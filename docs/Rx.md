@@ -144,13 +144,14 @@ Signal loss can be detected when:
 ### RX loss configuration
 
 The `rxfail` cli command is used to configure per-channel rx-loss behaviour.
-You can use the `rxfail` command to change this behaviour, a channel can either be AUTOMATIC, HOLD or SET.
+You can use the `rxfail` command to change this behaviour.
+A flight channel can either be AUTOMATIC or HOLD, an AUX channel can either be SET or HOLD.  
 
-* AUTOMATIC - Flight channels are set to safe values (low throttle, mid position for yaw/pitch/roll), all AUX channels HOLD last value.
+* AUTOMATIC - Flight channels are set to safe values (low throttle, mid position for yaw/pitch/roll).
 * HOLD - Channel holds the last value.
 * SET - Channel is set to a specific configured value. 
 
-The default mode for all channels is AUTOMATIC.
+The default mode is AUTOMATIC for flight channels and HOLD for AUX channels. 
 
 The rxfail command can be used in conjunction with mode ranges to trigger various actions.
 
@@ -232,8 +233,12 @@ Set the RX for 'No Pulses'.  Turn OFF TX and RX, Turn ON RX.  Press and release 
 
 ### Graupner GR-24 PWM
 
-Set failsafe on channels 1-4 set to OFF in the receiver settings (via transmitter menu).
+Set failsafe on the throttle channel in the receiver settings (via transmitter menu) to a value below `rx_min_usec` using channel mode FAILSAFE.
+This is the prefered way, since this is *much faster* detected by the FC then a channel that sends no pulses (OFF).
 
+__NOTE:__
+One or more control channels may be set to OFF to signal a failsafe condition to the FC, all other channels *must* be set to either HOLD or OFF. 
+Do __NOT USE__ the mode indicated with FAILSAFE instead, as this combination is NOT handled correctly by the FC.
 
 ## Receiver Channel Range Configuration.
 

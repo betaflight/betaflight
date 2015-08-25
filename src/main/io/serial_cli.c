@@ -170,7 +170,12 @@ static const char * const featureNames[] = {
 };
 
 // sync this with rxFailsafeChannelMode_e
-static char rxFailsafeModes[RX_FAILSAFE_MODE_COUNT] = { 'a', 'h', 's'};
+static const char rxFailsafeModeCharacters[] = "ahs";
+
+static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT][RX_FAILSAFE_MODE_COUNT] = {
+    { RX_FAILSAFE_MODE_AUTO, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_INVALID },
+    { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
+};
 
 #ifndef CJMCU
 // sync this with sensors_e
@@ -587,27 +592,22 @@ static void cliRxFail(char *cmdline)
             rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
 
             uint16_t value;
+            rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
             rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
             bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
 
-            // TODO optimize to use rxFailsafeModes - less logic.
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                switch (*(++ptr)) {
-                    case 'a':
-                        mode = RX_FAILSAFE_MODE_AUTO;
-                        break;
-
-                    case 'h':
-                        mode = RX_FAILSAFE_MODE_HOLD;
-                        break;
-
-                    case 's':
-                        mode = RX_FAILSAFE_MODE_SET;
-                        break;
-                    default:
-                        cliShowParseError();
-                        return;
+                char *p = strchr(rxFailsafeModeCharacters, *(++ptr));
+                if (p) {
+                    uint8_t requestedMode = p - rxFailsafeModeCharacters;
+                    mode = rxFailsafeModesTable[type][requestedMode];
+                } else {
+                    mode = RX_FAILSAFE_MODE_INVALID;
+                }
+                if (mode == RX_FAILSAFE_MODE_INVALID) {
+                    cliShowParseError();
+                    return;
                 }
 
                 requireValue = mode == RX_FAILSAFE_MODE_SET;
@@ -626,12 +626,15 @@ static void cliRxFail(char *cmdline)
                     }
 
                     channelFailsafeConfiguration->step = value;
+                } else if (requireValue) {
+                    cliShowParseError();
+                    return;
                 }
                 channelFailsafeConfiguration->mode = mode;
 
             }
 
-            char modeCharacter = rxFailsafeModes[channelFailsafeConfiguration->mode];
+            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
 
             // triple use of printf below
             // 1. acknowledge interpretation on command,
