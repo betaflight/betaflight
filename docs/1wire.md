@@ -12,7 +12,7 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
 ## Wiring
 
-  - For the NAZE, no external wiring is necessary. Simply plugin the board via USB cable.
+  - For the NAZE, no external wiring is necessary. Simply plug in the board via USB cable.
 
   - For the CC3D, connect [a USB to UART adapter](http://bit.ly/cf-cp2102) to the main port. If you need one, I prefer the [CP2102](http://bit.ly/cf-cp2102) as it is cheap and [the driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) is readily available.
 
