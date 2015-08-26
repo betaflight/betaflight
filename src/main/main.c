@@ -49,6 +49,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/sdcard.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gyro_sync.h"
 
@@ -343,6 +344,19 @@ void init(void)
 #endif
 #endif
 
+    SD_Error error;
+
+    SD_Detect_LowLevel_Init();
+    if (SD_Detect() == SD_PRESENT) {
+        while ((error = SD_Init()) != SD_RESPONSE_NO_ERROR) {
+
+        };
+
+        SD_DeInit();
+    }
+    SD_Detect_LowLevel_DeInit();
+
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -475,6 +489,10 @@ void init(void)
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
+#endif
+
+#ifdef USE_SD_CARD
+    SD_Detect_LowLevel_Init();
 #endif
 
 #ifdef USE_FLASHFS
