@@ -38,6 +38,39 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+
+#define USE_SD_CARD
+
+#define SD_DETECT_PIN                    GPIO_Pin_14
+#define SD_DETECT_EXTI_LINE              EXTI_Line14
+#define SD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
+#define SD_DETECT_GPIO_PORT              GPIOC
+#define SD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
+#define SD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
+#define SD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
+
+#define SD_CS_GPIO          GPIOB
+#define SD_CS_PIN           GPIO_Pin_12
+#define SD_SPI_INSTANCE     SPI2
+
+//#define USE_FLASHFS
+//#define USE_FLASH_M25P16
+
+//#define M25P16_CS_GPIO          GPIOB
+//#define M25P16_CS_PIN           GPIO_Pin_12
+//#define M25P16_SPI_INSTANCE     SPI2
 
 #define GYRO
 #define USE_GYRO_L3GD20
