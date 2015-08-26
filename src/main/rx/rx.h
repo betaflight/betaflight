@@ -142,3 +142,5 @@ uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
+void suspendRxSignal(void);
+void resumeRxSignal(void);
