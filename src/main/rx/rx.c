@@ -66,8 +66,8 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 uint16_t rssi = 0;                  // range: [0;1023]
 
 static bool rxDataReceived = false;
-static bool rxSignalReceived = false;
-static bool rxFlightChannelsValid = false;
+bool rxSignalReceived = false;
+bool rxFlightChannelsValid = false;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
