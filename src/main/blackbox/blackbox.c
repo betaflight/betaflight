@@ -242,9 +242,12 @@ static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
 
 // Rarely-updated fields
 static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
-    {"flightModeFlags",   -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"stateFlags",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
-    {"failsafePhase",     -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)}
+    {"flightModeFlags",       -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
+    {"stateFlags",            -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
+
+    {"failsafePhase",         -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
+    {"rxSignalReceived",      -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
+    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)}
 };
 
 typedef enum BlackboxState {
@@ -297,6 +300,8 @@ typedef struct blackboxSlowState_t {
     uint16_t flightModeFlags;
     uint8_t stateFlags;
     uint8_t failsafePhase;
+    bool rxSignalReceived;
+    bool rxFlightChannelsValid;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
@@ -679,11 +684,20 @@ static void writeInterframe(void)
  * infrequently, delta updates are not reasonable, so we log independent frames. */
 static void writeSlowFrame(void)
 {
+    int32_t values[3];
+
     blackboxWrite('S');
 
     blackboxWriteUnsignedVB(slowHistory.flightModeFlags);
     blackboxWriteUnsignedVB(slowHistory.stateFlags);
-    blackboxWriteUnsignedVB(slowHistory.failsafePhase);
+
+    /*
+     * Most of the time these three values will be able to pack into one byte for us:
+     */
+    values[0] = slowHistory.failsafePhase;
+    values[1] = slowHistory.rxSignalReceived ? 1 : 0;
+    values[2] = slowHistory.rxFlightChannelsValid ? 1 : 0;
+    blackboxWriteTag2_3S32(values);
 
     blackboxSlowFrameIterationTimer = 0;
 }
@@ -696,6 +710,8 @@ static void loadSlowState(blackboxSlowState_t *slow)
     slow->flightModeFlags = flightModeFlags;
     slow->stateFlags = stateFlags;
     slow->failsafePhase = failsafePhase();
+    slow->rxSignalReceived = rxIsReceivingSignal();
+    slow->rxFlightChannelsValid = rxAreFlightChannelsValid();
 }
 
 /**
