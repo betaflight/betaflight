@@ -312,8 +312,6 @@ extern uint32_t currentTime;
 
 //From rx.c:
 extern uint16_t rssi;
-bool rxSignalReceived;
-bool rxFlightChannelsValid;
 
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
@@ -712,8 +710,8 @@ static void loadSlowState(blackboxSlowState_t *slow)
     slow->flightModeFlags = flightModeFlags;
     slow->stateFlags = stateFlags;
     slow->failsafePhase = failsafePhase();
-    slow->rxSignalReceived = rxSignalReceived;
-    slow->rxFlightChannelsValid = rxFlightChannelsValid;
+    slow->rxSignalReceived = rxIsReceivingSignal();
+    slow->rxFlightChannelsValid = rxAreFlightChannelsValid();
 }
 
 /**
