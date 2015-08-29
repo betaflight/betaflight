@@ -1332,7 +1332,15 @@ void handleBlackbox(void)
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
             if (blackboxWriteSysinfo()) {
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
+
+                /*
+                 * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
+                 * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
+                 * could wipe out the end of the header if we weren't careful)
+                 */
+                if (blackboxDeviceFlush()) {
+                    blackboxSetState(BLACKBOX_STATE_RUNNING);
+                }
             }
         break;
         case BLACKBOX_STATE_PAUSED:
