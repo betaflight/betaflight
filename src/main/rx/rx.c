@@ -83,7 +83,6 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 rxRuntimeConfig_t rxRuntimeConfig;
 static rxConfig_t *rxConfig;
 
-<<<<<<< HEAD
 static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
     UNUSED(rxRuntimeConfig);
     UNUSED(channel);
