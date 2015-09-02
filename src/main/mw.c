@@ -92,7 +92,7 @@ enum {
 #define VBATINTERVAL (6 * 3500)       
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
-#define GYRO_WATCHDOG_DELAY 500  // Watchdog for boards without interrupt for gyro
+#define GYRO_WATCHDOG_DELAY 200  // Watchdog for boards without interrupt for gyro
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
