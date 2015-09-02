@@ -73,15 +73,15 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
   gpioInit(gpio, &cfg);
 }
 
+#ifdef STM32F10X
+static volatile uint32_t in_cr_mask, out_cr_mask;
+
 void usb1WireInitialize()
 {
    for (volatile uint8_t i = 0; i<ESC_COUNT ; i++){
       gpio_set_mode(escHardware[i].gpio, (1U << escHardware[i].pinpos), Mode_IPU); //GPIO_Mode_IPU
    }
 }
-
-#ifdef STM32F10X
-static volatile uint32_t in_cr_mask, out_cr_mask;
 
 static __IO uint32_t *cr;
 static void gpio_prep_vars(uint16_t escIndex)
