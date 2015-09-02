@@ -13,6 +13,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ * Driver for IBUS (Flysky) receiver
+ *   - initial implementation for MultiWii by Cesco/Plüschi
+ *   - implementation for BaseFlight by Andreas (fiendie) Tacke
+ *   - ported to CleanFlight by Konstantin (digitalentity) Sharlaimov
  */
 
 #include <stdbool.h>
@@ -31,8 +37,6 @@
 
 #include "rx/rx.h"
 #include "rx/ibus.h"
-
-// Driver for IBUS (Flysky) receiver 
 
 #define IBUS_MAX_CHANNEL 8
 #define IBUS_BUFFSIZE 32
