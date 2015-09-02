@@ -740,14 +740,8 @@ bool runLoop(uint32_t loopTime) {
 	bool loopTrigger = false;
 
     if (masterConfig.syncGyroToLoop) {
-        if (ARMING_FLAG(ARMED)) {
-            if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
-            	loopTrigger = true;
-            }
-        }
-        // Blheli arming workaround (stable looptime prior to arming)
-        else if (!ARMING_FLAG(ARMED) && ((int32_t)(currentTime - loopTime) >= 0)) {
-        	loopTrigger = true;
+        if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
+            loopTrigger = true;
         }
     }
 
