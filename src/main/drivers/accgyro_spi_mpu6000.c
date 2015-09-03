@@ -352,5 +352,7 @@ void checkMPU6000Interrupt(bool *gyroIsUpdated) {
 
 	mpu6000ReadRegister(MPU6000_INT_STATUS, &mpuIntStatus, 1);
 
+	delayMicroseconds(5);
+
 	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
 }

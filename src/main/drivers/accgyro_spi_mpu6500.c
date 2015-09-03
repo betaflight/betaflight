@@ -248,5 +248,7 @@ void checkMPU6500Interrupt(bool *gyroIsUpdated) {
 
 	mpu6500ReadRegister(MPU6500_INT_STATUS, &mpuIntStatus, 1);
 
+	delayMicroseconds(5);
+
 	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
 }

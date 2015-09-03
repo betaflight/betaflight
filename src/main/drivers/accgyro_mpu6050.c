@@ -453,5 +453,7 @@ void checkMPU6050Interrupt(bool *gyroIsUpdated) {
 
 	i2cRead(MPU6050_ADDRESS, MPU_RA_INT_STATUS, 1, &mpuIntStatus);
 
+	delayMicroseconds(5);
+
 	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
 }
