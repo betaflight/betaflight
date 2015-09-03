@@ -2138,8 +2138,6 @@ static void cliUSB1Wire(char *cmdline)
             printf("Invalid motor port, valid range: 1 to %d\r\n", ESC_COUNT);
         }
     }
-    UNUSED(cmdline);
-    StopPwmAllMotors();
     // motor 1 => index 0
     usb1WirePassthrough(i-1);
 }
