@@ -41,9 +41,9 @@ The Colibri RACE is a STM32F3 based flight control designed specifically to work
 	| Pin | Function       | Notes                                        |
 	| --- | -------------- | -------------------------------------------- |
 	| 1   | VCC_IN         | 3.3 Volt                                     |
-	| 2   | SWDIO          |                        		               |
+	| 2   | SWDIO          |                                              |
 	| 3   | nRESET         |                                              |
-	| 4   | SWCLK          |                                              | 
+	| 4   | SWCLK          |                                              |
 	| 5   | Ground         |                                              |
 	| 6   | SWO/TDO        |                                              |
 
@@ -51,17 +51,17 @@ The Colibri RACE is a STM32F3 based flight control designed specifically to work
 
 	| Pin | Function       | Notes                                        |
 	| --- | -------------- | -------------------------------------------- |
-	| 1   | PWM1	       | MOTOR 1                                       |
-	| 2   | PWM2           | MOTOR 2                		               |
+	| 1   | PWM1           | MOTOR 1                                      |
+	| 2   | PWM2           | MOTOR 2                                      |
 	| 3   | PWM3           | MOTOR 3                                      |
-	| 4   | PWM4           | MOTOR 4                                      | 
-	| 5   | PWM5 	       | MOTOR 5 (For Y6 or Hex X)                     | 
-	| 6   | PWM6 	       | MOTOR 6 (For Y6 or Hex X)                     | 
+	| 4   | PWM4           | MOTOR 4                                      |
+	| 5   | PWM5           | MOTOR 5 (For Y6 or Hex X)                    |
+	| 6   | PWM6           | MOTOR 6 (For Y6 or Hex X)                    |
 	| 7   | BST SDA        | Use For TBS CorePro Control Device           |
 	| 8   | BST SCL        | Use For TBS CorePro Control Device           |
 	| 9   | PWM7           | Can be a normal GPIO (PA2) or PWM            |
 	| 10  | PWM8           | Can be a normal GPIO (PA2) or PWM            |
-	| 11  | 12.2V DCDC     | If 12v is detected, the Blue LED will trun on|
+	| 11  | 12.2V DCDC     | If 12v is detected, the Blue LED will turn on|
 	| 12  | 5.1V DCDC      | Voltage for MCU                              |
 
 ### Servo
@@ -93,12 +93,11 @@ The Colibri RACE is a STM32F3 based flight control designed specifically to work
 
 ### IO_3 - RC input
 
-	When RX_PPM/RX_SERIAL is used the IO_3 pinout is as follows.
-	if RX_SERIAL, Telemetry need to set to UART2 and choose your device.
+	IO_3 is used for RX_PPM/RX_SERIAL. Under the `PORT` tab, set RX_SERIAL to UART2 when using RX_SERIAL.
 
 	| Pin | Function          | Notes                                        |
 	| --- | ----------------- | -------------------------------------------- |
-	| 2   | PPM/Serial        | Can PPM or Serial input 	                  |
+	| 1   | PPM/Serial        | Can PPM or Serial input                      |
 	| 2   | VCC_OUT           | 3.3 Volt output to the device                |
 	| 3   | Ground            |                                              |
 	| 4   | VCC_OUT           | 5.1 Volt output to the device                |
