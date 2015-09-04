@@ -118,7 +118,7 @@ The Colibri RACE is a STM32F3 based flight control designed specifically to work
 	| 3   | Ground            |                                              |
 	| 4   | VCC_OUT           | 4.7 Volt output to the device                |
 
-### IO_6 - IR TX (externsion)
+### IO_6 - IR TX (extension)
 
 	| Pin | Function          | Notes                                        |
 	| --- | ----------------- | -------------------------------------------- |
