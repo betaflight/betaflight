@@ -71,6 +71,7 @@ static bool rxFlightChannelsValid = false;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
+static uint8_t  skipRxSamples = 0;
 
 int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
@@ -79,6 +80,8 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_10_HZ (1000000 / 10)
+#define SKIP_RC_SAMPLES_ON_SUSPEND 75               // approx. 1.5 seconds of samples at 50Hz
+#define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements
 
 rxRuntimeConfig_t rxRuntimeConfig;
 static rxConfig_t *rxConfig;
@@ -259,6 +262,16 @@ static void resetRxSignalReceivedFlagIfNeeded(uint32_t currentTime)
         debug[0]++;
 #endif
     }
+}
+
+void suspendRxSignal(void)
+{
+    skipRxSamples = SKIP_RC_SAMPLES_ON_SUSPEND;
+}
+
+void resumeRxSignal(void)
+{
+    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
 }
 
 void updateRx(uint32_t currentTime)
@@ -465,6 +478,11 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
         if (!isRxDataDriven()) {
             processNonDataDrivenRx();
         }
+    }
+
+    if (skipRxSamples) {
+        skipRxSamples--;
+        return;
     }
 
     readRxChannelsApplyRanges();

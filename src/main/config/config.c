@@ -829,6 +829,8 @@ void readEEPROM(void)
     if (!isEEPROMContentValid())
         failureMode(10);
 
+    suspendRxSignal();
+
     // Read flash
     memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
 
@@ -844,6 +846,8 @@ void readEEPROM(void)
 
     validateAndFixConfig();
     activateConfig();
+
+    resumeRxSignal();
 }
 
 void readEEPROMAndNotify(void)
@@ -861,6 +865,8 @@ void writeEEPROM(void)
     FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
+
+    suspendRxSignal();
 
     // prepare checksum/version constants
     masterConfig.version = EEPROM_CONF_VERSION;
@@ -903,6 +909,8 @@ void writeEEPROM(void)
     if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
         failureMode(10);
     }
+
+    resumeRxSignal();
 }
 
 void ensureEEPROMContainsValidData(void)
