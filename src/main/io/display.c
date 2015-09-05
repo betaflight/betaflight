@@ -231,6 +231,12 @@ void updateFailsafeStatus(void)
         case FAILSAFE_LANDED:
             failsafeIndicator = 'L';
             break;
+        case FAILSAFE_RX_LOSS_MONITORING:
+            failsafeIndicator = 'M';
+            break;
+        case FAILSAFE_RX_LOSS_RECOVERED:
+            failsafeIndicator = 'r';
+            break;
     }
     i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 3, 0);
     i2c_OLED_send_char(failsafeIndicator);

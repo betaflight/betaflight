@@ -104,7 +104,7 @@ void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
-void failsafeInit(rxConfig_t *intialRxConfig);
+void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 #ifdef USE_SERVOS
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
@@ -404,7 +404,7 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig);
+    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig);
 
