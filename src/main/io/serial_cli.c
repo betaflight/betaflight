@@ -1477,15 +1477,6 @@ static void cliDump(char *cmdline)
             );
         }
 
-        // print servo directions
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
-                if (servoDirection(i, channel) < 0) {
-                    printf("smix reverse %d %d r\r\n", i , channel);
-                }
-            }
-        }
-
 #endif
 
         cliPrint("\r\n\r\n# feature\r\n");
@@ -1548,6 +1539,16 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# servo\r\n");
 
         cliServo("");
+
+        // print servo directions
+        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
+                if (servoDirection(i, channel) < 0) {
+                    printf("smix reverse %d %d r\r\n", i , channel);
+                }
+            }
+        }
+
 
         printSectionBreak();
 
