@@ -122,6 +122,19 @@ const mpu6050Config_t *selectMPU6050Config(void)
     return &spRacingF3MPU6050Config;
 #endif
 
+#ifdef MOTOLAB
+    static const mpu6050Config_t MotolabF3MPU6050Config = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_15,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource15,
+            .exti_line = EXTI_Line15,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    return &MotolabF3MPU6050Config;
+#endif
+
     return NULL;
 }
 
