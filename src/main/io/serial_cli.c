@@ -111,8 +111,12 @@ static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
+
+#ifdef USE_SERVOS
 static void cliServo(char *cmdline);
 static void cliServoMix(char *cmdline);
+#endif
+
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
@@ -1056,11 +1060,9 @@ static void cliColor(char *cmdline)
 }
 #endif
 
+#ifdef USE_SERVOS
 static void cliServo(char *cmdline)
 {
-#ifndef USE_SERVOS
-    UNUSED(cmdline);
-#else
     enum { SERVO_ARGUMENT_COUNT = 8 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
@@ -1147,14 +1149,12 @@ static void cliServo(char *cmdline)
         servo->rate = arguments[6];
         servo->forwardFromChannel = arguments[7];
     }
-#endif
 }
+#endif
 
+#ifdef USE_SERVOS
 static void cliServoMix(char *cmdline)
 {
-#ifndef USE_SERVOS
-    UNUSED(cmdline);
-#else
     int i;
     uint8_t len;
     char *ptr;
@@ -1282,8 +1282,8 @@ static void cliServoMix(char *cmdline)
             cliShowParseError();
         }
     }
-#endif
 }
+#endif
 
 
 #ifdef USE_FLASHFS
@@ -1403,7 +1403,7 @@ static const char* const sectionBreak = "\r\n";
 
 static void cliDump(char *cmdline)
 {
-    unsigned int i, channel;
+    unsigned int i;
     char buf[16];
     uint32_t mask;
 
@@ -1536,11 +1536,14 @@ static void cliDump(char *cmdline)
 
         cliRxRange("");
 
+#ifdef USE_SERVOS
         cliPrint("\r\n# servo\r\n");
 
         cliServo("");
 
         // print servo directions
+        unsigned int channel;
+
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
@@ -1548,7 +1551,7 @@ static void cliDump(char *cmdline)
                 }
             }
         }
-
+#endif
 
         printSectionBreak();
 
