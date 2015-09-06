@@ -40,6 +40,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/system.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -49,6 +50,7 @@
 #include "rx/xbus.h"
 
 #include "rx/rx.h"
+
 
 //#define DEBUG_RX_SIGNAL_LOSS
 
@@ -71,6 +73,7 @@ static bool rxFlightChannelsValid = false;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
+static uint32_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
 int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
@@ -80,8 +83,8 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_10_HZ (1000000 / 10)
-#define SKIP_RC_SAMPLES_ON_SUSPEND 75               // approx. 1.5 seconds of samples at 50Hz
-#define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements
+#define SKIP_RC_ON_SUSPEND_PERIOD 1500000           // 1.5 second period in usec (call frequency independent)
+#define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements (timing independent)
 
 rxRuntimeConfig_t rxRuntimeConfig;
 static rxConfig_t *rxConfig;
@@ -266,12 +269,16 @@ static void resetRxSignalReceivedFlagIfNeeded(uint32_t currentTime)
 
 void suspendRxSignal(void)
 {
-    skipRxSamples = SKIP_RC_SAMPLES_ON_SUSPEND;
+    suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
+    skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
 }
 
 void resumeRxSignal(void)
 {
+    suspendRxSignalUntil = micros();
     skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
+    failsafeOnRxResume();
 }
 
 void updateRx(uint32_t currentTime)
@@ -481,8 +488,11 @@ void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
         }
     }
 
+    // only proceed when no more samples to skip and suspend period is over
     if (skipRxSamples) {
-        skipRxSamples--;
+        if (currentTime > suspendRxSignalUntil) {
+            skipRxSamples--;
+        }
         return;
     }
 
