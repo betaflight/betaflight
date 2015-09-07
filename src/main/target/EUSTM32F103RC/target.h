@@ -77,6 +77,7 @@
 #define LED0
 #define LED1
 #define DISPLAY
+//#define DISPLAY_ARMED_BITMAP
 #define INVERTER
 
 #define USE_USART1

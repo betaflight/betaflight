@@ -84,6 +84,37 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
+#if defined(DISPLAY_ARMED_BITMAP)
+static uint8_t armedBitmapRLE [] = { 128, 32,
+    '\x00','\x00','\x87','\xc0','\xe0','\xf8','\xfc','\xfc', // 0x0008
+    '\x02','\x7e','\x3e','\x1f','\x0f','\x0f','\x06','\xcf', // 0x0010
+    '\xff','\xff','\x04','\x7f','\x1f','\x8e','\xe0','\xf0', // 0x0018
+    '\xfc','\xfe','\x7f','\x3f','\x0f','\x0f','\x06','\x8f', // 0x0020
+    '\xcf','\xff','\xff','\x04','\x7f','\x1f','\x8e','\xe0', // 0x0028
+    '\xf0','\xfc','\xfe','\x7f','\x3f','\x0f','\x0f','\x06', // 0x0030
+    '\xcf','\xef','\xff','\xff','\x03','\x7f','\x1f','\x0f', // 0x0038
+    '\x0f','\x06','\xcf','\xff','\xff','\x04','\x7f','\x1f', // 0x0040
+    '\x8e','\xe0','\xf0','\xfc','\xfe','\xff','\xbf','\x8f', // 0x0048
+    '\x8f','\x05','\x0f','\x0f','\x08','\x07','\x07','\x02', // 0x0050
+    '\x83','\xe3','\xf1','\xfd','\xfe','\x7f','\x3f','\x0f', // 0x0058
+    '\x0f','\x07','\xcf','\xff','\xff','\x04','\x7f','\x1f', // 0x0060
+    '\x0e','\x00','\x00','\x03','\x80','\xc0','\xf0','\xf8', // 0x0068
+    '\xfe','\x7f','\x3f','\x1f','\x0f','\x0f','\x06','\x8f', // 0x0070
+    '\xef','\xff','\xff','\x03','\x7f','\x3f','\x8f','\xc7', // 0x0078
+    '\xf3','\xf8','\xfe','\xff','\x3f','\x1f','\x0f','\x0f', // 0x0080
+    '\x06','\x8f','\xcf','\xff','\xff','\x04','\x3f','\x9f', // 0x0088
+    '\xc3','\xf1','\xf8','\xfc','\xff','\x3f','\x1f','\x07', // 0x0090
+    '\x03','\x00','\x00','\x03','\x80','\xc0','\xf0','\xf8', // 0x0098
+    '\xfe','\xff','\x3f','\x1f','\x07','\x03','\x00','\x00', // 0x00a0
+    '\x03','\x80','\xc0','\xf0','\xf8','\xfe','\xff','\x3f', // 0x00a8
+    '\x9f','\xc7','\xf3','\xf8','\xfc','\xff','\xff','\x03', // 0x00b0
+    '\xf7','\xf3','\xf3','\x04','\xf1','\xf1','\x03','\xf0', // 0x00b8
+    '\xf0','\x09','\xf8','\xfe','\xff','\xff','\x03','\xf7', // 0x00c0
+    '\xf3','\xf0','\xf0','\x06','\xf8','\x7c','\x7e','\x3f', // 0x00c8
+    '\x3f','\x02','\x1f','\x07','\x03','\x00','\x00','\x86', // 0x00d0
+};
+#endif
+
 static const char* const pageTitles[] = {
     FC_NAME,
     "ARMED",
@@ -203,10 +234,17 @@ void updateFailsafeStatus(void)
     i2c_OLED_send_char(failsafeIndicator);
 }
 
-void showTitle()
+void showTitle(void)
 {
+#if defined(DISPLAY_ARMED_BITMAP)
+    if (currentPageId != PAGE_ARMED) {
+        i2c_OLED_set_line(0);
+        i2c_OLED_send_string(pageTitles[currentPageId]);
+    }
+#else 
     i2c_OLED_set_line(0);
     i2c_OLED_send_string(pageTitles[currentPageId]);
+#endif
 }
 
 void showWelcomePage(void)
@@ -221,9 +259,45 @@ void showWelcomePage(void)
     i2c_OLED_send_string(targetName);
 }
 
+#if defined(DISPLAY_ARMED_BITMAP)
+// RLE compressed bitmaps must be 128 width with vertical data orientation, and size included in file.
+void bitmapDecompressAndShow(uint8_t *bitmap)
+{
+    uint8_t data = 0, count = 0;
+    uint16_t i;
+    uint8_t width = *bitmap;
+    bitmap++;
+    uint8_t height = *bitmap;
+    bitmap++;
+    uint16_t bitmapSize = (width * height) / 8;
+    for (i = 0; i < bitmapSize; i++) {
+        if(count == 0) {
+            data = *bitmap;
+            bitmap++;
+            if(data == *bitmap) {
+                bitmap++;
+                count = *bitmap;
+                bitmap++;
+            }
+            else {
+                count = 1;
+            }
+        }
+        count--;
+        i2c_OLED_send_byte(data);
+    }
+}
+
+void showArmedPage(void)
+{
+    i2c_OLED_set_line(2);
+    bitmapDecompressAndShow(armedBitmapRLE);
+}
+#else
 void showArmedPage(void)
 {
 }
+#endif
 
 void showStatusPage(void)
 {

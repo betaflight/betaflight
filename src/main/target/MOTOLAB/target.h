@@ -119,6 +119,8 @@
 //#define GPS_PROTO_NAZA
 
 #define DISPLAY
+#define DISPLAY_ARMED_BITMAP
+
 #define USE_SERVOS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

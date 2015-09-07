@@ -124,6 +124,7 @@
 #define LED1
 #define INVERTER
 #define DISPLAY
+//#define DISPLAY_ARMED_BITMAP
 
 #define USE_USART1
 #define USE_USART2

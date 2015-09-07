@@ -167,7 +167,10 @@
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
+
 #define DISPLAY
+#define DISPLAY_ARMED_BITMAP
+
 #define USE_SERVOS
 #define USE_CLI
 
