@@ -85,9 +85,17 @@ typedef enum {
     RX_FAILSAFE_MODE_AUTO = 0,
     RX_FAILSAFE_MODE_HOLD,
     RX_FAILSAFE_MODE_SET,
+    RX_FAILSAFE_MODE_INVALID,
 } rxFailsafeChannelMode_e;
 
 #define RX_FAILSAFE_MODE_COUNT 3
+
+typedef enum {
+    RX_FAILSAFE_TYPE_FLIGHT = 0,
+    RX_FAILSAFE_TYPE_AUX,
+} rxFailsafeChannelType_e;
+
+#define RX_FAILSAFE_TYPE_COUNT 2
 
 typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
@@ -143,3 +151,5 @@ void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
 void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
+void suspendRxSignal(void);
+void resumeRxSignal(void);

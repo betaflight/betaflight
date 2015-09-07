@@ -31,7 +31,11 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+#define DE_ACTIVATE_ALL_BOXES   0
+
 extern "C" {
+uint32_t rcModeActivationMask;
+
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range);
 }
 
@@ -39,6 +43,8 @@ extern uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfig
 
 TEST(RxChannelRangeTest, TestRxChannelRanges)
 {
+    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
+
     // No signal, special condition
     EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1000, 2000)), 0);
     EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1300, 1700)), 0);
@@ -184,7 +190,7 @@ void failsafeOnValidDataReceived(void)
 {
 }
 
-void failsafeOnRxCycleStarted(void)
+void failsafeOnValidDataFailed(void)
 {
 }
 

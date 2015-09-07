@@ -31,6 +31,7 @@ extern "C" {
     #include "config/runtime_config.h"
 
     #include "io/beeper.h"
+    #include "io/rc_controls.h"
 
     #include "rx/rx.h"
     #include "flight/failsafe.h"
@@ -42,6 +43,9 @@ extern "C" {
 #include "gtest/gtest.h"
 
 uint32_t testFeatureMask = 0;
+uint16_t flightModeFlags = 0;
+uint16_t testMinThrottle = 0;
+throttleStatus_e throttleStatus = THROTTLE_HIGH;
 
 enum {
     COUNTER_MW_DISARM = 0,
@@ -56,24 +60,34 @@ void resetCallCounters(void) {
     memset(&callCounts, 0, sizeof(callCounts));
 }
 
-#define TEST_MID_RC 1495 // something other than the default 1500 will suffice.
+#define TEST_MID_RC 1495            // something other than the default 1500 will suffice.
+#define TEST_MIN_CHECK 1100;
+#define PERIOD_OF_10_SCONDS 10000
+#define DE_ACTIVATE_ALL_BOXES 0
 
 rxConfig_t rxConfig;
 failsafeConfig_t failsafeConfig;
+uint32_t sysTickUptime;
 
 void configureFailsafe(void)
 {
     memset(&rxConfig, 0, sizeof(rxConfig));
     rxConfig.midrc = TEST_MID_RC;
+    rxConfig.mincheck = TEST_MIN_CHECK;
 
     memset(&failsafeConfig, 0, sizeof(failsafeConfig));
     failsafeConfig.failsafe_delay = 10; // 1 second
     failsafeConfig.failsafe_off_delay = 50; // 5 seconds
+    failsafeConfig.failsafe_kill_switch = false;
+    failsafeConfig.failsafe_throttle = 1200;
+    failsafeConfig.failsafe_throttle_low_delay = 50; // 5 seconds
+    sysTickUptime = 0;
 }
 //
 // Stepwise tests
 //
 
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeInitialState)
 {
     // given
@@ -91,6 +105,7 @@ TEST(FlightFailsafeTest, TestFailsafeInitialState)
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeStartMonitoring)
 {
     // when
@@ -102,14 +117,16 @@ TEST(FlightFailsafeTest, TestFailsafeStartMonitoring)
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeFirstArmedCycle)
 {
     // given
     ENABLE_ARMING_FLAG(ARMED);
 
     // when
-    failsafeOnRxCycleStarted();
-    failsafeOnValidDataReceived();
+    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
+    failsafeOnValidDataReceived();                  // cause a recovered link
 
     // and
     failsafeUpdateState();
@@ -119,47 +136,11 @@ TEST(FlightFailsafeTest, TestFailsafeFirstArmedCycle)
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
-/*
- * FIXME failsafe assumes that calls to failsafeUpdateState() happen at a set frequency (50hz)
- * but that is NOT the case when using a RX_SERIAL or RX_MSP as in that case the rx data is processed as soon
- * as it arrives which may be more or less frequent.
- *
- * Since the failsafe uses a counter the counter would not be updated at the same frequency that the maths
- * in the failsafe code is expecting the failsafe will either be triggered to early or too late when using
- * RX_SERIAL or RX_MSP.
- *
- *  uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
- *
- *  static bool failsafeHasTimerElapsed(void)
- *  {
- *    return failsafeState.counter > (5 * failsafeConfig->failsafe_delay);
- *  }
- *
- *  static bool failsafeShouldHaveCausedLandingByNow(void)
- *  {
- *    return failsafeState.counter > 5 * (failsafeConfig->failsafe_delay + failsafeConfig->failsafe_off_delay);
- *  }
- *
- *  void failsafeOnValidDataReceived(void)
- *  {
- *    if (failsafeState.counter > 20)
- *      failsafeState.counter -= 20;
- *    else
- *      failsafeState.counter = 0;
- *  }
- *
- *  1000ms / 50hz = 20
- */
-
-#define FAILSAFE_UPDATE_HZ 50
-
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenReceivingData)
 {
     // when
-    int callsToMakeToSimulateTenSeconds = FAILSAFE_UPDATE_HZ * 10;
-
-    for (int i = 0; i < callsToMakeToSimulateTenSeconds; i++) {
-        failsafeOnRxCycleStarted();
+    for (sysTickUptime = 0; sysTickUptime < PERIOD_OF_10_SCONDS; sysTickUptime++) {
         failsafeOnValidDataReceived();
 
         failsafeUpdateState();
@@ -170,108 +151,213 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenReceivingData)
     }
 }
 
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 {
-
     // given
     ENABLE_ARMING_FLAG(ARMED);
 
-    //
-    // currently 20 cycles must occur before the lack of an update triggers RX loss detection.
-    //
-    // FIXME see comments about RX_SERIAL/RX_MSP above, the test should likely deal with time rather than counters.
-    int failsafeCounterThreshold = 20;
+    // and
+    failsafeStartMonitoring();
+    throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
+    sysTickUptime = 0;                              // restart time from 0
+    failsafeOnValidDataReceived();                  // set last valid sample at current time
 
     // when
-    for (int i = 0; i < failsafeCounterThreshold; i++) {
-
-        failsafeOnRxCycleStarted();
-        // no call to failsafeOnValidDataReceived();
+    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig.failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
+        failsafeOnValidDataFailed();
 
         failsafeUpdateState();
 
         // then
+        EXPECT_EQ(false, failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-        EXPECT_EQ(false, failsafeIsActive());
     }
 
-    // when
-    for (int i = 0; i < FAILSAFE_UPDATE_HZ - failsafeCounterThreshold; i++) {
-
-        failsafeOnRxCycleStarted();
-        // no call to failsafeOnValidDataReceived();
-
-        failsafeUpdateState();
-
-        // then
-        EXPECT_EQ(FAILSAFE_RX_LOSS_DETECTED, failsafePhase());
-        EXPECT_EQ(false, failsafeIsActive());
-    }
-
-    //
-    // one more cycle currently needed before the counter is re-checked.
-    //
+    // given
+    sysTickUptime++;                                // adjust time to point just past the failure time to
+    failsafeOnValidDataFailed();                    // cause a lost link
 
     // when
-    failsafeOnRxCycleStarted();
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(true, failsafeIsActive());
+}
+
+/****************************************************************************************/
+TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
+{
+    // given
+    sysTickUptime += failsafeConfig.failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    sysTickUptime++;
+
+    // when
     // no call to failsafeOnValidDataReceived();
     failsafeUpdateState();
 
     // then
     EXPECT_EQ(true, failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
-}
-
-TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
-{
-    // given
-    int callsToMakeToSimulateFiveSeconds = FAILSAFE_UPDATE_HZ * 5;
-
-    // when
-    for (int i = 0; i < callsToMakeToSimulateFiveSeconds - 1; i++) {
-
-        failsafeOnRxCycleStarted();
-        // no call to failsafeOnValidDataReceived();
-
-        failsafeUpdateState();
-
-        // then
-        EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
-        EXPECT_EQ(true, failsafeIsActive());
-
-    }
-
-    // when
-    failsafeOnRxCycleStarted();
-    // no call to failsafeOnValidDataReceived();
-    failsafeUpdateState();
-
-    // then
-    EXPECT_EQ(false, failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_LANDED, failsafePhase());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
 
     // given
-    DISABLE_ARMING_FLAG(ARMED);
+    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
+    failsafeOnValidDataReceived();                  // cause a recovered link
 
     // when
-    failsafeOnRxCycleStarted();
-    // no call to failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+
+    // given
+    sysTickUptime += PERIOD_OF_30_SECONDS + 1;      // adjust time to point just past the required additional recovery time
+    failsafeOnValidDataReceived();
+
+    // when
     failsafeUpdateState();
 
     // then
     EXPECT_EQ(false, failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_LANDED, failsafePhase());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
-
+    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
 }
 
+/****************************************************************************************/
+TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
+{
+    // given
+    DISABLE_ARMING_FLAG(ARMED);
+    resetCallCounters();
+
+    // and
+    failsafeStartMonitoring();
+    throttleStatus = THROTTLE_LOW;                  // throttle LOW to go for a failsafe just-disarm procedure
+    sysTickUptime = 0;                              // restart time from 0
+    failsafeOnValidDataReceived();                  // set last valid sample at current time
+
+    // when
+    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig.failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
+        failsafeOnValidDataFailed();
+
+        failsafeUpdateState();
+
+        // then
+        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    }
+
+    // given
+    sysTickUptime++;                                // adjust time to point just past the failure time to
+    failsafeOnValidDataFailed();                    // cause a lost link
+    ENABLE_ARMING_FLAG(ARMED);                      // armed from here (disarmed state has cleared throttleLowPeriod).
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+
+    // given
+    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
+    failsafeOnValidDataReceived();                  // cause a recovered link
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+
+    // given
+    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    failsafeOnValidDataReceived();
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
+    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+}
+
+/****************************************************************************************/
+TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
+{
+    // given
+    ENABLE_ARMING_FLAG(ARMED);
+    resetCallCounters();
+    failsafeStartMonitoring();
+
+    // and
+    throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
+    failsafeConfig.failsafe_kill_switch = 1;        // configure AUX switch as kill switch
+    ACTIVATE_RC_MODE(BOXFAILSAFE);                  // and activate it
+    sysTickUptime = 0;                              // restart time from 0
+    failsafeOnValidDataReceived();                  // set last valid sample at current time
+    sysTickUptime = PERIOD_RXDATA_FAILURE + 1;      // adjust time to point just past the failure time to
+    failsafeOnValidDataFailed();                    // cause a lost link
+
+    // when
+    failsafeUpdateState();                          // kill switch handling should come first
+
+    // then
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // given
+    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
+    failsafeOnValidDataReceived();                  // cause a recovered link
+
+    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be off (kill switch)
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // given
+    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    failsafeOnValidDataReceived();
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
+    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+}
+
+/****************************************************************************************/
 //
 // Additional non-stepwise tests
 //
-
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected)
 {
     // given
@@ -288,28 +374,58 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     failsafeStartMonitoring();
 
     // and
-    int callsToMakeToSimulateTenSeconds = FAILSAFE_UPDATE_HZ * 10;
+    sysTickUptime = 0;                              // restart time from 0
+    failsafeOnValidDataReceived();                  // set last valid sample at current time
 
-    for (int i = 0; i < callsToMakeToSimulateTenSeconds; i++) {
-        failsafeOnRxCycleStarted();
-        // no call to failsafeOnValidDataReceived();
+    // when
+    for (sysTickUptime = 0; sysTickUptime < PERIOD_RXDATA_FAILURE; sysTickUptime++) {
+        failsafeOnValidDataFailed();
 
         failsafeUpdateState();
 
         // then
-        EXPECT_EQ(true, failsafeIsMonitoring());
         EXPECT_EQ(false, failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     }
-}
 
+    // given
+    sysTickUptime++;                                // adjust time to point just past the failure time to
+    failsafeOnValidDataFailed();                    // cause a lost link
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_EQ(true, failsafeIsMonitoring());
+    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+}
 
 // STUBS
 
 extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint8_t armingFlags;
+int16_t rcCommand[4];
+uint32_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
+bool isUsingSticksToArm = true;
+
+
+// Return system uptime in milliseconds (rollover in 49 days)
+uint32_t millis(void)
+{
+    return sysTickUptime;
+}
+
+throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+{
+    UNUSED(rxConfig);
+    UNUSED(deadband3d_throttle);
+    return throttleStatus;
+}
 
 void delay(uint32_t) {}
 
@@ -323,6 +439,28 @@ void mwDisarm(void) {
 
 void beeper(beeperMode_e mode) {
     UNUSED(mode);
+}
+
+uint16_t enableFlightMode(flightModeFlags_e mask)
+{
+    flightModeFlags |= (mask);
+    return flightModeFlags;
+}
+
+uint16_t disableFlightMode(flightModeFlags_e mask)
+{
+    flightModeFlags &= ~(mask);
+    return flightModeFlags;
+}
+
+uint16_t getCurrentMinthrottle(void)
+{
+    return testMinThrottle;
+}
+
+bool isUsingSticksForArming(void)
+{
+    return isUsingSticksToArm;
 }
 
 }

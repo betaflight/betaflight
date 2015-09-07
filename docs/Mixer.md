@@ -127,6 +127,18 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers. 
 
+## Servo Reversing
+
+Servos are reversed using the `smix reverse` command.
+
+e.g. when using the TRI mixer to reverse the tail servo on a tricopter use this:
+
+`smix reverse 5 2 r`
+
+i.e. when mixing rudder servo slot (`5`) using Stabilised YAW input source (`2`) reverse the direction (`r`)
+
+`smix reverse` is a per-profile setting.  So ensure you configure it for your profiles as required.
+
 ### Example 1: A KK2.0 wired motor setup 
 Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme. 
 
@@ -179,17 +191,12 @@ mmix 0 1.000 0.000 1.333 0.000
 mmix 1 1.000 -1.000 -0.667 0.000
 mmix 2 1.000 1.000 -0.667 0.000
 smix reset
-smix 0 6 3 100 0 0 100 0
+smix 0 5 2 100 0 0 100 0
+profile 0
+smix reverse 5 2 r
+profile 1
+smix reverse 5 2 r
+profile 2
+smix reverse 5 2 r
+
 ```
-
-
-## Servo Reversing
-
-Servos are reversed using the `smix reverse` command.
-
-e.g. when using the TRI mixer to reverse the tail servo on a tricopter use this:
-
-`smix reverse 5 2 r`
-
-i.e. when mixing rudder servo slot (`5`) using Stabilised YAW input source (`2`) reverse the direction (`r`)
-  

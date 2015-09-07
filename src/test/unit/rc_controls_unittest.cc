@@ -298,6 +298,26 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 {
     // given
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rates = {0,0,0},
+            .dynThrPID = 0,
+            .rcYawExpo8 = 0,
+            .tpa_breakpoint = 0
+    };
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
+
+    // and
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
