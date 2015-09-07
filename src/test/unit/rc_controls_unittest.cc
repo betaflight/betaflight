@@ -673,9 +673,9 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(0.1f, pidProfile.P_f[PIDPITCH]);
-    EXPECT_EQ(5.1f, pidProfile.P_f[PIDROLL]);
-    EXPECT_EQ(7.1f, pidProfile.P_f[PIDYAW]);
+    EXPECT_EQ(0.01f, pidProfile.P_f[PIDPITCH]);
+    EXPECT_EQ(5.01f, pidProfile.P_f[PIDROLL]);
+    EXPECT_EQ(7.01f, pidProfile.P_f[PIDYAW]);
     EXPECT_EQ(10.01f, pidProfile.I_f[PIDPITCH]);
     EXPECT_EQ(15.01f, pidProfile.I_f[PIDROLL]);
     EXPECT_EQ(17.01f, pidProfile.I_f[PIDYAW]);
