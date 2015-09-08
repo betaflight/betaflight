@@ -75,7 +75,7 @@ https://help.github.com/articles/creating-a-pull-request/
 
 The main flow for a contributing is as follows:
 
-1. Login to github, goto the cleanflight repository and press `fork`.
+1. Login to github, go to the cleanflight repository and press `fork`.
 2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
 3. `cd cleanflight`
 4. `git checkout master`
