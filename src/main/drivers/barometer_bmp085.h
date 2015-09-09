@@ -28,6 +28,10 @@ typedef struct bmp085Config_s {
 bool bmp085Detect(const bmp085Config_t *config, baro_t *baro);
 void bmp085Disable(const bmp085Config_t *config);
 
+#if defined(BARO_EOC_GPIO)
+bool bmp085TestEOCConnected(const bmp085Config_t *config);
+#endif
+
 #ifdef UNIT_TEST
 void RCC_APB2PeriphClockCmd(uint32_t RCC_APB2Periph, FunctionalState NewState);
 #endif
