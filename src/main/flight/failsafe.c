@@ -132,6 +132,17 @@ bool failsafeIsReceivingRxData(void)
     return (failsafeState.rxLinkState == FAILSAFE_RXLINK_UP);
 }
 
+void failsafeOnRxSuspend(uint32_t usSuspendPeriod)
+{
+    failsafeState.validRxDataReceivedAt += (usSuspendPeriod / 1000);    // / 1000 to convert micros to millis
+}
+
+void failsafeOnRxResume(void)
+{
+    failsafeState.validRxDataReceivedAt = millis();                     // prevent RX link down trigger, restart rx link up
+    failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;                     // do so while rx link is up
+}
+
 void failsafeOnValidDataReceived(void)
 {
     failsafeState.validRxDataReceivedAt = millis();
