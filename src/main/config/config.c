@@ -803,6 +803,11 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#ifdef STM32F303xC
+    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+    masterConfig.telemetryConfig.telemetry_inversion = 1;
+#endif
+
     /*
      * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
      * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
