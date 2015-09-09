@@ -110,7 +110,6 @@ STATIC_UNIT_TESTED bmp085_t bmp085;
 #define UT_DELAY    6000        // 1.5ms margin according to the spec (4.5ms T conversion time)
 #define UP_DELAY    27000       // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
 
-static bmp085_t bmp085;
 static bool bmp085InitDone = false;
 STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
