@@ -139,6 +139,12 @@ extern "C" {
     void failsafeOnValidDataFailed() {}
     void failsafeOnValidDataReceived() {}
 
+    void failsafeOnRxSuspend(uint32_t ) {}
+    void failsafeOnRxResume(void) {}
+
+    uint32_t micros(void) { return 0; }
+    uint32_t millis(void) { return 0; }
+
     bool feature(uint32_t mask) {
         UNUSED(mask);
         return false;
@@ -159,6 +165,4 @@ extern "C" {
     void rxMspInit(rxConfig_t *, rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 
     void rxPwmInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
-
-
 }
