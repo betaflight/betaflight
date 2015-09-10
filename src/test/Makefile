@@ -512,6 +512,30 @@ $(OBJECT_DIR)/baro_bmp085_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/sensors/boardalignment.o : \
+	$(USER_DIR)/sensors/boardalignment.c \
+	$(USER_DIR)/sensors/boardalignment.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/boardalignment.c -o $@
+
+$(OBJECT_DIR)/alignsensor_unittest.o : \
+	$(TEST_DIR)/alignsensor_unittest.cc \
+	$(USER_DIR)/sensors/boardalignment.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/alignsensor_unittest.cc -o $@
+
+$(OBJECT_DIR)/alignsensor_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/sensors/boardalignment.o \
+	$(OBJECT_DIR)/alignsensor_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 test: $(TESTS:%=test-%)
 
 test-%: $(OBJECT_DIR)/%
