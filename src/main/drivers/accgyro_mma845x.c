@@ -78,7 +78,7 @@
 static uint8_t device_id;
 
 static void mma8452Init(void);
-static void mma8452Read(int16_t *accelData);
+static bool mma8452Read(int16_t *accelData);
 
 bool mma8452Detect(acc_t *acc)
 {
@@ -132,12 +132,17 @@ static void mma8452Init(void)
     acc_1G = 256;
 }
 
-static void mma8452Read(int16_t *accelData)
+static bool mma8452Read(int16_t *accelData)
 {
     uint8_t buf[6];
 
-    i2cRead(MMA8452_ADDRESS, MMA8452_OUT_X_MSB, 6, buf);
+    if (!i2cRead(MMA8452_ADDRESS, MMA8452_OUT_X_MSB, 6, buf)) {
+        return false;
+    }
+
     accelData[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
     accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
     accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
+
+    return true;
 }

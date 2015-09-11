@@ -47,7 +47,7 @@ void registerExti15_10_CallbackHandler(extiCallbackHandler *fn)
             return;
         }
     }
-    failureMode(15); // EXTI15_10_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
+    failureMode(FAILURE_DEVELOPER); // EXTI15_10_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
 }
 
 void unregisterExti15_10_CallbackHandler(extiCallbackHandler *fn)
@@ -194,21 +194,49 @@ void delay(uint32_t ms)
         delayMicroseconds(1000);
 }
 
-// FIXME replace mode with an enum so usage can be tracked, currently mode is a magic number
-void failureMode(uint8_t mode)
-{
-    uint8_t flashesRemaining = 10;
+#define SHORT_FLASH_DURATION 50
+#define CODE_FLASH_DURATION 250
 
-    LED1_ON;
-    LED0_OFF;
-    while (flashesRemaining--) {
-        LED1_TOGGLE;
-        LED0_TOGGLE;
-        delay(475 * mode - 2);
-        BEEP_ON;
-        delay(25);
-        BEEP_OFF;
+void failureMode(failureMode_e mode)
+{
+    int codeRepeatsRemaining = 10;
+    int codeFlashesRemaining;
+    int shortFlashesRemaining;
+
+    while (codeRepeatsRemaining--) {
+        LED1_ON;
+        LED0_OFF;
+        shortFlashesRemaining = 5;
+        codeFlashesRemaining = mode + 1;
+        uint8_t flashDuration = SHORT_FLASH_DURATION;
+
+        while (shortFlashesRemaining || codeFlashesRemaining) {
+            LED1_TOGGLE;
+            LED0_TOGGLE;
+            BEEP_ON;
+            delay(flashDuration);
+
+            LED1_TOGGLE;
+            LED0_TOGGLE;
+            BEEP_OFF;
+            delay(flashDuration);
+
+            if (shortFlashesRemaining) {
+                shortFlashesRemaining--;
+                if (shortFlashesRemaining == 0) {
+                    delay(500);
+                    flashDuration = CODE_FLASH_DURATION;
+                }
+            } else {
+                codeFlashesRemaining--;
+            }
+        }
+        delay(1000);
     }
 
+#ifdef DEBUG
+    systemReset();
+#else
     systemResetToBootloader();
+#endif
 }

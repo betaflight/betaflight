@@ -42,3 +42,14 @@ void registerExti15_10_CallbackHandler(extiCallbackHandler *fn);
 void unregisterExti15_10_CallbackHandler(extiCallbackHandler *fn);
 
 extern uint32_t cachedRccCsrValue;
+
+typedef enum {
+    FAILURE_DEVELOPER = 0,
+    FAILURE_MISSING_ACC,
+    FAILURE_ACC_INIT,
+    FAILURE_ACC_INCOMPATIBLE,
+    FAILURE_INVALID_EEPROM_CONTENTS,
+    FAILURE_FLASH_WRITE_FAILED
+} failureMode_e;
+
+#define FAILURE_MODE_COUNT 4
