@@ -13,7 +13,7 @@ This document is primarily for developers only.
 7. Don't be afraid of moving code to a new file - it helps to reduce test dependencies.
 8. Avoid noise-words in variable names, like 'data' or 'info'.  Think about what you're naming and name it well.  Don't be afraid to rename anything.
 9. Avoid comments that describe what the code is doing, the code should describe itself.  Comments are useful however for big-picture purposes and to document content of variables.
-10. If you need to document a variable do it at the declarion, don't copy the comment to the `extern` usage since it will lead to comment rot.
+10. If you need to document a variable do it at the declaration, don't copy the comment to the `extern` usage since it will lead to comment rot.
 11. Seek advice from other developers - know you can always learn more.
 12. Be professional - attempts at humor or slating existing code in the codebase itself is not helpful when you have to change/fix it.
 13. Know that there's always more than one way to do something and that code is never final - but it does have to work.
@@ -46,16 +46,15 @@ Note: Tests are written in C++ and linked with with firmware's C code.
 
 ### Running the tests.
 
-The tests and test build system is very simple and based of the googletest example files, it will be improved in due course.
+The tests and test build system is very simple and based off the googletest example files, it will be improved in due course. From the root folder of the project simply do:
 
 ```
-cd test
-make
+make test
 ```
 
-This will build a set of executable files, one for each `*_unittest.cc` file.
+This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
 
-You can run them on the command line to execute the tests and to see the test report.
+After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report.
 
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
@@ -75,7 +74,7 @@ https://help.github.com/articles/creating-a-pull-request/
 
 The main flow for a contributing is as follows:
 
-1. Login to github, goto the cleanflight repository and press `fork`.
+1. Login to github, go to the cleanflight repository and press `fork`.
 2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
 3. `cd cleanflight`
 4. `git checkout master`

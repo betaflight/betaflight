@@ -693,9 +693,9 @@ void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
+bool feature(uint32_t) { return false;}
+bool sensors(uint32_t) { return false;}
 void mwArm(void) {}
-void feature(uint32_t) {}
-void sensors(uint32_t) {}
 void mwDisarm(void) {}
 void displayDisablePageCycling() {}
 void displayEnablePageCycling() {}

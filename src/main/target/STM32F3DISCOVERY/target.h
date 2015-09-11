@@ -47,7 +47,7 @@
 #define L3GD20_CS_GPIO                  GPIOE
 #define L3GD20_CS_PIN                   GPIO_Pin_3
 
-#define GYRO_L3GD20_ALIGN CW90_DEG
+#define GYRO_L3GD20_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_LSM303DLHC

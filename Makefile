@@ -74,6 +74,8 @@ USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 
 ifeq ($(TARGET),$(filter $(TARGET),STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 SPARKY ALIENWIIF3 COLIBRI_RACE MOTOLAB))
 
+CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
+
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
 STDPERIPH_SRC = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
@@ -637,6 +639,11 @@ LDFLAGS		 = -lm \
 # No user-serviceable parts below
 ###############################################################################
 
+CPPCHECK         = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
+		   --std=c99 --inline-suppr --quiet --force \
+		   $(addprefix -I,$(INCLUDE_DIRS)) \
+		   -I/usr/include -I/usr/include/linux
+
 #
 # Things we will build
 #
@@ -705,6 +712,13 @@ unbrick_$(TARGET): $(TARGET_HEX)
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 unbrick: unbrick_$(TARGET)
+
+## cppcheck    : run static analysis on C source code
+cppcheck: $(CSOURCES)
+	$(CPPCHECK)
+
+cppcheck-result.xml: $(CSOURCES)
+	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
 help:
 	@echo ""

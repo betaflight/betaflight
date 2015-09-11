@@ -42,6 +42,10 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 | CUSTOM AIRPLANE  | User-defined airplane     |                |                  |
 | CUSTOM TRICOPTER | User-defined tricopter    |                |                  |
 
+## Servo configuration
+
+The cli `servo` command defines the settings for the servo outputs. 
+The cli mixer `smix` command controllers how the mixer maps internal FC data (RC input, PID stabilisation output, channel forwarding, etc) to servo outputs.
 
 ## Servo filtering
 
@@ -98,6 +102,7 @@ Note: the `mmix` command may show a motor mix that is not active, custom motor m
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
 
 | id | Servo slot |
+|----|--------------|
 | 0  | GIMBAL PITCH |
 | 1  | GIMBAL ROLL |
 | 2  | FLAPS |
@@ -109,7 +114,7 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 
 
 | id | Input sources |
-| -- | ------------- |
+|----|-----------------|
 | 0  | Stabilised ROLL |
 | 1  | Stabilised PITCH |
 | 2  | Stabilised YAW |

@@ -34,9 +34,8 @@
 #ifdef BARO
 
 #if defined(BARO_EOC_GPIO)
-// BMP085, Standard address 0x77
 static bool isConversionComplete = false;
-static uint16_t bmp085ConversionOverrun = 0;
+static bool isEOCConnected = true;
 
 // EXTI14 for BMP085 End of Conversion Interrupt
 void BMP085_EOC_EXTI_Handler(void) {
@@ -107,6 +106,10 @@ typedef struct {
 #define SMD500_PARAM_MI      3791        //calibration parameter
 
 STATIC_UNIT_TESTED bmp085_t bmp085;
+
+#define UT_DELAY    6000        // 1.5ms margin according to the spec (4.5ms T conversion time)
+#define UP_DELAY    27000       // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
+
 static bool bmp085InitDone = false;
 STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
@@ -133,7 +136,6 @@ void bmp085InitXCLRGpio(const bmp085Config_t *config) {
 
     RCC_APB2PeriphClockCmd(config->gpioAPB2Peripherals, ENABLE);
 
-    // PC13, PC14 (Barometer XCLR reset output, EOC input)
     gpio.pin = config->xclrGpioPin;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_Out_PP;
@@ -163,7 +165,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         bmp085InitXCLRGpio(config);
 
         gpio.pin = config->eocGpioPin;
-        gpio.mode = Mode_IN_FLOATING;
+        gpio.mode = Mode_IPD;
         gpioInit(config->eocGpioPort, &gpio);
         BMP085_ON;
 
@@ -200,19 +202,22 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
             bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
-            bmp085InitDone = true;
-            baro->ut_delay = 6000; // 1.5ms margin according to the spec (4.5ms T conversion time)
-            baro->up_delay = 27000; // 6000+21000=27000 1.5ms margin according to the spec (25.5ms P conversion time with OSS=3)
+            baro->ut_delay = UT_DELAY;
+            baro->up_delay = UP_DELAY;
             baro->start_ut = bmp085_start_ut;
             baro->get_ut = bmp085_get_ut;
             baro->start_up = bmp085_start_up;
             baro->get_up = bmp085_get_up;
             baro->calculate = bmp085_calculate;
+#if defined(BARO_EOC_GPIO)
+            isEOCConnected = bmp085TestEOCConnected(config);
+#endif
+            bmp085InitDone = true;
             return true;
         }
     }
 
-#ifdef BARO_EOC_GPIO
+#if defined(BARO_EOC_GPIO)
     EXTI_InitTypeDef EXTI_InitStructure;
     EXTI_StructInit(&EXTI_InitStructure);
     EXTI_InitStructure.EXTI_Line = EXTI_Line14;
@@ -293,9 +298,9 @@ static void bmp085_get_ut(void)
     uint8_t data[2];
 
 #if defined(BARO_EOC_GPIO)
-    if (!isConversionComplete) {
-        bmp085ConversionOverrun++;
-        return; // keep old value
+    // return old baro value if conversion time exceeds datasheet max when EOC is connected
+    if ((isEOCConnected) && (!isConversionComplete)) {
+        return;
     }
 #endif
 
@@ -324,11 +329,10 @@ static void bmp085_get_up(void)
 {
     uint8_t data[3];
 
-#if  defined(BARO_EOC_GPIO)
-    // wait in case of cockup
-    if (!isConversionComplete) {
-        bmp085ConversionOverrun++;
-        return; // keep old value
+#if defined(BARO_EOC_GPIO)
+    // return old baro value if conversion time exceeds datasheet max when EOC is connected
+    if ((isEOCConnected) && (!isConversionComplete)) {
+        return;
     }
 #endif
 
@@ -372,4 +376,21 @@ static void bmp085_get_cal_param(void)
     bmp085.cal_param.md = (data[20] << 8) | data[21];
 }
 
+#if defined(BARO_EOC_GPIO)
+bool bmp085TestEOCConnected(const bmp085Config_t *config)
+{
+    if (!bmp085InitDone) {
+        bmp085_start_ut();
+        delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure
+
+        // conversion should have finished now so check if EOC is high
+        uint8_t status = GPIO_ReadInputDataBit(config->eocGpioPort, config->eocGpioPin);
+        if (status) {
+            return true;
+        }
+    } 
+    return false; // assume EOC is not connected
+}
 #endif
+
+#endif /* BARO */

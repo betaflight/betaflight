@@ -97,6 +97,12 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
 // stubs
 extern "C" {
 
+void failsafeOnRxSuspend(uint32_t ) {}
+void failsafeOnRxResume(void) {}
+
+uint32_t micros(void) { return 0; }
+uint32_t millis(void) { return 0; }
+
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxRuntimeConfig);
@@ -143,29 +149,13 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
-{
-    UNUSED(modeActivationConditions);
-}
-
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig)
-{
-    UNUSED(index);
-    UNUSED(auxChannelIndex);
-    UNUSED(adjustmentConfig);
-}
-
-void feature(uint32_t)
-{
+bool feature(uint32_t) {
+    return false;
 }
 
 bool rxMspFrameComplete(void)
 {
     return false;
-}
-
-void failsafeReset(void)
-{
 }
 
 bool isPPMDataBeingReceived(void)
@@ -182,22 +172,12 @@ void resetPPMDataReceivedState(void)
 {
 }
 
-void failsafeOnRxCycle(void)
-{
-}
-
 void failsafeOnValidDataReceived(void)
 {
 }
 
 void failsafeOnValidDataFailed(void)
 {
-}
-
-void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
-{
-    UNUSED(channel);
-    UNUSED(pulseDuration);
 }
 
 }
