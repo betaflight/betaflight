@@ -62,6 +62,15 @@ const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOB, 9 },
   { GPIOA, 2 },
   { GPIOA, 3 }
+#elif MOTOLAB
+  { GPIOA, 4 },
+  { GPIOA, 6 },
+  { GPIOB, 0 },
+  { GPIOB, 1 },
+  { GPIOA, 1 },
+  { GPIOA, 2 },
+  { GPIOA, 3 },
+  { GPIOA, 8 }
 #endif
 };
 
