@@ -1506,15 +1506,15 @@ static void cliSdShowError(char *message, SD_Error error)
 static void cliSdInfo(char *cmdline) {
     UNUSED(cmdline);
 
-    SD_Error error;
-
     uint8_t sdPresent = SD_Detect();
-    cliPrintf("sdcard %s\n", sdPresent == SD_PRESENT ? "PRESENT" : "NOT PRESENT");
-
-    if (sdPresent == SD_PRESENT) {
-        error = SD_Init();
-        cliSdShowError("SD init result", error);
+    if (sdPresent != SD_PRESENT) {
+        cliPrint("sd card not present\r\n");
+        return;
     }
+
+    SD_Error error;
+    error = SD_Init();
+    cliSdShowError("SD init result", error);
 
     SD_CardInfo cardInfo;
     memset(&cardInfo, 0, sizeof(cardInfo));
