@@ -73,10 +73,10 @@ enum accel_fsr_e {
 static uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
 
 static void mpu6500AccInit(void);
-static void mpu6500AccRead(int16_t *accData);
+static bool mpu6500AccRead(int16_t *accData);
 static void mpu6500GyroInit(void);
-static void mpu6500GyroRead(int16_t *gyroADC);
-static void checkMPU6500Interrupt(bool *gyroIsUpdated);
+static bool mpu6500GyroRead(int16_t *gyroADC);
+static bool checkMPU6500Interrupt(bool *gyroIsUpdated);
 
 extern uint16_t acc_1G;
 
@@ -197,7 +197,7 @@ static void mpu6500AccInit(void)
     acc_1G = 512 * 8;
 }
 
-static void mpu6500AccRead(int16_t *accData)
+static bool mpu6500AccRead(int16_t *accData)
 {
     uint8_t buf[6];
 
@@ -206,6 +206,8 @@ static void mpu6500AccRead(int16_t *accData)
     accData[X] = (int16_t)((buf[0] << 8) | buf[1]);
     accData[Y] = (int16_t)((buf[2] << 8) | buf[3]);
     accData[Z] = (int16_t)((buf[4] << 8) | buf[5]);
+
+    return true;
 }
 
 static void mpu6500GyroInit(void)
@@ -232,7 +234,7 @@ static void mpu6500GyroInit(void)
     mpu6500WriteRegister(MPU6500_RA_RATE_DIV, 0); // 1kHz S/R
 }
 
-static void mpu6500GyroRead(int16_t *gyroADC)
+static bool mpu6500GyroRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
@@ -241,6 +243,8 @@ static void mpu6500GyroRead(int16_t *gyroADC)
     gyroADC[X] = (int16_t)((buf[0] << 8) | buf[1]);
     gyroADC[Y] = (int16_t)((buf[2] << 8) | buf[3]);
     gyroADC[Z] = (int16_t)((buf[4] << 8) | buf[5]);
+
+    return true;
 }
 
 void checkMPU6500Interrupt(bool *gyroIsUpdated) {

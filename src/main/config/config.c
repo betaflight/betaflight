@@ -843,7 +843,7 @@ void readEEPROM(void)
 {
     // Sanity check
     if (!isEEPROMContentValid())
-        failureMode(10);
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
 
     suspendRxSignal();
 
@@ -923,7 +923,7 @@ void writeEEPROM(void)
 
     // Flash write failed - just die now
     if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
-        failureMode(10);
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
     }
 
     resumeRxSignal();

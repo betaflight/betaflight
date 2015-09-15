@@ -373,7 +373,7 @@ void init(void)
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf, masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination, masterConfig.looptime, masterConfig.syncGyroToLoop)) {
         // if gyro was not detected due to whatever reason, we give up now.
-        failureMode(3);
+        failureMode(FAILURE_MISSING_ACC);
     }
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
