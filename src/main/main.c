@@ -51,6 +51,7 @@
 
 #include "rx/rx.h"
 
+#include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
