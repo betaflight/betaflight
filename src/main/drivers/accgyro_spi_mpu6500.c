@@ -76,7 +76,7 @@ static void mpu6500AccInit(void);
 static bool mpu6500AccRead(int16_t *accData);
 static void mpu6500GyroInit(void);
 static bool mpu6500GyroRead(int16_t *gyroADC);
-static bool checkMPU6500Interrupt(bool *gyroIsUpdated);
+static void checkMPU6500Interrupt(bool *gyroIsUpdated);
 
 extern uint16_t acc_1G;
 
