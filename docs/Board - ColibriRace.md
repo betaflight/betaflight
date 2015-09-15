@@ -59,7 +59,7 @@ The Colibri RACE is a STM32F3 based flight control designed specifically to work
 	| 6   | PWM6           | MOTOR 6 (For Y6 or Hex X)                    |
 	| 7   | BST SDA        | Use For TBS CorePro Control Device           |
 	| 8   | BST SCL        | Use For TBS CorePro Control Device           |
-	| 9   | PWM7           | Can be a normal GPIO (PA2) or PWM            |
+	| 9   | PWM7           | Can be a normal GPIO (PA1) or PWM            |
 	| 10  | PWM8           | Can be a normal GPIO (PA2) or PWM            |
 	| 11  | 12.2V DCDC     | If 12v is detected, the Blue LED will turn on|
 	| 12  | 5.1V DCDC      | Voltage for MCU                              |
