@@ -165,7 +165,9 @@ static void mpu6050AccInit(void);
 static bool mpu6050AccRead(int16_t *accData);
 static void mpu6050GyroInit(void);
 static bool mpu6050GyroRead(int16_t *gyroADC);
-static void checkMPU6050Interrupt(bool *gyroIsUpdated);
+static void checkMPU6050DataReady(bool *mpuDataReadyPtr);
+
+static bool mpuDataReady;
 
 typedef enum {
     MPU_6050_HALF_RESOLUTION,
@@ -183,6 +185,8 @@ void MPU_DATA_READY_EXTI_Handler(void)
     }
 
     EXTI_ClearITPendingBit(mpu6050Config->exti_line);
+
+    mpuDataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     // Measure the delta in micro seconds between calls to the interrupt handler
@@ -358,7 +362,7 @@ bool mpu6050GyroDetect(const mpu6050Config_t *configToUse, gyro_t *gyro, uint16_
 
     gyro->init = mpu6050GyroInit;
     gyro->read = mpu6050GyroRead;
-    gyro->intStatus = checkMPU6050Interrupt;
+    gyro->intStatus = checkMPU6050DataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -458,12 +462,11 @@ static bool mpu6050GyroRead(int16_t *gyroADC)
     return true;
 }
 
-void checkMPU6050Interrupt(bool *gyroIsUpdated) {
-	uint8_t mpuIntStatus;
-
-	i2cRead(MPU6050_ADDRESS, MPU_RA_INT_STATUS, 1, &mpuIntStatus);
-
-	delayMicroseconds(5);
-
-	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
+void checkMPU6050DataReady(bool *mpuDataReadyPtr) {
+	if (mpuDataReady) {
+		*mpuDataReadyPtr = true;
+	    mpuDataReady= false;
+	} else {
+		*mpuDataReadyPtr = false;
+	}
 }

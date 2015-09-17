@@ -31,16 +31,16 @@ extern gyro_t gyro;
 uint32_t targetLooptime;
 static uint8_t mpuDivider;
 
-bool getMpuInterrupt(gyro_t *gyro)
+bool getMpuDataStatus(gyro_t *gyro)
 {
-    bool gyroIsUpdated;
+    bool mpuDataStatus;
 
-    gyro->intStatus(&gyroIsUpdated);
-    return gyroIsUpdated;
+    gyro->intStatus(&mpuDataStatus);
+    return mpuDataStatus;
 }
 
 bool gyroSyncCheckUpdate(void) {
-    return getMpuInterrupt(&gyro);
+    return getMpuDataStatus(&gyro);
 }
 
 void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t syncGyroToLoop) {
