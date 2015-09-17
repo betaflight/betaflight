@@ -73,7 +73,7 @@ TEST(baroBmp280Test, TestBmp280Calculate)
 
     // then
     EXPECT_EQ(100653, pressure); // 100653 Pa
-    EXPECT_EQ(2500, temperature); // 25.00 degC (data sheet says 25.08)
+    EXPECT_EQ(2508, temperature); // 25.08 degC
 
 }
 
@@ -104,7 +104,7 @@ TEST(baroBmp280Test, TestBmp280CalculateHighP)
 
     // then
     EXPECT_EQ(135382, pressure); // 135385 Pa
-    EXPECT_EQ(2500, temperature); // 25.00 degC (data sheet says 25.08)
+    EXPECT_EQ(2508, temperature); // 25.08 degC
 
 }
 
@@ -135,7 +135,7 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
 
     // then
     EXPECT_EQ(0, pressure); // P1=0 trips pressure to 0 Pa, avoiding division by zero
-    EXPECT_EQ(2500, temperature); // 25.00 degC (data sheet says 25.08)
+    EXPECT_EQ(2508, temperature); // 25.08 degC
 
 }
 
