@@ -90,16 +90,16 @@ typedef struct bmp280_calib_param_t {
 
 static uint8_t bmp280_chip_id = 0;
 static bool bmp280InitDone = false;
-static bmp280_calib_param_t bmp280_cal;
+STATIC_UNIT_TESTED bmp280_calib_param_t bmp280_cal;
 // uncompensated pressure and temperature
-static int32_t bmp280_up = 0;
-static int32_t bmp280_ut = 0;
+STATIC_UNIT_TESTED int32_t bmp280_up = 0;
+STATIC_UNIT_TESTED int32_t bmp280_ut = 0;
 
 static void bmp280_start_ut(void);
 static void bmp280_get_ut(void);
 static void bmp280_start_up(void);
 static void bmp280_get_up(void);
-static void bmp280_calculate(int32_t *pressure, int32_t *temperature);
+STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
 bool bmp280Detect(baro_t *baro)
 {
@@ -160,9 +160,9 @@ static void bmp280_get_up(void)
     bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
 }
 
-// Returns temperature in DegC, float precision. Output value of “51.23” equals 51.23 DegC.
+// Returns temperature in DegC, float precision. Output value of "51.23" equals 51.23 DegC.
 // t_fine carries fine temperature as global value
-float bmp280_compensate_T(int32_t adc_T)
+static float bmp280_compensate_T(int32_t adc_T)
 {
     float var1, var2, T;
 
@@ -174,8 +174,8 @@ float bmp280_compensate_T(int32_t adc_T)
     return T;
 }
 
-// Returns pressure in Pa as float. Output value of “96386.2” equals 96386.2 Pa = 963.862 hPa
-float bmp280_compensate_P(int32_t adc_P)
+// Returns pressure in Pa as float. Output value of "96386.2" equals 96386.2 Pa = 963.862 hPa
+static float bmp280_compensate_P(int32_t adc_P)
 {
     float var1, var2, p;
     var1 = ((float)bmp280_cal.t_fine / 2.0f) - 64000.0f;
@@ -196,7 +196,7 @@ float bmp280_compensate_P(int32_t adc_P)
     return p;
 }
 
-static void bmp280_calculate(int32_t *pressure, int32_t *temperature)
+STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature)
 {
     // calculate
     float t, p;
