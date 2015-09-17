@@ -399,8 +399,14 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 static uint16_t getRxfailValue(uint8_t channel)
 {
     rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
+    uint8_t mode = channelFailsafeConfiguration->mode;
 
-    switch(channelFailsafeConfiguration->mode) {
+    // force auto mode to prevent fly away when failsafe stage 2 is disabled
+    if ( channel < NON_AUX_CHANNEL_COUNT && (!feature(FEATURE_FAILSAFE)) ) {
+        mode = RX_FAILSAFE_MODE_AUTO;
+    }
+
+    switch(mode) {
         case RX_FAILSAFE_MODE_AUTO:
             switch (channel) {
                 case ROLL:
@@ -510,7 +516,7 @@ static void detectAndApplySignalLossBehaviour(void)
 
     rxFlightChannelsValid = rxHaveValidFlightChannels();
 
-    if ((rxFlightChannelsValid) && !IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+    if ((rxFlightChannelsValid) && !(IS_RC_MODE_ACTIVE(BOXFAILSAFE) && feature(FEATURE_FAILSAFE))) {
         failsafeOnValidDataReceived();
     } else {
         rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven = true;
