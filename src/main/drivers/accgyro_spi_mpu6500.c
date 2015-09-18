@@ -232,6 +232,7 @@ static void mpu6500GyroInit(void)
     mpu6500WriteRegister(MPU6500_RA_ACCEL_CFG, INV_FSR_8G << 3);
     mpu6500WriteRegister(MPU6500_RA_LPF, mpuLowPassFilter);
     mpu6500WriteRegister(MPU6500_RA_RATE_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider drop count
+    mpu6500WriteRegister(MPU6500_RA_INT_ENABLE, 0x01);
 }
 
 static bool mpu6500GyroRead(int16_t *gyroADC)
