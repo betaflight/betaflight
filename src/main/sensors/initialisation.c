@@ -24,6 +24,10 @@
 
 #include "common/axis.h"
 
+#include "drivers/gpio.h"
+#include "drivers/system.h"
+#include "drivers/exti.h"
+
 #include "drivers/sensor.h"
 
 #include "drivers/accgyro.h"
@@ -31,6 +35,7 @@
 #include "drivers/accgyro_bma280.h"
 #include "drivers/accgyro_l3g4200d.h"
 #include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_l3gd20.h"
@@ -49,9 +54,6 @@
 #include "drivers/compass_ak8975.h"
 
 #include "drivers/sonar_hcsr04.h"
-
-#include "drivers/gpio.h"
-#include "drivers/system.h"
 
 #include "config/runtime_config.h"
 
@@ -76,11 +78,11 @@ extern acc_t acc;
 uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
-const mpu6050Config_t *selectMPU6050Config(void)
+const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #ifdef NAZE
     // MPU_INT output on rev4 PB13
-    static const mpu6050Config_t nazeRev4MPU6050Config = {
+    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
             .gpioPin = Pin_13,
             .gpioPort = GPIOB,
@@ -90,7 +92,7 @@ const mpu6050Config_t *selectMPU6050Config(void)
             .exti_irqn = EXTI15_10_IRQn
     };
     // MPU_INT output on rev5 hardware PC13
-    static const mpu6050Config_t nazeRev5MPU6050Config = {
+    static const extiConfig_t nazeRev5MPUIntExtiConfig = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
             .gpioPin = Pin_13,
             .gpioPort = GPIOC,
@@ -101,14 +103,14 @@ const mpu6050Config_t *selectMPU6050Config(void)
     };
 
     if (hardwareRevision < NAZE32_REV5) {
-        return &nazeRev4MPU6050Config;
+        return &nazeRev4MPUIntExtiConfig;
     } else {
-        return &nazeRev5MPU6050Config;
+        return &nazeRev5MPUIntExtiConfig;
     }
 #endif
 
 #ifdef SPRACINGF3
-    static const mpu6050Config_t spRacingF3MPU6050Config = {
+    static const extiConfig_t spRacingF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,
             .gpioPin = Pin_13,
@@ -117,7 +119,7 @@ const mpu6050Config_t *selectMPU6050Config(void)
             .exti_line = EXTI_Line13,
             .exti_irqn = EXTI15_10_IRQn
     };
-    return &spRacingF3MPU6050Config;
+    return &spRacingF3MPUIntExtiConfig;
 #endif
 
     return NULL;
@@ -171,7 +173,7 @@ bool detectGyro(uint16_t gyroLpf)
             ; // fallthrough
         case GYRO_MPU6050:
 #ifdef USE_GYRO_MPU6050
-            if (mpu6050GyroDetect(selectMPU6050Config(), &gyro, gyroLpf)) {
+            if (mpu6050GyroDetect(&gyro, gyroLpf)) {
 #ifdef GYRO_MPU6050_ALIGN
                 gyroHardware = GYRO_MPU6050;
                 gyroAlign = GYRO_MPU6050_ALIGN;
@@ -279,7 +281,7 @@ static void detectAcc(accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware;
 
-    #ifdef USE_ACC_ADXL345
+#ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
 #endif
 
@@ -319,7 +321,7 @@ retry:
             ; // fallthrough
         case ACC_MPU6050: // MPU6050
 #ifdef USE_ACC_MPU6050
-            if (mpu6050AccDetect(selectMPU6050Config(), &acc)) {
+            if (mpu6050AccDetect(&acc)) {
 #ifdef ACC_MPU6050_ALIGN
                 accAlign = ACC_MPU6050_ALIGN;
 #endif
@@ -596,6 +598,14 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
 
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
+
+#if defined(USE_GYRO_MPU6050) || defined(USE_ACC_MPU6050)
+
+    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
+
+    mpuDetectionResult_t *mpuDetectionResult = detectMpu(extiConfig);
+    UNUSED(mpuDetectionResult);
+#endif
 
     if (!detectGyro(gyroLpf)) {
         return false;

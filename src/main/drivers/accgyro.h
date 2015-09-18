@@ -17,7 +17,7 @@
 
 #pragma once
 
-extern uint16_t acc_1G;
+extern uint16_t acc_1G; // FIXME move into acc_t
 
 typedef struct gyro_s {
     sensorInitFuncPtr init;                                 // initialize function

@@ -292,6 +292,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/accgyro_mma845x.c \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_spi_mpu6500.c \
@@ -332,6 +333,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/accgyro_mma845x.c \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_spi_mpu6000.c \
@@ -369,6 +371,7 @@ EUSTM32F103RC_SRC	 = startup_stm32f10x_hd_gcc.S \
 PORT103R_SRC = $(EUSTM32F103RC_SRC)
 
 OLIMEXINO_SRC	 = startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
@@ -408,6 +411,7 @@ CJMCU_SRC	 = \
 		   startup_stm32f10x_md_gcc.S \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
@@ -499,6 +503,7 @@ STM32F3DISCOVERY_SRC	 = \
 		   drivers/accgyro_adxl345.c \
 		   drivers/accgyro_bma280.c \
 		   drivers/accgyro_mma845x.c \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
@@ -527,6 +532,7 @@ COLIBRI_RACE_SRC        = \
 SPARKY_SRC	 = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/display_ug2864hsweg01.c \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
@@ -539,6 +545,7 @@ ALIENWIIF3_SRC	 = $(SPARKY_SRC)
 
 SPRACINGF3_SRC	 = \
 		   $(STM32F30x_COMMON_SRC) \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
