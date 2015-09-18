@@ -12,9 +12,24 @@
 
 #define MPU6000_WHO_AM_I_CONST              (0x68)
 
+typedef struct mpu6000Config_s {
+#ifdef STM32F303
+    uint32_t gpioAHBPeripherals;
+#endif
+#ifdef STM32F10X
+    uint32_t gpioAPB2Peripherals;
+#endif
+    uint16_t gpioPin;
+    GPIO_TypeDef *gpioPort;
 
-bool mpu6000SpiAccDetect(acc_t *acc);
-bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf);
+    uint8_t exti_port_source;
+    uint32_t exti_line;
+    uint8_t exti_pin_source;
+    IRQn_Type exti_irqn;
+} mpu6000Config_t;
+
+bool mpu6000SpiAccDetect(const mpu6000Config_t *config, acc_t *acc);
+bool mpu6000SpiGyroDetect(const mpu6000Config_t *config, gyro_t *gyro, uint16_t lpf);
 
 bool mpu6000SpiGyroRead(int16_t *gyroADC);
 bool mpu6000SpiAccRead(int16_t *gyroADC);

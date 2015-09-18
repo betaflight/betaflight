@@ -27,9 +27,13 @@
 #include <stdlib.h>
 
 #include "platform.h"
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
+
+#include "nvic.h"
 
 #include "system.h"
 #include "gpio.h"
@@ -40,6 +44,8 @@
 #include "accgyro_spi_mpu6000.h"
 
 #include "gyro_sync.h"
+
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 static bool mpuSpi6000InitDone = false;
 
@@ -74,6 +80,7 @@ static bool mpuSpi6000InitDone = false;
 #define MPU6000_FIFO_COUNTL	    	0x73
 #define MPU6000_FIFO_R_W		   	0x74
 #define MPU6000_WHOAMI		    	0x75
+#define MPU_RA_INT_ENABLE           0x38
 
 // Bits
 #define BIT_SLEEP				    0x40
@@ -107,6 +114,8 @@ static bool mpuSpi6000InitDone = false;
 #define BIT_GYRO                    3
 #define BIT_ACC                     2
 #define BIT_TEMP                    1
+// RF = Register Flag
+#define MPU_RF_DATA_RDY_EN (1 << 0)
 
 // Product ID Description for MPU6000
 // high 4 bits low 4 bits
@@ -129,7 +138,114 @@ static bool mpuSpi6000InitDone = false;
 
 bool mpu6000SpiGyroRead(int16_t *gyroADC);
 bool mpu6000SpiAccRead(int16_t *gyroADC);
-void checkMPU6000Interrupt(bool *gyroIsUpdated);
+void checkMPU6000DataReady(bool *mpuDataReadyPtr);
+
+static bool mpuDataReady;
+static const mpu6000Config_t *mpu6000Config = NULL;
+
+void EXTI3_IRQHandler(void)
+{
+    if (EXTI_GetITStatus(mpu6000Config->exti_line) == RESET) {
+        return;
+    }
+
+    EXTI_ClearITPendingBit(mpu6000Config->exti_line);
+
+    mpuDataReady = true;
+
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+    // Measure the delta in micro seconds between calls to the interrupt handler
+    static uint32_t lastCalledAt = 0;
+    static int32_t callDelta = 0;
+
+    uint32_t now = micros();
+    callDelta = now - lastCalledAt;
+
+    //UNUSED(callDelta);
+    debug[0] = callDelta;
+
+    lastCalledAt = now;
+#endif
+}
+
+void configureMPUDataReadyInterruptHandling(void)
+{
+#ifdef USE_MPU_DATA_READY_SIGNAL
+
+#ifdef STM32F10X
+    // enable AFIO for EXTI support
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+#endif
+
+#ifdef STM32F303xC
+    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+#endif
+
+#ifdef STM32F10X
+    gpioExtiLineConfig(mpu6000Config->exti_port_source, mpu6000Config->exti_pin_source);
+#endif
+
+#ifdef STM32F303xC
+    gpioExtiLineConfig(mpu6000Config->exti_port_source, mpu6000Config->exti_pin_source);
+#endif
+
+#ifdef ENSURE_MPU_DATA_READY_IS_LOW
+    uint8_t status = GPIO_ReadInputDataBit(mpu6000Config->gpioPort, mpu6000Config->gpioPin);
+    if (status) {
+        return;
+    }
+#endif
+
+    EXTI_ClearITPendingBit(mpu6000Config->exti_line);
+
+    EXTI_InitTypeDef EXTIInit;
+    EXTIInit.EXTI_Line = mpu6000Config->exti_line;
+    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTIInit.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTIInit);
+
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = mpu6000Config->exti_irqn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MPU_DATA_READY);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MPU_DATA_READY);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+#endif
+}
+
+void mpu6000GpioInit(void) {
+    gpio_config_t gpio;
+
+    static bool mpu6000GpioInitDone = false;
+
+    if (mpu6000GpioInitDone || !mpu6000Config) {
+        return;
+    }
+
+#ifdef STM32F303
+        if (mpu6000Config->gpioAHBPeripherals) {
+            RCC_AHBPeriphClockCmd(mpu6000Config->gpioAHBPeripherals, ENABLE);
+        }
+#endif
+#ifdef STM32F10X
+        if (mpu6000Config->gpioAPB2Peripherals) {
+            RCC_APB2PeriphClockCmd(mpu6000Config->gpioAPB2Peripherals, ENABLE);
+        }
+#endif
+
+    gpio.pin = mpu6000Config->gpioPin;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(mpu6000Config->gpioPort, &gpio);
+
+    configureMPUDataReadyInterruptHandling();
+
+    mpu6000GpioInitDone = true;
+}
+//
 
 static void mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {
@@ -149,10 +265,12 @@ static void mpu6000ReadRegister(uint8_t reg, uint8_t *data, int length)
 
 void mpu6000SpiGyroInit(void)
 {
+    mpu6000GpioInit();
 }
 
 void mpu6000SpiAccInit(void)
 {
+    mpu6000GpioInit();
     acc_1G = 512 * 8;
 }
 
@@ -244,11 +362,19 @@ void mpu6000AccAndGyroInit(void) {
     mpu6000WriteRegister(MPU6000_GYRO_CONFIG, BITS_FS_2000DPS);
     delayMicroseconds(1);
 
+#ifdef USE_MPU_DATA_READY_SIGNAL
+    // Set MPU Data Ready Signal
+    mpu6000WriteRegister(MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+    delayMicroseconds(1);
+#endif
+
     mpuSpi6000InitDone = true;
 }
 
-bool mpu6000SpiAccDetect(acc_t *acc)
+bool mpu6000SpiAccDetect(const mpu6000Config_t *configToUse, acc_t *acc)
 {
+    mpu6000Config = configToUse;
+
     if (!mpu6000SpiDetect()) {
         return false;
     }
@@ -264,8 +390,10 @@ bool mpu6000SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
+bool mpu6000SpiGyroDetect(const mpu6000Config_t *configToUse, gyro_t *gyro, uint16_t lpf)
 {
+    mpu6000Config = configToUse;
+
     if (!mpu6000SpiDetect()) {
         return false;
     }
@@ -313,7 +441,7 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
     }
     gyro->init = mpu6000SpiGyroInit;
     gyro->read = mpu6000SpiGyroRead;
-    gyro->intStatus = checkMPU6000Interrupt;
+    gyro->intStatus = checkMPU6000DataReady;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
     //gyro->scale = (4.0f / 16.4f) * (M_PIf / 180.0f) * 0.000001f;
@@ -351,14 +479,11 @@ bool mpu6000SpiAccRead(int16_t *gyroData)
     return true;
 }
 
-void checkMPU6000Interrupt(bool *gyroIsUpdated) {
-	uint8_t mpuIntStatus;
-
-	mpu6000ReadRegister(MPU6000_INT_STATUS, &mpuIntStatus, 1);
-
-    if (mpuIntStatus) {
-        *gyroIsUpdated = true;
+void checkMPU6000DataReady(bool *mpuDataReadyPtr) {
+    if (mpuDataReady) {
+        *mpuDataReadyPtr = true;
+        mpuDataReady= false;
     } else {
-        *gyroIsUpdated = false;
+        *mpuDataReadyPtr = false;
     }
 }

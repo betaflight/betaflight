@@ -138,6 +138,26 @@ const mpu6050Config_t *selectMPU6050Config(void)
     return NULL;
 }
 
+
+const mpu6000Config_t *selectMPU6000Config(void)
+{
+#ifdef CC3D
+    static const mpu6000Config_t CC3DMPU6000Config = {
+            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_3,
+            .exti_port_source = GPIO_PortSourceGPIOA,
+            .exti_pin_source = GPIO_PinSource3,
+            .exti_line = EXTI_Line3,
+            .exti_irqn = EXTI3_IRQn
+    };
+    return &CC3DMPU6000Config;
+#endif
+
+    return NULL;
+}
+
+
 #ifdef USE_FAKE_GYRO
 static void fakeGyroInit(void) {}
 static bool fakeGyroRead(int16_t *gyroADC) {
@@ -233,7 +253,7 @@ bool detectGyro(uint16_t gyroLpf)
 
         case GYRO_SPI_MPU6000:
 #ifdef USE_GYRO_SPI_MPU6000
-            if (mpu6000SpiGyroDetect(&gyro, gyroLpf)) {
+            if (mpu6000SpiGyroDetect(selectMPU6000Config(), &gyro, gyroLpf)) {
 #ifdef GYRO_SPI_MPU6000_ALIGN
                 gyroHardware = GYRO_SPI_MPU6000;
                 gyroAlign = GYRO_SPI_MPU6000_ALIGN;
@@ -372,7 +392,7 @@ retry:
             ; // fallthrough
         case ACC_SPI_MPU6000:
 #ifdef USE_ACC_SPI_MPU6000
-            if (mpu6000SpiAccDetect(&acc)) {
+            if (mpu6000SpiAccDetect(selectMPU6000Config(), &acc)) {
 #ifdef ACC_SPI_MPU6000_ALIGN
                 accAlign = ACC_SPI_MPU6000_ALIGN;
 #endif
