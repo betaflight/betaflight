@@ -52,4 +52,3 @@ typedef enum {
     FAILURE_FLASH_WRITE_FAILED
 } failureMode_e;
 
-#define FAILURE_MODE_COUNT 4
