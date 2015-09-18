@@ -54,6 +54,9 @@
 
 #define ACC_SPI_MPU6000_ALIGN CW270_DEG
 
+// MPU6000 interrupts
+#define USE_MPU_DATA_READY_SIGNAL
+
 // External I2C BARO
 #define BARO
 #define USE_BARO_MS5611
