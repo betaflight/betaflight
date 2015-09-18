@@ -71,6 +71,13 @@ const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOA, 2 },
   { GPIOA, 3 },
   { GPIOA, 8 }
+#elif SPARKY
+  { GPIOB, 15 },
+  { GPIOB, 14 },
+  { GPIOA, 8 },
+  { GPIOB, 0 },
+  { GPIOA, 6 },
+  { GPIOA, 2 }
 #endif
 };
 
