@@ -55,7 +55,6 @@
 #define ACC_SPI_MPU6000_ALIGN CW270_DEG
 
 // MPU6000 interrupts
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 
 // External I2C BARO

@@ -149,7 +149,7 @@ const mpu6000Config_t *selectMPU6000Config(void)
             .exti_port_source = GPIO_PortSourceGPIOA,
             .exti_pin_source = GPIO_PinSource3,
             .exti_line = EXTI_Line3,
-            .exti_irqn = EXTI15_10_IRQn
+            .exti_irqn = EXTI3_IRQn
     };
     return &CC3DMPU6000Config;
 #endif
