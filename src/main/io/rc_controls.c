@@ -529,7 +529,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         case ADJUSTMENT_PITCH_ROLL_P:
         case ADJUSTMENT_PITCH_P:
             if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
-                newFloatValue = constrainf(pidProfile->P_f[PIDPITCH] + (float)(delta / 10.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = constrainf(pidProfile->P_f[PIDPITCH] + (float)(delta / 100.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
                 pidProfile->P_f[PIDPITCH] = newFloatValue;
                 blackboxLogInflightAdjustmentEventFloat(ADJUSTMENT_PITCH_P, newFloatValue);
             } else {
@@ -543,7 +543,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             // follow though for combined ADJUSTMENT_PITCH_ROLL_P
         case ADJUSTMENT_ROLL_P:
             if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
-                newFloatValue = constrainf(pidProfile->P_f[PIDROLL] + (float)(delta / 10.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = constrainf(pidProfile->P_f[PIDROLL] + (float)(delta / 100.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
                 pidProfile->P_f[PIDROLL] = newFloatValue;
                 blackboxLogInflightAdjustmentEventFloat(ADJUSTMENT_ROLL_P, newFloatValue);
             } else {
@@ -606,7 +606,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             break;
         case ADJUSTMENT_YAW_P:
             if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
-                newFloatValue = constrainf(pidProfile->P_f[PIDYAW] + (float)(delta / 10.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
+                newFloatValue = constrainf(pidProfile->P_f[PIDYAW] + (float)(delta / 100.0f), 0, 100); // FIXME magic numbers repeated in serial_cli.c
                 pidProfile->P_f[PIDYAW] = newFloatValue;
                 blackboxLogInflightAdjustmentEventFloat(ADJUSTMENT_YAW_P, newFloatValue);
             } else {
