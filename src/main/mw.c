@@ -746,7 +746,7 @@ bool runLoop(uint32_t loopTime) {
         if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
             loopTrigger = true;
         }
-    } else if ((int32_t)(currentTime - loopTime) >= 0){
+    } else if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0){
         loopTrigger = true;
     }
 

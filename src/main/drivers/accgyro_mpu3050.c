@@ -157,5 +157,9 @@ void checkMPU3050Interrupt(bool *gyroIsUpdated) {
 
 	i2cRead(MPU3050_ADDRESS, MPU3050_INT_STATUS, 1, &mpuIntStatus);
 
-	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
+    if (mpuIntStatus) {
+        *gyroIsUpdated = true;
+    } else {
+        *gyroIsUpdated = false;
+    }
 }

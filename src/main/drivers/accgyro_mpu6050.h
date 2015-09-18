@@ -42,7 +42,7 @@ enum lpf_e {
     INV_FILTER_10HZ,
     INV_FILTER_5HZ,
     INV_FILTER_2100HZ_NOLPF,
-    NUM_FILTER
+    INV_FILTER_COUNT
 };
 
 bool mpu6050AccDetect(const mpu6050Config_t *config,acc_t *acc);

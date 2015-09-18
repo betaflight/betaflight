@@ -298,7 +298,7 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 
     // Determine the new sample divider
-    mpu6000WriteRegister(MPU6000_SMPLRT_DIV, gyroMPU6xxxGetDivider());
+    mpu6000WriteRegister(MPU6000_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops());
     delayMicroseconds(1);
 
     // Accel and Gyro DLPF Setting
@@ -356,7 +356,9 @@ void checkMPU6000Interrupt(bool *gyroIsUpdated) {
 
 	mpu6000ReadRegister(MPU6000_INT_STATUS, &mpuIntStatus, 1);
 
-	delayMicroseconds(5);
-
-	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
+    if (mpuIntStatus) {
+        *gyroIsUpdated = true;
+    } else {
+        *gyroIsUpdated = false;
+    }
 }

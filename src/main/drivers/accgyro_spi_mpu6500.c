@@ -231,7 +231,7 @@ static void mpu6500GyroInit(void)
     mpu6500WriteRegister(MPU6500_RA_GYRO_CFG, INV_FSR_2000DPS << 3);
     mpu6500WriteRegister(MPU6500_RA_ACCEL_CFG, INV_FSR_8G << 3);
     mpu6500WriteRegister(MPU6500_RA_LPF, mpuLowPassFilter);
-    mpu6500WriteRegister(MPU6500_RA_RATE_DIV, 0); // 1kHz S/R
+    mpu6500WriteRegister(MPU6500_RA_RATE_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider drop count
 }
 
 static bool mpu6500GyroRead(int16_t *gyroADC)
@@ -250,9 +250,11 @@ static bool mpu6500GyroRead(int16_t *gyroADC)
 void checkMPU6500Interrupt(bool *gyroIsUpdated) {
 	uint8_t mpuIntStatus;
 
-	mpu6500ReadRegister(MPU6500_INT_STATUS, &mpuIntStatus, 1);
+	mpu6500ReadRegister(MPU6500_RA_INT_STATUS, &mpuIntStatus, 1);
 
-	delayMicroseconds(5);
-
-	(mpuIntStatus) ? (*gyroIsUpdated= true) : (*gyroIsUpdated= false);
+    if (mpuIntStatus) {
+        *gyroIsUpdated = true;
+    } else {
+        *gyroIsUpdated = false;
+    }
 }
