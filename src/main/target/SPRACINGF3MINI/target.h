@@ -184,3 +184,8 @@
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
+
+#define HARDWARE_BIND_PLUG
+// Hardware bind plug at PB1
+#define BINDPLUG_PORT  GPIOB
+#define BINDPLUG_PIN   Pin_1
