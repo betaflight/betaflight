@@ -812,7 +812,9 @@ void loop(void)
 
         dT = (float)cycleTime * 0.000001f;
 
-        if (currentProfile->pidProfile.gyro_cut_hz) {
+        if (currentProfile->pidProfile.gyro_fir_filter_enable) {
+            filterApply7TapFIR(gyroADC);
+        else if (currentProfile->pidProfile.gyro_cut_hz) {
             filterGyro();
         }
 

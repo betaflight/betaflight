@@ -13,3 +13,5 @@ typedef struct filterStatePt1_s {
 } filterStatePt1_t;
 
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
+
+void filterApply7TapFIR(int16_t data[]);
