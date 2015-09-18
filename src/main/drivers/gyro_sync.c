@@ -43,11 +43,10 @@ bool gyroSyncCheckUpdate(void) {
     return getMpuDataStatus(&gyro);
 }
 
-void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t syncGyroToLoop) {
+void gyroUpdateSampleRate(uint8_t lpf) {
     int gyroSamplePeriod;
     int minLooptime;
 
-    if (syncGyroToLoop) {
 #if defined(SPRACINGF3) || defined(ALIENWIIF3) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(CHEBUZZF3) || defined(PORT103R) || defined(MOTOLAB)  || defined(SPARKY)
         if (lpf == INV_FILTER_256HZ_NOLPF2) {
             gyroSamplePeriod = 125;
@@ -106,13 +105,8 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t syncGyroToLoop
             }
         }
 #endif
-        looptime = constrain(looptime, minLooptime, 4000);
-        mpuDividerDrops  = (looptime + gyroSamplePeriod -1 ) / gyroSamplePeriod - 1;
+        mpuDividerDrops  = (minLooptime + gyroSamplePeriod -1 ) / gyroSamplePeriod - 1;
         targetLooptime = (mpuDividerDrops + 1) * gyroSamplePeriod;
-    } else {
-    	mpuDividerDrops = 0;
-    	targetLooptime = looptime;
-    }
 }
 
 uint8_t gyroMPU6xxxGetDividerDrops(void) {

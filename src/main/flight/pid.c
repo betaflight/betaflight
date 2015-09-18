@@ -95,7 +95,7 @@ void pidResetErrorGyro(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static filterStatePt1_t PTermState[3], DTermState[3];
+static filterStatePt1_t DTermState[3];
 
 #ifdef AUTOTUNE
 bool shouldAutotune(void)

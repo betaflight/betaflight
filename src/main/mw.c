@@ -723,21 +723,6 @@ void filterRc(void){
     }
 }
 
-// Function for loop trigger
-bool runLoop(uint32_t loopTime) {
-	bool loopTrigger = false;
-
-    if (masterConfig.syncGyroToLoop) {
-        if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
-            loopTrigger = true;
-        }
-    } else if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0){
-        loopTrigger = true;
-    }
-
-    return loopTrigger;
-}
-
 void loop(void)
 {
     static uint32_t loopTime;
@@ -784,7 +769,7 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (runLoop(loopTime)) {
+    if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
 
         loopTime = currentTime + targetLooptime;
 

@@ -9,4 +9,4 @@ extern uint32_t targetLooptime;
 
 bool gyroSyncCheckUpdate(void);
 uint8_t gyroMPU6xxxGetDividerDrops(void);
-void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t syncGyroToLoop);
+void gyroUpdateSampleRate(uint8_t lpf);
