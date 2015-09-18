@@ -122,7 +122,7 @@ const mpu6050Config_t *selectMPU6050Config(void)
     return &spRacingF3MPU6050Config;
 #endif
 
-#ifdef MOTOLAB
+#if defined(MOTOLAB) || defined(SPARKY)
     static const mpu6050Config_t MotolabF3MPU6050Config = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,

@@ -48,7 +48,7 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t syncGyroToLoop
     int minLooptime;
 
     if (syncGyroToLoop) {
-#if defined(SPRACINGF3) || defined(ALIENWIIF3) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(CHEBUZZF3) || defined(PORT103R) || defined(MOTOLAB)
+#if defined(SPRACINGF3) || defined(ALIENWIIF3) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(CHEBUZZF3) || defined(PORT103R) || defined(MOTOLAB)  || defined(SPARKY)
         if (lpf == INV_FILTER_256HZ_NOLPF2) {
             gyroSamplePeriod = 125;
 
