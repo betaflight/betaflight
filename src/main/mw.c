@@ -688,21 +688,6 @@ void processRx(void)
 
 }
 
-// Gyro Low Pass
-void filterGyro(void) {
-    int axis;
-    static float dTGyro;
-    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
-
-    if (!dTGyro) {
-        dTGyro = (float)targetLooptime * 0.000001f;
-    }
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dTGyro);
-    }
-}
-
 void filterRc(void){
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
@@ -812,11 +797,7 @@ void loop(void)
 
         dT = (float)cycleTime * 0.000001f;
 
-        if (currentProfile->pidProfile.gyro_fir_filter_enable) {
-            filterApply7TapFIR(gyroADC);
-        else if (currentProfile->pidProfile.gyro_cut_hz) {
-            filterGyro();
-        }
+        filterApply7TapFIR(gyroADC);
 
         if (masterConfig.rcSmoothing) {
             filterRc();
