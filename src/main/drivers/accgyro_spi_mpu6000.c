@@ -143,8 +143,6 @@ void checkMPU6000DataReady(bool *mpuDataReadyPtr);
 static bool mpuDataReady;
 static const mpu6000Config_t *mpu6000Config = NULL;
 
-
-//void MPU_DATA_READY_EXTI_Handler(void)
 void EXTI3_IRQHandler(void)
 {
     if (EXTI_GetITStatus(mpu6000Config->exti_line) == RESET) {
