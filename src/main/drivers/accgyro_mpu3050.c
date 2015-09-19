@@ -75,20 +75,20 @@ void mpu3050Init(void)
 
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
 
-    ack = i2cWrite(MPU3050_ADDRESS, MPU3050_SMPLRT_DIV, 0);
+    ack = mpuConfiguration.write(MPU3050_SMPLRT_DIV, 0);
     if (!ack)
         failureMode(FAILURE_ACC_INIT);
 
-    i2cWrite(MPU3050_ADDRESS, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFilter);
-    i2cWrite(MPU3050_ADDRESS, MPU3050_INT_CFG, 0);
-    i2cWrite(MPU3050_ADDRESS, MPU3050_USER_CTRL, MPU3050_USER_RESET);
-    i2cWrite(MPU3050_ADDRESS, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
+    mpuConfiguration.write(MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpuLowPassFilter);
+    mpuConfiguration.write(MPU3050_INT_CFG, 0);
+    mpuConfiguration.write(MPU3050_USER_CTRL, MPU3050_USER_RESET);
+    mpuConfiguration.write(MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
 static bool mpu3050ReadTemp(int16_t *tempData)
 {
     uint8_t buf[2];
-    if (!i2cRead(MPU3050_ADDRESS, MPU3050_TEMP_OUT, 2, buf)) {
+    if (!mpuConfiguration.read(MPU3050_TEMP_OUT, 2, buf)) {
         return false;
     }
 

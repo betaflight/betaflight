@@ -599,7 +599,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_ACC_MPU6050)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_ACC_MPU6050)
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 

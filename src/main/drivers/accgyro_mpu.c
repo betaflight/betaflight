@@ -37,24 +37,28 @@
 #include "accgyro.h"
 #include "accgyro_mpu3050.h"
 #include "accgyro_mpu6050.h"
+#include "accgyro_spi_mpu6500.h"
 #include "accgyro_mpu.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 
+static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
+static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
-uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
+static void mpu6050FindRevision(void);
 
-void mpu6050FindRevision(void);
+#ifdef USE_SPI
+static bool detectSPISensorsAndUpdateDetectionResult(void);
+#endif
 
 mpuDetectionResult_t mpuDetectionResult;
 
-typedef struct mpuConfiguration_s {
-    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
-} mpuConfiguration_t;
-
-static mpuConfiguration_t mpuConfiguration;
+mpuConfiguration_t mpuConfiguration;
 static const extiConfig_t *mpuIntExtiConfig = NULL;
+
+// FIXME move into mpuConfiguration
+uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
 
 
 #define MPU_ADDRESS             0x68
@@ -87,14 +91,23 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     // MPU datasheet specifies 30ms.
     delay(35);
 
-    ack = i2cRead(MPU_ADDRESS, MPU_RA_WHO_AM_I, 1, &sig);
-    if (!ack)
+    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
+    if (ack) {
+        mpuConfiguration.read = mpuReadRegisterI2C;
+        mpuConfiguration.write = mpuWriteRegisterI2C;
+    } else {
+#ifdef USE_SPI
+        bool detectedSpiSensor = detectSPISensorsAndUpdateDetectionResult();
+        UNUSED(detectedSpiSensor);
+#endif
+
         return &mpuDetectionResult;
+    }
 
     mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
 
     // If an MPU3050 is connected sig will contain 0.
-    ack = i2cRead(MPU_ADDRESS, MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
+    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
     inquiryResult &= MPU_INQUIRY_MASK;
     if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
         mpuDetectionResult.sensor = MPU_3050;
@@ -114,8 +127,26 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     return &mpuDetectionResult;
 }
 
+#ifdef USE_SPI
+static bool detectSPISensorsAndUpdateDetectionResult(void)
+{
+    bool found = false;
 
-void mpu6050FindRevision(void)
+#ifdef USE_GYRO_SPI_MPU6500
+    found = mpu6500Detect();
+    if (found) {
+        mpuDetectionResult.sensor = MPU_65xx_SPI;
+        mpuConfiguration.gyroReadXRegister = MPU6500_RA_GYRO_XOUT_H;
+        mpuConfiguration.read = mpu6500ReadRegister;
+        mpuConfiguration.write = mpu6500WriteRegister;
+    }
+#endif
+
+    return found;
+}
+#endif
+
+static void mpu6050FindRevision(void)
 {
     bool ack;
     UNUSED(ack);
@@ -276,34 +307,46 @@ void configureMPULPF(uint16_t lpf)
         mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
 }
 
+static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
+{
+    bool ack = i2cRead(MPU_ADDRESS, reg, length, data);
+    return ack;
+}
+
+static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
+{
+    bool ack = i2cWrite(MPU_ADDRESS, reg, data);
+    return ack;
+}
+
 bool mpuAccRead(int16_t *accData)
 {
-    uint8_t buf[6];
+    uint8_t data[6];
 
-    bool ack = i2cRead(MPU_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
+    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 6, data);
     if (!ack) {
         return false;
     }
 
-    accData[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    accData[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    accData[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    accData[0] = (int16_t)((data[0] << 8) | data[1]);
+    accData[1] = (int16_t)((data[2] << 8) | data[3]);
+    accData[2] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
 
 bool mpuGyroRead(int16_t *gyroADC)
 {
-    uint8_t buf[6];
+    uint8_t data[6];
 
-    bool ack = i2cRead(MPU_ADDRESS, mpuConfiguration.gyroReadXRegister, 6, buf);
+    bool ack = mpuConfiguration.read(mpuConfiguration.gyroReadXRegister, 6, data);
     if (!ack) {
         return false;
     }
 
-    gyroADC[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    gyroADC[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    gyroADC[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    gyroADC[0] = (int16_t)((data[0] << 8) | data[1]);
+    gyroADC[1] = (int16_t)((data[2] << 8) | data[3]);
+    gyroADC[2] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
