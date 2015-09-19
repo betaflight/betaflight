@@ -227,8 +227,6 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     int32_t error, errorAngle;
     int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
     static int16_t lastGyro[3] = { 0, 0, 0 };
-    static int32_t delta1[3], delta2[3];
-    int32_t deltaSum;
     int32_t delta;
 
     UNUSED(controlRateConfig);
@@ -288,16 +286,14 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;
         lastGyro[axis] = gyroADC[axis];
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
         delta1[axis] = delta;
 
         // Dterm low pass
         if (pidProfile->dterm_cut_hz) {
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = (deltaSum * dynD8[axis]) / 32;
+        DTerm = (delta * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
@@ -317,7 +313,6 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     int32_t rc, error, errorAngle;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
     static int16_t lastGyro[2] = { 0, 0 };
-    static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
     int32_t delta;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
@@ -373,16 +368,13 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastGyro[axis] = gyroADC[axis];
-        DTerm = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
 
         // Dterm low pass
         if (pidProfile->dterm_cut_hz) {
-            DTerm = filterApplyPt1(DTerm, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
+        DTerm = ((int32_t)delta * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm - DTerm;
 
@@ -431,8 +423,6 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
     int32_t rc, error, errorAngle;
     int32_t PTerm, ITerm, PTermACC = 0, ITermACC = 0, PTermGYRO = 0, ITermGYRO = 0, DTerm;
     static int16_t lastGyro[2] = { 0, 0 };
-    static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
-    int32_t deltaSum;
     int32_t delta;
 
     UNUSED(controlRateConfig);
@@ -492,16 +482,13 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;
         lastGyro[axis] = gyroADC[axis];
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
 
         // Dterm low pass
         if (pidProfile->dterm_cut_hz) {
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = (deltaSum * dynD8[axis]) / 32;
+        DTerm = (delta * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
