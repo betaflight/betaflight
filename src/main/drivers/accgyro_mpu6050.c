@@ -164,7 +164,7 @@ bool mpu6050AccDetect(acc_t *acc)
 bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
 {
     if (mpuDetectionResult.sensor != MPU_60x0) {
-        return false;;
+        return false;
     }
     gyro->init = mpu6050GyroInit;
     gyro->read = mpuGyroRead;

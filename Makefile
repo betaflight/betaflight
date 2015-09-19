@@ -433,6 +433,7 @@ CJMCU_SRC	 = \
 
 CC3D_SRC	 = \
 		   startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \

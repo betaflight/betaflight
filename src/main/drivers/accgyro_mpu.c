@@ -37,6 +37,7 @@
 #include "accgyro.h"
 #include "accgyro_mpu3050.h"
 #include "accgyro_mpu6050.h"
+#include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
 #include "accgyro_mpu.h"
 
@@ -139,10 +140,22 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         mpuConfiguration.gyroReadXRegister = MPU6500_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6500ReadRegister;
         mpuConfiguration.write = mpu6500WriteRegister;
+        return true;
     }
 #endif
 
-    return found;
+#ifdef USE_GYRO_SPI_MPU6000
+    found = mpu6000SpiDetect();
+    if (found) {
+        mpuDetectionResult.sensor = MPU_60x0_SPI;
+        mpuConfiguration.gyroReadXRegister = MPU6000_GYRO_XOUT_H;
+        mpuConfiguration.read = mpu6000ReadRegister;
+        mpuConfiguration.write = mpu6000WriteRegister;
+        return true;
+    }
+#endif
+
+    return false;
 }
 #endif
 

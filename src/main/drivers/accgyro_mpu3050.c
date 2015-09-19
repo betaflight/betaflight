@@ -55,7 +55,7 @@ static bool mpu3050ReadTemp(int16_t *tempData);
 bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
 {
     if (mpuDetectionResult.sensor != MPU_3050) {
-        return false;;
+        return false;
     }
     gyro->init = mpu3050Init;
     gyro->read = mpuGyroRead;
