@@ -20,6 +20,8 @@
 
 #include <limits.h>
 
+#include <math.h>
+
 #define BARO
 
 extern "C" {
@@ -145,3 +147,52 @@ TEST(MathsUnittest, TestRotateVectorAroundAxis)
 
     expectVectorsAreEqual(&vector, &expected_result);
 }
+
+#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+TEST(MathsUnittest, TestFastTrigonometrySinCos)
+{
+    double sinError = 0;
+    for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {
+        double approxResult = sin_approx(x);
+        double libmResult = sinf(x);
+        sinError = MAX(sinError, fabs(approxResult - libmResult));
+    }
+    printf("sin_approx maximum absolute error = %e\n", sinError);
+    EXPECT_LE(sinError, 3e-6);
+
+    double cosError = 0;
+    for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {
+        double approxResult = cos_approx(x);
+        double libmResult = cosf(x);
+        cosError = MAX(cosError, fabs(approxResult - libmResult));
+    }
+    printf("cos_approx maximum absolute error = %e\n", cosError);
+    EXPECT_LE(cosError, 3e-6);
+}
+
+TEST(MathsUnittest, TestFastTrigonometryATan2)
+{
+    double error = 0;
+    for (float x = -1.0f; x < 1.0f; x += 0.01) {
+        for (float y = -1.0f; x < 1.0f; x += 0.001) {
+            double approxResult = atan2_approx(y, x);
+            double libmResult = atan2f(y, x);
+            error = MAX(error, fabs(approxResult - libmResult));
+        }
+    }
+    printf("atan2_approx maximum absolute error = %e rads (%e degree)\n", error, error / M_PI * 180.0f);
+    EXPECT_LE(error, 1e-6);
+}
+
+TEST(MathsUnittest, TestFastTrigonometryACos)
+{
+    double error = 0;
+    for (float x = -1.0f; x < 1.0f; x += 0.001) {
+        double approxResult = acos_approx(x);
+        double libmResult = acos(x);
+        error = MAX(error, fabs(approxResult - libmResult));
+    }
+    printf("acos_approx maximum absolute error = %e rads (%e degree)\n", error, error / M_PI * 180.0f);
+    EXPECT_LE(error, 1e-4);
+}
+#endif
