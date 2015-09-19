@@ -20,8 +20,6 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "debug.h"
-
 #include "platform.h"
 
 #include "common/maths.h"
@@ -81,8 +79,6 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
-
-#define DEBUG_CYCLE_TIME
 
 // June 2013     V2.2-dev
 
@@ -731,12 +727,6 @@ void loop(void)
 {
     static uint32_t loopTime;
 
-#ifdef DEBUG_CYCLE_TIME
-    static uint32_t minCycleTime = 0xffffffff;
-    static uint32_t maxCycleTime = 0;
-    static uint32_t clearTime = 0;
-#endif
-
 #if defined(BARO) || defined(SONAR)
     static bool haveProcessedAnnexCodeOnce = false;
 #endif
@@ -792,18 +782,6 @@ void loop(void)
         previousTime = currentTime;
 
         dT = (float)cycleTime * 0.000001f;
-#ifdef DEBUG_CYCLE_TIME
-        if (currentTime > clearTime) {
-            clearTime = currentTime + (uint32_t)20000000;
-            minCycleTime = 0xffffffff;
-            maxCycleTime = 0;
-        }
-        if (cycleTime < minCycleTime) minCycleTime = cycleTime;
-        if (cycleTime > maxCycleTime) maxCycleTime = cycleTime;
-        debug[0] = cycleTime;
-        debug[1] = minCycleTime;
-        debug[2] = maxCycleTime;
-#endif
 
         filterApply7TapFIR(gyroADC);
 
