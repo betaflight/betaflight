@@ -84,4 +84,4 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t acc_for_fast_looptime);
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims);

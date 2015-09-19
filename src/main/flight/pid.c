@@ -210,7 +210,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = constrainf((delta / 3.0f) * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
+        DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
@@ -301,7 +301,7 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = (delta * dynD8[axis]) / 32;
+        DTerm = (delta * 3  * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
@@ -386,7 +386,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = ((int32_t)delta * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
+        DTerm = ((int32_t)delta * 3 * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm - DTerm;
 
@@ -504,7 +504,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
             delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = (delta * dynD8[axis]) / 32;
+        DTerm = (delta * 3 * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
 #ifdef BLACKBOX
@@ -775,7 +775,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
-        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+        DTerm = (delta * 3 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8; // Multiplied by 3 to match old scaling
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;

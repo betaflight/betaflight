@@ -29,6 +29,8 @@ typedef enum {
     GYRO_FAKE
 } gyroSensor_e;
 
+#define GYRO_LPF 188
+
 extern gyro_t gyro;
 extern sensor_align_e gyroAlign;
 

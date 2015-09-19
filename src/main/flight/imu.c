@@ -73,7 +73,7 @@ static pidProfile_t *pidProfile;
 static accDeadband_t *accDeadband;
 static accProcessor_t accProc;
 
-static void qAccProcessingStateMachine(rollAndPitchTrims_t *accelerometerTrims, uint8_t acc_for_fast_looptime);
+static void qAccProcessingStateMachine(rollAndPitchTrims_t *accelerometerTrims);
 
 
 void imuConfigure(
@@ -182,12 +182,12 @@ int16_t imuCalculateHeading(t_fp_vector *vec)
     return head;
 }
 
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t acc_for_fast_looptime)
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 {
     gyroUpdate();
 
     if (sensors(SENSOR_ACC)) {
-        qAccProcessingStateMachine(accelerometerTrims, acc_for_fast_looptime);
+        qAccProcessingStateMachine(accelerometerTrims);
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
@@ -578,7 +578,7 @@ void qimuInit()
 
 //////////////////////////////////////////////////////////////////////
 
-static void qAccProcessingStateMachine(rollAndPitchTrims_t *accelerometerTrims, uint8_t acc_for_fast_looptime)
+static void qAccProcessingStateMachine(rollAndPitchTrims_t *accelerometerTrims)
 {
     int axis;
     const float gyro_drift_factor = 0.00f;
@@ -595,7 +595,7 @@ static void qAccProcessingStateMachine(rollAndPitchTrims_t *accelerometerTrims, 
     // get time step.. TODO: this should really be fixed to division of MPU sample rate
     static float dT;
 
-    bool keepProcessing = !acc_for_fast_looptime;               // (keepProcessing == true): causes all states to execute (for slow cycle times)
+    bool keepProcessing = true;               // (keepProcessing == true): causes all states to execute (for slow cycle times)
 
     do {
         switch (accProc.state) {

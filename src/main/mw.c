@@ -773,7 +773,7 @@ void loop(void)
     if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
 
         loopTime = currentTime + targetLooptime;
-        imuUpdate(&currentProfile->accelerometerTrims, masterConfig.acc_for_fast_looptime);
+        imuUpdate(&currentProfile->accelerometerTrims);
 
 
         // Measure loop rate just after reading the sensors
@@ -781,13 +781,11 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
-        dT = (float)cycleTime * 0.000001f;
+        dT = (float)targetLooptime * 0.000001f;
 
         filterApply7TapFIR(gyroADC);
 
-        if (masterConfig.rcSmoothing) {
-            filterRc();
-        }
+        filterRc();
 
         annexCode();
 #if defined(BARO) || defined(SONAR)
