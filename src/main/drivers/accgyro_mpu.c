@@ -134,11 +134,8 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(void)
 {
-    bool found = false;
-
 #ifdef USE_GYRO_SPI_MPU6500
-    found = mpu6500SpiDetect();
-    if (found) {
+    if (mpu6500SpiDetect()) {
         mpuDetectionResult.sensor = MPU_65xx_SPI;
         mpuConfiguration.gyroReadXRegister = MPU6500_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6500ReadRegister;
@@ -148,8 +145,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
 #endif
 
 #ifdef USE_GYRO_SPI_MPU6000
-    found = mpu6000SpiDetect();
-    if (found) {
+    if (mpu6000SpiDetect()) {
         mpuDetectionResult.sensor = MPU_60x0_SPI;
         mpuConfiguration.gyroReadXRegister = MPU6000_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6000ReadRegister;
