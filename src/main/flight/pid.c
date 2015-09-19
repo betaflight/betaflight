@@ -96,6 +96,7 @@ void pidResetErrorGyro(void)
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t DTermState[3];
+static filterStatePt1_t yawPTermState;
 
 #ifdef AUTOTUNE
 bool shouldAutotune(void)
@@ -184,6 +185,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
@@ -284,9 +289,12 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         PTerm -= ((int32_t)gyroADC[axis] / 4) * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
 
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
+
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;
         lastGyro[axis] = gyroADC[axis];
-        delta1[axis] = delta;
 
         // Dterm low pass
         if (pidProfile->dterm_cut_hz) {
@@ -365,6 +373,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         }
 
         PTerm -= ((int32_t)(gyroADC[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastGyro[axis] = gyroADC[axis];
@@ -479,6 +491,10 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
         }
 
         PTerm -= ((int32_t)gyroADC[axis] / 4) * dynP8[axis] / 10 / 8; // 32 bits is needed for calculation
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;
         lastGyro[axis] = gyroADC[axis];
@@ -729,6 +745,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
