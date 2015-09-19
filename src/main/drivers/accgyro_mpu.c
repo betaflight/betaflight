@@ -35,67 +35,100 @@
 
 #include "sensor.h"
 #include "accgyro.h"
+#include "accgyro_mpu3050.h"
 #include "accgyro_mpu6050.h"
 #include "accgyro_mpu.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-// MPU6050, Standard address 0x68
-// MPU_INT on PB13 on rev4 Naze32 hardware
-#define MPU6050_ADDRESS         0x68
 
 
 uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
 
-void mpu6050AccInit(void);
-bool mpu6050AccRead(int16_t *accData);
-void mpu6050GyroInit(void);
-bool mpu6050GyroRead(int16_t *gyroADC);
+void mpu6050FindRevision(void);
 
 mpuDetectionResult_t mpuDetectionResult;
 
+typedef struct mpuConfiguration_s {
+    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
+} mpuConfiguration_t;
+
+static mpuConfiguration_t mpuConfiguration;
 static const extiConfig_t *mpuIntExtiConfig = NULL;
+
+
+#define MPU_ADDRESS             0x68
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
+#define MPU_RA_WHO_AM_I_LEGACY  0x00
 #define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS
 #define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register
 #define MPU_RA_ACCEL_XOUT_H     0x3B
 #define MPU_RA_GYRO_XOUT_H      0x43
 
+// WHO_AM_I register contents for MPU3050, 6050 and 6500
+#define MPU6500_WHO_AM_I_CONST              (0x70)
+#define MPUx0x0_WHO_AM_I_CONST              (0x68)
+
+#define MPU_INQUIRY_MASK   0x7E
+
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
+    memset(&mpuConfiguration, 0, sizeof(mpuConfiguration));
 
     mpuIntExtiConfig = configToUse;
 
     bool ack;
     uint8_t sig;
-    uint8_t readBuffer[6];
-    uint8_t revision;
-    uint8_t productId;
+    uint8_t inquiryResult;
 
-    delay(35);          // datasheet page 13 says 30ms. other stuff could have been running meanwhile. but we'll be safe
+    // MPU datasheet specifies 30ms.
+    delay(35);
 
-    ack = i2cRead(MPU6050_ADDRESS, MPU_RA_WHO_AM_I, 1, &sig);
+    ack = i2cRead(MPU_ADDRESS, MPU_RA_WHO_AM_I, 1, &sig);
     if (!ack)
         return &mpuDetectionResult;
 
-    // So like, MPU6xxx has a "WHO_AM_I" register, that is used to verify the identity of the device.
-    // The contents of WHO_AM_I are the upper 6 bits of the MPU-60X0�s 7-bit I2C address.
-    // The least significant bit of the MPU-60X0�s I2C address is determined by the value of the AD0 pin. (we know that already).
-    // But here's the best part: The value of the AD0 pin is not reflected in this register.
+    mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
 
-    if (sig != (MPU6050_ADDRESS & 0x7e))
+    // If an MPU3050 is connected sig will contain 0.
+    ack = i2cRead(MPU_ADDRESS, MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
+    inquiryResult &= MPU_INQUIRY_MASK;
+    if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
+        mpuDetectionResult.sensor = MPU_3050;
+        mpuConfiguration.gyroReadXRegister = MPU3050_GYRO_OUT;
+        return &mpuDetectionResult;
+    }
 
+    sig &= MPU_INQUIRY_MASK;
+
+    if (sig != MPUx0x0_WHO_AM_I_CONST)
         return &mpuDetectionResult;
 
+    mpuDetectionResult.sensor = MPU_60x0;
+
+    mpu6050FindRevision();
+
+    return &mpuDetectionResult;
+}
+
+
+void mpu6050FindRevision(void)
+{
+    bool ack;
+    UNUSED(ack);
+
+    uint8_t readBuffer[6];
+    uint8_t revision;
+    uint8_t productId;
 
     // There is a map of revision contained in the android source tree which is quite comprehensive and may help to understand this code
     // See https://android.googlesource.com/kernel/msm.git/+/eaf36994a3992b8f918c18e4f7411e8b2320a35f/drivers/misc/mpu6050/mldl_cfg.c
 
     // determine product ID and accel revision
-    i2cRead(MPU6050_ADDRESS, MPU_RA_XA_OFFS_H, 6, readBuffer);
+    ack = i2cRead(MPU_ADDRESS, MPU_RA_XA_OFFS_H, 6, readBuffer);
     revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
     if (revision) {
         /* Congrats, these parts are better. */
@@ -107,7 +140,7 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
             failureMode(FAILURE_ACC_INCOMPATIBLE);
         }
     } else {
-        i2cRead(MPU6050_ADDRESS, MPU_RA_PRODUCT_ID, 1, &productId);
+        ack = i2cRead(MPU_ADDRESS, MPU_RA_PRODUCT_ID, 1, &productId);
         revision = productId & 0x0F;
         if (!revision) {
             failureMode(FAILURE_ACC_INCOMPATIBLE);
@@ -117,9 +150,6 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
             mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
         }
     }
-
-    mpuDetectionResult.sensor = MPU_60x0;
-    return &mpuDetectionResult;
 }
 
 void MPU_DATA_READY_EXTI_Handler(void)
@@ -250,7 +280,7 @@ bool mpuAccRead(int16_t *accData)
 {
     uint8_t buf[6];
 
-    bool ack = i2cRead(MPU6050_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
+    bool ack = i2cRead(MPU_ADDRESS, MPU_RA_ACCEL_XOUT_H, 6, buf);
     if (!ack) {
         return false;
     }
@@ -266,7 +296,7 @@ bool mpuGyroRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
-    bool ack = i2cRead(MPU6050_ADDRESS, MPU_RA_GYRO_XOUT_H, 6, buf);
+    bool ack = i2cRead(MPU_ADDRESS, mpuConfiguration.gyroReadXRegister, 6, buf);
     if (!ack) {
         return false;
     }
