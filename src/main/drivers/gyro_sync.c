@@ -89,20 +89,10 @@ void gyroUpdateSampleRate(uint8_t lpf) {
 #else
         if (lpf == INV_FILTER_256HZ_NOLPF2) {
             gyroSamplePeriod = 125;
-
-            if(!sensors(SENSOR_ACC)) {
-                minLooptime = 625;   // Max refresh 1,6khz
-            } else {
-                minLooptime = 1625;  // Max refresh 615hz
-            }
+            minLooptime = 625;      // Max refresh 1,6khz
         } else {
             gyroSamplePeriod = 1000;
-
-            if(!sensors(SENSOR_ACC)) {
-                minLooptime = 1000;  // Full sampling without ACC
-            } else {
-                minLooptime = 2000;
-            }
+            minLooptime = 1000;     // Full sampling without ACC
         }
 #endif
         mpuDividerDrops  = (minLooptime + gyroSamplePeriod -1 ) / gyroSamplePeriod - 1;

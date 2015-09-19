@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "common/maths.h"
 #include "flight/lowpass.h"
 
 //#define DEBUG_LOWPASS
@@ -31,7 +32,7 @@ void generateLowpassCoeffs2(int16_t freq, lowpass_t *filter)
 
     // generates coefficients for a 2nd-order butterworth low-pass filter
     float freqf = (float)freq*0.001f;
-    float omega = tanf((float)M_PI*freqf/2.0f);
+    float omega = tan_approx((float)M_PI*freqf/2.0f);
     float scaling = 1.0f / (omega*omega + 1.4142136f*omega + 1.0f);
 
 
