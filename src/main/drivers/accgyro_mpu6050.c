@@ -439,10 +439,8 @@ static void mpu6050GyroInit(void)
     // Accel scale 8g (4096 LSB/g)
     ack = i2cWrite(MPU6050_ADDRESS, MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
 
-//    ack = i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG,
-//            0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
     ack = i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_PIN_CFG,
-            0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
+            0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
     ack = i2cWrite(MPU6050_ADDRESS, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
