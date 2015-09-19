@@ -28,9 +28,9 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
 }
 
 // 7 Tap FIR filter as described here:
-// http://www.rcgroups.com/forums/showpost.php?p=32723398&postcount=2776
+// Thanks to Qcopter
 void filterApply7TapFIR(int16_t data[]) {
-    int16_t FIRcoeff[7] = { 12, 23, 40, 51, 52, 40, 38 };
+    int16_t FIRcoeff[7] = { 12, 23, 40, 51, 52, 40, 38 }; // TODO - More coefficients needed. Now fixed to 1khz
     static int16_t gyro_delay[3][7] = { {0}, {0}, {0} };
     int32_t FIRsum;
     int axis, i;
