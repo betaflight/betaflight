@@ -204,7 +204,7 @@ static void mpu6050GyroInit(void)
     ack = mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     ack = mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
-    // ACC Init stuff. Moved into gyro init because the reset above would screw up accel config. Oops.
+    // ACC Init stuff.
     // Accel scale 8g (4096 LSB/g)
     ack = mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
 

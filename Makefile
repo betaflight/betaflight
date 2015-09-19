@@ -295,6 +295,7 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu3050.c \
 		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \

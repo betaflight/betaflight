@@ -35,10 +35,8 @@
 
 #pragma once
 
-bool mpu6500SpiDetect(void);
+bool mpu6500AccDetect(acc_t *acc);
+bool mpu6500GyroDetect(gyro_t *gyro, uint16_t lpf);
 
-bool mpu6500SpiAccDetect(acc_t *acc);
-bool mpu6500SpiGyroDetect(gyro_t *gyro, uint16_t lpf);
-
-bool mpu6500WriteRegister(uint8_t reg, uint8_t data);
-bool mpu6500ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);
+void mpu6500AccInit(void);
+void mpu6500GyroInit(void);

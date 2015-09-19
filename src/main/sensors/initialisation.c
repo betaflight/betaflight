@@ -38,6 +38,7 @@
 #include "drivers/accgyro_mpu.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_mpu6500.h"
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 
@@ -218,40 +219,30 @@ bool detectGyro(uint16_t gyroLpf)
 #endif
             ; // fallthrough
 
-        case GYRO_SPI_MPU6000:
+        case GYRO_MPU6000:
 #ifdef USE_GYRO_SPI_MPU6000
             if (mpu6000SpiGyroDetect(&gyro, gyroLpf)) {
-#ifdef GYRO_SPI_MPU6000_ALIGN
-                gyroHardware = GYRO_SPI_MPU6000;
-                gyroAlign = GYRO_SPI_MPU6000_ALIGN;
+#ifdef GYRO_MPU6000_ALIGN
+                gyroHardware = GYRO_MPU6000;
+                gyroAlign = GYRO_MPU6000_ALIGN;
 #endif
                 break;
             }
 #endif
             ; // fallthrough
 
-        case GYRO_SPI_MPU6500:
-#ifdef USE_GYRO_SPI_MPU6500
+        case GYRO_MPU6500:
+#ifdef USE_GYRO_MPU6500
 #ifdef USE_HARDWARE_REVISION_DETECTION
 		  spiBusInit();
 #endif
-#ifdef NAZE
-            if (hardwareRevision == NAZE32_SP && mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
-#ifdef GYRO_SPI_MPU6500_ALIGN
-                gyroHardware = GYRO_SPI_MPU6500;
-                gyroAlign = GYRO_SPI_MPU6500_ALIGN;
+            if (mpu6500GyroDetect(&gyro, gyroLpf) || mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
+#ifdef GYRO_MPU6500_ALIGN
+                gyroHardware = GYRO_MPU6500;
+                gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
                 break;
             }
-#else
-            if (mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
-#ifdef GYRO_SPI_MPU6500_ALIGN
-                gyroHardware = GYRO_SPI_MPU6500;
-                gyroAlign = GYRO_SPI_MPU6500_ALIGN;
-#endif
-                break;
-            }
-#endif
 #endif
             ; // fallthrough
 
@@ -357,28 +348,24 @@ retry:
             }
 #endif
             ; // fallthrough
-        case ACC_SPI_MPU6000:
+        case ACC_MPU6000:
 #ifdef USE_ACC_SPI_MPU6000
             if (mpu6000SpiAccDetect(&acc)) {
-#ifdef ACC_SPI_MPU6000_ALIGN
-                accAlign = ACC_SPI_MPU6000_ALIGN;
+#ifdef ACC_MPU6000_ALIGN
+                accAlign = ACC_MPU6000_ALIGN;
 #endif
-                accHardware = ACC_SPI_MPU6000;
+                accHardware = ACC_MPU6000;
                 break;
             }
 #endif
             ; // fallthrough
-        case ACC_SPI_MPU6500:
-#ifdef USE_ACC_SPI_MPU6500
-#ifdef NAZE
-            if (hardwareRevision == NAZE32_SP && mpu6500SpiAccDetect(&acc)) {
-#else
-            if (mpu6500SpiAccDetect(&acc)) {
+        case ACC_MPU6500:
+#ifdef USE_ACC_MPU6500
+            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc)) {
+#ifdef ACC_MPU6500_ALIGN
+                accAlign = ACC_MPU6500_ALIGN;
 #endif
-#ifdef ACC_SPI_MPU6500_ALIGN
-                accAlign = ACC_SPI_MPU6500_ALIGN;
-#endif
-                accHardware = ACC_SPI_MPU6500;
+                accHardware = ACC_MPU6500;
                 break;
             }
 #endif
@@ -599,7 +586,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 

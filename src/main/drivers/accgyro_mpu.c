@@ -37,6 +37,7 @@
 #include "accgyro.h"
 #include "accgyro_mpu3050.h"
 #include "accgyro_mpu6050.h"
+#include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
 #include "accgyro_mpu.h"
@@ -118,12 +119,14 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
 
     sig &= MPU_INQUIRY_MASK;
 
-    if (sig != MPUx0x0_WHO_AM_I_CONST)
-        return &mpuDetectionResult;
+    if (sig == MPUx0x0_WHO_AM_I_CONST) {
 
-    mpuDetectionResult.sensor = MPU_60x0;
+        mpuDetectionResult.sensor = MPU_60x0;
 
-    mpu6050FindRevision();
+        mpu6050FindRevision();
+    } else if (sig == MPU6500_WHO_AM_I_CONST) {
+        mpuDetectionResult.sensor = MPU_65xx_I2C;
+    }
 
     return &mpuDetectionResult;
 }
@@ -134,7 +137,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
     bool found = false;
 
 #ifdef USE_GYRO_SPI_MPU6500
-    found = mpu6500Detect();
+    found = mpu6500SpiDetect();
     if (found) {
         mpuDetectionResult.sensor = MPU_65xx_SPI;
         mpuConfiguration.gyroReadXRegister = MPU6500_RA_GYRO_XOUT_H;

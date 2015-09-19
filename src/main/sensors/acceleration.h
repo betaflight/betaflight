@@ -26,8 +26,8 @@ typedef enum {
     ACC_MMA8452 = 4,
     ACC_BMA280 = 5,
     ACC_LSM303DLHC = 6,
-    ACC_SPI_MPU6000 = 7,
-    ACC_SPI_MPU6500 = 8,
+    ACC_MPU6000 = 7,
+    ACC_MPU6500 = 8,
     ACC_FAKE = 9,
 } accelerationSensor_e;
 

@@ -32,6 +32,7 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
+#include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
 #define DISABLE_MPU6500       GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN)
@@ -39,10 +40,6 @@
 
 extern mpuDetectionResult_t mpuDetectionResult;
 extern uint8_t mpuLowPassFilter;
-
-
-static void mpu6500AccInit(void);
-static void mpu6500GyroInit(void);
 
 extern uint16_t acc_1G;
 
@@ -105,7 +102,7 @@ static void mpu6500SpiInit(void)
     hardwareInitialised = true;
 }
 
-bool mpu6500Detect(void)
+bool mpu6500SpiDetect(void)
 {
     uint8_t tmp;
 
@@ -148,33 +145,3 @@ bool mpu6500SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
     return true;
 }
 
-static void mpu6500AccInit(void)
-{
-    acc_1G = 512 * 8;
-}
-
-static void mpu6500GyroInit(void)
-{
-#ifdef NAZE
-    gpio_config_t gpio;
-    // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices
-    if (hse_value == 12000000) {
-        gpio.pin = Pin_13;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_IN_FLOATING;
-        gpioInit(GPIOC, &gpio);
-    }
-#endif
-
-    mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
-    delay(100);
-    mpu6500WriteRegister(MPU6500_RA_SIGNAL_PATH_RST, 0x07);
-    delay(100);
-    mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, 0);
-    delay(100);
-    mpu6500WriteRegister(MPU6500_RA_PWR_MGMT_1, INV_CLK_PLL);
-    mpu6500WriteRegister(MPU6500_RA_GYRO_CFG, INV_FSR_2000DPS << 3);
-    mpu6500WriteRegister(MPU6500_RA_ACCEL_CFG, INV_FSR_8G << 3);
-    mpu6500WriteRegister(MPU6500_RA_LPF, mpuLowPassFilter);
-    mpu6500WriteRegister(MPU6500_RA_RATE_DIV, 0); // 1kHz S/R
-}
