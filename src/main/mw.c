@@ -93,6 +93,7 @@ enum {
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
+#define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 90 // Prevent RX processing before expected loop trigger
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -733,7 +734,7 @@ void loop(void)
 
     updateRx(currentTime);
 
-    if (shouldProcessRx(currentTime)) {
+    if (shouldProcessRx(currentTime) && !((int32_t)(currentTime - (loopTime - PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER)) >= 0)) {
         processRx();
         isRXDataNew = true;
 
