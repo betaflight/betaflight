@@ -59,10 +59,6 @@ mpuDetectionResult_t mpuDetectionResult;
 mpuConfiguration_t mpuConfiguration;
 static const extiConfig_t *mpuIntExtiConfig = NULL;
 
-// FIXME move into mpuConfiguration
-uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
-
-
 #define MPU_ADDRESS             0x68
 
 // MPU6050
@@ -299,8 +295,10 @@ void mpuIntExtiInit(void)
     mpuExtiInitDone = true;
 }
 
-void configureMPULPF(uint16_t lpf)
+uint8_t determineMPULPF(uint16_t lpf)
 {
+    uint8_t mpuLowPassFilter;
+
     if (lpf == 256)
         mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
     else if (lpf >= 188)
@@ -317,6 +315,8 @@ void configureMPULPF(uint16_t lpf)
         mpuLowPassFilter = INV_FILTER_5HZ;
     else
         mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
+
+    return mpuLowPassFilter;
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)

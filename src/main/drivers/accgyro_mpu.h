@@ -78,7 +78,9 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
-void configureMPULPF(uint16_t lpf);
+extern mpuDetectionResult_t mpuDetectionResult;
+
+uint8_t determineMPULPF(uint16_t lpf);
 void configureMPUDataReadyInterruptHandling(void);
 void mpuIntExtiInit(void);
 bool mpuAccRead(int16_t *accData);

@@ -31,9 +31,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu3050.h"
 
-extern mpuDetectionResult_t mpuDetectionResult;
-extern uint8_t mpuLowPassFilter;
-
 // MPU3050, Standard address 0x68
 #define MPU3050_ADDRESS         0x68
 
@@ -49,10 +46,10 @@ extern uint8_t mpuLowPassFilter;
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-void mpu3050Init(void);
+static void mpu3050Init(uint16_t lpf);
 static bool mpu3050ReadTemp(int16_t *tempData);
 
-bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
+bool mpu3050Detect(gyro_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_3050) {
         return false;
@@ -64,14 +61,14 @@ bool mpu3050Detect(gyro_t *gyro, uint16_t lpf)
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
-    configureMPULPF(lpf);
-
     return true;
 }
 
-void mpu3050Init(void)
+static void mpu3050Init(uint16_t lpf)
 {
     bool ack;
+
+    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
 

@@ -43,7 +43,6 @@
 
 static void mpu6000AccAndGyroInit(void);
 
-extern mpuDetectionResult_t mpuDetectionResult;
 extern uint8_t mpuLowPassFilter;
 
 static bool mpuSpi6000InitDone = false;
@@ -121,8 +120,10 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu6000SpiGyroInit(void)
+void mpu6000SpiGyroInit(uint16_t lpf)
 {
+    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
+
     mpu6000AccAndGyroInit();
 
     spiResetErrorCounter(MPU6000_SPI_INSTANCE);
@@ -249,7 +250,7 @@ bool mpu6000SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
+bool mpu6000SpiGyroDetect(gyro_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_60x0_SPI) {
         return false;
@@ -260,8 +261,6 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro, uint16_t lpf)
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
-
-    configureMPULPF(lpf);
 
     return true;
 }

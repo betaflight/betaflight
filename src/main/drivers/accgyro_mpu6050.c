@@ -37,7 +37,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6050.h"
 
-extern mpuDetectionResult_t mpuDetectionResult;
 extern uint8_t mpuLowPassFilter;
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
@@ -146,7 +145,7 @@ extern uint8_t mpuLowPassFilter;
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
 static void mpu6050AccInit(void);
-static void mpu6050GyroInit(void);
+static void mpu6050GyroInit(uint16_t lpf);
 
 bool mpu6050AccDetect(acc_t *acc)
 {
@@ -161,7 +160,7 @@ bool mpu6050AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
+bool mpu6050GyroDetect(gyro_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_60x0) {
         return false;
@@ -171,8 +170,6 @@ bool mpu6050GyroDetect(gyro_t *gyro, uint16_t lpf)
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
-
-    configureMPULPF(lpf);
 
     return true;
 }
@@ -191,11 +188,14 @@ static void mpu6050AccInit(void)
     }
 }
 
-static void mpu6050GyroInit(void)
+static void mpu6050GyroInit(uint16_t lpf)
 {
+    bool ack;
+
     mpuIntExtiInit();
 
-    bool ack;
+    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
+
     ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(100);
     ack = mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0x00); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)

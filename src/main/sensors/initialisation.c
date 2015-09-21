@@ -128,19 +128,25 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 }
 
 #ifdef USE_FAKE_GYRO
-static void fakeGyroInit(void) {}
-static bool fakeGyroRead(int16_t *gyroADC) {
+static void fakeGyroInit(uint16_t lpf)
+{
+    UNUSED(lpf);
+}
+
+static bool fakeGyroRead(int16_t *gyroADC)
+{
     memset(gyroADC, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
     return true;
 }
-static bool fakeGyroReadTemp(int16_t *tempData) {
+
+static bool fakeGyroReadTemp(int16_t *tempData)
+{
     UNUSED(tempData);
     return true;
 }
 
-bool fakeGyroDetect(gyro_t *gyro, uint16_t lpf)
+bool fakeGyroDetect(gyro_t *gyro)
 {
-    UNUSED(lpf);
     gyro->init = fakeGyroInit;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
@@ -164,7 +170,7 @@ bool fakeAccDetect(acc_t *acc)
 }
 #endif
 
-bool detectGyro(uint16_t gyroLpf)
+bool detectGyro(void)
 {
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
@@ -175,7 +181,7 @@ bool detectGyro(uint16_t gyroLpf)
             ; // fallthrough
         case GYRO_MPU6050:
 #ifdef USE_GYRO_MPU6050
-            if (mpu6050GyroDetect(&gyro, gyroLpf)) {
+            if (mpu6050GyroDetect(&gyro)) {
 #ifdef GYRO_MPU6050_ALIGN
                 gyroHardware = GYRO_MPU6050;
                 gyroAlign = GYRO_MPU6050_ALIGN;
@@ -186,7 +192,7 @@ bool detectGyro(uint16_t gyroLpf)
             ; // fallthrough
         case GYRO_L3G4200D:
 #ifdef USE_GYRO_L3G4200D
-            if (l3g4200dDetect(&gyro, gyroLpf)) {
+            if (l3g4200dDetect(&gyro)) {
 #ifdef GYRO_L3G4200D_ALIGN
                 gyroHardware = GYRO_L3G4200D;
                 gyroAlign = GYRO_L3G4200D_ALIGN;
@@ -198,7 +204,7 @@ bool detectGyro(uint16_t gyroLpf)
 
         case GYRO_MPU3050:
 #ifdef USE_GYRO_MPU3050
-            if (mpu3050Detect(&gyro, gyroLpf)) {
+            if (mpu3050Detect(&gyro)) {
 #ifdef GYRO_MPU3050_ALIGN
                 gyroHardware = GYRO_MPU3050;
                 gyroAlign = GYRO_MPU3050_ALIGN;
@@ -210,7 +216,7 @@ bool detectGyro(uint16_t gyroLpf)
 
         case GYRO_L3GD20:
 #ifdef USE_GYRO_L3GD20
-            if (l3gd20Detect(&gyro, gyroLpf)) {
+            if (l3gd20Detect(&gyro)) {
 #ifdef GYRO_L3GD20_ALIGN
                 gyroHardware = GYRO_L3GD20;
                 gyroAlign = GYRO_L3GD20_ALIGN;
@@ -222,7 +228,7 @@ bool detectGyro(uint16_t gyroLpf)
 
         case GYRO_MPU6000:
 #ifdef USE_GYRO_SPI_MPU6000
-            if (mpu6000SpiGyroDetect(&gyro, gyroLpf)) {
+            if (mpu6000SpiGyroDetect(&gyro)) {
 #ifdef GYRO_MPU6000_ALIGN
                 gyroHardware = GYRO_MPU6000;
                 gyroAlign = GYRO_MPU6000_ALIGN;
@@ -237,7 +243,7 @@ bool detectGyro(uint16_t gyroLpf)
 #ifdef USE_HARDWARE_REVISION_DETECTION
 		  spiBusInit();
 #endif
-            if (mpu6500GyroDetect(&gyro, gyroLpf) || mpu6500SpiGyroDetect(&gyro, gyroLpf)) {
+            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro)) {
 #ifdef GYRO_MPU6500_ALIGN
                 gyroHardware = GYRO_MPU6500;
                 gyroAlign = GYRO_MPU6500_ALIGN;
@@ -249,7 +255,7 @@ bool detectGyro(uint16_t gyroLpf)
 
         case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
-            if (fakeGyroDetect(&gyro, gyroLpf)) {
+            if (fakeGyroDetect(&gyro)) {
                 gyroHardware = GYRO_FAKE;
                 break;
             }
@@ -403,7 +409,9 @@ retry:
 
 static void detectBaro(baroSensor_e baroHardwareToUse)
 {
-#ifdef BARO
+#ifndef BARO
+    UNUSED(baroHardwareToUse);
+#else
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
@@ -603,7 +611,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     UNUSED(mpuDetectionResult);
 #endif
 
-    if (!detectGyro(gyroLpf)) {
+    if (!detectGyro()) {
         return false;
     }
     detectAcc(accHardwareToUse);
@@ -614,7 +622,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16_t 
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.init();
+    gyro.init(gyroLpf);
 
     detectMag(magHardwareToUse);
 

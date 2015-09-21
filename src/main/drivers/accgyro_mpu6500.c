@@ -33,12 +33,7 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
-extern mpuDetectionResult_t mpuDetectionResult;
-extern uint8_t mpuLowPassFilter;
-
-
 extern uint16_t acc_1G;
-
 
 bool mpu6500AccDetect(acc_t *acc)
 {
@@ -52,7 +47,7 @@ bool mpu6500AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro, uint16_t lpf)
+bool mpu6500GyroDetect(gyro_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -64,8 +59,6 @@ bool mpu6500GyroDetect(gyro_t *gyro, uint16_t lpf)
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
-    configureMPULPF(lpf);
-
     return true;
 }
 
@@ -74,7 +67,7 @@ void mpu6500AccInit(void)
     acc_1G = 512 * 8;
 }
 
-void mpu6500GyroInit(void)
+void mpu6500GyroInit(uint16_t lpf)
 {
 #ifdef NAZE
     // FIXME target specific code in driver code.
@@ -88,6 +81,8 @@ void mpu6500GyroInit(void)
         gpioInit(GPIOC, &gpio);
     }
 #endif
+
+    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     mpuConfiguration.write(MPU6500_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
