@@ -325,7 +325,6 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.emf_avoidance, 0, 1 },
-    { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.i2c_overclock, 0, 2 },
 
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, 1200, 1700 },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, PWM_RANGE_ZERO, PWM_RANGE_MAX },

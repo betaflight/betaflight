@@ -26,7 +26,6 @@ typedef struct master_t {
     uint8_t mixerMode;
     uint32_t enabledFeatures;
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
-    uint8_t i2c_overclock;                  // i2c clockspeed, 0 = 400kHz default (conform specs), 1 = 800kHz, 2 = 1200kHz
 
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
 #ifdef USE_SERVOS
