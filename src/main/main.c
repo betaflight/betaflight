@@ -168,6 +168,7 @@ void init(void)
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
     SetSysClock(masterConfig.emf_avoidance);
+    i2cSetClockSelect(masterConfig.i2c_overclock);
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

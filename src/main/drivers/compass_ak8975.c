@@ -129,7 +129,7 @@ bool ak8975Read(int16_t *magData)
     for (uint8_t i = 0; i < 6; i++) {
         ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL + i, 1, &buf[i]); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
         if (!ack) {
-            break false
+            return false
         }
     }
 #endif

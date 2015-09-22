@@ -48,6 +48,7 @@
 #include "config/runtime_config.h"
 
 //#define DEBUG_IMU
+#define DEBUG_IMU_SPEED
 
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
@@ -182,10 +183,17 @@ int16_t imuCalculateHeading(t_fp_vector *vec)
     return head;
 }
 
+#if 0
 void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 {
+#ifdef DEBUG_IMU_SPEED
+    uint32_t time = micros();
+#endif
     gyroUpdate();
-
+#ifdef DEBUG_IMU_SPEED
+    debug[0] = micros() - time;
+    time = micros();
+#endif
     if (sensors(SENSOR_ACC)) {
         qAccProcessingStateMachine(accelerometerTrims);
     } else {
@@ -193,7 +201,36 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
+#ifdef DEBUG_IMU_SPEED
+    debug[2] = debug[0] + debug[1];
+#endif
 }
+
+#else
+
+void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
+{
+#ifdef DEBUG_IMU_SPEED
+    uint32_t time = micros();
+#endif
+    gyroUpdate();
+#ifdef DEBUG_IMU_SPEED
+    debug[0] = micros() - time;
+    time = micros();
+#endif
+    if (sensors(SENSOR_ACC)) {
+        qAccProcessingStateMachine(accelerometerTrims);
+    } else {
+        accADC[X] = 0;
+        accADC[Y] = 0;
+        accADC[Z] = 0;
+    }
+#ifdef DEBUG_IMU_SPEED
+    debug[2] = debug[0] + debug[1];
+#endif
+}
+
+#endif
 
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
 {
