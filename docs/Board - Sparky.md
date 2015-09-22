@@ -176,6 +176,13 @@ USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
 
 All USART ports all support automatic hardware inversion which allows direct connection of serial rx receivers like the FrSky X4RSB - no external inverter needed.
 
+# Beeper Connection
+
+| Pin  | Signal | Function        |
+| ---- | ------ | --------------- |
+| PWM10| PA1    | Beeper Signal   |
+
+Output signal to connect a buzzer. Please note this singal can not drive the buzzer, but it must be used to drive for exmaple the gate of a small N-Channel MOSFET, drain connected to the - pin of the buzzer and source to GND. + pin of the buzzer can be conneted to +5 Volts (or even to your Lipo + if the buzzer supports the voltage).
 
 # Battery Monitoring Connections
 
