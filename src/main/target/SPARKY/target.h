@@ -26,6 +26,12 @@
 #define LED1_PIN    Pin_5  // Green (Rev 1) / Red (Rev 2) - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
+#define BEEP_GPIO   GPIOA  //USE PWM10 as beeper signal
+#define BEEP_PIN    Pin_1
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER_INVERTED
+#define BEEPER
+
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU6050 interrupts
