@@ -505,12 +505,9 @@ void quaternion_to_rpy(const q4_t *q, rpy_t *o) // (degrees) yaw->pitch->roll or
     if ((y0 == 0) && (y1 == 0)) { o->y = 0.0f; } // atan(0,0)!
     else { o->y = atan2_approx(y0, y1); }
   }
-#ifdef NAZE
-  o->y = -o->y;     // yaw inversion hack for NAZE32
-#endif
-#ifdef SPARKY
-  o->y = -o->y;     // yaw inversion hack for SPARKY
-#endif
+
+  o->y = -o->y;     // yaw inversion hack for all boards
+
 }
 
 void angle_vector(const q4_t *a, v3_t *o) // convert from quaternion to angle vector[rad]
