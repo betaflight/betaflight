@@ -300,7 +300,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
 
-#ifdef CC3D
+#if defined(CC3D) || defined(SPRACINGF3MINI)
     // This allows MSP connection via USART & VCP so the board can be reconfigured.
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
 #endif
@@ -388,9 +388,9 @@ static void resetConf(void)
     featureSet(FEATURE_RX_PPM);
 #endif
 
-#if defined(SPRACINGF3MINI)
-    featureSet(FEATURE_DISPLAY);
-#endif
+//#if defined(SPRACINGF3MINI)
+//    featureSet(FEATURE_DISPLAY);
+//#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
