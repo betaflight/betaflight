@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "debug.h"
 #include "platform.h"
 
 #include "common/maths.h"
@@ -87,6 +88,8 @@ enum {
     ALIGN_ACCEL = 1,
     ALIGN_MAG = 2
 };
+
+//#define DEBUG_JITTER 3
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)       
@@ -776,11 +779,22 @@ void loop(void)
         loopTime = currentTime + targetLooptime;
         imuUpdate(&currentProfile->accelerometerTrims);
 
-
         // Measure loop rate just after reading the sensors
         currentTime = micros();
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
+
+#ifdef DEBUG_JITTER
+        static uint32_t previousCycleTime;
+
+		if (previousCycleTime > cycleTime) {
+		    debug[DEBUG_JITTER] = previousCycleTime - cycleTime;
+		} else {
+	        debug[DEBUG_JITTER] = cycleTime - previousCycleTime;
+		}
+		previousCycleTime = cycleTime;
+#endif
+
 
         dT = (float)targetLooptime * 0.000001f;
 

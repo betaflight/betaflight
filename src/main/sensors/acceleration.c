@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "debug.h"
 
 #include "common/axis.h"
 
@@ -35,8 +34,6 @@
 #include "config/config.h"
 
 #include "sensors/acceleration.h"
-
-#define DEBUG_IMU_SPEED
 
 int16_t accADC[XYZ_AXIS_COUNT];
 
@@ -175,15 +172,10 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-#ifdef DEBUG_IMU_SPEED
-    uint32_t time = micros();
-#endif
     if (!acc.read(accADC)) {
         return;
     }
-#ifdef DEBUG_IMU_SPEED
-    debug[1] = micros() - time;
-#endif
+
     alignSensors(accADC, accADC, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {

@@ -48,7 +48,10 @@
 #include "config/runtime_config.h"
 
 //#define DEBUG_IMU
-#define DEBUG_IMU_SPEED
+//#define DEBUG_IMU_SPEED
+
+#define MAX_ACC_PROCESSING   360  // Anti jitter equal acc processing each cycle
+#define MAX_GYRO_PROCESSING  100  // Anti jitter equal gyro processing each cycle
 
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
@@ -186,23 +189,40 @@ int16_t imuCalculateHeading(t_fp_vector *vec)
 #if 0
 void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 {
-#ifdef DEBUG_IMU_SPEED
-    uint32_t time = micros();
+#if defined(NAZE)
+	uint32_t accProcessTime, gyroProcessTime;
 #endif
+#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+	uint32_t time = micros();
+#endif
+
     gyroUpdate();
+#if defined(NAZE)
+    while (gyroProcessTime < MAX_GYRO_PROCESSING ) {
+        gyroProcessTime = micros() - time;
+    }
+#endif
 #ifdef DEBUG_IMU_SPEED
-    debug[0] = micros() - time;
-    time = micros();
+    debug[0] = micros() - time; // gyro read time
 #endif
     if (sensors(SENSOR_ACC)) {
+#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+        time = micros();
+#endif
         qAccProcessingStateMachine(accelerometerTrims);
+#if defined(NAZE)
+        while (accProcessTime < MAX_ACC_PROCESSING) {
+            accProcessTime = micros() - time;
+        }
+#endif
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
 #ifdef DEBUG_IMU_SPEED
-    debug[2] = debug[0] + debug[1];
+    debug[1] = micros() - time; // acc read time
+    debug[2] = debug[0] + debug[1]; // gyro + acc read time
 #endif
 }
 
@@ -210,23 +230,40 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 
 void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
 {
-#ifdef DEBUG_IMU_SPEED
-    uint32_t time = micros();
+#if defined(NAZE)
+	uint32_t accProcessTime, gyroProcessTime;
 #endif
+#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+	uint32_t time = micros();
+#endif
+
     gyroUpdate();
+#if defined(NAZE)
+    while (gyroProcessTime < MAX_GYRO_PROCESSING ) {
+        gyroProcessTime = micros() - time;
+    }
+#endif
 #ifdef DEBUG_IMU_SPEED
-    debug[0] = micros() - time;
-    time = micros();
+    debug[0] = micros() - time; // gyro read time
 #endif
     if (sensors(SENSOR_ACC)) {
+#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+        time = micros();
+#endif
         qAccProcessingStateMachine(accelerometerTrims);
+#if defined(NAZE)
+    while (accProcessTime < MAX_ACC_PROCESSING) {
+        accProcessTime = micros() - time;
+    }
+#endif
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
 #ifdef DEBUG_IMU_SPEED
-    debug[2] = debug[0] + debug[1];
+    debug[1] = micros() - time;     // acc read time
+    debug[2] = debug[0] + debug[1]; // gyro + acc read time
 #endif
 }
 
