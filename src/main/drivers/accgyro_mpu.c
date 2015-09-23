@@ -167,7 +167,7 @@ static void mpu6050FindRevision(void)
     // See https://android.googlesource.com/kernel/msm.git/+/eaf36994a3992b8f918c18e4f7411e8b2320a35f/drivers/misc/mpu6050/mldl_cfg.c
 
     // determine product ID and accel revision
-    ack = i2cRead(MPU_ADDRESS, MPU_RA_XA_OFFS_H, 6, readBuffer);
+    ack = mpuConfiguration.read(MPU_RA_XA_OFFS_H, 6, readBuffer);
     revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
     if (revision) {
         /* Congrats, these parts are better. */
@@ -179,7 +179,7 @@ static void mpu6050FindRevision(void)
             failureMode(FAILURE_ACC_INCOMPATIBLE);
         }
     } else {
-        ack = i2cRead(MPU_ADDRESS, MPU_RA_PRODUCT_ID, 1, &productId);
+        ack = mpuConfiguration.read(MPU_RA_PRODUCT_ID, 1, &productId);
         revision = productId & 0x0F;
         if (!revision) {
             failureMode(FAILURE_ACC_INCOMPATIBLE);

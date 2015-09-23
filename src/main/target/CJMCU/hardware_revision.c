@@ -51,7 +51,3 @@ void detectHardwareRevision(void)
 void updateHardwareRevision(void)
 {
 }
-
-void spiBusInit(void)
-{
-}

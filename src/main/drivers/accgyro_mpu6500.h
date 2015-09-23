@@ -24,10 +24,12 @@
 #define MPU6500_RA_INT_ENABLE               (0x38)
 #define MPU6500_RA_GYRO_XOUT_H              (0x43)
 #define MPU6500_RA_SIGNAL_PATH_RST          (0x68)
+#define MPU6500_RA_USER_CTRL                (0x6A)
 #define MPU6500_RA_PWR_MGMT_1               (0x6B)
 #define MPU6500_RA_BANK_SEL                 (0x6D)
 #define MPU6500_RA_MEM_RW                   (0x6F)
 #define MPU6500_RA_WHOAMI                   (0x75)
+#define MPU6500_RA_XA_OFFS_H                (0x77)
 
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 

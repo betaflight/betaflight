@@ -111,7 +111,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     }
 #endif
 
-#ifdef SPRACINGF3
+#if defined(SPRACINGF3)
     static const extiConfig_t spRacingF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,
@@ -240,14 +240,17 @@ bool detectGyro(void)
 
         case GYRO_MPU6500:
 #ifdef USE_GYRO_MPU6500
-#ifdef USE_HARDWARE_REVISION_DETECTION
-		  spiBusInit();
+#ifdef USE_GYRO_SPI_MPU6500
+            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro))
+#else
+            if (mpu6500GyroDetect(&gyro))
 #endif
-            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro)) {
-#ifdef GYRO_MPU6500_ALIGN
+            {
                 gyroHardware = GYRO_MPU6500;
+#ifdef GYRO_MPU6500_ALIGN
                 gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
+
                 break;
             }
 #endif
@@ -368,7 +371,12 @@ retry:
             ; // fallthrough
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
-            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc)) {
+#ifdef USE_ACC_SPI_MPU6500
+            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc))
+#else
+            if (mpu6500AccDetect(&acc))
+#endif
+            {
 #ifdef ACC_MPU6500_ALIGN
                 accAlign = ACC_MPU6500_ALIGN;
 #endif
