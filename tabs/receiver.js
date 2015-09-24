@@ -326,8 +326,15 @@ TABS.receiver.initialize = function (callback) {
                     maxWidth: windowWidth, maxHeight: windowHeight
                 }
             }, function(createdWindow) {
-                // Give the window a callback it can use to access our MSP object to send to CF
-                createdWindow.contentWindow.setRawRx = MSP.setRawRx;
+                // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
+                createdWindow.contentWindow.setRawRx = function(channels) {
+                    if (CONFIGURATOR.connectionValid && GUI.active_tab != 'cli') {
+                        MSP.setRawRx(channels);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
             });
         });
         

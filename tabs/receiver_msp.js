@@ -53,7 +53,10 @@ function transmitChannels() {
     }
     
     // Callback given to us by the window creator so we can have it send data over MSP for us:
-    window.setRawRx(channelValues);
+    if (!window.setRawRx(channelValues)) {
+        // MSP connection has gone away
+        chrome.app.window.current().close();
+    }
 }
 
 function stickPortionToChannelValue(portion) {
@@ -178,5 +181,5 @@ $(document).ready(function() {
     
     updateControlPositions();
     
-    setInterval(transmitChannels, 100);
+    setInterval(transmitChannels, 50);
 });
