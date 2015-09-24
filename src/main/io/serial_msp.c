@@ -1310,9 +1310,13 @@ static bool processInCommand(void)
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
                 headSerialError(0);
             } else {
-                for (i = 0; i < channelCount; i++)
-                    rcData[i] = read16();
-                rxMspFrameRecieve();
+                uint16_t frame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+
+                for (i = 0; i < channelCount; i++) {
+                    frame[i] = read16();
+                }
+
+                rxMspFrameReceive(frame, channelCount);
             }
         }
         break;
