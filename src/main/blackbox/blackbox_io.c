@@ -648,8 +648,11 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
     // Handle failure:
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
-            // One byte of the tx buffer isn't available for user data (due to its circular list implementation), hence the -1
-            if (bytes > (int32_t) blackboxPort->txBufferSize - 1) {
+            /*
+             * One byte of the tx buffer isn't available for user data (due to its circular list implementation),
+             * hence the -1. Note that the USB VCP implementation doesn't use a buffer and has txBufferSize set to zero.
+             */
+            if (blackboxPort->txBufferSize && bytes > (int32_t) blackboxPort->txBufferSize - 1) {
                 return BLACKBOX_RESERVE_PERMANENT_FAILURE;
             }
 
