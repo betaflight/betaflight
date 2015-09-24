@@ -324,7 +324,8 @@ TABS.receiver.initialize = function (callback) {
                     minWidth: windowWidth, minHeight: windowHeight,
                     width: windowWidth, height: windowHeight, 
                     maxWidth: windowWidth, maxHeight: windowHeight
-                }
+                },
+                alwaysOnTop: true
             }, function(createdWindow) {
                 // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
                 createdWindow.contentWindow.setRawRx = function(channels) {
