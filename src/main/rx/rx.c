@@ -378,16 +378,13 @@ static uint16_t getRxfailValue(uint8_t channel)
     switch(channelFailsafeConfiguration->mode) {
         case RX_FAILSAFE_MODE_AUTO:
             switch (channel) {
-                case ROLL:
-                case PITCH:
-                case YAW:
-                    return rxConfig->midrc;
-
                 case THROTTLE:
                     if (feature(FEATURE_3D))
                         return rxConfig->midrc;
                     else
                         return rxConfig->rx_min_usec;
+                default:
+                    return rxConfig->midrc;
             }
             /* no break */
 
