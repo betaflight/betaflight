@@ -83,6 +83,7 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_10_HZ (1000000 / 10)
+#define DELAY_5_HZ (1000000 / 5)
 #define SKIP_RC_ON_SUSPEND_PERIOD 1500000           // 1.5 second period in usec (call frequency independent)
 #define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements (timing independent)
 
@@ -297,16 +298,18 @@ void updateRx(uint32_t currentTime)
         if (frameStatus & SERIAL_RX_FRAME_COMPLETE) {
             rxDataReceived = true;
             rxSignalReceived = (frameStatus & SERIAL_RX_FRAME_FAILSAFE) == 0;
+            needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
 #endif
 
     if (feature(FEATURE_RX_MSP)) {
         rxDataReceived = rxMspFrameComplete();
-    }
 
-    if (feature(FEATURE_RX_SERIAL | FEATURE_RX_MSP) && rxDataReceived) {
-        needRxSignalBefore = currentTime + DELAY_10_HZ;
+        if (rxDataReceived) {
+            rxSignalReceived = true;
+            needRxSignalBefore = currentTime + DELAY_5_HZ;
+        }
     }
 
     if (feature(FEATURE_RX_PPM)) {
