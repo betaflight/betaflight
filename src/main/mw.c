@@ -267,7 +267,7 @@ void annexCode(void)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-            updateCurrentMeter((ibatTimeSinceLastServiced / 1000), &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
         }
     }
 
