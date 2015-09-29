@@ -290,7 +290,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
+    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(ltmPortSharing);
     if (newTelemetryEnabledValue == ltmEnabled)
         return;
     if (newTelemetryEnabledValue)
