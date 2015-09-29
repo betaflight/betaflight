@@ -107,6 +107,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
+static bool isRXDataNew;
+
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
@@ -684,6 +686,41 @@ void processRx(void)
 
 }
 
+void filterRc(void){
+    static int16_t lastCommand[4] = { 0, 0, 0, 0 };
+    static int16_t deltaRC[4] = { 0, 0, 0, 0 };
+    static int16_t factor, rcInterpolationFactor;
+    static filterStatePt1_t filteredCycleTimeState;
+    uint16_t rxRefreshRate, filteredCycleTime;
+
+    // Set RC refresh rate for sampling and channels to filter
+   	initRxRefreshRate(&rxRefreshRate);
+
+    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1);
+    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+
+    if (isRXDataNew) {
+        for (int channel=0; channel < 4; channel++) {
+        	deltaRC[channel] = rcData[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+            lastCommand[channel] = rcData[channel];
+        }
+
+        isRXDataNew = false;
+        factor = rcInterpolationFactor - 1;
+    } else {
+        factor--;
+    }
+
+    // Interpolate steps of rcData
+    if (factor > 0) {
+        for (int channel=0; channel < 4; channel++) {
+            rcData[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+         }
+    } else {
+        factor = 0;
+    }
+}
+
 void loop(void)
 {
     static uint32_t loopTime;
@@ -695,6 +732,7 @@ void loop(void)
 
     if (shouldProcessRx(currentTime)) {
         processRx();
+        isRXDataNew = true;
 
 #ifdef BARO
         // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
@@ -747,6 +785,10 @@ void loop(void)
             for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         	    gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz);
             }
+        }
+
+        if (masterConfig.rxConfig.rcSmoothing) {
+            filterRc();
         }
 
         annexCode();
