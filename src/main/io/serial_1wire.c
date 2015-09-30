@@ -87,6 +87,11 @@ void usb1WireInitialize()
    for (volatile uint8_t i = 0; i < ESC_COUNT; i++) {
       gpio_set_mode(escHardware[i].gpio, (1U << escHardware[i].pinpos), Mode_IPU); //GPIO_Mode_IPU
    }
+#ifdef BEEPER
+   // fix for buzzer often starts beeping continuously when the ESCs are read
+   // switch beeper off until reboot
+   gpio_set_mode(BEEP_GPIO, BEEP_PIN, Mode_IN_FLOATING); //GPIO_Mode_IPU
+#endif
 }
 
 
