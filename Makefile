@@ -666,6 +666,11 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
+
+## all         : default task; compile C code, build firmware
+all: binary
+
+## clean       : clean up all temporary / machine-generated files
 clean:
 	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
@@ -676,11 +681,13 @@ flash_$(TARGET): $(TARGET_HEX)
 	echo -n 'R' >$(SERIAL_DEVICE)
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
+## flash       : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	st-flash --reset write $< 0x08000000
 
+## st-flash    : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
 binary: $(TARGET_BIN)
@@ -689,6 +696,7 @@ unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
+## unbrick     : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck    : run static analysis on C source code
@@ -698,7 +706,8 @@ cppcheck: $(CSOURCES)
 cppcheck-result.xml: $(CSOURCES)
 	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
-help:
+## help        : print this help message and exit
+help: Makefile
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""
@@ -707,6 +716,7 @@ help:
 	@echo ""
 	@echo "Valid TARGET values are: $(VALID_TARGETS)"
 	@echo ""
+	@sed -n 's/^## //p' $<
 
 ## test        : run the cleanflight test suite
 test:
