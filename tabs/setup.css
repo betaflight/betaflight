@@ -68,12 +68,23 @@
     border: 1px solid silver;
     background-color: white;
 }
-.tab-setup #interactive_block .heading {
+.tab-setup #interactive_block .attitude {
     float: right;
-    height: 15px;
+    margin: 10px 10px 0px 0px
+}
 
-    margin: 10px 10px 0 0;
-    font-weight: bold;
+.tab-setup #interactive_block .attitude dt {
+    float: left;
+    width: 64px;
+    font-weight: 700;
+    text-align: right
+}
+
+.tab-setup #interactive_block .attitude dd {
+    display: block;
+    margin-left: 64px;
+    width: 64px;
+    text-align: right
 }
 .tab-setup #interactive_block a.reset {
     position: absolute;
