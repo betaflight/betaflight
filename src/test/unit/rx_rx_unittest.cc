@@ -25,6 +25,8 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    uint32_t rcModeActivationMask;
+
     void rxInit(rxConfig_t *rxConfig);
     void rxResetFlightChannelStatus(void);
     bool rxHaveValidFlightChannels(void);
@@ -34,6 +36,8 @@ extern "C" {
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
+#define DE_ACTIVATE_ALL_BOXES   0
 
 typedef struct testData_s {
     bool isPPMDataBeingReceived;
@@ -46,6 +50,7 @@ TEST(RxTest, TestValidFlightChannels)
 {
     // given
     memset(&testData, 0, sizeof(testData));
+    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
 
     // and
     rxConfig_t rxConfig;
@@ -131,8 +136,14 @@ TEST(RxTest, TestInvalidFlightChannels)
 // STUBS
 
 extern "C" {
-    void failsafeOnRxCycleStarted() {}
+    void failsafeOnValidDataFailed() {}
     void failsafeOnValidDataReceived() {}
+
+    void failsafeOnRxSuspend(uint32_t ) {}
+    void failsafeOnRxResume(void) {}
+
+    uint32_t micros(void) { return 0; }
+    uint32_t millis(void) { return 0; }
 
     bool feature(uint32_t mask) {
         UNUSED(mask);
@@ -154,6 +165,4 @@ extern "C" {
     void rxMspInit(rxConfig_t *, rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 
     void rxPwmInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
-
-
 }

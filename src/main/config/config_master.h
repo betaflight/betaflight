@@ -53,6 +53,7 @@ typedef struct master_t {
     gyroConfig_t gyroConfig;
 
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    uint8_t baro_hardware;                  // Barometer hardware to use
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     flightDynamicsTrims_t accZero;

@@ -122,6 +122,11 @@ remaining area of flash ram.
 The OpenPilot bootloader code also allows the remaining section of flash to be reconfigured and re-flashed by the
 OpenPilot Ground Station (GCS) via USB without requiring a USB to uart adapter.
 
+The following features are not available:
+ * Autotune
+ * Display
+ * Sonar
+
 # Restoring OpenPilot bootloader
 
 If you have a JLink debugger, you can use JLinkExe to flash the open pilot bootloader.

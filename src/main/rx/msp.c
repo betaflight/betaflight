@@ -31,16 +31,26 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
 
 static uint16_t rxMspReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t chan)
 {
     UNUSED(rxRuntimeConfigPtr);
-    return rcData[chan];
+    return mspFrame[chan];
 }
 
-void rxMspFrameRecieve(void)
+void rxMspFrameReceive(uint16_t *frame, int channelCount)
 {
+    for (int i = 0; i < channelCount; i++) {
+        mspFrame[i] = frame[i];
+    }
+
+    // Any channels not provided will be reset to zero
+    for (int i = channelCount; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+        mspFrame[i] = 0;
+    }
+
     rxMspFrameDone = true;
 }
 
@@ -57,7 +67,7 @@ bool rxMspFrameComplete(void)
 void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxConfig);
-    rxRuntimeConfig->channelCount = 8; // Limited to 8 channels due to MSP_SET_RAW_RC command.
+    rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
     if (callback)
         *callback = rxMspReadRawRC;
 }

@@ -31,7 +31,11 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+#define DE_ACTIVATE_ALL_BOXES   0
+
 extern "C" {
+uint32_t rcModeActivationMask;
+
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range);
 }
 
@@ -39,6 +43,8 @@ extern uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfig
 
 TEST(RxChannelRangeTest, TestRxChannelRanges)
 {
+    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
+
     // No signal, special condition
     EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1000, 2000)), 0);
     EXPECT_EQ(applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1300, 1700)), 0);
@@ -91,6 +97,12 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
 // stubs
 extern "C" {
 
+void failsafeOnRxSuspend(uint32_t ) {}
+void failsafeOnRxResume(void) {}
+
+uint32_t micros(void) { return 0; }
+uint32_t millis(void) { return 0; }
+
 void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxRuntimeConfig);
@@ -137,29 +149,13 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
-{
-    UNUSED(modeActivationConditions);
-}
-
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig)
-{
-    UNUSED(index);
-    UNUSED(auxChannelIndex);
-    UNUSED(adjustmentConfig);
-}
-
-void feature(uint32_t)
-{
+bool feature(uint32_t) {
+    return false;
 }
 
 bool rxMspFrameComplete(void)
 {
     return false;
-}
-
-void failsafeReset(void)
-{
 }
 
 bool isPPMDataBeingReceived(void)
@@ -176,22 +172,12 @@ void resetPPMDataReceivedState(void)
 {
 }
 
-void failsafeOnRxCycle(void)
-{
-}
-
 void failsafeOnValidDataReceived(void)
 {
 }
 
-void failsafeOnRxCycleStarted(void)
+void failsafeOnValidDataFailed(void)
 {
-}
-
-void failsafeCheckPulse(uint8_t channel, uint16_t pulseDuration)
-{
-    UNUSED(channel);
-    UNUSED(pulseDuration);
 }
 
 }

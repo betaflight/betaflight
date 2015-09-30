@@ -128,7 +128,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 104;
+static const uint8_t EEPROM_CONF_VERSION = 105;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -348,6 +348,11 @@ static void setControlRateProfile(uint8_t profileIndex)
     currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
 }
 
+uint16_t getCurrentMinthrottle(void)
+{
+    return masterConfig.escAndServoConfig.minthrottle;
+}
+
 // Default settings
 static void resetConf(void)
 {
@@ -392,6 +397,7 @@ static void resetConf(void)
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+    masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
@@ -407,8 +413,8 @@ static void resetConf(void)
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = RX_FAILSAFE_MODE_AUTO;
-        channelFailsafeConfiguration->step = CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
+        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
     }
 
     masterConfig.rxConfig.rssi_channel = 0;
@@ -483,6 +489,8 @@ static void resetConf(void)
     masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
     masterConfig.failsafeConfig.failsafe_off_delay = 200;         // 20sec
     masterConfig.failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
+    masterConfig.failsafeConfig.failsafe_kill_switch = 0;         // default failsafe switch action is identical to rc link loss
+    masterConfig.failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
 
 #ifdef USE_SERVOS
     // servos
@@ -796,6 +804,11 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#ifdef STM32F303xC
+    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+    masterConfig.telemetryConfig.telemetry_inversion = 1;
+#endif
+
     /*
      * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
      * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
@@ -827,7 +840,9 @@ void readEEPROM(void)
 {
     // Sanity check
     if (!isEEPROMContentValid())
-        failureMode(10);
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+
+    suspendRxSignal();
 
     // Read flash
     memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
@@ -844,6 +859,8 @@ void readEEPROM(void)
 
     validateAndFixConfig();
     activateConfig();
+
+    resumeRxSignal();
 }
 
 void readEEPROMAndNotify(void)
@@ -861,6 +878,8 @@ void writeEEPROM(void)
     FLASH_Status status = 0;
     uint32_t wordOffset;
     int8_t attemptsRemaining = 3;
+
+    suspendRxSignal();
 
     // prepare checksum/version constants
     masterConfig.version = EEPROM_CONF_VERSION;
@@ -901,8 +920,10 @@ void writeEEPROM(void)
 
     // Flash write failed - just die now
     if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
-        failureMode(10);
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
     }
+
+    resumeRxSignal();
 }
 
 void ensureEEPROMContainsValidData(void)

@@ -298,6 +298,26 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
 {
     // given
+    controlRateConfig_t controlRateConfig = {
+            .rcRate8 = 90,
+            .rcExpo8 = 0,
+            .thrMid8 = 0,
+            .thrExpo8 = 0,
+            .rates = {0,0,0},
+            .dynThrPID = 0,
+            .rcYawExpo8 = 0,
+            .tpa_breakpoint = 0
+    };
+
+    // and
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
+
+    // and
+    adjustmentStateMask = 0;
+    memset(&adjustmentStates, 0, sizeof(adjustmentStates));
     configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
@@ -673,9 +693,9 @@ void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
+bool feature(uint32_t) { return false;}
+bool sensors(uint32_t) { return false;}
 void mwArm(void) {}
-void feature(uint32_t) {}
-void sensors(uint32_t) {}
 void mwDisarm(void) {}
 void displayDisablePageCycling() {}
 void displayEnablePageCycling() {}
