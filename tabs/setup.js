@@ -47,8 +47,13 @@ TABS.setup.initialize = function (callback) {
         // initialize 3D
         self.initialize3D();
 
+		// set roll in interactive block
+        $('span.roll').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
+		// set pitch in interactive block
+        $('span.pitch').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
         // set heading in interactive block
-        $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
+        $('span.heading').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
+
 
         // check if we have magnetometer
         if (!bit_check(CONFIG.activeSensors, 2)) {
@@ -151,7 +156,9 @@ TABS.setup.initialize = function (callback) {
             gpsSats_e = $('.gpsSats'),
             gpsLat_e = $('.gpsLat'),
             gpsLon_e = $('.gpsLon'),
-            heading_e = $('span.heading');
+            roll_e = $('dd.roll'),
+            pitch_e = $('dd.pitch'),
+            heading_e = $('dd.heading');
 
         function get_slow_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
@@ -175,7 +182,9 @@ TABS.setup.initialize = function (callback) {
 
         function get_fast_data() {
             MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
-                heading_e.text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+	            roll_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[0]]));
+	            pitch_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[1]]));
+                heading_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[2]]));
                 self.render3D();
                 self.updateInstruments();
             });
