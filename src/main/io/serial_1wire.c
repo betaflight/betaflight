@@ -94,7 +94,7 @@ void usb1WireInitialize()
 static volatile uint32_t in_cr_mask, out_cr_mask;
 
 static __IO uint32_t *cr;
-static void gpio_prep_vars(uint16_t escIndex)
+static void gpio_prep_vars(uint32_t escIndex)
 {
   GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
   uint32_t pinpos = escHardware[escIndex].pinpos;
@@ -115,7 +115,7 @@ static void gpio_prep_vars(uint16_t escIndex)
   out_cr_mask |= outmode << shift;
 }
 
-static void gpioSetOne(uint16_t escIndex, GPIO_Mode mode) {
+static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
   // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
   if (mode == Mode_IPU) {
     *cr = in_cr_mask;
@@ -172,7 +172,7 @@ static void ledInitDebug(void)
 
 // This method translates 2 wires (a tx and rx line) to 1 wire, by letting the
 // RX line control when data should be read or written from the single line
-void usb1WirePassthrough(int8_t escIndex)
+void usb1WirePassthrough(uint8_t escIndex)
 {
 #ifdef STM32F3DISCOVERY
   ledInitDebug();
@@ -199,6 +199,7 @@ void usb1WirePassthrough(int8_t escIndex)
   TX_SET_HIGH;
   // Wait for programmer to go from 1 -> 0 indicating incoming data
   while(RX_HI);
+
   while(1) {
     // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
     // Setup escIndex pin to send data, pullup is the default
@@ -213,20 +214,10 @@ void usb1WirePassthrough(int8_t escIndex)
     // Wait for programmer to go 0 -> 1
     uint32_t ct=3333;
     while(!RX_HI) {
-      ct--;
-      // check for low time ->ct=3333; //~600uS //byte Lo time for 0 @ 19200 baud -> 8*52 uS => 416uS
-      // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more)
-      if (ct==0) {
-        // Set ESC line high again //restore Input with pull up
-        ESC_INPUT(escIndex);
-        // Programmer TX
-        gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-        // Enable Hardware UART
-        enable_hardware_uart;
-        // Wait a bit more (todo check if necessary...))
-        delay(50);
-        return;
-      }
+      if (ct > 0) ct--; //count down until 0;
+      // check for low time ->ct=3333 ~600uS //byte LO time for 0 @ 19200 baud -> 9*52 uS => 468.75uS
+      // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more) > 0 =  937.5uS LO
+      // BLHeliSuite will use 4800 baud
     }
     // Programmer is high, end of bit
     // At first Echo to the esc, which helps to charge input capacities at ESC
@@ -234,6 +225,7 @@ void usb1WirePassthrough(int8_t escIndex)
     // Listen to the escIndex, input mode, pullup resistor is on
     gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
     TX_LED_OFF;
+    if (ct==0) break; //we reached zero
     // Listen to the escIndex while there is no data from the programmer
     while (RX_HI) {
       if (ESC_HI(escIndex)) {
@@ -246,6 +238,18 @@ void usb1WirePassthrough(int8_t escIndex)
       }
     }
   }
+
+  // we get here in case ct reached zero
+  TX_SET_HIGH;
+  RX_LED_OFF;
+  // Programmer TX
+  gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
+  // Enable Hardware UART
+  enable_hardware_uart;
+  // Wait a bit more to let App read the 0 byte and switch baudrate
+  // 2ms will most likely do the job, but give some grace time
+  delay(10);
+  return;
 }
 
 #endif
