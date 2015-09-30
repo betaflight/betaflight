@@ -28,5 +28,5 @@ typedef struct {
 } escHardware_t;
 
 void usb1WireInitialize();
-void usb1WirePassthrough(int8_t escIndex);
+void usb1WirePassthrough(uint8_t escIndex);
 #endif
