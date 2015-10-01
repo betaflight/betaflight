@@ -96,7 +96,7 @@ enum {
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
-#define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 90 // Prevent RX processing before expected loop trigger
+#define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 80 // Prevent RX processing before expected loop trigger
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -730,6 +730,7 @@ void filterRc(void){
 void loop(void)
 {
     static uint32_t loopTime;
+    static bool haveProcessedRxOnceBeforeLoop = false;
 
 #if defined(BARO) || defined(SONAR)
     static bool haveProcessedAnnexCodeOnce = false;
@@ -737,9 +738,10 @@ void loop(void)
 
     updateRx(currentTime);
 
-    if (shouldProcessRx(currentTime) && !((int32_t)(currentTime - (loopTime - PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER)) >= 0)) {
+   if (shouldProcessRx(currentTime) && (!((int32_t)(currentTime - (loopTime - PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER)) >= 0) || (haveProcessedRxOnceBeforeLoop))) {
         processRx();
         isRXDataNew = true;
+        haveProcessedRxOnceBeforeLoop = true;
 
 #ifdef BARO
         // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
@@ -777,6 +779,8 @@ void loop(void)
     if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
 
         loopTime = currentTime + targetLooptime;
+
+        haveProcessedRxOnceBeforeLoop = false;
 
         // Determine current flight mode. When no acc needed in pid calculations we should only read gyro to reduce latency
         if (!flightModeFlags) {
