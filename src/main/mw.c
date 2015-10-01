@@ -727,14 +727,6 @@ void filterRc(void){
     }
 }
 
-bool imuUpdateAccDelayed(void) {
-    if (flightModeFlags) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
 void loop(void)
 {
     static uint32_t loopTime;
@@ -787,7 +779,7 @@ void loop(void)
         loopTime = currentTime + targetLooptime;
 
         // Determine current flight mode. When no acc needed in pid calculations we should only read gyro to reduce latency
-        if (imuUpdateAccDelayed()) {
+        if (!flightModeFlags) {
             imuUpdate(&currentProfile->accelerometerTrims, ONLY_GYRO);  // When no level modes active read only gyro
         } else {
             imuUpdate(&currentProfile->accelerometerTrims, ACC_AND_GYRO);  // When level modes active read gyro and acc
@@ -887,7 +879,7 @@ void loop(void)
         }
 
         // When no level modes active read acc after motor update
-        if (imuUpdateAccDelayed()) {
+        if (!flightModeFlags) {
             imuUpdate(&currentProfile->accelerometerTrims, ONLY_ACC);
         }
 
