@@ -190,6 +190,13 @@ void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motor
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
 
+void fastPWMMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t idlePulse)
+{
+    uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
+    motors[motorIndex] = pwmOutConfig(timerHardware, ONESHOT125_TIMER_MHZ, hz / 4000, idlePulse);
+    motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
+}
+
 void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex)
 {
     motors[motorIndex] = pwmOutConfig(timerHardware, ONESHOT125_TIMER_MHZ, 0xFFFF, 0);
