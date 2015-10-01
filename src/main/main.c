@@ -256,12 +256,12 @@ void init(void)
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.useFastPWM = feature(FEATURE_FASTPWM);
+    pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
+    if (pwm_params.motorPwmRate > 500 && !masterConfig.use_fast_pwm)
         pwm_params.idlePulse = 0; // brushed motors
 
     pwmRxInit(masterConfig.inputFilteringMode);

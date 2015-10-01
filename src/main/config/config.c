@@ -128,7 +128,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 108;
+static const uint8_t EEPROM_CONF_VERSION = 109;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -442,6 +442,7 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     masterConfig.servo_pwm_rate = 50;
+    masterConfig.use_fast_pwm = 0;
 
 #ifdef GPS
     // gps/nav stuff
@@ -745,14 +746,6 @@ void validateAndFixConfig(void)
     if (featureConfigured(FEATURE_RX_SERIAL)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_PPM);
-    }
-
-    if (featureConfigured(FEATURE_ONESHOT125)) {
-        featureClear(FEATURE_FASTPWM);
-    }
-
-    if (featureConfigured(FEATURE_FASTPWM)) {
-        featureClear(FEATURE_ONESHOT125);
     }
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
