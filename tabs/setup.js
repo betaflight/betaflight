@@ -216,13 +216,15 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
         useWebGlRenderer = true;
     } else {
-
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
+    // initialize render size for current canvas size
+    renderer.setSize(wrapper.width(), wrapper.height());
 
-    // modelWrapper adds an extra axis of rotation to avoid gimbal lock with the euler angles
+
+//    // modelWrapper adds an extra axis of rotation to avoid gimbal lock with the euler angles
     modelWrapper = new THREE.Object3D()
-
+//
     // load the model including materials
     if (useWebGlRenderer) {
         model_file = mixerList[CONFIG.multiType - 1].model;
@@ -237,29 +239,27 @@ TABS.setup.initialize3D = function (compatibility) {
         useLegacyCustomModel = true;
     }
 
+    // setup scene
+    scene = new THREE.Scene();
+
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
-        model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        var modelMaterial = new THREE.MeshFaceMaterial(materials);
+        model = new THREE.Mesh(geometry, modelMaterial);
 
         model.scale.set(15, 15, 15);
 
         modelWrapper.add(model);
         scene.add(modelWrapper);
     });
-
+    
     // stationary camera
     camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
-
-    // setup scene
-    scene = new THREE.Scene();
 
     // some light
     light = new THREE.AmbientLight(0x404040);
     light2 = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 1.5);
     light2.position.set(0, 1, 0);
-
-    // initialize render size for current canvas size
-    renderer.setSize(wrapper.width(), wrapper.height());
 
     // move camera away from the model
     camera.position.z = 125;
