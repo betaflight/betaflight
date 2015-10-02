@@ -28,7 +28,7 @@
         "visible": true,
         "blending": "NormalBlending",
         "DbgIndex": 0,
-        "opacity": 0.0
+        "opacity": 1.0
     },{
         "DbgColor": 15597568,
         "specularCoef": 50,
@@ -45,7 +45,7 @@
         "visible": true,
         "blending": "NormalBlending",
         "DbgIndex": 1,
-        "opacity": 0.0
+        "opacity": 1.0
     },{
         "DbgColor": 60928,
         "specularCoef": 50,
@@ -62,7 +62,7 @@
         "visible": true,
         "blending": "NormalBlending",
         "DbgIndex": 2,
-        "opacity": 0.0
+        "opacity": 1.0
     },{
         "DbgColor": 238,
         "specularCoef": 50,
@@ -79,7 +79,7 @@
         "visible": true,
         "blending": "NormalBlending",
         "DbgIndex": 3,
-        "opacity": 0.0
+        "opacity": 1.0
     },{
         "DbgColor": 15658496,
         "specularCoef": 50,
@@ -96,6 +96,6 @@
         "visible": true,
         "blending": "NormalBlending",
         "DbgIndex": 4,
-        "opacity": 0.0
+        "opacity": 1.0
     }]
 }

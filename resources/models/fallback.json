@@ -28,7 +28,7 @@
         "DbgName": "Material.003",
         "colorEmissive": [0.0,0.0,0.0],
         "mapDiffuse": "fallback.png",
-        "opacity": 0.0,
+        "opacity": 1.0,
         "specularCoef": 50,
         "shading": "phong",
         "mapDiffuseWrap": ["RepeatWrapping","RepeatWrapping"],
