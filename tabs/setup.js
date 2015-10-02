@@ -220,7 +220,7 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
 
-    // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
+    // modelWrapper adds an extra axis of rotation to avoid gimbal lock with the euler angles
     modelWrapper = new THREE.Object3D()
 
     // load the model including materials
@@ -247,7 +247,7 @@ TABS.setup.initialize3D = function (compatibility) {
         scene.add(modelWrapper);
     });
 
-    // stacionary camera
+    // stationary camera
     camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
 
     // setup scene
