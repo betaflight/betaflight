@@ -105,5 +105,5 @@ Some advanced configurations and features are documented in the following pages,
 * [Spektrum Bind](Spektrum bind.md)
 * [Telemetry](Telemetry.md)
 * [Using a Display](Display.md)
-* [Using a LED strip](Ledstrip.md)
+* [Using a LED strip](LedStrip.md)
 * [Migrating from baseflight](Migrating from baseflight.md)
