@@ -169,9 +169,9 @@ void updateSonarAltHoldState(void)
     }
 }
 
-bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
+bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude)
 {
-    return ABS(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && ABS(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+    return ABS(attitude->values.roll) < DEGREES_80_IN_DECIDEGREES && ABS(attitude->values.pitch) < DEGREES_80_IN_DECIDEGREES;
 }
 
 int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, float accZ_old)
@@ -180,7 +180,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     int32_t error;
     int32_t setVel;
 
-    if (!isThrustFacingDownwards(&inclination)) {
+    if (!isThrustFacingDownwards(&attitude)) {
         return result;
     }
 
@@ -248,7 +248,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
 #ifdef SONAR
     sonarAlt = sonarRead();
-    sonarAlt = sonarCalculateAltitude(sonarAlt, inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees);
+    sonarAlt = sonarCalculateAltitude(sonarAlt, attitude.values.roll, attitude.values.pitch);
 #endif
 
     if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {

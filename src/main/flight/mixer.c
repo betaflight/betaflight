@@ -684,8 +684,8 @@ STATIC_UNIT_TESTED void servoMixer(void)
         }
     }
 
-    input[INPUT_GIMBAL_PITCH] = scaleRange(inclination.values.pitchDeciDegrees, -1800, 1800, -500, +500);
-    input[INPUT_GIMBAL_ROLL] = scaleRange(inclination.values.rollDeciDegrees, -1800, 1800, -500, +500);
+    input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
+    input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
 
     input[INPUT_STABILIZED_THROTTLE] = motor[0] - 1000 - 500;  // Since it derives from rcCommand or mincommand and must be [-500:+500]
 
@@ -841,8 +841,8 @@ void mixTable(void)
 
         /*
         case MIXER_GIMBAL:
-			servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-            servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+			servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+            servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
             break;
         */
 
@@ -858,11 +858,11 @@ void mixTable(void)
 
         if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
             if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
-                servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
-                servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * inclination.values.pitchDeciDegrees / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees / 50;
+                servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
+                servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
             } else {
-                servo[SERVO_GIMBAL_PITCH] += (int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * inclination.values.pitchDeciDegrees / 50;
-                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * inclination.values.rollDeciDegrees  / 50;
+                servo[SERVO_GIMBAL_PITCH] += (int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch / 50;
+                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll  / 50;
             }
         }
     }

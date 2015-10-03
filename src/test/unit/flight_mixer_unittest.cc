@@ -376,7 +376,7 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 // STUBS
 
 extern "C" {
-rollAndPitchInclination_t inclination;
+attitudeEulerAngles_t attitude;
 rxRuntimeConfig_t rxRuntimeConfig;
 
 int16_t axisPID[XYZ_AXIS_COUNT];
