@@ -380,7 +380,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_HEADING    :
-                smartPortSendPackage(id, heading * 100); // given in deg, requested in 10000 = 100 deg
+                smartPortSendPackage(id, attitude.values.yaw * 10); // given in 10*deg, requested in 10000 = 100 deg
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :

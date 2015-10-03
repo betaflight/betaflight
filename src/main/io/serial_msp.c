@@ -964,9 +964,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ATTITUDE:
         headSerialReply(6);
-        for (i = 0; i < 2; i++)
-            serialize16(inclination.raw[i]);
-        serialize16(heading);
+        serialize16(attitude.values.roll);
+        serialize16(attitude.values.pitch);
+        serialize16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         break;
     case MSP_ALTITUDE:
         headSerialReply(6);
