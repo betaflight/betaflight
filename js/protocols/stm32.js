@@ -100,14 +100,23 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options, callback)
                 serial.send(bufferOut, function () {
                     serial.disconnect(function (result) {
                         if (result) {
-                            serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
-                                if (openInfo) {
-                                    self.initialize();
-                                } else {
+                            // delay to allow board to boot in bootloader mode
+                            // required to detect if a DFU device appears
+                            setTimeout(function() {
+                                if($("div#port-picker #port [value='DFU']").length) {
                                     GUI.connect_lock = false;
-                                    GUI.log('<span style="color: red">Failed</span> to open serial port');
+                                    STM32DFU.connect(usbDevices.STM32DFU, hex);
+                                } else {
+                                    serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+                                        if (openInfo) {
+                                            self.initialize();
+                                        } else {
+                                            GUI.connect_lock = false;
+                                            GUI.log('<span style="color: red">Failed</span> to open serial port');
+                                        }
+                                    });
                                 }
-                            });
+                            }, 1000);
                         } else {
                             GUI.connect_lock = false;
                         }
