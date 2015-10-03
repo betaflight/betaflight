@@ -296,9 +296,6 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
             var bytes_flashed_total = 0; // used for progress bar
             var wBlockNum = 2; // required by DFU
 
-            // start
-            self.loadAddress(address, write);
-
             var write = function () {
                 if (bytes_flashed < self.hex.data[flashing_block].bytes) {
                     var bytes_to_write = ((bytes_flashed + 2048) <= self.hex.data[flashing_block].bytes) ? 2048 : (self.hex.data[flashing_block].bytes - bytes_flashed);
@@ -353,6 +350,10 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                     }
                 }
             }
+
+            // start
+            self.loadAddress(address, write);
+
             break;
         case 5:
             // verify

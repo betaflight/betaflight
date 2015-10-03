@@ -205,7 +205,7 @@
         "message": "Optional USB Permissions"
     },
     "default_optional_permissions_text": {
-        "message": "Due to addition of <strong>Naze32PRO</strong> to the supported hardware family, Configurator <strong style=\"color: red\">requires</strong> USB access to allow firmware flashing via DFU"
+        "message": "To allow flashing some newer flight controllers, Configurator <strong style=\"color: red\">requires</strong> USB access"
     },
     "default_request_optional_permissions": {
         "message": "Request Optional Permissions"

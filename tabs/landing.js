@@ -10,7 +10,7 @@ TABS.landing.initialize = function (callback) {
     }
 
     $('#content').load("./tabs/landing.html", function () {
-        //check_usb_permissions(); // temporary enabled in dev branch, should be commented out untill DFU support goes live
+        check_usb_permissions(); // check for permissions require for USB DFU support
 
         // translate to user-selected language
         localize();
