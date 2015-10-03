@@ -464,8 +464,6 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                 });
             }
 
-            // start
-            clear_before_leave();
             break;
         case 99:
             // cleanup
