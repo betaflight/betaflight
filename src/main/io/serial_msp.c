@@ -93,6 +93,7 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
+extern uint32_t targetLooptime;
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -225,6 +226,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
 #define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
 #define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
+
+#define MSP_LOOP_TIME                   73 //out message         Returns FC cycle time i.e looptime parameter
+#define MSP_SET_LOOP_TIME               74 //in message          Sets FC cycle time i.e looptime parameter
 
 #define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
 #define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
@@ -927,6 +931,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.auto_disarm_delay); 
         serialize8(masterConfig.disarm_kill_switch);
         break;
+    case MSP_LOOP_TIME:
+        headSerialReply(2);
+        serialize16((uint16_t)targetLooptime);
+        break;
     case MSP_RC_TUNING:
         headSerialReply(11);
         serialize8(currentControlRateProfile->rcRate8);
@@ -1347,6 +1355,8 @@ static bool processInCommand(void)
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
         masterConfig.disarm_kill_switch = read8();
+        break;
+    case MSP_SET_LOOP_TIME:
         break;
     case MSP_SET_PID_CONTROLLER:
         currentProfile->pidProfile.pidController = read8();
