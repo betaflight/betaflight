@@ -139,7 +139,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->pidController = 0;
+    pidProfile->pidController = 1;
 
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
