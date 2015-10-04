@@ -206,11 +206,50 @@ smix reverse 5 2 r
 
 ```
 
-### Example 4: Custom Airplane with Differential Thrust
-Here is an example of a custom twin engine plan with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
+### Example 4: Custom Airplane for 6 Pinout Boards like [Afromini Amaze rev3 (Mini Naze32)](http://abusemark.com/store/index.php?main_page=product_info&cPath=1&products_id=45)
+Here is an example of a custom single engine plane.
+Servo control has been moved from pins 3,4,5,6 to 2,3,4,5 to acomidate only 6 pinouts.
+
+| Pins | Outputs          |
+|------|------------------|
+| 1    | Main Motor       |
+| 2    | [EMPTY]          |
+| 3    | Roll / Aileron   |
+| 4    | Roll / Aileron   |
+| 5    | Yaw / Rudder     |
+| 6    | Pitch / Elevator |
+
+```
+mixer CUSTOMAIRPLANE
+mmix reset
+mmix 0 1.0 0.0 0.0 0.0  # Engine
+
+smix reset
+# Rule	Servo	Source	Rate	Speed	Min	Max	Box
+smix 0 2 0 100 0 0 100 0  # Roll / Aileron
+smix 1 3 0 100 0 0 100 0  # Roll / Aileron
+smix 3 4 2 100 0 0 100 0  # Yaw / Rudder
+smix 2 5 1 100 0 0 100 0  # Pitch / Elevator
+
+```
+
+
+### Example 5: Custom Airplane with Differential Thrust
+Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
 Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
 Note: You can look at the Motors tab in [Cleanflight Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
+
+| Pins | Outputs          |
+|------|------------------|
+| 1    | Left Engine      |
+| 2    | Right Engine     |
+| 3    | [EMPTY]          |
+| 4    | Roll / Aileron   |
+| 5    | Roll / Aileron   |
+| 6    | Yaw / Rudder     |
+| 7    | Pitch / Elevator |
+| 8    | [EMPTY]          |
 
 ```
 mixer CUSTOMAIRPLANE
