@@ -120,7 +120,7 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 2  | Stabilised YAW |
 | 3  | Stabilised THROTTLE |
 | 4  | RC ROLL |
-| 5  | RC ITCH |
+| 5  | RC PITCH |
 | 6  | RC YAW |
 | 7  | RC THROTTLE |
 | 8  | RC AUX 1 |
@@ -203,5 +203,26 @@ profile 1
 smix reverse 5 2 r
 profile 2
 smix reverse 5 2 r
+
+```
+
+### Example 4: Custom Airplane with Differential Thrust
+Here is an example of a custom twin engine plan with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
+Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
+Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
+Note: You can look at the Motors tab in [Cleanflight Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
+
+```
+mixer CUSTOMAIRPLANE
+mmix reset
+mmix 0 1.0 0.0 0.0 0.3  # Left Engine
+mmix 1 1.0 0.0 0.0 -0.3  # Right Engine
+
+smix reset
+# Rule	Servo	Source	Rate	Speed	Min	Max	Box
+smix 0 3 0 100 0 0 100 0  # Roll / Aileron
+smix 1 4 0 100 0 0 100 0  # Roll / Aileron
+smix 3 5 2 100 0 0 100 0  # Yaw / Rudder
+smix 2 6 1 100 0 0 100 0  # Pitch / Elevator
 
 ```
