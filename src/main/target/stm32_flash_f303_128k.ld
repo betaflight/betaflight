@@ -9,7 +9,7 @@
 *****************************************************************************
 */
 
-/* Specify the memory areas */
+/* Specify the memory areas. */
 MEMORY
 {
   FLASH  (rx)     : ORIGIN = 0x08000000, LENGTH = 126K /* last 2kb used for config storage */

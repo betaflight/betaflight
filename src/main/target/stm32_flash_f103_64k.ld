@@ -9,7 +9,7 @@
 *****************************************************************************
 */
 
-/* Specify the memory areas. Flash is limited for last 2K for configuration storage */
+/* Specify the memory areas. */
 MEMORY
 {
   FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 62K /* last 2kb used for config storage */

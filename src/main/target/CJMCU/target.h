@@ -40,8 +40,8 @@
 #define GYRO
 #define USE_GYRO_MPU6050
 
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 
@@ -75,4 +75,5 @@
 #endif
 
 //#undef USE_CLI
+#define GTUNE
 //#define BLACKBOX

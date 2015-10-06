@@ -112,6 +112,7 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define SONAR
+#define GTUNE
 #define USE_SERVOS
 #define USE_CLI
 

@@ -156,11 +156,12 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
-#define GPS
 #define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
 #define DISPLAY
+#define GPS
+#define GTUNE
+#define SERIAL_RX
+#define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
 
