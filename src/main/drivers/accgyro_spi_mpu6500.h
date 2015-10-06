@@ -15,22 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MPU6500_RA_WHOAMI                   (0x75)
-#define MPU6500_RA_ACCEL_XOUT_H             (0x3B)
-#define MPU6500_RA_GYRO_XOUT_H              (0x43)
-#define MPU6500_RA_BANK_SEL                 (0x6D)
-#define MPU6500_RA_MEM_RW                   (0x6F)
-#define MPU6500_RA_GYRO_CFG                 (0x1B)
-#define MPU6500_RA_PWR_MGMT_1               (0x6B)
-#define MPU6500_RA_ACCEL_CFG                (0x1C)
-#define MPU6500_RA_LPF                      (0x1A)
-#define MPU6500_RA_RATE_DIV                 (0x19)
-
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-
-#define MPU6500_BIT_RESET                   (0x80)
-
 #pragma once
 
+bool mpu6500SpiDetect(void);
+
 bool mpu6500SpiAccDetect(acc_t *acc);
-bool mpu6500SpiGyroDetect(gyro_t *gyro, uint16_t lpf);
+bool mpu6500SpiGyroDetect(gyro_t *gyro);
+
+bool mpu6500WriteRegister(uint8_t reg, uint8_t data);
+bool mpu6500ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);

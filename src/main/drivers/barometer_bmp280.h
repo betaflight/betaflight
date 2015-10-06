@@ -17,4 +17,5 @@
 
 #pragma once
 
-bool l3gd20Detect(gyro_t *gyro);
+bool bmp280Detect(baro_t *baro);
+

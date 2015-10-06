@@ -86,8 +86,10 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
 }
 
-void l3gd20GyroInit(void)
+void l3gd20GyroInit(uint16_t lpf)
 {
+    UNUSED(lpf); // FIXME use it!
+
     l3gd20SpiInit(L3GD20_SPI);
 
     GPIO_ResetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
@@ -150,10 +152,8 @@ static bool l3gd20GyroRead(int16_t *gyroADC)
 // Page 9 in datasheet, So - Sensitivity, Full Scale = 2000, 70 mdps/digit
 #define L3GD20_GYRO_SCALE_FACTOR  0.07f
 
-bool l3gd20Detect(gyro_t *gyro, uint16_t lpf)
+bool l3gd20Detect(gyro_t *gyro)
 {
-    UNUSED(lpf);
-
     gyro->init = l3gd20GyroInit;
     gyro->read = l3gd20GyroRead;
 
