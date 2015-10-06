@@ -107,7 +107,7 @@ This controller has code that attempts to compensate for variations in the loopt
 don't have to be retuned when the looptime setting changes. 
 
 There were initially some problems with horizon mode, and sluggishness in acro mode, that were recently fixed by
-nebbian in v1.6.0. The autotune feature does not work on this controller, so don't try to autotune it.
+nebbian in v1.6.0.
 
 It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 

@@ -112,13 +112,11 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define SONAR
-#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 
 #if defined(OPBL)
 // disabled some features for OPBL build due to code size.
-#undef AUTOTUNE
 #undef DISPLAY
 #undef SONAR
 #define SKIP_CLI_COMMAND_HELP

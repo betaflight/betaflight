@@ -41,7 +41,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
-#include "flight/autotune.h"
 #include "flight/filter.h"
 
 #include "config/runtime_config.h"
@@ -96,13 +95,6 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t PTermState[3], DTermState[3];
 
-#ifdef AUTOTUNE
-bool shouldAutotune(void)
-{
-    return ARMING_FLAG(ARMED) && FLIGHT_MODE(AUTOTUNE_MODE);
-}
-#endif
-
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
@@ -156,12 +148,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #else
             errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
-            }
 #endif
 
             if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -257,12 +243,6 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
 #endif
 
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
@@ -367,12 +347,6 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
                 +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
-#endif
-
             errorAngleI[axis]  = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
 
             PTermACC = ((int32_t)errorAngle * pidProfile->P8[PIDLEVEL]) >> 7;   // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
@@ -471,12 +445,6 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
 #endif
 
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
@@ -597,11 +565,6 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             error = constrain(2.0f * rcCommandAxis, -((int) max_angle_inclination), +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                error = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(error)));
-            }
-#endif
             PTermACC = error * (float)pidProfile->P8[PIDLEVEL] * 0.008f;
             float limitf = (float)pidProfile->D8[PIDLEVEL] * 5.0f;
             PTermACC = constrain(PTermACC, -limitf, +limitf);
@@ -752,12 +715,6 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
 #endif
 
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID

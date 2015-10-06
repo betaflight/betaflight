@@ -99,7 +99,6 @@ Some advanced configurations and features are documented in the following pages,
 * [Profiles](Profiles.md)
 * [PID tuning](PID tuning.md)
 * [In-flight Adjustments](Inflight Adjustments.md)
-* [Autotune](Autotune.md)
 * [Blackbox logging](Blackbox.md)
 * [Using a Sonar](Sonar.md)
 * [Spektrum Bind](Spektrum bind.md)

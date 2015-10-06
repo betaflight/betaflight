@@ -265,7 +265,7 @@ COMMON_SRC	 = build_config.c \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
 
-HIGHEND_SRC  = flight/autotune.c \
+HIGHEND_SRC  = \
 		   flight/navigation.c \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \

@@ -107,7 +107,6 @@
 #define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
-#define AUTOTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX

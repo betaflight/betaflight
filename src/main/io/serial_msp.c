@@ -340,7 +340,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
-    { BOXAUTOTUNE, "AUTOTUNE;", 21 },
+    //{ BOXAUTOTUNE, "AUTOTUNE;", 21 },
     { BOXSONAR, "SONAR;", 22 },
     { BOXSERVO1, "SERVO1;", 23 },
     { BOXSERVO2, "SERVO2;", 24 },
@@ -677,10 +677,6 @@ void mspInit(serialConfig_t *serialConfig)
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
 
-#ifdef AUTOTUNE
-    activeBoxIds[activeBoxIdCount++] = BOXAUTOTUNE;
-#endif
-
     if (feature(FEATURE_SONAR)){
         activeBoxIds[activeBoxIdCount++] = BOXSONAR;
     }
@@ -821,7 +817,6 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTUNE)) << BOXAUTOTUNE |
             IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
             IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |

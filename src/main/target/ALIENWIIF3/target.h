@@ -114,7 +114,6 @@
 #define SERIAL_RX
 //#define GPS
 //#define DISPLAY
-#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 

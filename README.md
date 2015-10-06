@@ -35,7 +35,6 @@ Cleanflight also has additional features not found in baseflight.
 * MSP Telemetry.
 * Smartport Telemetry.
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
-* Autotune - ported from BradWii, experimental - feedback welcomed.
 * OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
 * In-flight manual PID tuning and rate adjustment.
 * Rate profiles and in-flight selection of them.

@@ -70,7 +70,6 @@
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
-#include "flight/autotune.h"
 #include "flight/navigation.h"
 #include "flight/filter.h"
 
@@ -121,44 +120,6 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 
     saveConfigAndNotify();
 }
-
-#ifdef AUTOTUNE
-
-void updateAutotuneState(void)
-{
-    static bool landedAfterAutoTuning = false;
-    static bool autoTuneWasUsed = false;
-
-    if (IS_RC_MODE_ACTIVE(BOXAUTOTUNE)) {
-        if (!FLIGHT_MODE(AUTOTUNE_MODE)) {
-            if (ARMING_FLAG(ARMED)) {
-                if (isAutotuneIdle() || landedAfterAutoTuning) {
-                    autotuneReset();
-                    landedAfterAutoTuning = false;
-                }
-                autotuneBeginNextPhase(&currentProfile->pidProfile);
-                ENABLE_FLIGHT_MODE(AUTOTUNE_MODE);
-                autoTuneWasUsed = true;
-            } else {
-                if (havePidsBeenUpdatedByAutotune()) {
-                    saveConfigAndNotify();
-                    autotuneReset();
-                }
-            }
-        }
-        return;
-    }
-
-    if (FLIGHT_MODE(AUTOTUNE_MODE)) {
-        autotuneEndPhase();
-        DISABLE_FLIGHT_MODE(AUTOTUNE_MODE);
-    }
-
-    if (!ARMING_FLAG(ARMED) && autoTuneWasUsed) {
-        landedAfterAutoTuning = true;
-    }
-}
-#endif
 
 bool isCalibrating()
 {
@@ -275,10 +236,6 @@ void annexCode(void)
         }
 
         if (!STATE(SMALL_ANGLE)) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-        if (IS_RC_MODE_ACTIVE(BOXAUTOTUNE)) {
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -794,10 +751,6 @@ void loop(void)
         annexCode();
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
-#endif
-
-#ifdef AUTOTUNE
-        updateAutotuneState();
 #endif
 
 #ifdef MAG
