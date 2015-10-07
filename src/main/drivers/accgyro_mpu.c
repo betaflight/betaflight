@@ -218,6 +218,33 @@ void MPU_DATA_READY_EXTI_Handler(void)
 #endif
 }
 
+    //// Hack for cc3d
+void EXTI3_IRQHandler(void)
+{
+    if (EXTI_GetITStatus(mpuIntExtiConfig->exti_line) == RESET) {
+        return;
+    }
+
+    EXTI_ClearITPendingBit(mpuIntExtiConfig->exti_line);
+
+    mpuDataReady = true;
+
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+    // Measure the delta in micro seconds between calls to the interrupt handler
+    static uint32_t lastCalledAt = 0;
+    static int32_t callDelta = 0;
+
+    uint32_t now = micros();
+    callDelta = now - lastCalledAt;
+
+    //UNUSED(callDelta);
+    debug[0] = callDelta;
+
+    lastCalledAt = now;
+#endif
+}
+    //// Hack for cc3d
+
 void configureMPUDataReadyInterruptHandling(void)
 {
 #ifdef USE_MPU_DATA_READY_SIGNAL
@@ -247,7 +274,9 @@ void configureMPUDataReadyInterruptHandling(void)
     }
 #endif
 
+#ifndef CC3D
     registerExti15_10_CallbackHandler(MPU_DATA_READY_EXTI_Handler);
+#endif
 
     EXTI_ClearITPendingBit(mpuIntExtiConfig->exti_line);
 

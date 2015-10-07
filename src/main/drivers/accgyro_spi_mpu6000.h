@@ -44,6 +44,9 @@
 
 #define MPU6000_WHO_AM_I_CONST              (0x68)
 
+// RF = Register Flag
+#define MPU_RF_DATA_RDY_EN (1 << 0)
+
 bool mpu6000SpiDetect(void);
 
 bool mpu6000SpiAccDetect(acc_t *acc);
