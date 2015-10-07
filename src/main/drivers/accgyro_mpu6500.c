@@ -27,6 +27,7 @@
 #include "system.h"
 #include "exti.h"
 #include "gpio.h"
+#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -55,6 +56,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
+    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -94,7 +96,7 @@ void mpu6500GyroInit(uint16_t lpf)
     mpuConfiguration.write(MPU6500_RA_GYRO_CFG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU6500_RA_ACCEL_CFG, INV_FSR_8G << 3);
     mpuConfiguration.write(MPU6500_RA_LPF, mpuLowPassFilter);
-    mpuConfiguration.write(MPU6500_RA_RATE_DIV, 0); // 1kHz S/R
+    mpuConfiguration.write(MPU6500_RA_RATE_DIV, gyroMPU6xxxGetDividerDrops()); // 1kHz S/R
 
     // Data ready interrupt configuration
     mpuConfiguration.write(MPU6500_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
