@@ -90,16 +90,16 @@ typedef struct bmp280_calib_param_t {
 
 static uint8_t bmp280_chip_id = 0;
 static bool bmp280InitDone = false;
-static bmp280_calib_param_t bmp280_cal;
+STATIC_UNIT_TESTED bmp280_calib_param_t bmp280_cal;
 // uncompensated pressure and temperature
-static int32_t bmp280_up = 0;
-static int32_t bmp280_ut = 0;
+STATIC_UNIT_TESTED int32_t bmp280_up = 0;
+STATIC_UNIT_TESTED int32_t bmp280_ut = 0;
 
 static void bmp280_start_ut(void);
 static void bmp280_get_ut(void);
 static void bmp280_start_up(void);
 static void bmp280_get_up(void);
-static void bmp280_calculate(int32_t *pressure, int32_t *temperature);
+STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
 bool bmp280Detect(baro_t *baro)
 {
@@ -160,53 +160,53 @@ static void bmp280_get_up(void)
     bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
 }
 
-// Returns temperature in DegC, float precision. Output value of “51.23” equals 51.23 DegC.
+// Returns temperature in DegC, resolution is 0.01 DegC. Output value of "5123" equals 51.23 DegC
 // t_fine carries fine temperature as global value
-float bmp280_compensate_T(int32_t adc_T)
+static int32_t bmp280_compensate_T(int32_t adc_T)
 {
-    float var1, var2, T;
+    int32_t var1, var2, T;
 
-    var1 = (((float)adc_T) / 16384.0f - ((float)bmp280_cal.dig_T1) / 1024.0f) * ((float)bmp280_cal.dig_T2);
-    var2 = ((((float)adc_T) / 131072.0f - ((float)bmp280_cal.dig_T1) / 8192.0f) * (((float)adc_T) / 131072.0f - ((float)bmp280_cal.dig_T1) / 8192.0f)) * ((float)bmp280_cal.dig_T3);
-    bmp280_cal.t_fine = (int32_t)(var1 + var2);
-    T = (var1 + var2) / 5120.0f;
+    var1 = ((((adc_T >> 3) - ((int32_t)bmp280_cal.dig_T1 << 1))) * ((int32_t)bmp280_cal.dig_T2)) >> 11;
+    var2  = (((((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1)) * ((adc_T >> 4) - ((int32_t)bmp280_cal.dig_T1))) >> 12) * ((int32_t)bmp280_cal.dig_T3)) >> 14;
+    bmp280_cal.t_fine = var1 + var2;
+    T = (bmp280_cal.t_fine * 5 + 128) >> 8;
 
     return T;
 }
 
-// Returns pressure in Pa as float. Output value of “96386.2” equals 96386.2 Pa = 963.862 hPa
-float bmp280_compensate_P(int32_t adc_P)
+// Returns pressure in Pa as unsigned 32 bit integer in Q24.8 format (24 integer bits and 8 fractional bits).
+// Output value of "24674867" represents 24674867/256 = 96386.2 Pa = 963.862 hPa
+static uint32_t bmp280_compensate_P(int32_t adc_P)
 {
-    float var1, var2, p;
-    var1 = ((float)bmp280_cal.t_fine / 2.0f) - 64000.0f;
-    var2 = var1 * var1 * ((float)bmp280_cal.dig_P6) / 32768.0f;
-    var2 = var2 + var1 * ((float)bmp280_cal.dig_P5) * 2.0f;
-    var2 = (var2 / 4.0f) + (((float)bmp280_cal.dig_P4) * 65536.0f);
-    var1 = (((float)bmp280_cal.dig_P3) * var1 * var1 / 524288.0f + ((float)bmp280_cal.dig_P2) * var1) / 524288.0f;
-    var1 = (1.0f + var1 / 32768.0f) * ((float)bmp280_cal.dig_P1);
-    if (var1 == 0.0f)
-        return 0.0f; // avoid exception caused by division by zero
-
-    p = 1048576.0f - (float)adc_P;
-    p = (p - (var2 / 4096.0f)) * 6250.0f / var1;
-    var1 = ((float)bmp280_cal.dig_P9) * p * p / 2147483648.0f;
-    var2 = p * ((float)bmp280_cal.dig_P8) / 32768.0f;
-    p = p + (var1 + var2 + ((float)bmp280_cal.dig_P7)) / 16.0f;
-
-    return p;
+    int64_t var1, var2, p;
+    var1 = ((int64_t)bmp280_cal.t_fine) - 128000;
+    var2 = var1 * var1 * (int64_t)bmp280_cal.dig_P6;
+    var2 = var2 + ((var1*(int64_t)bmp280_cal.dig_P5) << 17);
+    var2 = var2 + (((int64_t)bmp280_cal.dig_P4) << 35);
+    var1 = ((var1 * var1 * (int64_t)bmp280_cal.dig_P3) >> 8) + ((var1 * (int64_t)bmp280_cal.dig_P2) << 12);
+    var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)bmp280_cal.dig_P1) >> 33;
+    if (var1 == 0)
+        return 0;
+    p = 1048576 - adc_P;
+    p = (((p << 31) - var2) * 3125) / var1;
+    var1 = (((int64_t)bmp280_cal.dig_P9) * (p >> 13) * (p >> 13)) >> 25;
+    var2 = (((int64_t)bmp280_cal.dig_P8) * p) >> 19;
+    p = ((p + var1 + var2) >> 8) + (((int64_t)bmp280_cal.dig_P7) << 4);
+    return (uint32_t)p;
 }
 
-static void bmp280_calculate(int32_t *pressure, int32_t *temperature)
+STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature)
 {
     // calculate
-    float t, p;
+    int32_t t;
+    uint32_t p;
     t = bmp280_compensate_T(bmp280_ut);
     p = bmp280_compensate_P(bmp280_up);
 
     if (pressure)
-        *pressure = (int32_t)p;
+        *pressure = (int32_t)(p / 256);
     if (temperature)
-        *temperature = (int32_t)t * 100;
+        *temperature = t;
 }
 
 #endif

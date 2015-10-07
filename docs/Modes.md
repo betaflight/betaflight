@@ -25,9 +25,9 @@ auxillary receiver channels and other events such as failsafe detection.
 | 18      | 17     | GOV        |                                                                      |
 | 19      | 18     | OSD        | Enable/Disable On-Screen-Display (OSD)                               |
 | 20      | 19     | TELEMETRY  | Enable telemetry via switch                                          |
-| 21      | 20     | AUTOTUNE   | Autotune Pitch/Roll PIDs                                             |
 | 22      | 21     | SONAR      | Altitude hold mode (sonar sensor only)                               |
 | 26      | 25     | BLACKBOX   | Enable BlackBox logging                                              |
+| 27      | 26     | GTUNE      | G-Tune - auto tuning of Pitch/Roll/Yaw P values                      |
 
 ## Mode details
 

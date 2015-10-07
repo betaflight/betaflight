@@ -107,7 +107,7 @@ This controller has code that attempts to compensate for variations in the loopt
 don't have to be retuned when the looptime setting changes. 
 
 There were initially some problems with horizon mode, and sluggishness in acro mode, that were recently fixed by
-nebbian in v1.6.0. The autotune feature does not work on this controller, so don't try to autotune it.
+nebbian in v1.6.0.
 
 It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
@@ -150,10 +150,11 @@ For the ALIENWII32 targets the gyroscale is removed for more yaw authority. This
 
 PID Controller 5 is an port of the PID controller from the Harakiri firmware.
 
-The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don't need retuning of the PID values when looptime is changing. Actually there are two settings hardcoded which are configurable via the GUI in Harakiri:
+The algorithm is leveraging more floating point math. This PID controller also compensates for different looptimes on roll and pitch. It likely don't need retuning of the PID values when looptime is changing. There are two additional settings which are configurable via the CLI in Harakiri:
 
-        OLD_YAW 0 // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw.
-        MAIN_CUT_HZ 12.0f // (default 12Hz, Range 1-50Hz)
+        set dterm_cut_hz = 0        [1-50Hz] Cut Off Frequency for D term of main PID controller
+                                    (default of 0 equals to 12Hz which was the hardcoded setting in previous Cleanflight versions)
+        set pid5_oldyw = 0          [0/1] 0 = multiwii 2.3 yaw (default), 1 = older yaw
 
 The PID controller is flight tested and running well with the default PID settings. If you want do acrobatics start slowly.
 

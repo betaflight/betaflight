@@ -110,7 +110,6 @@
 
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
 #define BLACKBOX
 #define USE_SERVOS
 #define USE_CLI

@@ -17,4 +17,5 @@
 
 #pragma once
 
-bool l3gd20Detect(gyro_t *gyro);
+void init_Gtune(pidProfile_t *pidProfileToTune);
+void calculate_Gtune(uint8_t axis);

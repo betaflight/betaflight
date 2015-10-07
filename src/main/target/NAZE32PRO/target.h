@@ -40,11 +40,11 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define GPS
 #define BLACKBOX
-#define TELEMETRY
+#define GPS
+#define GTUNE
 #define SERIAL_RX
-#define AUTOTUNE
+#define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
 

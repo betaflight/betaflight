@@ -17,33 +17,5 @@
 
 #pragma once
 
-typedef struct mpu6050Config_s {
-#ifdef STM32F303
-    uint32_t gpioAHBPeripherals;
-#endif
-#ifdef STM32F10X
-    uint32_t gpioAPB2Peripherals;
-#endif
-    uint16_t gpioPin;
-    GPIO_TypeDef *gpioPort;
-
-    uint8_t exti_port_source;
-    uint32_t exti_line;
-    uint8_t exti_pin_source;
-    IRQn_Type exti_irqn;
-} mpu6050Config_t;
-
-enum lpf_e {
-    INV_FILTER_256HZ_NOLPF2 = 0,
-    INV_FILTER_188HZ,
-    INV_FILTER_98HZ,
-    INV_FILTER_42HZ,
-    INV_FILTER_20HZ,
-    INV_FILTER_10HZ,
-    INV_FILTER_5HZ,
-    INV_FILTER_2100HZ_NOLPF,
-    INV_FILTER_COUNT
-};
-
-bool mpu6050AccDetect(const mpu6050Config_t *config,acc_t *acc);
-bool mpu6050GyroDetect(const mpu6050Config_t *config, gyro_t *gyro, uint16_t lpf);
+bool mpu6050AccDetect(acc_t *acc);
+bool mpu6050GyroDetect(gyro_t *gyro);

@@ -16,8 +16,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/accgyro_mpu6050.h"
-#include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"

@@ -111,7 +111,7 @@ static bool adxl345Read(int16_t *accelData)
             i++;
 
             if (!i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 8, buf)) {
-                return false;;
+                return false;
             }
 
             x += (int16_t)(buf[0] + (buf[1] << 8));

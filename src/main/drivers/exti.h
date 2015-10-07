@@ -15,14 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #pragma once
 
-void autotuneReset();
-void autotuneBeginNextPhase(pidProfile_t *pidProfileToTune);
-float autotune(angle_index_t angleIndex, const rollAndPitchInclination_t *inclination, float errorAngle);
-void autotuneEndPhase();
+typedef struct extiConfig_s {
+#ifdef STM32F303
+    uint32_t gpioAHBPeripherals;
+#endif
+#ifdef STM32F10X
+    uint32_t gpioAPB2Peripherals;
+#endif
+    uint16_t gpioPin;
+    GPIO_TypeDef *gpioPort;
 
-bool isAutotuneIdle(void);
-bool hasAutotunePhaseCompleted(void);
-bool havePidsBeenUpdatedByAutotune(void);
-
+    uint8_t exti_port_source;
+    uint32_t exti_line;
+    uint8_t exti_pin_source;
+    IRQn_Type exti_irqn;
+} extiConfig_t;

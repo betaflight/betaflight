@@ -123,7 +123,6 @@ The OpenPilot bootloader code also allows the remaining section of flash to be r
 OpenPilot Ground Station (GCS) via USB without requiring a USB to uart adapter.
 
 The following features are not available:
- * Autotune
  * Display
  * Sonar
 

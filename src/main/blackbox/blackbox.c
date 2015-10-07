@@ -1134,26 +1134,6 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
             blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
-        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START:
-            blackboxWrite(data->autotuneCycleStart.phase);
-            blackboxWrite(data->autotuneCycleStart.cycle | (data->autotuneCycleStart.rising ? 0x80 : 0));
-            blackboxWrite(data->autotuneCycleStart.p);
-            blackboxWrite(data->autotuneCycleStart.i);
-            blackboxWrite(data->autotuneCycleStart.d);
-        break;
-        case FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT:
-            blackboxWrite(data->autotuneCycleResult.flags);
-            blackboxWrite(data->autotuneCycleStart.p);
-            blackboxWrite(data->autotuneCycleStart.i);
-            blackboxWrite(data->autotuneCycleStart.d);
-        break;
-        case FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS:
-            blackboxWriteS16(data->autotuneTargets.currentAngle);
-            blackboxWrite((uint8_t) data->autotuneTargets.targetAngle);
-            blackboxWrite((uint8_t) data->autotuneTargets.targetAngleAtPeak);
-            blackboxWriteS16(data->autotuneTargets.firstPeakAngle);
-            blackboxWriteS16(data->autotuneTargets.secondPeakAngle);
-        break;
         case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
             if (data->inflightAdjustment.floatFlag) {
                 blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
@@ -1162,6 +1142,10 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
                 blackboxWrite(data->inflightAdjustment.adjustmentFunction);
                 blackboxWriteSignedVB(data->inflightAdjustment.newValue);
             }
+        case FLIGHT_LOG_EVENT_GTUNE_RESULT:
+            blackboxWrite(data->gtuneCycleResult.gtuneAxis);
+            blackboxWriteSignedVB(data->gtuneCycleResult.gtuneGyroAVG);
+            blackboxWriteS16(data->gtuneCycleResult.gtuneNewP);
         break;
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);

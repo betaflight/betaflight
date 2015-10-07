@@ -9,7 +9,7 @@
 *****************************************************************************
 */
 
-/* Specify the memory areas. Flash is limited for last 2K for configuration storage */
+/* Specify the memory areas. */
 MEMORY
 {
   FLASH (rx)      : ORIGIN = 0x08003000, LENGTH = 126K - 0x03000 /* last 2kb used for config storage first 12k for OP Bootloader*/

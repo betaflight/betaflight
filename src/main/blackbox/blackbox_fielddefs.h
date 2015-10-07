@@ -103,43 +103,15 @@ typedef enum FlightLogFieldSign {
 
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
-    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,
-    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,
-    FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,
     FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
     FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
+    FLIGHT_LOG_EVENT_GTUNE_RESULT = 20,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
 
 typedef struct flightLogEvent_syncBeep_t {
     uint32_t time;
 } flightLogEvent_syncBeep_t;
-
-typedef struct flightLogEvent_autotuneCycleStart_t {
-    uint8_t phase;
-    uint8_t cycle;
-    uint8_t p;
-    uint8_t i;
-    uint8_t d;
-    uint8_t rising;
-} flightLogEvent_autotuneCycleStart_t;
-
-#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_OVERSHOT 1
-#define FLIGHT_LOG_EVENT_AUTOTUNE_FLAG_TIMEDOUT 2
-#define FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG 128
-
-typedef struct flightLogEvent_autotuneCycleResult_t {
-    uint8_t flags;
-    uint8_t p;
-    uint8_t i;
-    uint8_t d;
-} flightLogEvent_autotuneCycleResult_t;
-
-typedef struct flightLogEvent_autotuneTargets_t {
-    uint16_t currentAngle;
-    int8_t targetAngle, targetAngleAtPeak;
-    uint16_t firstPeakAngle, secondPeakAngle;
-} flightLogEvent_autotuneTargets_t;
 
 typedef struct flightLogEvent_inflightAdjustment_t {
     uint8_t adjustmentFunction;
@@ -153,14 +125,20 @@ typedef struct flightLogEvent_loggingResume_t {
     uint32_t currentTime;
 } flightLogEvent_loggingResume_t;
 
+#define FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG 128
+
+typedef struct flightLogEvent_gtuneCycleResult_t {
+    uint8_t gtuneAxis;
+    int32_t gtuneGyroAVG;
+    int16_t gtuneNewP;
+} flightLogEvent_gtuneCycleResult_t;
+
 typedef union flightLogEventData_t
 {
     flightLogEvent_syncBeep_t syncBeep;
-    flightLogEvent_autotuneCycleStart_t autotuneCycleStart;
-    flightLogEvent_autotuneCycleResult_t autotuneCycleResult;
-    flightLogEvent_autotuneTargets_t autotuneTargets;
     flightLogEvent_inflightAdjustment_t inflightAdjustment;
     flightLogEvent_loggingResume_t loggingResume;
+    flightLogEvent_gtuneCycleResult_t gtuneCycleResult;
 } flightLogEventData_t;
 
 typedef struct flightLogEvent_t

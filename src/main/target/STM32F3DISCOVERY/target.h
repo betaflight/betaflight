@@ -91,11 +91,11 @@
 
 #define BLACKBOX
 #define GPS
+#define GTUNE
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 

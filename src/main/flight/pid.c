@@ -43,7 +43,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
-#include "flight/autotune.h"
+#include "flight/gtune.h"
 
 #include "config/runtime_config.h"
 
@@ -99,13 +99,6 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static filterStatePt1_t DTermState[3];
 static filterStatePt1_t yawPTermState;
 
-#ifdef AUTOTUNE
-bool shouldAutotune(void)
-{
-    return ARMING_FLAG(ARMED) && FLIGHT_MODE(AUTOTUNE_MODE);
-}
-#endif
-
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
@@ -155,12 +148,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #else
             errorAngle = (constrainf((float)rcCommand[axis] * ((float)max_angle_inclination / 500.0f), -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f;
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = autotune(rcAliasToAngleIndexMap[axis], &inclination, errorAngle);
-            }
 #endif
 
             if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -216,6 +203,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -249,12 +242,6 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
 #endif
 
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
@@ -305,6 +292,12 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         DTerm = (delta * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -354,12 +347,6 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
                 +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
-#endif
-
             errorAngleI[axis]  = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
 
             PTermACC = ((int32_t)errorAngle * pidProfile->P8[PIDLEVEL]) >> 7;   // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
@@ -391,6 +378,12 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         axisPID[axis] = PTerm + ITerm - DTerm;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -419,6 +412,12 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] =  PTerm + ITerm;
+
+#ifdef GTUNE
+    if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+        calculate_Gtune(FD_YAW);
+    }
+#endif
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
@@ -452,12 +451,6 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
-#endif
-
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
 #endif
 
             PTermACC = errorAngle * pidProfile->P8[PIDLEVEL] / 100; // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
@@ -508,6 +501,12 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
         DTerm = (delta * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -536,6 +535,11 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
 
     axisPID[FD_YAW] =  PTerm + ITerm;
 
+#ifdef GTUNE
+    if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+        calculate_Gtune(FD_YAW);
+    }
+#endif
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
@@ -555,7 +559,11 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     uint8_t axis;
     float ACCDeltaTimeINS, FLOATcycleTime, Mwii3msTimescale;
 
-    MainDptCut = RCconstPI / constrain(pidProfile->dterm_cut_hz, 1, 50);       // maincuthz (default 0 (disabled), Range 1-50Hz)
+    if (pidProfile->dterm_cut_hz) {
+        MainDptCut = RCconstPI / constrain(pidProfile->dterm_cut_hz, 1, 50);   // dterm_cut_hz (default 0, Range 1-50Hz)
+    } else {
+        MainDptCut = RCconstPI / 12.0f;                                        // default is 12Hz to maintain initial behavior of PID5
+    }
     FLOATcycleTime  = (float)constrain(cycleTime, 1, 100000);                  // 1us - 100ms
     ACCDeltaTimeINS = FLOATcycleTime * 0.000001f;                              // ACCDeltaTimeINS is in seconds now
     RCfactor = ACCDeltaTimeINS / (MainDptCut + ACCDeltaTimeINS);               // used for pt1 element
@@ -567,7 +575,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     for (axis = 0; axis < 2; axis++) {
         int32_t tmp = (int32_t)((float)gyroADC[axis] * 0.3125f);              // Multiwii masks out the last 2 bits, this has the same idea
         gyroADCQuant = (float)tmp * 3.2f;                                     // but delivers more accuracy and also reduces jittery flight
-        rcCommandAxis = (float)rcCommand[axis];                                // Calculate common values for pid controllers
+        rcCommandAxis = (float)rcCommand[axis];                               // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
 #ifdef GPS
             error = constrain(2.0f * rcCommandAxis + GPS_angle[axis], -((int) max_angle_inclination), +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
@@ -575,11 +583,6 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
             error = constrain(2.0f * rcCommandAxis, -((int) max_angle_inclination), +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
 #endif
 
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                error = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(error)));
-            }
-#endif
             PTermACC = error * (float)pidProfile->P8[PIDLEVEL] * 0.008f;
             float limitf = (float)pidProfile->D8[PIDLEVEL] * 5.0f;
             PTermACC = constrain(PTermACC, -limitf, +limitf);
@@ -619,6 +622,12 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 
         axisPID[axis] = lrintf(PTerm + ITerm - DTerm);                         // Round up result.
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -629,7 +638,7 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
     Mwii3msTimescale = (int32_t)FLOATcycleTime & (int32_t)~3;                  // Filter last 2 bit jitter
     Mwii3msTimescale /= 3000.0f;
 
-    if (OLD_YAW) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw. hardcoded for now
+    if (pidProfile->pid5_oldyw) { // [0/1] 0 = multiwii 2.3 yaw, 1 = older yaw
         PTerm = ((int32_t)pidProfile->P8[FD_YAW] * (100 - (int32_t)controlRateConfig->rates[FD_YAW] * (int32_t)ABS(rcCommand[FD_YAW]) / 500)) / 100;
         int32_t tmp = lrintf(gyroADC[FD_YAW] * 0.25f);
         PTerm = rcCommand[FD_YAW] - tmp * PTerm / 80;
@@ -660,6 +669,12 @@ rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 
     axisPID[FD_YAW] = PTerm + ITerm;
     axisPID[FD_YAW] = lrintf(axisPID[FD_YAW]);                                 // Round up result.
+
+#ifdef GTUNE
+    if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+        calculate_Gtune(FD_YAW);
+    }
+#endif
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
@@ -721,12 +736,6 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
                     +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
 
-#ifdef AUTOTUNE
-            if (shouldAutotune()) {
-                errorAngle = DEGREES_TO_DECIDEGREES(autotune(rcAliasToAngleIndexMap[axis], &inclination, DECIDEGREES_TO_DEGREES(errorAngle)));
-            }
-#endif
-
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
@@ -780,6 +789,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
+
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+             calculate_Gtune(axis);
+        }
+#endif
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;

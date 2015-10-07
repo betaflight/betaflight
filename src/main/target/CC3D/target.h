@@ -47,12 +47,12 @@
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define GYRO_SPI_MPU6000_ALIGN CW270_DEG
+#define GYRO_MPU6000_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
 
-#define ACC_SPI_MPU6000_ALIGN CW270_DEG
+#define ACC_MPU6000_ALIGN CW270_DEG
 
 // MPU6000 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
@@ -116,7 +116,6 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define SONAR
-#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 

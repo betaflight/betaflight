@@ -75,8 +75,6 @@
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
-
 #if !defined(FLASH_SIZE)
 #error "Flash size not defined for target. (specify in KB)"
 #endif
@@ -118,6 +116,12 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #error "Flash page count not defined for target."
 #endif
 
+#if FLASH_SIZE <= 128
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
+#else
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
+#endif
+
 // use the last flash pages for storage
 #define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 
@@ -128,7 +132,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 109;
+static const uint8_t EEPROM_CONF_VERSION = 110;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -185,6 +189,20 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
     pidProfile->H_sensitivity = 75;
+
+    pidProfile->pid5_oldyw = 0;
+
+#ifdef GTUNE
+    pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
+    pidProfile->gtune_lolimP[PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
+    pidProfile->gtune_lolimP[YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
+    pidProfile->gtune_hilimP[ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_hilimP[PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_hilimP[YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+    pidProfile->gtune_pwr = 0;                    // [0..10] Strength of adjustment
+    pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
+    pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
+#endif
 }
 
 #ifdef GPS
@@ -418,6 +436,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
+    masterConfig.rxConfig.rcSmoothing = 1;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 

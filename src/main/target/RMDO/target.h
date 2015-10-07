@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SRF3"
+#define TARGET_BOARD_IDENTIFIER "RMDO" // Ready Made RC DoDo
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3
@@ -48,13 +48,7 @@
 #define ACC_MPU6050_ALIGN CW270_DEG
 
 #define BARO
-#define USE_BARO_MS5611
 #define USE_BARO_BMP280
-
-#define MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN CW270_DEG
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -157,12 +151,11 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
-#define BLACKBOX
-#define DISPLAY
 #define GPS
-#define GTUNE
-#define SERIAL_RX
+#define BLACKBOX
 #define TELEMETRY
+#define SERIAL_RX
+#define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
 
@@ -170,10 +163,3 @@
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
-
-#define USE_SERIAL_1WIRE
-#define ESC_COUNT 8
-#define S1W_TX_GPIO         GPIOA
-#define S1W_TX_PIN          GPIO_Pin_9
-#define S1W_RX_GPIO         GPIOA
-#define S1W_RX_PIN          GPIO_Pin_10

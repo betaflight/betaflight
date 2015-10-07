@@ -57,11 +57,11 @@
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_SPI_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_SPI_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
@@ -140,6 +140,7 @@
 
 #define BLACKBOX
 #define GPS
+#define GTUNE
 #define LED_STRIP
 
 #define LED_STRIP_TIMER TIM16
@@ -157,6 +158,5 @@
 
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI

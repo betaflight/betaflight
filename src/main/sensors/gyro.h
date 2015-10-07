@@ -24,8 +24,8 @@ typedef enum {
     GYRO_L3G4200D,
     GYRO_MPU3050,
     GYRO_L3GD20,
-    GYRO_SPI_MPU6000,
-    GYRO_SPI_MPU6500,
+    GYRO_MPU6000,
+    GYRO_MPU6500,
     GYRO_FAKE
 } gyroSensor_e;
 

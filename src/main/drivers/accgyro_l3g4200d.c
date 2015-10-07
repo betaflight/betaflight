@@ -54,12 +54,10 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
-
-static void l3g4200dInit(void);
+static void l3g4200dInit(uint16_t lpf);
 static bool l3g4200dRead(int16_t *gyroADC);
 
-bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
+bool l3g4200dDetect(gyro_t *gyro)
 {
     uint8_t deviceid;
 
@@ -75,7 +73,15 @@ bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
     // 14.2857dps/lsb scalefactor
     gyro->scale = 1.0f / 14.2857f;
 
-    // default LPF is set to 32Hz
+    return true;
+}
+
+static void l3g4200dInit(uint16_t lpf)
+{
+    bool ack;
+
+    uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
+
     switch (lpf) {
         default:
             case 32:
@@ -91,13 +97,6 @@ bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
             mpuLowPassFilter = L3G4200D_DLPF_93HZ;
             break;
     }
-
-    return true;
-}
-
-static void l3g4200dInit(void)
-{
-    bool ack;
 
     delay(100);
 

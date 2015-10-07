@@ -512,6 +512,29 @@ $(OBJECT_DIR)/baro_bmp085_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/drivers/barometer_bmp280.o : \
+    $(USER_DIR)/drivers/barometer_bmp280.c \
+    $(USER_DIR)/drivers/barometer_bmp280.h \
+    $(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/barometer_bmp280.c -o $@
+
+$(OBJECT_DIR)/baro_bmp280_unittest.o : \
+	$(TEST_DIR)/baro_bmp280_unittest.cc \
+	$(USER_DIR)/drivers/barometer_bmp280.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/baro_bmp280_unittest.cc -o $@
+
+$(OBJECT_DIR)/baro_bmp280_unittest : \
+	$(OBJECT_DIR)/drivers/barometer_bmp280.o \
+	$(OBJECT_DIR)/baro_bmp280_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 $(OBJECT_DIR)/sensors/boardalignment.o : \
 	$(USER_DIR)/sensors/boardalignment.c \
 	$(USER_DIR)/sensors/boardalignment.h \
