@@ -120,7 +120,7 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu6000SpiGyroInit(uint8_t lpf)
+void mpu6000SpiGyroInit(uint16_t lpf)
 {
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
