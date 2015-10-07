@@ -126,6 +126,8 @@ void mpu6000SpiGyroInit(uint16_t lpf)
 
     mpu6000AccAndGyroInit();
 
+    mpuIntExtiInit();
+
     spiResetErrorCounter(MPU6000_SPI_INSTANCE);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
@@ -145,6 +147,7 @@ void mpu6000SpiGyroInit(uint16_t lpf)
 
 void mpu6000SpiAccInit(void)
 {
+    mpuIntExtiInit();
     acc_1G = 512 * 8;
 }
 
@@ -234,6 +237,13 @@ static void mpu6000AccAndGyroInit(void) {
     delayMicroseconds(1);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);  // 18 MHz SPI clock
+    delayMicroseconds(1);
+
+    #ifdef USE_MPU_DATA_READY_SIGNAL
+        // Set MPU Data Ready Signal
+        mpu6000WriteRegister(MPU6000_INT_ENABLE , MPU_RF_DATA_RDY_EN);
+        delayMicroseconds(1);
+    #endif
 
     mpuSpi6000InitDone = true;
 }
