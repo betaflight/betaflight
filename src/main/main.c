@@ -193,6 +193,41 @@ void init(void)
     ledInit(false);
 #endif
 
+#ifdef SPRACINGF3MINI
+    gpio_config_t buttonAGpioConfig = {
+        BUTTON_A_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+
+    gpio_config_t buttonBGpioConfig = {
+        BUTTON_B_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+
+    // Check status of bind plug and exit if not active
+    delayMicroseconds(10);  // allow GPIO configuration to settle
+
+    if (!isMPUSoftReset()) {
+        uint8_t secondsRemaining = 5;
+        bool bothButtonsHeld;
+        do {
+            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+            if (bothButtonsHeld) {
+                if (--secondsRemaining == 0) {
+                    resetEEPROM();
+                    systemReset();
+                }
+                delay(1000);
+                LED0_TOGGLE;
+            }
+        } while (bothButtonsHeld);
+    }
+#endif
+
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (masterConfig.rxConfig.serialrx_provider) {
