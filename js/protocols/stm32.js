@@ -103,19 +103,22 @@ STM32_protocol.prototype.connect = function (port, baud, hex, options, callback)
                             // delay to allow board to boot in bootloader mode
                             // required to detect if a DFU device appears
                             setTimeout(function() {
-                                if($("div#port-picker #port [value='DFU']").length) {
-                                    GUI.connect_lock = false;
-                                    STM32DFU.connect(usbDevices.STM32DFU, hex);
-                                } else {
-                                    serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
-                                        if (openInfo) {
-                                            self.initialize();
-                                        } else {
-                                            GUI.connect_lock = false;
-                                            GUI.log('<span style="color: red">Failed</span> to open serial port');
-                                        }
-                                    });
-                                }
+                                // refresh device list
+                                PortHandler.check_usb_devices(function(dfu_available) {
+                                    if(dfu_available) {
+                                        GUI.connect_lock = false;
+                                        STM32DFU.connect(usbDevices.STM32DFU, hex);
+                                    } else {
+                                        serial.connect(port, {bitrate: self.baud, parityBit: 'even', stopBits: 'one'}, function (openInfo) {
+                                            if (openInfo) {
+                                                self.initialize();
+                                            } else {
+                                                GUI.connect_lock = false;
+                                                GUI.log('<span style="color: red">Failed</span> to open serial port');
+                                            }
+                                        });
+                                    }
+                                });
                             }, 1000);
                         } else {
                             GUI.connect_lock = false;

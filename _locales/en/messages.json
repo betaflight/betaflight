@@ -190,11 +190,8 @@
         "message": "Cycle Time:"
     },
 
-    "please_grant_usb_permissions": {
-        "message": "Please click on <strong>\"Request Optional Permissions\"</strong> button to grant application <strong style=\"color: red\">required</strong> <strong>USB</strong> access"
-    },
-    "usb_permissions_granted": {
-        "message": "Optional <strong>USB</strong> permissions <strong style=\"color: green\">granted</strong>"
+    "dfu_connect_message": {
+        "message": "Please use the Firmware Flasher to access DFU devices"
     },
 
     "eeprom_saved_ok": {
