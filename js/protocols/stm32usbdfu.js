@@ -61,12 +61,25 @@ var STM32DFU_protocol = function () {
         dfuUPLOAD_IDLE:         9, // The device is processing an upload operation. Expecting DFU_UPLOAD requests.
         dfuERROR:               10 // An error has occurred. Awaiting the DFU_CLRSTATUS request.
     };
+
+    // Assume 2 kB page size (STM32F303)
+    // Cannot read chip ID using DFU protocol and Chrome doesn't provide the interface
+    // description string with flash page size information (at least on Linux anyway)
+    this.page_size = 2048;
 };
 
-STM32DFU_protocol.prototype.connect = function (device, hex, callback) {
+STM32DFU_protocol.prototype.connect = function (device, hex, options, callback) {
     var self = this;
     self.hex = hex;
     self.callback = callback;
+
+    self.options = {
+        erase_chip:     false
+    };
+
+    if (options.erase_chip) {
+        self.options.erase_chip = true;
+    }
 
     // reset and set some variables before we start
     self.upload_time_start = new Date().getTime();
@@ -150,6 +163,12 @@ STM32DFU_protocol.prototype.controlTransfer = function (direction, request, valu
             'index':        _interface,
             'length':       length
         }, function (result) {
+            if (chrome.runtime.lastError) {
+                if(chrome.runtime.lastError.message)
+                    console.log(chrome.runtime.lastError.message);
+                else
+                    console.log(chrome.runtime.lastError);
+            }
             if (result.resultCode) console.log(result.resultCode);
 
             var buf = new Uint8Array(result.data);
@@ -217,7 +236,7 @@ STM32DFU_protocol.prototype.loadAddress = function (address, callback) {
                         if (data[4] == self.state.dfuDNLOAD_IDLE) {
                             callback(data);
                         } else {
-                            console.log('Failed to execure address load');
+                            console.log('Failed to execute address load');
                             self.upload_procedure(99);
                         }
                     });
@@ -256,32 +275,85 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
             });
             break;
         case 2:
-            // full chip erase
-            console.log('Executing global chip erase');
-            $('span.progressLabel').text('Erasing ...');
+            // erase
+            if (self.options.erase_chip) {
+                // full chip erase
+                console.log('Executing global chip erase');
+                $('span.progressLabel').text('Erasing ...');
 
-            self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function () {
-                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
-                    if (data[4] == self.state.dfuDNBUSY) { // completely normal
-                        var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+                self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, [0x41], function () {
+                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
+                        if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                            var delay = data[1] | (data[2] << 8) | (data[3] << 16);
 
-                        setTimeout(function () {
-                            self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
-                                if (data[4] == self.state.dfuDNLOAD_IDLE) {
-                                    self.upload_procedure(4);
-                                } else {
-                                    console.log('Failed to execute global chip erase');
-                                    self.upload_procedure(99);
-                                }
-                            });
-                        }, delay);
-                    } else {
-                        console.log('Failed to initiate global chip erase');
-                        self.upload_procedure(99);
-                    }
+                            setTimeout(function () {
+                                self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
+                                    if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                        self.upload_procedure(4);
+                                    } else {
+                                        console.log('Failed to execute global chip erase');
+                                        self.upload_procedure(99);
+                                    }
+                                });
+                            }, delay);
+                        } else {
+                            console.log('Failed to initiate global chip erase');
+                            self.upload_procedure(99);
+                        }
+                    });
                 });
-            });
+            } else {
+                // local erase
+
+                var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000,
+                                erase_pages_n = Math.ceil(max_address / self.page_size),
+                                page = 0;
+
+                $('span.progressLabel').text('Erasing ...');
+                console.log('Executing local chip erase');
+                console.log('Erasing. page: 0x00 - 0x' + erase_pages_n.toString(16)); 
+
+                var erase_page = function() {
+                    var page_addr = page * self.page_size + 0x8000000;
+                    var cmd = [0x41, page_addr & 0xff, (page_addr >> 8) & 0xff, (page_addr >> 16) & 0xff, (page_addr >> 24) & 0xff];
+
+                    self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, cmd, function () {
+                        self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
+                            if (data[4] == self.state.dfuDNBUSY) { // completely normal
+                                var delay = data[1] | (data[2] << 8) | (data[3] << 16);
+
+                                setTimeout(function () {
+                                    self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
+                                        if (data[4] == self.state.dfuDNLOAD_IDLE) {
+                                            // update progress bar
+                                            self.progress_bar_e.val((page + 1) / erase_pages_n * 100);
+                                            page++;
+
+                                            if(page == erase_pages_n) {
+                                                console.log("Erase: complete");
+                                                self.upload_procedure(4);
+                                            }
+                                            else
+                                                erase_page();
+                                        } else {
+                                            console.log('Failed to erase page 0x' + self.current_page.toString(16));
+                                            self.upload_procedure(99);
+                                        }
+                                    });
+                                }, delay);
+                            } else {
+                                console.log('Failed to initiate page erase, page 0x' + self.current_page.toString(16));
+                                self.upload_procedure(99);
+                            }
+                        });
+                    });
+                };
+
+                // start
+                erase_page();
+            }
             break;
+
         case 4:
             // upload
             // we dont need to clear the state as we are already using DFU_DNLOAD
