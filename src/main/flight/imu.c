@@ -50,9 +50,6 @@
 //#define DEBUG_IMU
 //#define DEBUG_IMU_SPEED
 
-#define MAX_ACC_PROCESSING   360  // Anti jitter equal acc processing each cycle
-#define MAX_GYRO_PROCESSING  100  // Anti jitter equal gyro processing each cycle
-
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
@@ -192,32 +189,17 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors
 #if defined(NAZE) || defined(DEBUG_IMU_SPEED)
 	uint32_t time = micros();
 #endif
-#if defined(NAZE)
-	uint32_t accProcessTime, gyroProcessTime;
-#endif
-
 	if (imuUpdateSensors == ONLY_GYRO || imuUpdateSensors == ACC_AND_GYRO) {
         gyroUpdate();
-#if defined(NAZE)
-        while (gyroProcessTime < MAX_GYRO_PROCESSING ) {
-            gyroProcessTime = micros() - time;
-        }
-
-#endif
 #ifdef DEBUG_IMU_SPEED
     debug[0] = micros() - time; // gyro read time
 #endif
     }
     if (sensors(SENSOR_ACC) && (!imuUpdateSensors == ONLY_GYRO)) {
-#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+#ifdef DEBUG_IMU_SPEED
         time = micros();
 #endif
         qAccProcessingStateMachine(accelerometerTrims);
-#if defined(NAZE)
-    while (accProcessTime < MAX_ACC_PROCESSING) {
-        accProcessTime = micros() - time;
-    }
-#endif
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
@@ -230,40 +212,24 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors
 	}
 #endif
 }
-
 #else
 
 void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors)
 {
-#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+#ifdef DEBUG_IMU_SPEED
 	uint32_t time = micros();
 #endif
-#if defined(NAZE)
-	uint32_t accProcessTime, gyroProcessTime;
-#endif
-
 	if (imuUpdateSensors == ONLY_GYRO || imuUpdateSensors == ACC_AND_GYRO) {
         gyroUpdate();
-#if defined(NAZE)
-        while (gyroProcessTime < MAX_GYRO_PROCESSING ) {
-            gyroProcessTime = micros() - time;
-        }
-
-#endif
 #ifdef DEBUG_IMU_SPEED
     debug[0] = micros() - time; // gyro read time
 #endif
     }
     if (sensors(SENSOR_ACC) && (!imuUpdateSensors == ONLY_GYRO)) {
-#if defined(NAZE) || defined(DEBUG_IMU_SPEED)
+#ifdef DEBUG_IMU_SPEED
         time = micros();
 #endif
         qAccProcessingStateMachine(accelerometerTrims);
-#if defined(NAZE)
-    while (accProcessTime < MAX_ACC_PROCESSING) {
-        accProcessTime = micros() - time;
-    }
-#endif
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;

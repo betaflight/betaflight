@@ -31,7 +31,7 @@
 
 #ifndef SOFT_I2C
 
-#define CLOCKSPEED 1200000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
+#define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
 // I2C2
 // SCL  PB10
