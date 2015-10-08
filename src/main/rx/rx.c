@@ -69,7 +69,10 @@ uint16_t rssi = 0;                  // range: [0;1023]
 
 static bool rxDataReceived = false;
 static bool rxSignalReceived = false;
+static bool rxSignalReceivedNotDataDriven = false;
 static bool rxFlightChannelsValid = false;
+static bool rxIsInFailsafeMode = true;
+static bool rxIsInFailsafeModeNotDataDriven = true;
 
 static uint32_t rxUpdateAt = 0;
 static uint32_t needRxSignalBefore = 0;
@@ -272,9 +275,7 @@ static void resetRxSignalReceivedFlagIfNeeded(uint32_t currentTime)
 
     if (((int32_t)(currentTime - needRxSignalBefore) >= 0)) {
         rxSignalReceived = false;
-#ifdef DEBUG_RX_SIGNAL_LOSS
-        debug[0]++;
-#endif
+        rxSignalReceivedNotDataDriven = false;
     }
 }
 
@@ -307,7 +308,8 @@ void updateRx(uint32_t currentTime)
 
         if (frameStatus & SERIAL_RX_FRAME_COMPLETE) {
             rxDataReceived = true;
-            rxSignalReceived = (frameStatus & SERIAL_RX_FRAME_FAILSAFE) == 0;
+            rxIsInFailsafeMode = (frameStatus & SERIAL_RX_FRAME_FAILSAFE) != 0;
+            rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
@@ -318,13 +320,15 @@ void updateRx(uint32_t currentTime)
 
         if (rxDataReceived) {
             rxSignalReceived = true;
+            rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTime + DELAY_5_HZ;
         }
     }
 
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
-            rxSignalReceived = true;
+            rxSignalReceivedNotDataDriven = true;
+            rxIsInFailsafeModeNotDataDriven = false;
             needRxSignalBefore = currentTime + DELAY_10_HZ;
             resetPPMDataReceivedState();
         }
@@ -332,7 +336,8 @@ void updateRx(uint32_t currentTime)
 
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
         if (isPWMDataBeingReceived()) {
-            rxSignalReceived = true;
+            rxSignalReceivedNotDataDriven = true;
+            rxIsInFailsafeModeNotDataDriven = false;
             needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
@@ -439,13 +444,20 @@ static void detectAndApplySignalLossBehaviour(void)
     bool useValueFromRx = true;
     bool rxIsDataDriven = isRxDataDriven();
 
-    if (!rxSignalReceived) {
-        if (rxIsDataDriven && rxDataReceived) {
-            // use the values from the RX
-        } else {
-            useValueFromRx = false;
-        }
+    if (!rxIsDataDriven) {
+        rxSignalReceived = rxSignalReceivedNotDataDriven;
+        rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven;
     }
+
+    if (!rxSignalReceived || rxIsInFailsafeMode) {
+        useValueFromRx = false;
+    }
+
+#ifdef DEBUG_RX_SIGNAL_LOSS
+    debug[0] = rxSignalReceived;
+    debug[1] = rxIsInFailsafeMode;
+    debug[2] = rcReadRawFunc(&rxRuntimeConfig, 0);
+#endif
 
     rxResetFlightChannelStatus();
 
@@ -473,13 +485,17 @@ static void detectAndApplySignalLossBehaviour(void)
     if ((rxFlightChannelsValid) && !IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
         failsafeOnValidDataReceived();
     } else {
-        rxSignalReceived = false;
+        rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven = true;
         failsafeOnValidDataFailed();
 
         for (channel = 0; channel < rxRuntimeConfig.channelCount; channel++) {
             rcData[channel] = getRxfailValue(channel);
         }
     }
+
+#ifdef DEBUG_RX_SIGNAL_LOSS
+    debug[3] = rcData[THROTTLE];
+#endif
 
 }
 
