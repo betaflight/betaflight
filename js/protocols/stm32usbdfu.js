@@ -102,12 +102,35 @@ STM32DFU_protocol.prototype.connect = function (device, hex, options, callback) 
     });
 };
 
+STM32DFU_protocol.prototype.checkChromeError = function() {
+    if (chrome.runtime.lastError) {
+        if(chrome.runtime.lastError.message)
+            console.log(chrome.runtime.lastError.message);
+        else
+            console.log(chrome.runtime.lastError);
+
+        return true;
+    }
+
+    return false;
+}
+
 STM32DFU_protocol.prototype.openDevice = function (device) {
     var self = this;
 
     chrome.usb.openDevice(device, function (handle) {
+        if(self.checkChromeError()) {
+            console.log('Failed to open USB device!');
+            GUI.log(chrome.i18n.getMessage('usbDeviceOpenFail'));
+            if(GUI.operating_system === 'Linux') {
+                GUI.log(chrome.i18n.getMessage('usbDeviceUdevNotice'));
+            }
+            return;
+        }
+
         self.handle = handle;
 
+        GUI.log(chrome.i18n.getMessage('usbDeviceOpened', handle.handle.toString()));
         console.log('Device opened with Handle ID: ' + handle.handle);
         self.claimInterface(0);
     });
@@ -117,6 +140,12 @@ STM32DFU_protocol.prototype.closeDevice = function () {
     var self = this;
 
     chrome.usb.closeDevice(this.handle, function closed() {
+        if(self.checkChromeError()) {
+            console.log('Failed to close USB device!');
+            GUI.log(chrome.i18n.getMessage('usbDeviceCloseFail'));
+        }
+
+        GUI.log(chrome.i18n.getMessage('usbDeviceClosed'));
         console.log('Device closed with Handle ID: ' + self.handle.handle);
 
         self.handle = null;
@@ -152,6 +181,8 @@ STM32DFU_protocol.prototype.resetDevice = function (callback) {
 };
 
 STM32DFU_protocol.prototype.controlTransfer = function (direction, request, value, _interface, length, data, callback) {
+    var self = this;
+
     if (direction == 'in') {
         // data is ignored
         chrome.usb.controlTransfer(this.handle, {
@@ -163,11 +194,8 @@ STM32DFU_protocol.prototype.controlTransfer = function (direction, request, valu
             'index':        _interface,
             'length':       length
         }, function (result) {
-            if (chrome.runtime.lastError) {
-                if(chrome.runtime.lastError.message)
-                    console.log(chrome.runtime.lastError.message);
-                else
-                    console.log(chrome.runtime.lastError);
+            if(self.checkChromeError()) {
+                console.log('USB transfer failed!');
             }
             if (result.resultCode) console.log(result.resultCode);
 
@@ -193,6 +221,9 @@ STM32DFU_protocol.prototype.controlTransfer = function (direction, request, valu
             'index':        _interface,
             'data':         arrayBuf
         }, function (result) {
+            if(self.checkChromeError()) {
+                console.log('USB transfer failed!');
+            }
             if (result.resultCode) console.log(result.resultCode);
 
             callback(result);
@@ -331,6 +362,7 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
 
                                             if(page == erase_pages_n) {
                                                 console.log("Erase: complete");
+                                                GUI.log(chrome.i18n.getMessage('dfu_erased_kilobytes', (erase_pages_n * self.page_size / 1024).toString()));
                                                 self.upload_procedure(4);
                                             }
                                             else
@@ -540,6 +572,8 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
         case 99:
             // cleanup
             self.releaseInterface(0);
+
+            GUI.connect_lock = false;
 
             var timeSpent = new Date().getTime() - self.upload_time_start;
 
