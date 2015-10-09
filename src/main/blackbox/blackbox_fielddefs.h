@@ -109,40 +109,38 @@ typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
 
-typedef struct flightLogEvent_syncBeep_t {
+typedef struct flightLogEvent_syncBeep_s {
     uint32_t time;
 } flightLogEvent_syncBeep_t;
 
-typedef struct flightLogEvent_inflightAdjustment_t {
+typedef struct flightLogEvent_inflightAdjustment_s {
     uint8_t adjustmentFunction;
     bool floatFlag;
     int32_t newValue;
     float newFloatValue;
 } flightLogEvent_inflightAdjustment_t;
 
-typedef struct flightLogEvent_loggingResume_t {
+typedef struct flightLogEvent_loggingResume_s {
     uint32_t logIteration;
     uint32_t currentTime;
 } flightLogEvent_loggingResume_t;
 
 #define FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG 128
 
-typedef struct flightLogEvent_gtuneCycleResult_t {
+typedef struct flightLogEvent_gtuneCycleResult_s {
     uint8_t gtuneAxis;
     int32_t gtuneGyroAVG;
     int16_t gtuneNewP;
 } flightLogEvent_gtuneCycleResult_t;
 
-typedef union flightLogEventData_t
-{
+typedef union flightLogEventData_u {
     flightLogEvent_syncBeep_t syncBeep;
     flightLogEvent_inflightAdjustment_t inflightAdjustment;
     flightLogEvent_loggingResume_t loggingResume;
     flightLogEvent_gtuneCycleResult_t gtuneCycleResult;
 } flightLogEventData_t;
 
-typedef struct flightLogEvent_t
-{
+typedef struct flightLogEvent_s {
     FlightLogEvent event;
     flightLogEventData_t data;
 } flightLogEvent_t;

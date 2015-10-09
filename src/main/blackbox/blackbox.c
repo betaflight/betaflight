@@ -111,7 +111,7 @@ static const char* const blackboxFieldHeaderNames[] = {
 };
 
 /* All field definition structs should look like this (but with longer arrs): */
-typedef struct blackboxFieldDefinition_t {
+typedef struct blackboxFieldDefinition_s {
     const char *name;
     // If the field name has a number to be included in square brackets [1] afterwards, set it here, or -1 for no brackets:
     int8_t fieldNameIndex;
@@ -124,7 +124,7 @@ typedef struct blackboxFieldDefinition_t {
 #define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 #define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 
-typedef struct blackboxSimpleFieldDefinition_t {
+typedef struct blackboxSimpleFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -133,7 +133,7 @@ typedef struct blackboxSimpleFieldDefinition_t {
     uint8_t encode;
 } blackboxSimpleFieldDefinition_t;
 
-typedef struct blackboxConditionalFieldDefinition_t {
+typedef struct blackboxConditionalFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -143,7 +143,7 @@ typedef struct blackboxConditionalFieldDefinition_t {
     uint8_t condition; // Decide whether this field should appear in the log
 } blackboxConditionalFieldDefinition_t;
 
-typedef struct blackboxDeltaFieldDefinition_t {
+typedef struct blackboxDeltaFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -264,7 +264,7 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SHUTTING_DOWN
 } BlackboxState;
 
-typedef struct blackboxMainState_t {
+typedef struct blackboxMainState_s {
     uint32_t time;
 
     int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
@@ -290,13 +290,13 @@ typedef struct blackboxMainState_t {
     uint16_t rssi;
 } blackboxMainState_t;
 
-typedef struct blackboxGpsState_t {
+typedef struct blackboxGpsState_s {
     int32_t GPS_home[2], GPS_coord[2];
     uint8_t GPS_numSat;
 } blackboxGpsState_t;
 
 // This data is updated really infrequently:
-typedef struct blackboxSlowState_t {
+typedef struct blackboxSlowState_s {
     uint16_t flightModeFlags;
     uint8_t stateFlags;
     uint8_t failsafePhase;

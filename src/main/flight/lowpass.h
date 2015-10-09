@@ -21,7 +21,7 @@
 #define LOWPASS_NUM_COEF 3
 #define LPF_ROUND(x) (x < 0 ? (x - 0.5f) : (x + 0.5f))
 
-typedef struct lowpass_t {
+typedef struct lowpass_s {
     bool init;
     int16_t freq;                           // Normalized freq in 1/1000ths
     float bf[LOWPASS_NUM_COEF];
