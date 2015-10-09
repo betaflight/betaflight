@@ -25,6 +25,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/utils.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -236,14 +237,14 @@ void annexCode(void)
     }
 
     if (feature(FEATURE_VBAT)) {
-        if ((int32_t)(currentTime - vbatLastServiced) >= VBATINTERVAL) {
+        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
         }
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-        int32_t ibatTimeSinceLastServiced = (int32_t) (currentTime - ibatLastServiced);
+        int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
