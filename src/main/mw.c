@@ -794,10 +794,6 @@ void loop(void)
 
         filterRc();
 
-        if (masterConfig.rxConfig.rcSmoothing) {
-            filterRc();
-        }
-
         annexCode();
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
