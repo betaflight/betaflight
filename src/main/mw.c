@@ -460,16 +460,14 @@ void executePeriodicTasks(void)
 
 #if defined(BARO) || defined(SONAR)
     case CALCULATE_ALTITUDE_TASK:
-
-#if defined(BARO) && !defined(SONAR)
-        if (sensors(SENSOR_BARO) && isBaroReady()) {
+        if (false
+#if defined(BARO)
+            || (sensors(SENSOR_BARO) && isBaroReady())
 #endif
-#if defined(BARO) && defined(SONAR)
-        if ((sensors(SENSOR_BARO) && isBaroReady()) || sensors(SENSOR_SONAR)) {
+#if defined(SONAR)
+            || sensors(SENSOR_SONAR)
 #endif
-#if !defined(BARO) && defined(SONAR)
-        if (sensors(SENSOR_SONAR)) {
-#endif
+            ) {
             calculateEstimatedAltitude(currentTime);
         }
         break;
