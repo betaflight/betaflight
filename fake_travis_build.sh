@@ -3,7 +3,6 @@
 targets=("PUBLISHMETA=True" \
     "RUNTESTS=True" \
     "TARGET=CC3D" \
-    "TARGET=CC3D OPBL=yes" \
     "TARGET=CHEBUZZF3" \
     "TARGET=CJMCU" \
     "TARGET=COLIBRI_RACE" \
@@ -26,7 +25,7 @@ export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 
 for target in "${targets[@]}"
 do
-	unset RUNTESTS PUBLISHMETA TARGET OPBL
+	unset RUNTESTS PUBLISHMETA TARGET
 	eval "export $target"
 	make clean
 	./.travis.sh

@@ -115,14 +115,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#if defined(OPBL)
-// disabled some features for OPBL build due to code size.
-#undef DISPLAY
-#undef SONAR
-#define SKIP_CLI_COMMAND_HELP
-#endif
-
-
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
