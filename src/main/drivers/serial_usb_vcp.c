@@ -99,7 +99,12 @@ void usbVcpWrite(serialPort_t *instance, uint8_t c)
 
 }
 
-const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
+uint8_t usbTxBytesFree() {
+    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
+    return 255;
+}
+
+const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
 
 serialPort_t *usbVcpOpen(void)
 {

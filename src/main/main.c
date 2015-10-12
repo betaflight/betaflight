@@ -514,7 +514,7 @@ void init(void)
 void processLoopback(void) {
     if (loopbackPort) {
         uint8_t bytesWaiting;
-        while ((bytesWaiting = serialTotalBytesWaiting(loopbackPort))) {
+        while ((bytesWaiting = serialRxBytesWaiting(loopbackPort))) {
             uint8_t b = serialRead(loopbackPort);
             serialWrite(loopbackPort, b);
         };

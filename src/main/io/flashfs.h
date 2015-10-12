@@ -32,6 +32,8 @@ void flashfsEraseRange(uint32_t start, uint32_t end);
 
 uint32_t flashfsGetSize();
 uint32_t flashfsGetOffset();
+uint32_t flashfsGetWriteBufferFreeSpace();
+uint32_t flashfsGetWriteBufferSize();
 int flashfsIdentifyStartOfFreeSpace();
 const flashGeometry_t* flashfsGetGeometry();
 
