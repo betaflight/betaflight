@@ -165,8 +165,7 @@ void failsafeUpdateState(void)
         return;
     }
 
-    //bool receivingRxData = failsafeIsReceivingRxData();        // FIXME - Original check for received data
-    bool receivingRxData = rxIsReceivingSignal() ? true : false; // FIXME - temporary workaround for the original CF failsafe. It works pretty well actuall
+    bool receivingRxData = failsafeIsReceivingRxData();        // FIXME - Original check for received data
     bool armed = ARMING_FLAG(ARMED);
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
