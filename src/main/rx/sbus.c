@@ -82,7 +82,7 @@ bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 {
     int b;
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
-        sbusChannelData[b] = (1.6f * rxConfig->midrc) - 1408;
+        sbusChannelData[b] = (16 * rxConfig->midrc) / 10 - 1408;
     if (callback)
         *callback = sbusReadRawRC;
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;

@@ -72,7 +72,7 @@
 #define T_SETUP_PRESSURE_MAX             (10)
 // 10/16 = 0.625 ms
 
-typedef struct bmp280_calib_param_t {
+typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
     int16_t dig_T2; /* calibration T2 data */
     int16_t dig_T3; /* calibration T3 data */

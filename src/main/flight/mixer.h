@@ -54,7 +54,7 @@ typedef enum mixerMode
 } mixerMode_e;
 
 // Custom mixer data per motor
-typedef struct motorMixer_t {
+typedef struct motorMixer_s {
     float throttle;
     float roll;
     float pitch;
@@ -62,7 +62,7 @@ typedef struct motorMixer_t {
 } motorMixer_t;
 
 // Custom mixer configuration
-typedef struct mixer_t {
+typedef struct mixer_s {
     uint8_t motorCount;
     uint8_t useServo;
     const motorMixer_t *motor;
@@ -86,7 +86,7 @@ typedef struct flight3DConfig_s {
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
 } flight3DConfig_t;
 
-typedef struct airplaneConfig_t {
+typedef struct airplaneConfig_s {
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
 } airplaneConfig_t;
 
@@ -150,7 +150,7 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-typedef struct servoMixer_t {
+typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule
     int8_t rate;                            // range [-125;+125] ; can be used to adjust a rate 0-125% and a direction
@@ -165,12 +165,12 @@ typedef struct servoMixer_t {
 #define MAX_SERVO_BOXES 3
 
 // Custom mixer configuration
-typedef struct mixerRules_t {
+typedef struct mixerRules_s {
     uint8_t servoRuleCount;
     const servoMixer_t *rule;
 } mixerRules_t;
 
-typedef struct servoParam_t {
+typedef struct servoParam_s {
     int16_t min;                            // servo min
     int16_t max;                            // servo max
     int16_t middle;                         // servo middle

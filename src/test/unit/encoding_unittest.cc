@@ -23,12 +23,12 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-typedef struct zigzagEncodingExpectation_t {
+typedef struct zigzagEncodingExpectation_s {
     int32_t input;
     uint32_t expected;
 } zigzagEncodingExpectation_t;
 
-typedef struct floatToIntEncodingExpectation_t {
+typedef struct floatToIntEncodingExpectation_s {
     float input;
     uint32_t expected;
 } floatToIntEncodingExpectation_t;

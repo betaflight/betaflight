@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-typedef struct flashGeometry_t {
+typedef struct flashGeometry_s {
     uint16_t sectors; // Count of the number of erasable blocks on the device
 
     uint16_t pagesPerSector;

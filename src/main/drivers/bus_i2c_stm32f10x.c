@@ -42,7 +42,7 @@ static void i2c_er_handler(void);
 static void i2c_ev_handler(void);
 static void i2cUnstick(void);
 
-typedef struct i2cDevice_t {
+typedef struct i2cDevice_s {
     I2C_TypeDef *dev;
     GPIO_TypeDef *gpio;
     uint16_t scl;
