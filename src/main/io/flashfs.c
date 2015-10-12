@@ -114,17 +114,33 @@ uint32_t flashfsGetSize()
     return m25p16_getGeometry()->totalSize;
 }
 
-const flashGeometry_t* flashfsGetGeometry()
-{
-    return m25p16_getGeometry();
-}
-
 static uint32_t flashfsTransmitBufferUsed()
 {
     if (bufferHead >= bufferTail)
         return bufferHead - bufferTail;
 
     return FLASHFS_WRITE_BUFFER_SIZE - bufferTail + bufferHead;
+}
+
+/**
+ * Get the size of the largest single write that flashfs could ever accept without blocking or data loss.
+ */
+uint32_t flashfsGetWriteBufferSize()
+{
+    return FLASHFS_WRITE_BUFFER_USABLE;
+}
+
+/**
+ * Get the number of bytes that can currently be written to flashfs without any blocking or data loss.
+ */
+uint32_t flashfsGetWriteBufferFreeSpace()
+{
+    return flashfsGetWriteBufferSize() - flashfsTransmitBufferUsed();
+}
+
+const flashGeometry_t* flashfsGetGeometry()
+{
+    return m25p16_getGeometry();
 }
 
 /**

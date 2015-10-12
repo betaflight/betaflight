@@ -40,9 +40,14 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     instance->vTable->serialWrite(instance, ch);
 }
 
-uint8_t serialTotalBytesWaiting(serialPort_t *instance)
+uint8_t serialRxBytesWaiting(serialPort_t *instance)
 {
-    return instance->vTable->serialTotalBytesWaiting(instance);
+    return instance->vTable->serialTotalRxWaiting(instance);
+}
+
+uint8_t serialTxBytesFree(serialPort_t *instance)
+{
+    return instance->vTable->serialTotalTxFree(instance);
 }
 
 uint8_t serialRead(serialPort_t *instance)
