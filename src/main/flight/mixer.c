@@ -783,10 +783,20 @@ void mixTable(void)
             motor[i] -= maxThrottleDifference;
 
             if (feature(FEATURE_3D)) {
-                if ((rcData[THROTTLE]) > rxConfig->midrc) {
-                    motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+                if (mixerConfig->pid_at_min_throttle
+                        || rcData[THROTTLE] <= rxConfig->midrc - flight3DConfig->deadband3d_throttle
+                        || rcData[THROTTLE] >= rxConfig->midrc + flight3DConfig->deadband3d_throttle) {
+                    if (rcData[THROTTLE] > rxConfig->midrc) {
+                        motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+                    } else {
+                        motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
+                    }
                 } else {
-                    motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
+                    if (rcData[THROTTLE] > rxConfig->midrc) {
+                        motor[i] = flight3DConfig->deadband3d_high;
+                    } else {
+                        motor[i] = flight3DConfig->deadband3d_low;
+                    }
                 }
             } else {
                 if (isFailsafeActive) {

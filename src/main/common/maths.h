@@ -34,7 +34,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
-typedef struct stdev_t
+typedef struct stdev_s
 {
     float m_oldM, m_newM, m_oldS, m_newS;
     int m_n;

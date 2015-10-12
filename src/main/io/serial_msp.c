@@ -1892,7 +1892,7 @@ void mspProcess(void)
 
         setCurrentPort(candidatePort);
 
-        while (serialTotalBytesWaiting(mspSerialPort)) {
+        while (serialRxBytesWaiting(mspSerialPort)) {
 
             uint8_t c = serialRead(mspSerialPort);
             bool consumed = mspProcessReceivedData(c);

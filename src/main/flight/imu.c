@@ -92,6 +92,13 @@ void imuConfigure(
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
+void imuInit(void)
+{
+    smallAngle = lrintf(acc_1G * cos_approx(degreesToRadians(imuRuntimeConfig->small_angle)));
+    accVelScale = 9.80665f / acc_1G / 10000.0f;
+    gyroScaleRad = gyro.scale * (M_PIf / 180.0f) * 0.000001f;
+}
+
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);

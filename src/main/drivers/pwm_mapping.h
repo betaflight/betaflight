@@ -44,7 +44,7 @@ typedef struct sonarGPIOConfig_s {
     uint16_t echoPin;
 } sonarGPIOConfig_t;
 
-typedef struct drv_pwm_config_t {
+typedef struct drv_pwm_config_s {
     bool useParallelPWM;
     bool usePPM;
     bool useSerialRx;

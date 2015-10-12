@@ -374,7 +374,7 @@ static void processBinaryModeRequest(uint8_t address) {
 
 static void flushHottRxBuffer(void)
 {
-    while (serialTotalBytesWaiting(hottPort) > 0) {
+    while (serialRxBytesWaiting(hottPort) > 0) {
         serialRead(hottPort);
     }
 }
@@ -383,7 +383,7 @@ static void hottCheckSerialData(uint32_t currentMicros)
 {
     static bool lookingForRequest = true;
 
-    uint8_t bytesWaiting = serialTotalBytesWaiting(hottPort);
+    uint8_t bytesWaiting = serialRxBytesWaiting(hottPort);
 
     if (bytesWaiting <= 1) {
         return;

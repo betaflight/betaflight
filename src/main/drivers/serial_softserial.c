@@ -403,7 +403,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
+uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;
@@ -414,6 +414,19 @@ uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
+uint8_t softSerialTxBytesFree(serialPort_t *instance)
+{
+    if ((instance->mode & MODE_TX) == 0) {
+        return 0;
+    }
+
+    softSerial_t *s = (softSerial_t *)instance;
+
+    uint8_t bytesUsed = (s->port.txBufferHead - s->port.txBufferTail) & (s->port.txBufferSize - 1);
+
+    return (s->port.txBufferSize - 1) - bytesUsed;
+}
+
 uint8_t softSerialReadByte(serialPort_t *instance)
 {
     uint8_t ch;
@@ -422,7 +435,7 @@ uint8_t softSerialReadByte(serialPort_t *instance)
         return 0;
     }
 
-    if (softSerialTotalBytesWaiting(instance) == 0) {
+    if (softSerialRxBytesWaiting(instance) == 0) {
         return 0;
     }
 
@@ -460,7 +473,8 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 const struct serialPortVTable softSerialVTable[] = {
     {
         softSerialWriteByte,
-        softSerialTotalBytesWaiting,
+        softSerialRxBytesWaiting,
+        softSerialTxBytesFree,
         softSerialReadByte,
         softSerialSetBaudRate,
         isSoftSerialTransmitBufferEmpty,

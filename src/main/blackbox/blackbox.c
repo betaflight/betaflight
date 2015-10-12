@@ -111,7 +111,7 @@ static const char* const blackboxFieldHeaderNames[] = {
 };
 
 /* All field definition structs should look like this (but with longer arrs): */
-typedef struct blackboxFieldDefinition_t {
+typedef struct blackboxFieldDefinition_s {
     const char *name;
     // If the field name has a number to be included in square brackets [1] afterwards, set it here, or -1 for no brackets:
     int8_t fieldNameIndex;
@@ -124,7 +124,7 @@ typedef struct blackboxFieldDefinition_t {
 #define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 #define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 
-typedef struct blackboxSimpleFieldDefinition_t {
+typedef struct blackboxSimpleFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -133,7 +133,7 @@ typedef struct blackboxSimpleFieldDefinition_t {
     uint8_t encode;
 } blackboxSimpleFieldDefinition_t;
 
-typedef struct blackboxConditionalFieldDefinition_t {
+typedef struct blackboxConditionalFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -143,7 +143,7 @@ typedef struct blackboxConditionalFieldDefinition_t {
     uint8_t condition; // Decide whether this field should appear in the log
 } blackboxConditionalFieldDefinition_t;
 
-typedef struct blackboxDeltaFieldDefinition_t {
+typedef struct blackboxDeltaFieldDefinition_s {
     const char *name;
     int8_t fieldNameIndex;
 
@@ -264,7 +264,10 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SHUTTING_DOWN
 } BlackboxState;
 
-typedef struct blackboxMainState_t {
+#define BLACKBOX_FIRST_HEADER_SENDING_STATE BLACKBOX_STATE_SEND_HEADER
+#define BLACKBOX_LAST_HEADER_SENDING_STATE BLACKBOX_STATE_SEND_SYSINFO
+
+typedef struct blackboxMainState_s {
     uint32_t time;
 
     int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
@@ -290,13 +293,13 @@ typedef struct blackboxMainState_t {
     uint16_t rssi;
 } blackboxMainState_t;
 
-typedef struct blackboxGpsState_t {
+typedef struct blackboxGpsState_s {
     int32_t GPS_home[2], GPS_coord[2];
     uint8_t GPS_numSat;
 } blackboxGpsState_t;
 
 // This data is updated really infrequently:
-typedef struct blackboxSlowState_t {
+typedef struct blackboxSlowState_s {
     uint16_t flightModeFlags;
     uint8_t stateFlags;
     uint8_t failsafePhase;
@@ -325,7 +328,6 @@ static struct {
      */
     union {
         int fieldIndex;
-        int serialBudget;
         uint32_t startTime;
     } u;
 } xmitState;
@@ -452,6 +454,7 @@ static void blackboxSetState(BlackboxState newState)
     //Perform initial setup required for the new state
     switch (newState) {
         case BLACKBOX_STATE_SEND_HEADER:
+            blackboxHeaderBudget = 0;
             xmitState.headerIndex = 0;
             xmitState.u.startTime = millis();
         break;
@@ -973,7 +976,6 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
         const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
 {
     const blackboxFieldDefinition_t *def;
-    int charsWritten;
     unsigned int headerCount;
     static bool needComma = false;
     size_t definitionStride = (char*) secondFieldDefinition - (char*) fieldDefinitions;
@@ -989,46 +991,76 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
      * We're chunking up the header data so we don't exceed our datarate. So we'll be called multiple times to transmit
      * the whole header.
      */
+
+    // On our first call we need to print the name of the header and a colon
     if (xmitState.u.fieldIndex == -1) {
         if (xmitState.headerIndex >= headerCount) {
             return false; //Someone probably called us again after we had already completed transmission
         }
 
-        charsWritten = blackboxPrintf("H Field %c %s:", xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? deltaFrameChar : mainFrameChar, blackboxFieldHeaderNames[xmitState.headerIndex]);
+        uint32_t charsToBeWritten = strlen("H Field x :") + strlen(blackboxFieldHeaderNames[xmitState.headerIndex]);
+
+        if (blackboxDeviceReserveBufferSpace(charsToBeWritten) != BLACKBOX_RESERVE_SUCCESS) {
+            return true; // Try again later
+        }
+
+        blackboxHeaderBudget -= blackboxPrintf("H Field %c %s:", xmitState.headerIndex >= BLACKBOX_SIMPLE_FIELD_HEADER_COUNT ? deltaFrameChar : mainFrameChar, blackboxFieldHeaderNames[xmitState.headerIndex]);
 
         xmitState.u.fieldIndex++;
         needComma = false;
-    } else
-        charsWritten = 0;
+    }
 
-    for (; xmitState.u.fieldIndex < fieldCount && charsWritten < blackboxWriteChunkSize; xmitState.u.fieldIndex++) {
+    // The longest we expect an integer to be as a string:
+    const uint32_t LONGEST_INTEGER_STRLEN = 2;
+
+    for (; xmitState.u.fieldIndex < fieldCount; xmitState.u.fieldIndex++) {
         def = (const blackboxFieldDefinition_t*) ((const char*)fieldDefinitions + definitionStride * xmitState.u.fieldIndex);
 
         if (!conditions || testBlackboxCondition(conditions[conditionsStride * xmitState.u.fieldIndex])) {
+            // First (over)estimate the length of the string we want to print
+
+            int32_t bytesToWrite = 1; // Leading comma
+
+            // The first header is a field name
+            if (xmitState.headerIndex == 0) {
+                bytesToWrite += strlen(def->name) + strlen("[]") + LONGEST_INTEGER_STRLEN;
+            } else {
+                //The other headers are integers
+                bytesToWrite += LONGEST_INTEGER_STRLEN;
+            }
+
+            // Now perform the write if the buffer is large enough
+            if (blackboxDeviceReserveBufferSpace(bytesToWrite) != BLACKBOX_RESERVE_SUCCESS) {
+                // Ran out of space!
+                return true;
+            }
+
+            blackboxHeaderBudget -= bytesToWrite;
+
             if (needComma) {
                 blackboxWrite(',');
-                charsWritten++;
             } else {
                 needComma = true;
             }
 
             // The first header is a field name
             if (xmitState.headerIndex == 0) {
-                charsWritten += blackboxPrint(def->name);
+                blackboxPrint(def->name);
 
                 // Do we need to print an index in brackets after the name?
                 if (def->fieldNameIndex != -1) {
-                    charsWritten += blackboxPrintf("[%d]", def->fieldNameIndex);
+                    blackboxPrintf("[%d]", def->fieldNameIndex);
                 }
             } else {
                 //The other headers are integers
-                charsWritten += blackboxPrintf("%d", def->arr[xmitState.headerIndex - 1]);
+                blackboxPrintf("%d", def->arr[xmitState.headerIndex - 1]);
             }
         }
     }
 
     // Did we complete this line?
-    if (xmitState.u.fieldIndex == fieldCount) {
+    if (xmitState.u.fieldIndex == fieldCount && blackboxDeviceReserveBufferSpace(1) == BLACKBOX_RESERVE_SUCCESS) {
+        blackboxHeaderBudget--;
         blackboxWrite('\n');
         xmitState.headerIndex++;
         xmitState.u.fieldIndex = -1;
@@ -1043,68 +1075,57 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
  */
 static bool blackboxWriteSysinfo()
 {
-    if (xmitState.headerIndex == 0) {
-        xmitState.u.serialBudget = 0;
-        xmitState.headerIndex = 1;
-    }
-
-    // How many bytes can we afford to transmit this loop?
-    xmitState.u.serialBudget = MIN(xmitState.u.serialBudget + blackboxWriteChunkSize, 64);
-
-    // Most headers will consume at least 20 bytes so wait until we've built up that much link budget
-    if (xmitState.u.serialBudget < 20) {
+    // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
+    if (blackboxDeviceReserveBufferSpace(64) != BLACKBOX_RESERVE_SUCCESS) {
         return false;
     }
 
     switch (xmitState.headerIndex) {
         case 0:
-            //Shouldn't ever get here
+            blackboxPrintfHeaderLine("Firmware type:Cleanflight");
         break;
         case 1:
-            xmitState.u.serialBudget -= blackboxPrint("H Firmware type:Cleanflight\n");
+            blackboxPrintfHeaderLine("Firmware revision:%s", shortGitRevision);
         break;
         case 2:
-            xmitState.u.serialBudget -= blackboxPrintf("H Firmware revision:%s\n", shortGitRevision);
+            blackboxPrintfHeaderLine("Firmware date:%s %s", buildDate, buildTime);
         break;
         case 3:
-            xmitState.u.serialBudget -= blackboxPrintf("H Firmware date:%s %s\n", buildDate, buildTime);
+            blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 4:
-            xmitState.u.serialBudget -= blackboxPrintf("H P interval:%d/%d\n", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
         break;
         case 5:
-            xmitState.u.serialBudget -= blackboxPrintf("H rcRate:%d\n", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+            blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);
         break;
         case 6:
-            xmitState.u.serialBudget -= blackboxPrintf("H minthrottle:%d\n", masterConfig.escAndServoConfig.minthrottle);
+            blackboxPrintfHeaderLine("maxthrottle:%d", masterConfig.escAndServoConfig.maxthrottle);
         break;
         case 7:
-            xmitState.u.serialBudget -= blackboxPrintf("H maxthrottle:%d\n", masterConfig.escAndServoConfig.maxthrottle);
+            blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));
         break;
         case 8:
-            xmitState.u.serialBudget -= blackboxPrintf("H gyro.scale:0x%x\n", castFloatBytesToInt(gyro.scale));
+            blackboxPrintfHeaderLine("acc_1G:%u", acc_1G);
         break;
         case 9:
-            xmitState.u.serialBudget -= blackboxPrintf("H acc_1G:%u\n", acc_1G);
-        break;
-        case 10:
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                xmitState.u.serialBudget -= blackboxPrintf("H vbatscale:%u\n", masterConfig.batteryConfig.vbatscale);
+                blackboxPrintfHeaderLine("vbatscale:%u", masterConfig.batteryConfig.vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
         break;
-        case 11:
-            xmitState.u.serialBudget -= blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", masterConfig.batteryConfig.vbatmincellvoltage,
+        case 10:
+            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u", masterConfig.batteryConfig.vbatmincellvoltage,
                 masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
         break;
-        case 12:
-            xmitState.u.serialBudget -= blackboxPrintf("H vbatref:%u\n", vbatReference);
+        case 11:
+            blackboxPrintfHeaderLine("vbatref:%u", vbatReference);
         break;
-        case 13:
+        case 12:
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                xmitState.u.serialBudget -= blackboxPrintf("H currentMeter:%d,%d\n", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+                blackboxPrintfHeaderLine("currentMeter:%d,%d", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
             }
         break;
         default:
@@ -1262,21 +1283,28 @@ void handleBlackbox(void)
 {
     int i;
 
+    if (blackboxState >= BLACKBOX_FIRST_HEADER_SENDING_STATE && blackboxState <= BLACKBOX_LAST_HEADER_SENDING_STATE) {
+        blackboxReplenishHeaderBudget();
+    }
+
     switch (blackboxState) {
         case BLACKBOX_STATE_SEND_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
 
             /*
-             * Once the UART has had time to init, transmit the header in chunks so we don't overflow our transmit
-             * buffer.
+             * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
+             * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
              */
             if (millis() > xmitState.u.startTime + 100) {
-                for (i = 0; i < blackboxWriteChunkSize && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
-                    blackboxWrite(blackboxHeader[xmitState.headerIndex]);
-                }
+                if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
+                    for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
+                        blackboxWrite(blackboxHeader[xmitState.headerIndex]);
+                        blackboxHeaderBudget--;
+                    }
 
-                if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                    blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
+                    if (blackboxHeader[xmitState.headerIndex] == '\0') {
+                        blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
+                    }
                 }
             }
         break;

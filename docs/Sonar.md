@@ -39,8 +39,6 @@ Current meter cannot be used in conjunction with Sonar.
 | ------------- | ------------- | ------------------- |
 | PB5           | PB0           | YES (3.3v input)    |
 
-Sonar support is not available when using the OpenPilot bootloader (OPBL).
-
 #### Constraints
 
 Sonar cannot be used in conjuction with SoftSerial or Parallel PWM.

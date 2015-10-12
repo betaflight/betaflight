@@ -98,9 +98,12 @@ save.
 You need to let Cleanflight know which of [your serial ports][] you connect your OpenLog to (i.e. the Blackbox port),
 which you can do on the Configurator's Ports tab.
 
-A hardware serial port is required (such as UART1 on the Naze32, the two-pin Tx/Rx header in the center of the board).
-SoftSerial ports cannot be used as they are too slow. Blackbox needs to be set to at least 115200 baud on this port.
-When using fast looptimes (<2500), a baud rate of 250000 should be used instead in order to reduce dropped frames.
+You should use a hardware serial port (such as UART1 on the Naze32, the two-pin Tx/Rx header in the center of the
+board). SoftSerial ports can be used for the Blackbox. However, because they are limited to 19200 baud, your logging 
+rate will need to be severely reduced to compensate. Therefore the use of SoftSerial is not recommended.
+
+When using a hardware serial port, Blackbox should be set to at least 115200 baud on that port. When using fast
+looptimes (<2500), a baud rate of 250000 should be used instead in order to reduce dropped frames.
 
 The serial port used for Blackbox cannot be shared with any other function (e.g. GPS, telemetry) except the MSP
 protocol. If MSP is used on the same port as Blackbox, then MSP will be active when the board is disarmed, and Blackbox
@@ -132,7 +135,7 @@ then you can use a spare motor header's +5V and GND pins to power the OpenLog wi
 Boards other than the Naze32 may have more accessible hardware serial devices, in which case refer to their
 documentation to decide how to wire up the logger. The key criteria are:
 
-* Must be a hardware serial port. Not SoftSerial.
+* Should be a hardware serial port rather than SoftSerial.
 * Cannot be shared with any other function (GPS, telemetry) except MSP.
 * If MSP is used on the same UART, MSP will stop working when the board is armed.
 
@@ -213,6 +216,9 @@ set blackbox_rate_denom = 2
 
 The data rate for my quadcopter using a looptime of 2400 and a rate of 1/1 is about 10.25kB/s. This allows about 18
 days of flight logs to fit on my OpenLog's 16GB MicroSD card, which ought to be enough for anybody :).
+
+If you are logging using SoftSerial, you will almost certainly need to reduce your logging rate to 1/32. Even at that
+logging rate, looptimes faster than about 1000 cannot be successfully logged.
 
 If you're logging to an onboard dataflash chip instead of an OpenLog, be aware that the 2MB of storage space it offers
 is pretty small. At the default 1/1 logging rate, and a 2400 looptime, this is only enough for about 3 minutes of
