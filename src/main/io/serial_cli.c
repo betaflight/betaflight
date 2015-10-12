@@ -2168,7 +2168,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("# BetaFlight Bee/%s %s %s / %s (%s)",
+    printf("# BetaFlight Final/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,
