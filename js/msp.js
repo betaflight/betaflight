@@ -1138,6 +1138,22 @@ MSP.crunch = function (code) {
 };
 
 /**
+ * Set raw Rx values over MSP protocol.
+ * 
+ * Channels is an array of 16-bit unsigned integer channel values to be sent. 8 channels is probably the maximum.
+ */
+MSP.setRawRx = function(channels) {
+    var buffer = [];
+    
+    for (var i = 0; i < channels.length; i++) {
+        buffer.push(specificByte(channels[i], 0));
+        buffer.push(specificByte(channels[i], 1));
+    }
+    
+    MSP.send_message(MSP_codes.MSP_SET_RAW_RC, buffer, false);
+}
+
+/**
  * Send a request to read a block of data from the dataflash at the given address and pass that address and a dataview
  * of the returned data to the given callback (or null for the data if an error occured).
  */

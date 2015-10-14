@@ -299,6 +299,7 @@
     position: absolute;
     bottom: 10px;
 }
+.tab-receiver .sticks,
 .tab-receiver .update,
 .tab-receiver .refresh {
     display: block;
@@ -317,6 +318,7 @@
     border: 1px solid silver;
     background-color: #ececec;
 }
+.tab-receiver .sticks,
 .tab-receiver .refresh {
     margin-right: 10px;
 }

@@ -31,7 +31,8 @@
         "fileSystem",
         "fileSystem.write",
         "fileSystem.retainEntries",
-        "notifications"
+        "notifications",
+        "alwaysOnTopWindows"
     ],
 
     "optional_permissions": [

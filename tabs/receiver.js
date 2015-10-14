@@ -18,7 +18,12 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_map() {
-        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_config);
+    }
+    
+    // Fetch features so we can check if RX_MSP is enabled:
+    function load_config() {
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_html);
     }
 
     function load_html() {
@@ -52,7 +57,12 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // generate bars
-        var bar_names = ['Roll', 'Pitch', 'Yaw', 'Throttle'],
+        var bar_names = [
+                chrome.i18n.getMessage('controlAxisRoll'),
+                chrome.i18n.getMessage('controlAxisPitch'),
+                chrome.i18n.getMessage('controlAxisYaw'),
+                chrome.i18n.getMessage('controlAxisThrottle')
+            ],
             bar_container = $('.tab-receiver .bars'),
             aux_index = 1;
 
@@ -61,7 +71,7 @@ TABS.receiver.initialize = function (callback) {
             if (i < bar_names.length) {
                 name = bar_names[i];
             } else {
-                name = 'AUX ' + aux_index++;
+                name = chrome.i18n.getMessage("controlAxisAux" + (aux_index++));
             }
 
             bar_container.append('\
@@ -302,6 +312,35 @@ TABS.receiver.initialize = function (callback) {
 
             MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
         });
+        
+        $("a.sticks").click(function() {
+            var
+                windowWidth = 370,
+                windowHeight = 510;
+            
+            chrome.app.window.create("/tabs/receiver_msp.html", {
+                id: "receiver_msp",
+                innerBounds: {
+                    minWidth: windowWidth, minHeight: windowHeight,
+                    width: windowWidth, height: windowHeight, 
+                    maxWidth: windowWidth, maxHeight: windowHeight
+                },
+                alwaysOnTop: true
+            }, function(createdWindow) {
+                // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
+                createdWindow.contentWindow.setRawRx = function(channels) {
+                    if (CONFIGURATOR.connectionValid && GUI.active_tab != 'cli') {
+                        MSP.setRawRx(channels);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+        });
+        
+        // Only show the MSP control sticks if the MSP Rx feature is enabled
+        $("a.sticks").toggle(bit_check(BF_CONFIG.features, 14 /* RX_MSP */));
 
         $('select[name="rx_refresh_rate"]').change(function () {
             var plot_update_rate = parseInt($(this).val(), 10);
