@@ -372,8 +372,8 @@
     "initialSetupModel": {
         "message": "Model: $1"
     },
-    "initialSetupHeading": {
-        "message": "Heading: $1 deg"
+    "initialSetupAttitude": {
+        "message": "$1 deg"
     },
     "initialSetupAccelCalibStarted": {
         "message": "Accelerometer calibration started"
