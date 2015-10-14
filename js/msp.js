@@ -466,8 +466,8 @@ var MSP = {
                                 'max':                      data.getInt16(i + 2, 1),
                                 'middle':                   data.getInt16(i + 4, 1),
                                 'rate':                     data.getInt8(i + 6),
-                                'angleAtMin':               data.getUint8(i + 7),
-                                'angleAtMax':               data.getUint8(i + 8),
+                                'angleAtMin':               data.getInt8(i + 7),
+                                'angleAtMax':               data.getInt8(i + 8),
                                 'indexOfChannelToForward':  data.getInt8(i + 9),
                                 'reversedInputSources':     data.getUint32(i + 10)
                             };
