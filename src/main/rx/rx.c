@@ -81,7 +81,9 @@ static uint8_t  skipRxSamples = 0;
 
 int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+int8_t  rcInvalidPulsCounter[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
+#define MAX_INVALID_PULS_COUNTS  3
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_50_HZ (1000000 / 50)
@@ -157,6 +159,7 @@ void rxInit(rxConfig_t *rxConfig)
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig->midrc;
+        rcInvalidPulsCounter[i] = MAX_INVALID_PULS_COUNTS;
     }
 
     rcData[THROTTLE] = (feature(FEATURE_3D)) ? rxConfig->midrc : rxConfig->rx_min_usec;
@@ -471,10 +474,16 @@ static void detectAndApplySignalLossBehaviour(void)
         bool validPulse = isPulseValid(sample);
 
         if (!validPulse) {
-            sample = getRxfailValue(channel);
+            if (rcInvalidPulsCounter[channel]) {
+                rcInvalidPulsCounter[channel]--;
+                sample = rcData[channel];           // hold channel for MAX_INVALID_PULS_COUNTS
+            } else {
+                sample = getRxfailValue(channel);   // after that apply rxfail value
+                rxUpdateFlightChannelStatus(channel, validPulse);
+            }
+        } else {
+            rcInvalidPulsCounter[channel] = MAX_INVALID_PULS_COUNTS;
         }
-
-        rxUpdateFlightChannelStatus(channel, validPulse);
 
         if (rxIsDataDriven) {
             rcData[channel] = sample;
