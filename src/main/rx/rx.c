@@ -377,9 +377,29 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
-static uint16_t getRxfailValue(uint8_t channel)
+int16_t rxValueStepToTarget(int16_t currentRxValue, uint16_t targetRxValue) {
+
+#define RX_FAIL_STEP_SIZE 30
+#define RX_FAIL_STEP_DEADBAND 50
+
+    if ((currentRxValue >= (targetRxValue - RX_FAIL_STEP_DEADBAND)) && (currentRxValue < targetRxValue)) {
+        return targetRxValue;
+    } else if ((currentRxValue <= (targetRxValue + RX_FAIL_STEP_DEADBAND)) && (currentRxValue > targetRxValue)) {
+        return targetRxValue;
+    } else if (currentRxValue < (targetRxValue - RX_FAIL_STEP_DEADBAND)) {
+        return (currentRxValue + RX_FAIL_STEP_SIZE);
+    } else if (currentRxValue > (targetRxValue + RX_FAIL_STEP_DEADBAND)) {
+        return (currentRxValue - RX_FAIL_STEP_SIZE);
+    } else {
+        return targetRxValue;
+    }
+}
+
+static int16_t getRxfailValue(uint8_t channel)
 {
     rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
+
+#define RX_FAIL_STEP_TIME_BEFORE_STEPPING 1500
 
     switch(channelFailsafeConfiguration->mode) {
         case RX_FAILSAFE_MODE_AUTO:
@@ -387,13 +407,25 @@ static uint16_t getRxfailValue(uint8_t channel)
                 case ROLL:
                 case PITCH:
                 case YAW:
-                    return rxConfig->midrc;
+                	if (millis() < RX_FAIL_STEP_TIME_BEFORE_STEPPING) {
+                        return rxConfig->midrc;
+                    } else {
+                        return rxValueStepToTarget(rcData[channel], rxConfig->midrc);
+                    }
 
                 case THROTTLE:
                     if (feature(FEATURE_3D))
-                        return rxConfig->midrc;
+                        if (millis() < RX_FAIL_STEP_TIME_BEFORE_STEPPING) {
+                            return rxConfig->midrc;
+                        } else {
+                            return rxValueStepToTarget(rcData[channel], rxConfig->midrc);
+                        }
                     else
-                        return rxConfig->rx_min_usec;
+                        if (millis() < RX_FAIL_STEP_TIME_BEFORE_STEPPING) {
+                            return rxConfig->rx_min_usec;
+                        } else {
+                            return rxValueStepToTarget(rcData[channel], rxConfig->rx_min_usec);
+                        }
             }
             /* no break */
 
