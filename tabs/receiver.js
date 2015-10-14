@@ -1,6 +1,9 @@
 'use strict';
 
-TABS.receiver = {};
+TABS.receiver = {
+  rateChartHeight: 120
+};
+
 TABS.receiver.initialize = function (callback) {
     var self = this;
 
@@ -43,11 +46,11 @@ TABS.receiver.initialize = function (callback) {
         $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
         $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
 		    $('.tunings .yaw_rate input[name="yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-        
+
 		    if (semver.lt(CONFIG.apiVersion, "1.10.0")) {
             $('.tunings .yaw_rate input[name="yaw_expo"]').hide();
         }
-		
+
         chrome.storage.local.get('rx_refresh_rate', function (result) {
             if (result.rx_refresh_rate) {
                 $('select[name="rx_refresh_rate"]').val(result.rx_refresh_rate).change();
@@ -186,6 +189,8 @@ TABS.receiver.initialize = function (callback) {
 
         $('select[name="rssi_channel"]').val(MISC.rssi_channel);
 
+        var rateHeight = TABS.receiver.rateChartHeight;
+
         // UI Hooks
         // curves
         $('.tunings .throttle input').on('input change', function () {
@@ -211,14 +216,14 @@ TABS.receiver.initialize = function (callback) {
                 var midx = 220 * mid,
                     midxl = midx * 0.5,
                     midxr = (((220 - midx) * 0.5) + midx),
-                    midy = 58 - (midx * (58 / 220)),
-                    midyl = 58 - ((58 - midy) * 0.5 *(expo + 1)),
+                    midy = rateHeight - (midx * (rateHeight / 220)),
+                    midyl = rateHeight - ((rateHeight - midy) * 0.5 *(expo + 1)),
                     midyr = (midy / 2) * (expo + 1);
 
                 // draw
-                context.clearRect(0, 0, 220, 58);
+                context.clearRect(0, 0, 220, rateHeight);
                 context.beginPath();
-                context.moveTo(0, 58);
+                context.moveTo(0, rateHeight);
                 context.quadraticCurveTo(midxl, midyl, midx, midy);
                 context.moveTo(midx, midy);
                 context.quadraticCurveTo(midxr, midyr, 220, 0);
@@ -247,13 +252,13 @@ TABS.receiver.initialize = function (callback) {
                 }
 
                 // math magic by englishman
-                var ratey = 58 * rate;
+                var ratey = rateHeight * rate;
 
                 // draw
-                context.clearRect(0, 0, 220, 58);
+                context.clearRect(0, 0, 220, rateHeight);
                 context.beginPath();
-                context.moveTo(0, 58);
-                context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
+                context.moveTo(0, rateHeight);
+                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 220, rateHeight - ratey);
                 context.lineWidth = 2;
                 context.stroke();
             }, 0);
