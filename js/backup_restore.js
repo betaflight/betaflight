@@ -39,7 +39,7 @@ function configuration_backup(callback) {
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
             profileSpecificData.push(MSP_codes.MSP_CHANNEL_FORWARDING);
         } else {            
-            profileSpecificData.push(MSP_codes.MSP_SERVO_RULES);
+            profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
         }
     }
     
