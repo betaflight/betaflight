@@ -987,43 +987,43 @@ MSP.crunch = function (code) {
                     case 7:
                     case 8:
                     case 9:
-                        buffer.push(parseInt(PIDs[i][0] * 10));
-                        buffer.push(parseInt(PIDs[i][1] * 1000));
+                        buffer.push(Math.round(PIDs[i][0] * 10));
+                        buffer.push(Math.round(PIDs[i][1] * 1000));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 4:
-                        buffer.push(parseInt(PIDs[i][0] * 100));
-                        buffer.push(parseInt(PIDs[i][1] * 100));
+                        buffer.push(Math.round(PIDs[i][0] * 100));
+                        buffer.push(Math.round(PIDs[i][1] * 100));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 5:
                     case 6:
-                        buffer.push(parseInt(PIDs[i][0] * 10));
-                        buffer.push(parseInt(PIDs[i][1] * 100));
-                        buffer.push(parseInt(PIDs[i][2] * 1000));
+                        buffer.push(Math.round(PIDs[i][0] * 10));
+                        buffer.push(Math.round(PIDs[i][1] * 100));
+                        buffer.push(Math.round(PIDs[i][2] * 1000));
                         break;
                 }
             }
             break;
         case MSP_codes.MSP_SET_RC_TUNING:
-            buffer.push(parseInt(RC_tuning.RC_RATE * 100));
-            buffer.push(parseInt(RC_tuning.RC_EXPO * 100));
+            buffer.push(Math.round(RC_tuning.RC_RATE * 100));
+            buffer.push(Math.round(RC_tuning.RC_EXPO * 100));
             if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
-                buffer.push(parseInt(RC_tuning.roll_pitch_rate * 100));
+                buffer.push(Math.round(RC_tuning.roll_pitch_rate * 100));
             } else {
-                buffer.push(parseInt(RC_tuning.roll_rate * 100));
-                buffer.push(parseInt(RC_tuning.pitch_rate * 100));
+                buffer.push(Math.round(RC_tuning.roll_rate * 100));
+                buffer.push(Math.round(RC_tuning.pitch_rate * 100));
             }
-            buffer.push(parseInt(RC_tuning.yaw_rate * 100));
-            buffer.push(parseInt(RC_tuning.dynamic_THR_PID * 100));
-            buffer.push(parseInt(RC_tuning.throttle_MID * 100));
-            buffer.push(parseInt(RC_tuning.throttle_EXPO * 100));
+            buffer.push(Math.round(RC_tuning.yaw_rate * 100));
+            buffer.push(Math.round(RC_tuning.dynamic_THR_PID * 100));
+            buffer.push(Math.round(RC_tuning.throttle_MID * 100));
+            buffer.push(Math.round(RC_tuning.throttle_EXPO * 100));
             if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
                 buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
                 buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
             }
 			if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
-                buffer.push(parseInt(RC_tuning.RC_YAW_EXPO * 100));
+                buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
             }
             break;
         // Disabled, cleanflight does not use MSP_SET_BOX.
@@ -1071,12 +1071,12 @@ MSP.crunch = function (code) {
             buffer.push(MISC.multiwiicurrentoutput);
             buffer.push(MISC.rssi_channel);
             buffer.push(MISC.placeholder2);
-            buffer.push(lowByte(MISC.mag_declination * 10));
-            buffer.push(highByte(MISC.mag_declination * 10));
+            buffer.push(lowByte(Math.round(MISC.mag_declination * 10)));
+            buffer.push(highByte(Math.round(MISC.mag_declination * 10)));
             buffer.push(MISC.vbatscale);
-            buffer.push(MISC.vbatmincellvoltage * 10);
-            buffer.push(MISC.vbatmaxcellvoltage * 10);
-            buffer.push(MISC.vbatwarningcellvoltage * 10);
+            buffer.push(Math.round(MISC.vbatmincellvoltage * 10));
+            buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
+            buffer.push(Math.round(MISC.vbatwarningcellvoltage * 10));
             break;
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
