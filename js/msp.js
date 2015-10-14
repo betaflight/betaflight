@@ -105,6 +105,7 @@ var MSP = {
 
     callbacks:                  [],
     packet_error:               0,
+    unsupported:                0,
 
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
     ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
@@ -141,10 +142,14 @@ var MSP = {
                     }
                     break;
                 case 2: // direction (should be >)
+                    this.unsupported = 0;
                     if (data[i] == 62) { // >
                         this.message_direction = 1;
-                    } else { // <
+                    } else if (data[i] == 60) { // <
                         this.message_direction = 0;
+                    } else if (data[i] == 33) { // !
+                        // FC reports unsupported message error
+                        this.unsupported = 1;
                     }
 
                     this.state++;
@@ -205,7 +210,7 @@ var MSP = {
     process_data: function (code, message_buffer, message_length) {
         var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
 
-        switch (code) {
+        if (!this.unsupported) switch (code) {
             case MSP_codes.MSP_IDENT:
                 console.log('Using deprecated msp command: MSP_IDENT');
                 // Deprecated
@@ -834,6 +839,8 @@ var MSP = {
                 
             default:
                 console.log('Unknown code detected: ' + code);
+        } else {
+            console.log('FC reports unsupported message error: ' + code);
         }
 
         // trigger callbacks, cleanup/remove callback after trigger
