@@ -84,6 +84,8 @@ void mpu6500GyroInit(uint16_t lpf)
     }
 #endif
 
+    mpuIntExtiInit();
+
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     mpuConfiguration.write(MPU6500_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
