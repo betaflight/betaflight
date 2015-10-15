@@ -18,6 +18,8 @@
 #include "stdbool.h"
 #include "stdint.h"
 
+#include "platform.h"
+
 #include "common/maths.h"
 
 #include "drivers/adc.h"
