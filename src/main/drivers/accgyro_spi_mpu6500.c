@@ -105,7 +105,7 @@ bool mpu6500SpiDetect(void)
 
     mpu6500SpiInit();
 
-    mpu6500ReadRegister(MPU6500_RA_WHOAMI, 1, &tmp);
+    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
 
     if (tmp != MPU6500_WHO_AM_I_CONST)
         return false;

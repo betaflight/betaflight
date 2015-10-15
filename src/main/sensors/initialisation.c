@@ -124,6 +124,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &spRacingF3MPUIntExtiConfig;
 #endif
 
+#if defined(CC3D)
+    static const extiConfig_t cc3dMPUIntExtiConfig = {
+            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_3,
+            .exti_port_source = GPIO_PortSourceGPIOA,
+            .exti_pin_source = GPIO_PinSource3,
+            .exti_line = EXTI_Line3,
+            .exti_irqn = EXTI3_IRQn
+    };
+    return &cc3dMPUIntExtiConfig;
+#endif
+
     return NULL;
 }
 

@@ -169,7 +169,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         gpioInit(config->eocGpioPort, &gpio);
         BMP085_ON;
 
-        registerExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
+        registerExtiCallbackHandler(EXTI15_10_IRQn, BMP085_EOC_EXTI_Handler);
 
         // EXTI interrupt for barometer EOC
         gpioExtiLineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource14);
@@ -224,7 +224,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
     EXTI_InitStructure.EXTI_LineCmd = DISABLE;
     EXTI_Init(&EXTI_InitStructure);
 
-    unregisterExti15_10_CallbackHandler(BMP085_EOC_EXTI_Handler);
+    unregisterExtiCallbackHandler(EXTI15_10_IRQn, BMP085_EOC_EXTI_Handler);
 #endif
 
     BMP085_OFF;
