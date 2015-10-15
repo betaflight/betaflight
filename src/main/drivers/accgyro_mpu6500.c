@@ -66,11 +66,15 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
 void mpu6500AccInit(void)
 {
+    mpuIntExtiInit();
+
     acc_1G = 512 * 8;
 }
 
 void mpu6500GyroInit(uint16_t lpf)
 {
+    mpuIntExtiInit();
+
 #ifdef NAZE
     // FIXME target specific code in driver code.
 
