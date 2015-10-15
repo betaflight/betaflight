@@ -132,19 +132,12 @@
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
 
-#if defined(OPBL)
-// disabled some features for OPBL build due to code size.
-#undef AUTOTUNE
-#undef BARO
-#undef DISPLAY
-#undef SONAR
-#define SKIP_CLI_COMMAND_HELP
-#endif
-
 #if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef DISPLAY
+#undef SONAR
+#undef BARO
+#define SKIP_CLI_COMMAND_HELP
 #endif
-
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
