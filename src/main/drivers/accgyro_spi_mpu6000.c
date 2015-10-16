@@ -251,12 +251,6 @@ static void mpu6000AccAndGyroInit(void) {
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);  // 18 MHz SPI clock
     delayMicroseconds(1);
 
-    #ifdef USE_MPU_DATA_READY_SIGNAL
-        // Set MPU Data Ready Signal
-        mpu6000WriteRegister(MPU6000_INT_ENABLE , MPU_RF_DATA_RDY_EN);
-        delayMicroseconds(1);
-    #endif
-
     mpuSpi6000InitDone = true;
 }
 
