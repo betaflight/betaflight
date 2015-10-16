@@ -751,7 +751,12 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
-        imuUpdate(&currentProfile->accelerometerTrims);
+        // Determine current flight mode. When no acc needed in pid calculations we should only read gyro to reduce latency
+        if (!flightModeFlags) {
+            imuUpdate(&currentProfile->accelerometerTrims, ONLY_GYRO);  // When no level modes active read only gyro
+        } else {
+            imuUpdate(&currentProfile->accelerometerTrims, ACC_AND_GYRO);  // When level modes active read gyro and acc
+        }
 
         // Measure loop rate just after reading the sensors
         currentTime = micros();
@@ -840,6 +845,11 @@ void loop(void)
 
         if (motorControlEnable) {
             writeMotors();
+        }
+
+        // When no level modes active read acc after motor update
+        if (!flightModeFlags) {
+            imuUpdate(&currentProfile->accelerometerTrims, ONLY_ACC);
         }
 
 #ifdef BLACKBOX
