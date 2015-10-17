@@ -237,8 +237,10 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
+#ifndef COLIBRI_RACE
     if (gpsConfig->provider == GPS_NMEA)
 	    mode &= ~MODE_TX;
+#endif
 
     // no callback - buffer will be consumed in gpsThread()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
@@ -253,11 +255,49 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
 void gpsInitNmea(void)
 {
+#ifdef COLIBRI_RACE
+	uint32_t now;
+#endif
     switch(gpsData.state) {
         case GPS_INITIALIZING:
+#ifdef COLIBRI_RACE
+		   now = millis();
+		   if (now - gpsData.state_ts < 1000)
+			   return;
+		   gpsData.state_ts = now;
+		   if (gpsData.state_position < 1) {
+			   serialSetBaudRate(gpsPort, 4800);
+			   gpsData.state_position++;
+		   } else if (gpsData.state_position < 2) {
+			   // print our FIXED init string for the baudrate we want to be at
+			   serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
+			   gpsData.state_position++;
+		   } else {
+			   // we're now (hopefully) at the correct rate, next state will switch to it
+			   gpsSetState(GPS_CHANGE_BAUD);
+		   }
+		   break;
+#endif
         case GPS_CHANGE_BAUD:
+#ifdef COLIBRI_RACE
+		   now = millis();
+		   if (now - gpsData.state_ts < 1000)
+			   return;
+		   gpsData.state_ts = now;
+		   if (gpsData.state_position < 1) {
+			   serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+			   gpsData.state_position++;
+		   } else if (gpsData.state_position < 2) {
+			   serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
+			   gpsData.state_position++;
+		   } else {
+#else
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+#endif
             gpsSetState(GPS_RECEIVING_DATA);
+#ifdef COLIBRI_RACE
+		   }
+#endif
             break;
     }
 }
