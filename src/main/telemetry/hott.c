@@ -427,9 +427,12 @@ static void hottSendTelemetryData(void) {
     if (!hottIsSending) {
         hottIsSending = true;
         // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        //serialSetMode(hottPort, MODE_TX);
-        closeSerialPort(hottPort);
-        hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_TX, SERIAL_NOT_INVERTED);
+        if ((portConfig->identifier == SERIAL_PORT_SOFTSERIAL1) || (portConfig->identifier == SERIAL_PORT_SOFTSERIAL2))
+		    serialSetMode(hottPort, MODE_TX);
+        else {
+        	closeSerialPort(hottPort);
+        	hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_TX, SERIAL_NOT_INVERTED);
+        }
         hottMsgCrc = 0;
         return;
     }
@@ -439,9 +442,12 @@ static void hottSendTelemetryData(void) {
         hottIsSending = false;
 
         // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        //serialSetMode(hottPort, MODE_RX);
-        closeSerialPort(hottPort);
-        hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+        if ((portConfig->identifier == SERIAL_PORT_SOFTSERIAL1) || (portConfig->identifier == SERIAL_PORT_SOFTSERIAL2))
+            serialSetMode(hottPort, MODE_RX);
+        else {
+            closeSerialPort(hottPort);
+            hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+        }
         flushHottRxBuffer();
         return;
     }
