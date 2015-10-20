@@ -43,7 +43,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             var releaseDescriptors = [];
             TABS.firmware_flasher.releases.forEach(function(release){
                 release.assets.forEach(function(asset){
-                    var targetFromFilenameExpression = /.*_(.*)\.(.*)/;
+                    var targetFromFilenameExpression = /w*_(.*)\.(.*)/;
                     var match = targetFromFilenameExpression.exec(asset.name);
 
                     if (!showDevReleases && release.prerelease) {
@@ -54,7 +54,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                         return;
                     }
 
-                    var target = match[1];
+                    var target = match[1].replace("_", "_");
                     var format = match[2];
 
                     if (format != 'hex') {
@@ -529,6 +529,4 @@ TABS.firmware_flasher.cleanup = function (callback) {
 
     if (callback) callback();
 };
-
-
 
