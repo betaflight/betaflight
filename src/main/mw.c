@@ -683,13 +683,13 @@ void filterRc(void){
     // Set RC refresh rate for sampling and channels to filter
    	initRxRefreshRate(&rxRefreshRate);
 
-    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
+   	filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
     rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
-        	deltaRC[channel] = rcData[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
-            lastCommand[channel] = rcData[channel];
+        	deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+            lastCommand[channel] = rcCommand[channel];
         }
 
         isRXDataNew = false;
@@ -698,15 +698,16 @@ void filterRc(void){
         factor--;
     }
 
-    // Interpolate steps of rcData
+    // Interpolate steps of rcCommand
     if (factor > 0) {
         for (int channel=0; channel < 4; channel++) {
-            rcData[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+            rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
          }
     } else {
         factor = 0;
     }
 }
+
 
 void loop(void)
 {
@@ -791,9 +792,10 @@ void loop(void)
 
         filterApply7TapFIR(gyroADC);
 
+        annexCode();
+
         filterRc();
 
-        annexCode();
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
 #endif
