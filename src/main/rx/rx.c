@@ -81,9 +81,9 @@ static uint8_t  skipRxSamples = 0;
 
 int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
-int8_t  rcInvalidPulsCounter[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-#define MAX_INVALID_PULS_COUNTS  20
+#define MAX_INVALID_PULS_TIME    300
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_50_HZ (1000000 / 50)
@@ -150,19 +150,35 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChann
     }
 }
 
-void rxInit(rxConfig_t *rxConfig)
+void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions)
 {
     uint8_t i;
+    uint16_t value;
 
     useRxConfig(rxConfig);
     rcSampleIndex = 0;
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig->midrc;
-        rcInvalidPulsCounter[i] = MAX_INVALID_PULS_COUNTS;
+        rcInvalidPulsPeriod[i] = millis() + MAX_INVALID_PULS_TIME;
     }
 
     rcData[THROTTLE] = (feature(FEATURE_3D)) ? rxConfig->midrc : rxConfig->rx_min_usec;
+
+    // Initialize ARM switch to OFF position when arming via switch is defined
+    for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[i];
+        if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
+            // ARM switch is defined, determine an OFF value
+            if (modeActivationCondition->range.startStep > 0) {
+                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationCondition->range.startStep - 1));
+            } else {
+                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationCondition->range.endStep + 1));
+            }
+            // Initialize ARM AUX channel to OFF value
+            rcData[modeActivationCondition->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = value;
+        }
+    }
 
 #ifdef SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
@@ -449,6 +465,7 @@ static void detectAndApplySignalLossBehaviour(void)
     uint16_t sample;
     bool useValueFromRx = true;
     bool rxIsDataDriven = isRxDataDriven();
+    uint32_t currentMilliTime = millis();
 
     if (!rxIsDataDriven) {
         rxSignalReceived = rxSignalReceivedNotDataDriven;
@@ -474,15 +491,14 @@ static void detectAndApplySignalLossBehaviour(void)
         bool validPulse = isPulseValid(sample);
 
         if (!validPulse) {
-            if (rcInvalidPulsCounter[channel]) {
-                rcInvalidPulsCounter[channel]--;
-                sample = rcData[channel];           // hold channel for MAX_INVALID_PULS_COUNTS
+            if (currentMilliTime < rcInvalidPulsPeriod[channel]) {
+                sample = rcData[channel];           // hold channel for MAX_INVALID_PULS_TIME
             } else {
                 sample = getRxfailValue(channel);   // after that apply rxfail value
                 rxUpdateFlightChannelStatus(channel, validPulse);
             }
         } else {
-            rcInvalidPulsCounter[channel] = MAX_INVALID_PULS_COUNTS;
+            rcInvalidPulsPeriod[channel] = currentMilliTime + MAX_INVALID_PULS_TIME;
         }
 
         if (rxIsDataDriven) {
@@ -508,7 +524,6 @@ static void detectAndApplySignalLossBehaviour(void)
 #ifdef DEBUG_RX_SIGNAL_LOSS
     debug[3] = rcData[THROTTLE];
 #endif
-
 }
 
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
