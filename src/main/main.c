@@ -52,6 +52,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/sdcard.h"
 
 #include "rx/rx.h"
 
@@ -533,6 +534,10 @@ void init(void)
 #endif
 
     flashfsInit();
+#endif
+
+#ifdef USE_SDCARD
+    sdcard_init();
 #endif
 
 #ifdef BLACKBOX
