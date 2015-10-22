@@ -90,8 +90,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-//#define DEBUG_JITTER 3
-
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)       
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
@@ -102,7 +100,7 @@ enum {
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-float dT;
+float dT = 0.000001f;  // dT set for 1khz mode
 
 int16_t magHold;
 int16_t headFreeModeHold;
@@ -164,6 +162,41 @@ bool isCalibrating()
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+}
+
+void filterRc(void){
+    static int16_t lastCommand[4] = { 0, 0, 0, 0 };
+    static int16_t deltaRC[4] = { 0, 0, 0, 0 };
+    static int16_t factor, rcInterpolationFactor;
+    static filterStatePt1_t filteredCycleTimeState;
+    uint16_t rxRefreshRate, filteredCycleTime;
+
+    // Set RC refresh rate for sampling and channels to filter
+   	initRxRefreshRate(&rxRefreshRate);
+
+   	filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
+    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+
+    if (isRXDataNew) {
+        for (int channel=0; channel < 4; channel++) {
+        	deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+            lastCommand[channel] = rcCommand[channel];
+        }
+
+        isRXDataNew = false;
+        factor = rcInterpolationFactor - 1;
+    } else {
+        factor--;
+    }
+
+    // Interpolate steps of rcCommand
+    if (factor > 0) {
+        for (int channel=0; channel < 4; channel++) {
+            rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+         }
+    } else {
+        factor = 0;
+    }
 }
 
 void annexCode(void)
@@ -241,6 +274,8 @@ void annexCode(void)
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
+
+    filterRc();  // rcCommand smoothing function
 
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
@@ -673,42 +708,6 @@ void processRx(void)
 
 }
 
-void filterRc(void){
-    static int16_t lastCommand[4] = { 0, 0, 0, 0 };
-    static int16_t deltaRC[4] = { 0, 0, 0, 0 };
-    static int16_t factor, rcInterpolationFactor;
-    static filterStatePt1_t filteredCycleTimeState;
-    uint16_t rxRefreshRate, filteredCycleTime;
-
-    // Set RC refresh rate for sampling and channels to filter
-   	initRxRefreshRate(&rxRefreshRate);
-
-   	filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
-    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
-
-    if (isRXDataNew) {
-        for (int channel=0; channel < 4; channel++) {
-        	deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
-            lastCommand[channel] = rcCommand[channel];
-        }
-
-        isRXDataNew = false;
-        factor = rcInterpolationFactor - 1;
-    } else {
-        factor--;
-    }
-
-    // Interpolate steps of rcCommand
-    if (factor > 0) {
-        for (int channel=0; channel < 4; channel++) {
-            rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-         }
-    } else {
-        factor = 0;
-    }
-}
-
-
 void loop(void)
 {
     static uint32_t loopTime;
@@ -776,25 +775,7 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
-#ifdef DEBUG_JITTER
-        static uint32_t previousCycleTime;
-
-		if (previousCycleTime > cycleTime) {
-		    debug[DEBUG_JITTER] = previousCycleTime - cycleTime;
-		} else {
-	        debug[DEBUG_JITTER] = cycleTime - previousCycleTime;
-		}
-		previousCycleTime = cycleTime;
-#endif
-
-
-        dT = (float)targetLooptime * 0.000001f;
-
-        filterApply7TapFIR(gyroADC);
-
         annexCode();
-
-        filterRc();
 
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;

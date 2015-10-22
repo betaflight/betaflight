@@ -22,6 +22,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -121,6 +122,8 @@ void gyroUpdate(void)
         return;
     }
     alignSensors(gyroADC, gyroADC, gyroAlign);
+
+    filterApply7TapFIR(gyroADC); // Apply filter to gyro
 
     if (!isGyroCalibrationComplete()) {
         performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);

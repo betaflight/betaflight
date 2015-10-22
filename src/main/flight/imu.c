@@ -50,9 +50,6 @@
 
 #include "config/runtime_config.h"
 
-//#define DEBUG_IMU
-//#define DEBUG_IMU_SPEED
-
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
@@ -411,19 +408,10 @@ static void imuCalculateEstimatedAttitude(void)
 
 void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors)
 {
-#ifdef DEBUG_IMU_SPEED
-	uint32_t time = micros();
-#endif
 	if (imuUpdateSensors == ONLY_GYRO || imuUpdateSensors == ACC_AND_GYRO) {
         gyroUpdate();
-#ifdef DEBUG_IMU_SPEED
-    debug[0] = micros() - time; // gyro read time
-#endif
     }
     if (sensors(SENSOR_ACC) && (!imuUpdateSensors == ONLY_GYRO)) {
-#ifdef DEBUG_IMU_SPEED
-        time = micros();
-#endif
         updateAccelerationReadings(accelerometerTrims);
         imuCalculateEstimatedAttitude();
     } else {
@@ -431,12 +419,6 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims, uint8_t imuUpdateSensors
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
-#ifdef DEBUG_IMU_SPEED
-    debug[1] = micros() - time;     // acc read time
-	if (imuUpdateSensors == ACC_AND_GYRO) {
-        debug[2] = debug[0] + debug[1]; // gyro + acc read time
-	}
-#endif
 }
 
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
