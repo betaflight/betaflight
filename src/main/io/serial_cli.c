@@ -186,6 +186,11 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
+// sync this with pidControllerType_e
+static const char * const pidControllers[] = {
+    "REWRITE", "LUXFLOAT", NULL
+};
+
 #ifndef CJMCU
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
@@ -476,7 +481,7 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, 0, MAG_MAX },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, -18000, 18000 },
 
-    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidController, 0, 5 },
+    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidController, 1, 2 },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], 0, 200 },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], 0, 200 },
@@ -514,10 +519,7 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], 0, 200 },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], 0, 200 },
 
-    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX },
 	{ "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, 0, 200 },
-
-    { "pid5_oldyw",                 VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.pid5_oldyw, 0, 1 },
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], 10, 200 },
@@ -1409,7 +1411,13 @@ static void dumpValues(uint16_t mask)
         }
 
         printf("set %s = ", valueTable[i].name);
-        cliPrintVar(value, 0);
+
+        if (strstr(valueTable[i].name, "pid_controller")) {
+            cliPrint(pidControllers[*(uint8_t *)valueTable[i].ptr -1]);
+        } else {
+            cliPrintVar(value, 0);
+        }
+
         cliPrint("\r\n");
     }
 }
@@ -2049,9 +2057,42 @@ static void cliSet(char *cmdline)
         valuef = fastA2F(eqptr);
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
-            // ensure exact match when setting to prevent setting variables with shorter names
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
-                if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
+                // ensure exact match when setting to prevent setting variables with shorter names
+                if (strstr(valueTable[i].name, "pid_controller")) {
+                    int_float_value_t tmp;
+                    tmp.int_value = 0;
+                    bool pidControllerSet = false;
+
+                    if (value) {
+                        if (value >= valueTable[i].min && value <= valueTable[i].max) {
+                        	tmp.int_value = value;
+                            cliSetVar(val, tmp);
+                            printf("%s set to %s \r\n", valueTable[i].name, pidControllers[value - 1]);
+                            pidControllerSet = true;
+                        }
+                    } else {
+                        for (int pid = 0; pid < (PID_COUNT - 1); pid++) {
+                            if (strstr(eqptr, pidControllers[pid])) {
+                                tmp.int_value = pid + 1;
+                                cliSetVar(val, tmp);
+                                printf("%s set to %s \r\n", valueTable[i].name, pidControllers[pid]);
+                                pidControllerSet = true;
+                            }
+                        }
+                    }
+
+                    if (!pidControllerSet) {
+                    	printf("Invalid Value! (Available PID Controllers: ");
+                    	for (int pid = 0; pid < (PID_COUNT - 1); pid++) {
+                    	    printf(pidControllers[pid]);
+                    	    printf(" ");
+                        }
+                        printf(")\r\n");
+                    }
+
+                    return;
+                } else if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
                     int_float_value_t tmp;
                     if (valueTable[i].type & VAR_FLOAT)
                         tmp.float_value = valuef;
@@ -2073,6 +2114,7 @@ static void cliSet(char *cmdline)
     }
 }
 
+
 static void cliGet(char *cmdline)
 {
     uint32_t i;
@@ -2083,7 +2125,13 @@ static void cliGet(char *cmdline)
         if (strstr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
             printf("%s = ", valueTable[i].name);
-            cliPrintVar(val, 0);
+
+        	if (strstr(valueTable[i].name, "pid_controller")) {
+                cliPrint(pidControllers[*(uint8_t *)valueTable[i].ptr - 1]);
+        	} else {
+                cliPrintVar(val, 0);
+        	}
+
             cliPrint("\r\n");
 
             matchedCommands++;

@@ -1359,7 +1359,7 @@ static bool processInCommand(void)
     case MSP_SET_LOOP_TIME:
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = read8();
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);  // Temporary configurator compatibility
         pidSetController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:
