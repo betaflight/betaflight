@@ -18,26 +18,27 @@
 #pragma once
 
 extern int16_t throttleAngleCorrection;
-extern uint32_t accTimeSum;       // altitudehold.c
-extern int accSumCount;           // altitudehold.c
-extern float accVelScale;         // altitudehold.c
-extern t_fp_vector EstG;          // display.c
-extern int16_t accSmooth[XYZ_AXIS_COUNT]; // blackbox.c, display.c, serial_msp.c, frsky.c, smartport.c
-extern int32_t accSum[XYZ_AXIS_COUNT]; // altitudehold.c
-extern int16_t smallAngle;        // display.c
+extern uint32_t accTimeSum;
+extern int accSumCount;
+extern float accVelScale;
+extern int16_t accSmooth[XYZ_AXIS_COUNT];
+extern int32_t accSum[XYZ_AXIS_COUNT];
 
-typedef struct rollAndPitchInclination_s {
-    // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-    int16_t rollDeciDegrees;
-    int16_t pitchDeciDegrees;
-} rollAndPitchInclination_t_def;
+#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
+#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
+#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
 
 typedef union {
-    int16_t raw[ANGLE_INDEX_COUNT];
-    rollAndPitchInclination_t_def values;
-} rollAndPitchInclination_t;
+    int16_t raw[XYZ_AXIS_COUNT];
+    struct {
+        // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+        int16_t roll;
+        int16_t pitch;
+        int16_t yaw;
+    } values;
+} attitudeEulerAngles_t;
 
-extern rollAndPitchInclination_t inclination;
+extern attitudeEulerAngles_t attitude;
 
 typedef struct accDeadband_s {
     uint8_t xy;                 // set the acc deadband for xy-Axis
@@ -45,10 +46,10 @@ typedef struct accDeadband_s {
 } accDeadband_t;
 
 typedef struct imuRuntimeConfig_s {
-    uint8_t acc_lpf_factor;
+    uint8_t acc_cut_hz;
     uint8_t acc_unarmedcal;
-    float gyro_cmpf_factor;
-    float gyro_cmpfm_factor;
+    float dcm_ki;
+    float dcm_kp;
     uint8_t small_angle;
 } imuRuntimeConfig_t;
 

@@ -168,9 +168,9 @@ void updateSonarAltHoldState(void)
     }
 }
 
-bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
+bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude)
 {
-    return ABS(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && ABS(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+    return ABS(attitude->values.roll) < DEGREES_80_IN_DECIDEGREES && ABS(attitude->values.pitch) < DEGREES_80_IN_DECIDEGREES;
 }
 
 /*
@@ -178,9 +178,9 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
 * //TODO: Fix this up. We could either actually return the angle between 'down' and the normal of the craft
 * (my best interpretation of scalar 'tiltAngle') or rename the function.
 */
-int16_t calculateTiltAngle(rollAndPitchInclination_t *inclination)
+int16_t calculateTiltAngle(attitudeEulerAngles_t *attitude)
 {
-    return MAX(ABS(inclination->values.rollDeciDegrees), ABS(inclination->values.pitchDeciDegrees));
+    return MAX(ABS(attitude->values.roll), ABS(attitude->values.pitch));
 }
 
 int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, float accZ_old)
@@ -189,7 +189,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     int32_t error;
     int32_t setVel;
 
-    if (!isThrustFacingDownwards(&inclination)) {
+    if (!isThrustFacingDownwards(&attitude)) {
         return result;
     }
 
@@ -260,7 +260,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 #endif
 
 #ifdef SONAR
-    tiltAngle = calculateTiltAngle(&inclination);
+    tiltAngle = calculateTiltAngle(&attitude);
     sonarAlt = sonarRead();
     sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
 #endif
