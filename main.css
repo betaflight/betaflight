@@ -35,7 +35,7 @@ input[type="number"]::-webkit-inner-spin-button {
     float: right;
 }
 #main-wrapper {
-    padding: 5px 5px 0 5px;
+    padding: 0px 0px 0 0px; /*   padding: 5px 5px 0 5px; */
     height: calc(100% - 5px);
 }
 
@@ -185,6 +185,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 10px;
 }
 
+/*  
 #button-documentation {
     float: left;
 
@@ -199,6 +200,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border: solid 1px #c0c0c0;
     display: none;
 }
+*/
 #options {
     float: right;
 
@@ -236,23 +238,21 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 #options-window input {
     float: left;
-
-    margin-top: 3px;
+	margin-top: 3px;
     margin-right: 5px;
 }
 #log {
-    margin-bottom: 4px;
-
-    height: 65px;
-
-    border: 1px solid silver;
-    background-color: rgba(255, 255, 255, 0.5);
-
-    overflow-y: scroll;
+    margin-bottom: 0px;
+    height: 25px; /* was 65*/
+    border: 0px solid silver; /* was 1px*/
+    background-color: rgba(0, 0, 0, 1.0);
+    overflow-y: hidden; /* scroll*/
+    color:#fff;
+    line-height: 20px;
 }
 #log .wrapper {
-    padding: 5px;
-
+    padding: 5px;   /* was 5*/
+    padding-left:10px;
     -webkit-user-select: text;
 }
 #log a {
@@ -262,12 +262,16 @@ input[type="number"]::-webkit-inner-spin-button {
     text-decoration: underline;
 }
 #tabs {
-    position: absolute;
-    margin-top: 1px;
+    position: relative;
+    float: left;
+	width:100%;
+    padding-top: 5px; 
+    padding-bottom: 5px;
+    margin-top: 0px;
 
     z-index: 10;
 
-    font-weight: bold;
+    font-weight: regular;
 }
 
 #tabs ul {
@@ -279,14 +283,17 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #tabs li {
+		width:100%;
+
     float: left;
-    margin-right: 4px;
+    margin-right: 4px; 
 
     border: 1px solid #848484;
     border-bottom: 0;
 }
 
 #tabs li a {
+	width:100%;
     display: block;
 
     height: 15px;
@@ -311,17 +318,17 @@ input[type="number"]::-webkit-inner-spin-button {
     background-color: white;
 }
 #content {
-    margin-top: 31px;
-    padding: 10px;
+    margin-top: 0px;  /* 31 */
+    padding: 0px; /* 10 */
 
-    height: calc(100% - 171px); /* - (port picker, log, tab, status bar) */
+    height:100%; /*  (port picker, log, tab, status bar) was calc(100% - 171px) */
 
     background-color: white;
 
     overflow-x: hidden;
     overflow-y: auto;
 
-    border: 1px solid #848484;
+    border: 0px solid #848484; /* 1px solid #848484; */
 
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
 }

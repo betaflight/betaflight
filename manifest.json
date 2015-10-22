@@ -3,8 +3,8 @@
     "minimum_chrome_version": "38",
     "version": "0.65.0",
     "author": "Hydra",
-    "name": "Cleanflight - Configurator",
-    "short_name": "cleanflight",
+    "name": "cleanflight - Configurator Redesign",
+    "short_name": "cleanflightRed",
     "description": "Crossplatform configuration tool for Cleanflight flight control system",
 
     "offline_enabled": true,
