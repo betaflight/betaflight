@@ -504,6 +504,8 @@ STM32F3DISCOVERY_SRC = \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
+		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 

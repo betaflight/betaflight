@@ -48,6 +48,7 @@
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/sdcard.h"
 
 #include "rx/rx.h"
 
@@ -452,6 +453,10 @@ void init(void)
 #endif
 
     flashfsInit();
+#endif
+
+#ifdef USE_SDCARD
+    sdcard_init();
 #endif
 
 #ifdef BLACKBOX

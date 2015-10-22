@@ -38,6 +38,19 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+
+// SPI1
+// PB5  SPI1_MOSI
+// PB4  SPI1_MISO
+// PB3  SPI1_SCK
+// PA15 SPI1_NSS
+
+// SPI2
+// PB15 SPI2_MOSI
+// PB14 SPI2_MISO
+// PB13 SPI2_SCK
+// PB12 SPI2_NSS
 
 #define GYRO
 #define USE_GYRO_L3GD20
@@ -48,6 +61,14 @@
 #define L3GD20_CS_PIN                   GPIO_Pin_3
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI2
+
+#define SDCARD_SPI_INSTANCE               SPI2
+#define SDCARD_SPI_CS_GPIO                GPIOB
+#define SDCARD_SPI_CS_PIN                 GPIO_Pin_12
+#define SDCARD_SPI_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
 
 #define ACC
 #define USE_ACC_LSM303DLHC
