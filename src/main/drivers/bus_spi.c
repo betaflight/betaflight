@@ -422,6 +422,20 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #endif
 }
 
+/**
+ * Return true if the bus is currently in the middle of a transmission.
+ */
+bool spiIsBusBusy(SPI_TypeDef *instance)
+{
+#ifdef STM32F303xC
+    return SPI_GetTransmissionFIFOStatus(instance) != SPI_TransmissionFIFOStatus_Empty || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
+#endif
+#ifdef STM32F10X
+    return SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
+#endif
+
+}
+
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
     uint16_t spiTimeout = 1000;
