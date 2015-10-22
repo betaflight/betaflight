@@ -59,7 +59,7 @@ TABS.dataflash.initialize = function (callback) {
                 display: 'block'
             });
             
-            $(".tab-dataflash .dataflash-used div").text('Used space ' + formatFilesize(DATAFLASH.usedSize));
+            $(".tab-dataflash .dataflash-used div").text('Used space: ' + formatFilesize(DATAFLASH.usedSize));
         } else {
             $(".tab-dataflash .dataflash-used").css({
                 display: 'none'
@@ -71,7 +71,7 @@ TABS.dataflash.initialize = function (callback) {
                 width: ((DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
                 display: 'block'
             });
-            $(".tab-dataflash .dataflash-free div").text('Free space ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+            $(".tab-dataflash .dataflash-free div").text('Free space: ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
         } else {
             $(".tab-dataflash .dataflash-free").css({
                 display: 'none'
