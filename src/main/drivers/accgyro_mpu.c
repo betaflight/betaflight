@@ -63,14 +63,6 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_ADDRESS             0x68
 
-// MPU6050
-#define MPU_RA_WHO_AM_I         0x75
-#define MPU_RA_WHO_AM_I_LEGACY  0x00
-#define MPU_RA_XA_OFFS_H        0x06    //[15:0] XA_OFFS
-#define MPU_RA_PRODUCT_ID       0x0C    // Product ID Register
-#define MPU_RA_ACCEL_XOUT_H     0x3B
-#define MPU_RA_GYRO_XOUT_H      0x43
-
 // WHO_AM_I register contents for MPU3050, 6050 and 6500
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPUx0x0_WHO_AM_I_CONST              (0x68)
@@ -135,7 +127,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
 #ifdef USE_GYRO_SPI_MPU6500
     if (mpu6500SpiDetect()) {
         mpuDetectionResult.sensor = MPU_65xx_SPI;
-        mpuConfiguration.gyroReadXRegister = MPU6500_RA_GYRO_XOUT_H;
+        mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6500ReadRegister;
         mpuConfiguration.write = mpu6500WriteRegister;
         return true;
@@ -145,7 +137,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
 #ifdef USE_GYRO_SPI_MPU6000
     if (mpu6000SpiDetect()) {
         mpuDetectionResult.sensor = MPU_60x0_SPI;
-        mpuConfiguration.gyroReadXRegister = MPU6000_GYRO_XOUT_H;
+        mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6000ReadRegister;
         mpuConfiguration.write = mpu6000WriteRegister;
         return true;
@@ -218,33 +210,6 @@ void MPU_DATA_READY_EXTI_Handler(void)
 #endif
 }
 
-    //// Hack for cc3d
-void EXTI3_IRQHandler(void)
-{
-    if (EXTI_GetITStatus(mpuIntExtiConfig->exti_line) == RESET) {
-        return;
-    }
-
-    EXTI_ClearITPendingBit(mpuIntExtiConfig->exti_line);
-
-    mpuDataReady = true;
-
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    // Measure the delta in micro seconds between calls to the interrupt handler
-    static uint32_t lastCalledAt = 0;
-    static int32_t callDelta = 0;
-
-    uint32_t now = micros();
-    callDelta = now - lastCalledAt;
-
-    //UNUSED(callDelta);
-    debug[0] = callDelta;
-
-    lastCalledAt = now;
-#endif
-}
-    //// Hack for cc3d
-
 void configureMPUDataReadyInterruptHandling(void)
 {
 #ifdef USE_MPU_DATA_READY_SIGNAL
@@ -274,9 +239,7 @@ void configureMPUDataReadyInterruptHandling(void)
     }
 #endif
 
-#ifndef CC3D
-    registerExti15_10_CallbackHandler(MPU_DATA_READY_EXTI_Handler);
-#endif
+    registerExtiCallbackHandler(mpuIntExtiConfig->exti_irqn, MPU_DATA_READY_EXTI_Handler);
 
     EXTI_ClearITPendingBit(mpuIntExtiConfig->exti_line);
 

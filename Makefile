@@ -20,6 +20,9 @@ TARGET		?= NAZE
 # Compile-time options
 OPTIONS		?=
 
+# compile for OpenPilot BootLoader support
+OPBL ?=no
+
 # Debugger optons, must be empty or GDB
 DEBUG ?=
 
@@ -36,6 +39,9 @@ FLASH_SIZE ?=
 FORKNAME			 = betaflight
 
 VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENWIIF1 ALIENWIIF3 COLIBRI_RACE MOTOLAB RMDO
+
+# Valid targets for OP BootLoader support
+OPBL_VALID_TARGETS = CC3D
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -404,6 +410,16 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
+ifeq ($(OPBL),yes)
+ifneq ($(filter $(TARGET),$(OPBL_VALID_TARGETS)),)
+TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+.DEFAULT_GOAL := binary
+else
+$(error OPBL specified with a unsupported target)
+endif
+endif
+
 CJMCU_SRC = \
 		   startup_stm32f10x_md_gcc.S \
 		   drivers/adc.c \
@@ -522,7 +538,9 @@ COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
+		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \

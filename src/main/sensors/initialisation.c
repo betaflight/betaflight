@@ -126,7 +126,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 
 #if defined(CC3D)
-    static const extiConfig_t CC3DMPU6000Config = {
+    static const extiConfig_t cc3dMPUIntExtiConfig = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,
             .gpioPort = GPIOA,
             .gpioPin = Pin_3,
@@ -135,7 +135,20 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_line = EXTI_Line3,
             .exti_irqn = EXTI3_IRQn
     };
-    return &CC3DMPU6000Config;
+    return &cc3dMPUIntExtiConfig;
+#endif
+
+#if defined(COLIBRI_RACE)
+    static const extiConfig_t colibriRaceMPUIntExtiConfig = {
+         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+         .gpioPort = GPIOA,
+         .gpioPin = Pin_5,
+         .exti_port_source = EXTI_PortSourceGPIOA,
+         .exti_pin_source = EXTI_PinSource5,
+         .exti_line = EXTI_Line5,
+         .exti_irqn = EXTI9_5_IRQn
+    };
+    return &colibriRaceMPUIntExtiConfig;
 #endif
 
 #if defined(MOTOLAB) || defined(SPARKY)

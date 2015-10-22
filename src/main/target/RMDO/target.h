@@ -30,7 +30,7 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
+#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW

@@ -46,3 +46,5 @@ typedef struct
 } TIM_TypeDef;
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
+
+typedef enum {TEST_IRQ = 0 } IRQn_Type;

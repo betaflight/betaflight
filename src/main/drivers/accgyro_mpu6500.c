@@ -66,11 +66,15 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
 void mpu6500AccInit(void)
 {
+    mpuIntExtiInit();
+
     acc_1G = 512 * 8;
 }
 
 void mpu6500GyroInit(uint16_t lpf)
 {
+    mpuIntExtiInit();
+
 #ifdef NAZE
     // FIXME target specific code in driver code.
 
@@ -84,24 +88,26 @@ void mpu6500GyroInit(uint16_t lpf)
     }
 #endif
 
+    mpuIntExtiInit();
+
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
-    mpuConfiguration.write(MPU6500_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
-    mpuConfiguration.write(MPU6500_RA_SIGNAL_PATH_RST, 0x07);
+    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
     delay(100);
-    mpuConfiguration.write(MPU6500_RA_PWR_MGMT_1, 0);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
     delay(100);
-    mpuConfiguration.write(MPU6500_RA_PWR_MGMT_1, INV_CLK_PLL);
-    mpuConfiguration.write(MPU6500_RA_GYRO_CFG, INV_FSR_2000DPS << 3);
-    mpuConfiguration.write(MPU6500_RA_ACCEL_CFG, INV_FSR_8G << 3);
-    mpuConfiguration.write(MPU6500_RA_LPF, mpuLowPassFilter);
-    mpuConfiguration.write(MPU6500_RA_RATE_DIV, gyroMPU6xxxGetDividerDrops()); // 1kHz S/R
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter);
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
 
     // Data ready interrupt configuration
-    mpuConfiguration.write(MPU6500_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    mpuConfiguration.write(MPU6500_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
+    mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
 }

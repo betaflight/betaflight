@@ -503,7 +503,7 @@ static void resetConf(void)
 
     // Failsafe Variables
     masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
-    masterConfig.failsafeConfig.failsafe_off_delay = 20;         // 20sec
+    masterConfig.failsafeConfig.failsafe_off_delay = 10;          // 1sec
     masterConfig.failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
     masterConfig.failsafeConfig.failsafe_kill_switch = 0;         // default failsafe switch action is identical to rc link loss
     masterConfig.failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
