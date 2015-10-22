@@ -1,0 +1,27 @@
+{
+  "name": "switchery",
+  "repo": "abpetkov/switchery",
+  "description": "Component to create iOS 7 styled switches from default input checkboxes",
+  "version": "0.8.1",
+  "keywords": [
+    "checkbox",
+    "input",
+    "switch",
+    "iOS7"
+  ],
+  "license": "MIT",
+  "main": "switchery.js",
+  "scripts": [
+    "switchery.js"
+  ],
+  "styles": [
+    "switchery.css"
+  ],
+  "dependencies": {
+    "abpetkov/transitionize": "*",
+    "ftlabs/fastclick": "v0.6.11",
+    "component/classes": "1.2.1",
+    "component/events": "1.0.9"
+  },
+  "development": {}
+}

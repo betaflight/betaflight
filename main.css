@@ -12,7 +12,9 @@ body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 12px;
     color: #303030;
-    background-color: #dfddd0;
+	background-color:#3f4140;
+	margin:0px;
+	padding:0px;
 }
 a {
     color: #303030;
@@ -39,43 +41,31 @@ input[type="number"]::-webkit-inner-spin-button {
     height: calc(100% - 5px);
 }
 
-#content-watermark {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
-    right: 0;
-    z-index: -1;
-    overflow: hidden;
-    background-image: url("images/light-wide-1.svg");
-    background-repeat: no-repeat;
-    background-position: 50% 0%;
-    background-size: 600px;
-    height: 174px;
-    opacity: 0.25;
-}
-
-#watermark {
-    position: absolute;
-    top: 30px;
-    height: 67px;
-    right: 0;
-    z-index: -1;
-    overflow: hidden;
-    background-image: url("images/light-wide-1.svg");
+#logo {
+    position: relative;
+	float:left;    
+	width: 260px;
+	height:80px;
+    z-index: 0;
+    background-image: url("images/light-wide-2.svg");
     background-repeat: no-repeat;
     width: 340px;
-    background-position: 0px 0px;
-    background-size: 85%;
+    background-position:left center;
+    background-size: contain;
+	margin-left:15px;
+	margin-top:15px;
 }
 
-#port-picker {
+#port-picker { /*  */
     float: left;
     height: 105px; /* was 20px */
-    margin-bottom: 5px;
+    margin-top: 20px;
+    margin-left: 20px;
+	width:190px;
 }
 #port-picker li {
     float: left;
-}
+} /* 
 #port-picker select {
     height: 20px;
     line-height: 20px;
@@ -134,6 +124,8 @@ input[type="number"]::-webkit-inner-spin-button {
     float: left;
     margin: 3px 0 0 5px;
 }
+*/
+
 
 #sensor-status {
     float: right;
@@ -240,19 +232,31 @@ input[type="number"]::-webkit-inner-spin-button {
 #log a:hover {
     text-decoration: underline;
 }
+
+.tab_container {
+	float:left; 
+	height:100%; 
+	width:200px; 
+	border-right: 4px solid #59aa29;
+	}
+	
+	
 #tabs {
     position: relative;
     float: left;
 	width:100%;
-    padding-top: 5px; 
-    padding-bottom: 5px;
-    margin-top: 0px;
+    padding-top: 0px; 
+    padding-bottom: 0px;
+    margin-top:0px;
     z-index: 10;
     font-weight: regular;
+	font-size:13px;
 }
 
 #tabs ul {
-    overflow: hidden; /* Cause the height to expand to contain its floated contents */
+	margin-top:0px;
+    overflow: hidden;
+	 /* Cause the height to expand to contain its floated contents */
 }
 
 #tabs ul.mode-connected {
@@ -262,31 +266,70 @@ input[type="number"]::-webkit-inner-spin-button {
 #tabs li {
 	width:100%;
     float: left;
-    margin-right: 4px; 
-    border: 1px solid #848484;
-    border-bottom: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.30);
+	border-top: 1px solid #404040;
+	height:32px;
+
 }
 
-#tabs li a {
-	width:100%;
-    display: block;
-    height: 15px;
-    padding: 5px 4px;
-    background-color: #d0d0d0;
+#tabs li:first-child {
+	border-top: 0px;
+
 }
+
+#tabs li:last-child {
+    border-bottom: 0px;
+
+}
+
+
+#tabs li a {
+	padding-left:40px;
+	padding-top:7px;
+    background-color: transparent;
+	color:#999999;
+	width:100%;
+	height:24px;
+	display:block;
+	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
+	
+	background-image:url(images/icons/cf_icon_info_green.svg);
+	background-repeat: no-repeat;
+	background-size:18px;
+	background-position:17px 6px;
+	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
+
+
+}
+
+
+	
+
+
+
+
+
 #tabs li a:hover {
     text-decoration: none;
-    background-color: #acacac;
+    background-color: rgba(0,0,0,0.20);
 }
 #tabs li.active {
+	color: #fff;
+
+	
 }
 #tabs li.active a {
-    height: 16px;
-    background-color: white;
+    background-color: #59aa29;
+	color: #fff;
+		background-image:url(images/icons/cf_icon_info_grey.svg);
+
+
 }
+
+
 #tabs li.active a:hover {
     cursor: default;
-    background-color: white;
+    background-color:#59aa29;
 }
 #content {
     margin-top: 0px;  /* 31 */
