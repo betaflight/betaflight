@@ -147,10 +147,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
-    pidProfile->D8[ROLL] = 20;
+    pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 40;
     pidProfile->I8[PITCH] = 30;
-    pidProfile->D8[PITCH] = 20;
+    pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 95;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 10;
@@ -178,11 +178,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.4f;
-    pidProfile->D_f[ROLL] = 0.03f;
+    pidProfile->D_f[ROLL] = 0.02f;
     pidProfile->P_f[PITCH] = 1.5f;
     pidProfile->I_f[PITCH] = 0.4f;
-    pidProfile->D_f[PITCH] = 0.03f;
-    pidProfile->P_f[YAW] = 3.5f;
+    pidProfile->D_f[PITCH] = 0.02f;
+    pidProfile->P_f[YAW] = 3.9f;
     pidProfile->I_f[YAW] = 0.9f;
     pidProfile->D_f[YAW] = 0.00f;
     pidProfile->A_level = 5.0f;
@@ -405,7 +405,7 @@ static void resetConf(void)
     masterConfig.boardAlignment.pitchDegrees = 0;
     masterConfig.boardAlignment.yawDegrees = 0;
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    masterConfig.max_angle_inclination = 500;    // 50 degrees
+    masterConfig.max_angle_inclination = 600;    // 50 degrees
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
