@@ -105,12 +105,12 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 |----|--------------|
 | 0  | GIMBAL PITCH |
 | 1  | GIMBAL ROLL |
-| 2  | FLAPS |
-| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
-| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
-| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
-| 6  | ELEVATOR / SINGLECOPTER_4 | 
-| 7  | THROTTLE (Based ONLY on the first motor output) | 
+| 2  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
+| 3  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
+| 4  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
+| 5  | ELEVATOR / SINGLECOPTER_4 | 
+| 6  | THROTTLE (Based ONLY on the first motor output) | 
+| 7  | FLAPS |
 
 
 | id | Input sources |

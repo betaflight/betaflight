@@ -211,11 +211,11 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     withDefaultEscAndServoConfiguration();
     withDefaultRxConfig();
 
-    servoConf[5].min = DEFAULT_SERVO_MIN;
-    servoConf[5].max = DEFAULT_SERVO_MAX;
-    servoConf[5].middle = DEFAULT_SERVO_MIDDLE;
-    servoConf[5].rate = 100;
-    servoConf[5].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+    servoConf[4].min = DEFAULT_SERVO_MIN;
+    servoConf[4].max = DEFAULT_SERVO_MAX;
+    servoConf[4].middle = DEFAULT_SERVO_MIDDLE;
+    servoConf[4].rate = 100;
+    servoConf[4].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
 
     configureMixer();
 
@@ -364,12 +364,12 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     EXPECT_EQ(EXPECTED_SERVOS_TO_MIX_COUNT, updatedServoCount);
 
-    EXPECT_EQ(2000, servos[0].value); // Flaps
+    EXPECT_EQ(TEST_SERVO_MID, servos[0].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[1].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[2].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[3].value);
-    EXPECT_EQ(TEST_SERVO_MID, servos[4].value);
-    EXPECT_EQ(1000, servos[5].value); // Throttle
+    EXPECT_EQ(1000, servos[4].value); // Throttle
+    EXPECT_EQ(2000, servos[5].value); // Flaps
 
 }
 
