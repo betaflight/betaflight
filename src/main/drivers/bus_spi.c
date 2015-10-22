@@ -69,12 +69,33 @@ void initSpi1(void)
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
     // Init pins
-    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+#ifdef USE_SDCARD_SPI1
+    // Configure pins and pullups for SD-card use
+
+    // No pull-up needed since we drive this pin as an output
+    GPIO_InitStructure.GPIO_Pin = SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+
+    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
+    GPIO_InitStructure.GPIO_Pin = SPI1_MISO_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+
+    // In clock-low mode, STM32 manual says we should enable a pulldown to match
+    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+#else
+    // General-purpose pin config
+    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+#endif
 
 #ifdef SPI1_NSS_PIN
     GPIO_InitStructure.GPIO_Pin = SPI1_NSS_PIN;
@@ -116,9 +137,15 @@ void initSpi1(void)
     spi.SPI_NSS = SPI_NSS_Soft;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    
+#ifdef USE_SDCARD_SPI1
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
     spi.SPI_CPOL = SPI_CPOL_High;
     spi.SPI_CPHA = SPI_CPHA_2Edge;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
@@ -173,12 +200,33 @@ void initSpi2(void)
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
 
-    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+#ifdef USE_SDCARD_SPI2
+    // Configure pins and pullups for SD-card use
+
+    // No pull-up needed since we drive this pin as an output
+    GPIO_InitStructure.GPIO_Pin = SPI2_MOSI_PIN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+
+    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
+    GPIO_InitStructure.GPIO_Pin = SPI2_MISO_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+
+    // In clock-low mode, STM32 manual says we should enable a pulldown to match
+    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+#else
+    // General-purpose pin config
+    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+#endif
 
 #ifdef SPI2_NSS_PIN
     GPIO_InitStructure.GPIO_Pin = SPI2_NSS_PIN;
@@ -219,12 +267,18 @@ void initSpi2(void)
     spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spi.SPI_Mode = SPI_Mode_Master;
     spi.SPI_DataSize = SPI_DataSize_8b;
-    spi.SPI_CPOL = SPI_CPOL_High;
-    spi.SPI_CPHA = SPI_CPHA_2Edge;
     spi.SPI_NSS = SPI_NSS_Soft;
     spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+
+#ifdef USE_SDCARD_SPI2
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
+    spi.SPI_CPOL = SPI_CPOL_High;
+    spi.SPI_CPHA = SPI_CPHA_2Edge;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
