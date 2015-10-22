@@ -234,7 +234,7 @@ void annexCode(void)
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(heading - headFreeModeHold);
+        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
         float cosDiff = cos_approx(radDiff);
         float sinDiff = sin_approx(radDiff);
         int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
@@ -338,7 +338,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
-            headFreeModeHold = heading;
+            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -412,7 +412,7 @@ void updateInflightCalibrationState(void)
 void updateMagHold(void)
 {
     if (ABS(rcCommand[YAW]) < 70 && FLIGHT_MODE(MAG_MODE)) {
-        int16_t dif = heading - magHold;
+        int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
         if (dif <= -180)
             dif += 360;
         if (dif >= +180)
@@ -421,7 +421,7 @@ void updateMagHold(void)
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
     } else
-        magHold = heading;
+        magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
 typedef enum {
@@ -623,7 +623,7 @@ void processRx(void)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
-                magHold = heading;
+                magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             }
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
@@ -636,7 +636,7 @@ void processRx(void)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            headFreeModeHold = heading; // acquire new heading
+            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
         }
     }
 #endif
