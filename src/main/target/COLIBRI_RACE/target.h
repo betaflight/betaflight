@@ -166,6 +166,13 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 
+#define USE_SERIAL_1WIRE
+#define ESC_COUNT 6
+#define S1W_TX_GPIO         GPIOC
+#define S1W_TX_PIN          GPIO_Pin_4
+#define S1W_RX_GPIO         GPIOC
+#define S1W_RX_PIN          GPIO_Pin_5
+
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
