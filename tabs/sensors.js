@@ -15,6 +15,7 @@ TABS.sensors.initialize = function (callback) {
             SENSOR_DATA.gyroscope[i] = 0;
             SENSOR_DATA.magnetometer[i] = 0;
             SENSOR_DATA.sonar = 0;
+            SENSOR_DATA.altitude = 0;
             SENSOR_DATA.debug[i] = 0;
         }
     }

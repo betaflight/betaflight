@@ -238,21 +238,10 @@ function onConnect() {
     $('#tabs ul.mode-connected').show();
 
     if ("CLFL" == CONFIG.flightControllerIdentifier){
-        
-         /* placing this elsewhere
-         var documentationButton = $('#button-documentation');
+        var documentationButton = $('#button-documentation');
         documentationButton.show();
         documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
         documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-        */
-        
-        /* just a thought 
-         var sensor_state = $('#sensor-status');
-        sensor_state.show(); 
-        */
-        
-         var flashstate = $('#header_dataflash');
-        flashstate.show();
     }
 }
 
@@ -266,14 +255,8 @@ function onClosed(result) {
     $('#tabs ul.mode-connected').hide();
     $('#tabs ul.mode-disconnected').show();
 
-    
-    var flashstate = $('#header_dataflash');
-    flashstate.hide();
-    
-    /* just a thought 
-      var sensor_state = $('#sensor-status');
-    sensor_state.hide();
-    */
+    var documentationButton = $('#button-documentation');
+    documentationButton.hide();
 }
 
 function read_serial(info) {

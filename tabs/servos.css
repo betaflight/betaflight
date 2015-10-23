@@ -3,10 +3,6 @@
 .tab-servos input[type="number"]::-webkit-inner-spin-button {
     border: 0;
 }
-.tab-servos .supported_wrapper,
-.tab-servos .direction_wrapper {
-    display: none;
-}
 .tab-servos .title {
     margin-top: 10px;
 
@@ -129,4 +125,17 @@
 }
 .tab-servos .update:hover {
     background-color: #dedcdc;
+}
+
+.tab-servos .require-support {
+    display:none;
+}
+.tab-servos.supported .require-support {
+    display:block;
+}
+.tab-servos .require-upgrade {
+    display:block;
+}
+.tab-servos.supported .require-upgrade {
+    display:none;
 }
