@@ -14,7 +14,8 @@
         <link type="text/css" rel="stylesheet" href="./tabs/help.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/ports.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/configuration.css" media="all" />
-        <link type="text/css" rel="stylesheet" href="./tabs/pid_tuning.css" media="all" />
+		<link type="text/css" rel="stylesheet" href="./tabs/pid_tuning.css" media="all" />
+
         <link type="text/css" rel="stylesheet" href="./tabs/receiver.css" media="all" />
 <!--         <link type="text/css" rel="stylesheet" href="./tabs/modes.css" media="all" /> -->
         <link type="text/css" rel="stylesheet" href="./tabs/servos.css" media="all" />
@@ -26,14 +27,19 @@
         <link type="text/css" rel="stylesheet" href="./tabs/logging.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/dataflash.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/firmware_flasher.css" media="all" />
-
         <link type="text/css" rel="stylesheet" href="./tabs/adjustments.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./tabs/auxiliary.css" media="all" />
 
+        <link type="text/css" rel="stylesheet" href="./styles/opensans_webfontkit/fonts.css" media="all" />
+        <link type="text/css" rel="stylesheet" href="./styles/dropdown-lists/css/style_lists.css" media="all" />
+                <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/switchery.css" media="all" />
+
+                
         <script type="text/javascript" src="./js/libraries/q.js"></script>
         <script type="text/javascript" src="./js/libraries/google-analytics-bundle.js"></script>
-        <script type="text/javascript" src="./js/libraries/jquery-2.1.4.min.js"></script>
-        <script type="text/javascript" src="./js/libraries/jquery-ui-1.11.4.min.js"></script>
+        <script type="text/javascript" src="./js/libraries/jquery-2.1.3.min.js"></script>
+        <script type="text/javascript" src="./js/libraries/jquery-ui-1.11.2.min.js"></script>
+
         <script type="text/javascript" src="./js/libraries/d3.min.js"></script>
         <script type="text/javascript" src="./js/libraries/jquery.nouislider.all.min.js"></script>
         <script type="text/javascript" src="./js/libraries/three/three.min.js"></script>
@@ -77,20 +83,27 @@
         <script type="text/javascript" src="./tabs/logging.js"></script>
         <script type="text/javascript" src="./tabs/dataflash.js"></script>
         <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
+        
+        <script type="text/javascript" src="./js/libraries/switchery/switchery.js"></script>
+
     </head>
     <body>
         <div id="main-wrapper">
+       <div class="headerbar">
+        <div id="logo"></div>
             <div id="port-picker">
-                <ul>
-                    <li class="port">
-                        <select id="port" title="Port">
-                            <option vlaue="manual">Manual</option>
-                            <!-- port list gets generated here -->
-                        </select>
-                    </li>
-                    <li>
-                        <select id="baud" title="Baud Rate">
-                            <option value="115200" selected="selected">115200</option>
+                
+                        <div class="dropdown dropdown-dark" style="margin-bottom:3px;">
+      <select class="dropdown-select" id="port" title="Port">
+        <option value="manual">Manual</option>
+                       <!-- port list gets generated here -->
+
+      </select>
+    </div>
+                   
+                       <div class="dropdown dropdown-dark" style="margin-bottom:5px;">
+      <select class="dropdown-select" id="baud" title="Baud Rate">
+        					<option value="115200" selected="selected">115200</option>
                             <option value="57600">57600</option>
                             <option value="38400">38400</option>
                             <option value="28800">28800</option>
@@ -100,23 +113,49 @@
                             <option value="4800">4800</option>
                             <option value="2400">2400</option>
                             <option value="1200">1200</option>
-                        </select>
-                    </li>
-                    <li id="port-override-option">
-                        <label for="port-override">Port: </label><input id="port-override" type="text" value="/dev/rfcomm0"/>
-                    </li>
-                    <li>
-                        <a class="connect" href="#" i18n="connect"></a>
-                        <label>
+
+      </select>
+    </div>
+                      
+                    <div id="port-override-option" style="width:195px; float:left;">
+                        <label for="port-override" style="background-color:#2b2b2b; border-radius:3px; padding:3px; margin-bottom:5px; color:#ddd; float:left;">Port: <input id="port-override" type="text" value="/dev/rfcomm0" style="background-color:rgba(0, 0, 0, 0.1);; color:#888888; width:154px; margin-left:2px; margin-top:-2px; padding:1px; border-radius:3px; height:15px; float:right;"/></label>
+                    </div>
+                    <div>
+                        <label style="color:#888888;">
                             <input class="auto_connect" type="checkbox" />
                             <span class="auto_connect" i18n="autoConnect"></span>
                         </label>
-                    </li>
-                </ul>
-            </div>
+                                           <a class="connect" href="#" i18n="connect" style="color:#FFFFFF;"></a>
+
+                    </div>
+    </div>
+        
+        
+        
+        
+      
+        
+    
+    
+    
             <a id="options" href="#" i18n_title="options_title"></a>
+            
+             <div class="tab-dataflash" id="flashstate" style="width:120px; float:right; height:12px;"
+>
+    <div class="require-dataflash" id="header_dataflash">
+        <ul class="dataflash-contents" style="height:7px; margin:12px;">
+               <li class="dataflash-free" style="height:10px; text-align:left;">
+                <div class="legend" align="left" style="font-size:10px; margin-top:-40px; float:left; line-height:12px; width:100%; color:white;"></div>
+            </li>
+        </ul>
+        
+    </div>
+</div> 
+
+
+
             <div class="header-wrapper">
-                <div id="sensor-status">
+                <div id="sensor-status" class="sensor_state">
                     <ul>
                         <li class="gyro" title="Gyroscope">Gyro</li>
                         <li class="accel" title="Accelerometer">Accel</li>
@@ -127,17 +166,18 @@
                     </ul>
                 </div>
                 <div id="documentation-controls">
-                    <ul>
-                        <li><a id="button-documentation" href="#" target="_blank"></a></li>
+        <ul>
+        <li><a id="button-documentation" href="#" target="_blank"></a></li>
                     </ul>
                 </div>
-            </div>
+            </div> </div>
+
             <div class="clear-both"></div>
             <div id="log">
-                <div id="watermark"></div>
                 <div class="wrapper">
                 </div>
             </div>
+            <div class="tab_container">
             <div id="tabs">
                 <ul class="mode-disconnected">
                     <li class="tab_landing"><a href="#" i18n="tabLanding"></a></li>
@@ -163,6 +203,7 @@
                     <li class="tab_cli"><a href="#" i18n="tabCLI"></a></li>
                 </ul>
                 <div class="clear-both"></div>
+            </div>
             </div>
             <div id="content">
             </div>
