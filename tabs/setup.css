@@ -1,69 +1,24 @@
 .tab-setup .model-and-info {
     height: calc(100% - 138px);
 }
+
 .tab-setup {
     height: 100%;
+	background-color:#ccc;
 }
-.tab-setup .section {
-    clear: both;
-    padding-bottom: 8px;
-}
-.tab-setup .section a {
-    display: block;
 
-    float: left;
+.cell_setup {
+min-height:20px;
+border-bottom: solid 1px #ddd;
+margin-bottom:13px;
+float:left;}
 
-    width: 190px;
-    height: 24px;
-    line-height: 24px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-
-    white-space: nowrap;
-}
-.tab-setup .section a:hover {
-    background-color: #dedcdc;
-}
-.tab-setup .section  a.calibrating {
-    background-color: #c1c1c1;
-}
-.tab-setup .section a.calibrating:hover {
-    cursor: default;
-    background-color: #c1c1c1;
-}
-.tab-setup .section a.disabled {
-    background-color: #c1c1c1;
-}
-.tab-setup .section a.disabled:hover {
-    cursor: default;
-}
-.tab-setup .section a.backup {
-    width: 90px;
-    margin-right: 8px;
-}
-.tab-setup .section a.restore {
-    width: 90px;
-}
-.tab-setup .section p {
-    margin-left: 200px;
-
-    padding: 0 0 0 5px;
-
-    height: 25px;
-    line-height: 25px;
-
-    border-bottom: 1px solid #e5e5e5;
-}
 .tab-setup #interactive_block {
     float: left;
     position: relative;
 
     height: 100%;
-    width: calc(100% - 199px);
+    width: calc(100% - 0px);
 
     border: 1px solid silver;
     background-color: white;
