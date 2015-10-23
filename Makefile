@@ -694,6 +694,14 @@ TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+
+ifeq ($(OPBL),yes)
+CLEAN_ARTIFACTS := $(TARGET_BIN)
+else
+CLEAN_ARTIFACTS := $(TARGET_HEX)
+endif
+CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP) 
+
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
@@ -730,7 +738,7 @@ all: binary
 
 ## clean       : clean up all temporary / machine-generated files
 clean:
-	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+	rm -f $(CLEAN_ARTIFACTS)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
 	cd src/test && $(MAKE) clean || true
 
