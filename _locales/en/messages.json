@@ -253,7 +253,7 @@
         "message": "Calibrate Accelerometer"
     },
     "initialSetupCalibrateAccelText": {
-        "message": "Place board or frame on <strong>leveled</strong> surface, proceed with calibration, ensure platform is not moving during calibration period"
+        "message": "Place board or frame on <strong>leveled</strong> surface, proceed with calibration, ensure platform is not moving during calibration"
     },
     "initialSetupButtonCalibrateMag": {
         "message": "Calibrate Magnetometer"
