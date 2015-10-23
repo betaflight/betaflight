@@ -811,5 +811,63 @@ dialog {
 	margin-left:3px;
 }
 
-/* END */
+/* note */
 
+
+.connect_contols {
+	position:absolute;
+	left:585px;
+	top:19px;
+	height:70px;
+	width:60px;
+	}
+	
+	
+	
+.connect_b {
+	float:left;
+	
+	}
+	
+	
+	.connect_b a  {
+	height:50px;
+	width:50px;
+	border-radius:100px;
+	box-shadow:0px 1px 2px rgba(0, 0, 0, 0.35);
+	float:left;
+	margin-left: 5px;
+	margin-bottom:7px;
+	}
+	
+	
+	.connect_b a.connect  {
+background-color:#e60000;
+	border:1px solid #fe0000;
+	background-image:url(images/icons/cf_icon_usb1_white.svg);
+	background-repeat:no-repeat;
+	background-size:44px;
+	background-position:center 6px;
+	}
+	
+	.connect_b a.connect.active  {
+	background-color:#56ac1d;
+	border:1px solid #5bbb1b;
+	}
+	
+	
+	.connect_state {
+	float:left;
+	height:20px;
+	width:100%;
+	text-align:center;
+	color:#fff;
+	font-size:12px;
+	font-family: 'open_sansregular', Arial;
+	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
+
+
+	}
+	
+	
+	
