@@ -96,11 +96,12 @@ enum {
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 #define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 80 // Prevent RX processing before expected loop trigger
+#define GYRO_RATE 0.001f  // Gyro refresh rate 1khz
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-float dT = 0.000001f;  // dT set for 1khz mode
+float dT = GYRO_RATE;  // dT set for gyro refresh rate
 
 int16_t magHold;
 int16_t headFreeModeHold;
