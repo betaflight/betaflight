@@ -4,6 +4,8 @@
     Official "specs" are from 115200 to 1200
 
     popular choices - 921600, 460800, 256000, 230400, 153600, 128000, 115200, 57600, 38400, 28800, 19200
+
+    Documentation reference: http://www.st.com/web/en/resource/technical/document/application_note/CD00264342.pdf
 */
 'use strict';
 
@@ -384,7 +386,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             break;
         case 2:
             // get version of the bootloader and supported commands
-            self.send([self.command.get, 0xFF], 2, function (data) { // 0x00 ^ 0xFF
+            self.send([self.command.get, self.command.get ^ 0xFF], 2, function (data) {
                 if (self.verify_response(self.status.ACK, data)) {
                     self.retrieve(data[1] + 1 + 1, function (data) { // data[1] = number of bytes that will follow [– 1 except current and ACKs]
                         console.log('STM32 - Bootloader version: ' + (parseInt(data[0].toString(16)) / 10).toFixed(1)); // convert dec to hex, hex to dec and add floating point
@@ -399,7 +401,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             break;
         case 3:
             // get ID (device signature)
-            self.send([self.command.get_ID, 0xFD], 2, function (data) { // 0x01 ^ 0xFF
+            self.send([self.command.get_ID, self.command.get_ID ^ 0xFF], 2, function (data) {
                 if (self.verify_response(self.status.ACK, data)) {
                     self.retrieve(data[1] + 1 + 1, function (data) { // data[1] = number of bytes that will follow [– 1 (N = 1 for STM32), except for current byte and ACKs]
                         var signature = (data[0] << 8) | data[1];
@@ -494,7 +496,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                 console.log(message);
                 $('span.progressLabel').text(message + ' ...');
 
-                self.send([self.command.erase, 0xBC], 1, function (reply) { // 0x43 ^ 0xFF
+                self.send([self.command.erase, self.command.erase ^ 0xFF], 1, function (reply) {
                     if (self.verify_response(self.status.ACK, reply)) {
                         self.send([0xFF, 0x00], 1, function (reply) {
                             if (self.verify_response(self.status.ACK, reply)) {
@@ -510,7 +512,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
                 console.log(message);
                 $('span.progressLabel').text(message + ' ...');
 
-                self.send([self.command.erase, 0xBC], 1, function (reply) { // 0x43 ^ 0xFF
+                self.send([self.command.erase, self.command.erase ^ 0xFF], 1, function (reply) {
                     if (self.verify_response(self.status.ACK, reply)) {
                         // the bootloader receives one byte that contains N, the number of pages to be erased – 1
                         var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000,
@@ -555,7 +557,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                     // console.log('STM32 - Writing to: 0x' + address.toString(16) + ', ' + bytes_to_write + ' bytes');
 
-                    self.send([self.command.write_memory, 0xCE], 1, function (reply) { // 0x31 ^ 0xFF
+                    self.send([self.command.write_memory, self.command.write_memory ^ 0xFF], 1, function (reply) {
                         if (self.verify_response(self.status.ACK, reply)) {
                             // address needs to be transmitted as 32 bit integer, we need to bit shift each byte out and then calculate address checksum
                             var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
@@ -635,7 +637,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
 
                     // console.log('STM32 - Reading from: 0x' + address.toString(16) + ', ' + bytes_to_read + ' bytes');
 
-                    self.send([self.command.read_memory, 0xEE], 1, function (reply) { // 0x11 ^ 0xFF
+                    self.send([self.command.read_memory, self.command.read_memory ^ 0xFF], 1, function (reply) {
                         if (self.verify_response(self.status.ACK, reply)) {
                             var address_arr = [(address >> 24), (address >> 16), (address >> 8), address];
                             var address_checksum = address_arr[0] ^ address_arr[1] ^ address_arr[2] ^ address_arr[3];
@@ -719,7 +721,7 @@ STM32_protocol.prototype.upload_procedure = function (step) {
             // memory address = 4 bytes, 1st high byte, 4th low byte, 5th byte = checksum XOR(byte 1, byte 2, byte 3, byte 4)
             console.log('Sending GO command: 0x8000000');
 
-            self.send([self.command.go, 0xDE], 1, function (reply) { // 0x21 ^ 0xFF
+            self.send([self.command.go, self.command.go ^ 0xFF], 1, function (reply) {
                 if (self.verify_response(self.status.ACK, reply)) {
                     var gt_address = 0x8000000,
                         address = [(gt_address >> 24), (gt_address >> 16), (gt_address >> 8), gt_address],

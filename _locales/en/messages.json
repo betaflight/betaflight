@@ -478,6 +478,9 @@
     "configurationBatteryMinimum": {
         "message": "Minimum Cell Voltage"
     },
+    "configurationBatteryWarning": {
+        "message": "Warning Cell Voltage"
+    },
     "configurationBatteryMaximum": {
         "message": "Maximum Cell Voltage"
     },

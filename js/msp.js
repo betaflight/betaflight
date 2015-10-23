@@ -377,6 +377,7 @@ var MSP = {
                 }
                 break;
             case MSP_codes.MSP_MISC: // 22 bytes
+<<<<<<< HEAD
                 var offset = 0;
                 MISC.midrc = data.getInt16(offset, 1);
                 offset += 2;
@@ -400,6 +401,24 @@ var MSP = {
                 MISC.vbatmincellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
                 MISC.vbatmaxcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
                 MISC.vbatwarningcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
+=======
+                MISC.midrc = data.getInt16(0, 1);
+                MISC.minthrottle = data.getUint16(2, 1); // 0-2000
+                MISC.maxthrottle = data.getUint16(4, 1); // 0-2000
+                MISC.mincommand = data.getUint16(6, 1); // 0-2000
+                MISC.failsafe_throttle = data.getUint16(8, 1); // 1000-2000
+                MISC.gps_type = data.getUint8(10);
+                MISC.gps_baudrate = data.getUint8(11);
+                MISC.gps_ubx_sbas = data.getInt8(12);
+                MISC.multiwiicurrentoutput = data.getUint8(13);
+                MISC.rssi_aux_channel = data.getUint8(14);
+                MISC.placeholder2 = data.getUint8(15);
+                MISC.mag_declination = data.getInt16(16, 1) / 10; // -18000-18000
+                MISC.vbatscale = data.getUint8(18, 1); // 10-200
+                MISC.vbatmincellvoltage = data.getUint8(19, 1) / 10; // 10-50
+                MISC.vbatmaxcellvoltage = data.getUint8(20, 1) / 10; // 10-50
+                MISC.vbatwarningcellvoltage = data.getUint8(21, 1) / 10; // 10-50
+>>>>>>> origin/baseflight-configurator-development
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
