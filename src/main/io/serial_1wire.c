@@ -78,6 +78,13 @@ const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOB, 0 },
   { GPIOA, 6 },
   { GPIOA, 2 }
+#elif COLIBRI_RACE
+  { GPIOC, 6 },
+  { GPIOC, 7 },
+  { GPIOC, 8 },
+  { GPIOC, 9 },
+  { GPIOA, 0 },
+  { GPIOA, 1 }
 #endif
 };
 
