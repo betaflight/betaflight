@@ -21,6 +21,30 @@ body {
 
 
 
+/* Help-Icon  */
+
+.helpicon {
+	float:right;
+	margin-top:-18px;
+	margin-right:7px;
+	display:block;
+	height:14px;
+	width:14px;
+	opacity: 0.2;
+	background-image:url(images/icons/cf_icon_info_grey.svg);
+	background-size:contain;
+	background-position:center;
+
+}
+
+
+.helpicon:hover {
+	opacity: 1.0;
+	background-image:url(images/icons/cf_icon_info_green.svg);
+}
+
+
+
 /* Change here the content of the documentation button in all tabs!!!  */
 
 .cf_doc_version_bt a:before {
@@ -739,29 +763,7 @@ dialog {
 	}
 	
 	
-	/* Help Icon */
-
-
-.helpicon {
-	float:right;
-	margin-top:-14px;
-	margin-right:7px;
-	display:block;
-	height:14px;
-	width:14px;
-	opacity: 0.2;
-	background-image:url(rescources/icons/cf_icon_info_grey.svg);
-	background-size:contain;
-	background-position:center;
-
-}
-
-
-
-
-.helpicon:hover {
-	background-image:url(rescources/icons/cf_icon_info_green.svg);
-	opacity: 1.0;}
+	
 
 /* Table styling */
 
