@@ -185,8 +185,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P_f[YAW] = 3.9f;
     pidProfile->I_f[YAW] = 0.9f;
     pidProfile->D_f[YAW] = 0.00f;
-    pidProfile->A_level = 5.0f;
-    pidProfile->H_level = 3.0f;
+    pidProfile->A_level = 6.0f;
+    pidProfile->H_level = 6.0f;
     pidProfile->H_sensitivity = 75;
 
 #ifdef GTUNE
