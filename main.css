@@ -326,12 +326,15 @@ margin-right:20px;
 	opacity:0.15;
 	background-image:url(images/icons/scroll.svg);
 	background-size:80%;
-	transition: all ease 1s;
+	box-shadow: inset 0 0 5px #000000;
+
+	transition: all ease 2s;
 }
 
 
 #log.active {
     overflow-y: scroll; /* scroll*/
+	box-shadow: inset 0 0 15px #000000;
 }
 
 
@@ -341,13 +344,15 @@ margin-right:20px;
 	padding-bottom:4px;
     -webkit-user-select: text;
 	position:relative;
-		bottom:0px;
+	bottom:0px;
 
 }
+
 #log a {
     font-weight: regular;
 	color:#59aa29;
 }
+
 #log a:hover {
     text-decoration: underline;
 }
@@ -419,7 +424,7 @@ margin-right:20px;
 	background-size:15px;
 	background-position:13px 7px;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
-
+transition: none;
 
 }
 
@@ -436,6 +441,8 @@ margin-right:20px;
 }
 #tabs li.active {
 	color: #fff;
+	transition: none;
+
 
 	
 }
@@ -443,6 +450,8 @@ margin-right:20px;
     background-color: #59aa29;
 	color: #fff;
 		background-image:url(images/icons/cf_icon_info_grey.svg);
+		transition: none;
+
 
 
 }
