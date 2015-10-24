@@ -301,6 +301,35 @@ input[type="number"]::-webkit-inner-spin-button {
 	overflow-y: hidden; /* scroll*/
 }
 
+
+
+#scrollicon {
+position:fixed;
+right:10px;
+top:113px;
+height:27px;
+width:27px;
+background-image:url(images/icons/scroll.svg);
+background-repeat:no-repeat;
+background-size:100%;
+opacity:0.0;
+transition: all ease 1s;
+
+}
+
+
+#scrollicon.active {
+height:110px;
+margin-top:10px;
+margin-right:20px;
+	width:110px;
+	opacity:0.15;
+	background-image:url(images/icons/scroll.svg);
+	background-size:80%;
+	transition: all ease 1s;
+}
+
+
 #log.active {
     overflow-y: scroll; /* scroll*/
 }
@@ -908,9 +937,14 @@ background-color:#e60000;
 	}
 	
 	.logswitch {
-		position:relative;
+		position:fixed;
+		right: 7px;
+		margin-top:-1px;
 		float:right;
-		background-color:rgba(255,0,4,1.00);
-		padding:5px;}
-	
-	
+		padding:5px;
+		z-index:10;
+		}
+		.logswitch a {
+						color:#656565;
+
+		}
