@@ -842,17 +842,19 @@ dialog {
 	
 	
 	.connect_b a.connect  {
-background-color:#e60000;
-	border:1px solid #fe0000;
-	background-image:url(images/icons/cf_icon_usb1_white.svg);
+	background-color:#56ac1d;
+	border:1px solid #5bbb1b;
+	background-image:url(images/icons/cf_icon_usb2_white.svg);
 	background-repeat:no-repeat;
 	background-size:44px;
 	background-position:center 6px;
 	}
 	
 	.connect_b a.connect.active  {
-	background-color:#56ac1d;
-	border:1px solid #5bbb1b;
+background-color:#e60000;
+	border:1px solid #fe0000;
+	background-image:url(images/icons/cf_icon_usb1_white.svg);
+
 	}
 	
 	
