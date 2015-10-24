@@ -293,18 +293,27 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 #log {
     margin-bottom: 0px;
-    height: 27px; /* was 65*/
     border: 0px solid silver; /* was 1px*/
     background-color:#242424;
-    overflow-y: hidden; /* scroll*/
     color:rgba(255,255,255,0.60);
     line-height: 21px;
+	height: 27px; /* was 65*/
+	overflow-y: hidden; /* scroll*/
 }
+
+#log.active {
+    overflow-y: scroll; /* scroll*/
+}
+
+
 #log .wrapper {
     padding: 5px;   /* was 5*/
     padding-left:10px;
 	padding-bottom:4px;
     -webkit-user-select: text;
+	position:relative;
+		bottom:0px;
+
 }
 #log a {
     font-weight: regular;
@@ -859,6 +868,8 @@ dialog {
 	float:left;
 	margin-left: 5px;
 	margin-bottom:7px;
+				transition: none;
+
 	}
 	
 	
@@ -869,12 +880,16 @@ dialog {
 	background-repeat:no-repeat;
 	background-size:44px;
 	background-position:center 6px;
+				transition: none;
+
 	}
 	
 	.connect_b a.connect.active  {
 background-color:#e60000;
 	border:1px solid #fe0000;
 	background-image:url(images/icons/cf_icon_usb1_white.svg);
+			transition: none;
+
 
 	}
 	
@@ -892,5 +907,10 @@ background-color:#e60000;
 
 	}
 	
+	.logswitch {
+		position:relative;
+		float:right;
+		background-color:rgba(255,0,4,1.00);
+		padding:5px;}
 	
 	

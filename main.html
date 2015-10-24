@@ -90,6 +90,7 @@
     <body>
         <div id="main-wrapper">
        <div class="headerbar">
+       <div class="logswitch"><a href="#" id="showlog">Show Log</a></div>
         <div id="logo"></div>
             <div id="port-picker">
                 
@@ -232,5 +233,20 @@
                 <p>Waiting for data ...</p>
             </div>
         </div>
-    </body>
+ <script>
+ /** log trigger **/
+$("#showlog").on('click', function() {
+    var state = $(this).data('state');
+    if ( state ) {
+        $("#log").animate({height: 27}, 800);
+        state = false;
+    }else{
+        $("#log").animate({height: 100}, 800);
+        state = true;
+    }
+    $(this).text(state ? 'Close' : 'Open');
+    $(this).data('state', state);
+});
+ </script>
+ </body>
 </html>

@@ -357,3 +357,26 @@ String.prototype.format = function () {
         return args[i] !== void 0 ? args[i] : "{"+(i-args.length)+"}";
     });
 };
+
+/** log trigger **/
+$(document).ready(function () {
+
+$("#showlog").on('click', function() {
+    var state = $(this).data('state');
+    if ( state ) {
+        $("#log").animate({height: 27}, 800);
+        $("#log").removeClass('active');
+
+        state = false;
+    }else{
+        $("#log").animate({height: 111}, 800);
+        $("#log").addClass('active');
+
+        state = true;
+    }
+    $(this).text(state ? 'Hide Log' : 'Show Log');
+    $(this).data('state', state);
+    
+});
+
+});
