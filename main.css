@@ -71,6 +71,8 @@ body {
 	
 .cf_doc_version_bt a:hover {
 	background-color:#6ac435;
+		transition: all ease 0.2s;
+
 	}
 	
 	
@@ -85,6 +87,8 @@ a {
 
 a:hover {
 	    text-decoration: none;
+			transition: all ease 0.2s;
+
 
 	}
 	
@@ -662,10 +666,14 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	display:block;
 	cursor:pointer;
+		transition: all ease 0.2s;
+
 	}
 	
 .save_btn a:hover {
 	background-color:#6ac435;
+		transition: all ease 0.2s;
+
 	}
 	
 	
@@ -694,18 +702,23 @@ dialog {
 	font-size:12px;
 	line-height:13px;
 	display:block;
+		transition: all ease 0.2s;
+
 	}
 	
 .default_btn a:hover {
 	background-color:#6ac435;
 	color:#fff;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
+		transition: all ease 0.2s;
+
 	}
 
 .default_btn a:active {
 	background-color:#4d9324;
 	transition: all ease 0.0s;
 	box-shadow:inset 0px 1px 5px rgba(0, 0, 0, 0.35);
+
 	}
 
 .small {
@@ -730,6 +743,8 @@ dialog {
 	font-size:11px;
 	line-height:11px;
 	display:block;
+		transition: all ease 0.2s;
+
 	}
 	
 .small a:hover {
@@ -737,6 +752,8 @@ dialog {
 	color:#fff;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	border: 1px solid #59aa29;
+		transition: all ease 0.2s;
+
 
 	}
 
@@ -752,6 +769,8 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	color:#fff;
 		border: 1px solid #59aa29;
+			transition: all ease 0.2s;
+
 
 	}
 	
@@ -760,6 +779,8 @@ dialog {
 	border: 1px solid #4d9324;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	color:#fff;
+		transition: all ease 0.2s;
+
 	}
 	
 	
