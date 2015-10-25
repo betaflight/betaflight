@@ -1,28 +1,92 @@
 .tab-setup .model-and-info {
-    height: calc(100% - 155px);
+    height: calc(100% - 138px);
 }
 .tab-setup {
     height: 100%;
 }
-
-
-#interactive_block  {
-    position: absolute;
-    width:calc(71% + 8px);
-	height:100%;
-	max-height:417px;
-	background-color:#f5f5f5;
-	border-radius: 5px;
-	border:1px solid #e4e4e4;
-
+.tab-setup .section {
+    clear: both;
+    padding-bottom: 8px;
 }
-.heading_info {
-	position:absolute;
-    height: 25px;
-    margin: 10px 0px 10px 10px;
+.tab-setup .section a {
+    display: block;
+
+    float: left;
+
+    width: 190px;
+    height: 24px;
+    line-height: 24px;
+
+    text-align: center;
     font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+
+    white-space: nowrap;
 }
-#interactive_block a.reset {
+.tab-setup .section a:hover {
+    background-color: #dedcdc;
+}
+.tab-setup .section  a.calibrating {
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.calibrating:hover {
+    cursor: default;
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.disabled {
+    background-color: #c1c1c1;
+}
+.tab-setup .section a.disabled:hover {
+    cursor: default;
+}
+.tab-setup .section a.backup {
+    width: 90px;
+    margin-right: 8px;
+}
+.tab-setup .section a.restore {
+    width: 90px;
+}
+.tab-setup .section p {
+    margin-left: 200px;
+
+    padding: 0 0 0 5px;
+
+    height: 25px;
+    line-height: 25px;
+
+    border-bottom: 1px solid #e5e5e5;
+}
+.tab-setup #interactive_block {
+    float: left;
+    position: relative;
+
+    height: 100%;
+    width: calc(100% - 199px);
+
+    border: 1px solid silver;
+    background-color: white;
+}
+.tab-setup #interactive_block .attitude {
+    float: right;
+    margin: 10px 10px 0px 0px
+}
+
+.tab-setup #interactive_block .attitude dt {
+    float: left;
+    width: 64px;
+    font-weight: 700;
+    text-align: right
+}
+
+.tab-setup #interactive_block .attitude dd {
+    display: block;
+    margin-left: 64px;
+    width: 64px;
+    text-align: right
+}
+.tab-setup #interactive_block a.reset {
     position: absolute;
     display: block;
 
@@ -39,25 +103,25 @@
 
     border: 1px solid silver;
     background-color: #ececec;
-	border-radius: 3px:
 
     z-index: 100;
 }
-#interactive_block a.reset:hover {
+.tab-setup #interactive_block a.reset:hover {
     background-color: #dedcdc;
 }
-#canvas_wrapper {
+.tab-setup #canvas_wrapper {
     position: absolute;
+
     width: 100%;
     height: 100%;
 
     top: 0;
     left: 0;
 }
-.block_wrapper {
+.tab-setup .block_wrapper {
     font-size: 0;
 }
-.block {
+.tab-setup .block {
     float: left;
     display: block;
 
@@ -65,7 +129,7 @@
 
     border: 1px solid silver;
 }
-.block .head {
+.tab-setup .block .head {
     display: block;
 
     text-align: center;
@@ -75,7 +139,7 @@
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
-.block.info {
+.tab-setup .block.info {
     display: inline-block;
     margin-bottom: 10px;
 
@@ -118,20 +182,24 @@
 
     line-height: 20px;
 }
+.tab-setup .block.gps dd {
+    height: 20px;
 
-.block.instruments {
-    width: 285px;
-	align-content:center;
-	text-align:center;
-	ma
+    margin-left: 85px;
+    margin-bottom: 2px;
+
+    line-height: 20px;
 }
-.buttons {
+.tab-setup .block.instruments {
+    width: 185px;
+}
+.tab-setup .buttons {
     width: calc(100% - 20px);
 
     position: absolute;
     bottom: 10px;
 }
-.update {
+.tab-setup .update {
     display: block;
     float: right;
 
@@ -149,9 +217,3 @@
 .tab-setup .update:hover {
     background-color: #dedcdc;
 }
-
-.cell_setup {
-	border-bottom: solid 1px #ddd;
-	padding-bottom:8px;
-	padding-top:7px;
-	}

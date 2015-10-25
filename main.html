@@ -235,20 +235,7 @@
                 <p>Waiting for data ...</p>
             </div>
         </div>
- <script>
- /** log trigger **/
-$("#showlog").on('click', function() {
-    var state = $(this).data('state');
-    if ( state ) {
-        $("#log").animate({height: 27}, 800);
-        state = false;
-    }else{
-        $("#log").animate({height: 100}, 800);
-        state = true;
-    }
-    $(this).text(state ? 'Close' : 'Open');
-    $(this).data('state', state);
-});
- </script>
+
+ 
  </body>
 </html>

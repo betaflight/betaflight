@@ -1,0 +1,222 @@
+.tab-setup .model-and-info {
+    height: calc(100% - 155px);
+}
+.tab-setup {
+    height: 100%;
+}
+
+
+#interactive_block  {
+    position: absolute;
+    width:calc(71% + 8px);
+	height:100%;
+	max-height:417px;
+	background-color:#f5f5f5;
+	border-radius: 5px;
+	border:1px solid #e4e4e4;
+
+}
+.heading_info {
+	position:absolute;
+    height: 25px;
+    margin: 10px 0px 10px 10px;
+    font-weight: bold;
+}
+#interactive_block a.reset {
+    position: absolute;
+    display: block;
+
+    bottom: 10px;
+    right: 10px;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+	border-radius: 3px:
+
+    z-index: 100;
+}
+#interactive_block a.reset:hover {
+    background-color: #dedcdc;
+}
+#canvas_wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+    top: 0;
+    left: 0;
+}
+.block_wrapper {
+    font-size: 0;
+}
+.block {
+    float: left;
+    display: block;
+
+    margin-left: 10px;
+
+    border: 1px solid silver;
+}
+.block .head {
+    display: block;
+
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+.block.info {
+    display: inline-block;
+    margin-bottom: 10px;
+
+    vertical-align: top;
+    font-size: 12px;
+
+    border: 1px solid silver;
+}
+.tab-setup .block.info .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-setup .block.info dt {
+    float: left;
+
+    width: 99px;
+    height: 20px;
+    line-height: 20px;
+}
+.tab-setup .block.info dd {
+    width: 76px;
+    height: 20px;
+    line-height: 20px;
+
+    margin-left: 99px;
+}
+.tab-setup .block.gps {
+    width: 185px;
+    margin-bottom: 10px;
+}
+.tab-setup .block.gps .fields {
+    padding: 5px 5px 3px 5px;
+}
+.tab-setup .block.gps dt {
+    float: left;
+
+    width: 85px;
+    height: 20px;
+
+    margin-bottom: 2px;
+
+    line-height: 20px;
+}
+
+.block.instruments {
+    width: 285px;
+	align-content:center;
+	text-align:center;
+	ma
+}
+.buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
+.update {
+    display: block;
+    float: right;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-setup .update:hover {
+    background-color: #dedcdc;
+}
+
+.cell_setup {
+	border-bottom: solid 1px #ddd;
+	padding-bottom:8px;
+	padding-top:7px;
+	}
+	
+	
+	
+	
+	
+	
+	
+	/* Colums  START> */
+
+.cf_column {
+	margin-bottom:20px;
+
+	}		
+	
+	
+.full {
+	float:left;
+	width:100%;
+	}
+	
+.half {
+	float:left;
+	width:50%;
+	}
+	
+
+
+.third_left {
+	float:left;
+	width:33%;
+	}
+	
+.third_center {
+	display: inline-block;
+	width:34%;
+	}
+	
+.third_right {
+	float:right;
+	width:33%;
+	}
+	
+	
+.fourth {
+	float:left;
+	width:25%;
+	}
+	
+	
+.threefourth_right {
+	float:right;
+	width:75%;
+	}
+	
+.threefourth_left {
+	float:left;
+	width:75%;
+	}	
+		
+.twothird {
+	float:left;
+	width:67%;
+	}	
+	
+	
