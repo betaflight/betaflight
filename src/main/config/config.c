@@ -377,6 +377,7 @@ static void resetConf(void)
     setControlRateProfile(0);
 
     masterConfig.beeper_off.flags = BEEPER_OFF_FLAGS_MIN;
+    masterConfig.beeper_off.cells_min = BEEPER_OFF_CELLS_DEFAULT;
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();

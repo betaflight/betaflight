@@ -544,6 +544,7 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], -32768, 32767 },
 
     { "beeper_off_flags",           VAR_UINT32  | MASTER_VALUE, &masterConfig.beeper_off.flags, BEEPER_OFF_FLAGS_MIN, BEEPER_OFF_FLAGS_MAX },
+    { "beeper_off_cells_min",       VAR_UINT8  | MASTER_VALUE, &masterConfig.beeper_off.cells_min, 1, 250 },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))

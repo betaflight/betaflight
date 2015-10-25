@@ -211,7 +211,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-    if (mode == BEEPER_SILENCE || (feature(FEATURE_VBAT) && (batteryCellCount < 2))) {
+    if (mode == BEEPER_SILENCE || (feature(FEATURE_VBAT) && (batteryCellCount < masterConfig.beeper_off.cells_min))) {
         beeperSilence();
         return;
     }
