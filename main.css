@@ -441,21 +441,8 @@ margin-right:20px;
 	height:23px;
 	display:block;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.45);
-	
-	background-image:url(images/icons/cf_icon_info_green.svg);
-	background-repeat: no-repeat;
-	background-size:15px;
-	background-position:13px 7px;
-	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
-transition: none;
-
+	transition: none;
 }
-
-
-	
-
-
-
 
 
 #tabs li a:hover {
@@ -467,13 +454,11 @@ transition: none;
 	transition: none;
 
 
-	
 }
 #tabs li.active a {
     background-color: #59aa29;
 	color: #fff;
-		background-image:url(images/icons/cf_icon_info_grey.svg);
-		transition: none;
+	transition: none;
 }
 
 
@@ -481,6 +466,219 @@ transition: none;
     cursor: default;
     background-color:#59aa29;
 }
+
+
+.tabicon {
+	background-repeat: no-repeat;
+	background-size:15px;
+	background-position:13px 7px;
+}
+
+
+/* Tab-Icons */
+
+.ic_setup {
+	background-image:url(images/icons/cf_icon_setup_grey.svg);
+	}
+	
+li.active .ic_setup {
+	background-image:url(images/icons/cf_icon_setup_white.svg);
+		color: #fff;
+	}
+.ic_ports {
+	background-image:url(images/icons/cf_icon_ports_grey.svg);
+	}
+	
+li.active .ic_ports {
+	background-image:url(images/icons/cf_icon_ports_white.svg);
+		color: #fff;
+	}
+.ic_config {
+	background-image:url(images/icons/cf_icon_config_grey.svg);
+	}
+	
+li.active .ic_config {
+	background-image:url(images/icons/cf_icon_config_white.svg);
+		color: #fff;
+	}
+.ic_pid {
+	background-image:url(images/icons/cf_icon_pid_grey.svg);
+	}
+	
+li.active .ic_pid {
+	background-image:url(images/icons/cf_icon_pid_white.svg);
+		color: #fff;
+	}
+.ic_rx {
+	background-image:url(images/icons/cf_icon_rx_grey.svg);
+	}
+	
+li.active .ic_rx {
+	background-image:url(images/icons/cf_icon_rx_white.svg);
+		color: #fff;
+	}
+.ic_modes {
+	background-image:url(images/icons/cf_icon_modes_grey.svg);
+	}
+	
+li.active .ic_modes {
+	background-image:url(images/icons/cf_icon_modes_white.svg);
+		color: #fff;
+	}
+.ic_adjust {
+	background-image:url(images/icons/cf_icon_adjust_grey.svg);
+	}
+	
+li.active .ic_adjust {
+	background-image:url(images/icons/cf_icon_adjust_white.svg);
+		color: #fff;
+	}
+.ic_servo {
+	background-image:url(images/icons/cf_icon_servo_grey.svg);
+	}
+	
+li.active .ic_servo {
+	background-image:url(images/icons/cf_icon_servo_white.svg);
+		color: #fff;
+	}
+.ic_gps{
+	background-image:url(images/icons/cf_icon_gps_grey.svg);
+	}
+	
+li.active .ic_gps{
+	background-image:url(images/icons/cf_icon_gps_white.svg);
+		color: #fff;
+	}
+
+.ic_led{
+	background-image:url(images/icons/cf_icon_led_grey.svg);
+	}
+	
+li.active .ic_led {
+	background-image:url(images/icons/cf_icon_led_white.svg);
+		color: #fff;
+	}
+	
+.ic_sensors {
+	background-image:url(images/icons/cf_icon_sensors_grey.svg);
+	}
+	
+li.active .ic_sensors {
+	background-image:url(images/icons/cf_icon_sensors_white.svg);
+		color: #fff;
+	}
+.ic_log {
+	background-image:url(images/icons/cf_icon_sensors_grey.svg);
+	}
+	
+li.active .ic_log {
+	background-image:url(images/icons/cf_icon_log_white.svg);
+		color: #fff;
+	}
+
+.ic_data {
+	background-image:url(images/icons/cf_icon_log_grey.svg);
+	}
+	
+li.active .ic_data{
+	background-image:url(images/icons/cf_icon_log_white.svg);
+		color: #fff;
+	}
+.ic_cli {
+	background-image:url(images/icons/cf_icon_cli_grey.svg);
+	}
+	
+li.active .ic_cli {
+	background-image:url(images/icons/cf_icon_cli_white.svg);
+		color: #fff;
+	}
+
+.ic_motor {
+	background-image:url(images/icons/cf_icon_motor_grey.svg);
+	}
+	
+li.active .ic_motor {
+	background-image:url(images/icons/cf_icon_motor_white.svg);
+		color: #fff;
+	}
+	
+
+.ic_welcome {
+	background-image:url(images/icons/cf_icon_welcome_grey.svg);
+	}
+	
+li.active .ic_welcome {
+	background-image:url(images/icons/cf_icon_welcome_white.svg);
+		color: #fff;
+	}
+	
+.ic_help {
+	background-image:url(images/icons/cf_icon_help_grey.svg);
+	}
+	
+li.active .ic_help {
+	background-image:url(images/icons/cf_icon_help_white.svg);
+		color: #fff;
+	}
+	
+	
+	.ic_flasher {
+	background-image:url(images/icons/cf_icon_flasher_grey.svg);
+	}
+	
+li.active .ic_flasher {
+	background-image:url(images/icons/cf_icon_flasher_white.svg);
+		color: #fff;
+	}
+		
+	
+	
+	
+		/* SPARE Tab-Icons */
+	
+	
+	
+.ic_backup {
+	background-image:url(images/icons/cf_icon_backup_grey.svg);
+	}
+	
+li.active .ic_backup {
+	background-image:url(images/icons/cf_icon_backup_white.svg);
+		color: #fff;
+	}
+.ic_wizzard {
+	background-image:url(images/icons/cf_icon_wizard_grey.svg);
+	}
+	
+li.active .ic_wizard {
+	background-image:url(images/icons/cf_icon_wizard_white.svg);
+		color: #fff;
+	}
+.ic_advanced {
+	background-image:url(images/icons/cf_icon_advanced_grey.svg);
+	}
+	
+li.active .ic_advanced {
+	background-image:url(images/icons/cf_icon_advanced_white.svg);
+		color: #fff;
+	}
+.ic_mission {
+	background-image:url(images/icons/cf_icon_mission_grey.svg);
+	}
+	
+li.active .ic_mission {
+	background-image:url(images/icons/cf_icon_mission_white.svg);
+		color: #fff;
+	}
+	
+	
+	
+	
+	
+	
+	
+
+
 #content {
     margin-top: 0px;  /* 31 */
     padding: 10px; /* 10 */
@@ -917,7 +1115,7 @@ background-color:#e60000;
 	}
 	
 
-
+/* fixing logging tab*/
 .properties {
 	width:800px;
 	}
@@ -928,7 +1126,8 @@ background-color:#e60000;
 	}
 	
 	
-		.properties dd {
+	.properties dd {
 	width:400px;
 	height:auto !important;
 	}
+	
