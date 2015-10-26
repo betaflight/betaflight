@@ -214,7 +214,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 10px;
     line-height: 2px;
 	height:67px;
-	border-radius:3px;
+	border-radius:5px;
 	border:1px solid #272727;
 	box-shadow: 0px 2px 0px rgba(92,92,92,0.5);
 	background-color: #434343;
@@ -229,28 +229,148 @@ input[type="number"]::-webkit-inner-spin-button {
     height:67px;
 	width:45px;
     line-height: 18px;
-    color: white;
     text-align: center;
 	border-top:1px solid #373737;
 	border-bottom:1px solid #1a1a1a;
 	border-left:1px solid #373737;
 	border-right:1px solid #222222;
+	background-color: #434343;
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
+
 
 
 }
+
+
+.gyroicon {
+		background-image:url(images/icons/sensor_gyro_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.gyroicon.active {
+		background-image:url(images/icons/sensor_gyro_on.png);
+		color: #61d514;
+}
+
+
+
+
+.accicon {
+		background-image:url(images/icons/sensor_acc_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.accicon.active {
+		background-image:url(images/icons/sensor_acc_on.png);
+		color: #61d514;
+		}
+		
+
+
+.magicon {
+		background-image:url(images/icons/sensor_mag_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.magicon.active {
+		background-image:url(images/icons/sensor_mag_on.png);
+		color: #61d514;
+		}
+		
+				
+.gpsicon {
+		background-image:url(images/icons/sensor_sat_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.gpsicon.active {
+		background-image:url(images/icons/sensor_sat_on.png);
+		color: #61d514;
+		}
+		
+	
+.baroicon {
+		background-image:url(images/icons/sensor_baro_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.baroicon.active {
+		background-image:url(images/icons/sensor_baro_on.png);
+		color: #61d514;
+		}
+.sonaricon {
+		background-image:url(images/icons/sensor_sonar_off.png);
+		background-size:100%;
+		background-position:top;
+		background-repeat:no-repeat;
+		height:30px;
+		margin-top:3px;
+		width:45px;
+		padding-top:40px;
+		color: #818181;
+}
+
+
+.sonaricon.active {
+		background-image:url(images/icons/sensor_sonar_on.png);
+		color: #61d514;
+		}
+					
+			
+		
 #sensor-status li:last-child {
     border-right: 0px solid #c0c0c0;
-	border-top-right-radius:3px;
-	border-bottom-right-radius:3px;
+	border-top-right-radius:5px;
+	border-bottom-right-radius:5px;
 }
 
 #sensor-status li:first-child {
     border-left: 0px solid #c0c0c0;
-	border-top-left-radius:3px;
-	border-bottom-left-radius:3px;
+	border-top-left-radius:5px;
+	border-bottom-left-radius:5px;
 }
 #sensor-status .on {
-    background-color: #b8cf02;
+  background-color: #434343;
 	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
 }
 

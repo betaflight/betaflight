@@ -304,38 +304,54 @@ function sensor_status(sensors_detected) {
 
     if (have_sensor(sensors_detected, 'acc')) {
         $('.accel', e_sensor_status).addClass('on');
+    	$('.accicon', e_sensor_status).addClass('active');
+
     } else {
         $('.accel', e_sensor_status).removeClass('on');
+		$('.accicon', e_sensor_status).removeClass('active');
+
     }
 
     if (have_sensor(sensors_detected, 'gyro')) {
         $('.gyro', e_sensor_status).addClass('on');
+		$('.gyroicon', e_sensor_status).addClass('active');
+
     } else {
         $('.gyro', e_sensor_status).removeClass('on');
+		$('.gyroicon', e_sensor_status).removeClass('active');
+
     }
 
     if (have_sensor(sensors_detected, 'baro')) {
         $('.baro', e_sensor_status).addClass('on');
+		$('.baroicon', e_sensor_status).addClass('active');
     } else {
         $('.baro', e_sensor_status).removeClass('on');
+		$('.baroicon', e_sensor_status).removeClass('active');
     }
 
     if (have_sensor(sensors_detected, 'mag')) {
         $('.mag', e_sensor_status).addClass('on');
+		$('.magicon', e_sensor_status).addClass('active');
     } else {
         $('.mag', e_sensor_status).removeClass('on');
+		$('.magicon', e_sensor_status).removeClass('active');
     }
 
     if (have_sensor(sensors_detected, 'gps')) {
         $('.gps', e_sensor_status).addClass('on');
+		$('.gpsicon', e_sensor_status).addClass('active');
     } else {
         $('.gps', e_sensor_status).removeClass('on');
+		$('.gpsicon', e_sensor_status).removeClass('active');
     }
 
     if (have_sensor(sensors_detected, 'sonar')) {
         $('.sonar', e_sensor_status).addClass('on');
+		$('.sonaricon', e_sensor_status).addClass('active');
     } else {
         $('.sonar', e_sensor_status).removeClass('on');
+		$('.sonaricon', e_sensor_status).removeClass('active');
     }
 }
 

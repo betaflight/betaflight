@@ -60,7 +60,7 @@ $(document).ready(function () {
     $('a', ui_tabs).click(function () {
         if ($(this).parent().hasClass('active') == false && !GUI.tab_switch_in_progress) { // only initialize when the tab isn't already active
             var self = this,
-                tabClass = $(self).parent().prop('id');
+                tabClass = $(self).parent().prop('class');
 
             var tabRequiresConnection = $(self).parent().hasClass('mode-connected');
             
@@ -211,20 +211,6 @@ $(document).ready(function () {
                     googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
-                function close_and_cleanup(e) {
-                    if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
-                        $(document).unbind('click keyup', close_and_cleanup);
-
-                        $('div#options-window').slideUp(250, function () {
-                            el.removeClass('active');
-                            $(this).empty().remove();
-                        });
-                    }
-                }
-				
-				
-				
-				
  // TEST
 var css = $("#default");
 $("div#options-window #remove").click(function(){
@@ -237,6 +223,17 @@ $("div#options-window #restore").click(function(){
    // TEST
    
    
+                function close_and_cleanup(e) {
+                    if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
+                        $(document).unbind('click keyup', close_and_cleanup);
+
+                        $('div#options-window').slideUp(250, function () {
+                            el.removeClass('active');
+                            $(this).empty().remove();
+                        });
+                    }
+                }
+
                 $(document).bind('click keyup', close_and_cleanup);
 
                 $(this).slideDown(250);
