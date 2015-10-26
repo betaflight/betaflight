@@ -136,7 +136,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #port-picker { /*  */
     float: left;
     margin-top: 20px;
-    margin-left: 20px;
+    margin-left: -20px;
 	width:180px;
 }
 
@@ -210,8 +210,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #sensor-status {
 	margin-top:20px;
-    float: right;
-    margin-right: 30px;
+    float: left;
+    margin-left: 110px;
     line-height: 2px;
 	height:67px;
 	border-radius:5px;
@@ -1168,9 +1168,9 @@ dialog {
 
 
 .connect_contols {
-	position:absolute;
-	left:585px;
-	top:19px;
+	position:relative;
+	margin-top:-93px;
+	margin-left:-380px;
 	height:70px;
 	width:60px;
 	}
