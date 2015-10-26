@@ -211,7 +211,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #sensor-status {
 	margin-top:20px;
     float: right;
-    margin-right: 10px;
+    margin-right: 30px;
     line-height: 2px;
 	height:67px;
 	border-radius:5px;
@@ -225,9 +225,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #sensor-status li {
     float: left;
-    padding: 0 12px 0 12px;
     height:67px;
-	width:45px;
+	width:30px;
     line-height: 18px;
     text-align: center;
 	border-top:1px solid #373737;
@@ -244,12 +243,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .gyroicon {
 		background-image:url(images/icons/sensor_gyro_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
@@ -265,12 +264,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .accicon {
 		background-image:url(images/icons/sensor_acc_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
@@ -285,12 +284,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .magicon {
 		background-image:url(images/icons/sensor_mag_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
@@ -304,12 +303,12 @@ input[type="number"]::-webkit-inner-spin-button {
 				
 .gpsicon {
 		background-image:url(images/icons/sensor_sat_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
@@ -323,12 +322,12 @@ input[type="number"]::-webkit-inner-spin-button {
 	
 .baroicon {
 		background-image:url(images/icons/sensor_baro_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
@@ -340,12 +339,12 @@ input[type="number"]::-webkit-inner-spin-button {
 		}
 .sonaricon {
 		background-image:url(images/icons/sensor_sonar_off.png);
-		background-size:100%;
+		background-size:120%;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:45px;
+		width:30px;
 		padding-top:40px;
 		color: #818181;
 }
