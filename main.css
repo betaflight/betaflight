@@ -907,6 +907,64 @@ dialog {
 		padding-bottom:15px;
 }
 
+/* Colums  START> */
+
+.column {
+	min-height:20px;
+	margin-bottom:10px;
+
+	}	
+	
+	
+.full {
+	float:left;
+	width:100%;
+	}
+	
+.half {
+	float:left;
+	width:50%;
+	}
+	
+
+
+.third_left {
+	float:left;
+	width:33%;
+	}
+	
+.third_center {
+	display: inline-block;
+	width:34%;
+	}
+	
+.third_right {
+	float:right;
+	width:33%;
+	}
+	
+	
+.fourth {
+	float:left;
+	width:25%;
+	}
+	
+	
+.threefourth_right {
+	float:right;
+	width:75%;
+	}
+	
+.threefourth_left {
+	float:left;
+	width:75%;
+	}	
+		
+.twothird {
+	float:left;
+	width:67%;
+	}	
+
 /* Columns  END> */
 
 /* Spacers */
