@@ -221,7 +221,22 @@ $(document).ready(function () {
                         });
                     }
                 }
+				
+				
+				
+				
+ // TEST
+var css = $("#default");
+$("div#options-window #remove").click(function(){
+    css.remove();
+});
 
+$("div#options-window #restore").click(function(){
+    $("head").append(css);
+});
+   // TEST
+   
+   
                 $(document).bind('click keyup', close_and_cleanup);
 
                 $(this).slideDown(250);

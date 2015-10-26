@@ -4,7 +4,9 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="author" content="cTn" />
 
-        <link type="text/css" rel="stylesheet" href="./main.css" media="all" />
+        <link type="text/css" rel="stylesheet" href="./main2.css" media="all" />
+        <link type="text/css" rel="stylesheet" href="./main.css" media="all" id="default" />
+
         <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.min.css">
         <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.pips.min.css">
         <link type="text/css" rel="stylesheet" href="./js/libraries/flightindicators.css">
@@ -83,7 +85,7 @@
         <script type="text/javascript" src="./tabs/logging.js"></script>
         <script type="text/javascript" src="./tabs/dataflash.js"></script>
         <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
-        
+
         <script type="text/javascript" src="./js/libraries/switchery/switchery.js"></script>
 
     </head>
@@ -143,7 +145,7 @@
     
             <a id="options" href="#" i18n_title="options_title"></a>
             
-             <div class="tab-dataflash" id="flashstate" style="width:120px; float:right; height:12px;"
+             <div class="tab-dataflash" id="flashstate" style="width:120px; float:right; height:12px; display:none;"
 >
     <div class="require-dataflash" id="header_dataflash">
         <ul class="dataflash-contents" style="height:7px; margin:12px;">
@@ -189,6 +191,8 @@
                     <li id="tab_help"><a href="#" i18n="tabHelp" class="tabicon ic_help"></a></li>
                     <li id="tab_firmware_flasher"><a href="#" i18n="tabFirmwareFlasher" class="tabicon ic_flasher"></a></li>
                 </ul>
+                
+              
                 <ul class="mode-connected">
                     <li id="tab_setup"><a href="#" i18n="tabSetup" class="tabicon ic_setup"></a></li>
                     <li id="tab_ports"><a href="#" i18n="tabPorts" class="tabicon ic_ports"></a></li>

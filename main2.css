@@ -14,7 +14,7 @@ body {
     font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
     font-size: 12px;
     color: #303030;
-	background-color:#3f4140;
+	background-color:#dfddd0;
 	margin:0px;
 	padding:0px;
 }
@@ -119,6 +119,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 
+
 #logo {
     position: relative;
 	float:left;    
@@ -204,54 +205,33 @@ input[type="number"]::-webkit-inner-spin-button {
 */
 
 
+#sensor-status {
+    float: right;
+    margin-right: 10px;
+    height: 22px;
+    line-height: 22px;
+}
+
 #header_dataflash { 
 	display:none; }
 
 
-#sensor-status {
-	margin-top:20px;
-    float: right;
-    margin-right: 10px;
-    line-height: 2px;
-	height:67px;
-	border-radius:3px;
-	border:1px solid #272727;
-	box-shadow: 0px 2px 0px rgba(92,92,92,0.5);
-	background-color: #434343;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
-
-
-}
-
 #sensor-status li {
     float: left;
     padding: 0 12px 0 12px;
-    height:67px;
-	width:45px;
+    height: 18px;
     line-height: 18px;
     color: white;
     text-align: center;
-	border-top:1px solid #373737;
-	border-bottom:1px solid #1a1a1a;
-	border-left:1px solid #373737;
-	border-right:1px solid #222222;
-
-
+    border: 1px solid #c0c0c0;
+    border-right: 0;
+    background-color: #e32424;
 }
 #sensor-status li:last-child {
-    border-right: 0px solid #c0c0c0;
-	border-top-right-radius:3px;
-	border-bottom-right-radius:3px;
-}
-
-#sensor-status li:first-child {
-    border-left: 0px solid #c0c0c0;
-	border-top-left-radius:3px;
-	border-bottom-left-radius:3px;
+    border-right: 1px solid #c0c0c0;
 }
 #sensor-status .on {
     background-color: #b8cf02;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
 }
 
 
@@ -404,7 +384,7 @@ margin-right:20px;
 
 .tab_container {
 	float:left; 
-	height:calc(100% - 20px);	
+	height:100%; 
 	width:210px; 
 	border-right: 4px solid #59aa29;
 	}
@@ -414,7 +394,6 @@ margin-right:20px;
     position: relative;
     float: left;
 	width:100%;
-	height:calc(100% - 20px);	
     padding-top: 0px; 
     padding-bottom: 0px;
     margin-top:0px;
@@ -424,8 +403,6 @@ margin-right:20px;
 }
 
 #tabs ul {
-	height:100%;
-	float:left;
 	margin-top:0px;
     overflow: hidden;
 	 /* Cause the height to expand to contain its floated contents */
@@ -508,6 +485,7 @@ margin-right:20px;
 	
 li.active .ic_setup {
 	background-image:url(images/icons/cf_icon_setup_white.svg);
+		color: #fff;
 	}
 .ic_ports {
 	background-image:url(images/icons/cf_icon_ports_grey.svg);
@@ -515,6 +493,7 @@ li.active .ic_setup {
 	
 li.active .ic_ports {
 	background-image:url(images/icons/cf_icon_ports_white.svg);
+		color: #fff;
 	}
 .ic_config {
 	background-image:url(images/icons/cf_icon_config_grey.svg);
@@ -522,6 +501,7 @@ li.active .ic_ports {
 	
 li.active .ic_config {
 	background-image:url(images/icons/cf_icon_config_white.svg);
+		color: #fff;
 	}
 .ic_pid {
 	background-image:url(images/icons/cf_icon_pid_grey.svg);
@@ -529,6 +509,7 @@ li.active .ic_config {
 	
 li.active .ic_pid {
 	background-image:url(images/icons/cf_icon_pid_white.svg);
+		color: #fff;
 	}
 .ic_rx {
 	background-image:url(images/icons/cf_icon_rx_grey.svg);
@@ -536,6 +517,7 @@ li.active .ic_pid {
 	
 li.active .ic_rx {
 	background-image:url(images/icons/cf_icon_rx_white.svg);
+		color: #fff;
 	}
 .ic_modes {
 	background-image:url(images/icons/cf_icon_modes_grey.svg);
@@ -543,6 +525,7 @@ li.active .ic_rx {
 	
 li.active .ic_modes {
 	background-image:url(images/icons/cf_icon_modes_white.svg);
+		color: #fff;
 	}
 .ic_adjust {
 	background-image:url(images/icons/cf_icon_adjust_grey.svg);
@@ -550,6 +533,7 @@ li.active .ic_modes {
 	
 li.active .ic_adjust {
 	background-image:url(images/icons/cf_icon_adjust_white.svg);
+		color: #fff;
 	}
 .ic_servo {
 	background-image:url(images/icons/cf_icon_servo_grey.svg);
@@ -557,6 +541,7 @@ li.active .ic_adjust {
 	
 li.active .ic_servo {
 	background-image:url(images/icons/cf_icon_servo_white.svg);
+		color: #fff;
 	}
 .ic_gps{
 	background-image:url(images/icons/cf_icon_gps_grey.svg);
@@ -564,6 +549,7 @@ li.active .ic_servo {
 	
 li.active .ic_gps{
 	background-image:url(images/icons/cf_icon_gps_white.svg);
+		color: #fff;
 	}
 
 .ic_led{
@@ -572,6 +558,7 @@ li.active .ic_gps{
 	
 li.active .ic_led {
 	background-image:url(images/icons/cf_icon_led_white.svg);
+		color: #fff;
 	}
 	
 .ic_sensors {
@@ -580,6 +567,7 @@ li.active .ic_led {
 	
 li.active .ic_sensors {
 	background-image:url(images/icons/cf_icon_sensors_white.svg);
+		color: #fff;
 	}
 .ic_log {
 	background-image:url(images/icons/cf_icon_sensors_grey.svg);
@@ -587,6 +575,7 @@ li.active .ic_sensors {
 	
 li.active .ic_log {
 	background-image:url(images/icons/cf_icon_log_white.svg);
+		color: #fff;
 	}
 
 .ic_data {
@@ -595,6 +584,7 @@ li.active .ic_log {
 	
 li.active .ic_data{
 	background-image:url(images/icons/cf_icon_log_white.svg);
+		color: #fff;
 	}
 .ic_cli {
 	background-image:url(images/icons/cf_icon_cli_grey.svg);
@@ -602,6 +592,7 @@ li.active .ic_data{
 	
 li.active .ic_cli {
 	background-image:url(images/icons/cf_icon_cli_white.svg);
+		color: #fff;
 	}
 
 .ic_motor {
@@ -610,6 +601,7 @@ li.active .ic_cli {
 	
 li.active .ic_motor {
 	background-image:url(images/icons/cf_icon_motor_white.svg);
+		color: #fff;
 	}
 	
 
@@ -619,6 +611,7 @@ li.active .ic_motor {
 	
 li.active .ic_welcome {
 	background-image:url(images/icons/cf_icon_welcome_white.svg);
+		color: #fff;
 	}
 	
 .ic_help {
@@ -627,6 +620,7 @@ li.active .ic_welcome {
 	
 li.active .ic_help {
 	background-image:url(images/icons/cf_icon_help_white.svg);
+		color: #fff;
 	}
 	
 	
@@ -636,6 +630,7 @@ li.active .ic_help {
 	
 li.active .ic_flasher {
 	background-image:url(images/icons/cf_icon_flasher_white.svg);
+		color: #fff;
 	}
 		
 	
@@ -651,6 +646,7 @@ li.active .ic_flasher {
 	
 li.active .ic_backup {
 	background-image:url(images/icons/cf_icon_backup_white.svg);
+		color: #fff;
 	}
 .ic_wizzard {
 	background-image:url(images/icons/cf_icon_wizard_grey.svg);
@@ -658,6 +654,7 @@ li.active .ic_backup {
 	
 li.active .ic_wizard {
 	background-image:url(images/icons/cf_icon_wizard_white.svg);
+		color: #fff;
 	}
 .ic_advanced {
 	background-image:url(images/icons/cf_icon_advanced_grey.svg);
@@ -665,6 +662,7 @@ li.active .ic_wizard {
 	
 li.active .ic_advanced {
 	background-image:url(images/icons/cf_icon_advanced_white.svg);
+		color: #fff;
 	}
 .ic_mission {
 	background-image:url(images/icons/cf_icon_mission_grey.svg);
@@ -672,6 +670,7 @@ li.active .ic_advanced {
 	
 li.active .ic_mission {
 	background-image:url(images/icons/cf_icon_mission_white.svg);
+		color: #fff;
 	}
 	
 	
