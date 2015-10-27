@@ -1,65 +1,140 @@
-<div class="tab-setup">
-    <div class="section">
-        <a class="calibrateAccel" href="#" i18n="initialSetupButtonCalibrateAccel"></a>
-        <p i18n="initialSetupCalibrateAccelText">
-        </p>
-    </div>
-    <div class="section">
-        <a class="calibrateMag" href="#" i18n="initialSetupButtonCalibrateMag"></a>
-        <p i18n="initialSetupCalibrateMagText">
-        </p>
-    </div>
-    <div class="section">
-        <a class="resetSettings" href="#" i18n="initialSetupButtonReset"></a>
-        <p i18n="initialSetupResetText">
-        </p>
-    </div>
-    <div class="section">
-        <a class="backup" href="#" i18n="initialSetupButtonBackup"></a>
-        <a class="restore" href="#" i18n="initialSetupButtonRestore"></a>
-        <p i18n="initialSetupBackupRestoreText">
-        </p>
-    </div>
-    <div class="model-and-info">
+
+<div class="tab_setup"> <!-- should be the first DIV on each tab -->
+
+<div class="cf_column full" style="margin-bottom:10px;">
+  <div class="tab_title">Setup
+    <div class="cf_doc_version_bt"><a href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a></div>
+</div>
+
+
+    <div class="cf_column fourth" style="min-height:100px;">
+    <div class="spacer_right">
+        <div class="default_btn" style="margin-bottom:10px;"><a class="calibrateAccel" id="default_btn green" href="#" i18n="initialSetupButtonCalibrateAccel"></a></div>
+        <div class="default_btn" style="margin-bottom:10px;"><a class="calibrateMag" href="#" i18n="initialSetupButtonCalibrateMag" ></a></div>
+        <div class="default_btn" style="margin-bottom:10px;"><a class="resetSettings" href="#" i18n="initialSetupButtonReset"></a></div>
+ 		
+        <div class="half"><div class="spacer_right">
+        <div class="default_btn half"><a class="backup" href="#" i18n="initialSetupButtonBackup"></a></div>
+		</div></div>
+         <div class="half"><div class="spacer_left">
+         <div class="default_btn half"><a class="restore" href="#" i18n="initialSetupButtonRestore"></a></div>
+        </div></div></div>
+        
+        </div>
+        
+    <div class="threefourth_right"><div class="spacer_left">
+        <div class="cell_setup"><span i18n="initialSetupCalibrateAccelText"></span></div>
+        <div class="cell_setup"><span i18n="initialSetupCalibrateMagText"></span></div>
+        <div class="cell_setup"><span i18n="initialSetupResetText"></span></div>
+        <div class="cell_setup"><span i18n="initialSetupBackupRestoreText"></span></div>
+    </div></div>
+</div>
+
+<div style="clear:both; margin-bottom:5px;"></div>
+
+
+
+<div class="cf_column threefourth_left" > 
+
+	<div class="spacer_right">
+
+<div class="model-and-info">
         <div id="interactive_block">
-            <div id="canvas_wrapper">
+            <div id="canvas_wrapper" style="">
                 <canvas id="canvas"></canvas>
-            </div>
+            
+            
+
             <div class="attitude">
                 <dl>
                     <dt>Heading:</dt><dd class="heading">&nbsp;</dd>
                     <dt>Pitch:</dt><dd class="pitch">&nbsp;</dd>
                     <dt>Roll:</dt><dd class="roll">&nbsp;</dd>
                 </dl>
-            </div>
-            <a class="reset" href="#" i18n="initialSetupButtonResetZaxis"></a>
-        </div>
-        <div class="block info">
-            <span class="head" i18n="initialSetupInfoHead"></span>
-            <div class="fields">
-                <dl>
-                    <dt i18n="initialSetupBattery"></dt><dd class="bat-voltage">0 V</dd>
-                    <dt i18n="initialSetupDrawn"></dt><dd class="bat-mah-drawn">0 mAh</dd>
-                    <dt i18n="initialSetupDrawing"></dt><dd class="bat-mah-drawing">0 A</dd>
-                    <dt i18n="initialSetupRSSI"></dt><dd class="rssi">0 %</dd>
-                </dl>
-            </div>
-        </div>
-        <div class="block gps">
-            <span class="head" i18n="initialSetupGPSHead"></span>
-            <div class="fields">
-                <dl>
-                    <dt i18n="gps3dFix"></dt><dd class="gpsFix"></dd>
-                    <dt i18n="gpsSats"></dt><dd class="gpsSats"></dd>
-                    <dt i18n="gpsLat"></dt><dd class="gpsLat"></dd>
-                    <dt i18n="gpsLon"></dt><dd class="gpsLon"></dd>
-                </dl>
-            </div>
-        </div>
-        <div class="block instruments">
-          <span class="head" i18n="initialSetupInstrumentsHead"></span>
+            </div>  
+                    
+                    
+                </div>
+                        <a class="reset" href="#" i18n="initialSetupButtonResetZaxis"></a>
+
+    
+</div></div></div> </div> 
+        
+        <div class="cf_column fourth">
+        
+<div class="spacer_left"><div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="initialSetupInfoHead"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+<table width="100%" border="0" cellpadding="0" cellspacing="0" class="cf_table">
+    <tbody>
+      <tr>
+        <td i18n="initialSetupBattery"></td>
+        <td class="bat-voltage">0 V</td>
+      </tr>
+      <tr>
+        <td i18n="initialSetupDrawn"></td>
+        <td class="bat-mah-drawn">0 mAh</td>
+      </tr>
+      <tr>
+        <td i18n="initialSetupDrawing"></td>
+        <td class="bat-mah-drawing">0.00 A</td>
+      </tr>
+      <tr class="noboarder">
+        <td i18n="initialSetupRSSI"></td>
+        <td class="rssi"> 0 %</td>
+      </tr>
+    </tbody>
+  </table></div></div></div> 
+
+
+  
+  <div class="spacer_left"><div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="initialSetupGPSHead"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+<table width="100%" border="0" cellpadding="0" cellspacing="0" class="cf_table">
+    <tbody>
+       <tr>
+        <td i18n="gps3dFix"></td>
+        <td class="gpsFix"></td>
+      </tr>
+      <tr>
+        <td i18n="gpsSats"></td>
+        <td class="gpsSats"></td>
+      </tr>
+      <tr>
+        <td i18n="gpsLat"></td>
+        <td class="gpsLat"></td>
+      </tr>
+      <tr class="noboarder">
+        <td i18n="gpsLon"></td>
+        <td class="gpsLon"></td>
+      </tr>
+    </tbody>
+  </table></div></div></div> 
+
+  
+   <div class="spacer_left"><div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="initialSetupInstrumentsHead"></div>
+<div class="helpicon"></div></div><div class="spacer_box" align="center">
           <span id="attitude"></span>
           <span id="heading"></span>
-        </div>
-    </div>
+
+
+
+</div></div></div>  
+
+  
+  
+    
+    </div></div>
+    
+    
+    
+    
+    
+
+        
+        
+        
+        
 </div>

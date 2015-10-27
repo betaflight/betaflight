@@ -159,14 +159,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #port-picker #delay {
     width: 60px;
 }
-#port-picker #port-override{
-    height: 18px;
-    line-height: 20px;
-    margin-right: 5px;
-    width: 120px;
-    padding: 0 5px;
-    border: 1px solid silver;
-}
+
 
 #port-picker a {
     float: left;
@@ -201,7 +194,52 @@ input[type="number"]::-webkit-inner-spin-button {
     float: left;
     margin: 3px 0 0 5px;
 }
+
+
+#port-picker #port-override{
+    height: 20px;
+    line-height: 20px;
+    margin-right: 5px;
+    width: 120px;
+    padding: 0 5px;
+    border: 1px solid silver;
+}
 */
+#port-override {
+    background-color:rgba(0, 0, 0, 0.1);
+    color:#888888; 
+    width: 140px;
+    margin-left: 2px;
+    margin-top: 0px;
+    padding:1px; 
+    border-radius:3px; 
+    height:15px; 
+    float:right;
+    font-size:12px;
+
+}
+
+
+#port-override-option label {
+background-color:#2b2b2b; 
+border-radius:3px; 
+padding:3px; 
+margin-bottom:5px; 
+color:#ddd; 
+position:absolute;
+margin-top:-59px;
+margin-left:-183px;
+}
+
+
+#port-override input {
+width:136px;
+}
+
+
+#port-picker .auto_connect {
+color:#ddd; 
+}
 
 
 #header_dataflash { 
@@ -210,8 +248,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #sensor-status {
 	margin-top:20px;
-    float: left;
-    margin-left: 110px;
+    float: right;
+    margin-right: 20px;
     line-height: 2px;
 	height:67px;
 	border-radius:5px;
@@ -254,8 +292,9 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
+
 
 }
 
@@ -263,6 +302,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .gyroicon.active {
 		background-image:url(images/icons/sensor_gyro_on.png);
 		color: #61d514;
+		color: #818181;
+
+
 }
 
 
@@ -277,14 +319,18 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
+
 }
 
 
 .accicon.active {
 		background-image:url(images/icons/sensor_acc_on.png);
 		color: #61d514;
+				color: #818181;		
+
+
 		}
 		
 
@@ -298,14 +344,18 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
+
 }
 
 
 .magicon.active {
 		background-image:url(images/icons/sensor_mag_on.png);
 		color: #61d514;
+				color: #818181;
+
+
 		}
 		
 				
@@ -318,14 +368,18 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
+
 }
 
 
 .gpsicon.active {
 		background-image:url(images/icons/sensor_sat_on.png);
 		color: #61d514;
+				color: #818181;
+
+
 		}
 		
 	
@@ -338,15 +392,20 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
+
 }
 
 
 .baroicon.active {
 		background-image:url(images/icons/sensor_baro_on.png);
 		color: #61d514;
+				color: #818181;
+
+
 		}
+		
 .sonaricon {
 		background-image:url(images/icons/sensor_sonar_off.png);
 	background-size:41px;
@@ -356,7 +415,7 @@ input[type="number"]::-webkit-inner-spin-button {
 		margin-top:3px;
 		width:100%;
 		padding-top:40px;
-		color: #818181;
+		color: #4f4f4f;
 		text-align:center;
 }
 
@@ -364,6 +423,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .sonaricon.active {
 		background-image:url(images/icons/sensor_sonar_on.png);
 		color: #61d514;
+		color: #818181;
+
+
 		}
 					
 			
@@ -817,8 +879,8 @@ li.active .ic_mission {
 
 #content {
     margin-top: 0px;  /* 31 */
-    padding: 10px; /* 10 */
-    height:calc(100% - 170px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px) - was: calc(100% - 171px)*/
+    padding: 20px; /* 10 */
+    height:calc(100% - 190px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px + padding) - was: calc(100% - 171px)*/
 	
     background-color: white;
     overflow-x: hidden;
@@ -892,7 +954,7 @@ dialog {
 	line-height:24px;
 	height:30px;	
 	font-family: 'open_sanslight', Arial;
-	margin-bottom:7px;
+	margin-bottom:15px;
 	}
 	
 /* Note */
@@ -923,12 +985,12 @@ dialog {
 
 /* Colums  START> */
 
-.column {
+.cf_column {
 	min-height:20px;
-	margin-bottom:10px;
+	margin-bottom:0px;
 
 	}	
-	
+
 	
 .full {
 	float:left;
@@ -1305,7 +1367,7 @@ background-color:#e60000;
 /* fixing padding for all Tabs*/
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
-	padding:;
+	padding:0px;
 	}
 	
 
