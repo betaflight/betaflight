@@ -226,7 +226,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #sensor-status li {
     float: left;
     height:67px;
-	width:30px;
+	width:33px;
     line-height: 18px;
     text-align: center;
 	border-top:1px solid #373737;
@@ -235,6 +235,10 @@ input[type="number"]::-webkit-inner-spin-button {
 	border-right:1px solid #222222;
 	background-color: #434343;
 	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
+	padding-left:5px;
+	padding-right:5px;
+	text-align:center;
+	text-shadow:0px 1px rgba(0, 0, 0, 1.0);
 
 
 
@@ -243,14 +247,16 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .gyroicon {
 		background-image:url(images/icons/sensor_gyro_off.png);
-		background-size:120%;
+		background-size:43px;
 		background-position:top;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
+
 }
 
 
@@ -264,14 +270,15 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .accicon {
 		background-image:url(images/icons/sensor_acc_off.png);
-		background-size:120%;
-		background-position:top;
+		background-size:40px;
+		background-position: -5px 2px;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
 }
 
 
@@ -284,14 +291,15 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .magicon {
 		background-image:url(images/icons/sensor_mag_off.png);
-		background-size:120%;
-		background-position:top;
+		background-size:42px;
+		background-position: -5px 2px;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
 }
 
 
@@ -303,14 +311,15 @@ input[type="number"]::-webkit-inner-spin-button {
 				
 .gpsicon {
 		background-image:url(images/icons/sensor_sat_off.png);
-		background-size:120%;
-		background-position:top;
+		background-size:42px;
+		background-position: -5px 2px;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
 }
 
 
@@ -322,14 +331,15 @@ input[type="number"]::-webkit-inner-spin-button {
 	
 .baroicon {
 		background-image:url(images/icons/sensor_baro_off.png);
-		background-size:120%;
-		background-position:top;
+		background-size:40px;
+		background-position: -5px 2px;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
 }
 
 
@@ -339,14 +349,15 @@ input[type="number"]::-webkit-inner-spin-button {
 		}
 .sonaricon {
 		background-image:url(images/icons/sensor_sonar_off.png);
-		background-size:120%;
-		background-position:top;
+	background-size:41px;
+		background-position: -4px 1px;
 		background-repeat:no-repeat;
 		height:30px;
 		margin-top:3px;
-		width:30px;
+		width:100%;
 		padding-top:40px;
 		color: #818181;
+		text-align:center;
 }
 
 
@@ -547,6 +558,8 @@ margin-right:20px;
 	float:left;
 	margin-top:0px;
     overflow: hidden;
+    width:100%;
+
 	 /* Cause the height to expand to contain its floated contents */
 }
 
