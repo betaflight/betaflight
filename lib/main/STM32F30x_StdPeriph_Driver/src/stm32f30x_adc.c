@@ -945,6 +945,10 @@ void ADC_AnalogWatchdog3SingleChannelConfig(ADC_TypeDef* ADCx, uint8_t ADC_Chann
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 void ADC_TempSensorCmd(ADC_TypeDef* ADCx, FunctionalState NewState)
 {
   /* Check the parameters */
@@ -961,6 +965,9 @@ void ADC_TempSensorCmd(ADC_TypeDef* ADCx, FunctionalState NewState)
      ADC1_2->CCR &= ~(uint32_t)ADC12_CCR_TSEN;
    }
 }
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
 
 /**
   * @brief  Enables or disables the Vrefint channel.
@@ -1010,6 +1017,10 @@ void ADC_VrefintCmd(ADC_TypeDef* ADCx, FunctionalState NewState)
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 void ADC_VbatCmd(ADC_TypeDef* ADCx, FunctionalState NewState)
 {
   /* Check the parameters */
@@ -1026,7 +1037,9 @@ void ADC_VbatCmd(ADC_TypeDef* ADCx, FunctionalState NewState)
      ADC1_2->CCR &= ~(uint32_t)ADC12_CCR_VBATEN;
    }
 }
-
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
 /**
   * @}
   */
