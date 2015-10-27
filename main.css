@@ -701,7 +701,7 @@ li.active .ic_sensors {
 	background-image:url(images/icons/cf_icon_sensors_white.svg);
 	}
 .ic_log {
-	background-image:url(images/icons/cf_icon_sensors_grey.svg);
+	background-image:url(images/icons/cf_icon_log_grey.svg);
 	}
 	
 li.active .ic_log {
@@ -709,12 +709,13 @@ li.active .ic_log {
 	}
 
 .ic_data {
-	background-image:url(images/icons/cf_icon_log_grey.svg);
+	background-image:url(images/icons/cf_icon_data_grey.svg);
 	}
 	
-li.active .ic_data{
-	background-image:url(images/icons/cf_icon_log_white.svg);
+li.active .ic_data {
+	background-image:url(images/icons/cf_icon_data_white.svg);
 	}
+	
 .ic_cli {
 	background-image:url(images/icons/cf_icon_cli_grey.svg);
 	}
