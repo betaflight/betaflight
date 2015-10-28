@@ -378,7 +378,7 @@ $("#showlog").on('click', function() {
     if ( state ) {
         $("#log").animate({height: 27}, 800);
         $("#log").removeClass('active');
-		$("#content").removeClass('active');
+		$("#content").removeClass('logopen');
 
         $("#scrollicon").removeClass('active');
 
@@ -386,7 +386,7 @@ $("#showlog").on('click', function() {
     }else{
         $("#log").animate({height: 111}, 800);
         $("#log").addClass('active');
-        $("#content").addClass('active');
+        $("#content").addClass('logopen');
         $("#scrollicon").addClass('active');
 
         state = true;
