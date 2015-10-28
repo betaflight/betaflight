@@ -880,7 +880,7 @@ li.active .ic_mission {
 #content {
     margin-top: 0px;  /* 31 */
     padding: 0px; /* 10 */
-    height:calc(100% - 150px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px + padding) - was: calc(100% - 171px)*/
+    height:calc(100% - 150px); /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
     background-color: white;
     overflow-x: hidden;
     overflow-y: auto;
@@ -893,7 +893,7 @@ li.active .ic_mission {
 #content.logopen {
     margin-top: 0px;  /* 31 */
     padding: 0px; /* 10 */
-    height:calc(100% - 234px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px + padding) - was: calc(100% - 171px)*/
+    height:calc(100% - 234px); /*  (port picker, log OPEN, status bar: 20px + padding) - was: calc(100% - 171px)*/
     background-color: white;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1395,6 +1395,7 @@ background-color:#e60000;
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
 	padding:20px;
 	float:left;
+	width:calc(100% - 40px);
 	}
 	
 
