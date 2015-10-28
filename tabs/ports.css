@@ -6,11 +6,7 @@
     display: none;
 }
 
-.tab-ports .help {
-    padding: 10px;
-    background-color: #ffcb18;
-    margin-bottom: 10px;
-}
+
 
 .tab-ports table {
     margin-bottom: 10px;
@@ -66,11 +62,7 @@
     background-color: #dedcdc;
 }
 
-.tab-ports .note {
-    padding: 5px;
-    border: 1px dashed silver;
-    margin-bottom: 8px;
-}
+
 .tab-ports .require-support {
     display:none;
 }

@@ -241,12 +241,12 @@ function onConnect() {
 
     if ("CLFL" == CONFIG.flightControllerIdentifier){
         
-         /* placing this elsewhere
-         var documentationButton = $('#button-documentation');
-        documentationButton.show();
+        /* placing this elsewhere 
+        var documentationButton = $('#button-documentation');
+        documentationButton.show(); 
         documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
         documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-        */
+       */
         
         /* just a thought 
          var sensor_state = $('#sensor-status');
