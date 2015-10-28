@@ -886,7 +886,24 @@ li.active .ic_mission {
     overflow-y: auto;
     border: 0px solid #848484; /* 1px solid #848484; */
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
+    transition: all  1.0s;
+
 }
+
+#content.active {
+    margin-top: 0px;  /* 31 */
+    padding: 20px; /* 10 */
+    height:calc(100% - 274px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px + padding) - was: calc(100% - 171px)*/
+    background-color: white;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 0px solid #848484; /* 1px solid #848484; */
+    -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
+    transition: all  1.3s;
+
+}
+
+
 #status-bar {
     position: fixed;
     bottom: 0px;

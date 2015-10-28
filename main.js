@@ -378,12 +378,15 @@ $("#showlog").on('click', function() {
     if ( state ) {
         $("#log").animate({height: 27}, 800);
         $("#log").removeClass('active');
+		$("#content").removeClass('active');
+
         $("#scrollicon").removeClass('active');
 
         state = false;
     }else{
         $("#log").animate({height: 111}, 800);
         $("#log").addClass('active');
+        $("#content").addClass('active');
         $("#scrollicon").addClass('active');
 
         state = true;
