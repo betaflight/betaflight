@@ -90,10 +90,12 @@
 
 
 
-.block_wrapper {
+.gui_box grey .block_wrapper {
     font-size: 0;
 }
-.block {
+/**/
+
+.gui_box grey .block {
     float: left;
     display: block;
 
@@ -101,7 +103,8 @@
 
     border: 1px solid silver;
 }
-.block .head {
+
+.gui_box grey .block .head {
     display: block;
 
     text-align: center;
@@ -111,7 +114,7 @@
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
-.block.info {
+.gui_box grey .block.info {
     display: inline-block;
     margin-bottom: 10px;
 
@@ -120,6 +123,10 @@
 
     border: 1px solid silver;
 }
+
+
+
+
 .tab-setup .block.info .fields {
     padding: 5px 5px 3px 5px;
 }
@@ -162,10 +169,9 @@
 	ma
 }
 .buttons {
-    width: calc(100% - 20px);
-
+    width: calc(100% - 40px);
     position: absolute;
-    bottom: 10px;
+    bottom: 20px;
 }
 .update {
     display: block;

@@ -1076,17 +1076,24 @@ dialog {
 .spacer {
 	padding-left:7px;
 	padding-right:7px;
+	width:calc(100% - 14px);
+	float:left;
 
 	}
 	
 
 .spacer_left {
 	padding-left:7px;
+	float:left;
+	width:calc(100% - 7px);
 
 	}
 
 .spacer_right {
 	padding-right:7px;
+	width:calc(100% - 7px);
+	float:left;
+
 
 	}
 
