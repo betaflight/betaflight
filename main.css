@@ -272,7 +272,7 @@ color:#ddd;
 	border-left:1px solid #373737;
 	border-right:1px solid #222222;
 	background-color: #434343;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
 	padding-left:5px;
 	padding-right:5px;
 	text-align:center;
@@ -443,7 +443,7 @@ color:#ddd;
 }
 #sensor-status .on {
   background-color: #434343;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
 }
 
 
