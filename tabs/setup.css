@@ -169,8 +169,6 @@
 	ma
 }
 .buttons {
-    width: calc(100% - 40px);
-    position: absolute;
     bottom: 20px;
 }
 .update {
