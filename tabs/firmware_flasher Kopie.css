@@ -1,0 +1,220 @@
+.tab-firmware_flasher .info {
+    margin: 10px 0 10px 0;
+    position: relative;
+}
+.tab-firmware_flasher .info .progressLabel {
+    position: absolute;
+
+    width: 100%;
+    height: 26px;
+
+    top: 0;
+    left: 0;
+
+    text-align: center;
+    line-height: 24px;
+
+    color: white;
+    font-weight: bold;
+
+    /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
+}
+.tab-firmware_flasher .info .progressLabel a {
+    color: white;
+}
+.tab-firmware_flasher .info .progressLabel a:hover {
+    text-decoration: underline;
+}
+.tab-firmware_flasher .info .progress {
+    width: 100%;
+    height: 26px;
+
+    border: 1px solid silver;
+}
+.tab-firmware_flasher .info .progress {
+    -webkit-appearance: none;
+}
+.tab-firmware_flasher .info .progress::-webkit-progress-bar {
+    background-color: #343434;
+}
+.tab-firmware_flasher .info .progress::-webkit-progress-value {
+    background-color: #F86008;
+}
+.tab-firmware_flasher .info .progress.valid::-webkit-progress-bar {
+    background-color: #73BE45;
+}
+.tab-firmware_flasher .info .progress.valid::-webkit-progress-value {
+    background-color: #73BE45;
+}
+.tab-firmware_flasher .info .progress.invalid::-webkit-progress-bar {
+    background-color: #A62E32;
+}
+.tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
+    background-color: #A62E32;
+}
+.tab-firmware_flasher .options {
+    position: relative;
+
+    margin-bottom: 10px;
+    padding: 5px;
+
+    line-height: 18px;
+
+    border: 1px dotted silver;
+}
+.tab-firmware_flasher .options label input {
+    float: left;
+    margin-top: 2px;
+}
+.tab-firmware_flasher .options label span {
+    font-weight: bold;
+    margin-left: 6px;
+}
+.tab-firmware_flasher .options select {
+    height: 20px;
+
+    border: 1px solid silver;
+}
+
+.tab-firmware_flasher .options .releases select {
+    width: 280px;
+}
+
+.tab-firmware_flasher .option.releases {
+    margin: 0 0 2px 0;
+    line-height: 20px;
+}
+.tab-firmware_flasher .options .description {
+    position: absolute;
+    left: 300px;
+
+    font-style: italic;
+    color: #818181;
+}
+.tab-firmware_flasher .options .flash_on_connect_wrapper {
+    display: none;
+}
+
+.tab-firmware_flasher .options .manual_baud_rate select {
+    width: 70px;
+}
+
+.tab-firmware_flasher .release_info {
+    display: none;
+
+    margin-bottom: 10px;
+
+    border: 1px solid silver;
+}
+.tab-firmware_flasher .release_info .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+
+.tab-firmware_flasher .release_info .target {
+    color: blue;
+}
+
+.tab-firmware_flasher .release_info p {
+    padding: 5px;
+}
+.tab-firmware_flasher .release_info p a {
+    font-weight: bold;
+}
+.tab-firmware_flasher .release_info p a:hover {
+    text-decoration: underline;
+}
+.tab-firmware_flasher .release_info .notes {
+    padding: 5px;
+}
+
+.tab-firmware_flasher .git_info {
+    display: none;
+
+    margin-bottom: 10px;
+
+    border: 1px solid silver;
+}
+.tab-firmware_flasher .git_info .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #3f4241;
+}
+.tab-firmware_flasher .git_info p {
+    padding: 5px;
+}
+.tab-firmware_flasher .git_info p a {
+    font-weight: bold;
+}
+.tab-firmware_flasher .git_info p a:hover {
+    text-decoration: underline;
+}
+.warning {
+    border: 1px solid silver;
+}
+.warning .title {
+    line-height: 20px;
+
+    text-align: center;
+    font-weight: bold;
+    color: white;
+
+    border-bottom: 1px solid silver;
+    background-color: #cd4c4c;
+}
+.warning p {
+    padding: 5px;
+}
+.tab-firmware_flasher .buttons {
+    width: calc(100% - 20px);
+
+    margin-top: 10px;
+    bottom: 10px;
+}
+.tab-firmware_flasher .buttons a {
+    display: block;
+    float: left;
+
+    margin: 0 10px 0 0;
+    padding: 0 15px 0 15px;
+
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-firmware_flasher .buttons a:hover {
+    background-color: #dedcdc;
+}
+.tab-firmware_flasher .buttons a.flash_firmware.locked {
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.flash_firmware.locked:hover {
+    cursor: default;
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.load_remote_file.locked {
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.load_remote_file.locked:hover {
+    cursor: default;
+    background-color: #b8b8b8;
+}
+.tab-firmware_flasher .buttons a.back {
+    float: right;
+    margin: 0;
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Unbenanntes Dokument</title>
+ 
+                <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/dist/switchery.css" media="all" />
+
+                
+   
+        
+        <script type="text/javascript" src="./js/libraries/switchery/dist/switchery.js"></script>
+        
+        </head>
+
+<body>
+
+<div class="option">
+            <label>
+                <input class="updating" id="toggle" type="checkbox" />
+                <span i18n="firmwareFlasherNoReboot"></span>
+            </label>
+           
+           <label>
+                <input class="updating" id="togglesmall" type="checkbox" />
+                <span i18n="firmwareFlasherNoReboot"></span>
+            </label>
+            <span class="description" i18n="firmwareFlasherNoRebootDescription"></span>
+
+        </div>
+        
+
+                        <input class="updating" id="togglesmall" type="checkbox" />
+
+        
+<script>
+var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  
+});
+
+
+var elems = Array.prototype.slice.call(document.querySelectorAll('#togglesmall'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    size: 'small',
+	color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  
+});
+
+</script>
+</body>
+</html>

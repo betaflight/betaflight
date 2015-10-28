@@ -13,10 +13,10 @@
   border-radius: 20px;
   cursor: pointer;
   display: inline-block;
-  height: 30px;
+  height: 17px;
   position: relative;
   vertical-align: middle;
-  width: 50px;
+  width: 42px;
 
   -moz-user-select: none;
   -khtml-user-select: none;
@@ -31,23 +31,25 @@
   background: #fff;
   border-radius: 100%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  height: 30px;
+  height: 17px;
   position: absolute;
   top: 0;
-  width: 30px;
+  width: 17px;
 }
 
 /* Switchery sizes. */
 
 .switchery-small {
   border-radius: 20px;
-  height: 20px;
-  width: 33px;
+  height: 10px;
+  width: 20px;
+  margin-top:-3px;
+  margin-right:3px;
 }
 
 .switchery-small > small {
-  height: 20px;
-  width: 20px;
+  height: 10px;
+  width: 10px;
 }
 
 .switchery-large {

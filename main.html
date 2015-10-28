@@ -34,7 +34,7 @@
 
         <link type="text/css" rel="stylesheet" href="./styles/opensans_webfontkit/fonts.css" media="all" />
         <link type="text/css" rel="stylesheet" href="./styles/dropdown-lists/css/style_lists.css" media="all" />
-                <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/switchery.css" media="all" />
+                <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/dist/switchery.css" media="all" />
 
                 
         <script type="text/javascript" src="./js/libraries/q.js"></script>
@@ -86,14 +86,14 @@
         <script type="text/javascript" src="./tabs/dataflash.js"></script>
         <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
         
-        <script type="text/javascript" src="./js/libraries/switchery/switchery.js"></script>
+        <script type="text/javascript" src="./js/libraries/switchery/dist/switchery.js"></script>
 
     </head>
     <body>
         <div id="main-wrapper">
        <div class="headerbar">
        
-        <div id="logo"></div>
+        <div id="logo"></div> 
             <div id="port-picker">
                 
                         <div class="dropdown dropdown-dark" style="margin-bottom:3px;">
@@ -125,7 +125,7 @@
                     </div>
                     <div>
                         <label>
-                            <input class="auto_connect" type="checkbox" />
+                            <input class="auto_connect" type="checkbox" id="togglesmall" />
                             <span class="auto_connect" i18n="autoConnect"></span>
                         </label>
                          <div class="connect_contols">
