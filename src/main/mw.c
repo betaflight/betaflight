@@ -539,6 +539,7 @@ void executePeriodicTasks(bool skipBaroUpdate)
 void processRx(void)
 {
     static bool armedBeeperOn = false;
+    static uint32_t pidResetErrorGyroTimeout = 0;
 
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
@@ -563,7 +564,19 @@ void processRx(void)
 
     if (throttleStatus == THROTTLE_LOW) {
         pidResetErrorAngle();
-        pidResetErrorGyro();
+        /*
+         * Additional code to prevent Iterm reset below min_check. pid_at_min_throttle higher than 1 will
+         * activate the feature. Experimental yet. Minimum configuration is 2 sec and maxx is 5seconds.
+         */
+        if (masterConfig.mixerConfig.pid_at_min_throttle > 1) {
+            if (pidResetErrorGyroTimeout < millis()) {
+                pidResetErrorGyro();
+            } else {
+                pidResetErrorGyroTimeout = millis() + (masterConfig.mixerConfig.pid_at_min_throttle * 1000);
+            }
+        } else {
+            pidResetErrorGyro();
+        }
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
