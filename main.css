@@ -596,7 +596,7 @@ margin-right:20px;
 
 .tab_container {
 	float:left; 
-	height:calc(100% - 20px);	
+	height:calc(100% - 150px);	
 	width:210px; 
 	border-right: 4px solid #59aa29;
 	}
@@ -881,7 +881,6 @@ li.active .ic_mission {
     margin-top: 0px;  /* 31 */
     padding: 20px; /* 10 */
     height:calc(100% - 190px); /*  (port picker 105px, log 25px, tab 0px, status bar: 20px + padding) - was: calc(100% - 171px)*/
-	
     background-color: white;
     overflow-x: hidden;
     overflow-y: auto;
@@ -1104,22 +1103,28 @@ dialog {
 	
 /* Fixed area at the Bottom */
 
-
 .fixed_band {
+	position: absolute;
 	height: 50px;
-	position:fixed;
-	background-color:#e4e4e4;
+    background-color:#e4e4e4;
 	width:100%;
-	margin-left:-20px;
+	margin-left:0px;
 	box-shadow:rgba(0,0,0,0.20) 0 -3px 8px ;
-	bottom: 0px;
 	z-index:1000;
+	float:left;
+	margin-top:10px;
+	margin-bottom:10px;
 	}	
+
 	
 	
-.save_btn a {
+.fixed_band .save_btn a {
+/*	line-height:20px;
 	padding:3px 13px 5px 13px;
+	*/
 	margin-top: 10px;
+	margin-bottom: 10px;
+
 	margin-right:15px;
 	background-color:#59aa29;
 	border-radius:3px;
@@ -1128,15 +1133,14 @@ dialog {
 	float:right;
 	font-family: 'open_sansbold', Arial;
 	font-size:12px;
-	line-height:20px;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	display:block;
 	cursor:pointer;
-		transition: all ease 0.2s;
+	transition: all ease 0.2s;
 
 	}
 	
-.save_btn a:hover {
+.fixed_band .save_btn a:hover {
 	background-color:#6ac435;
 		transition: all ease 0.2s;
 
@@ -1368,6 +1372,9 @@ background-color:#e60000;
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
 	padding:0px;
+	float:left;
+	width:100%;
+	height:100%;
 	}
 	
 
