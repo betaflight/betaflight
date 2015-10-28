@@ -14,7 +14,7 @@ body {
     font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
     font-size: 12px;
     color: #303030;
-	background-color:#3f4140;
+	background-color:#3d3f3e;
 	margin:0px;
 	padding:0px;
 }
@@ -471,8 +471,8 @@ color:#ddd;
 */
 #options {
     float: right;
-    width: 25px;
-    height: 25px;
+    width: 20px;
+    height: 20px;
 	margin-top:10px;
 	margin-right:10px;
     background-image: url('./images/CF_settings_white.svg');
@@ -597,8 +597,9 @@ margin-right:20px;
 .tab_container {
 	float:left; 
 	height:calc(100% - 150px);	
-	width:210px; 
+	width:200px; 
 	border-right: 4px solid #59aa29;
+	background-color: #2e2e2e;
 	}
 	
 	
@@ -616,14 +617,26 @@ margin-right:20px;
 }
 
 #tabs ul {
-	height:100%;
+	height:100%;	
 	float:left;
 	margin-top:0px;
     overflow: hidden;
     width:100%;
+    overflow-y: scroll; /* scroll*/
 
-	 /* Cause the height to expand to contain its floated contents */
 }
+
+#tabs.logopen ul {
+	height:calc(100% - 65px);	
+	float:left;
+	margin-top:0px;
+    overflow: hidden;
+    width:100%;
+    overflow-y: scroll; /* scroll*/
+
+	 /* Cause the height to shrink to contain its floated contents while log is open */
+}
+
 
 #tabs ul.mode-connected {
     display: none;
@@ -900,6 +913,7 @@ li.active .ic_mission {
     border: 0px solid #848484; /* 1px solid #848484; */
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
     transition: all  1.3s;
+	 /* Cause the height to shrink to contain its floated contents while log is open */
 
 }
 
@@ -957,12 +971,10 @@ dialog {
 
 /* Border of the Tab */
 
-
-	
 	
 	
 	/* Tab Title */
-.tab_title {
+	.tab_title {
 	float:left;
 	width:100%;
 	border-bottom:1px solid #59aa29;
@@ -1121,16 +1133,16 @@ dialog {
 /* Fixed area at the Bottom */
 
 .fixed_band {
-	position: ;
+	position: relative;
 	height: 50px;
     background-color:#e4e4e4;
-	width:100%;
-	margin-left:0px;
-	box-shadow:rgba(0,0,0,0.20) 0 -3px 8px ;
-	z-index:1000;
-	float:left;
-	margin-top:0px;
+	width:calc(100% + 40px);
+	margin-left:-20px;
+	box-shadow:rgba(0,0,0,0.00) 0 -3px 8px ;
+	bottom:0px;
 	margin-bottom:0px;
+
+
 	}	
 
 	
@@ -1139,10 +1151,10 @@ dialog {
 /*	line-height:20px;
 	padding:3px 13px 5px 13px;
 	*/
-	margin-top: 10px;
-	margin-bottom: 10px;
+	margin-top: 9px;
+	margin-bottom: 0px;
 
-	margin-right:15px;
+	margin-right:20px;
 	background-color:#59aa29;
 	border-radius:3px;
 	border: 1px solid #4c8829;
@@ -1154,7 +1166,7 @@ dialog {
 	display:block;
 	cursor:pointer;
 	transition: all ease 0.2s;
-	padding:5px;
+	padding:0px;
 	padding-left:9px;
 	padding-right:9px;
 
@@ -1396,6 +1408,8 @@ background-color:#e60000;
 	padding:20px;
 	float:left;
 	width:calc(100% - 40px);
+	height:calc(100% - 40px) !important;
+	position:absolute !important; 
 	}
 	
 

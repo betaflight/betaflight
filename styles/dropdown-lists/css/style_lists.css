@@ -119,7 +119,9 @@
 }
 
 .dropdown-dark {
-  background: #636363;
+    background: #636363; /* NEW2 */
+  background: #3e403f; /* NEW */
+
   border-color: #111 #0a0a0a black;
   background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.4));
   background-image: -moz-linear-gradient(top, transparent, rgba(0, 0, 0, 0.4));

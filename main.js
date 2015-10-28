@@ -379,7 +379,7 @@ $("#showlog").on('click', function() {
         $("#log").animate({height: 27}, 800);
         $("#log").removeClass('active');
 		$("#content").removeClass('logopen');
-
+		$("#tabs").removeClass('logopen');
         $("#scrollicon").removeClass('active');
 
         state = false;
@@ -387,6 +387,7 @@ $("#showlog").on('click', function() {
         $("#log").animate({height: 111}, 800);
         $("#log").addClass('active');
         $("#content").addClass('logopen');
+        $("#tabs").addClass('logopen');
         $("#scrollicon").addClass('active');
 
         state = true;
