@@ -1423,3 +1423,29 @@ dialog {
 	height:auto !important;
 	}
 	
+	
+	
+/* GPS Fix styling*/
+
+	
+.fixtrue {
+	background-color:#56ac1d;
+	padding:2px;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-radius:3px;
+	color:#fff;
+	}
+	
+	
+.fixfalse {
+	background-color:#e60000;
+	padding:2px;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-radius:3px;
+	color:#fff;
+
+	}
+	
+	

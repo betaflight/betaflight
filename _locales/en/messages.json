@@ -871,10 +871,10 @@
         "message": "3D Fix:"
     },
     "gpsFixTrue": {
-        "message": "<span style=\"color: #57a929\">True</span>"
+        "message": "<span class=\"fixtrue\">True</span>"
     },
     "gpsFixFalse": {
-        "message": "<span style=\"color: red\">False</span>"
+        "message": "<span class=\"fixfalse\">False</span>"
     },
     "gpsAltitude": {
         "message": "Altitude:"
