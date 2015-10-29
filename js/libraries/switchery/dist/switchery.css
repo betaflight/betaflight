@@ -9,11 +9,11 @@
 
 .switchery {
   background-color: #fff;
-  border: 1px solid #dfdfdf;
+  border: 2px solid #fff;
   border-radius: 20px;
   cursor: pointer;
   display: inline-block;
-  height: 17px;
+  height: 16px;
   position: relative;
   vertical-align: middle;
   width: 42px;
@@ -31,15 +31,18 @@
   background: #fff;
   border-radius: 100%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  height: 17px;
+  height: 16px;
   position: absolute;
   top: 0;
-  width: 17px;
+  width: 16px;
+  
 }
 
 /* Switchery sizes. */
 
 .switchery-small {
+  border: none !important;
+
   border-radius: 20px;
   height: 10px;
   width: 20px;

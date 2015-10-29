@@ -28,29 +28,41 @@
 .tab-firmware_flasher .info .progress {
     width: 100%;
     height: 26px;
-
+	border-radius: 5px;
     border: 1px solid silver;
 }
 .tab-firmware_flasher .info .progress {
     -webkit-appearance: none;
 }
 .tab-firmware_flasher .info .progress::-webkit-progress-bar {
-    background-color: #343434;
+    background-color: #4f4f4f;
+    border-radius: 4px;
+    box-shadow: inset 0px 0px 5px #2f2f2f;
 }
 .tab-firmware_flasher .info .progress::-webkit-progress-value {
     background-color: #F86008;
+    border-radius: 4px;
+
 }
 .tab-firmware_flasher .info .progress.valid::-webkit-progress-bar {
-    background-color: #73BE45;
+    background-color: #56ac1d;
+        border-radius: 4px;
+
 }
 .tab-firmware_flasher .info .progress.valid::-webkit-progress-value {
-    background-color: #73BE45;
+    background-color: #56ac1d;
+        border-radius: 4px;
+
 }
 .tab-firmware_flasher .info .progress.invalid::-webkit-progress-bar {
     background-color: #A62E32;
+        border-radius: 4px;
+
 }
 .tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
     background-color: #A62E32;
+        border-radius: 4px;
+
 }
 .tab-firmware_flasher .options {
     position: relative;
