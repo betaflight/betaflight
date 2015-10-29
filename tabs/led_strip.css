@@ -269,7 +269,7 @@
 .tab-led-strip .controls {
     position: relative;
     float: left;
-    width: 290px;
+    width: 285px;
     height: calc((30px + 8px) * 16);
 }
 
