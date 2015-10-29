@@ -45,7 +45,7 @@
 #define MAG
 #define USE_MAG_AK8975
 
-#define MAG_AK8975_ALIGN CW0_DEG_FLIP
+#define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
 #define LED0
 #define LED1
