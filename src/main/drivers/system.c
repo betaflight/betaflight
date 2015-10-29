@@ -151,11 +151,19 @@ void systemInit(void)
     cachedRccCsrValue = RCC->CSR;
     RCC_ClearFlag();
 
-
     enableGPIOPowerUsageAndNoiseReductions();
 
-
 #ifdef STM32F10X
+    // Set USART1 TX (PA9) to output and high state to prevent a rs232 break condition on reset.
+    // See issue https://github.com/cleanflight/cleanflight/issues/1433
+    gpio_config_t gpio;
+
+    gpio.mode = Mode_Out_PP;
+    gpio.speed = Speed_2MHz;
+    gpio.pin = Pin_9;
+    digitalHi(GPIOA, gpio.pin);
+    gpioInit(GPIOA, &gpio);
+
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;

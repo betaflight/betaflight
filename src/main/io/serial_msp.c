@@ -1823,10 +1823,7 @@ void mspProcess(void)
         }
 
         if (isRebootScheduled) {
-            // pause a little while to allow response to be sent
-            while (!isSerialTransmitBufferEmpty(candidatePort->port)) {
-                delay(50);
-            }
+            waitForSerialPortToFinishTransmitting(candidatePort->port);
             stopMotors();
             handleOneshotFeatureChangeOnRestart();
             systemReset();
