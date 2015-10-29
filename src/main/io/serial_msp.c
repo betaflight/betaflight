@@ -929,7 +929,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ARMING_CONFIG:
         headSerialReply(2);
-        serialize8(masterConfig.auto_disarm_delay); 
+        serialize8(masterConfig.auto_disarm_delay);
         serialize8(masterConfig.disarm_kill_switch);
         break;
     case MSP_LOOP_TIME:
@@ -1524,7 +1524,7 @@ static bool processInCommand(void)
         }
 #endif
         break;
-        
+
     case MSP_SET_SERVO_MIX_RULE:
 #ifdef USE_SERVOS
         i = read8();
@@ -1542,7 +1542,7 @@ static bool processInCommand(void)
         }
 #endif
         break;
-        
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
