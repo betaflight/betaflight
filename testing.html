@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Unbenanntes Dokument</title>
+ 
+                <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/dist/switchery.css" media="all" />
+
+                
+   
+        
+        <script type="text/javascript" src="./js/libraries/switchery/dist/switchery.js"></script>
+                <script type="text/javascript" src="./js/libraries/jquery-2.1.3.min.js"></script>
+        <script type="text/javascript" src="./js/libraries/jquery-ui-1.11.2.min.js"></script>
+        
+        
+        <style>
+		body {
+
+}
+#fixed_band {
+  color: #c00;
+  font: bold 15px arial;
+  padding: 10px;
+  margin: 10px;
+  border: 1px solid #c00;
+  width: 200px;
+  top: 0px;
+  position:absolute;
+}
+</style>
+        </head>
+
+<body>
+
+<div class="option">
+            <label>
+                <input class="updating" id="toggle" type="checkbox" />
+                <span i18n="firmwareFlasherNoReboot"></span>
+            </label>
+           
+           <label>
+                <input class="updating" id="togglesmall" type="checkbox" />
+                <span i18n="firmwareFlasherNoReboot"></span>
+            </label>
+            <span class="description" i18n="firmwareFlasherNoRebootDescription"></span>
+
+        </div>
+        
+
+<div id="fixed_band">This div is going to be fixed</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+d<br>
+<br>
+<br>
+<br>
+<br>
+d<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+d<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+d<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+d        
+<script>
+var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  
+});
+
+
+var elems = Array.prototype.slice.call(document.querySelectorAll('#togglesmall'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    size: 'small',
+	color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  
+});
+
+</script>
+<script>
+
+function relative_sticky(id, topSpacing){
+
+if(!topSpacing){ var topSpacing = 0; }
+
+var el_top = parseFloat(document.getElementById(id).getBoundingClientRect().top);
+    el_top = el_top - parseFloat(document.getElementById(id).style.top);
+    el_top = el_top * (-1);
+    el_top = el_top + topSpacing;
+
+    if(el_top > 0){
+    document.getElementById(id).style.top = el_top + "px";
+    } else{
+    document.getElementById(id).style.top = "0px";
+    }
+}
+
+window.onscroll = function(){
+
+    relative_sticky("fixed_band", 200);
+}
+</script>
+                <!-- 
+
+<script>
+$(document).ready(function () {
+
+jQuery(function($) {
+  function fixDiv() {
+    var $cache = $('.fixed_band');
+         $cache.css({
+        'position': 'fixed',
+        'bottom': '20px'
+      });
+   
+  }
+  $(window).scroll(fixDiv);
+  fixDiv();
+});
+});
+
+</script>
+
+end -->
+
+</body>
+</html>
