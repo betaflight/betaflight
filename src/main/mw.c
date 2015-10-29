@@ -571,12 +571,12 @@ void processRx(void)
         if (masterConfig.mixerConfig.pid_at_min_throttle > 1) {
             if (pidResetErrorGyroTimeout < millis()) {
                 pidResetErrorGyro();
-            } else {
-                pidResetErrorGyroTimeout = millis() + (masterConfig.mixerConfig.pid_at_min_throttle * 1000);
             }
         } else {
             pidResetErrorGyro();
         }
+    } else {
+        pidResetErrorGyroTimeout = millis() + (masterConfig.mixerConfig.pid_at_min_throttle * 1000);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
