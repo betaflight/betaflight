@@ -96,6 +96,7 @@ enum {
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 #define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 80 // Prevent RX processing before expected loop trigger
+#define PREVENT_BARO_READ_PRE_LOOP_TRIGGER 150 // Prevent BARO processing before expected loop trigger
 #define GYRO_RATE 0.001f  // Gyro refresh rate 1khz
 
 uint32_t currentTime = 0;
@@ -479,7 +480,7 @@ typedef enum {
 #define PERIODIC_TASK_COUNT (UPDATE_DISPLAY_TASK + 1)
 
 
-void executePeriodicTasks(void)
+void executePeriodicTasks(bool skipBaroUpdate)
 {
     static int periodicTaskIndex = 0;
 
@@ -494,7 +495,7 @@ void executePeriodicTasks(void)
 
 #ifdef BARO
     case UPDATE_BARO_TASK:
-        if (sensors(SENSOR_BARO)) {
+        if (sensors(SENSOR_BARO) && !(skipBaroUpdate)) {
             baroUpdate(currentTime);
         }
         break;
@@ -713,6 +714,7 @@ void loop(void)
 {
     static uint32_t loopTime;
     static bool haveProcessedRxOnceBeforeLoop = false;
+    bool skipBaroUpdate = false;
 
 #if defined(BARO) || defined(SONAR)
     static bool haveProcessedAnnexCodeOnce = false;
@@ -744,8 +746,12 @@ void loop(void)
 #endif
 
     } else {
+        if ((int32_t)(currentTime - (loopTime - PREVENT_BARO_READ_PRE_LOOP_TRIGGER)) >= 0) {
+            skipBaroUpdate = true;
+        }
+
         // not processing rx this iteration
-        executePeriodicTasks();
+        executePeriodicTasks(skipBaroUpdate);
 
         // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
         // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
