@@ -40,11 +40,13 @@ typedef enum {
     BEEPER_CASE_MAX
 } beeperMode_e;
 
+#define BEEPER_OFF_CELLS_DEFAULT  2 // default cell count to activate the beeper
 #define BEEPER_OFF_FLAGS_MIN  0
 #define BEEPER_OFF_FLAGS_MAX  ((1 << (BEEPER_CASE_MAX - 1)) - 1)
 
 typedef struct beeperOffConditions_t {
     uint32_t flags;
+    uint8_t cells_min;
 } beeperOffConditions_t;
 
 void beeper(beeperMode_e mode);
