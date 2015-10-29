@@ -409,8 +409,14 @@ static void resetConf(void)
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    masterConfig.mag_hardware = 1;     // default/autodetect
-    masterConfig.baro_hardware = 1;   // default/autodetect
+    // xxx_hardware: 0:default/autodetect, 1: disable
+    masterConfig.mag_hardware = 1;
+
+#ifdef IRCFUSIONF3
+    masterConfig.baro_hardware = 0;
+#else
+    masterConfig.baro_hardware = 1;
+#endif
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
