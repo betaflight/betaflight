@@ -429,7 +429,7 @@ const clivalue_t valueTable[] = {
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, -1, 1 },
 
-    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE, &masterConfig.mixerConfig.pid_at_min_throttle, 0, 1 },
+    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE, &masterConfig.mixerConfig.pid_at_min_throttle, 0, 5 },
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, -1, 1 },
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH },
 #ifdef USE_SERVOS
