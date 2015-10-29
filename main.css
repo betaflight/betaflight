@@ -557,6 +557,7 @@ input[type="number"]::-webkit-inner-spin-button {
 	position:relative;
 	bottom:0px;
 
+
 }
 
 #log a {
@@ -891,7 +892,7 @@ li.active .ic_mission {
     overflow-y: auto;
     border: 0px solid #848484; /* 1px solid #848484; */
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
-    transition: all  1.0s;
+    transition: all  0.3s;
 
 }
 
@@ -904,7 +905,7 @@ li.active .ic_mission {
     overflow-y: auto;
     border: 0px solid #848484; /* 1px solid #848484; */
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
-    transition: all  1.3s;
+    transition: all  0.5s;
 	 /* Cause the height to shrink to contain its floated contents while log is open */
 
 }

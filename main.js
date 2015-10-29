@@ -376,7 +376,7 @@ $(document).ready(function () {
 $("#showlog").on('click', function() {
     var state = $(this).data('state');
     if ( state ) {
-        $("#log").animate({height: 27}, 800);
+        $("#log").animate({height: 27}, 200);
         $("#log").removeClass('active');
 		$("#content").removeClass('logopen');
 		$("#tabs").removeClass('logopen');
@@ -384,7 +384,7 @@ $("#showlog").on('click', function() {
 
         state = false;
     }else{
-        $("#log").animate({height: 111}, 800);
+        $("#log").animate({height: 111}, 200);
         $("#log").addClass('active');
         $("#content").addClass('logopen');
         $("#tabs").addClass('logopen');
