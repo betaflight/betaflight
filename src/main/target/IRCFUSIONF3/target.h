@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "IRCF3"
+#define TARGET_BOARD_IDENTIFIER "IFF3"
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3
