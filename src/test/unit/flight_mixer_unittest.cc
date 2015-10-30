@@ -211,11 +211,11 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     withDefaultEscAndServoConfiguration();
     withDefaultRxConfig();
 
-    servoConf[4].min = DEFAULT_SERVO_MIN;
-    servoConf[4].max = DEFAULT_SERVO_MAX;
-    servoConf[4].middle = DEFAULT_SERVO_MIDDLE;
-    servoConf[4].rate = 100;
-    servoConf[4].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+    servoConf[5].min = DEFAULT_SERVO_MIN;
+    servoConf[5].max = DEFAULT_SERVO_MAX;
+    servoConf[5].middle = DEFAULT_SERVO_MIDDLE;
+    servoConf[5].rate = 100;
+    servoConf[5].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
 
     configureMixer();
 
@@ -316,12 +316,12 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
     };
 
     servoMixer_t testServoMixer[EXPECTED_SERVOS_TO_MIX_COUNT] = {
-        { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
+        { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
         { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
         { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
         { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-        { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
         { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+        { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
     };
     memcpy(customServoMixer, testServoMixer, sizeof(testServoMixer));
 

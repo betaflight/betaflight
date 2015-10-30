@@ -118,12 +118,12 @@ enum {
 typedef enum {
     SERVO_GIMBAL_PITCH = 0,
     SERVO_GIMBAL_ROLL = 1,
-    SERVO_FLAPPERON_1 = 2,
-    SERVO_FLAPPERON_2 = 3,
-    SERVO_RUDDER = 4,
-    SERVO_ELEVATOR = 5,
+    SERVO_ELEVATOR = 2,
+    SERVO_FLAPPERON_1 = 3,
+    SERVO_FLAPPERON_2 = 4,
+    SERVO_RUDDER = 5,
     SERVO_THROTTLE = 6, // for internal combustion (IC) planes
-    SERVO_FLAPS = 7, // move servo flaps to Out8 by default
+    SERVO_FLAPS = 7,
 
     SERVO_BICOPTER_LEFT = 4,
     SERVO_BICOPTER_RIGHT = 5,
@@ -138,7 +138,7 @@ typedef enum {
 
 } servoIndex_e; // FIXME rename to servoChannel_e
 
-#define SERVO_PLANE_INDEX_MIN SERVO_FLAPPERON_1
+#define SERVO_PLANE_INDEX_MIN SERVO_ELEVATOR
 #define SERVO_PLANE_INDEX_MAX SERVO_FLAPS
 
 #define SERVO_DUALCOPTER_INDEX_MIN SERVO_DUALCOPTER_LEFT
