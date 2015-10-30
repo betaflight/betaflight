@@ -77,9 +77,9 @@
     height: 100%;
 }
 .tab-configuration select.mixerList {
-    width: 180px;
+    width: 155px;
     height: 20px;
-    margin-top: 10px;
+    margin-top: 5px;
 
     font-weight: bold;
 
@@ -116,7 +116,7 @@
 }
 
 .tab-configuration .number input.disabled {
-    width: 48px;
+    width: 39px;
     padding: 0px 5px;
     background-color: #ececec;
 }
@@ -250,11 +250,14 @@ width:100%;
 .tab-configuration .number:last-child { 
 border-bottom:none;
 padding-bottom:0px;
+	margin-bottom:0px;
+
 
 }
 
 .tab-configuration .gui_box_titlebar  { 
-	      margin-bottom: 0px; }
+	      margin-bottom: 0px; 
+}
 
 .tab-configuration .numberspacer {
 float:left; width:60px; height:20px;}
@@ -266,3 +269,71 @@ float:left; width:60px; height:20px;}
 .tab-configuration .gui_box {
 	margin-bottom:10px;
 	}
+	
+	.tab-configuration .rssi td {
+		border-bottom:none;
+		padding-bottom:0px;
+			margin-bottom:0px;
+
+
+}
+
+.tab-configuration .rssi .gui_box {
+	min-height:140px;
+	}
+	
+	
+	.tab-configuration .mixer .gui_box {
+	min-height:284px;
+	}
+
+	.tab-configuration .current .gui_box {
+	min-height:221px;
+	}
+	
+		.tab-configuration .gps .gui_box {
+	min-height:366px;
+	}
+	
+	
+	.tab-configuration .system .gui_box {
+	min-height:100px;
+	}
+	
+	
+.tab-configuration table tr td:first-child {
+	width:20px;}
+	
+
+.tab-configuration .other tr:last-child td{
+    border-bottom:0px;
+    padding-bottom:0px;
+    margin-bottom:0px;
+
+}
+
+.tab-configuration .mixerPreview {
+	height:230px; 
+	width:230px; 
+	background-color: #eeeeee;
+	text-align: center;
+	float:left;
+	border-radius:5px;
+	margin-right:15px;
+	margin-top:5px;
+	margin-left:5px;
+	}
+	
+.tab-configuration .mixerPreview img {
+    width: 80%;
+    margin-top:10%;
+    margin-left:10%;
+    height: 80%;
+    }
+    
+.tab-configuration .rxMode tr:last-child td{
+    border-bottom:0px;
+    padding-bottom:0px;
+	margin-bottom:0px;
+
+}
