@@ -316,12 +316,12 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
     };
 
     servoMixer_t testServoMixer[EXPECTED_SERVOS_TO_MIX_COUNT] = {
-        { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
+        { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
         { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
         { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
         { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-        { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
         { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+        { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
     };
     memcpy(customServoMixer, testServoMixer, sizeof(testServoMixer));
 
@@ -364,12 +364,12 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     EXPECT_EQ(EXPECTED_SERVOS_TO_MIX_COUNT, updatedServoCount);
 
-    EXPECT_EQ(2000, servos[0].value); // Flaps
+    EXPECT_EQ(TEST_SERVO_MID, servos[0].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[1].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[2].value);
     EXPECT_EQ(TEST_SERVO_MID, servos[3].value);
-    EXPECT_EQ(TEST_SERVO_MID, servos[4].value);
-    EXPECT_EQ(1000, servos[5].value); // Throttle
+    EXPECT_EQ(1000, servos[4].value); // Throttle
+    EXPECT_EQ(2000, servos[5].value); // Flaps
 
 }
 
