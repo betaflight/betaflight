@@ -1435,6 +1435,7 @@ dialog {
 	padding-right: 5px;
 	border-radius:3px;
 	color:#fff;
+    font-size: 10px;
 	}
 	
 	
@@ -1445,6 +1446,8 @@ dialog {
 	padding-right: 5px;
 	border-radius:3px;
 	color:#fff;
+	font-size: 10px;
+
 
 	}
 	
