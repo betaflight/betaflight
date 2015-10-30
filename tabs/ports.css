@@ -37,8 +37,8 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
 
 .tab-ports table td {
 	border-bottom:1px solid #e4e4e4;
-	padding-top:6px;
-	padding-bottom:6px;
+	padding-top:4px;
+	padding-bottom:4px;
 	padding-left:5px;
 	padding-right:5px;
 	}
