@@ -182,4 +182,3 @@
 #define S1W_TX_PIN          GPIO_Pin_6
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_7
-
