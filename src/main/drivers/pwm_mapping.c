@@ -323,9 +323,7 @@ static const uint16_t airPWM[] = {
     // TODO
     0xFFFF
 };
-
 #endif
-
 
 #ifdef SPRACINGF3
 static const uint16_t multiPPM[] = {
@@ -400,6 +398,44 @@ static const uint16_t airPWM[] = {
     PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM15 | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM16 | (MAP_TO_SERVO_OUTPUT  << 8), // server #6
+    0xFFFF
+};
+#endif
+
+#if defined(MOTOLAB)
+static const uint16_t multiPPM[] = {
+    PWM9  | (MAP_TO_PPM_INPUT << 8), // PPM input
+
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    // TODO
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    // TODO
     0xFFFF
 };
 #endif
@@ -553,6 +589,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 if (timerIndex == PWM9 || timerIndex == PWM10)
                     type = MAP_TO_SERVO_OUTPUT;
             }
+#endif
+
+#if defined(MOTOLAB)
+            // remap PWM 7+8 as servos
+            if (timerIndex == PWM7 || timerIndex == PWM8)
+                type = MAP_TO_SERVO_OUTPUT;
 #endif
         }
 
