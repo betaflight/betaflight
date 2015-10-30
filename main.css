@@ -988,6 +988,8 @@ dialog {
 	width:100%;
 	border-radius: 3px;
 	font-size:11px;
+	font-family: 'open_sansregular', Arial;
+
 	}
 
 .note_spacer {
@@ -1095,6 +1097,8 @@ dialog {
 	float:left;
 	width:100%;
 	margin-bottom:10px;
+	font-family: 'open_sansregular', Arial;
+
 	}
 	
 .grey {
@@ -1112,6 +1116,8 @@ dialog {
 	padding-bottom:0px;
 	float:left;
 	margin-bottom:7px;
+	font-family: 'open_sansregular', Arial;
+
 	}
 
 .spacer_box {

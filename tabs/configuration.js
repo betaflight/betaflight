@@ -132,9 +132,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td>'
+                        + '</label></td><td><span>'
                         + features[i].description
-                        + '</td>');
+                        + '</td><span>');
                 radioGroups.push(features[i].group);
             } else {
                 row_e = $('<tr><td><input class="feature"'
@@ -147,9 +147,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td>'
+                        + '</label></td><td><span>'
                         + features[i].description
-                        + '</td>');
+                        + '</span></td>');
                 
                 var feature_e = row_e.find('input.feature');
 

@@ -77,7 +77,7 @@
     height: 100%;
 }
 .tab-configuration select.mixerList {
-    width: 155px;
+    width: 170px;
     height: 20px;
     margin-top: 5px;
 
@@ -170,6 +170,8 @@
 .tab-configuration .disarm .checkbox div input {
     display:;
     margin:0px;
+    float: left;
+
 }
 .tab-configuration .disarm .checkbox span {
     margin-left: 0px;
@@ -260,7 +262,10 @@ padding-bottom:0px;
 }
 
 .tab-configuration .numberspacer {
-float:left; width:60px; height:20px;}
+float:left; 
+width:60px; 
+height:20px;
+}
 
 .tab-configuration thead {
 	display:none;
@@ -268,6 +273,8 @@ float:left; width:60px; height:20px;}
 
 .tab-configuration .gui_box {
 	margin-bottom:10px;
+			float:left;
+
 	}
 	
 	.tab-configuration .rssi td {
@@ -277,22 +284,35 @@ float:left; width:60px; height:20px;}
 
 
 }
+.tab-configuration .acc .gui_box {
+	min-height:137px;
+			float:left;
 
-.tab-configuration .rssi .gui_box {
-	min-height:140px;
 	}
 	
 	
-	.tab-configuration .mixer .gui_box {
-	min-height:284px;
+.tab-configuration .rssi .gui_box {
+	min-height:140px;
+		float:left;
+}
+	
+	
+	.tab-configuration .mixer .gui_box, .tab-configuration .motorstop .gui_box   {
+	min-height:285px;
+		float:left;
+
 	}
 
 	.tab-configuration .current .gui_box {
-	min-height:221px;
+	min-height:223px;
+	float:left;
+
 	}
 	
 		.tab-configuration .gps .gui_box {
-	min-height:366px;
+	min-height:358px;
+		float:left;
+
 	}
 	
 	
@@ -313,8 +333,8 @@ float:left; width:60px; height:20px;}
 }
 
 .tab-configuration .mixerPreview {
-	height:230px; 
-	width:230px; 
+	height:217px; 
+	width:217px; 
 	background-color: #eeeeee;
 	text-align: center;
 	float:left;
@@ -336,4 +356,16 @@ float:left; width:60px; height:20px;}
     padding-bottom:0px;
 	margin-bottom:0px;
 
+}
+
+.tab-configuration .gui_box  {
+font-style: bold;
+font-family: 'open_sanssemibold', Arial;
+}
+
+.tab-configuration .gui_box span {
+font-style: italic;
+	font-family: 'open_sansregular', Arial;
+
+color:#7d7d7d;
 }
