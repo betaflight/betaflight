@@ -10,25 +10,52 @@
 
 .tab-ports table {
     margin-bottom: 10px;
-
-    border-collapse: collapse;
+	width:100%;
+	
+    border-collapse:collapse;
 }
 .tab-ports table,
 .tab-ports table th,
 .tab-ports table td {
-    padding: 4px;
-    border: 1px solid #8b8b8b;
+	border-left:0px;
+	border-right:0px;
+	border-top:0px;
+	border-right:1px solid #e4e4e4;
+	border-left:1px solid #e4e4e4;
+
 }
 .tab-ports table tr td:first-child {
-    text-align: center;
+    text-align: left;
+	
 }
+table.ports tr:first-child td:first-child { border-top-left-radius: 0px; 
+ } 
+table.ports tr:first-child td:last-child { border-top-right-radius: 0px; } 
+
+
+
+
 .tab-ports table td {
-    padding: 2px 10px;
-}
+	border-bottom:1px solid #e4e4e4;
+	padding-top:6px;
+	padding-bottom:6px;
+	padding-left:5px;
+	padding-right:5px;
+	}
+
 
 .tab-ports table thead tr:first-child,
 .tab-ports table tr:nth-child(even) {
-    background-color: #ececec;
+    background-color:#f9f9f9; }
+
+
+.tab-ports table thead tr:first-child {
+	background-color:#e4e4e4;
+	font-size:14px;
+	height:25px;
+	font-family: 'open_sansregular', Arial;
+	
+	
 }
 
 .tab-ports .function input {

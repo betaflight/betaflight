@@ -163,8 +163,13 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                     var select_e;
                     if (column != 'telemetry') {
                         var checkboxId = 'functionCheckbox-' + portIndex + '-' + columnIndex + '-' + i;
-                        functions_e.prepend('<span class="function"><input type="checkbox" id="' + checkboxId + '" value="' + functionName + '" /><label for="' + checkboxId + '"> ' + functionRule.displayName + '</label></span>');
+                        functions_e.prepend('<span class="function"><input type="checkbox" class="togglesmall" id="' + checkboxId + '" value="' + functionName + '" /><label for="' + checkboxId + '"> ' + functionRule.displayName + '</label></span>');
 
+
+
+  
+  
+  
                         if (serialPort.functions.indexOf(functionName) >= 0) {
                             var checkbox_e = functions_e.find('#' + checkboxId);
                             checkbox_e.prop("checked", true);
@@ -201,6 +206,20 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         
         update_ui();
 
+
+// load switchery
+	var elems = Array.prototype.slice.call(document.querySelectorAll('.togglesmall'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  { className: 'switcherymid',
+    color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  });  	// load switchery END
+  
+  
+  
         $('a.save').click(on_save_handler);
 
         // status data pulled via separate timer with static speed
@@ -211,7 +230,14 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         if (callback) callback();
     }
 
-    function on_save_handler() {
+ 
+ 
+ 
+	
+	
+	
+	
+	   function on_save_handler() {
         
         // update configuration based on current ui state
         SERIAL_CONFIG.ports = [];
@@ -274,6 +300,10 @@ TABS.ports.initialize = function (callback, scrollPosition) {
     }
 };
 
+
+
+	
+	
 TABS.ports.cleanup = function (callback) {
     if (callback) callback();
 };
