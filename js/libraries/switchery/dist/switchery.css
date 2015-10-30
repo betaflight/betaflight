@@ -9,14 +9,14 @@
 
 .switchery {
   background-color: #fff;
-  border: 2px solid #fff;
+  border: 1px solid #fff;
   border-radius: 20px;
   cursor: pointer;
   display: inline-block;
   height: 16px;
   position: relative;
   vertical-align: middle;
-  width: 42px;
+  width: 45px;
 
   -moz-user-select: none;
   -khtml-user-select: none;

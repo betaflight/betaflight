@@ -27,7 +27,7 @@ elems.forEach(function(html) {
     secondaryColor: '#c4c4c4' 
 });
   });
-  
+
   
           function parse_hex(str, callback) {
             // parsing hex in different thread

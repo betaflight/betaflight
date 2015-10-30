@@ -47,6 +47,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('#content').load("./tabs/configuration.html", process_html);
     }
 
+	
+	
+	
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
 
     function recalculate_cycles_sec() {
@@ -134,13 +137,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + '</td>');
                 radioGroups.push(features[i].group);
             } else {
-                row_e = $('<tr><td><input class="feature" id="feature-'
+                row_e = $('<tr><td><input class="feature"'
                         + i
                         + '" name="'
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox" /></td><td><label for="feature-'
+                        + '" type="checkbox" id="toggle"/></td><td><label for="feature-'
                         + i
                         + '">'
                         + features[i].name
@@ -356,6 +359,23 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             });
         });
 
+
+
+// load switchery
+	var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  });
+  	// load switchery END
+	
+	
+	
+	
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
             BF_CONFIG.board_align_roll = parseInt($('input[name="board_align_roll"]').val());
@@ -448,6 +468,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 };
 
-TABS.configuration.cleanup = function (callback) {
+
+	
+	
+	TABS.configuration.cleanup = function (callback) {
     if (callback) callback();
 };

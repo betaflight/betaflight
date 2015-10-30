@@ -1,12 +1,23 @@
 
 <div class="tab-configuration">
- 
-     <div class="help">
-        <p i18n="configurationFeaturesHelp"></p>
-    </div>
+  
+  
+   <div class="tab_title" i18n="tabConfiguration">Configuration</div>
+ <div class="cf_doc_version_bt">
+	<a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a></div>
+
+     <div class="note" style="margin-bottom:20px;">
+          <div class="note_spacer"><p i18n="configurationFeaturesHelp"></p></div>
+        </div>
+        
+    
 
     <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationMixer"></div>
+    <div class="gui_box grey" style="min-height:288px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationMixer"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+
         <div class="mixerPreview">
             <img src="./resources/motor_order/custom.svg" />
         </div>
@@ -14,14 +25,25 @@
             <!-- list generated here -->
         </select>
     </div>
+    
+        </div></div>
+
+    
+    
     <div class="rightWrapper">        
-        <div class="groupTitle" i18n="configurationEscFeatures"></div>
-        <table>
-            <thead>
+        
+            <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationEscFeatures"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+
+
+        <table cellpadding="0" cellspacing="0">
+            <thead style="display:none;">
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features esc">
@@ -30,50 +52,65 @@
         </table>
         <!--   -->
         <div class="disarm">
-            <div class="number disarmdelay" style="display: none;">
-                <label>
-                    <input type="number" name="autodisarmdelay" min="0" max="60" />
+            
+            <div class="checkbox">
+                <label><div style="float:left; width:57px; height:20px;">
+                        <input type="checkbox" name="disarmkillswitch" id="toggle"/></div>
+                    <div class="freelabel" i18n="configurationDisarmKillSwitch"></div>
+                </label>
+            </div> 
+            <div class="number disarmdelay" style="display:none;">
+                <label><div class="numberspacer">
+                    <input type="number" name="autodisarmdelay" min="0" max="60" /></div>
                     <span i18n="configurationAutoDisarmDelay"></span>
                 </label>
             </div>
-            <div class="checkbox">
-                <label>
-                    <div>
-                        <input type="checkbox" name="disarmkillswitch" />
-                    </div>
-                    <span i18n="configurationDisarmKillSwitch"></span>
-                </label>
-            </div> 
         </div>       
         <!--   -->
         <div class="number">
-            <label>
+            <label><div class="numberspacer">
                 <input type="number" name="minthrottle" min="0" max="2000" />
-                <span i18n="configurationThrottleMinimum"></span>
+               </div> <span i18n="configurationThrottleMinimum"></span>
             </label>
         </div>
         <div class="number">
-            <label>
+            <label><div class="numberspacer">
                 <input type="number" name="midthrottle" min="0" max="2000" />
-                <span i18n="configurationThrottleMid"></span>
+                </div><span i18n="configurationThrottleMid"></span>
             </label>
         </div>
         <div class="number">
-            <label>
+            <label><div class="numberspacer">
                 <input type="number" name="maxthrottle" min="0" max="2000" />
-                <span i18n="configurationThrottleMaximum"></span>
+                </div><span i18n="configurationThrottleMaximum"></span>
             </label>
         </div>
         <div class="number">
-            <label>
-                <input type="number" name="mincommand" min="0" max="2000" />
-                <span i18n="configurationThrottleMinimumCommand"></span>
+            <label><div class="numberspacer">
+              <input type="number" name="mincommand" min="0" max="2000" />
+               </div><span i18n="configurationThrottleMinimumCommand"></span>
             </label>
         </div>
     </div>
+    
+    
+    
+    
+    </div></div>
+    
+    
+    
+  
+    
+    
     <div class="clear-both"></div>
+    
     <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationBoardAlignment"></div>
+    
+     <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationBoardAlignment"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
         <div class="number">
             <label>
                 <input type="number" name="board_align_roll" step="1" min="-180" max="360" />
@@ -92,9 +129,14 @@
                 <span i18n="configurationBoardAlignmentYaw"></span>
             </label>
         </div>
-    </div>
+    </div></div></div>
+    
+    
     <div class="rightWrapper">
-        <div class="groupTitle" i18n="configurationAccelTrims"></div>
+     <div class="gui_box grey" style="min-height:142px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationAccelTrims"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
         <div class="number">
             <label>
                 <input type="number" name="roll"   min="-300" max="300" />
@@ -107,16 +149,22 @@
                 <span i18n="configurationAccelTrimPitch"></span>
             </label>
         </div>
-    </div>
+    </div></div></div>
+    
+    
     <div class="clear-both"></div>
+    
     <div class="leftWrapper">
-        <div class="groupTitle" i18n="configurationReceiver"></div>
-        <table>
+      <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationReceiver"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features rxMode">
@@ -124,22 +172,35 @@
             </tbody>
         </table>
                 
-        <div class="groupTitle" i18n="configurationSerialRX"></div>
+                     </div></div>
+
+                
+                
+                 <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationSerialRX"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+<div class="note">
+          <div class="note_spacer"><p i18n="configurationSerialRXHelp"></p></div>        </div>
+          
         <select class="serialRX" size="4">
             <!-- list generated here -->
         </select>
         
-        <div class="help">
-            <p i18n="configurationSerialRXHelp"></p>
-        </div>
         
-        <div class="groupTitle" i18n="configurationFailsafe"></div>
-        <table>
+        </div></div>
+       
+        
+          <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationFailsafe"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features rxFailsafe">
@@ -153,14 +214,23 @@
             </label>
         </div>
     </div>
+    </div></div>
+    
+     
+     
+     
     <div class="rightWrapper current voltage">
-        <div class="groupTitle" i18n="configurationBatteryVoltage"></div>
-        <table>
+    
+    <div class="gui_box grey">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationBatteryVoltage"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features batteryVoltage">
@@ -191,14 +261,19 @@
                 <input type="number" name="voltagescale" step="1" min="10" max="255" />
                 <span i18n="configurationBatteryScale"></span>
             </label>
-        </div>
-        <div class="groupTitle" i18n="configurationCurrent"></div>
-        <table>
+        </div></div></div>
+        
+        
+    <div class="gui_box grey" style="min-height:0px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationCurrent"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features batteryCurrent">
@@ -218,24 +293,28 @@
             </label>
         </div>
         <div class="checkbox">
-            <label>
-                <div>
-                    <input type="checkbox" name="multiwiicurrentoutput" />
-                </div>
+            <label><div class="numberspacer">
+                    <input type="checkbox" name="multiwiicurrentoutput" id="toggle"/></div>
                 <span i18n="configurationBatteryMultiwiiCurrent"></span>
             </label>
         </div>
-    </div>
+    </div></div></div>
+    
+    
     <div class="clear-both"></div>
     
     <div class="leftWrapper rssi">
-        <div class="groupTitle" i18n="configurationRSSI"></div>
-        <table>
+     <div class="gui_box grey" style="min-height:0px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationRSSI"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features rssi">
@@ -243,9 +322,20 @@
             </tbody>
         </table>
     </div>
+    
+    </div></div>
+    
+    
+    
     <div class="rightWrapper system">
-        <div class="groupTitle" i18n="configurationSystem"></div>
-        <div class="number">
+    <div class="gui_box grey" style="min-height:0px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationSystem"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+<div class="note">
+          <div class="note_spacer"><p i18n="configurationLoopTimeHelp"></p></div></div>
+          
+                  <div class="number">
             <label>
                 <input type="number" name="looptime" step="100" min="0" max="9000"/>
                 <span i18n="configurationLoopTime"></span>
@@ -253,22 +343,32 @@
         </div>
         <div class="number">
             <label>
-                <input type="text" name="looptimehz" readonly="readonly" class="disabled"/>
+                <input type="text" name="looptimehz" readonly class="disabled"/>
                 <span i18n="configurationCalculatedCyclesSec"></span>
             </label>
         </div>
-        <p class="help" i18n="configurationLoopTimeHelp"></p>
-    </div>
+         
+    </div></div></div>
     
     <div class="clear-both"></div>
+    
     <div class="leftWrapper gps">
-        <div class="groupTitle" i18n="configurationGPS"></div>
-        <table>
+    <div class="gui_box grey" style="min-height:0px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationGPS"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+
+    <div class="note">
+          <div class="note_spacer"><p i18n="configurationGPSHelp"></p></div>
+        </div>
+        
+        
+            <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+                    <th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features gps">
@@ -301,26 +401,32 @@
             </label>
         </div>
         
-        <div class="help">
-            <p i18n="configurationGPSHelp"></p>
-        </div>
+        
+        
+        
+       </div></div>
         
     </div>
     <div class="rightWrapper">
-        <div class="groupTitle" i18n="configurationFeatures"></div>
-        <table>
+    
+    <div class="gui_box grey" style="min-height:0px;">
+<div class="gui_box_titlebar"><div class="spacer_box_title" i18n="configurationFeatures"></div>
+<div class="helpicon"></div></div><div class="spacer_box">
+
+
+        <table cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
                     <th i18n="configurationFeatureEnabled"></th>
-                    <th i18n="configurationFeatureName"></th>
                     <th i18n="configurationFeatureDescription"></th>
+ 					<th i18n="configurationFeatureName"></th>
                 </tr>
             </thead>
             <tbody class="features other">
                 <!-- table generated here -->
             </tbody>
         </table>
-    </div>
+    </div></div></div>
   <div class="clear-both"></div>
   
 

@@ -211,7 +211,7 @@ $(document).ready(function () {
                     googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
- // TEST
+ // CSS TEST
 var css = $("#default");
 $("div#options-window #remove").click(function(){
     css.remove();
@@ -220,7 +220,7 @@ $("div#options-window #remove").click(function(){
 $("div#options-window #restore").click(function(){
     $("head").append(css);
 });
-   // TEST
+   // CSS TEST END
    
    
                 function close_and_cleanup(e) {
@@ -401,23 +401,3 @@ $("#showlog").on('click', function() {
 
 
 
-/** toggle switch **/
-
-
-$(document).ready(function () {
-
-
-
-var elems = Array.prototype.slice.call(document.querySelectorAll('#togglesmall'));
-
-elems.forEach(function(html) {
-  var switchery = new Switchery(html,
-  {
-    size: 'small',
-	color: '#59aa29', 
-    secondaryColor: '#c4c4c4' 
-});
-  
-});
-
-});

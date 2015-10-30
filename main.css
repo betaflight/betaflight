@@ -64,7 +64,7 @@ a:hover {
 
 .cf_doc_version_bt a {
 	padding:1px 9px 1px 9px;
-	margin-top: -25px;
+	margin-top: -45px;
 	background-color:#59aa29;
 	border-radius:3px;
 	border: 1px solid #4c8829;
@@ -1098,7 +1098,8 @@ dialog {
 	}
 	
 .grey {
-	background-color:#f5f5f5;
+	/* background-color:#f5f5f5; */
+	background-color:#f9f9f9
 	
 	}
 	

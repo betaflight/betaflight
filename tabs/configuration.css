@@ -1,30 +1,47 @@
-.tab-configuration .help {
-    padding: 0px;
-    background-color: #ffcb18;
-    margin-bottom: 00px;
-}
+
 
 
 .tab-configuration table {
     margin-bottom: 10px;
+		width:100%;
+		float:left;
 
-    border-collapse: collapse;
+
 }
 .tab-configuration table,
 .tab-configuration table th,
 .tab-configuration table td {
-    padding: 4px;
-    border: 1px solid #8b8b8b;
-}
-.tab-configuration table tr td:first-child {
-    text-align: center;
-}
-.tab-configuration table td {
-    padding: 2px 10px;
+    padding: 0px;
+	padding-left:0px;
+	text-align:left;
+
 }
 
-.tab-configuration table thead tr:first-child,
-.tab-configuration table tr:nth-child(even) {
+.tab-configuration table th {
+	padding-left:3px;
+	    padding: 3px;
+
+	    border-bottom: 1px solid #ddd;
+
+}
+
+
+.tab-configuration table td {
+	
+	padding-left:5px;
+	    border-bottom: 1px solid #ddd;
+
+}
+
+.tab-configuration table tr td:first-child {
+    text-align: left;
+    width:50px;
+}
+.tab-configuration table td {
+    padding: 5px 3px;
+}
+
+.tab-configuration table thead tr:first-child {
     background-color: #ececec;
 }
 
@@ -41,15 +58,13 @@
 }
 .tab-configuration .leftWrapper {
     float: left;
-    width: 50%;
-
-    margin: 0 0 10px 0;
+ width: calc(50% - 20px);
+  0 10px 20px 0px
 }
 .tab-configuration .rightWrapper {
     float: left;
-
-    width: calc(50% - 10px);
-    margin: 0 0 10px 10px;
+    width: calc(50% - 0px);
+    margin: 0 0 10px 20px;
 }
 .tab-configuration .mixerPreview {
     width: 180px;
@@ -91,24 +106,23 @@
     clear: left;
 }
 .tab-configuration .number input {
-    width: 60px;
+    width: 48px;
     height: 20px;
     line-height: 20px;
-
     text-align: right;
-
     border: 1px solid silver;
+	border-radius:3px;
+	margin-right:11px;
 }
 
 .tab-configuration .number input.disabled {
-    width: 50px;
+    width: 48px;
     padding: 0px 5px;
     background-color: #ececec;
 }
 
 .tab-configuration .number span {
-    margin-left: 10px;
-    line-height: 20px;
+    margin-left: 0px;
 }
 .tab-configuration .gps .line {
     clear: left;
@@ -127,7 +141,7 @@
     line-height: 20px;
 }
 .tab-configuration .serialRX {
-    width: 160px;
+    width: 100%;
 
     border: 1px solid silver;
     margin-bottom: 5px;
@@ -140,26 +154,25 @@
     width: 60px;
 }
 .tab-configuration .current .checkbox div input {
-    display: block;
-    margin: 2px auto 0 auto;
+    display: ;
+    margin: 0px;
 }
 .tab-configuration .current .checkbox span {
-    margin-left: 15px;
+    margin-left: 0px;
 }
 .tab-configuration .disarm .checkbox {
     margin-top: 2px;
 }
 .tab-configuration .disarm .checkbox div {
-    float: left;
-    width: 60px;
-    margin-bottom: 5px;
+    margin-bottom: 0px;
+    margin-top: 0px;
 }
 .tab-configuration .disarm .checkbox div input {
-    display: block;
-    margin: 2px auto 0 auto;
+    display:;
+    margin:0px;
 }
 .tab-configuration .disarm .checkbox span {
-    margin-left: 15px;
+    margin-left: 0px;
 }
 .tab-configuration .save {
     display: block;
@@ -181,3 +194,75 @@
 }
 
 
+.tab-configuration .freelabel {
+margin-left:10px;
+position:relative;
+}
+
+
+.tab-configuration input {
+float:left;
+}
+
+.tab-configuration span {
+margin:0px
+}
+
+
+.tab-configuration .disarm .checkbox { 
+float:left;
+padding-left:3px; 
+margin-top: -5px; 
+padding-bottom:5px;
+border-bottom: 1px solid #ddd;
+width:100%;
+}
+
+
+.tab-configuration .spacer_box { 
+padding-bottom 10px; 
+float: left;
+width: calc(100% - 20px);
+}
+
+
+.tab-configuration .number { 
+padding-bottom:5px;
+border-bottom: 1px solid #ddd;
+width:100%;
+float: left;
+}
+
+.tab-configuration .disarm { 
+margin-bottom:5px;
+float:left;
+border-bottom: 1px solid #ddd;
+width:100%;
+
+}
+
+.disarmdelay { margin-top: 5px; float:left; width:100%; border-bottom: 1px solid #ddd;
+
+ }
+
+
+
+.tab-configuration .number:last-child { 
+border-bottom:none;
+padding-bottom:0px;
+
+}
+
+.tab-configuration .gui_box_titlebar  { 
+	      margin-bottom: 0px; }
+
+.tab-configuration .numberspacer {
+float:left; width:60px; height:20px;}
+
+.tab-configuration thead {
+	display:none;
+}
+
+.tab-configuration .gui_box {
+	margin-bottom:10px;
+	}

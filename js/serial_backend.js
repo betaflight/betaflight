@@ -123,12 +123,38 @@ $(document).ready(function () {
             }
 
             chrome.storage.local.set({'auto_connect': GUI.auto_connect});
+            
+
         });
+        
+
+ /** toggle switch **/
+var elems = Array.prototype.slice.call(document.querySelectorAll('#togglesmall'));
+
+elems.forEach(function(html) {
+  var switchery = new Switchery(html,
+  {
+    size: 'small',
+	color: '#59aa29', 
+    secondaryColor: '#c4c4c4' 
+});
+  
+});
+/** toggle switch END **/
+
+
     });
+
 
     PortHandler.initialize();
     PortUsage.initialize();
+    
+
+
 });
+
+
+
 
 function onOpen(openInfo) {
     if (openInfo) {
@@ -395,3 +421,5 @@ function bit_set(num, bit) {
 function bit_clear(num, bit) {
     return num & ~(1 << bit);
 }
+
+
