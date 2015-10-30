@@ -2,29 +2,22 @@
     height: 100%;
 }
 .tab-cli p {
-    padding: 0px;
-    border: 0px dotted silver;
+    padding: 5px;
+    border: 1px dotted silver;
 }
 .tab-cli .backdrop {
     border: 1px solid silver;
     background-color: rgba(0,0,0,0.75);
 
-    margin-top: 0px;
-    height: calc(100% - 90px); /* - (p, textarea) */
-   /* background-image: url("../images/light-wide-1.svg");*/
-  	background-image: url("../images/cli_backdrop.png");
-    /*background-repeat: no-repeat;
+    margin-top: 10px;
+    height: calc(100% - 80px); /* - (p, textarea) */
+    background-image: url("../images/light-wide-1.svg");
+    background-repeat: no-repeat;
     background-position: 50% 80%;
-    background-size: 600px;*/
-    border-radius: 5px;
-   /* box-shadow: inset 0px 0px 30px rgba(0,0,0,0.80);*/
-   float:left;
-       width:100%;
-
+    background-size: 600px;
 }
 .tab-cli .window {
     height:100%;
-    width:100%;
     padding: 5px;
 
     overflow-y: scroll;
@@ -35,8 +28,6 @@
 
     box-sizing: border-box;
     -webkit-user-select: text;
-       float:left;
-
 }
 .tab-cli textarea {
     -webkit-box-sizing: border-box;
