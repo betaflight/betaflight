@@ -73,6 +73,7 @@ Re-apply any new defaults as desired.
 
 | `Command`        | Description                                    |
 |------------------|------------------------------------------------|
+| `1wire <esc>`    | passthrough 1wire to the specified esc         |
 | `adjrange`       | show/set adjustment ranges settings            |
 | `aux`            | show/set aux settings                          |
 | `mmix`           | design custom motor mixer                      |
