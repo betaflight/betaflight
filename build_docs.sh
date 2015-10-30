@@ -24,7 +24,7 @@ doc_files=(
 	'Modes.md'
 	'Inflight Adjustments.md'
 	'Controls.md'
-	'Autotune.md'
+	'Gtune.md'
 	'Blackbox.md'
 	'Migrating from baseflight.md'
 	'Boards.md'
@@ -35,6 +35,10 @@ doc_files=(
 	'Board - Sparky.md'
 	'Board - Olimexino.md'
 	'Board - ChebuzzF3.md'
+	'Board - ColibriRace.md'
+	'Board - Paris Air Hero 32.md'
+	'Board - RMDO.md'
+	'Board - SPRacingF3.md'
 )
 
 if which gimli >/dev/null; then
