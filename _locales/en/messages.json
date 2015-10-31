@@ -211,7 +211,7 @@
         "message": "Request Optional Permissions"
     },
     "defaultWelcomeText": {
-        "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />The application supports all hardware that can run cleanflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/PrestaShop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
+        "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />The application supports all hardware that can run cleanflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"http://www.readymaderc.com/store/index.php?main_page=product_info&cPath=76_156&products_id=4221\" target=\"_blank\">DoDo</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://multirotormania.com/129-dragonfly32\" target=\"_blank\">DragonFly32</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/PrestaShop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a>, development builds available <a href=\"http://cleanflight.memoryleaks.org/builds/\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
     },
     "defaultContributingHead": {
         "message": "Contributing"
@@ -372,8 +372,8 @@
     "initialSetupModel": {
         "message": "Model: $1"
     },
-    "initialSetupHeading": {
-        "message": "Heading: $1 deg"
+    "initialSetupAttitude": {
+        "message": "$1 deg"
     },
     "initialSetupAccelCalibStarted": {
         "message": "Accelerometer calibration started"
@@ -425,6 +425,10 @@
     },
     "configurationFeaturesHelp": {
         "message": "<strong>Note:</strong> Not all combinations of features are valid.  When the flight controller firmware detects invalid feature combinations conflicting features will be disabled.<br /><strong>Note:</strong> Configure serial ports <span style=\"color: red\">before</span> enabling the features that will use the ports."
+    },
+    
+    "configurationSerialRXHelp": {
+        "message": "<strong>Note:</strong> Rememer to configure a Serial Port (via Ports tab) and choose a Serial Receiver Provider when using RX_SERIAL feature."
     },
 
     "configurationBoardAlignment": {
@@ -499,6 +503,18 @@
     "configurationBatteryMultiwiiCurrent": {
         "message": "Enable support for legacy Multiwii MSP current output"
     },
+    "configurationSystem": {
+        "message": "System configuration"
+    },
+    "configurationLoopTime": {
+        "message": "Flight Controller Loop Time"
+    },
+    "configurationCalculatedCyclesSec": {    
+        "message": "Cycles/Sec (Hz)"
+    },
+    "configurationLoopTimeHelp": {
+        "message": "<strong>Note:</strong> Changing this may require PID re-tuning."
+    },
     "configurationGPS": {
         "message": "GPS"
     },
@@ -511,6 +527,10 @@
     "configurationGPSubxSbas": {
         "message": "Ground Assistance Type"
     },
+    "configurationGPSHelp": {
+        "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) when using GPS feature."
+    },
+
     "configurationSerialRX": {
         "message": "Serial Receiver Provider"
     },
@@ -522,7 +542,10 @@
     },
 
     "portsHelp": {
-        "message": "Configure serial ports.  <strong>Note:</strong> not all combinations are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
+        "message": "<strong>Note:</strong> not all combinations are valid.  When the flight controller firmware detects this the serial port configuration will be reset."
+    },
+    "portsMSPHelp": {
+        "message": "<strong>Note:</strong> Do <span style=\"color: red\">NOT</span> disable MSP on the first serial port unless you know what you are doing.  You may have to reflash and erase your configuration if you do."
     },
     "portsFirmwareUpgradeRequired": {
         "message": "Firmware upgrade <span style=\"color: red\">required</span>.  Serial port configurations of firmware &lt; 1.8.0 is not supported."
@@ -613,6 +636,9 @@
         "message": "EEPROM <span style=\"color: green\">saved</span>"
     },
 
+    "receiverHelp": {
+        "message": "Please read receiver chapter of the documentation.  Configure serial port (if required), receiver mode (serial/ppm/pwm), provider (for serial receivers), bind receiver, set channel map, configure channel endpoints/range on TX so that all channels go from ~1000 to ~2000.  Set midpoint (default 1500), trim channels to 1500, configure stick deadband, verify behaviour when TX is off or out of range.<br /><span style=\"color: red\">IMPORTANT:</span> Before flying read failsafe chapter of documentation and configure failsafe."
+    },
     "receiverThrottleMid": {
         "message": "Throttle MID"
     },
@@ -645,6 +671,9 @@
     },
     "receiverButtonRefresh": {
         "message": "Refresh"
+    },
+    "receiverButtonSticks": {
+        "message": "Control sticks"
     },
     "receiverDataRefreshed": {
         "message": "RC Tuning data <strong>refreshed</strong>"
@@ -791,14 +820,12 @@
     },
 
 
-    "servosModel": {
-        "message": "Model:"
+    "servosFirmwareUpgradeRequired": {
+        "message": "Servos requires firmware &gt;= 1.10.0."
     },
+
     "servosChangeDirection": {
         "message": "Change Direction in TX To Match"
-    },
-    "servosGyroAccelDirection": {
-        "message": "Gyroscope / Accelerometer Direction"
     },
     "servosName": {
         "message": "Name"
@@ -812,17 +839,20 @@
     "servosMax": {
         "message": "MAX"
     },
-    "servosDirection": {
-        "message": "Direction"
+    "servosAngleAtMin": {
+        "message": "Angle at min"
+    },
+    "servosAngleAtMax": {
+        "message": "Angle at max"
+    },
+    "servosDirectionAndRate": {
+        "message": "Direction and rate"
     },
     "servosLiveMode": {
         "message": "Enable Live mode:"
     },
     "servosButtonSave": {
         "message": "Save"
-    },
-    "servosModelNoSupport": {
-        "message": "This model doesn't support servos"
     },
     "servosNormal": {
         "message": "Normal"
@@ -1042,7 +1072,7 @@
         "message": "Attempt to flash the board automatically (triggered by newly detected serial port)"
     },
     "firmwareFlasherFullChipErase": {
-        "message": "Full Chip Erase"
+        "message": "Full chip erase"
     },
     "firmwareFlasherFullChipEraseDescription": {
         "message": "Wipes all configuration data currently stored on the board"
@@ -1054,7 +1084,7 @@
         "message": "Flash most recent (untested) development firmware"
     },
     "firmwareFlasherManualBaud": {
-        "message": "Manual Baud Rate"
+        "message": "Manual baud rate"
     },
     "firmwareFlasherManualBaudDescription": {
         "message": "Manual selection of baud rate for boards that don't support the default speed or for flashing via bluetooth."
@@ -1099,7 +1129,7 @@
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do not try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher (it wont work).<br />Do not <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br />Note: <strong>STM32</strong> bootloader is stored in <strong>ROM</strong>, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br />Note: This can wipe your configuration including but not limited to PIDs, Auxiliary, and FEATURES. Make sure you have a backup.<br />"
+        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><span style=\"color: green\">Note: </span>STM32 bootloader is stored in ROM, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br /><span style=\"color: red\">Note: </span>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><span style=\"color: green\">Note:</span> If you have problems flashing try disconnecting all cables from your FC.<br /><br /><span style=\"color: green\">Note: </span>If you have lost comminication with your board then power off the board, jumper the bootloader pins, power on, enable 'No reboot sequence', enable 'Full chip erase', re-flash, then power off, remove bootloader jumper, power on and connect (For all firmware except OPBL firmware)."
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
@@ -1125,5 +1155,41 @@
     },
     "ledStripEepromSaved": {
         "message": "EEPROM <span style=\"color: green\">saved</span>"
+    },
+    "controlAxisRoll": {
+        "message": "Roll"
+    },
+    "controlAxisPitch": {
+        "message": "Pitch"
+    },
+    "controlAxisYaw": {
+        "message": "Yaw"
+    },
+    "controlAxisThrottle": {
+        "message": "Throttle"
+    },
+    "controlAxisAux1": {
+        "message": "AUX 1"
+    },
+    "controlAxisAux2": {
+        "message": "AUX 2"
+    },
+    "controlAxisAux3": {
+        "message": "AUX 3"
+    },
+    "controlAxisAux4": {
+        "message": "AUX 4"
+    },
+    "controlAxisAux5": {
+        "message": "AUX 5"
+    },
+    "controlAxisAux6": {
+        "message": "AUX 6"
+    },
+    "controlAxisAux7": {
+        "message": "AUX 7"
+    },
+    "controlAxisAux8": {
+        "message": "AUX 8"
     }
 }

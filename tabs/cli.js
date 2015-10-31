@@ -141,6 +141,13 @@ TABS.cli.read = function (readInfo) {
                             text += "<br />";
                         }
                         break;
+                    case 60:
+                        text += '&lt';
+                        break;
+                    case 62:
+                        text += '&gt';
+                        break;
+                        
                     default:
                         text += String.fromCharCode(data[i]);
                 }

@@ -272,7 +272,7 @@ TABS.motors.initialize = function (callback) {
             ');
 
             servos_wrapper.append('\
-                <div class="m-block servo-' + i + '">\
+                <div class="m-block servo-' + (7 - i) + '">\
                     <div class="meter-bar">\
                         <div class="label"></div>\
                         <div class="indicator">\

@@ -99,6 +99,13 @@
 
     border: 1px solid silver;
 }
+
+.tab-configuration .number input.disabled {
+    width: 50px;
+    padding: 0px 5px;
+    background-color: #ececec;
+}
+
 .tab-configuration .number span {
     margin-left: 10px;
     line-height: 20px;
@@ -154,7 +161,6 @@
 .tab-configuration .disarm .checkbox span {
     margin-left: 15px;
 }
-
 .tab-configuration .save {
     display: block;
     float: right;

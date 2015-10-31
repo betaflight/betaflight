@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1432389468227, // new Date().getTime() - Sat May 23 2015 14:57:54 GMT+0100 (BST)
+    'releaseDate': 1446278768375, // new Date().getTime() - Fri Oct 02 2015 20:50:49 GMT+0100 (GMT Daylight Time)
     
      // all versions are specified and compared using semantic versioning http://semver.org/
     'apiVersionAccepted': '1.2.0',
@@ -86,6 +86,7 @@ var MODE_RANGES = [];
 var ADJUSTMENT_RANGES = [];
 
 var SERVO_CONFIG = [];
+var SERVO_RULES = [];
 
 var SERIAL_CONFIG = {
     ports: [],

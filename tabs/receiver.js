@@ -1,6 +1,9 @@
 'use strict';
 
-TABS.receiver = {};
+TABS.receiver = {
+  rateChartHeight: 120
+};
+
 TABS.receiver.initialize = function (callback) {
     var self = this;
 
@@ -18,7 +21,12 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_map() {
-        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_config);
+    }
+    
+    // Fetch features so we can check if RX_MSP is enabled:
+    function load_config() {
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_html);
     }
 
     function load_html() {
@@ -38,11 +46,11 @@ TABS.receiver.initialize = function (callback) {
         $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
         $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
 		    $('.tunings .yaw_rate input[name="yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-        
+
 		    if (semver.lt(CONFIG.apiVersion, "1.10.0")) {
             $('.tunings .yaw_rate input[name="yaw_expo"]').hide();
         }
-		
+
         chrome.storage.local.get('rx_refresh_rate', function (result) {
             if (result.rx_refresh_rate) {
                 $('select[name="rx_refresh_rate"]').val(result.rx_refresh_rate).change();
@@ -52,7 +60,12 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // generate bars
-        var bar_names = ['Roll', 'Pitch', 'Yaw', 'Throttle'],
+        var bar_names = [
+                chrome.i18n.getMessage('controlAxisRoll'),
+                chrome.i18n.getMessage('controlAxisPitch'),
+                chrome.i18n.getMessage('controlAxisYaw'),
+                chrome.i18n.getMessage('controlAxisThrottle')
+            ],
             bar_container = $('.tab-receiver .bars'),
             aux_index = 1;
 
@@ -61,7 +74,7 @@ TABS.receiver.initialize = function (callback) {
             if (i < bar_names.length) {
                 name = bar_names[i];
             } else {
-                name = 'AUX ' + aux_index++;
+                name = chrome.i18n.getMessage("controlAxisAux" + (aux_index++));
             }
 
             bar_container.append('\
@@ -176,6 +189,8 @@ TABS.receiver.initialize = function (callback) {
 
         $('select[name="rssi_channel"]').val(MISC.rssi_channel);
 
+        var rateHeight = TABS.receiver.rateChartHeight;
+
         // UI Hooks
         // curves
         $('.tunings .throttle input').on('input change', function () {
@@ -201,14 +216,14 @@ TABS.receiver.initialize = function (callback) {
                 var midx = 220 * mid,
                     midxl = midx * 0.5,
                     midxr = (((220 - midx) * 0.5) + midx),
-                    midy = 58 - (midx * (58 / 220)),
-                    midyl = 58 - ((58 - midy) * 0.5 *(expo + 1)),
+                    midy = rateHeight - (midx * (rateHeight / 220)),
+                    midyl = rateHeight - ((rateHeight - midy) * 0.5 *(expo + 1)),
                     midyr = (midy / 2) * (expo + 1);
 
                 // draw
-                context.clearRect(0, 0, 220, 58);
+                context.clearRect(0, 0, 220, rateHeight);
                 context.beginPath();
-                context.moveTo(0, 58);
+                context.moveTo(0, rateHeight);
                 context.quadraticCurveTo(midxl, midyl, midx, midy);
                 context.moveTo(midx, midy);
                 context.quadraticCurveTo(midxr, midyr, 220, 0);
@@ -237,13 +252,13 @@ TABS.receiver.initialize = function (callback) {
                 }
 
                 // math magic by englishman
-                var ratey = 58 * rate;
+                var ratey = rateHeight * rate;
 
                 // draw
-                context.clearRect(0, 0, 220, 58);
+                context.clearRect(0, 0, 220, rateHeight);
                 context.beginPath();
-                context.moveTo(0, 58);
-                context.quadraticCurveTo(110, 58 - ((ratey / 2) * (1 - expo)), 220, 58 - ratey);
+                context.moveTo(0, rateHeight);
+                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 220, rateHeight - ratey);
                 context.lineWidth = 2;
                 context.stroke();
             }, 0);
@@ -302,6 +317,35 @@ TABS.receiver.initialize = function (callback) {
 
             MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
         });
+        
+        $("a.sticks").click(function() {
+            var
+                windowWidth = 370,
+                windowHeight = 510;
+            
+            chrome.app.window.create("/tabs/receiver_msp.html", {
+                id: "receiver_msp",
+                innerBounds: {
+                    minWidth: windowWidth, minHeight: windowHeight,
+                    width: windowWidth, height: windowHeight, 
+                    maxWidth: windowWidth, maxHeight: windowHeight
+                },
+                alwaysOnTop: true
+            }, function(createdWindow) {
+                // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
+                createdWindow.contentWindow.setRawRx = function(channels) {
+                    if (CONFIGURATOR.connectionValid && GUI.active_tab != 'cli') {
+                        MSP.setRawRx(channels);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+        });
+        
+        // Only show the MSP control sticks if the MSP Rx feature is enabled
+        $("a.sticks").toggle(bit_check(BF_CONFIG.features, 14 /* RX_MSP */));
 
         $('select[name="rx_refresh_rate"]').change(function () {
             var plot_update_rate = parseInt($(this).val(), 10);

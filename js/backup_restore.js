@@ -30,11 +30,20 @@ function configuration_backup(callback) {
         MSP_codes.MSP_PID,
         MSP_codes.MSP_RC_TUNING,
         MSP_codes.MSP_ACC_TRIM,
-        MSP_codes.MSP_SERVO_CONF,
-        MSP_codes.MSP_CHANNEL_FORWARDING,
+        MSP_codes.MSP_SERVO_CONFIGURATIONS,
         MSP_codes.MSP_MODE_RANGES,
         MSP_codes.MSP_ADJUSTMENT_RANGES
     ];
+
+    function update_profile_specific_data_list() {
+        if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
+            profileSpecificData.push(MSP_codes.MSP_CHANNEL_FORWARDING);
+        } else {            
+            profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
+        }
+    }
+    
+    update_profile_specific_data_list();
 
     function fetch_specific_data() {
         var fetchingProfile = 0,
@@ -54,6 +63,7 @@ function configuration_backup(callback) {
                             'RC': jQuery.extend(true, {}, RC_tuning),
                             'AccTrim': jQuery.extend(true, [], CONFIG.accelerometerTrims),
                             'ServoConfig': jQuery.extend(true, [], SERVO_CONFIG),
+                            'ServoRules': jQuery.extend(true, [], SERVO_RULES),
                             'ModeRanges': jQuery.extend(true, [], MODE_RANGES),
                             'AdjustmentRanges': jQuery.extend(true, [], ADJUSTMENT_RANGES)
                         });
@@ -428,6 +438,38 @@ function configuration_restore(callback) {
             }
         }
         
+        if (semver.lt(migratedVersion, '0.66.0')) {
+            // api 1.12 updated servo configuration protocol and added servo mixer rules
+            for (var profileIndex = 0; i < configuration.profiles.length; i++) {
+                
+                if (semver.eq(configuration.apiVersion, '1.10.0')) {
+                    // drop two unused servo configurations
+                    while (configuration.profiles[profileIndex].ServoConfig.length > 8) {
+                        configuration.profiles[profileIndex].ServoConfig.pop();
+                    } 
+                }
+                
+                for (var i = 0; i < configuration.profiles[profileIndex].ServoConfig.length; i++) {
+                    var servoConfig = profiles[profileIndex].ServoConfig;
+                    
+                    servoConfig[i].angleAtMin = 90;
+                    servoConfig[i].angleAtMax = 90;
+                    servoConfig[i].reversedInputSources = 0;
+                    
+                    // set the rate to 0 if an invalid value is detected.
+                    if (servoConfig[i].rate < -100 || servoConfig[i].rate > 100) {
+                        servoConfig[i].rate = 0;
+                    }
+                }
+
+                configuration.profiles[profileIndex].ServoRules = [];
+            }
+            
+            migratedVersion = '0.66.0';
+
+            appliedMigrationsCount++;
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
@@ -444,9 +486,7 @@ function configuration_restore(callback) {
                 MSP_codes.MSP_SET_PID_CONTROLLER,
                 MSP_codes.MSP_SET_PID,
                 MSP_codes.MSP_SET_RC_TUNING,
-                MSP_codes.MSP_SET_ACC_TRIM,
-                MSP_codes.MSP_SET_SERVO_CONF,
-                MSP_codes.MSP_SET_CHANNEL_FORWARDING
+                MSP_codes.MSP_SET_ACC_TRIM
             ];
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
@@ -472,6 +512,7 @@ function configuration_restore(callback) {
                     RC_tuning = configuration.profiles[profile].RC;
                     CONFIG.accelerometerTrims = configuration.profiles[profile].AccTrim;
                     SERVO_CONFIG = configuration.profiles[profile].ServoConfig;
+                    SERVO_RULES = configuration.profiles[profile].ServoRules;
                     MODE_RANGES = configuration.profiles[profile].ModeRanges;
                     ADJUSTMENT_RANGES = configuration.profiles[profile].AdjustmentRanges;
                 }
@@ -501,6 +542,14 @@ function configuration_restore(callback) {
                     });
                 }
 
+                function upload_servo_mix_rules() {
+                    MSP.sendServoMixRules(upload_servo_configuration);
+                }
+
+                function upload_servo_configuration() {
+                    MSP.sendServoConfigurations(upload_mode_ranges);
+                }
+
                 function upload_mode_ranges() {
                     MSP.sendModeRanges(upload_adjustment_ranges);
                 }
@@ -510,7 +559,7 @@ function configuration_restore(callback) {
                 }
                 // start uploading
                 load_objects(0);
-                upload_mode_ranges();
+                upload_servo_configuration();
             }
 
             function upload_unique_data() {

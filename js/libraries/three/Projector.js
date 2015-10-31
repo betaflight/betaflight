@@ -10,6 +10,7 @@ THREE.RenderableObject = function () {
 
 	this.object = null;
 	this.z = 0;
+	this.renderOrder = 0;
 
 };
 
@@ -33,6 +34,7 @@ THREE.RenderableFace = function () {
 	this.uvs = [ new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2() ];
 
 	this.z = 0;
+	this.renderOrder = 0;
 
 };
 
@@ -68,6 +70,7 @@ THREE.RenderableLine = function () {
 	this.material = null;
 
 	this.z = 0;
+	this.renderOrder = 0;
 
 };
 
@@ -87,6 +90,7 @@ THREE.RenderableSprite = function () {
 	this.scale = new THREE.Vector2();
 
 	this.material = null;
+	this.renderOrder = 0;
 
 };
 
@@ -101,10 +105,6 @@ THREE.Projector = function () {
 	_sprite, _spriteCount, _spritePool = [], _spritePoolLength = 0,
 
 	_renderData = { objects: [], lights: [], elements: [] },
-
-	_vA = new THREE.Vector3(),
-	_vB = new THREE.Vector3(),
-	_vC = new THREE.Vector3(),
 
 	_vector3 = new THREE.Vector3(),
 	_vector4 = new THREE.Vector4(),
@@ -126,7 +126,7 @@ THREE.Projector = function () {
 
 	_clippedVertex1PositionScreen = new THREE.Vector4(),
 	_clippedVertex2PositionScreen = new THREE.Vector4();
-	
+
 	//
 
 	this.projectVector = function ( vector, camera ) {
@@ -145,10 +145,10 @@ THREE.Projector = function () {
 
 	this.pickingRay = function ( vector, camera ) {
 
-		console.error( 'THREE.Projector: .pickingRay() has been removed.' );
+		console.error( 'THREE.Projector: .pickingRay() is now raycaster.setFromCamera().' );
 
 	};
-	
+
 	//
 
 	var RenderList = function () {
@@ -247,6 +247,7 @@ THREE.Projector = function () {
 			_line.v1.copy( v1 );
 			_line.v2.copy( v2 );
 			_line.z = ( v1.positionScreen.z + v2.positionScreen.z ) / 2;
+			_line.renderOrder = object.renderOrder;
 
 			_line.material = object.material;
 
@@ -271,19 +272,21 @@ THREE.Projector = function () {
 				_face.v2.copy( v2 );
 				_face.v3.copy( v3 );
 				_face.z = ( v1.positionScreen.z + v2.positionScreen.z + v3.positionScreen.z ) / 3;
+				_face.renderOrder = object.renderOrder;
+
+				// use first vertex normal as face normal
+
+				_face.normalModel.fromArray( normals, a * 3 );
+				_face.normalModel.applyMatrix3( normalMatrix ).normalize();
 
 				for ( var i = 0; i < 3; i ++ ) {
 
-					var offset = arguments[ i ] * 3;
 					var normal = _face.vertexNormalsModel[ i ];
-
-					normal.set( normals[ offset ], normals[ offset + 1 ], normals[ offset + 2 ] );
+					normal.fromArray( normals, arguments[ i ] * 3 );
 					normal.applyMatrix3( normalMatrix ).normalize();
 
-					var offset2 = arguments[ i ] * 2;
-
 					var uv = _face.uvs[ i ];
-					uv.set( uvs[ offset2 ], uvs[ offset2 + 1 ] );
+					uv.fromArray( uvs, arguments[ i ] * 2 );
 
 				}
 
@@ -322,7 +325,7 @@ THREE.Projector = function () {
 		_renderData.elements.length = 0;
 
 		if ( scene.autoUpdate === true ) scene.updateMatrixWorld();
-		if ( camera.parent === undefined ) camera.updateMatrixWorld();
+		if ( camera.parent === null ) camera.updateMatrixWorld();
 
 		_viewMatrix.copy( camera.matrixWorldInverse.getInverse( camera.matrixWorld ) );
 		_viewProjectionMatrix.multiplyMatrices( camera.projectionMatrix, _viewMatrix );
@@ -344,7 +347,9 @@ THREE.Projector = function () {
 
 			} else if ( object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Sprite ) {
 
-				if ( object.material.visible === false ) return;
+				var material = object.material;
+
+				if ( material.visible === false ) return;
 
 				if ( object.frustumCulled === false || _frustum.intersectsObject( object ) === true ) {
 
@@ -352,17 +357,10 @@ THREE.Projector = function () {
 					_object.id = object.id;
 					_object.object = object;
 
-					if ( object.renderDepth !== null ) {
-
-						_object.z = object.renderDepth;
-
-					} else {
-
-						_vector3.setFromMatrixPosition( object.matrixWorld );
-						_vector3.applyProjection( _viewProjectionMatrix );
-						_object.z = _vector3.z;
-
-					}
+					_vector3.setFromMatrixPosition( object.matrixWorld );
+					_vector3.applyProjection( _viewProjectionMatrix );
+					_object.z = _vector3.z;
+					_object.renderOrder = object.renderOrder;
 
 					_renderData.objects.push( _object );
 
@@ -396,7 +394,7 @@ THREE.Projector = function () {
 				if ( geometry instanceof THREE.BufferGeometry ) {
 
 					var attributes = geometry.attributes;
-					var offsets = geometry.offsets;
+					var groups = geometry.groups;
 
 					if ( attributes.position === undefined ) continue;
 
@@ -432,20 +430,19 @@ THREE.Projector = function () {
 
 					}
 
-					if ( attributes.index !== undefined ) {
+					if ( geometry.index !== null ) {
 
-						var indices = attributes.index.array;
+						var indices = geometry.index.array;
 
-						if ( offsets.length > 0 ) {
+						if ( groups.length > 0 ) {
 
-							for ( var o = 0; o < offsets.length; o ++ ) {
+							for ( var o = 0; o < groups.length; o ++ ) {
 
-								var offset = offsets[ o ];
-								var index = offset.index;
+								var group = groups[ o ];
 
-								for ( var i = offset.start, l = offset.start + offset.count; i < l; i += 3 ) {
+								for ( var i = group.start, l = group.start + group.count; i < l; i += 3 ) {
 
-									renderList.pushTriangle( indices[ i ] + index, indices[ i + 1 ] + index, indices[ i + 2 ] + index );
+									renderList.pushTriangle( indices[ i ], indices[ i + 1 ], indices[ i + 2 ] );
 
 								}
 
@@ -479,13 +476,40 @@ THREE.Projector = function () {
 
 					_normalMatrix.getNormalMatrix( _modelMatrix );
 
-					var isFaceMaterial = object.material instanceof THREE.MeshFaceMaterial;
+					var material = object.material;
+
+					var isFaceMaterial = material instanceof THREE.MeshFaceMaterial;
 					var objectMaterials = isFaceMaterial === true ? object.material : null;
 
 					for ( var v = 0, vl = vertices.length; v < vl; v ++ ) {
 
 						var vertex = vertices[ v ];
-						renderList.pushVertex( vertex.x, vertex.y, vertex.z );
+
+						_vector3.copy( vertex );
+
+						if ( material.morphTargets === true ) {
+
+							var morphTargets = geometry.morphTargets;
+							var morphInfluences = object.morphTargetInfluences;
+
+							for ( var t = 0, tl = morphTargets.length; t < tl; t ++ ) {
+
+								var influence = morphInfluences[ t ];
+
+								if ( influence === 0 ) continue;
+
+								var target = morphTargets[ t ];
+								var targetVertex = target.vertices[ v ];
+
+								_vector3.x += ( targetVertex.x - vertex.x ) * influence;
+								_vector3.y += ( targetVertex.y - vertex.y ) * influence;
+								_vector3.z += ( targetVertex.z - vertex.z ) * influence;
+
+							}
+
+						}
+
+						renderList.pushVertex( _vector3.x, _vector3.y, _vector3.z );
 
 					}
 
@@ -493,7 +517,7 @@ THREE.Projector = function () {
 
 						var face = faces[ f ];
 
-						var material = isFaceMaterial === true
+						material = isFaceMaterial === true
 							 ? objectMaterials.materials[ face.materialIndex ]
 							 : object.material;
 
@@ -505,58 +529,15 @@ THREE.Projector = function () {
 						var v2 = _vertexPool[ face.b ];
 						var v3 = _vertexPool[ face.c ];
 
-						if ( material.morphTargets === true ) {
-
-							var morphTargets = geometry.morphTargets;
-							var morphInfluences = object.morphTargetInfluences;
-
-							var v1p = v1.position;
-							var v2p = v2.position;
-							var v3p = v3.position;
-
-							_vA.set( 0, 0, 0 );
-							_vB.set( 0, 0, 0 );
-							_vC.set( 0, 0, 0 );
-
-							for ( var t = 0, tl = morphTargets.length; t < tl; t ++ ) {
-
-								var influence = morphInfluences[ t ];
-
-								if ( influence === 0 ) continue;
-
-								var targets = morphTargets[ t ].vertices;
-
-								_vA.x += ( targets[ face.a ].x - v1p.x ) * influence;
-								_vA.y += ( targets[ face.a ].y - v1p.y ) * influence;
-								_vA.z += ( targets[ face.a ].z - v1p.z ) * influence;
-
-								_vB.x += ( targets[ face.b ].x - v2p.x ) * influence;
-								_vB.y += ( targets[ face.b ].y - v2p.y ) * influence;
-								_vB.z += ( targets[ face.b ].z - v2p.z ) * influence;
-
-								_vC.x += ( targets[ face.c ].x - v3p.x ) * influence;
-								_vC.y += ( targets[ face.c ].y - v3p.y ) * influence;
-								_vC.z += ( targets[ face.c ].z - v3p.z ) * influence;
-
-							}
-
-							v1.position.add( _vA );
-							v2.position.add( _vB );
-							v3.position.add( _vC );
-
-							renderList.projectVertex( v1 );
-							renderList.projectVertex( v2 );
-							renderList.projectVertex( v3 );
-
-						}
-
 						if ( renderList.checkTriangleVisibility( v1, v2, v3 ) === false ) continue;
 
 						var visible = renderList.checkBackfaceCulling( v1, v2, v3 );
 
 						if ( side !== THREE.DoubleSide ) {
+
 							if ( side === THREE.FrontSide && visible === false ) continue;
 							if ( side === THREE.BackSide && visible === true ) continue;
+
 						}
 
 						_face = getNextFaceInPool();
@@ -611,6 +592,7 @@ THREE.Projector = function () {
 						_face.material = material;
 
 						_face.z = ( v1.positionScreen.z + v2.positionScreen.z + v3.positionScreen.z ) / 3;
+						_face.renderOrder = object.renderOrder;
 
 						_renderData.elements.push( _face );
 
@@ -634,9 +616,9 @@ THREE.Projector = function () {
 
 						}
 
-						if ( attributes.index !== undefined ) {
+						if ( geometry.index !== null ) {
 
-							var indices = attributes.index.array;
+							var indices = geometry.index.array;
 
 							for ( var i = 0, l = indices.length; i < l; i += 2 ) {
 
@@ -646,7 +628,7 @@ THREE.Projector = function () {
 
 						} else {
 
-							var step = object.mode === THREE.LinePieces ? 2 : 1;
+							var step = object instanceof THREE.LineSegments ? 2 : 1;
 
 							for ( var i = 0, l = ( positions.length / 3 ) - 1; i < l; i += step ) {
 
@@ -669,8 +651,7 @@ THREE.Projector = function () {
 					v1 = getNextVertexInPool();
 					v1.positionScreen.copy( vertices[ 0 ] ).applyMatrix4( _modelViewProjectionMatrix );
 
-					// Handle LineStrip and LinePieces
-					var step = object.mode === THREE.LinePieces ? 2 : 1;
+					var step = object instanceof THREE.LineSegments ? 2 : 1;
 
 					for ( var v = 1, vl = vertices.length; v < vl; v ++ ) {
 
@@ -697,6 +678,7 @@ THREE.Projector = function () {
 							_line.v2.positionScreen.copy( _clippedVertex2PositionScreen );
 
 							_line.z = Math.max( _clippedVertex1PositionScreen.z, _clippedVertex2PositionScreen.z );
+							_line.renderOrder = object.renderOrder;
 
 							_line.material = object.material;
 
@@ -731,6 +713,7 @@ THREE.Projector = function () {
 					_sprite.x = _vector4.x * invW;
 					_sprite.y = _vector4.y * invW;
 					_sprite.z = _vector4.z;
+					_sprite.renderOrder = object.renderOrder;
 					_sprite.object = object;
 
 					_sprite.rotation = object.rotation;
@@ -816,7 +799,7 @@ THREE.Projector = function () {
 			var line = new THREE.RenderableLine();
 			_linePool.push( line );
 			_linePoolLength ++;
-			_lineCount ++
+			_lineCount ++;
 			return line;
 
 		}
@@ -832,7 +815,7 @@ THREE.Projector = function () {
 			var sprite = new THREE.RenderableSprite();
 			_spritePool.push( sprite );
 			_spritePoolLength ++;
-			_spriteCount ++
+			_spriteCount ++;
 			return sprite;
 
 		}
@@ -845,7 +828,11 @@ THREE.Projector = function () {
 
 	function painterSort( a, b ) {
 
-		if ( a.z !== b.z ) {
+		if ( a.renderOrder !== b.renderOrder ) {
+
+			return a.renderOrder - b.renderOrder;
+
+		} else if ( a.z !== b.z ) {
 
 			return b.z - a.z;
 

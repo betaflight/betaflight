@@ -47,8 +47,13 @@ TABS.setup.initialize = function (callback) {
         // initialize 3D
         self.initialize3D();
 
+		// set roll in interactive block
+        $('span.roll').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
+		// set pitch in interactive block
+        $('span.pitch').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
         // set heading in interactive block
-        $('span.heading').text(chrome.i18n.getMessage('initialSetupheading', [0]));
+        $('span.heading').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
+
 
         // check if we have magnetometer
         if (!bit_check(CONFIG.activeSensors, 2)) {
@@ -151,7 +156,9 @@ TABS.setup.initialize = function (callback) {
             gpsSats_e = $('.gpsSats'),
             gpsLat_e = $('.gpsLat'),
             gpsLon_e = $('.gpsLon'),
-            heading_e = $('span.heading');
+            roll_e = $('dd.roll'),
+            pitch_e = $('dd.pitch'),
+            heading_e = $('dd.heading');
 
         function get_slow_data() {
             MSP.send_message(MSP_codes.MSP_STATUS);
@@ -175,7 +182,9 @@ TABS.setup.initialize = function (callback) {
 
         function get_fast_data() {
             MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
-                heading_e.text(chrome.i18n.getMessage('initialSetupheading', [SENSOR_DATA.kinematics[2]]));
+	            roll_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[0]]));
+	            pitch_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[1]]));
+                heading_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[2]]));
                 self.render3D();
                 self.updateInstruments();
             });
@@ -216,13 +225,15 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.WebGLRenderer({canvas: canvas.get(0), alpha: true, antialias: true});
         useWebGlRenderer = true;
     } else {
-
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
+    // initialize render size for current canvas size
+    renderer.setSize(wrapper.width(), wrapper.height());
 
-    // modelWrapper just adds an extra axis of rotation to avoid gimbal lock withe euler angles
+
+//    // modelWrapper adds an extra axis of rotation to avoid gimbal lock with the euler angles
     modelWrapper = new THREE.Object3D()
-
+//
     // load the model including materials
     if (useWebGlRenderer) {
         model_file = mixerList[CONFIG.multiType - 1].model;
@@ -237,29 +248,27 @@ TABS.setup.initialize3D = function (compatibility) {
         useLegacyCustomModel = true;
     }
 
+    // setup scene
+    scene = new THREE.Scene();
+
     loader = new THREE.JSONLoader();
     loader.load('./resources/models/' + model_file + '.json', function (geometry, materials) {
-        model = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        var modelMaterial = new THREE.MeshFaceMaterial(materials);
+        model = new THREE.Mesh(geometry, modelMaterial);
 
         model.scale.set(15, 15, 15);
 
         modelWrapper.add(model);
         scene.add(modelWrapper);
     });
-
-    // stacionary camera
+    
+    // stationary camera
     camera = new THREE.PerspectiveCamera(50, wrapper.width() / wrapper.height(), 1, 10000);
-
-    // setup scene
-    scene = new THREE.Scene();
 
     // some light
     light = new THREE.AmbientLight(0x404040);
     light2 = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 1.5);
     light2.position.set(0, 1, 0);
-
-    // initialize render size for current canvas size
-    renderer.setSize(wrapper.width(), wrapper.height());
 
     // move camera away from the model
     camera.position.z = 125;

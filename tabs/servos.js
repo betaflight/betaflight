@@ -1,9 +1,3 @@
-/*  Please don't take code in this file very seriously !!!
-
-    I was "kinda" forced to write this implementation "this way" because the Servo code implementation
-    from multiwii is so horrible, obstructive and non dynamic, not to mention it doesn't make any sense
-    that there was just no other way around this then hardcoding/implementing each model separately.
-*/
 'use strict';
 
 TABS.servos = {};
@@ -15,15 +9,25 @@ TABS.servos.initialize = function (callback) {
         googleAnalytics.sendAppView('Servos');
     }
 
-    function get_servo_conf_data() {
-        MSP.send_message(MSP_codes.MSP_SERVO_CONF, false, false, get_channel_forwarding_data);
+    function get_servo_configurations() {
+        MSP.send_message(MSP_codes.MSP_SERVO_CONFIGURATIONS, false, false, get_servo_mix_rules);
     }
 
-    function get_channel_forwarding_data() {
-        MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, get_rc_data);
+    function get_servo_mix_rules() {
+        MSP.send_message(MSP_codes.MSP_SERVO_MIX_RULES, false, false, get_channel_forwarding);
     }
 
-   function get_rc_data() {
+    function get_channel_forwarding() {
+        var nextFunction = get_rc_data;
+        
+        if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
+            MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, nextFunction);
+        } else { 
+            nextFunction();
+        }
+    }
+
+    function get_rc_data() {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_boxnames_data);
     }
 
@@ -35,10 +39,18 @@ TABS.servos.initialize = function (callback) {
         $('#content').load("./tabs/servos.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_conf_data);
-
-    function process_html() {
-
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
+    
+    function update_ui() {
+            
+        if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
+            
+            $(".tab-servos").removeClass("supported");
+            return;
+        }
+        
+        $(".tab-servos").addClass("supported");
+            
         var servoCheckbox = '';
         var servoHeader = '';
         for (var i = 0; i < RC.active_channels-4; i++) {
@@ -46,93 +58,51 @@ TABS.servos.initialize = function (callback) {
                 <th >A' + (i+1) + '</th>\
             ';
         }
-        servoHeader = servoHeader + '<th style="width: 200px" i18n="servosDirection"></th>';
+        servoHeader = servoHeader + '<th style="width: 200px" i18n="servosDirectionAndRate"></th>';
 
         for (var i = 0; i < RC.active_channels; i++) {
             servoCheckbox = servoCheckbox + '\
                 <td class="channel"><input type="checkbox"/></td>\
             ';
         }
-        
-
 
         $('div.tab-servos table.fields tr.main').append(servoHeader);
 
-        function process_directions(name, obj, bitpos) {
-            $('div.direction_wrapper').show();
-
-            var val;
-
-            $('div.tab-servos table.directions').append('\
-                <tr>\
-                    <td class="name" style="text-align: center">' + name + '</td>\
-                    <td class="direction" style="text-align: right">\
-                        <select name="direction">\
-                            <option value="0">' + chrome.i18n.getMessage('servosNormal') + '</option>\
-                            <option value="1">' + chrome.i18n.getMessage('servosReverse') + '</option>\
-                        </select>\
-                    </td>\
-                </tr>\
-            ');
-
-            if (bit_check(SERVO_CONFIG[obj].rate, bitpos)) val = 1;
-            else val = 0;
-
-            $('div.tab-servos table.directions tr:last select').val(val);
-            $('div.tab-servos table.directions tr:last select').data('info', {'obj': obj, 'bitpos': bitpos});
-        }
-
-        function process_servos(name, alternate, obj, directions) {
+        function process_servos(name, alternate, obj) {
         
             $('div.supported_wrapper').show();
-
-
             
             $('div.tab-servos table.fields').append('\
                 <tr> \
                     <td style="text-align: center">' + name + '</td>\
-                    <td class="middle"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].middle + '" /></td>\
-                    <td class="min"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].min +'" /></td>\
-                    <td class="max"><input type="number" min="1000" max="2000" value="' + SERVO_CONFIG[obj].max +'" /></td>\
+                    <td class="middle"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].middle + '" /></td>\
+                    <td class="min"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].min +'" /></td>\
+                    <td class="max"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].max +'" /></td>\
+                    <td class="angleAtMin"><input type="number" min="-90" max="0" value="' + SERVO_CONFIG[obj].angleAtMin +'" /></td>\
+                    <td class="angleAtMax"><input type="number" min="0" max="90" value="' + SERVO_CONFIG[obj].angleAtMax +'" /></td>\
                     ' + servoCheckbox + '\
                     <td class="direction">\
-                        <input class="first" type="checkbox"/><span class="name">' + name + '</span>\
-                        <input class="second" type="checkbox"/><span class="alternate">' + alternate + '</span>\
                     </td>\
                 </tr> \
             ');
 
-            
-
-                    // translate to user-selected language
-        localize();
-
-            $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
-
-            if (directions == true) {
-                $('div.tab-servos table.fields tr:last td.direction input:first').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 0));
-                $('div.tab-servos table.fields tr:last td.direction input:last').prop('checked', bit_check(SERVO_CONFIG[obj].rate, 1));
-            } else if (directions == 2) {
-                // removing checkboxes
-                $('div.tab-servos table.fields tr:last td.direction').html('');
-
-                // adding select box and generating options
-                $('div.tab-servos table.fields tr:last td.direction').append('\
-                    <select class="rate" name="rate"></select>\
-                ');
-
-                var select = $('div.tab-servos table.fields tr:last td.direction select');
-
-                for (var i = 100; i > -101; i--) {
-                    select.append('<option value="' + i + '">Rate: ' + i + '%</option>');
-                }
-
-                // select current rate
-                select.val(SERVO_CONFIG[obj].rate);
-            } else {
-                // removing checkboxes
-                $('div.tab-servos table.fields tr:last td.direction').html('');
+            if (SERVO_CONFIG[obj].indexOfChannelToForward >= 0) {
+                $('div.tab-servos table.fields tr:last td.channel input').eq(SERVO_CONFIG[obj].indexOfChannelToForward).prop('checked', true);
             }
+
+            // adding select box and generating options
+            $('div.tab-servos table.fields tr:last td.direction').append('\
+                <select class="rate" name="rate"></select>\
+            ');
+
+            var select = $('div.tab-servos table.fields tr:last td.direction select');
+
+            for (var i = 100; i > -101; i--) {
+                select.append('<option value="' + i + '">Rate: ' + i + '%</option>');
+            }
+
+            // select current rate
+            select.val(SERVO_CONFIG[obj].rate);
 
             $('div.tab-servos table.fields tr:last').data('info', {'obj': obj});
             
@@ -146,18 +116,7 @@ TABS.servos.initialize = function (callback) {
             });
         }
 
-        function servos_update(save_to_eeprom) {
-            // update bitfields
-            $('div.tab-servos table.directions tr:not(".main")').each(function () {
-                var info = $('select', this).data('info');
-                var val = parseInt($('select', this).val());
-
-                // in this stage we need to know which bitfield and which bitposition needs to be flipped
-                if (val) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, info.bitpos);
-                else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, info.bitpos);
-            });
-
-            // update the rest
+        function servos_update(save_configuration_to_eeprom) {
             $('div.tab-servos table.fields tr:not(".main")').each(function () {
                 var info = $(this).data('info');
 
@@ -174,122 +133,37 @@ TABS.servos.initialize = function (callback) {
                 SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
                 SERVO_CONFIG[info.obj].min = parseInt($('.min input', this).val());
                 SERVO_CONFIG[info.obj].max = parseInt($('.max input', this).val());
+                SERVO_CONFIG[info.obj].angleAtMin = parseInt($('.angleAtMin input', this).val());
+                SERVO_CONFIG[info.obj].angleAtMax = parseInt($('.angleAtMax input', this).val());
 
-                // update rate if direction fields exist
-                if ($('.direction input', this).length) {
-                    if ($('.direction input:first', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 0);
-                    else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 0);
-
-                    if ($('.direction input:last', this).is(':checked')) SERVO_CONFIG[info.obj].rate = bit_set(SERVO_CONFIG[info.obj].rate, 1);
-                    else SERVO_CONFIG[info.obj].rate = bit_clear(SERVO_CONFIG[info.obj].rate, 1);
-                } else if ($('.direction select', this).length) {
-                    var val = parseInt($('.direction select', this).val());
-                    SERVO_CONFIG[info.obj].rate = val;
-                }
+                var val = parseInt($('.direction select', this).val());
+                SERVO_CONFIG[info.obj].rate = val;
             });
             
-            MSP.send_message(MSP_codes.MSP_SET_CHANNEL_FORWARDING, MSP.crunch(MSP_codes.MSP_SET_CHANNEL_FORWARDING), false, function () {
-                MSP.send_message(MSP_codes.MSP_SET_SERVO_CONF, MSP.crunch(MSP_codes.MSP_SET_SERVO_CONF), false, function () {
-                    if (save_to_eeprom) {
-                        // Save changes to EEPROM
-                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                            GUI.log(chrome.i18n.getMessage('servosEepromSave'));
-                        });
-                    }
-                });
-            });
+            //
+            // send data to FC
+            //
+            MSP.sendServoConfigurations(send_servo_mixer_rules);
+
+            function send_servo_mixer_rules() {
+                MSP.sendServoConfigurations(save_to_eeprom);
+            }
+            
+            function save_to_eeprom() {
+                if (save_configuration_to_eeprom) {
+                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('servosEepromSave'));
+                    });
+                }
+            }
 
         }
 
         // drop previous table
         $('div.tab-servos table.fields tr:not(:first)').remove();
 
-        var model = $('div.tab-servos strong.model');
-        var supported_models = [1, 4, 5, 8, 14, 20, 21];
-
-        switch (CONFIG.multiType) {
-            case 1: // TRI
-                // looking ok so far
-                model.text('TRI');
-
-                process_directions('YAW', 5, 0);
-
-                process_servos('Yaw Servo', '', 5, false);
-                break;
-            case 4: // BI
-                // looking ok so far
-                model.text('BI');
-
-                process_directions('L YAW', 4, 1);
-                process_directions('R YAW', 5, 1);
-                process_directions('L NICK', 4, 0);
-                process_directions('R NICK', 5, 0);
-
-                process_servos('Left Servo', '', 4, false);
-                process_servos('Right Servo', '', 5, false);
-                break;
-            case 5: // Gimbal
-                // needs to be verified
-                model.text('Gimbal');
-
-                // rate
-                process_servos('Pitch Servo', '', 0, 2);
-                process_servos('Roll Servo', '', 1, 2);
-                break;
-            case 8: // Flying Wing
-                // looking ok so far
-                model.text('Flying Wing');
-
-                process_directions('L ROLL', 3, 1);
-                process_directions('R ROLL', 4, 1);
-                process_directions('L NICK', 3, 0);
-                process_directions('R NICK', 4, 0);
-
-                process_servos('Left Wing', '', 3, false);
-                process_servos('Right Wing', '', 4, false);
-                break;
-            case 14: // Airplane
-                model.text('Airplane');
-
-                // rate
-                process_servos('Wing 1', '', 3, 2);
-                process_servos('Wing 2', '', 4, 2);
-                process_servos('Rudd', '', 5, 2);
-                process_servos('Elev', '', 6, 2);
-                break;
-            case 20: // Dualcopter
-                // looking ok so far
-                model.text('Dualcopter');
-
-                process_directions('PITCH', 4, 0);
-                process_directions('ROLL', 5, 0);
-
-                process_servos('Roll', '', 5, false);
-                process_servos('Nick', '', 4, false);
-                break;
-            case 21: // Singlecopter
-                // looking ok so far
-                model.text('Singlecopter');
-
-                process_servos('Right', 'R YAW', 3, true);
-                process_servos('Left', 'L YAW', 4, true);
-                process_servos('Front', 'F YAW', 5, true);
-                process_servos('Rear', 'YAW', 6, true);
-                break;
-
-            default:
-                model.text(chrome.i18n.getMessage('servosModelNoSupport'));
-
-                // implementation of feature servo_tilt
-                if (AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
-                    // Gimbal on
-                    // needs to be verified
-                    model.text('Gimbal / Tilt Servos');
-
-                    // rate
-                    process_servos('Pitch Servo', '', 0, 2);
-                    process_servos('Roll Servo', '', 1, 2);
-                }
+        for (var servoIndex = 0; servoIndex < 8; servoIndex++) {
+            process_servos('Servo ' + servoIndex, '', servoIndex, false);
         }
 
         // UI hooks for dynamically generated elements
@@ -299,14 +173,20 @@ TABS.servos.initialize = function (callback) {
                 GUI.timeout_add('servos_update', servos_update, 10);
             }
         });
-
+        
         $('a.update').click(function () {
-            // standard check for supported_models + custom implementation for feature servo_tilt
-            if (supported_models.indexOf(CONFIG.multiType) != -1 || AUX_CONFIG.indexOf('CAMSTAB') > -1 || AUX_CONFIG.indexOf('CAMTRIG') > -1) {
-                servos_update(true);
-            }
+            servos_update(true);
         });
+        
+    }
 
+    function process_html() {
+    
+        update_ui();
+
+        // translate to user-selected language
+        localize();
+        
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function () {
             MSP.send_message(MSP_codes.MSP_STATUS);
