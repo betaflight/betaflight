@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1443815435720, // new Date().getTime() - Fri Oct 02 2015 20:50:49 GMT+0100 (GMT Daylight Time)
+    'releaseDate': 1446278768375, // new Date().getTime() - Fri Oct 02 2015 20:50:49 GMT+0100 (GMT Daylight Time)
     
      // all versions are specified and compared using semantic versioning http://semver.org/
     'apiVersionAccepted': '1.2.0',
