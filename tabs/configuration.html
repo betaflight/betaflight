@@ -15,12 +15,14 @@
         <div class="helpicon"></div>
       </div>
       <div class="spacer_box">
-        <div class="mixerPreview">
+        <div class="mixerPreview twothird">
           <img src="./resources/motor_order/custom.svg" />
         </div>
+        <div class="half" style="width:calc(33% - 10px); margin-left:10px;">
         <select class="mixerList">
           <!-- list generated here -->
         </select>
+        </div>
       </div>
     </div>
   </div>
@@ -46,11 +48,10 @@
         <!--   -->
         <div class="disarm">
           <div class="checkbox">
-            <label>
-              <div style="float:left; width:57px; height:20px;">
+             <div style="float:left; height:20px; margin-right:15px; margin-left:3px;">
                 <input type="checkbox" name="disarmkillswitch" id="toggle"/>
-              </div>
-              <div class="freelabel" i18n="configurationDisarmKillSwitch"></div>
+              </div><label for="disarmkillswitch">
+              <span class="freelabel" i18n="configurationDisarmKillSwitch"></span>
             </label>
           </div>
           <div class="number disarmdelay" style="display:none; margin-bottom:5px;">
@@ -290,10 +291,9 @@
           </label>
         </div>
         <div class="checkbox">
-          <label>
             <div class="numberspacer">
               <input type="checkbox" name="multiwiicurrentoutput" id="toggle"/>
-            </div>
+            </div><label>
             <span i18n="configurationBatteryMultiwiiCurrent"></span>
           </label>
         </div>

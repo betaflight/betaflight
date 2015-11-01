@@ -120,7 +120,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             var row_e;
             
             if (features[i].mode === 'group') {
-                row_e = $('<tr><td><input class="feature" id="feature-'
+                row_e = $('<tr><td style="width: 15px;"><input style="width: 13px;" class="feature" id="feature-'
                         + i
                         + '" value="'
                         + features[i].bit

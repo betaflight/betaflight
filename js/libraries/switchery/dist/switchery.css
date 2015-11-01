@@ -17,6 +17,7 @@
   position: relative;
   vertical-align: middle;
   width: 45px;
+  z-index:1000;
 
   -moz-user-select: none;
   -khtml-user-select: none;

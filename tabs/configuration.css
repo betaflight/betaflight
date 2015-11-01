@@ -35,7 +35,7 @@
 
 .tab-configuration table tr td:first-child {
     text-align: left;
-    width:50px;
+    width:55px;
 }
 .tab-configuration table td {
     padding: 5px 3px;
@@ -58,31 +58,19 @@
 }
 .tab-configuration .leftWrapper {
     float: left;
- width: calc(50% - 20px);
-  0 10px 20px 0px
-}
+	width: calc(50% - 20px);
+	}
 .tab-configuration .rightWrapper {
     float: left;
     width: calc(50% - 0px);
     margin: 0 0 10px 20px;
 }
-.tab-configuration .mixerPreview {
-    width: 180px;
-    height: 180px;
-}
-.tab-configuration .mixerPreview img {
-    display: block;
 
-    width: 100%;
-    height: 100%;
-}
 .tab-configuration select.mixerList {
-    width: 170px;
+    width: 100%;
     height: 20px;
     margin-top: 5px;
-
     font-weight: bold;
-
     border: 1px solid silver;
 }
 .tab-configuration dl.features dt {
@@ -106,17 +94,20 @@
     clear: left;
 }
 .tab-configuration .number input {
-    width: 48px;
+    width: 50px;
+    padding-left: 3px;
     height: 20px;
     line-height: 20px;
-    text-align: right;
+    text-align: left;
     border: 1px solid silver;
 	border-radius:3px;
 	margin-right:11px;
+	font-size:12px;
+	font-weight:normal;
 }
 
 .tab-configuration .number input.disabled {
-    width: 39px;
+    width: 43px;
     padding: 0px 5px;
     background-color: #ececec;
 }
@@ -153,7 +144,7 @@
 }
 .tab-configuration .current .checkbox div {
     float: left;
-    width: 60px;
+    width: 66px;
 }
 .tab-configuration .current .checkbox div input {
     margin: 0px;
@@ -164,13 +155,14 @@
 
 .tab-configuration .disarm .checkbox {
     margin-top: 2px;
+    margin-right:5px;
 }
 .tab-configuration .disarm .checkbox div {
     margin-bottom: 0px;
     margin-top: 0px;
+
 }
 .tab-configuration .disarm .checkbox div input {
-    display:;
     margin:0px;
     float: left;
 
@@ -215,7 +207,7 @@ margin:0px
 
 .tab-configuration .disarm .checkbox { 
 float:left;
-padding-left:3px; 
+padding-left:0px; 
 margin-top: -5px; 
 padding-bottom:5px;
 border-bottom: 1px solid #ddd;
@@ -265,8 +257,8 @@ padding-bottom:0px;
 
 .tab-configuration .numberspacer {
 float:left; 
-width:60px; 
-height:20px;
+width:65px; 
+height:21px;
 }
 
 .tab-configuration thead {
@@ -300,19 +292,21 @@ height:20px;
 	
 	
 	.tab-configuration .mixer .gui_box, .tab-configuration .motorstop .gui_box   {
-	min-height:285px;
+	min-height:287px;
 		float:left;
 
 	}
 
-	.tab-configuration .current .gui_box {
+	.tab-configuration .mixer .gui_box {
+	}
+	
+		.tab-configuration .current .gui_box {
 	min-height:223px;
 	float:left;
-
 	}
 	
 		.tab-configuration .gps .gui_box {
-	min-height:358px;
+	min-height:352px;
 		float:left;
 
 	}
@@ -323,9 +317,6 @@ height:20px;
 	}
 	
 	
-.tab-configuration table tr td:first-child {
-	width:20px;}
-	
 
 .tab-configuration .other tr:last-child td{
     border-bottom:0px;
@@ -335,22 +326,19 @@ height:20px;
 }
 
 .tab-configuration .mixerPreview {
-	height:217px; 
-	width:217px; 
+	max-width:230px; 
 	background-color: #eeeeee;
 	text-align: center;
 	float:left;
 	border-radius:5px;
-	margin-right:15px;
 	margin-top:5px;
-	margin-left:5px;
 	}
 	
 .tab-configuration .mixerPreview img {
-    width: 80%;
-    margin-top:10%;
-    margin-left:10%;
-    height: 80%;
+    width: 90%;
+    height: 90%;
+	padding:5%;
+
     }
     
 .tab-configuration .rxMode tr:last-child td{
@@ -361,13 +349,25 @@ height:20px;
 }
 
 .tab-configuration .gui_box  {
-font-style: bold;
-font-family: 'open_sanssemibold', Arial;
+	font-style: bold;
+	font-family: 'open_sanssemibold', Arial;
 }
 
 .tab-configuration .gui_box span {
-font-style: italic;
+	font-style: italic;
 	font-family: 'open_sansregular', Arial;
+	line-height:19px;
+	color:#7d7d7d;
+}
 
-color:#7d7d7d;
+
+
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
+
+
+.tab-configuration .gui_box span {
+	line-height:15px;
+}
+
+
 }

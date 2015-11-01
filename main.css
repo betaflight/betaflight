@@ -1430,7 +1430,7 @@ dialog {
 	}
 	
 	
-@media only screen and (max-height: 710px), only screen and (max-device-height: 710px) {
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
 	
 .tab_title {
@@ -1476,7 +1476,24 @@ body {
 	margin-bottom:7px;
 }
 
-
+.default_btn a {
+ 	font-size:11px;
+}
 	
+#tabs li a {
+	font-family: 'open_sansregular', Arial;
+	font-size:12px;
+	padding-left:33px;
+	padding-top:6px;
+	padding-bottom:2px;
+}
+
+.tab_container {
+	width:185px;
+}
+
+input {
+	font-size:11px !important;
+}
 	
 	}
