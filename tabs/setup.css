@@ -6,7 +6,8 @@
 
 
 
-.tab_setup {
+.tab_setup .default_btn {
+margin-bottom:10px;
 }
 
 
@@ -22,9 +23,8 @@
 	border:1px solid #e4e4e4;
 	margin-bottom:10px;
 	min-height:404px;
-	
-
 }
+
 .attitude_info {
     position: absolute;
 	top:10px;
@@ -198,7 +198,21 @@
 	}
 	
 
-	
+@media only screen and (max-width: 1200px), only screen and (max-device-width: 1200px) {
+
+
+#interactive_block  {
+    position: absolute;
+	width: calc(75% - 20px);
+	min-height:372px;
+	height: calc(100% - 170px);
+}
+
+
+
+
+
+}
 	
 	
 	

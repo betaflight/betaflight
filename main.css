@@ -1160,7 +1160,7 @@ dialog {
 .default_btn {
 	width:100%;
 	position:relative;
-	margin-bottom:7px;
+	margin-bottom:10px;
 	margin-top:0px;
 	float:left;
 
@@ -1428,6 +1428,40 @@ dialog {
 	border-radius:3px;
 	color:#fff;
 	font-size: 10px;
+	}
+	
+	
+@media only screen and (max-width: 1200px), only screen and (max-device-width: 1200px) {
+
+	
+.tab_title {
+	display:none;
+	}
+	
+#content {
+    height:calc(100% - 151px); /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
+}
 
 
+
+body {
+    font-size: 11px;
+	}
+
+.tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
+	padding:10px;
+	float:left;
+	width:calc(100% - 20px);
+	height:calc(100% - 20px) !important;
+	position:absolute !important;
+	}
+	
+.cf_table td {
+	padding-top:2px;
+	padding-bottom:2px;
+}
+
+.default_btn {
+	margin-bottom:7px;
+}	
 	}
