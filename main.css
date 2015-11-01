@@ -1500,11 +1500,34 @@ body {
 	width:40px;
 }
 
-
+.gui_box_titlebar {
+	font-size:13px;
+	height:22px;
+	padding-bottom:0px;
+	margin-bottom:5px;
+	}
 	
+.spacer_box_title {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 1px;
+    margin-bottom: 0px;
+}
+
 	
 input {
 	font-size:11px !important;
 }
-	
+
+
+.helpicon {
+	float:right;
+	margin-top:-15px;
+	margin-right:7px;
+	height:14px;
+	width:14px;
+
+}
+
+
 	}

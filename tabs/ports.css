@@ -102,3 +102,28 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
 .tab-ports.supported .require-upgrade {
     display:none;
 }
+
+
+
+
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
+
+
+.tab-ports table thead tr:first-child {
+    font-size: 12px;
+    height: 22px;
+}
+
+.tab-ports .fixed_band {
+    position: relative;
+    height: 50px;
+    background-color: #e4e4e4;
+    width: calc(100% -20px);
+    margin-left: 0px;
+    box-shadow: rgba(0,0,0,0.00) 0 -3px 8px;
+    bottom: 0px;
+    margin-bottom: 0px;
+}
+
+
+}

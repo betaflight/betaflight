@@ -300,7 +300,7 @@ height:21px;
 	.tab-configuration .mixer .gui_box {
 	}
 	
-		.tab-configuration .current .gui_box {
+.tab-configuration .current .gui_box {
 	min-height:227px;
 	float:left;
 	}
@@ -379,8 +379,12 @@ height:21px;
 }
 
 .tab-configuration .gps .gui_box {
-    min-height: 331px;
+    min-height: 329px;
     }
 
-
+.tab-configuration .current .gui_box {
+	min-height:214px;
+	}
+	
+	
 }
