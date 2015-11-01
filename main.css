@@ -1,3 +1,4 @@
+
 * {
     margin: 0;
     padding: 0;
@@ -8,7 +9,7 @@
 
 html, body {
     height: 100%;
-	
+
 }
 body {
     font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
@@ -30,7 +31,7 @@ a:hover {
 
 
 	}
-	
+
 
 /* Help-Icon  */
 
@@ -79,19 +80,19 @@ a:hover {
 	display:block;
 
 	}
-	
+
 .cf_doc_version_bt a:hover {
 	background-color:#6ac435;
 	transition: all ease 0.2s;
 
 	}
-	
-	
+
+
 /* documentation button end  */
 
 
 
-	
+
 input[type="number"]::-webkit-inner-spin-button {
     opacity: 1; /* required for chromium 33+ beta */
     margin-left: 5px;
@@ -108,7 +109,7 @@ input[type="number"]::-webkit-inner-spin-button {
 #main-wrapper {
     padding: 0px 0px 0 0px; /*   padding: 5px 5px 0 5px; */
     height: calc(100% - 7px);
-	
+
 }
 
 .headerbar {
@@ -121,7 +122,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #logo {
     position: relative;
-	float:left;    
+	float:left;
 	height:70px;
     z-index: 0;
     background-image: url("images/light-wide-2.svg");
@@ -133,16 +134,13 @@ input[type="number"]::-webkit-inner-spin-button {
 	margin-top:15px;
 }
 
-#port-picker { /*  */
-    float: left;
-    margin-top: 20px;
-    margin-left: -20px;
-	width:180px;
+#port-picker {
+  float: left;
+  margin-top: 20px;
+	width:240px;
 }
 
-#port-picker li {
-    float: left;
-} /* 
+/*
 #port-picker select {
     height: 20px;
     line-height: 20px;
@@ -207,13 +205,13 @@ input[type="number"]::-webkit-inner-spin-button {
 */
 #port-override {
     background-color:rgba(0, 0, 0, 0.1);
-    color:#888888; 
+    color:#888888;
     width: 140px;
     margin-left: 2px;
     margin-top: 0px;
-    padding:1px; 
-    border-radius:3px; 
-    height:15px; 
+    padding:1px;
+    border-radius:3px;
+    height:15px;
     float:right;
     font-size:12px;
 
@@ -221,11 +219,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 #port-override-option label {
-	background-color:#2b2b2b; 
-	border-radius:3px; 
-	padding:3px; 
-	margin-bottom:5px; 
-	color:#ddd; 
+	background-color:#2b2b2b;
+	border-radius:3px;
+	padding:3px;
+	margin-bottom:5px;
+	color:#ddd;
 	position:absolute;
 	margin-top:-59px;
 	margin-left:-183px;
@@ -238,11 +236,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 #port-picker .auto_connect {
-	color:#ddd; 
+	color:#ddd;
 }
 
 
-#header_dataflash { 
+#header_dataflash {
 	display:none; }
 
 
@@ -323,11 +321,11 @@ input[type="number"]::-webkit-inner-spin-button {
 .accicon.active {
 	background-image:url(images/icons/sensor_acc_on.png);
 	color: #61d514;
-	color: #818181;		
+	color: #818181;
 
 
 		}
-		
+
 
 
 .magicon {
@@ -352,8 +350,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 		}
-		
-				
+
+
 .gpsicon {
 	background-image:url(images/icons/sensor_sat_off.png);
 	background-size:42px;
@@ -376,8 +374,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 		}
-		
-	
+
+
 .baroicon {
 	background-image:url(images/icons/sensor_baro_off.png);
 	background-size:40px;
@@ -400,7 +398,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 		}
-		
+
 .sonaricon {
 	background-image:url(images/icons/sensor_sonar_off.png);
 	background-size:41px;
@@ -420,9 +418,9 @@ input[type="number"]::-webkit-inner-spin-button {
 	color: #61d514;
 	color: #818181;
 	}
-					
-			
-		
+
+
+
 #sensor-status li:last-child {
     border-right: 0px solid #c0c0c0;
 	border-top-right-radius:5px;
@@ -441,7 +439,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 
-/* 
+/*
 #documentation-controls {
     float: right;
     height: 22px;
@@ -449,7 +447,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 10px;
 }
 
- 
+
 #button-documentation {
     float: left;
     padding: 0 12px 0 12px;
@@ -570,8 +568,8 @@ input[type="number"]::-webkit-inner-spin-button {
 	}
 
 	/* Log switch */
-	
-	
+
+
 .logswitch {
 	position:fixed;
 	right: 7px;
@@ -588,45 +586,23 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 .tab_container {
-	float:left; 
-	height:calc(100% - 150px);	
-	width:200px; 
+	float:left;
+	height:calc(100% - 150px);
+	width:200px;
 	border-right: 4px solid #59aa29;
 	background-color: #2e2e2e;
-	}
-	
-	
+}
+
+
 #tabs {
-    position: relative;
-    float: left;
-	width:100%;
-	height:calc(100% - 20px);	
-    padding-top: 0px; 
-    padding-bottom: 0px;
-    margin-top:0px;
-    z-index: 10;
-    font-weight: regular;
 	font-size:13px;
 }
 
 #tabs ul {
-	height:100%;	
-	float:left;
-	margin-top:0px;
-    overflow: hidden;
-    width:100%;
-    overflow-y: scroll; /* scroll*/
-
+  overflow-y: auto; /* do not force scrollbars as it renders blank stripe on some user agents */
 }
 
 #tabs.logopen ul {
-	height:calc(100% - 65px);	
-	float:left;
-	margin-top:0px;
-    overflow: hidden;
-    width:100%;
-    overflow-y: scroll; /* scroll*/
-
 	 /* Cause the height to shrink to contain its floated contents while log is open */
 }
 
@@ -636,12 +612,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #tabs li {
-	width:100%;
-    float: left;
-    border-bottom: 1px solid rgba(0,0,0,0.30);
-	border-top: 1px solid #404040;
-	height:29px;
-
+  border-bottom: 1px solid rgba(0,0,0,0.30);
 }
 
 #tabs li:first-child {
@@ -662,11 +633,14 @@ input[type="number"]::-webkit-inner-spin-button {
 	padding-bottom:3px;
     background-color: transparent;
 	color:#999999;
-	width:100%;
 	height:23px;
 	display:block;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.45);
 	transition: none;
+    /* following is just for a graceful degradation */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 
@@ -705,63 +679,63 @@ input[type="number"]::-webkit-inner-spin-button {
 .ic_setup {
 	background-image:url(images/icons/cf_icon_setup_grey.svg);
 	}
-	
+
 li.active .ic_setup {
 	background-image:url(images/icons/cf_icon_setup_white.svg);
 	}
 .ic_ports {
 	background-image:url(images/icons/cf_icon_ports_grey.svg);
 	}
-	
+
 li.active .ic_ports {
 	background-image:url(images/icons/cf_icon_ports_white.svg);
 	}
 .ic_config {
 	background-image:url(images/icons/cf_icon_config_grey.svg);
 	}
-	
+
 li.active .ic_config {
 	background-image:url(images/icons/cf_icon_config_white.svg);
 	}
 .ic_pid {
 	background-image:url(images/icons/cf_icon_pid_grey.svg);
 	}
-	
+
 li.active .ic_pid {
 	background-image:url(images/icons/cf_icon_pid_white.svg);
 	}
 .ic_rx {
 	background-image:url(images/icons/cf_icon_rx_grey.svg);
 	}
-	
+
 li.active .ic_rx {
 	background-image:url(images/icons/cf_icon_rx_white.svg);
 	}
 .ic_modes {
 	background-image:url(images/icons/cf_icon_modes_grey.svg);
 	}
-	
+
 li.active .ic_modes {
 	background-image:url(images/icons/cf_icon_modes_white.svg);
 	}
 .ic_adjust {
 	background-image:url(images/icons/cf_icon_adjust_grey.svg);
 	}
-	
+
 li.active .ic_adjust {
 	background-image:url(images/icons/cf_icon_adjust_white.svg);
 	}
 .ic_servo {
 	background-image:url(images/icons/cf_icon_servo_grey.svg);
 	}
-	
+
 li.active .ic_servo {
 	background-image:url(images/icons/cf_icon_servo_white.svg);
 	}
 .ic_gps{
 	background-image:url(images/icons/cf_icon_gps_grey.svg);
 	}
-	
+
 li.active .ic_gps{
 	background-image:url(images/icons/cf_icon_gps_white.svg);
 	}
@@ -769,22 +743,22 @@ li.active .ic_gps{
 .ic_led{
 	background-image:url(images/icons/cf_icon_led_grey.svg);
 	}
-	
+
 li.active .ic_led {
 	background-image:url(images/icons/cf_icon_led_white.svg);
 	}
-	
+
 .ic_sensors {
 	background-image:url(images/icons/cf_icon_sensors_grey.svg);
 	}
-	
+
 li.active .ic_sensors {
 	background-image:url(images/icons/cf_icon_sensors_white.svg);
 	}
 .ic_log {
 	background-image:url(images/icons/cf_icon_log_grey.svg);
 	}
-	
+
 li.active .ic_log {
 	background-image:url(images/icons/cf_icon_log_white.svg);
 	}
@@ -792,15 +766,15 @@ li.active .ic_log {
 .ic_data {
 	background-image:url(images/icons/cf_icon_data_grey.svg);
 	}
-	
+
 li.active .ic_data {
 	background-image:url(images/icons/cf_icon_data_white.svg);
 	}
-	
+
 .ic_cli {
 	background-image:url(images/icons/cf_icon_cli_grey.svg);
 	}
-	
+
 li.active .ic_cli {
 	background-image:url(images/icons/cf_icon_cli_white.svg);
 	}
@@ -808,79 +782,79 @@ li.active .ic_cli {
 .ic_motor {
 	background-image:url(images/icons/cf_icon_motor_grey.svg);
 	}
-	
+
 li.active .ic_motor {
 	background-image:url(images/icons/cf_icon_motor_white.svg);
 	}
-	
+
 
 .ic_welcome {
 	background-image:url(images/icons/cf_icon_welcome_grey.svg);
 	}
-	
+
 li.active .ic_welcome {
 	background-image:url(images/icons/cf_icon_welcome_white.svg);
 	}
-	
+
 .ic_help {
 	background-image:url(images/icons/cf_icon_help_grey.svg);
 	}
-	
+
 li.active .ic_help {
 	background-image:url(images/icons/cf_icon_help_white.svg);
 	}
-	
-	
+
+
 	.ic_flasher {
 	background-image:url(images/icons/cf_icon_flasher_grey.svg);
 	}
-	
+
 li.active .ic_flasher {
 	background-image:url(images/icons/cf_icon_flasher_white.svg);
 	}
-		
-	
-	
-	
+
+
+
+
 		/* SPARE Tab-Icons */
-	
-	
-	
+
+
+
 .ic_backup {
 	background-image:url(images/icons/cf_icon_backup_grey.svg);
 	}
-	
+
 li.active .ic_backup {
 	background-image:url(images/icons/cf_icon_backup_white.svg);
 	}
 .ic_wizzard {
 	background-image:url(images/icons/cf_icon_wizard_grey.svg);
 	}
-	
+
 li.active .ic_wizard {
 	background-image:url(images/icons/cf_icon_wizard_white.svg);
 	}
 .ic_advanced {
 	background-image:url(images/icons/cf_icon_advanced_grey.svg);
 	}
-	
+
 li.active .ic_advanced {
 	background-image:url(images/icons/cf_icon_advanced_white.svg);
 	}
 .ic_mission {
 	background-image:url(images/icons/cf_icon_mission_grey.svg);
 	}
-	
+
 li.active .ic_mission {
 	background-image:url(images/icons/cf_icon_mission_white.svg);
 	}
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 
 
 #content {
@@ -964,8 +938,8 @@ dialog {
 
 /* Border of the Tab */
 
-	
-	
+
+
 	/* Tab Title */
 	.tab_title {
 	float:left;
@@ -973,11 +947,11 @@ dialog {
 	border-bottom:1px solid #59aa29;
 	font-size:20px;
 	line-height:24px;
-	height:30px;	
+	height:30px;
 	font-family: 'open_sanslight', Arial;
 	margin-bottom:15px;
 	}
-	
+
 /* Note */
 .note {
 	float:left;
@@ -995,10 +969,10 @@ dialog {
 .note_spacer {
 	padding:5px 7px 5px 7px;
 	}
-	
 
 
-	
+
+
 .tab_wrapper {
 	padding-left:20px;
 	padding-right:15px;
@@ -1012,57 +986,57 @@ dialog {
 	min-height:20px;
 	margin-bottom:0px;
 
-	}	
+	}
 
-	
+
 .full {
 	float:left;
 	width:100%;
 	}
-	
+
 .half {
 	float:left;
 	width:50%;
 	}
-	
+
 
 
 .third_left {
 	float:left;
 	width:33%;
 	}
-	
+
 .third_center {
 	display: inline-block;
 	width:34%;
 	}
-	
+
 .third_right {
 	float:right;
 	width:33%;
 	}
-	
-	
+
+
 .fourth {
 	float:left;
 	width:25%;
 	}
-	
-	
+
+
 .threefourth_right {
 	float:right;
 	width:75%;
 	}
-	
+
 .threefourth_left {
 	float:left;
 	width:75%;
-	}	
-		
+	}
+
 .twothird {
 	float:left;
 	width:67%;
-	}	
+	}
 
 /* Columns  END> */
 
@@ -1074,7 +1048,7 @@ dialog {
 	width:calc(100% - 14px);
 	float:left;
 	}
-	
+
 
 .spacer_left {
 	padding-left:7px;
@@ -1100,13 +1074,13 @@ dialog {
 	font-family: 'open_sansregular', Arial;
 
 	}
-	
+
 .grey {
 	/* background-color:#f5f5f5; */
 	background-color:#f9f9f9
-	
+
 	}
-	
+
 .gui_box_titlebar {
 	background-color:#e4e4e4;
 	border-radius:3px 3px 0px 0px;
@@ -1124,15 +1098,15 @@ dialog {
 	padding:10px;
 	margin-bottom:3px;
 	}
-	
+
 .spacer_box_title {
 	padding-left:10px;
 	padding-right:10px;
 	padding-top:4px;
 	margin-bottom:0px;
 	}
-	
-	
+
+
 /* Fixed area at the Bottom */
 
 .fixed_band {
@@ -1144,10 +1118,10 @@ dialog {
 	box-shadow:rgba(0,0,0,0.00) 0 -3px 8px ;
 	bottom:0px;
 	margin-bottom:0px;
-	}	
+	}
 
-	
-	
+
+
 .fixed_band .save_btn a {
 /*	line-height:20px;
 	padding:3px 13px 5px 13px;
@@ -1171,14 +1145,14 @@ dialog {
 	padding-right:9px;
 
 	}
-	
+
 .fixed_band .save_btn a:hover {
 	background-color:#6ac435;
 	transition: all ease 0.2s;
 
 	}
-	
-	
+
+
 /* DIfferent buttons */
 
 
@@ -1191,8 +1165,8 @@ dialog {
 	float:left;
 
 	}
-	
-	
+
+
 .default_btn a {
 	padding:5px 0px 5px 0px;
 	text-align:center;
@@ -1207,7 +1181,7 @@ dialog {
 	transition: all ease 0.2s;
 
 	}
-	
+
 .default_btn a:hover {
 	background-color:#6ac435;
 	color:#fff;
@@ -1232,7 +1206,7 @@ dialog {
 	float:left;
 
 	}
-	
+
 	.small a {
 	padding:3px 4px 4px 4px;
 	text-align:center;
@@ -1248,7 +1222,7 @@ dialog {
 	transition: all ease 0.2s;
 
 	}
-	
+
 .small a:hover {
 	background-color:#6ac435;
 	color:#fff;
@@ -1264,8 +1238,8 @@ dialog {
 	transition: all ease 0.0s;
 	box-shadow:inset 0px 1px 5px rgba(0, 0, 0, 0.35);
 	}
-	
-	
+
+
 .green a {
 	background-color:#59aa29;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
@@ -1274,7 +1248,7 @@ dialog {
 	transition: all ease 0.2s;
 
 	}
-	
+
 .green a:hover {
 	background-color:#6ac435;
 	border: 1px solid #4d9324;
@@ -1283,9 +1257,9 @@ dialog {
 	transition: all ease 0.2s;
 
 	}
-	
-	
-	
+
+
+
 
 /* Table styling */
 
@@ -1335,20 +1309,20 @@ dialog {
 /* connect button */
 
 
-.connect_contols {
-	position:relative;
-	margin-top:-93px;
-	margin-left:-380px;
-	height:70px;
-	width:60px;
-	}
-	
-	
+.connect_controls {
+  position: absolute;
+  left: 620px;
+  top: 19px;
+  height: 70px;
+  width: 60px;
+}
+
+
 .connect_b {
 	float:left;
 	}
-	
-	
+
+
 .connect_b a  {
 	height:50px;
 	width:50px;
@@ -1359,8 +1333,8 @@ dialog {
 	margin-bottom:7px;
 	transition: none;
 	}
-	
-	
+
+
 .connect_b a.connect  {
 	background-color:#56ac1d;
 	border:1px solid #5bbb1b;
@@ -1370,12 +1344,12 @@ dialog {
 	background-position:center 6px;
 	transition: none;
 	}
-	
-	
+
+
 .connect_b a.connect:hover  {
 	background-color:#68c02e;
 	}
-	
+
 
 .connect_b a.connect.active  {
 	background-color:#e60000;
@@ -1388,8 +1362,8 @@ dialog {
 .connect_b a.connect.active:hover  {
 	background-color:#f21212;
 	}
-		
-	
+
+
 	.connect_state {
 	float:left;
 	height:20px;
@@ -1402,7 +1376,7 @@ dialog {
 
 
 	}
-	
+
 /* fixing padding for all Tabs*/
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
@@ -1410,31 +1384,31 @@ dialog {
 	float:left;
 	width:calc(100% - 40px);
 	height:calc(100% - 40px) !important;
-	position:absolute !important; 
+	position:absolute !important;
 	}
-	
+
 
 /* fixing logging tab*/
 .properties {
 	width:800px;
 	}
-	
-	
+
+
 .properties dl {
 	width:200px;
 	}
-	
-	
+
+
 .properties dd {
 	width:400px;
 	height:auto !important;
 	}
-	
-	
-	
+
+
+
 /* GPS Fix styling*/
 
-	
+
 .fixtrue {
 	background-color:#56ac1d;
 	padding:2px;
@@ -1444,8 +1418,8 @@ dialog {
 	color:#fff;
     font-size: 10px;
 	}
-	
-	
+
+
 .fixfalse {
 	background-color:#e60000;
 	padding:2px;
@@ -1457,5 +1431,3 @@ dialog {
 
 
 	}
-	
-	
