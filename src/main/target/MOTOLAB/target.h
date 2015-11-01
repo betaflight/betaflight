@@ -171,7 +171,7 @@
 #endif
 
 
-//#define SPEKTRUM_BIND
+#define SPEKTRUM_BIND
 // USART2, PB4
 #define BIND_PORT GPIOB
 #define BIND_PIN Pin_4
