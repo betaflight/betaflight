@@ -78,7 +78,6 @@ a:hover {
 	text-transform:uppercase;
 	letter-spacing: 0.03em;
 	display:block;
-
 	}
 
 .cf_doc_version_bt a:hover {
@@ -1431,13 +1430,25 @@ dialog {
 	}
 	
 	
-@media only screen and (max-width: 1200px), only screen and (max-device-width: 1200px) {
+@media only screen and (max-height: 710px), only screen and (max-device-height: 710px) {
 
 	
 .tab_title {
-	display:none;
+	font-size:16px;
+	line-height:18px;
+	height:24px;
+	font-family: 'open_sanslight', Arial;
+	margin-bottom:10px;
+	display:;
 	}
-	
+
+.cf_doc_version_bt a {
+	padding:1px 5px 1px 5px;
+	margin-top: -35px;
+	font-size:9px;
+	line-height:15px;
+	}
+		
 #content {
     height:calc(100% - 151px); /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
 }
@@ -1463,5 +1474,9 @@ body {
 
 .default_btn {
 	margin-bottom:7px;
-}	
+}
+
+
+	
+	
 	}
