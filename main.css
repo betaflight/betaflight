@@ -1483,15 +1483,26 @@ body {
 #tabs li a {
 	font-family: 'open_sansregular', Arial;
 	font-size:12px;
-	padding-left:33px;
+	padding-left:53px;
 	padding-top:6px;
 	padding-bottom:2px;
+	content:""!important;
+	text-shadow:none;
+	transition: none;
+    /* following is just for a graceful degradation */
+  text-overflow: clip;
+  white-space: nowrap;
+  overflow: hidden;
+
 }
 
 .tab_container {
-	width:185px;
+	width:40px;
 }
 
+
+	
+	
 input {
 	font-size:11px !important;
 }

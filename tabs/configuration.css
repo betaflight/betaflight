@@ -301,7 +301,7 @@ height:21px;
 	}
 	
 		.tab-configuration .current .gui_box {
-	min-height:223px;
+	min-height:227px;
 	float:left;
 	}
 	
@@ -368,6 +368,19 @@ height:21px;
 .tab-configuration .gui_box span {
 	line-height:15px;
 }
+
+.tab-configuration .leftWrapper {
+	width: calc(50% - 15px);
+	}
+.tab-configuration .rightWrapper {
+    float: left;
+    width: calc(50% - 0px);
+    margin: 0 0 10px 15px;
+}
+
+.tab-configuration .gps .gui_box {
+    min-height: 331px;
+    }
 
 
 }
