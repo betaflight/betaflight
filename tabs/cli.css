@@ -11,15 +11,16 @@
 
     margin-top: 0px;
     height: calc(100% - 90px); /* - (p, textarea) */
-   /* background-image: url("../images/light-wide-1.svg");*/
-  	background-image: url("../images/cli_backdrop.png");
-    /*background-repeat: no-repeat;
-    background-position: 50% 80%;
-    background-size: 600px;*/
-    border-radius: 5px;
-   box-shadow: inset 0px 0px 20px rgba(0,0,0,0.80);
-   float:left;
-       width:100%;
+    background-image: url("../images/light-wide-1.svg");
+    background-repeat: no-repeat;
+	background-position: 50% 80%;
+    background-size: 600px;
+  	/*background-image: url("../images/cli_backdrop.png");
+   /* */
+	border-radius: 5px;
+	box-shadow: inset 0px 0px 20px rgba(0,0,0,0.80);
+	float:left;
+	width:100%;
 
 }
 .tab-cli .window {
