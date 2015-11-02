@@ -50,30 +50,10 @@ margin-bottom:10px;
 .attitude_info dd {
 	width:50%;
 	float:left;
+}
 
 
 #interactive_block a.reset {
-/*
-.tab-setup #interactive_block .attitude {
-    float: right;
-    margin: 10px 10px 0px 0px
-}
-
-.tab-setup #interactive_block .attitude dt {
-    float: left;
-    width: 64px;
-    font-weight: 700;
-    text-align: right
-}
-
-.tab-setup #interactive_block .attitude dd {
-    display: block;
-    margin-left: 64px;
-    width: 64px;
-    text-align: right
-} */
-
-.tab-setup #interactive_block a.reset {
     position: absolute;
     display: block;
 	top: 10px;
