@@ -627,7 +627,7 @@
         "message": "PID Controller"
     },
     "pidTuningLoadedProfile": {
-        "message": "Loaded Profile: <strong>$1</strong>"
+        "message": "<span style=\"color: #57a929\">Loaded Profile: <strong>$1</strong></span>"
     },
     "pidTuningDataRefreshed": {
         "message": "PID data <strong>refreshed</strong>"

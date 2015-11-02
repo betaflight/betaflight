@@ -134,9 +134,10 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #port-picker {
-  float: left;
-  margin-top: 20px;
-	width:240px;
+	float: left;
+	margin-top: 20px;
+ 	margin-left:30px;
+	width:180px;
 }
 
 /*
@@ -225,7 +226,7 @@ input[type="number"]::-webkit-inner-spin-button {
 	color:#ddd;
 	position:absolute;
 	margin-top:-59px;
-	margin-left:-183px;
+	margin-left:187px;
 }
 
 
@@ -605,6 +606,10 @@ input[type="number"]::-webkit-inner-spin-button {
 	 /* Cause the height to shrink to contain its floated contents while log is open */
 }
 
+
+.header-wrapper .mode-connected {
+    display:none;
+}
 
 #tabs ul.mode-connected {
     display: none;
@@ -1309,11 +1314,12 @@ dialog {
 
 
 .connect_controls {
-  position: absolute;
-  left: 620px;
-  top: 19px;
-  height: 70px;
-  width: 60px;
+    position: relative;
+    float: left;
+    left: 0px;
+    top: 19px;
+    height: 70px;
+    width: 60px;
 }
 
 
@@ -1372,6 +1378,7 @@ dialog {
 	font-size:12px;
 	font-family: 'open_sansregular', Arial;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
+	margin-top: -1px;
 
 
 	}

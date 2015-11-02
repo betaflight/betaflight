@@ -81,6 +81,12 @@
  <div id="main-wrapper">
 	<div class="headerbar">
       <div id="logo"></div>
+      <div class="connect_controls">
+            <div class="connect_b">
+              <a class="connect" href="#"></a>
+            </div>
+            <a class="connect_state" i18n="connect"></a>
+      </div>      
       <div id="port-picker">
         <div class="dropdown dropdown-dark" style="margin-bottom:3px;">
           <select class="dropdown-select" id="port" title="Port">
@@ -107,17 +113,11 @@
         </div>
         <div>
           <label><input class="auto_connect" type="checkbox" id="togglesmall" /><span class="auto_connect" i18n="autoConnect"></span></label>
-          <div class="connect_controls">
-            <div class="connect_b">
-              <a class="connect" href="#"></a>
-            </div>
-            <a class="connect_state" i18n="connect"></a>
-          </div>
         </div>
       </div>
       <a id="options" href="#" i18n_title="options_title"></a>
       <div class="header-wrapper">
-        <div id="sensor-status" class="sensor_state">
+        <div id="sensor-status" class="sensor_state mode-connected">
           <ul>
             <li class="gyro" title="Gyroscope">
               <div class="gyroicon">Gyro</div>

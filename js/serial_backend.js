@@ -25,7 +25,7 @@ $(document).ready(function () {
         GUI.updateManualPortVisibility();
     });
 
-    $('div#port-picker a.connect').click(function () {
+    $('a.connect').click(function () {
         if (GUI.connect_lock != true) { // GUI control overrides the user control
 
             var clicks = $(this).data('clicks');
@@ -41,7 +41,7 @@ $(document).ready(function () {
 
                     // lock port select & baud while we are connecting / connected
                     $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', true);
-                    $('div#port-picker a.connect_state').text(chrome.i18n.getMessage('connecting'));
+                    $('a.connect_state').text(chrome.i18n.getMessage('connecting'));
 
 
                     serial.connect(selected_port, {bitrate: selected_baud}, onOpen);
@@ -70,8 +70,8 @@ $(document).ready(function () {
                     if (!GUI.auto_connect) $('div#port-picker #baud').prop('disabled', false);
 
                     // reset connect / disconnect button
-        			$('div#port-picker a.connect').removeClass('active');
-					$('div#port-picker a.connect_state').text(chrome.i18n.getMessage('connect'));
+        			$('a.connect').removeClass('active');
+					$('a.connect_state').text(chrome.i18n.getMessage('connect'));
                    
                     // reset active sensor indicators
                     sensor_status(0);
@@ -186,7 +186,7 @@ function onOpen(openInfo) {
             if (!CONFIGURATOR.connectionValid) {
                 GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
-                $('div#port-picker a.connect').click(); // disconnect
+                $('a.connect').click(); // disconnect
             }
         }, 10000);
 
@@ -247,21 +247,21 @@ function onOpen(openInfo) {
         console.log('Failed to open serial port');
         GUI.log(chrome.i18n.getMessage('serialPortOpenFail'));
 
-        $('div#port-picker a.connect_state').text(chrome.i18n.getMessage('connect'));
-        $('div#port-picker a.connect').removeClass('active');
+        $('a.connect_state').text(chrome.i18n.getMessage('connect'));
+        $('a.connect').removeClass('active');
 
         // unlock port select & baud
         $('div#port-picker #port, div#port-picker #baud, div#port-picker #delay').prop('disabled', false);
 
         // reset data
-        $('div#port-picker a.connect').data("clicks", false);
+        $('a.connect').data("clicks", false);
     }
 }
 
 function onConnect() {
     GUI.timeout_remove('connecting'); // kill connecting timer
     $('a.connect_state').text(chrome.i18n.getMessage('disconnect')).addClass('active');
-    $('div#port-picker a.connect').addClass('active');
+    $('a.connect').addClass('active');
     $('#tabs ul.mode-disconnected').hide();
     $('#tabs ul.mode-connected').show();
 
@@ -274,13 +274,12 @@ function onConnect() {
         documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
        */
         
-        /* just a thought 
-         var sensor_state = $('#sensor-status');
+        /* */
+        var sensor_state = $('#sensor-status');
         sensor_state.show(); 
-        */
-        
-         var flashstate = $('#header_dataflash');
-        flashstate.show();
+       	
+        var port_picker = $('#port-picker');
+        port_picker.hide(); 
     }
 }
 
@@ -294,14 +293,13 @@ function onClosed(result) {
     $('#tabs ul.mode-connected').hide();
     $('#tabs ul.mode-disconnected').show();
 
-    
-    var flashstate = $('#header_dataflash');
-    flashstate.hide();
-    
-    /* just a thought 
-      var sensor_state = $('#sensor-status');
+    var port_picker = $('#port-picker');
+    port_picker.show(); 
+
+    /* */
+    var sensor_state = $('#sensor-status');
     sensor_state.hide();
-    */
+   
 }
 
 function read_serial(info) {
