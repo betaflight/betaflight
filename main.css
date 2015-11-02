@@ -495,6 +495,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid silver;
     background-color: white;
 	border-radius:5px;
+	z-index:1;
 }
 #options-window input {
     float: left;
@@ -1487,11 +1488,11 @@ body {
 }
 
 .default_btn {
-	margin-bottom:7px;
+	margin-bottom:10px;
 }
 
 .default_btn a {
- 	font-size:11px;
+ 	font-size:12px;
 }
 	
 #tabs li a {
