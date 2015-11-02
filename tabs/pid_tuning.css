@@ -18,6 +18,7 @@
 }
 .tab-pid_tuning table tr td:first-child {
     text-align: center;
+    width:30%;
 }
 .tab-pid_tuning table td {
     padding: 1px;
@@ -37,7 +38,8 @@
 .tab-pid_tuning .controller {
     float: left;
 
-    width: calc(18% - 2px); /* - border*/
+	width: calc(40% - 10px);
+    margin-left: 10px;
 
     margin-bottom: 10px;
     border: 1px solid #8b8b8b;
@@ -81,19 +83,17 @@
     line-height: 20px;
 }
 .tab-pid_tuning .pid_tuning {
-    width: 60%;
+    width: 100%;
 }
 .tab-pid_tuning .pid_tuning .name {
     width: 30%;
 }
 .tab-pid_tuning .rate-tpa {
     float: right;
-    width: calc(40% - 10px); /* - ( "virtual" margin) */
+    width: calc(100% - 0px); /* - ( "virtual" margin) */
 }
 .tab-pid_tuning .buttons {
-    width: calc(100% - 20px);
-
-    position: absolute;
+    right:10px;
     bottom: 10px;
 }
 .tab-pid_tuning .update,
@@ -118,4 +118,7 @@
 .tab-pid_tuning .update:hover,
 .tab-pid_tuning .refresh:hover {
     background-color: #dedcdc;
+}
+.tab-pid_tuning .top-buttons {
+  float:right;
 }

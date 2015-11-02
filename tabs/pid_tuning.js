@@ -240,23 +240,50 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.rate-tpa input[name="tpa-breakpoint"]').val());
     }
+    function hideUnusedPids(sensors_detected) {
+      $('.tab-pid_tuning table.pid_tuning').hide();
+      $('#pid_main').show();
 
+      if (have_sensor(sensors_detected, 'acc')) {
+        $('#pid_accel').show();
+      }
+      if (have_sensor(sensors_detected, 'baro')) {
+        $('#pid_baro').show();
+      }
+      if (have_sensor(sensors_detected, 'mag')) {
+        $('#pid_mag').show();
+      }
+      if (bit_check(BF_CONFIG.features, 7)) {   //This will need to be reworked to remove BF_CONFIG reference eventually
+        $('#pid_gps').show();
+      }
+      if (have_sensor(sensors_detected, 'sonar')) {
+        $('#pid_sonar').show();
+      }
+    }
     function process_html() {
         // translate to user-selected language
         localize();
 
-        // Fill in the names from PID_names array
-        // this needs to be reworked, but will do for now
-        $('.pid_tuning tr:eq(1) td:first').text(PID_names[0]);
-        $('.pid_tuning tr:eq(2) td:first').text(PID_names[1]);
-        $('.pid_tuning tr:eq(3) td:first').text(PID_names[2]);
-        $('.pid_tuning tr:eq(4) td:first').text(PID_names[3]);
-        $('.pid_tuning tr:eq(5) td:first').text(PID_names[9]);
-        $('.pid_tuning tr:eq(6) td:first').text(PID_names[4]);
-        $('.pid_tuning tr:eq(7) td:first').text(PID_names[5]);
-        $('.pid_tuning tr:eq(8) td:first').text(PID_names[6]);
-        $('.pid_tuning tr:eq(9) td:first').text(PID_names[7]);
-        $('.pid_tuning tr:eq(10) td:first').text(PID_names[8]);
+        hideUnusedPids(CONFIG.activeSensors);
+
+        $('#showAllPids').on('click', function(){
+          if($(this).text() == "Show All PIDs") {
+            $('.tab-pid_tuning table.pid_tuning').show();
+            $(this).text('Hide Unused PIDs');
+          } else {
+            hideUnusedPids(CONFIG.activeSensors);
+            $(this).text('Show All PIDs');
+          }
+        });
+
+        $('.pid_tuning tr').each(function(){
+          for(i = 0; i < PID_names.length; i++) {
+            if($(this).hasClass(PID_names[i])) {
+              $(this).find('td:first').text(PID_names[i]);
+            }
+          }
+        });
+
 
         pid_and_rc_to_form();
 
@@ -274,7 +301,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
             pidController_e.prop('disabled', true);
         }
-        
+
         if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
             $('.rate-tpa .tpa-breakpoint').hide();
             $('.rate-tpa .roll').hide();
