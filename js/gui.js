@@ -10,7 +10,6 @@ var GUI_control = function () {
     this.active_tab;
     this.tab_switch_in_progress = false;
     this.operating_system;
-    this.optional_usb_permissions = false; // controlled by usb permissions code
     this.interval_array = [];
     this.timeout_array = [];
     this.defaultAllowedTabsWhenDisconnected = [

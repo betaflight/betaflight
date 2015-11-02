@@ -3,11 +3,18 @@
 $(document).ready(function () {
 
     GUI.updateManualPortVisibility = function(){
-        if ($('div#port-picker #port option:selected').data().isManual) {
+        var selected_port = $('div#port-picker #port option:selected');
+        if (selected_port.data().isManual) {
             $('#port-override-option').show();
         }
         else {
             $('#port-override-option').hide();
+        }
+        if (selected_port.data().isDFU) {
+            $('select#baud').hide();
+        }
+        else {
+            $('select#baud').show();
         }
     };
 
@@ -33,8 +40,10 @@ $(document).ready(function () {
             var selected_port = $('div#port-picker #port option:selected').data().isManual ?
                     $('#port-override').val() :
                     String($('div#port-picker #port').val());
-
-            if (selected_port != '0' && selected_port != 'DFU') {
+            if (selected_port === 'DFU') {
+                GUI.log(chrome.i18n.getMessage('dfu_connect_message'));
+            }
+            else if (selected_port != '0') {
                 if (!clicks) {
                     console.log('Connecting to: ' + selected_port);
                     GUI.connecting_to = selected_port;

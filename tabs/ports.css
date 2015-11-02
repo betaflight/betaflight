@@ -89,7 +89,6 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
     background-color: #dedcdc;
 }
 
-
 .tab-ports .require-support {
     display:none;
 }

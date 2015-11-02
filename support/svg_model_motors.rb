@@ -315,10 +315,10 @@ def render_vtail
   m.draw_body 100,180,140,160
   m.draw_body 100,180,60,160
   m.end_body
-  m.draw_circle 140,160,"1",Model::CW,Model::SE
-  m.draw_circle 160,40,"2",Model::CCW,Model::NE
-  m.draw_circle 60,160,"3",Model::CCW,Model::SW
-  m.draw_circle 40,40,"4",Model::CW,Model::NW
+  m.draw_circle 140,160,"1",Model::CCW,Model::SE
+  m.draw_circle 160,40,"2",Model::CW,Model::NE
+  m.draw_circle 60,160,"3",Model::CW,Model::SW
+  m.draw_circle 40,40,"4",Model::CCW,Model::NW
   m.draw_dirn
   m.close
 end
