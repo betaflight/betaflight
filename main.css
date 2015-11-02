@@ -134,9 +134,9 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #port-picker {
-	float: left;
+	float: right;
 	margin-top: 20px;
- 	margin-left:30px;
+ 	margin-right:20px;
 	width:180px;
 }
 
@@ -226,7 +226,7 @@ input[type="number"]::-webkit-inner-spin-button {
 	color:#ddd;
 	position:absolute;
 	margin-top:-59px;
-	margin-left:187px;
+	margin-left:-187px;
 }
 
 
@@ -1315,11 +1315,13 @@ dialog {
 
 .connect_controls {
     position: relative;
-    float: left;
+    float: right;
     left: 0px;
     top: 19px;
     height: 70px;
     width: 60px;
+	margin-right:20px;
+	margin-left:20px;
 }
 
 
