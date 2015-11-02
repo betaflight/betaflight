@@ -1075,8 +1075,8 @@ dialog {
 
 /* Standard GUI BOX */
 .gui_box {
-	border: 1px solid #e4e4e4;
-	border-radius:5px;
+	border: 1px solid #ccc;
+	border-radius:4px;
 	background-color:#FFFFFF;
 	float:left;
 	width:100%;
