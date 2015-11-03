@@ -20,7 +20,7 @@
 }
 
 .tab-auxiliary .mode.on:nth-child(odd) .info {
-    background: #b7ccab;
+    background: #7dc254;
 }
 
 .tab-auxiliary .mode.off .info {
@@ -30,7 +30,7 @@
 }
 
 .tab-auxiliary .mode.off:nth-child(odd) .info {
-    background: #e0bebe;
+    background: #cb4747;
 }
 
 #tab-auxiliary-templates {
@@ -221,7 +221,7 @@
 }
 
 .tab-auxiliary .save_btn a {
-line-height: 28px;
+	line-height: 28px;
 }
 
 
