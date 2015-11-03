@@ -9,28 +9,23 @@
 
 .tab-auxiliary .range .marker,
 .tab-auxiliary .channel-slider .noUi-connect {
-    background: #92b67c;
-    border-radius: 3px;
-
+    background: #ffcb18;
 }
 
 .tab-auxiliary .mode.on .info {
-    background: #7dc254;
-    color: white;
+    background: #61B665;
 }
 
 .tab-auxiliary .mode.on:nth-child(odd) .info {
-    background: #b7ccab;
+    background: #BAE2BC;
 }
 
 .tab-auxiliary .mode.off .info {
-    background: #cb4747;
-    color: white;
-
+    background: #E86969;
 }
 
 .tab-auxiliary .mode.off:nth-child(odd) .info {
-    background: #e0bebe;
+    background: #E7AEAE;
 }
 
 #tab-auxiliary-templates {
@@ -43,75 +38,58 @@
 }
 
 .tab-auxiliary .mode {
-    background-color: #f9f9f9;
+    background-color: #ececec;
     vertical-align: top;
 }
 
 .tab-auxiliary .mode:nth-child(odd) {
+    background-color: #ffffff;
 }
 
 .tab-auxiliary .mode .name {
     min-height: 50px;
-    padding: 13px 0px;
+    padding: 5px 0px;
 }
 
 .tab-auxiliary .mode.off .info,
 .tab-auxiliary .mode.on .info {
-    color: ;
+    color: white;
 }
 
 .tab-auxiliary .mode .info {
     text-align: center;
     width: 10%;
     position: relative;
-    background-color: #e4e4e4;
-    border-bottom: 5px solid white;
-	color: grey;
-	min-width: 100px;
 }
  
 .tab-auxiliary .mode .info .name {   
     font-weight: bold;
-    font-size: 1.0em;
+    font-size: 1.1em;
 }
 
 .tab-auxiliary .mode .info .buttons {
     position: absolute;
-    bottom: 14px;
+    bottom: 10px;
     width: 100%;
 }
 
 .tab-auxiliary .mode .info .buttons a {
     padding: 2px 5px;
-    border-radius: 4px;
 }
 
 .tab-auxiliary .ranges {
     margin: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
     padding-right: 2px;
-    border-bottom: 5px solid white;
 }
 
 .tab-auxiliary .range {
     position: relative;
     height: 70px;
-    padding-top: 15px;
-    padding-left: 0px;
-    border-top: 1px solid #fff;
-    border-bottom: 1px solid #cccccc;
-	background-color: #ececec;
-	padding-bottom: 5px;
-
+    padding-top: 8px;
+    padding-left: 10px;
 }
-
-.tab-auxiliary .range:first-child {
-    border-top: 0px;
-}
-
-.tab-auxiliary .range:last-child {
-    border-bottom: 0px;
-}
-
 
 .tab-auxiliary .range > .buttons {
     position: absolute;
@@ -129,7 +107,7 @@
 .tab-auxiliary .mode .range .channelInfo {
     display: inline-block;
     float: left;
-    min-width: 90px;
+    max-width: 100px;
     text-align: center;
 }
 
@@ -138,9 +116,8 @@
 }
 
 .tab-auxiliary .range .channel {
-	border: 1px solid silver;
-    border-radius: 3px;
-    }
+    outline: 1px solid silver;
+}
 
 .tab-auxiliary .range .marker {
     position: absolute;
@@ -153,10 +130,9 @@
 
 .tab-auxiliary .range .channel-slider {
     display: inline-block;
-    float: left;
-    width: 80%;
-    margin-left: 35px;
-    margin-top:1px;
+    float: right;
+    width: 85%;
+    margin-right: 35px;
 }
 
 .tab-auxiliary .channel-slider {
@@ -172,70 +148,16 @@
     line-height: 28px;
     padding: 0 15px 0 15px;
     display: block;
-    color:#000;
 }
 
 .tab-auxiliary .buttons a {
     text-align: center;
     font-weight: bold;
-    background-color: #fff;
-    color:black;
-    opacity: 0.8;
-    transition: all ease 0.3s;
 
+    border: 1px solid silver;
+    background-color: #ececec;
 }
 
 .tab-auxiliary .buttons a:hover {
-    background-color: #fff;
-    opacity: 1.0;
-    color:black;
-
-    transition: all ease 0.3s;
-
-
-}
-
-.tab-auxiliary .delete a {
-    height:16px;
-    width:16px;
-    transition: all ease 0.3s;
-    opacity: 0.3;
-    position:relative;
-    float:right;
-    margin-right:15px;
-    background-image: url('../images/icons/close1.svg');
-   	background-repeat: no-repeat;
-    background-position: center 100%;
-    display:block;
-}
-
-
-.tab-auxiliary .delete a:hover {
-    transition: all ease 0.3s;
-    opacity: 0.6;
-}
-
-.tab-auxiliary .fixed_band {
-    width: 100%;
-    bottom: 0px;
-}
-
-.tab-auxiliary .save_btn a {
-line-height: 28px;
-}
-
-
-
-
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
-
-
-.tab-auxiliary .fixed_band {
-    width: calc(100% - -5px);
-}
-
-.tab-auxiliary .fixed_band .save_btn a {
-	margin-right:15px;
-	}
+    background-color: #dedcdc;
 }

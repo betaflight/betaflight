@@ -203,7 +203,7 @@ margin-bottom:10px;
 
 #interactive_block  {
     position: absolute;
-	width: calc(75% - 20px);
+	width: calc(75% - 30px);
 	min-height:356px;
 	height: calc(100% - 218px);
 }

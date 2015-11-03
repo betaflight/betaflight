@@ -1,20 +1,30 @@
 <div class="tab-auxiliary">
-    <div class="help">
-    <p i18n="auxiliaryHelp"></p>
+<div class="tab_title" i18n="tabAuxiliary">tabAuxiliary</div>
+  <div class="cf_doc_version_bt">
+    <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+  </div>
+      <div class="note" style="margin-bottom:20px;">
+      <div class="note_spacer">
+        <p i18n="auxiliaryHelp"></p>
+      </div>
     </div>
+    
+
     <table class="modes">
         <tbody>
         </tbody>
     </table>
-    <div class="buttons">
-        <a class="save" href="#" i18n="auxiliaryButtonSave"></a>
-    </div>
+     <div class="fixed_band" style="position: fixed;">
+    <div class="save_btn"><a class="save" href="#" i18n="auxiliaryButtonSave"></a>
+</div>
+  </div>
+  
 </div>
 
 <div id="tab-auxiliary-templates">
     <table class="modes">
         <tbody>
-            <tr class="mode">
+            <tr class="mode" style="border-bottom: 1px solid #000000">
                 <td class="info">
                     <p class="name"></p>
                     <div class="buttons">
@@ -40,6 +50,6 @@
         <div class="channel-slider pips-channel-range">
             <div class="marker"></div>
         </div>
-        <div class="buttons"><a class="deleteRange" href="#">X</a></div>
+        <div class="delete"><a class="deleteRange" href="#">&nbsp;</a></div>
     </div>
 </div>
