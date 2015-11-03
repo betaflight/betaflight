@@ -33,7 +33,12 @@ var BOARD_DEFINITIONS = [
         identifier: "SDF3"
     }, {
         name: "SP Racing F3",
-        identifier: "SRF3"
+        identifier: "SRF3",
+        vcp: false
+    }, {
+        name: "MotoLab",
+        identifier: "MOTO",
+        vcp: true
     }
 ];
 
