@@ -343,31 +343,3 @@
     stroke: #000;
     shape-rendering: crispEdges;
 }
-
-
-.tab-receiver .fixed_band {
-	position: fixed;
-    bottom: 0px;
-    width: calc(100% - 0px);
-	background-color: #e4e4e4;
-	height: 50px;
-	box-shadow: rgba(0,0,0,0.00) 0 -3px 8px;
-    margin-bottom: 0px;
-
-
-}
-
-
-
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
-
-.tab-receiver .fixed_band {
-    width: calc(100% - -10px);
-    bottom: 0px;
-}
-
-.tab-receiver .fixed_band .save_btn a {
-	margin-right:10px;
-	}
-}
