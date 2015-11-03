@@ -78,7 +78,7 @@ TABS.dataflash.initialize = function (callback) {
             });
         }
         
-        $(".tab-dataflash a.erase-flash, .tab-dataflash a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
+        $(".save_btn a.erase-flash, .save_btn a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
     }
     
     function create_html() {
@@ -104,7 +104,7 @@ TABS.dataflash.initialize = function (callback) {
                 
                 update_html();
             } else {
-                $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
+                $(".tab-dataflash .note_spacer").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
             }
         } else {
             $(".tab-dataflash").removeClass("supported");
