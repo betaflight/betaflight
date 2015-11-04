@@ -162,10 +162,7 @@
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
-<<<<<<< HEAD
 
-=======
->>>>>>> 9be5abf... Fix 1wire pass through for F3 + target config changes
 #define USE_SERIAL_1WIRE
 #define ESC_COUNT 8
 #define S1W_TX_GPIO         GPIOA
