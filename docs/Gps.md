@@ -66,6 +66,8 @@ UBlox GPS units can either be configured using the FC or manually.
 
 Use UBox U-Center and connect your GPS to your computer.  The CLI `gpspassthrough` command may be of use if you do not have a spare USART to USB adapter.
 
+Note that many boards will not provide +5V from USB to the GPS module, such as the SPRacingF3; if you are using `gpspassthrough` you may need to connect a BEC to the controller if your board permits it, or use a standalone UART adapter. Check your board documentation to see if your GPS port is powered from USB.
+
 Display the Packet Console (so you can see what messages your receiver is sending to your computer).
 
 Display the Configation View.
