@@ -26,7 +26,6 @@
 
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
-#include "drivers/system.h"
 #include "io/serial_1wire.h"
 
 const escHardware_t escHardware[ESC_COUNT] = {
@@ -95,9 +94,9 @@ void usb1WireInitialize()
       gpio_set_mode(escHardware[i].gpio, (1U << escHardware[i].pinpos), Mode_IPU); //GPIO_Mode_IPU
    }
 #ifdef BEEPER
-   // fix for buzzer often starts beeping continuously when the ESCs are read  
+   // fix for buzzer often starts beeping continuously when the ESCs are read
    // switch beeper off until reboot
-   gpio_set_mode(BEEP_GPIO, BEEP_PIN, Mode_IN_FLOATING); //GPIO_Mode_IPU
+   gpio_set_mode(BEEP_GPIO, BEEP_PIN, Mode_IN_FLOATING); // set input no pull up or down
 #endif
 }
 
@@ -138,8 +137,6 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
 }
 #endif
 
-#define disable_hardware_uart  __disable_irq()
-#define enable_hardware_uart   __enable_irq()
 #define ESC_HI(escIndex)       ((escHardware[escIndex].gpio->IDR & (1U << escHardware[escIndex].pinpos)) != (uint32_t)Bit_RESET)
 #define RX_HI                  ((S1W_RX_GPIO->IDR & S1W_RX_PIN) != (uint32_t)Bit_RESET)
 #define ESC_SET_HI(escIndex)   escHardware[escIndex].gpio->BSRR = (1U << escHardware[escIndex].pinpos)
@@ -190,7 +187,7 @@ void usb1WirePassthrough(uint8_t escIndex)
 #endif
 
   //Disable all interrupts
-  disable_hardware_uart;
+  __disable_irq();
 
   // reset all the pins
   GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
@@ -210,7 +207,7 @@ void usb1WirePassthrough(uint8_t escIndex)
   TX_SET_HIGH;
   // Wait for programmer to go from 1 -> 0 indicating incoming data
   while(RX_HI);
-  
+
   while(1) {
     // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
     // Setup escIndex pin to send data, pullup is the default
@@ -225,7 +222,7 @@ void usb1WirePassthrough(uint8_t escIndex)
     // Wait for programmer to go 0 -> 1
     uint32_t ct=3333;
     while(!RX_HI) {
-      if (ct > 0) ct--; //count down until 0; 
+      if (ct > 0) ct--; // count down until 0;
       // check for low time ->ct=3333 ~600uS //byte LO time for 0 @ 19200 baud -> 9*52 uS => 468.75uS
       // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more) > 0 =  937.5uS LO
       // BLHeliSuite will use 4800 baud
@@ -249,17 +246,11 @@ void usb1WirePassthrough(uint8_t escIndex)
       }
     }
   }
-  
   // we get here in case ct reached zero
   TX_SET_HIGH;
-  RX_LED_OFF;  
-  // Programmer TX
-  gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
-  // Enable Hardware UART
-  enable_hardware_uart;
-  // Wait a bit more to let App read the 0 byte and switch baudrate
-  // 2ms will most likely do the job, but give some grace time
-  delay(10);
+  RX_LED_OFF;
+  // Enable all irq (for Hardware UART)
+  __enable_irq();
   return;
 }
 
