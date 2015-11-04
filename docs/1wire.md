@@ -12,9 +12,15 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
 ## Wiring
 
-  - For the NAZE, no external wiring is necessary. Simply plugin the board via USB cable.
+  - For the NAZE, no external wiring is necessary. Simply plug in the board via USB cable.
 
-  - For the CC3D, connect [a USB to UART adapter](http://bit.ly/cf-cp2102) to the main port. If you need one, I prefer the [CP2102](http://bit.ly/cf-cp2102) as it is cheap and [the driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) is readily available.
+  - For the CC3D, connect [a USB to UART adapter](http://bit.ly/cf-cp2102) to the flex port.
+
+    - Ensure MSP is enabled on the flex port. Unfortunatly the main port cannot be used in the current configuration due to the inverter on this port.
+
+    - You'll only need this connection to the CC3D, do not plug in the normal USB connection.
+
+    - If you need one, I prefer the [CP2102](http://bit.ly/cf-cp2102) as it is cheap and [the driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) is readily available.
 
   - In the case that your board does not power on fully without a battery attached, it is OK to attach the battery before following the steps below. However, it may not be necessary in all cases.
 
