@@ -305,6 +305,27 @@ height:21px;
 	float:left;
 	}
 	
+	
+	.tab-configuration .current td:nth-child(2){
+	width:30px;
+	}
+	
+		.tab-configuration .voltage td:nth-child(2){
+	width:30px;
+	}
+	
+			.tab-configuration .rssi td:nth-child(2){
+	width:30px;
+	}
+	
+				.tab-configuration .rxFailsafe td:nth-child(2){
+	width:30px;
+	}
+	
+				.tab-configuration .gps td:nth-child(2){
+	width:38px;
+	}
+	
 		.tab-configuration .gps .gui_box {
 	min-height:352px;
 		float:left;
@@ -354,10 +375,12 @@ height:21px;
 }
 
 .tab-configuration .gui_box span {
-	font-style: italic;
+	font-style: normal;
 	font-family: 'open_sansregular', Arial;
 	line-height:19px;
 	color:#7d7d7d;
+	font-size:11px;
+
 }
 
 
@@ -367,6 +390,7 @@ height:21px;
 
 .tab-configuration .gui_box span {
 	line-height:17px;
+
 }
 
 .tab-configuration .leftWrapper {

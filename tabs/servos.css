@@ -4,16 +4,15 @@
     border: 0;
 }
 .tab-servos .title {
-    margin-top: 10px;
-
-    line-height: 20px;
+    margin-top: 0px;
+	line-height: 30px;
     text-align: center;
     font-weight: bold;
-
     border: 1px solid #8b8b8b;
     border-bottom: 0;
-
     background-color: #ececec;
+    float:left;
+    width: calc(100% - 2px);
 }
 .tab-servos table.directions td.direction select {
     height: 19px;
@@ -22,6 +21,7 @@
 .tab-servos table {
     width: 100%;
     border-collapse: collapse;
+	float:left;
 }
 .tab-servos table th {
     line-height: 20px;
@@ -123,11 +123,10 @@
     border: 1px solid silver;
     background-color: #ececec;
 }
-.tab-servos .update:hover {
-    background-color: #dedcdc;
-}
+
 
 .tab-servos .require-support {
+	float:left;
     display:none;
 }
 .tab-servos.supported .require-support {
@@ -138,4 +137,35 @@
 }
 .tab-servos.supported .require-upgrade {
     display:none;
+	float:left;
+
 }
+
+.tab-servos .fixed_band {
+    bottom: 0px;
+	float:left;
+	position:fixed;
+	bottom:0px;
+	width:100%;
+}
+
+
+.tab-servos .save_btn a {
+	line-height: 28px;
+}
+
+
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
+
+
+.tab-servos .fixed_band {
+    margin: 0px;
+    width: calc(100% - 0px);
+    margin-left: -15px;
+}
+
+
+
+}
+
+

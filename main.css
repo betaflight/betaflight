@@ -57,11 +57,12 @@ a:hover {
 
 
 
-/* Change here the content of the documentation button in all tabs!!!  */
+/* Change here the content of the documentation button in all tabs!!!  
 
 .cf_doc_version_bt a:before {
 	content:"Documentation 1.10";
 	}
+*/
 
 .cf_doc_version_bt a {
 	padding:1px 9px 1px 9px;
@@ -587,9 +588,16 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .logswitch a {
 	color:#656565 !important;
+    transition: all  0.3s;
+
 	}
 
+.logswitch a:hover {
+	color:#959595 !important;
+	text-decoration:none !important;
+	transition: all  0.3s;
 
+	}
 
 .tab_container {
 	float:left;
@@ -1062,15 +1070,15 @@ dialog {
 
 
 .spacer_left {
-	padding-left:7px;
+	padding-left:15px;
 	float:left;
-	width:calc(100% - 7px);
+	width:calc(100% - 15px);
 
 	}
 
 .spacer_right {
-	padding-right:7px;
-	width:calc(100% - 7px);
+	padding-right:15px;
+	width:calc(100% - 15px);
 	float:left;
 	}
 
@@ -1095,13 +1103,13 @@ dialog {
 .gui_box_titlebar {
 	background-color:#e4e4e4;
 	border-radius:3px 3px 0px 0px;
-	font-size:14px;
+	font-size:13px;
 	width:100%;
-	height:25px;
+	height:27px;
 	padding-bottom:0px;
 	float:left;
 	margin-bottom:7px;
-	font-family: 'open_sansregular', Arial;
+	font-family: 'open_sanssemibold', Arial;
 
 	}
 
@@ -1154,6 +1162,7 @@ dialog {
 	padding:0px;
 	padding-left:9px;
 	padding-right:9px;
+	line-height:28px;
 
 	}
 
@@ -1280,15 +1289,17 @@ dialog {
 	float:left;
 	margin-top:-5px;
 	font-size:11px;
+	width:100%;
 	}
 
 .cf_table td {
 	border:0px;
 	border-bottom: solid 1px #ccc;
-	padding-top:4px;
-	padding-bottom:4px;
+	padding-top:2px;
+	padding-bottom:5px;
 	border-style: dotted;
 }
+
 
 .noboarder td{
 	border:none;
@@ -1515,8 +1526,8 @@ body {
 	}
 
 .gui_box_titlebar {
-	font-size:13px;
-	height:22px;
+	font-size:12px;
+	height:24px;
 	padding-bottom:0px;
 	margin-bottom:5px;
 	}
@@ -1524,7 +1535,7 @@ body {
 .spacer_box_title {
     padding-left: 10px;
     padding-right: 10px;
-    padding-top: 1px;
+    padding-top: 3px;
     margin-bottom: 0px;
 	}
 
@@ -1541,6 +1552,18 @@ input {
 	height:14px;
 	width:14px;
 	}
+
+.gps_false {
+	padding:0px 3px 0px 3px;
+	font-size:10px;
+}
+
+.gps_true {
+	padding:0px 3px 0px 3px;
+	font-size:10px;
+}
+
+
 
 
 	}

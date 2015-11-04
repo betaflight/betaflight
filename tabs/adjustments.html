@@ -1,12 +1,20 @@
 <div class="tab-adjustments">
-    <div class="help">
+<div class="tab_title" i18n="tabAdjustments"></div>
+<div class="cf_doc_version_bt">
+    <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+</div>
+    <div class="note" style="margin-bottom:20px;">
+      <div class="note_spacer">
         <p i18n="adjustmentsHelp"></p>
         <p i18n="adjustmentsExamples"></p>
-        <ul>
+		<ul>
             <li i18n="adjustmentsExample1"></li>
             <li i18n="adjustmentsExample2"></li>
         </ul>
+      </div>
     </div>
+         
+        
     <table class="adjustments">
         <thead>
             <tr>
@@ -28,9 +36,11 @@
         </tbody>
     </table>
     
-    <div class="buttons">
-        <a class="save" href="#" i18n="adjustmentsSave"></a>
-    </div>
+  <div class="fixed_band">
+    <div class="save_btn"><a class="save" href="#" i18n="adjustmentsSave"></a></div>
+  </div>
+  
+
 </div>
 
 <div id="tab-adjustments-templates">
@@ -39,7 +49,7 @@
             <tr class="adjustment">
                 <td class="info">
                     <div class="enabling">
-                        <input type="checkbox" class="enable"/>
+                        <input type="checkbox" class="enable" id="toggle" />
                     </div>
                 </td>
                 <td class="channelInfo">

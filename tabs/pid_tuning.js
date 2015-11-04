@@ -264,15 +264,21 @@ TABS.pid_tuning.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+   	// locating link to used CF version
+     var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+
+
         hideUnusedPids(CONFIG.activeSensors);
 
         $('#showAllPids').on('click', function(){
-          if($(this).text() == "Show All PIDs") {
+          if($(this).text() == "Show all PIDs") {
             $('.tab-pid_tuning table.pid_tuning').show();
-            $(this).text('Hide Unused PIDs');
+            $(this).text('Hide unused PIDs');
           } else {
             hideUnusedPids(CONFIG.activeSensors);
-            $(this).text('Show All PIDs');
+            $(this).text('Show all PIDs');
           }
         });
 

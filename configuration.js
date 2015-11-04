@@ -67,12 +67,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // translate to user-selected language
         localize();
 
-     	// locating link to used CF version
-    	var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-		var mixer_list_e = $('select.mixerList');
+        var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
         }

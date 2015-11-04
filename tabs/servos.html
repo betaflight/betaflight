@@ -1,5 +1,9 @@
 <div class="tab-servos">
-    <div class="require-support">
+    <div class="tab_title" i18n="tabServos">Servos</div>
+    <div class="cf_doc_version_bt">
+      <a id="button-documentation" href="" target="_blank"></a>
+    </div>
+    	<div class="require-support">
         <div class="title" i18n="servosChangeDirection"></div>
         <table class="fields">
             <tr class="main">
@@ -16,13 +20,19 @@
             </tr>
         </table>
         <div class="live">
-            <span i18n="servosLiveMode"></span> <input type="checkbox" />
+            <input type="checkbox" id="toggle" /> <span i18n="servosLiveMode"></span>
         </div>
-        <div class="buttons">
-            <a class="update" href="#" i18n="servosButtonSave"></a>
-        </div>
+          <div class="fixed_band">
+    <div class="save_btn"><a class="save" href="#" i18n="servosButtonSave"></a></div>
+  </div>
+  
+  
+
     </div>
     
-    <div class="note require-upgrade" i18n="servosFirmwareUpgradeRequired">
-    </div>
+    <div class="note require-upgrade">
+        <div class="note_spacer">
+        <p i18n="servosFirmwareUpgradeRequired"></p>
+        </div>
+	</div>
 </div>

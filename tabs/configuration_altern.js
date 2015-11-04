@@ -67,12 +67,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // translate to user-selected language
         localize();
 
-     	// locating link to used CF version
-    	var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-		var mixer_list_e = $('select.mixerList');
+        var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
         }
@@ -133,13 +128,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + features[i].name
                         + '" type="radio" name="'
                         + features[i].group
-                        + '" /></td><td><label for="feature-'
+                        + '" /></td><td> <label for="feature-'
                         + i
                         + '">'
-                        + features[i].name
-                        + '</label></td><td><span>'
                         + features[i].description
-                        + '</td><span>');
+                        + '</label> <span>'
+                        + features[i].name
+                        + '</td></span>');
                 radioGroups.push(features[i].group);
             } else {
                 row_e = $('<tr><td><input class="feature"'
@@ -148,12 +143,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox" id="toggle"/></td><td><label for="feature-'
+                        + '" type="checkbox" id="toggle"/></td><td> <label for="feature-'
                         + i
                         + '">'
-                        + features[i].name
-                        + '</label></td><td><span>'
                         + features[i].description
+                        + '</label> <span>'
+                        + features[i].name
                         + '</span></td>');
                 
                 var feature_e = row_e.find('input.feature');

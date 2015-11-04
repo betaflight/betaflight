@@ -1,5 +1,5 @@
 .tab-ports {
-    position: relative;
+    position: absolute;
     height: calc(100%; - 40px);
 }
 
@@ -7,12 +7,9 @@
     display: none;
 }
 
-
-
 .tab-ports table {
     margin-bottom: 10px;
 	width:100%;
-	
     border-collapse:collapse;
 }
 .tab-ports table,
@@ -21,42 +18,38 @@
 	border-left:0px;
 	border-right:0px;
 	border-top:0px;
-	border-right:1px solid #e4e4e4;
-	border-left:1px solid #e4e4e4;
+	
 
 }
 .tab-ports table tr td:first-child {
-    text-align: left;
-	
+    text-align: left;	
 }
-table.ports tr:first-child td:first-child { border-top-left-radius: 0px; 
- } 
-table.ports tr:first-child td:last-child { border-top-right-radius: 0px; } 
-
-
-
 
 .tab-ports table td {
 	border-bottom:1px solid #e4e4e4;
-	padding-top:4px;
-	padding-bottom:4px;
+	padding-top:6px;
+	padding-bottom:7px;
 	padding-left:5px;
 	padding-right:5px;
+	border-left:1px solid #e4e4e4;
+	border-right:1px solid #e4e4e4;
 	}
 
 
 .tab-ports table thead tr:first-child,
 .tab-ports table tr:nth-child(even) {
-    background-color:#f9f9f9; }
+    background-color:#f9f9f9;
+ }
 
 
 .tab-ports table thead tr:first-child {
 	background-color:#e4e4e4;
-	font-size:14px;
+	font-size:12px;
 	height:25px;
 	font-family: 'open_sansregular', Arial;
-	
-	
+	border-top:0px;
+	border-right:0px;
+	border-left:0px;	
 }
 
 .tab-ports .function input {
@@ -69,25 +62,6 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
 
 .tab-ports select {
     border: 1px solid silver;
-}
-
-.tab-ports .save {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-ports .save:hover {
-    background-color: #dedcdc;
 }
 
 
@@ -110,6 +84,36 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
     bottom: 0px;
 }
 
+
+.tab-ports .ports thead td {
+    text-align: left;
+    white-space: nowrap;
+    padding: 5px 7px;
+    background-color: #828885;
+    color: white;
+}
+
+
+.tab-ports .ports thead td:first-child {
+    border-top-left-radius: 5px;
+	border-left:0px;
+
+}
+
+.tab-ports .ports thead td:last-child {
+    border-top-right-radius: 5px;
+	border-right:0px;
+
+
+}
+
+.tab-ports .ports td:first-child {
+	font-weight:bold;
+}
+
+.tab-ports .fixed_band .save_btn a {
+	line-height:28px;
+	}
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 

@@ -73,10 +73,13 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
             $('#content').load("./tabs/ports.html", on_tab_loaded_handler);
             
+            
             board_definition = BOARD.find_board_definition(CONFIG.boardIdentifier);
             console.log('Using board definition', board_definition);
         }
-    }
+ 
+
+   }
 
     function update_ui() {
         
@@ -204,6 +207,11 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
         localize();
         
+      	// locating link to used CF version
+     var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+     
         update_ui();
 
 

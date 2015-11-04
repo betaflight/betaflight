@@ -43,6 +43,11 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         
         localize();
 
+	   	// locating link to used CF version
+    	 var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+
         // Build Grid
         var theHTML = [];
         var theHTMLlength = 0;

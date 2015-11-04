@@ -1,4 +1,5 @@
 .tab-auxiliary {
+	float:left;
 }
 
 .tab-auxiliary .help {
@@ -9,28 +10,31 @@
 
 .tab-auxiliary .range .marker,
 .tab-auxiliary .channel-slider .noUi-connect {
+    background: #59AA29;
     background: #92b67c;
     border-radius: 3px;
 
 }
 
 .tab-auxiliary .mode.on .info {
-    background: #7dc254;
+    background: #59aa29;
     color: white;
 }
 
 .tab-auxiliary .mode.on:nth-child(odd) .info {
-    background: #7dc254;
+    background: #59aa29;
 }
 
 .tab-auxiliary .mode.off .info {
     background: #cb4747;
+	background: #828885;
     color: white;
 
 }
 
 .tab-auxiliary .mode.off:nth-child(odd) .info {
-    background: #cb4747;
+   background: #cb4747;
+   background: #828885;
 }
 
 #tab-auxiliary-templates {
@@ -196,13 +200,14 @@
 }
 
 .tab-auxiliary .delete a {
-    height:16px;
-    width:16px;
+    height:15px;
+    width:15px;
     transition: all ease 0.3s;
     opacity: 0.3;
     position:relative;
     float:right;
-    margin-right:15px;
+    margin-right:5px;
+    margin-top:-9px;
     background-image: url('../images/icons/close1.svg');
    	background-repeat: no-repeat;
     background-position: center 100%;
@@ -216,7 +221,6 @@
 }
 
 .tab-auxiliary .fixed_band {
-    width: 100%;
     bottom: 0px;
 }
 
@@ -232,7 +236,10 @@
 
 
 .tab-auxiliary .fixed_band {
-    width: calc(100% - -5px);
+	margin: 0px;
+    width: calc(100% - -30px);
+    /* width: 100%; */
+    margin-left: -15px;
 }
 
 .tab-auxiliary .fixed_band .save_btn a {

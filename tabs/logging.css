@@ -1,11 +1,10 @@
 .tab-logging {
 }
-.tab-logging .note {
-    padding: 5px;
-    border: 1px dashed silver;
-}
+
 .tab-logging .properties {
     margin-top: 10px;
+    width: 100%;
+    float:left;
 }
 .tab-logging .properties dt {
     float: left;
