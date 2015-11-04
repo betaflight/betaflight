@@ -102,9 +102,9 @@
 #define USE_SERIAL_1WIRE
 // How many escs does this board support?
 #define ESC_COUNT 6
-// STM32F3DISCOVERY TX - PC3 connects to UART RX
-#define S1W_TX_GPIO         GPIOC
-#define S1W_TX_PIN          GPIO_Pin_3
-// STM32F3DISCOVERY RX - PC1 connects to UART TX
-#define S1W_RX_GPIO         GPIOC
-#define S1W_RX_PIN          GPIO_Pin_1
+// STM32F3DISCOVERY TX - PD5 connects to UART RX
+#define S1W_TX_GPIO         GPIOD
+#define S1W_TX_PIN          GPIO_Pin_5
+// STM32F3DISCOVERY RX - PD6 connects to UART TX
+#define S1W_RX_GPIO         GPIOD
+#define S1W_RX_PIN          GPIO_Pin_6
