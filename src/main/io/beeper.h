@@ -29,7 +29,7 @@ typedef enum {
     BEEPER_ARMING_GPS_FIX,          // Beep a special tone when arming the board and GPS has fix
     BEEPER_BAT_CRIT_LOW,            // Longer warning beeps when battery is critically low (repeats)
     BEEPER_BAT_LOW,                 // Warning beeps when battery is getting low (repeats)
-    BEEPER_GPS_STATUS,
+    BEEPER_USB,                     // Disable beeper when connected to USB
     BEEPER_RX_SET,                  // Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
     BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
@@ -65,7 +65,7 @@ BEEPER_ARMING,          		16    	// Beep when arming the board
 BEEPER_ARMING_GPS_FIX, 			32    	// Beep a special tone when arming the board and GPS has fix
 BEEPER_BAT_CRIT_LOW,       		64		// Longer warning beeps when battery is critically low (repeats)
 BEEPER_BAT_LOW,            		128     // Warning beeps when battery is getting low (repeats)
-BEEPER_GPS_STATUS,				256
+BEEPER_USB_DISABLE,				256     // Disable beeper when connected to USB
 BEEPER_RX_SET,              	512		// Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
 BEEPER_DISARM_REPEAT,       	1024	// Beeps sounded while stick held in disarm position
 BEEPER_ACC_CALIBRATION,     	2048	// ACC inflight calibration completed confirmation
