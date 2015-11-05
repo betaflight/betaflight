@@ -1,0 +1,356 @@
+.tab-receiver {
+}
+.tab-receiver input[type="number"]::-webkit-inner-spin-button {
+    border: 0;
+}
+.tab-receiver .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
+
+.tab-receiver .bars {
+    float: left;
+    width: 45%;
+
+    font-weight: bold;
+}
+.tab-receiver .bars ul {
+    margin-bottom: 5px;
+    clear: left;
+}
+.tab-receiver .bars li {
+    float: left;
+
+    height: 22px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+.tab-receiver .bars .name {
+    padding: 0 10px 0 0;
+
+    width: 50px;
+
+    text-align: right;
+}
+.tab-receiver .bars .meter {
+    width: calc(100% - 60px);
+}
+.tab-receiver .bars .meter-bar {
+    position: relative;
+    margin-top: 2px;
+
+    width: 100%;
+    height: 15px;
+
+    border: 1px solid silver;
+    background-color: #f4f4f4;
+}
+.tab-receiver .bars .meter-bar .label {
+    position: absolute;
+
+    width: 50px;
+    height: 15px;
+    line-height: 15px;
+
+    text-align: center;
+    color: #474747;
+}
+.tab-receiver .bars .meter-bar .fill {
+    position: relative;
+    overflow: hidden;
+
+    width: 50%;
+    height: 15px;
+
+    background-color: green;
+}
+.tab-receiver .bars .meter-bar .fill .label {
+    color: white;
+}
+.tab-receiver .bars ul:nth-of-type(1) .fill {
+    background-color: #f1453d;
+
+}
+.tab-receiver .bars ul:nth-of-type(2) .fill {
+    background-color: #673fb4;
+
+}
+.tab-receiver .bars ul:nth-of-type(3) .fill {
+    background-color: #2b98f0;
+
+}
+.tab-receiver .bars ul:nth-of-type(4) .fill {
+    background-color: #1fbcd2;
+
+}
+.tab-receiver .bars ul:nth-of-type(5) .fill {
+        background-color: #159588;
+
+}
+.tab-receiver .bars ul:nth-of-type(6) .fill {
+            background-color: #50ae55;
+
+}
+.tab-receiver .bars ul:nth-of-type(7) .fill {
+            background-color: #cdda49;
+}
+.tab-receiver .bars ul:nth-of-type(8) .fill {
+    background-color: #fdc02f;
+
+}
+.tab-receiver .bars ul:nth-of-type(9) .fill {
+        background-color: #fc5830;
+
+}
+.tab-receiver .bars ul:nth-of-type(10) .fill {
+    background-color: #785549;
+
+}
+.tab-receiver .bars ul:nth-of-type(11) .fill {
+        background-color: #9e9e9e;
+
+}
+.tab-receiver .bars ul:nth-of-type(12) .fill {
+            background-color: #617d8a;
+
+}
+.tab-receiver .bars ul:nth-of-type(13) .fill {
+    background-color: #cf267d;
+}
+.tab-receiver .bars ul:nth-of-type(14) .fill {
+    background-color: #7a1464;
+}
+.tab-receiver .bars ul:nth-of-type(15) .fill {
+    background-color: #3a7a14;
+}
+.tab-receiver .bars ul:nth-of-type(16) .fill {
+    background-color: #14407a;
+}
+.tab-receiver .tunings {
+    float: right;
+}
+.tab-receiver .tunings table {
+    border-collapse: collapse;
+}
+.tab-receiver .tunings .throttle {
+    margin-bottom: 10px;
+}
+.tab-receiver .tunings .rate {
+    margin-bottom: 10px;
+}
+.tab-receiver .tunings .yaw_rate {
+    margin-left:  127px;
+    margin-bottom: 10px;
+}
+.tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
+    padding: 4px;
+    border: 1px solid #8b8b8b;
+}
+.tab-receiver .tunings table th {
+    width: 118px;
+}
+.tab-receiver .tunings table td {
+    padding: 1px;
+}
+.tab-receiver .tunings table tr:nth-child(odd) {
+    background-color: #ececec;
+}
+.tab-receiver .tunings table input {
+    width: 100%;
+    height: 20px;
+
+    line-height: 20px;
+    text-align: right;
+}
+.tab-receiver .rssi_channel_wrapper {
+    float: right;
+
+    margin: 10px 0 0 0;
+
+    width: 126px;
+
+    border: 1px solid #8b8b8b;
+    border-left: 0;
+}
+.tab-receiver .rssi_channel_wrapper .head {
+    height: 15px;
+    padding: 4px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border-bottom: 1px solid #8b8b8b;
+    background-color: #ececec;
+}
+.tab-receiver .rssi_channel_wrapper select {
+    width: 100%;
+    height: 22px;
+
+    padding-left: 5px;
+}
+.tab-receiver .rcmap_wrapper {
+    float: right;
+    position: relative;
+
+    margin: 10px 0 0 0;
+
+    width: 126px;
+
+    border: 1px solid #8b8b8b;
+}
+.tab-receiver .rcmap_wrapper .head {
+    height: 15px;
+    padding: 4px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border-bottom: 1px solid #8b8b8b;
+    background-color: #ececec;
+}
+.tab-receiver .rcmap_wrapper .head span {
+    border-bottom: 1px dashed silver;
+}
+.tab-receiver .hybrid_element input {
+    position: absolute;
+
+    padding-left: 5px;
+
+    width: calc(100% - 24px);
+    height: 22px;
+
+    z-index: 2;
+}
+.tab-receiver .hybrid_element select {
+    width: 100%;
+    height: 22px;
+
+    z-index: 1;
+}
+.tab-receiver .curves {
+    float: right;
+}
+.tab-receiver .throttle_curve {
+    margin: 0 10px 10px 0;
+
+    width: 220px;
+    height: 120px;
+
+    border: 1px solid silver;
+}
+.tab-receiver .pitch_roll_curve {
+    margin: 0 10px 0 0;
+
+    width: 220px;
+    height: 120px;
+
+    border: 1px solid silver;
+}
+.tab-receiver select[name="rx_refresh_rate"] {
+    float: right;
+
+    border: 1px solid silver;
+}
+.tab-receiver #RX_plot {
+    width: 100%;
+    height: 200px;
+}
+.tab-receiver #RX_plot .line:nth-child(1) {
+    stroke: #f1453d;
+}
+.tab-receiver #RX_plot .line:nth-child(2) {
+    stroke: #673fb4;
+}
+.tab-receiver #RX_plot .line:nth-child(3) {
+    stroke: #2b98f0;
+}
+.tab-receiver #RX_plot .line:nth-child(4) {
+    stroke: #1fbcd2;
+}
+.tab-receiver #RX_plot .line:nth-child(5) {
+    stroke: #159588;
+}
+.tab-receiver #RX_plot .line:nth-child(6) {
+    stroke: #50ae55;
+}
+.tab-receiver #RX_plot .line:nth-child(7) {
+    stroke: #cdda49;
+}
+.tab-receiver #RX_plot .line:nth-child(8) {
+    stroke: #fdc02f;
+}
+.tab-receiver #RX_plot .line:nth-child(9) {
+    stroke: #fc5830;
+}
+.tab-receiver #RX_plot .line:nth-child(10) {
+    stroke: #785549;
+}
+.tab-receiver #RX_plot .line:nth-child(11) {
+    stroke: #9e9e9e;
+}
+.tab-receiver #RX_plot .line:nth-child(12) {
+    stroke: #7a6614;
+}
+.tab-receiver #RX_plot .line:nth-child(13) {
+    stroke: #cf267d;
+}
+.tab-receiver #RX_plot .line:nth-child(14) {
+    stroke: #7a1464;
+}
+.tab-receiver #RX_plot .line:nth-child(15) {
+    stroke: #3a7a14;
+}
+.tab-receiver #RX_plot .line:nth-child(16) {
+    stroke: #14407a;
+}
+.tab-receiver .buttons {
+    width: calc(100% - 20px);
+
+    position: absolute;
+    bottom: 10px;
+}
+.tab-receiver .sticks,
+.tab-receiver .update,
+.tab-receiver .refresh {
+    display: block;
+    float: right;
+
+    margin-top: 22px;
+
+    height: 28px;
+    line-height: 28px;
+
+    padding: 0 15px 0 15px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border: 1px solid silver;
+    background-color: #ececec;
+}
+.tab-receiver .sticks,
+.tab-receiver .refresh {
+    margin-right: 10px;
+}
+.tab-receiver .update:hover,
+.tab-receiver .refresh:hover {
+    background-color: #dedcdc;
+}
+/* SVG classes*/
+.tab-receiver .grid .tick {
+    stroke: silver;
+    shape-rendering: crispEdges;
+}
+.tab-receiver .line {
+    stroke-width: 2px;
+    fill: none;
+}
+.tab-receiver .grid path {
+    stroke-width: 0;
+}
+.tab-receiver .axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}

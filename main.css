@@ -35,9 +35,24 @@ a:hover {
 
 /* Help-Icon  */
 
+span .helpicon {
+	float:right;
+	margin-top:2px;
+	margin-right:0px;
+	display:block;
+	height:14px;
+	width:14px;
+	opacity: 0.2;
+	background-image:url(images/icons/cf_icon_info_grey.svg);
+	background-size:contain;
+	background-position:center;
+
+}
+
+
 .helpicon {
 	float:right;
-	margin-top:-18px;
+	margin-top:7px;
 	margin-right:7px;
 	display:block;
 	height:14px;
@@ -132,6 +147,20 @@ input[type="number"]::-webkit-inner-spin-button {
     background-size: contain;
 	margin-left:15px;
 	margin-top:15px;
+}
+
+.logo_text {
+    position: absolute;
+	height:20px;
+	width: 132px;
+	left: 31px;
+    top: 63px;
+	color: #949494;
+	opacity:0.5;
+}
+
+.logo_text .version {
+	float:right;
 }
 
 #port-picker {
@@ -978,7 +1007,7 @@ dialog {
 	border:1px solid #ffe55f;
 	margin-bottom:7px;
 	margin-top:3px;
-	width:100%;
+	width:calc(100% - 2px);
 	border-radius: 3px;
 	font-size:11px;
 	font-family: 'open_sansregular', Arial;
@@ -1088,7 +1117,7 @@ dialog {
 	border-radius:4px;
 	background-color:#FFFFFF;
 	float:left;
-	width:100%;
+	width: calc(100% - 2px);
 	margin-bottom:10px;
 	font-family: 'open_sansregular', Arial;
 
@@ -1123,6 +1152,7 @@ dialog {
 	padding-right:10px;
 	padding-top:4px;
 	margin-bottom:0px;
+	float:left;
 	}
 
 
@@ -1530,6 +1560,7 @@ body {
 	height:24px;
 	padding-bottom:0px;
 	margin-bottom:5px;
+	float:left;
 	}
 	
 .spacer_box_title {
@@ -1537,6 +1568,7 @@ body {
     padding-right: 10px;
     padding-top: 3px;
     margin-bottom: 0px;
+    float: left;
 	}
 
 	
@@ -1547,7 +1579,7 @@ input {
 
 .helpicon {
 	float:right;
-	margin-top:-15px;
+	margin-top:5px;
 	margin-right:7px;
 	height:14px;
 	width:14px;

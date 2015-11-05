@@ -87,7 +87,7 @@
 
 .tab-pid_tuning table input {
     display: block;
-    width: calc(100% - 2px);
+    width: calc(100% - 0px);
     height: 20px;
     line-height: 20px;
     text-align: right;
@@ -185,7 +185,7 @@
 .pid_mode {
 	width: calc(100% - 5px);
     height: 20px;
-    background-color: #ECECEC;
+    background-color: #D6D6D6;
     float: left;
     margin: 0px;
     padding: 0px;
@@ -195,8 +195,31 @@
     padding-top: 6px;
     font-size: 12px;
     border-bottom: 1px solid #ccc;
-    color: #595D5B;
-	font-family: 'open_sanslight', Arial;
+    color: #828282;
+	font-family: 'open_sans', Arial;
+	background-image: linear-gradient(
+    -45deg, 
+    rgba(255, 255, 255, .2) 10%, 
+    transparent 10%, 
+    transparent 20%, 
+    rgba(255, 255, 255, .2) 20%, 
+    rgba(255, 255, 255, .2) 30%, 
+    transparent 30%, 
+	transparent 40%, 
+    rgba(255, 255, 255, .2) 40%, 
+    rgba(255, 255, 255, .2) 50%, 
+    transparent 50%, 
+    transparent 60%, 
+    rgba(255, 255, 255, .2) 60%, 
+    rgba(255, 255, 255, .2) 70%, 
+    transparent 70%, 
+	transparent 80%, 
+    rgba(255, 255, 255, .2) 80%, 
+    rgba(255, 255, 255, .2) 90%, 
+    transparent 90%, 
+    transparent 100%, 
+    rgba(255, 255, 255, .2) 100%,
+    transparent );
 
 
 	}
@@ -207,7 +230,7 @@
 	border-top-left-radius:3px;
 	border-top-right-radius:3px;
 	height:20px;
-}
+	}
 
 .pid_titlebar td:first-child {
 	text-align:left;
@@ -218,6 +241,27 @@
     width: calc(100% - 10px);
 
   	}
+
+.tab-pid_tuning .helpicon {
+	margin-top:0px;
+}
+
+
+#content-watermark {
+	position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    overflow: hidden;
+    background-image: url("../images/light-wide-2.svg");
+    background-repeat: no-repeat;
+    background-position: 95% 20%;
+    background-size: 430px;
+    height: 174px;
+    opacity: 0.25;
+}
+
 
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {

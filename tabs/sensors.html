@@ -9,7 +9,7 @@
 </p>
       </div>
     </div>
-   
+   <div class="gui_box">
     <div class="info">
         <div class="checkboxes">
             <label><input type="checkbox" name="gyro_on" class="first"/>Gyroscope</label>
@@ -20,11 +20,11 @@
             <label><input type="checkbox" name="debug_on"/>Debug</label>
         </div>
     </div>
-    
-    
+    </div>
     
     <div class="wrapper gyro">
-        <div class="plot_control">
+        <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Gyroscope - deg/s</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -63,8 +63,9 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
-    <div class="wrapper accel">
+    </div></div>
+<div class="wrapper accel">
+       <div class="gui_box grey">
         <div class="plot_control">
             <div class="title">Accelerometer - g</div>
             <dl>
@@ -104,7 +105,10 @@
         </svg>
         <div class="clear-both"></div>
     </div>
-    <div class="wrapper mag">
+    </div>
+    
+<div class="wrapper mag">
+       <div class="gui_box grey">
         <div class="plot_control">
             <div class="title">Magnetometer - Ga</div>
             <dl>
@@ -143,8 +147,10 @@
         </svg>
         <div class="clear-both"></div>
     </div>
+    </div>
     <div class="wrapper baro">
-        <div class="plot_control">
+        <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Barometer - meters</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -164,6 +170,7 @@
                 <dt>X:</dt><dd class="x">0</dd>
             </dl>
         </div>
+        
         <svg id="baro">
             <g class="grid x" transform="translate(40, 120)"></g>
             <g class="grid y" transform="translate(40, 10)"></g>
@@ -172,8 +179,9 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
+    </div></div>
     <div class="wrapper sonar">
+       <div class="gui_box grey">
         <div class="plot_control">
             <div class="title">Sonar - cm</div>
             <dl>
@@ -202,9 +210,10 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
+    </div></div>
     <div class="wrapper debug">
-        <div class="plot_control">
+        <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Debug 0</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -273,4 +282,4 @@
             <g class="axis x" transform="translate(40, 120)"></g>
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
-    </div>
+    </div></div>

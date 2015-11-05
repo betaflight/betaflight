@@ -47,32 +47,30 @@
     height: 20px;
     line-height: 20px;
 }
-.tab-logging .buttons {
-    width: calc(100% - 20px);
 
-    position: absolute;
-    bottom: 10px;
+.tab-logging .fixed_band {
+    width: 100%;
+    bottom: 0px;
 }
-.tab-logging .buttons a {
-    display: block;
-    float: right;
 
-    margin-left: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
+.tab-logging .save_btn a {
+	line-height: 28px;
 }
-.tab-logging .buttons a:hover {
-    background-color: #dedcdc;
+
+
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
+
+
+.tab-logging table thead tr:first-child {
+    font-size: 12px;
+    height: 22px;
 }
-.tab-logging .buttons .back {
-    display: none;
+
+.tab-logging .fixed_band {
+    width: calc(100% - -5px);
+}
+
+.tab-logging .fixed_band .save_btn a {
+	margin-right:15px;
+	}
 }
