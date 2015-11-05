@@ -57,6 +57,9 @@
 	line-height: 28px;
 }
 
+.tab-logging .save_btn .back {
+    display: none;
+}
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
