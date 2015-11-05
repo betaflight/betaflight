@@ -1413,7 +1413,9 @@ static void dumpValues(uint16_t mask)
         printf("set %s = ", valueTable[i].name);
 
         if (strstr(valueTable[i].name, "pid_controller")) {
-            cliPrint(pidControllers[*(uint8_t *)valueTable[i].ptr -1]);
+            void *pidPtr= value->ptr;
+            pidPtr= ((uint8_t *)pidPtr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+            cliPrint(pidControllers[*(uint8_t *)pidPtr-1]);
         } else {
             cliPrintVar(value, 0);
         }
@@ -2127,7 +2129,9 @@ static void cliGet(char *cmdline)
             printf("%s = ", valueTable[i].name);
 
         	if (strstr(valueTable[i].name, "pid_controller")) {
-                cliPrint(pidControllers[*(uint8_t *)valueTable[i].ptr - 1]);
+                void *pidPtr= val->ptr;
+                pidPtr= ((uint8_t *)pidPtr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+                cliPrint(pidControllers[*(uint8_t *)pidPtr-1]);
         	} else {
                 cliPrintVar(val, 0);
         	}
