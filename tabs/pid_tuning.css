@@ -1,4 +1,5 @@
 .tab-pid_tuning {
+
 }
 
 .tab-pid_tuning .rate-tpa th {
@@ -26,9 +27,9 @@
 	width: calc(100% - -1px);
 	}
 	
-	.tab-pid_tuning .pid_tuning {
-}
-
+.tab-pid_tuning .gui_box {
+ 	margin-bottom:65px !important;
+ }
 
 .tab-pid_tuning table,
 .tab-pid_tuning table td {
