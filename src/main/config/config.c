@@ -182,8 +182,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P_f[PITCH] = 1.5f;
     pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.02f;
-    pidProfile->P_f[YAW] = 3.9f;
-    pidProfile->I_f[YAW] = 0.9f;
+    pidProfile->P_f[YAW] = 4.0f;
+    pidProfile->I_f[YAW] = 0.7f;
     pidProfile->D_f[YAW] = 0.00f;
     pidProfile->A_level = 6.0f;
     pidProfile->H_level = 6.0f;
@@ -391,6 +391,7 @@ static void resetConf(void)
 #endif
 
     featureSet(FEATURE_FAILSAFE);
+    featureSet(FEATURE_ONESHOT125);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
