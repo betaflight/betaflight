@@ -299,33 +299,7 @@
     position: absolute;
     bottom: 10px;
 }
-.tab-receiver .sticks,
-.tab-receiver .update,
-.tab-receiver .refresh {
-    display: block;
-    float: right;
 
-    margin-top: 22px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-receiver .sticks,
-.tab-receiver .refresh {
-    margin-right: 10px;
-}
-.tab-receiver .update:hover,
-.tab-receiver .refresh:hover {
-    background-color: #dedcdc;
-}
 /* SVG classes*/
 .tab-receiver .grid .tick {
     stroke: silver;

@@ -54,26 +54,6 @@
     position: absolute;
     bottom: 10px;
 }
-.tab-logging .buttons a {
-    display: block;
-    float: right;
-
-    margin-left: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-logging .buttons a:hover {
-    background-color: #dedcdc;
-}
 .tab-logging .buttons .back {
     display: none;
 }

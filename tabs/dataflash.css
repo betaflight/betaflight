@@ -72,37 +72,12 @@
     position: absolute;
     bottom: 10px;
 }
-.tab-dataflash .buttons a {
-    display: block;
-    float: right;
-
-    margin-left: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-dataflash .buttons a:hover {
-    background-color: #dedcdc;
-}
-.tab-dataflash .buttons a.disabled {
-    cursor: default;
-    color: #999;
-    pointer-events: none;
-}
 .tab-dataflash .dataflash-progress {
     display: none;
 }
 .tab-dataflash .dataflash-contents {
     margin:9px 16px;
-    
+
     border:1px solid silver;
     background-color:#eee;
 
@@ -110,7 +85,7 @@
     flex-direction:row;
     flex-wrap:nowrap;
     justify-content:flex-start;
-    
+
     border-radius:6px;
 }
 .tab-dataflash .dataflash-contents li {

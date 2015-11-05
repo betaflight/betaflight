@@ -147,7 +147,7 @@ TABS.cli.read = function (readInfo) {
                     case 62:
                         text += '&gt';
                         break;
-                        
+
                     default:
                         text += String.fromCharCode(data[i]);
                 }
@@ -169,7 +169,7 @@ TABS.cli.read = function (readInfo) {
     $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
 
     // there seems to be some sort of initial rendering glitch in 33+, we will force redraw/refill
-    $('.tab-cli .window .wrapper').css('webkitTransform', 'scale(1)');
+    //$('.tab-cli .window .wrapper').css('webkitTransform', 'scale(1)');
 };
 
 TABS.cli.cleanup = function (callback) {

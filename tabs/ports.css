@@ -11,7 +11,7 @@
 .tab-ports table {
     margin-bottom: 10px;
 	width:100%;
-	
+
     border-collapse:collapse;
 }
 .tab-ports table,
@@ -26,11 +26,11 @@
 }
 .tab-ports table tr td:first-child {
     text-align: left;
-	
+
 }
-table.ports tr:first-child td:first-child { border-top-left-radius: 0px; 
- } 
-table.ports tr:first-child td:last-child { border-top-right-radius: 0px; } 
+table.ports tr:first-child td:first-child { border-top-left-radius: 0px;
+ }
+table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
 
 
 
@@ -54,8 +54,8 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
 	font-size:14px;
 	height:25px;
 	font-family: 'open_sansregular', Arial;
-	
-	
+
+
 }
 
 .tab-ports .function input {
@@ -70,24 +70,6 @@ table.ports tr:first-child td:last-child { border-top-right-radius: 0px; }
     border: 1px solid silver;
 }
 
-.tab-ports .save {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-ports .save:hover {
-    background-color: #dedcdc;
-}
 
 
 .tab-ports .require-support {

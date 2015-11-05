@@ -100,23 +100,3 @@
 .tab-adjustments > .buttons {
     margin-top: 10px;
 }
-
-.tab-adjustments > .buttons a {
-    float: right;
-    height: 28px;
-    line-height: 28px;
-    padding: 0 15px 0 15px;
-    display: block;
-}
-
-.tab-adjustments .buttons a {
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-
-.tab-adjustments .buttons a:hover {
-    background-color: #dedcdc;
-}

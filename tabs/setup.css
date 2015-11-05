@@ -74,7 +74,6 @@ margin-bottom:10px;
 
     border: 1px solid silver;
     background-color: #ececec;
-	border-radius: 3px:
 
     z-index: 100;
 }
@@ -172,31 +171,13 @@ margin-bottom:10px;
 .buttons {
     bottom: 20px;
 }
-.update {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-setup .update:hover {
-    background-color: #dedcdc;
-}
 
 .cell_setup {
 	border-bottom: solid 1px #ddd;
 	padding-bottom:8px;
 	padding-top:7px;
 	}
-	
+
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
@@ -213,9 +194,3 @@ margin-bottom:10px;
 
 
 }
-	
-	
-	
-	
-	
-	

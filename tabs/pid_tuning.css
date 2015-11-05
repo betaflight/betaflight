@@ -96,29 +96,6 @@
     right:10px;
     bottom: 10px;
 }
-.tab-pid_tuning .update,
-.tab-pid_tuning .refresh {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-pid_tuning .refresh {
-    margin-right: 10px;
-}
-.tab-pid_tuning .update:hover,
-.tab-pid_tuning .refresh:hover {
-    background-color: #dedcdc;
-}
 .tab-pid_tuning .top-buttons {
   float:right;
 }

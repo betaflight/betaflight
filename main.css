@@ -29,9 +29,14 @@ a {
 
 a:hover {
 	text-decoration: none;
+}
 
+a.disabled {
+  pointer-events: none;
+  cursor: default;
+  color: #999;
+}
 
-	}
 
 
 /* Help-Icon  */
@@ -958,8 +963,8 @@ dialog {
 
 	/* Tab Title */
 	.tab_title {
-	float:left;
-	width:100%;
+	/*float:left; why?
+	width:100%; */
 	border-bottom:1px solid #59aa29;
 	font-size:20px;
 	line-height:24px;
@@ -970,12 +975,12 @@ dialog {
 
 /* Note */
 .note {
-	float:left;
+	/*float:left; why this? */
 	background-color:#fff7cd;
 	border:1px solid #ffe55f;
 	margin-bottom:7px;
 	margin-top:3px;
-	width:100%;
+	/*width:100%;*/
 	border-radius: 3px;
 	font-size:11px;
 	font-family: 'open_sansregular', Arial;
@@ -1001,6 +1006,7 @@ dialog {
   /*padding: 0 20px 0 20px;
     for testing: */
   padding: 20px;
+  position: relative;
 }
 
 .content_toolbar {
@@ -1023,7 +1029,13 @@ dialog {
   text-align: center;
   font-weight: bold;
   border: 1px solid silver;
+  border-radius: 3px;
   background-color: #ececec;
+}
+
+.content_toolbar .btn:hover {
+  background-color: #fff;
+  border-color: #999;
 }
 
 .toolbar_scroll_bottom .content_wrapper {
@@ -1045,6 +1057,7 @@ dialog {
 .toolbar_fixed_bottom .content_toolbar {
   position: absolute;
   bottom: 0;
+  z-index: 2000; /* for fancy toggle buttons */
 }
 
 
