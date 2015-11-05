@@ -1208,7 +1208,7 @@ dialog {
 
 
 .default_btn {
-	width:100%;
+	width: calc(100% - 2px);
 	position:relative;
 	margin-bottom:10px;
 	margin-top:0px;
