@@ -128,6 +128,22 @@
         "message": "<span style=\"color: red\">Failed</span> to close serial port"
     },
 
+    "usbDeviceOpened": {
+        "message": "USB device <span style=\"color: #57a929\">successfully</span> opened with ID: $1"
+    },
+    "usbDeviceOpenFail": {
+        "message": "<span style=\"color: red\">Failed</span> to open USB device!"
+    },
+    "usbDeviceClosed": {
+        "message": "USB device <span style=\"color: #57a929\">successfully</span> closed"
+    },
+    "usbDeviceCloseFail": {
+        "message": "<span style=\"color: red\">Failed</span> to close USB device"
+    },
+    "usbDeviceUdevNotice": {
+        "message": "Are <strong>udev rules</strong> installed correctly? See docs for instructions"
+    },
+
     "noConfigurationReceived": {
         "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
     },
@@ -190,26 +206,17 @@
         "message": "Cycle Time:"
     },
 
-    "please_grant_usb_permissions": {
-        "message": "Please click on <strong>\"Request Optional Permissions\"</strong> button to grant application <strong style=\"color: red\">required</strong> <strong>USB</strong> access"
+    "dfu_connect_message": {
+        "message": "Please use the Firmware Flasher to access DFU devices"
     },
-    "usb_permissions_granted": {
-        "message": "Optional <strong>USB</strong> permissions <strong style=\"color: #57a929\">granted</strong>"
+    "dfu_erased_kilobytes": {
+        "message": "Erased $1 kB of flash <span style=\"color: #57a929\">successfully</span>"
     },
 
     "eeprom_saved_ok": {
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
-    "default_optional_permissions_head": {
-        "message": "Optional USB Permissions"
-    },
-    "default_optional_permissions_text": {
-        "message": "Due to addition of <strong>Naze32PRO</strong> to the supported hardware family, Configurator <strong style=\"color: red\">requires</strong> USB access to allow firmware flashing via DFU"
-    },
-    "default_request_optional_permissions": {
-        "message": "Request Optional Permissions"
-    },
     "defaultWelcomeText": {
         "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller.<br /><br />The application supports all hardware that can run cleanflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"http://www.readymaderc.com/store/index.php?main_page=product_info&cPath=76_156&products_id=4221\" target=\"_blank\">DoDo</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://multirotormania.com/129-dragonfly32\" target=\"_blank\">DragonFly32</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/PrestaShop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a>, development builds available <a href=\"http://cleanflight.memoryleaks.org/builds/\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com/\" target=\"_blank\">here</a><br />"
     },
@@ -379,13 +386,13 @@
         "message": "Accelerometer calibration started"
     },
     "initialSetupAccelCalibEnded": {
-        "message": "Accelerometer calibration <span style=\"color: #57a929\">finished</span>"
+        "message": "Accelerometer calibration finished"
     },
     "initialSetupMagCalibStarted": {
         "message": "Magnetometer calibration started"
     },
     "initialSetupMagCalibEnded": {
-        "message": "Magnetometer calibration <span style=\"color: #57a929\">finished</span>"
+        "message": "Magnetometer calibration finished"
     },
     "initialSetupSettingsRestored": {
         "message": "Settings restored to <strong>default</strong>"
@@ -627,7 +634,7 @@
         "message": "PID Controller"
     },
     "pidTuningLoadedProfile": {
-        "message": "<span style=\"color: #57a929\">Loaded Profile: <strong>$1</strong></span>"
+        "message": "Loaded Profile: <strong>$1</strong>"
     },
     "pidTuningDataRefreshed": {
         "message": "PID data <strong>refreshed</strong>"
@@ -922,7 +929,7 @@
     },
 
     "cliInfo": {
-        "message": "<strong>Note</strong>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board.  With the latest firmware this will make the controller <span style=\"color: red\">restart</span> and unsaved changes will be <span style=\"color: red\">lost</span>."
+        "message": "<span style=\"color: red\">Note</span>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board.  With the latest firmware this will make the controller <span style=\"color: red\">restart</span> and unsaved changes will be <span style=\"color: red\">lost</span>."
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"

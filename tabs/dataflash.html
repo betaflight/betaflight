@@ -1,66 +1,67 @@
-<div id="content-watermark"></div>
 <div class="tab-dataflash toolbar_fixed_bottom">
 <div class="content_wrapper">
-    <div class="require-dataflash">
-        <div class="note" i18n="dataflashNote">
-        </div>
-
-        <dialog class="dataflash-confirm-erase">
-            <h3 i18n="dataflashConfirmEraseTitle"></h3>
-            <div class="dataflash-confirm-erase-note" i18n="dataflashConfirmEraseNote">
+   <div class="tab_title" i18n="tabDataflash"></div>
+   <div class="cf_doc_version_bt">
+      <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+   </div>
+   <div class="require-dataflash">
+      <div class="note" style="margin-bottom:20px;">
+         <div class="note_spacer">
+            <p i18n="dataflashNote"></p>
+         </div>
+      </div>
+      <dialog class="dataflash-confirm-erase">
+         <h3 i18n="dataflashConfirmEraseTitle"></h3>
+         <div class="dataflash-confirm-erase-note" i18n="dataflashConfirmEraseNote">
+         </div>
+         <div class="dataflash-erase-progress">
+            <div class="data-loading">
+               <p>Erase in progress, please wait...</p>
             </div>
-
-            <div class="dataflash-erase-progress">
-                <div class="data-loading">
-                    <p>Erase in progress, please wait...</p>
-                </div>
+         </div>
+         <div class="buttons">
+            <a href="#" class="erase-flash-cancel" i18n="dataflashButtonEraseCancel"></a>
+            <a href="#" class="erase-flash-confirm" i18n="dataflashButtonEraseConfirm"></a>
+         </div>
+      </dialog>
+      <dialog class="dataflash-saving">
+         <h3 i18n="dataflashSavingTitle"></h3>
+         <div class="dataflash-saving-before">
+            <div i18n="dataflashSavingNote">
             </div>
-
+            <progress value="0" min="0" max="100"></progress>
             <div class="buttons">
-                <a href="#" class="erase-flash-cancel" i18n="dataflashButtonEraseCancel"></a>
-                <a href="#" class="erase-flash-confirm" i18n="dataflashButtonEraseConfirm"></a>
+               <a href="#" class="save-flash-cancel" i18n="dataflashButtonSaveCancel"></a>
             </div>
-        </dialog>
-
-        <dialog class="dataflash-saving">
-            <h3 i18n="dataflashSavingTitle"></h3>
-            <div class="dataflash-saving-before">
-                <div i18n="dataflashSavingNote">
-                </div>
-
-                <progress value="0" min="0" max="100"></progress>
-
-                <div class="buttons">
-                    <a href="#" class="save-flash-cancel" i18n="dataflashButtonSaveCancel"></a>
-                </div>
+         </div>
+         <div class="dataflash-saving-after">
+            <div i18n="dataflashSavingNoteAfter">
             </div>
-            <div class="dataflash-saving-after">
-                <div i18n="dataflashSavingNoteAfter">
-                </div>
-
-                <div class="buttons">
-                    <a href="#" class="save-flash-dismiss" i18n="dataflashButtonSaveDismiss"></a>
-                </div>
+            <div class="buttons">
+               <a href="#" class="save-flash-dismiss" i18n="dataflashButtonSaveDismiss"></a>
             </div>
-        </dialog>
-
-        <h3>Dataflash contents</h3>
-        <ul class="dataflash-contents">
-            <li class="dataflash-used">
-                <div class="legend">
-                    Used space
-                </div>
-            </li>
-            <li class="dataflash-free">
-                <div class="legend">
-                    Free space
-                </div>
-            </li>
-        </ul>
-    </div>
-    <div class="note require-no-dataflash">
-    </div>
-  </div>
+         </div>
+      </dialog>
+      <h3>Dataflash contents</h3>
+      <ul class="dataflash-contents">
+         <li class="dataflash-used">
+            <div class="legend">
+               Used space
+            </div>
+         </li>
+         <li class="dataflash-free">
+            <div class="legend">
+               Free space
+            </div>
+         </li>
+      </ul>
+   </div>
+   <div class="require-no-dataflash note">
+      <div class="note_spacer">
+         <p i18n="require-no-dataflash"></p>
+      </div>
+   </div>
+</div>
 <div class="content_toolbar">
     <div class="btn erase_btn"><a class="erase-flash" href="#" i18n="dataflashButtonErase"></a></div>
     <div class="btn save_btn"><a class="save-flash" href="#" i18n="dataflashButtonSaveFile"></a></div>

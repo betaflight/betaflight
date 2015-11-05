@@ -1,9 +1,6 @@
 .tab-logging {
 }
-.tab-logging .note {
-    padding: 5px;
-    border: 1px dashed silver;
-}
+
 .tab-logging .properties {
     margin-top: 10px;
 }
@@ -48,12 +45,22 @@
     height: 20px;
     line-height: 20px;
 }
-.tab-logging .buttons {
-    width: calc(100% - 20px);
 
-    position: absolute;
-    bottom: 10px;
+.tab-logging .fixed_band {
+    width: 100%;
+    bottom: 0px;
 }
-.tab-logging .buttons .back {
+
+.tab-logging .save_btn .back {
     display: none;
+}
+
+
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
+
+.tab-logging table thead tr:first-child {
+    font-size: 12px;
+    height: 22px;
+}
+
 }

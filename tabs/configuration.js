@@ -67,7 +67,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // translate to user-selected language
         localize();
 
-        var mixer_list_e = $('select.mixerList');
+     	// locating link to used CF version
+    	var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+
+
+	var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
         }
@@ -92,7 +98,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
             {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
             {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports'},
-            {bit: 7, group: 'gps', name: 'GPS', description: 'GPS (configure port scenario first)'},
+            {bit: 7, group: 'gps', name: 'GPS', description: 'Configure port scenario first<div class="helpicon cf_tip" title="Remember to select port scenario first!"></div>'},
             {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
             {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
             {bit: 10, group: 'other', name: 'TELEMETRY', description: 'Telemetry output'},
@@ -109,7 +115,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         
         if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
             features.push(
-                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to remaining servo outputs'}
+                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to servo outputs'}
             );
         }
 
@@ -371,10 +377,22 @@ elems.forEach(function(html) {
     secondaryColor: '#c4c4c4' 
 });
   });
-  	// load switchery END
 	
 	
+// loading tooltip
+	$(document).ready(function() {
+		$('.cf_tip').jBox('Tooltip', {
+		delayOpen: 100,
+		delayClose: 100,
+		position: {
+			x: 'right',
+			y: 'center'
+		},
+		outside: 'x'
+		});
+	});
 	
+		
 	
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound

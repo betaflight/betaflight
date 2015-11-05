@@ -4,15 +4,12 @@
     border: 0;
 }
 .tab-servos .title {
-    margin-top: 10px;
-
-    line-height: 20px;
+    margin-top: 0px;
+	line-height: 30px;
     text-align: center;
     font-weight: bold;
-
     border: 1px solid #8b8b8b;
     border-bottom: 0;
-
     background-color: #ececec;
 }
 .tab-servos table.directions td.direction select {

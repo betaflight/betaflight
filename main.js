@@ -18,6 +18,7 @@ $(document).ready(function () {
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
     $('#status-bar .version').text(chrome.runtime.getManifest().version);
+    $('#logo .version').text(chrome.runtime.getManifest().version);
 
     // notification messages for various operating systems
     switch (GUI.operating_system) {
@@ -211,7 +212,7 @@ $(document).ready(function () {
                     googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
- // CSS TEST
+ // CSS switch TEST
 var css = $("#default");
 $("div#options-window #remove").click(function(){
     css.remove();
@@ -220,9 +221,11 @@ $("div#options-window #remove").click(function(){
 $("div#options-window #restore").click(function(){
     $("head").append(css);
 });
-   // CSS TEST END
+   // CSS switch TEST END
    
    
+        
+        
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
                         $(document).unbind('click keyup', close_and_cleanup);
@@ -400,4 +403,15 @@ $("#showlog").on('click', function() {
 });
 
 
-
+// loading tooltip
+$(document).ready(function() {
+$('.cf_tip').jBox('Tooltip', {
+    delayOpen: 100,
+    delayClose: 100,
+	position: {
+        x: 'right',
+        y: 'center'
+    },
+	outside: 'x'
+});
+});

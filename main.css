@@ -41,9 +41,24 @@ a.disabled {
 
 /* Help-Icon  */
 
+span .helpicon {
+	float:right;
+	margin-top:2px;
+	margin-right:0px;
+	display:block;
+	height:14px;
+	width:14px;
+	opacity: 0.2;
+	background-image:url(images/icons/cf_icon_info_grey.svg);
+	background-size:contain;
+	background-position:center;
+
+}
+
+
 .helpicon {
 	float:right;
-	margin-top:-18px;
+	margin-top:7px;
 	margin-right:7px;
 	display:block;
 	height:14px;
@@ -63,11 +78,12 @@ a.disabled {
 
 
 
-/* Change here the content of the documentation button in all tabs!!!  */
+/* Change here the content of the documentation button in all tabs!!!
 
 .cf_doc_version_bt a:before {
 	content:"Documentation 1.10";
 	}
+*/
 
 .cf_doc_version_bt a {
 	padding:1px 9px 1px 9px;
@@ -144,6 +160,20 @@ input[type="number"]::-webkit-inner-spin-button {
 	margin-top:15px;
 }
 
+.logo_text {
+    position: absolute;
+	height:20px;
+	width: 132px;
+	left: 31px;
+    top: 63px;
+	color: #949494;
+	opacity:0.5;
+}
+
+.logo_text .version {
+	float:right;
+}
+
 #port-picker {
 	position:relative;
 	width:100%;
@@ -153,7 +183,11 @@ input[type="number"]::-webkit-inner-spin-button {
 	float: right;
 	margin-top: 20px;
  	margin-right:20px;
-	width:180px;
+	/*width:180px;*/
+}
+
+#portsinput .dropdown {
+  margin-bottom:5px;
 }
 
 /*
@@ -506,7 +540,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid silver;
     background-color: white;
 	border-radius:5px;
-	z-index:1;
+	z-index:10000;
 }
 #options-window input {
     float: left;
@@ -559,7 +593,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 #log.active {
-    overflow-y: scroll; /* scroll*/
+	overflow-y: auto;
 	box-shadow: inset 0 0 15px #000000;
 }
 
@@ -588,19 +622,24 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 .logswitch {
-	position:fixed;
-	right: 7px;
+	position:absolute;
+	right: 20px;
 	margin-top:-1px;
 	float:right;
-	padding:5px;
+	padding:2px;
 	z-index:10;
 	}
 
 .logswitch a {
-	color:#656565;
+	color:#656565 !important;
+    transition: all  0.3s;
 	}
 
-
+.logswitch a:hover {
+	color:#959595 !important;
+	text-decoration:none !important;
+	transition: all  0.3s;
+	}
 
 .tab_container {
 	float:left;
@@ -616,7 +655,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #tabs ul {
-  overflow-y: auto; /* do not force scrollbars as it renders blank stripe on some user agents */
+  /* overflow-y: auto;  do not force scrollbars as it renders blank stripe on some user agents */
 }
 
 #tabs.logopen ul {
@@ -658,10 +697,11 @@ input[type="number"]::-webkit-inner-spin-button {
 	display:block;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.45);
 	transition: none;
+	border-top: solid 1px rgba(255, 255, 255, 0.05);
     /* following is just for a graceful degradation */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
 }
 
 
@@ -963,28 +1003,22 @@ dialog {
 
 	/* Tab Title */
 	.tab_title {
-	/*float:left; why?
-	width:100%; */
 	border-bottom:1px solid #59aa29;
 	font-size:20px;
 	line-height:24px;
-	height:30px;
 	font-family: 'open_sanslight', Arial;
 	margin-bottom:15px;
 	}
 
 /* Note */
 .note {
-	/*float:left; why this? */
 	background-color:#fff7cd;
 	border:1px solid #ffe55f;
 	margin-bottom:7px;
 	margin-top:3px;
-	/*width:100%;*/
 	border-radius: 3px;
 	font-size:11px;
 	font-family: 'open_sansregular', Arial;
-
 	}
 
 .note_spacer {
@@ -1018,7 +1052,7 @@ dialog {
   overflow: hidden;
 }
 
-.content_toolbar .btn {
+.content_toolbar .btn a {
   /*  common styles for content toolbar buttons */
   display: block;
   float: right;
@@ -1033,9 +1067,14 @@ dialog {
   background-color: #ececec;
 }
 
-.content_toolbar .btn:hover {
+.content_toolbar .btn a:hover {
   background-color: #fff;
   border-color: #999;
+}
+
+.content_toolbar .btn a:active {
+  background-color: #999;
+  color: #fff !important;
 }
 
 .toolbar_scroll_bottom .content_wrapper {
@@ -1050,7 +1089,7 @@ dialog {
   /*  content wrapper in view with toolbar fixed over bottom edge
       leave 50px space for the toolbar
       */
-  height: calc(100% - 50px);
+  height: calc(100% - 90px);
   overflow-y: auto;
 }
 
@@ -1135,28 +1174,26 @@ dialog {
 
 
 .spacer_left {
-	padding-left:7px;
+	padding-left:15px;
 	float:left;
-	width:calc(100% - 7px);
-
+	width:calc(100% - 15px);
 	}
 
 .spacer_right {
-	padding-right:7px;
-	width:calc(100% - 7px);
+	padding-right:15px;
+	width:calc(100% - 15px);
 	float:left;
 	}
 
 /* Standard GUI BOX */
 .gui_box {
-	border: 1px solid #e4e4e4;
-	border-radius:5px;
+	border: 1px solid #ccc;
+	border-radius:4px;
 	background-color:#FFFFFF;
 	float:left;
-	width:100%;
+	width: calc(100% - 2px);
 	margin-bottom:10px;
 	font-family: 'open_sansregular', Arial;
-
 	}
 
 .grey {
@@ -1168,13 +1205,13 @@ dialog {
 .gui_box_titlebar {
 	background-color:#e4e4e4;
 	border-radius:3px 3px 0px 0px;
-	font-size:14px;
+	font-size:13px;
 	width:100%;
-	height:25px;
+	height:27px;
 	padding-bottom:0px;
 	float:left;
 	margin-bottom:7px;
-	font-family: 'open_sansregular', Arial;
+	font-family: 'open_sanssemibold', Arial;
 
 	}
 
@@ -1188,6 +1225,7 @@ dialog {
 	padding-right:10px;
 	padding-top:4px;
 	margin-bottom:0px;
+	float:left;
 	}
 
 
@@ -1227,7 +1265,7 @@ dialog {
 	padding:0px;
 	padding-left:9px;
 	padding-right:9px;
-
+	line-height:28px;
 	}
 
 .fixed_band .save_btn a:hover {
@@ -1247,7 +1285,6 @@ dialog {
 	margin-bottom:10px;
 	margin-top:0px;
 	float:left;
-
 	}
 
 
@@ -1288,10 +1325,9 @@ dialog {
 	margin-top:0px;
 	margin-right:5px;
 	float:left;
-
 	}
 
-	.small a {
+.small a {
 	padding:3px 4px 4px 4px;
 	text-align:center;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
@@ -1304,7 +1340,6 @@ dialog {
 	line-height:11px;
 	display:block;
 	transition: all ease 0.2s;
-
 	}
 
 .small a:hover {
@@ -1313,8 +1348,6 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	border: 1px solid #59aa29;
 	transition: all ease 0.2s;
-
-
 	}
 
 .small a:active {
@@ -1330,7 +1363,6 @@ dialog {
 	color:#fff;
 	border: 1px solid #59aa29;
 	transition: all ease 0.2s;
-
 	}
 
 .green a:hover {
@@ -1339,7 +1371,6 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	color:#fff;
 	transition: all ease 0.2s;
-
 	}
 
 
@@ -1353,13 +1384,14 @@ dialog {
 	float:left;
 	margin-top:-5px;
 	font-size:11px;
+	width:100%;
 	}
 
 .cf_table td {
 	border:0px;
 	border-bottom: solid 1px #ccc;
-	padding-top:4px;
-	padding-bottom:4px;
+	padding-top:2px;
+	padding-bottom:5px;
 	border-style: dotted;
 }
 
@@ -1518,13 +1550,15 @@ dialog {
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
+.content_wrapper {
+  padding: 15px;
+}
 
 .tab_title {
 	font-size:16px;
 	line-height:18px;
 	font-family: 'open_sanslight', Arial;
 	margin-bottom:10px;
-  margin-top: 20px;
 	}
 
 .cf_doc_version_bt a {
@@ -1538,10 +1572,9 @@ dialog {
     height:calc(100% - 151px); /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
 }
 
-
-
 body {
-    font-size: 12px;
+/*font-size: 11px;*/
+/* lets see if we really need this? */
 	}
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
@@ -1550,15 +1583,15 @@ body {
 .cf_table td {
 	padding-top:2px;
 	padding-bottom:2px;
-}
+	}
 
 .default_btn {
 	margin-bottom:10px;
-}
+	}
 
 .default_btn a {
- 	font-size:12px;
-}
+ 	/*font-size:11px;*/
+	}
 
 #tabs li a {
 	font-family: 'open_sansregular', Arial;
@@ -1573,41 +1606,53 @@ body {
   text-overflow: clip;
   white-space: nowrap;
   overflow: hidden;
-
-}
+	}
 
 .tab_container {
 	width:40px;
-}
+	}
 
 .gui_box_titlebar {
-	font-size:13px;
-	height:22px;
+	font-size:12px;
+	height:24px;
 	padding-bottom:0px;
 	margin-bottom:5px;
+	float:left;
 	}
 
 .spacer_box_title {
     padding-left: 10px;
     padding-right: 10px;
-    padding-top: 1px;
+    padding-top: 3px;
     margin-bottom: 0px;
-}
+    float: left;
+	}
 
 
 input {
 	font-size:11px !important;
-}
+	}
 
 
 .helpicon {
 	float:right;
-	margin-top:-15px;
+	margin-top:5px;
 	margin-right:7px;
 	height:14px;
 	width:14px;
+	}
 
+.gps_false {
+	padding:0px 3px 0px 3px;
+	font-size:10px;
 }
+
+.gps_true {
+	padding:0px 3px 0px 3px;
+	font-size:10px;
+}
+
+
 
 
 	}

@@ -78,7 +78,7 @@ TABS.dataflash.initialize = function (callback) {
             });
         }
         
-        $(".tab-dataflash a.erase-flash, .tab-dataflash a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
+        $(".save_btn a.erase-flash, .save_btn a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
     }
     
     function create_html() {
@@ -86,7 +86,12 @@ TABS.dataflash.initialize = function (callback) {
         // translate to user-selected language
         localize();
        
-        if (TABS.dataflash.available) {
+    	// locating link to used CF version
+    	var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+
+			if (TABS.dataflash.available) {
             var supportsDataflash = DATAFLASH.totalSize > 0;
             
             $(".tab-dataflash").toggleClass("supported", supportsDataflash);
@@ -104,7 +109,7 @@ TABS.dataflash.initialize = function (callback) {
                 
                 update_html();
             } else {
-                $(".tab-dataflash .note").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
+                $(".tab-dataflash .note_spacer").html(chrome.i18n.getMessage('dataflashNotSupportedNote'));
             }
         } else {
             $(".tab-dataflash").removeClass("supported");

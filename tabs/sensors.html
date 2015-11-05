@@ -1,23 +1,30 @@
-<div id="content-watermark"></div>
 <div class="tab-sensors">
 <div class="content_wrapper">
-    <div class="info">
-        <p i18n="sensorsInfo">
-            Keep in mind that using fast update periods and rendering multiple graphs at the same time
-            is resource heavy and will burn your battery quicker if you use a laptop.<br />
-            We recommend to only render graphs for sensors you are interested in while using reasonable update periods.
-        </p>
+  <div class="tab_title" i18n="tabRawSensorData">tabRawSensorData</div>
+  <div class="cf_doc_version_bt">
+    <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a></div>    
+   
+   <div class="note" style="margin-bottom:10px;">
+      <div class="note_spacer">
+        <p i18n="sensorsInfo">Keep in mind that using fast update periods and rendering multiple graphs at the same time is resource heavy and will burn your battery quicker if you use a laptop. We recommend to only render graphs for sensors you are interested in while using reasonable update periods.
+</p>
+      </div>
+    </div>
+   <div class="gui_box">
+   <div class="info">
         <div class="checkboxes">
-            <label><input type="checkbox" name="gyro_on" class="first" />Gyroscope</label>
-            <label><input type="checkbox" name="accel_on" />Accelerometer</label>
-            <label><input type="checkbox" name="mag_on" />Magnetometer</label>
-            <label><input type="checkbox" name="baro_on" />Barometer</label>
-            <label><input type="checkbox" name="sonar_on" />Sonar</label>
-            <label><input type="checkbox" name="debug_on" />Debug</label>
+            <label><input type="checkbox" name="gyro_on" class="first"/>Gyroscope</label>
+            <label><input type="checkbox" name="accel_on"/>Accelerometer</label>
+            <label><input type="checkbox" name="mag_on"/>Magnetometer</label>
+            <label><input type="checkbox" name="baro_on"/>Barometer</label>
+            <label><input type="checkbox" name="sonar_on"/>Sonar</label>
+            <label><input type="checkbox" name="debug_on"/>Debug</label>
         </div>
     </div>
+    </div>
     <div class="wrapper gyro">
-        <div class="plot_control">
+       <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Gyroscope - deg/s</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -56,8 +63,9 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
-    <div class="wrapper accel">
+    </div></div>
+<div class="wrapper accel">
+       <div class="gui_box grey">
         <div class="plot_control">
             <div class="title">Accelerometer - g</div>
             <dl>
@@ -97,7 +105,10 @@
         </svg>
         <div class="clear-both"></div>
     </div>
-    <div class="wrapper mag">
+    </div>
+    
+<div class="wrapper mag">
+       <div class="gui_box grey">
         <div class="plot_control">
             <div class="title">Magnetometer - Ga</div>
             <dl>
@@ -136,8 +147,10 @@
         </svg>
         <div class="clear-both"></div>
     </div>
+    </div>
     <div class="wrapper baro">
-        <div class="plot_control">
+        <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Barometer - meters</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -157,6 +170,7 @@
                 <dt>X:</dt><dd class="x">0</dd>
             </dl>
         </div>
+        
         <svg id="baro">
             <g class="grid x" transform="translate(40, 120)"></g>
             <g class="grid y" transform="translate(40, 10)"></g>
@@ -165,9 +179,10 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
+    </div></div>
     <div class="wrapper sonar">
-        <div class="plot_control">
+       <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Sonar - cm</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>
@@ -195,9 +210,10 @@
             <g class="axis y" transform="translate(40, 10)"></g>
         </svg>
         <div class="clear-both"></div>
-    </div>
+    </div></div>
     <div class="wrapper debug">
-        <div class="plot_control">
+       <div class="gui_box grey">
+       <div class="plot_control">
             <div class="title">Debug 0</div>
             <dl>
                 <dt i18n="sensorsRefresh"></dt>

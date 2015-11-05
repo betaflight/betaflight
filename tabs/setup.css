@@ -1,6 +1,6 @@
 
 
-.model-and-info {
+.tab_setup .model-and-info {
 	float: left;
 }
 
@@ -16,13 +16,13 @@ margin-bottom:10px;
 
 #interactive_block  {
     position: absolute;
-	width: calc(75% - 40px);
+	width: calc(75% - 30px);
 	height: calc(100% - 245px);
 	background-color:#f9f9f9;
 	border-radius: 5px;
 	border:1px solid #e4e4e4;
 	margin-bottom:10px;
-	min-height:404px;
+	min-height:400px;
 }
 
 .attitude_info {
@@ -60,21 +60,16 @@ margin-bottom:10px;
 	right:10px;
 	z-index:10;
 	border-radius:3px;
-
     bottom: 10px;
     right: 10px;
-
     height: 28px;
     line-height: 28px;
-
     padding: 0 15px 0 15px;
-
     text-align: center;
     font-weight: bold;
-
     border: 1px solid silver;
     background-color: #ececec;
-
+	border-radius: 3px:
     z-index: 100;
 }
 #interactive_block a.reset:hover {
@@ -98,67 +93,56 @@ margin-bottom:10px;
 .gui_box grey .block {
     float: left;
     display: block;
-
     margin-left: 10px;
-
     border: 1px solid silver;
 }
 
 .gui_box grey .block .head {
     display: block;
-
     text-align: center;
     line-height: 20px;
     font-weight: bold;
-
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
 .gui_box grey .block.info {
     display: inline-block;
     margin-bottom: 10px;
-
     vertical-align: top;
     font-size: 12px;
-
     border: 1px solid silver;
 }
 
 
 
 
-.tab-setup .block.info .fields {
+.block.info .fields {
     padding: 5px 5px 3px 5px;
 }
-.tab-setup .block.info dt {
+.block.info dt {
     float: left;
-
     width: 99px;
     height: 20px;
     line-height: 20px;
 }
-.tab-setup .block.info dd {
+.block.info dd {
     width: 76px;
     height: 20px;
     line-height: 20px;
-
     margin-left: 99px;
 }
-.tab-setup .block.gps {
+.block.gps {
     width: 185px;
     margin-bottom: 10px;
 }
-.tab-setup .block.gps .fields {
+.block.gps .fields {
     padding: 5px 5px 3px 5px;
 }
-.tab-setup .block.gps dt {
+.block.gps dt {
     float: left;
-
     width: 85px;
     height: 20px;
-
     margin-bottom: 2px;
-
     line-height: 20px;
 }
 
@@ -166,8 +150,8 @@ margin-bottom:10px;
     width: 285px;
 	align-content:center;
 	text-align:center;
-	ma
 }
+
 .buttons {
     bottom: 20px;
 }
@@ -182,10 +166,22 @@ margin-bottom:10px;
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
 
+
+.block.instrument .attitude {
+width:50px !important;
+height:50px !important;
+}
+
+
+.block.instrument .heading {
+width:50px;
+height:50px;
+}
+
 #interactive_block  {
     position: absolute;
 	width: calc(75% - 20px);
-	min-height:356px;
+	min-height:300px;
 	height: calc(100% - 218px);
 }
 
