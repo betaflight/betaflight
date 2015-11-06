@@ -101,7 +101,7 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
 
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
         GPIO_InitStructure.GPIO_Pin = I2C1_SCL_PIN;
@@ -144,7 +144,7 @@ void i2cInitPort(I2C_TypeDef *I2Cx)
         // Init pins
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
         GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+        GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
         GPIO_InitStructure.GPIO_Pin = I2C2_SCL_PIN;
