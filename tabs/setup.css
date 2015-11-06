@@ -11,8 +11,8 @@ margin-bottom:10px;
 }
 
 
-/*
-*/
+
+
 
 #interactive_block  {
     position: absolute;
@@ -22,7 +22,7 @@ margin-bottom:10px;
 	border-radius: 5px;
 	border:1px solid #e4e4e4;
 	margin-bottom:10px;
-	min-height:400px;
+	/* min-height:400px; */
 }
 
 .attitude_info {
