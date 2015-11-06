@@ -32,7 +32,7 @@
 .tab-led-strip .gPoint.function-w { /* Warning */
     background: red;
     box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
-    border-color: red;      
+    border-color: red;
 }
 
 .tab-led-strip .gPoint.function-f { /* Flight mode & orientation */
@@ -44,7 +44,7 @@
 .tab-led-strip .gPoint.function-i { /* Indicator */
     background: yellow;
     box-shadow: inset 0 0 30px rgba(0, 0, 0, .7);
-    border-color: yellow;       
+    border-color: yellow;
 }
 
 .tab-led-strip .gPoint.function-a { /* Armed Mode */
@@ -205,12 +205,12 @@
 
 .tab-led-strip .indicators {
     position: relative;
-    height: 30px    
+    height: 30px
 }
 
 .tab-led-strip .indicators span {
-    width: 0; 
-    height: 0; 
+    width: 0;
+    height: 0;
     position: absolute;
     display: none;
     font-size: 10px;
@@ -219,44 +219,44 @@
 
 .tab-led-strip .indicators .north {
     top: -4px;
-    left: 7px; 
+    left: 7px;
     border-left: 7px solid transparent;
-    border-right: 7px solid transparent;    
+    border-right: 7px solid transparent;
     border-bottom: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .south {
     bottom: -2px;
-    left: 7px; 
+    left: 7px;
     border-left: 7px solid transparent;
-    border-right: 7px solid transparent;    
+    border-right: 7px solid transparent;
     border-top: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .east {
     bottom: 8px;
-    right: -5px; 
+    right: -5px;
     border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;   
+    border-bottom: 7px solid transparent;
     border-left: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .west {
     bottom: 8px;
-    left: -5px;  
+    left: -5px;
     border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;   
+    border-bottom: 7px solid transparent;
     border-right: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .up {
     top: 0px;
-    left: 2px;  
+    left: 2px;
 }
 
 .tab-led-strip .indicators .down {
     bottom: 17px;
-    right: 10px; 
+    right: 10px;
 }
 
 .tab-led-strip .dir-n .north {display: inline;}
@@ -318,26 +318,6 @@
     margin-top: 10px;
 }
 
-.tab-led-strip .save {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-
-.tab-led-strip.save:hover {
-    background-color: #dedcdc;
-}
-
 .gridSections {
     position: absolute;
     z-index: -1;
@@ -374,5 +354,5 @@
     background: rgba(0,0,0,.4);
     position: absolute;
     z-index: 100;
-    border: 1px dotted white;   
+    border: 1px dotted white;
 }

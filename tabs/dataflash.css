@@ -68,35 +68,6 @@
     position: absolute;
     bottom: 10px;
 }
-.tab-dataflash .buttons a {
-    display: block;
-    float: right;
-
-    margin-left: 10px;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-dataflash .buttons a:hover {
-    background-color: #dedcdc;
-}
-.tab-dataflash .save_btn a.disabled {
-    cursor: default;
-    color: #fff;
-    background-color:#AFAFAF;
-    border: none;
-    pointer-events: none;
-    text-shadow: none;
-    opacity: 0.5;
-}
 .tab-dataflash .dataflash-progress {
     display: none;
 }
@@ -110,7 +81,7 @@
     flex-direction:row;
     flex-wrap:nowrap;
     justify-content:flex-start;
-    
+
     border-radius:6px;
 }
 .tab-dataflash .dataflash-contents li {
@@ -200,30 +171,11 @@
     display:none;
 }
 
-
-.tab-dataflash .fixed_band {
-    width: 100%;
-    bottom: 0px;
-}
-
-.tab-dataflash .save_btn a {
-	line-height: 28px;
-}
-
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
 
 .tab-dataflash table thead tr:first-child {
     font-size: 12px;
     height: 22px;
 }
 
-.tab-dataflash .fixed_band {
-    width: calc(100% - -5px);
 }
-
-.tab-dataflash .fixed_band .save_btn a {
-	margin-right:15px;
-	}
-}
-

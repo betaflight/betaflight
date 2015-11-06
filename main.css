@@ -18,6 +18,7 @@ body {
 	background-color:#3d3f3e;
 	margin:0px;
 	padding:0px;
+  overflow: hidden;
 }
 
 a {
@@ -28,9 +29,14 @@ a {
 
 a:hover {
 	text-decoration: none;
+}
 
+a.disabled {
+  pointer-events: none;
+  cursor: default;
+  color: #999;
+}
 
-	}
 
 
 /* Help-Icon  */
@@ -72,7 +78,7 @@ span .helpicon {
 
 
 
-/* Change here the content of the documentation button in all tabs!!!  
+/* Change here the content of the documentation button in all tabs!!!
 
 .cf_doc_version_bt a:before {
 	content:"Documentation 1.10";
@@ -124,7 +130,12 @@ input[type="number"]::-webkit-inner-spin-button {
 #main-wrapper {
     padding: 0px 0px 0 0px; /*   padding: 5px 5px 0 5px; */
     height: calc(100% - 7px);
-
+}
+.margin-top {
+  margin-top: 20px;
+}
+.margin-bottom {
+  margin-bottom: 20px;
 }
 
 .headerbar {
@@ -172,7 +183,11 @@ input[type="number"]::-webkit-inner-spin-button {
 	float: right;
 	margin-top: 20px;
  	margin-right:20px;
-	width:180px;
+	/*width:180px;*/
+}
+
+#portsinput .dropdown {
+  margin-bottom:5px;
 }
 
 /*
@@ -618,14 +633,12 @@ input[type="number"]::-webkit-inner-spin-button {
 .logswitch a {
 	color:#656565 !important;
     transition: all  0.3s;
-
 	}
 
 .logswitch a:hover {
 	color:#959595 !important;
 	text-decoration:none !important;
 	transition: all  0.3s;
-
 	}
 
 .tab_container {
@@ -990,28 +1003,22 @@ dialog {
 
 	/* Tab Title */
 	.tab_title {
-	float:left;
-	width:100%;
 	border-bottom:1px solid #59aa29;
 	font-size:20px;
 	line-height:24px;
-	height:30px;
 	font-family: 'open_sanslight', Arial;
 	margin-bottom:15px;
 	}
 
 /* Note */
 .note {
-	float:left;
 	background-color:#fff7cd;
 	border:1px solid #ffe55f;
 	margin-bottom:7px;
 	margin-top:3px;
-	width:calc(100% - 2px);
 	border-radius: 3px;
 	font-size:11px;
 	font-family: 'open_sansregular', Arial;
-
 	}
 
 .note_spacer {
@@ -1027,6 +1034,74 @@ dialog {
 	padding-top:15px;
 	padding-bottom:15px;
 }
+
+.content_wrapper {
+  /* leave 20px side padding always */
+  /*padding: 0 20px 0 20px;
+    for testing: */
+  padding: 20px;
+  position: relative;
+}
+
+.content_toolbar {
+  /*  content toolbar panel */
+  width: 100%;
+  height: 30px;
+  background: silver;
+  padding: 10px 0;
+  overflow: hidden;
+}
+
+.content_toolbar .btn a {
+  /*  common styles for content toolbar buttons */
+  display: block;
+  float: right;
+  margin-right: 10px;
+  height: 28px;
+  line-height: 28px;
+  padding: 0 15px 0 15px;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid silver;
+  border-radius: 3px;
+  background-color: #ececec;
+}
+
+.content_toolbar .btn a:hover {
+  background-color: #fff;
+  border-color: #999;
+}
+
+.content_toolbar .btn a:active {
+  background-color: #999;
+  color: #fff !important;
+}
+
+.toolbar_scroll_bottom .content_wrapper {
+  /*  content wrapper in view with toolbar in scroll bottom
+      leave 50px space for the toolbar
+      */
+  height: 100%;
+  margin: 0 0 -50px;
+}
+
+.toolbar_fixed_bottom .content_wrapper {
+  /*  content wrapper in view with toolbar fixed over bottom edge
+      leave 50px space for the toolbar
+      */
+  height: calc(100% - 90px);
+  overflow-y: auto;
+}
+
+.toolbar_fixed_bottom .content_toolbar {
+  position: absolute;
+  bottom: 0;
+  z-index: 2000; /* for fancy toggle buttons */
+}
+
+
+
+
 
 /* Colums  START> */
 
@@ -1102,7 +1177,6 @@ dialog {
 	padding-left:15px;
 	float:left;
 	width:calc(100% - 15px);
-
 	}
 
 .spacer_right {
@@ -1120,7 +1194,6 @@ dialog {
 	width: calc(100% - 2px);
 	margin-bottom:10px;
 	font-family: 'open_sansregular', Arial;
-
 	}
 
 .grey {
@@ -1193,7 +1266,6 @@ dialog {
 	padding-left:9px;
 	padding-right:9px;
 	line-height:28px;
-
 	}
 
 .fixed_band .save_btn a:hover {
@@ -1208,12 +1280,11 @@ dialog {
 
 
 .default_btn {
-	width: calc(100% - 2px);
+	width:100%;
 	position:relative;
 	margin-bottom:10px;
 	margin-top:0px;
 	float:left;
-
 	}
 
 
@@ -1254,10 +1325,9 @@ dialog {
 	margin-top:0px;
 	margin-right:5px;
 	float:left;
-
 	}
 
-	.small a {
+.small a {
 	padding:3px 4px 4px 4px;
 	text-align:center;
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
@@ -1270,7 +1340,6 @@ dialog {
 	line-height:11px;
 	display:block;
 	transition: all ease 0.2s;
-
 	}
 
 .small a:hover {
@@ -1279,8 +1348,6 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	border: 1px solid #59aa29;
 	transition: all ease 0.2s;
-
-
 	}
 
 .small a:active {
@@ -1296,7 +1363,6 @@ dialog {
 	color:#fff;
 	border: 1px solid #59aa29;
 	transition: all ease 0.2s;
-
 	}
 
 .green a:hover {
@@ -1305,7 +1371,6 @@ dialog {
 	text-shadow:0px 1px rgba(0, 0, 0, 0.25);
 	color:#fff;
 	transition: all ease 0.2s;
-
 	}
 
 
@@ -1329,7 +1394,6 @@ dialog {
 	padding-bottom:5px;
 	border-style: dotted;
 }
-
 
 .noboarder td{
 	border:none;
@@ -1436,12 +1500,9 @@ dialog {
 /* fixing padding for all Tabs*/
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
-	padding:20px;
-	float:left;
-	width:calc(100% - 40px);
-	height:calc(100% - 40px) !important;
-	position:absolute !important;
-	}
+  height: 100%;
+  position: relative;
+}
 
 
 /* fixing logging tab*/
@@ -1485,18 +1546,19 @@ dialog {
 	color:#fff;
 	font-size: 10px;
 	}
-	
-	
+
+
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
-	
+.content_wrapper {
+  padding: 15px;
+}
+
 .tab_title {
 	font-size:16px;
 	line-height:18px;
-	height:24px;
 	font-family: 'open_sanslight', Arial;
 	margin-bottom:10px;
-	display:;
 	}
 
 .cf_doc_version_bt a {
@@ -1505,7 +1567,7 @@ dialog {
 	font-size:9px;
 	line-height:15px;
 	}
-		
+
 #content {
     height:calc(100% - 151px); /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
 }
@@ -1516,13 +1578,8 @@ body {
 	}
 
 .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash, .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors, .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
-	padding:15px;
-	float:left;
-	width:calc(100% - 30px);
-	height:calc(100% - 30px) !important;
-	position:absolute !important;
 	}
-	
+
 .cf_table td {
 	padding-top:2px;
 	padding-bottom:2px;
@@ -1535,7 +1592,7 @@ body {
 .default_btn a {
  	/*font-size:11px;*/
 	}
-	
+
 #tabs li a {
 	font-family: 'open_sansregular', Arial;
 	font-size:12px;
@@ -1562,7 +1619,7 @@ body {
 	margin-bottom:5px;
 	float:left;
 	}
-	
+
 .spacer_box_title {
     padding-left: 10px;
     padding-right: 10px;
@@ -1571,7 +1628,7 @@ body {
     float: left;
 	}
 
-	
+
 input {
 	font-size:11px !important;
 	}

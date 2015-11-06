@@ -3,8 +3,6 @@
 
 .tab-logging .properties {
     margin-top: 10px;
-    width: 100%;
-    float:left;
 }
 .tab-logging .properties dt {
     float: left;
@@ -53,27 +51,16 @@
     bottom: 0px;
 }
 
-.tab-logging .save_btn a {
-	line-height: 28px;
-}
-
 .tab-logging .save_btn .back {
     display: none;
 }
 
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
+@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 
 .tab-logging table thead tr:first-child {
     font-size: 12px;
     height: 22px;
 }
 
-.tab-logging .fixed_band {
-    width: calc(100% - -5px);
-}
-
-.tab-logging .fixed_band .save_btn a {
-	margin-right:15px;
-	}
 }

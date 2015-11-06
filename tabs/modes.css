@@ -44,21 +44,3 @@
     position: absolute;
     bottom: 10px;
 }
-.tab-modes .update {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-.tab-modes .update:hover {
-    background-color: #dedcdc;
-}

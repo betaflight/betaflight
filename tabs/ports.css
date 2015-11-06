@@ -1,6 +1,5 @@
 .tab-ports {
-    position: absolute;
-    height: calc(100%; - 40px);
+    position: relative;
 }
 
 #tab-ports-templates {
@@ -78,13 +77,6 @@
     display:none;
 }
 
-
-.tab-ports .fixed_band {
-    width: 100%;
-    bottom: 0px;
-}
-
-
 .tab-ports .ports thead td {
     text-align: left;
     white-space: nowrap;
@@ -92,7 +84,6 @@
     background-color: #828885;
     color: white;
 }
-
 
 .tab-ports .ports thead td:first-child {
     border-top-left-radius: 5px;
@@ -107,26 +98,12 @@
 
 }
 
-.tab-ports .ports td:first-child {
-}
-
-.tab-ports .fixed_band .save_btn a {
-	line-height:28px;
-	}
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
 
 .tab-ports table thead tr:first-child {
     font-size: 12px;
     height: 22px;
 }
 
-.tab-ports .fixed_band {
-    width: calc(100% - -5px);
-}
-
-.tab-ports .fixed_band .save_btn a {
-	margin-right:15px;
-	}
 }

@@ -15,7 +15,7 @@
 	border:1px solid #ccc;
 	margin-bottom:10px;
 	}
-	
+
 .tab-pid_tuning input[type="number"]::-webkit-inner-spin-button {
     border: 0;
 	}
@@ -26,7 +26,7 @@
     border-collapse: collapse;
 	width: calc(100% - -1px);
 	}
-	
+
 .tab-pid_tuning .gui_box {
  	margin-bottom:65px !important;
  }
@@ -51,11 +51,11 @@
 	width:calc(100% -1px);
 
 	}
-	
+
 	.tab-pid_tuning .pid_titlebar th:first-child {
 	text-align:left;
 	}
-	
+
 	.tab-pid_tuning .pid_titlebar th:last-child {
 	border-right: none;
 	}
@@ -82,7 +82,7 @@
     text-align: left;
     padding-left: 0px;
 }
-	
+
 .tab-pid_tuning table tr:nth-child(odd) {
 }
 
@@ -146,33 +146,6 @@
     float: right;
     width: calc(100% - 0px); /* - ( "virtual" margin) */
 }
-.tab-pid_tuning .buttons {
-    right:10px;
-    bottom: 10px;
-}
-.tab-pid_tuning .update,
-.tab-pid_tuning .refresh {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-
-    padding: 0 15px 0 15px;
-
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid #ccc;
-    background-color: #ececec;
-}
-.tab-pid_tuning .refresh {
-    margin-right: 10px;
-}
-.tab-pid_tuning .update:hover,
-.tab-pid_tuning .refresh:hover {
-    background-color: #dedcdc;
-}
 .tab-pid_tuning .top-buttons {
   float:right;
 }
@@ -199,26 +172,26 @@
     color: #828282;
 	font-family: 'open_sans', Arial;
 	background-image: linear-gradient(
-    -45deg, 
-    rgba(255, 255, 255, .2) 10%, 
-    transparent 10%, 
-    transparent 20%, 
-    rgba(255, 255, 255, .2) 20%, 
-    rgba(255, 255, 255, .2) 30%, 
-    transparent 30%, 
-	transparent 40%, 
-    rgba(255, 255, 255, .2) 40%, 
-    rgba(255, 255, 255, .2) 50%, 
-    transparent 50%, 
-    transparent 60%, 
-    rgba(255, 255, 255, .2) 60%, 
-    rgba(255, 255, 255, .2) 70%, 
-    transparent 70%, 
-	transparent 80%, 
-    rgba(255, 255, 255, .2) 80%, 
-    rgba(255, 255, 255, .2) 90%, 
-    transparent 90%, 
-    transparent 100%, 
+    -45deg,
+    rgba(255, 255, 255, .2) 10%,
+    transparent 10%,
+    transparent 20%,
+    rgba(255, 255, 255, .2) 20%,
+    rgba(255, 255, 255, .2) 30%,
+    transparent 30%,
+	transparent 40%,
+    rgba(255, 255, 255, .2) 40%,
+    rgba(255, 255, 255, .2) 50%,
+    transparent 50%,
+    transparent 60%,
+    rgba(255, 255, 255, .2) 60%,
+    rgba(255, 255, 255, .2) 70%,
+    transparent 70%,
+	transparent 80%,
+    rgba(255, 255, 255, .2) 80%,
+    rgba(255, 255, 255, .2) 90%,
+    transparent 90%,
+    transparent 100%,
     rgba(255, 255, 255, .2) 100%,
     transparent );
 
@@ -261,21 +234,4 @@
     background-size: 430px;
     height: 174px;
     opacity: 0.15;
-}
-
-
-
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
-
-.tab-pid_tuning .fixed_band {
-    margin: 0px;
-    width: calc(100% - 0px);
-    margin-left: -15px;
-}
-
-.tab-pid_tuning .fixed_band .save_btn a {
-	margin-right:15px;
-	}
-
 }

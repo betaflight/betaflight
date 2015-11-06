@@ -1,16 +1,14 @@
-<div class="tab-logging">
-  <div class="tab_title" i18n="tabLogging"></div>
-  <div class="cf_doc_version_bt">
-    <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
-  </div>
-  
-  <div class="note" style="margin-bottom:20px;">
-      <div class="note_spacer">
-        <p i18n="loggingNote"></p>
-      </div>
+<div class="tab-logging toolbar_fixed_bottom">
+<div class="content_wrapper">
+  	<div class="tab_title" i18n="tabLogging"></div>
+  	<div class="cf_doc_version_bt">
+   		<a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+  	</div>
+ 	<div class="note">
+	    <div class="note_spacer">
+    	    <p i18n="loggingNote"></p>
+    	</div>
     </div>
-    
-    
     <div class="properties">
         <dl>
             <dt><label><input type="checkbox" name="MSP_RAW_IMU" /> MSP_RAW_IMU</label></dt><dd>9 columns (accel[x, y, z], gyro[x, y, z], mag[x, y, z])</dd>
@@ -42,11 +40,10 @@
             <dt i18n="loggingLogSize"></dt><dd class="size">0 Bytes</dd>
         </dl>
     </div>
-    <div class="fixed_band" style="position:fixed;">
-      <div class="save_btn">
-         <a href="#" class="back" i18n="loggingBack"></a>
-         <a href="#" class="logging" i18n="loggingStart"></a>
-         <a href="#" class="log_file" i18n="loggingButtonLogFile"></a>
-      </div>
-   </div>
+</div>
+<div class="content_toolbar">
+  <div class="btn back_btn"><a class="back" href="#" i18n="loggingBack"></a></div>
+  <div class="btn logging_btn"><a class="logging" href="#" i18n="loggingStart"></a></div>
+  <div class="btn file_btn"><a class="log_file" href="#" i18n="loggingButtonLogFile"></a></div>
+</div>
 </div>

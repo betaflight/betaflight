@@ -1,4 +1,5 @@
-<div class="tab-firmware_flasher">
+<div class="tab-firmware_flasher toolbar_fixed_bottom">
+<div class="content_wrapper">
   <div class="options">
     <div class="option releases">
       <select name="release">
@@ -85,9 +86,15 @@
     <progress class="progress" value="0" min="0" max="100"></progress>
     <span class="progressLabel" i18n="firmwareFlasherLoadFirmwareFile"></span>
   </div>
-  <div class="buttons">
+  <!--div class="buttons">
     <a class="load_file" href="#" i18n="firmwareFlasherButtonLoadLocal"></a>
     <a class="load_remote_file locked" href="#" i18n="firmwareFlasherButtonLoadOnline"></a>
     <a class="flash_firmware locked" href="#" i18n="firmwareFlasherFlashFirmware"></a>
-  </div>
+  </div-->
+</div>
+<div class="content_toolbar">
+  <div class="btn"><a class="load_file" href="#" i18n="firmwareFlasherButtonLoadLocal"></a></div>
+  <div class="btn"><a class="load_remote_file locked" href="#" i18n="firmwareFlasherButtonLoadOnline"></a></div>
+  <div class="btn"><a class="flash_firmware locked" href="#" i18n="firmwareFlasherFlashFirmware"></a></div>
+</div>
 </div>

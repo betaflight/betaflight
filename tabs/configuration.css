@@ -171,27 +171,12 @@
     margin-left: 0px;
 }
 
-.tab-configuration .save {
-    display: block;
-    float: right;
-
-    height: 28px;
-    line-height: 28px;
-    padding: 0 15px 0 15px;
-    text-align: center;
-    font-weight: bold;
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-
-.tab-configuration .save:hover {
-    background-color: #dedcdc;
-}
 
 .tab-configuration .freelabel {
 	margin-left:10px;
 	position:relative;
 }
+
 
 .tab-configuration input {
 	float:left;
@@ -245,8 +230,8 @@
 	margin-bottom:0px;
 }
 
-.tab-configuration .gui_box_titlebar  { 
-	      margin-bottom: 0px; 
+.tab-configuration .gui_box_titlebar  {
+	      margin-bottom: 0px;
 }
 
 .tab-configuration .numberspacer {
@@ -326,7 +311,7 @@
 }
 
 .tab-configuration .mixerPreview {
-	max-width:230px; 
+	max-width:230px;
 	background-color: #eeeeee;
 	text-align: center;
 	float:left;
@@ -407,4 +392,3 @@
 
 	
 	
-}
