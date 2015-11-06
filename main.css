@@ -1683,4 +1683,14 @@ input {
 margin-right:15px;
 }
 
+
+.toolbar_fixed_bottom .content_wrapper {
+  /*  content wrapper in view with toolbar fixed over bottom edge
+      leave 50px space for the toolbar
+      */
+  height: calc(100% - 81px);
+  overflow-y: auto;
+}
+
+
 	}
