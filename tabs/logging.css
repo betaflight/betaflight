@@ -55,6 +55,9 @@
     display: none;
 }
 
+.tab-logging .back_btn {
+display:none;
+}
 
 @media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
 

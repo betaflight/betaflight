@@ -78,7 +78,7 @@ TABS.dataflash.initialize = function (callback) {
             });
         }
         
-        $(".save_btn a.erase-flash, .save_btn a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
+        $(".btn a.erase-flash, .btn a.save-flash").toggleClass("disabled", DATAFLASH.usedSize == 0);
     }
     
     function create_html() {

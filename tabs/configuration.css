@@ -277,6 +277,7 @@
 .tab-configuration .other .gui_box {
 	min-height:355px;
 	float:left;
+	margin-bottom:0px;
 }
 
 .tab-configuration .current .gui_box {
