@@ -50,6 +50,12 @@
 
 #include "config/runtime_config.h"
 
+// the limit (in degrees/second) beyond which we stop integrating
+// omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
+// which results in false gyro drift. See
+// http://gentlenav.googlecode.com/files/fastRotations.pdf
+#define SPIN_RATE_LIMIT 20
+
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
@@ -209,6 +215,19 @@ static bool imuUseFastGains(void)
     return !ARMING_FLAG(ARMED) && millis() < 20000;
 }
 
+// Taken from http://gentlenav.googlecode.com/files/fastRotations.pdf
+static float imuGetPGainScaleFactor(float spin_rate)
+{
+    if (spin_rate < DEGREES_TO_RADIANS(50)) {
+        return 1.0f;
+    }
+    else if (spin_rate > DEGREES_TO_RADIANS(500)) {
+        return 10.0f;
+    }
+
+    return spin_rate / DEGREES_TO_RADIANS(50);
+}
+
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
@@ -219,6 +238,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float hx, hy, bx;
     float ex = 0, ey = 0, ez = 0;
     float qa, qb, qc;
+
+    // Calculate general spin rate (rad/s)
+    float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
 
     // Use raw heading error (from GPS or whatever else)
     if (useYaw) {
@@ -272,10 +294,13 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
     // Compute and apply integral feedback if enabled
     if(imuRuntimeConfig->dcm_ki > 0.0f) {
-        float dcmKiGain = imuRuntimeConfig->dcm_ki;
-        integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
-        integralFBy += dcmKiGain * ey * dt;
-        integralFBz += dcmKiGain * ez * dt;
+        // Stop integrating if spinning beyond the certain limit
+        if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
+            float dcmKiGain = imuRuntimeConfig->dcm_ki;
+            integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
+            integralFBy += dcmKiGain * ey * dt;
+            integralFBz += dcmKiGain * ez * dt;
+        }
     }
     else {
         integralFBx = 0.0f;    // prevent integral windup
@@ -287,6 +312,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float dcmKpGain = imuRuntimeConfig->dcm_kp;
     if (imuUseFastGains()) {
         dcmKpGain *= 10;
+    }
+    else {
+        dcmKpGain *= imuGetPGainScaleFactor(spin_rate);
     }
 
     // Apply proportional and integral feedback
@@ -342,13 +370,13 @@ static bool imuIsAccelerometerHealthy(void)
     int32_t accMagnitude = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)accADC[axis] * accADC[axis];
+        accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
 
     accMagnitude = accMagnitude * 100 / ((int32_t)acc_1G * acc_1G);
 
-    // Accept accel readings only in range 0.85g - 1.15g
-    return (72 < accMagnitude) && (accMagnitude < 133);
+    // Accept accel readings only in range 0.90g - 1.10g
+    return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
 static bool isMagnetometerHealthy(void)
@@ -370,17 +398,17 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
+    // If reading is considered valid - apply filter
+    for (axis = 0; axis < 3; axis++) {
+        if (imuRuntimeConfig->acc_cut_hz > 0) {
+            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6);
+        } else {
+            accSmooth[axis] = accADC[axis];
+        }
+    }
+
     // Smooth and use only valid accelerometer readings
     if (imuIsAccelerometerHealthy()) {
-        // If reading is considered valid - apply filter
-        for (axis = 0; axis < 3; axis++) {
-            if (imuRuntimeConfig->acc_cut_hz > 0) {
-                accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6);
-            } else {
-                accSmooth[axis] = accADC[axis];
-            }
-        }
-
         useAcc = true;
     }
 
