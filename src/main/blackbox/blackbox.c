@@ -930,8 +930,8 @@ static void loadMainState(void)
     }
 
     blackboxCurrent->attitude[0] = attitude.values.roll;
-    blackboxCurrent->attitude[0] = attitude.values.pitch;
-    blackboxCurrent->attitude[0] = attitude.values.yaw;
+    blackboxCurrent->attitude[1] = attitude.values.pitch;
+    blackboxCurrent->attitude[2] = attitude.values.yaw;
 
     for (i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
