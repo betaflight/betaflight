@@ -342,13 +342,13 @@ static bool imuIsAccelerometerHealthy(void)
     int32_t accMagnitude = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)accADC[axis] * accADC[axis];
+        accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
 
     accMagnitude = accMagnitude * 100 / ((int32_t)acc_1G * acc_1G);
 
-    // Accept accel readings only in range 0.85g - 1.15g
-    return (72 < accMagnitude) && (accMagnitude < 133);
+    // Accept accel readings only in range 0.90g - 1.10g
+    return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
 static bool isMagnetometerHealthy(void)
@@ -370,17 +370,17 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
+    // If reading is considered valid - apply filter
+    for (axis = 0; axis < 3; axis++) {
+        if (imuRuntimeConfig->acc_cut_hz > 0) {
+            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6);
+        } else {
+            accSmooth[axis] = accADC[axis];
+        }
+    }
+
     // Smooth and use only valid accelerometer readings
     if (imuIsAccelerometerHealthy()) {
-        // If reading is considered valid - apply filter
-        for (axis = 0; axis < 3; axis++) {
-            if (imuRuntimeConfig->acc_cut_hz > 0) {
-                accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6);
-            } else {
-                accSmooth[axis] = accADC[axis];
-            }
-        }
-
         useAcc = true;
     }
 
