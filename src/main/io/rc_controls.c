@@ -126,6 +126,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
+    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
 
@@ -159,11 +160,16 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             // Disarming via ARM BOX
 
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
-                if (disarm_kill_switch) {
-                    mwDisarm();
-                } else if (throttleStatus == THROTTLE_LOW) {
-                    mwDisarm();
+                rcDisarmTicks++;
+                if (rcDisarmTicks > 3) {
+                    if (disarm_kill_switch) {
+                        mwDisarm();
+                    } else if (throttleStatus == THROTTLE_LOW) {
+                        mwDisarm();
+                    }
                 }
+            } else {
+                rcDisarmTicks = 0;
             }
         }
     }
