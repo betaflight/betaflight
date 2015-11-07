@@ -215,17 +215,14 @@ static bool imuUseFastGains(void)
     return !ARMING_FLAG(ARMED) && millis() < 20000;
 }
 
-// Taken from http://gentlenav.googlecode.com/files/fastRotations.pdf
 static float imuGetPGainScaleFactor(float spin_rate)
 {
-    if (spin_rate < DEGREES_TO_RADIANS(50)) {
-        return 1.0f;
-    }
-    else if (spin_rate > DEGREES_TO_RADIANS(500)) {
+    if (imuUseFastGains()) {
         return 10.0f;
     }
-
-    return spin_rate / DEGREES_TO_RADIANS(50);
+    else {
+        return 1.0f;
+    }
 }
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
@@ -309,13 +306,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Calculate kP gain. If we are acquiring initial attitude (not armed and within 20 sec from powerup) scale the kP to converge faster
-    float dcmKpGain = imuRuntimeConfig->dcm_kp;
-    if (imuUseFastGains()) {
-        dcmKpGain *= 10;
-    }
-    else {
-        dcmKpGain *= imuGetPGainScaleFactor(spin_rate);
-    }
+    float dcmKpGain = imuRuntimeConfig->dcm_kp * imuGetPGainScaleFactor(spin_rate);
 
     // Apply proportional and integral feedback
     gx += dcmKpGain * ex + integralFBx;
