@@ -157,7 +157,7 @@ elems.forEach(function(html) {
                     $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
                     $('div.git_info').slideUp();
                     $('div.release_info').slideUp();
-                    $('a.flash_firmware').addClass('locked');
+                    $('a.flash_firmware').addClass('disabled');
                 }
             });
 
@@ -206,7 +206,7 @@ elems.forEach(function(html) {
 
                                     if (parsed_hex) {
                                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
-                                        $('a.flash_firmware').removeClass('locked');
+                                        $('a.flash_firmware').removeClass('disabled');
 
                                         $('span.progressLabel').text('Loaded Local Firmware: (' + parsed_hex.bytes_total + ' bytes)');
                                     } else {
@@ -227,10 +227,10 @@ elems.forEach(function(html) {
          */
         $('select[name="release"]').change(function(evt){
             if (evt.target.value=="0") {
-                $("a.load_remote_file").addClass('locked');
+                $("a.load_remote_file").addClass('disabled');
             }
             else {
-                $("a.load_remote_file").removeClass('locked');
+                $("a.load_remote_file").removeClass('disabled');
             }
         });
         
@@ -253,7 +253,7 @@ elems.forEach(function(html) {
                         googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('span.progressLabel').html('<a class="save_firmware" href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
 
-                        $('a.flash_firmware').removeClass('locked');
+                        $('a.flash_firmware').removeClass('disabled');
 
                         if (summary.commit) {
                             $.get('https://api.github.com/repos/cleanflight/cleanflight/commits/' + summary.commit, function (data) {
@@ -302,7 +302,7 @@ elems.forEach(function(html) {
 
             function failed_to_load() {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
-                $('a.flash_firmware').addClass('locked');
+                $('a.flash_firmware').addClass('disabled');
             }
 
             var summary = $('select[name="release"] option:selected').data('summary');
@@ -317,7 +317,7 @@ elems.forEach(function(html) {
         });
         
         $('a.flash_firmware').click(function () {
-            if (!$(this).hasClass('locked')) {
+            if (!$(this).hasClass('disabled')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
                     if (parsed_hex != false) {
                         var options = {};

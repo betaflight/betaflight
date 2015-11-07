@@ -4,19 +4,14 @@
 }
 .tab-dataflash .info .progressLabel {
     position: absolute;
-
     width: 100%;
     height: 26px;
-
     top: 0;
     left: 0;
-
     text-align: center;
     line-height: 24px;
-
     color: white;
     font-weight: bold;
-
     /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
 }
 
@@ -31,7 +26,6 @@
     width: 12em;
     height: 20px;
     line-height: 20px;
-
     font-weight: bold;
 }
 .tab-dataflash .dataflash-info dd {
@@ -42,7 +36,6 @@
 .tab-dataflash .speed {
     margin-top: 5px;
     width: 80px;
-
     border: 1px solid silver;
 }
 .tab-dataflash .info {
@@ -53,7 +46,6 @@
     width: 120px;
     height: 20px;
     line-height: 20px;
-
     font-weight: bold;
 }
 .tab-dataflash .info dd {
@@ -64,7 +56,6 @@
 }
 .tab-dataflash .buttons {
     width: calc(100% - 20px);
-
     position: absolute;
     bottom: 10px;
 }
@@ -72,11 +63,9 @@
     display: none;
 }
 .tab-dataflash .dataflash-contents {
-    margin-top:5px;
-    
+    margin-top:5px;   
     border:1px solid silver;
     background-color:#eee;
-
     display:flex;
     flex-direction:row;
     flex-wrap:nowrap;
