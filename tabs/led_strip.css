@@ -12,17 +12,17 @@
 }
 
 .tab-led-strip .mainGrid {
-    width: calc((30px + 8px) * 16);
-    height: calc((30px + 8px) * 16);
+    width: calc((24px + 8px) * 16);
+    height: calc((24px + 8px) * 16);
     float: left;
     margin-right: 10px;
 }
 
 .tab-led-strip .mainGrid .gPoint {
     float: left;
-    border: solid 2px #ADADAD;
-    width: 28px;
-    height: 28px;
+    border: solid 1px #ADADAD;
+    width: 23px;
+    height: 23px;
     margin: 3px;
     border-radius: 7px;
     background: #ececec;;
@@ -112,15 +112,15 @@
 .tab-led-strip .wire {
     color: rgba(255,255,255,.5);
     text-align: center;
-    font-size: 25px;
+    font-size: 16px;
     text-shadow: 1px 1px rgba(0,0,0,.4);
     padding-top: 0px;
     display: block;
     font-family: monospace;
-    margin-left: -2px;
-    margin-top: -28px;
-    width: 32px;
-    height: 32px;
+    margin-left: -1px;
+    margin-top: -23px;
+    width: 24px;
+    height: 24px;
 }
 
 .gridWire .wire {
@@ -205,7 +205,7 @@
 
 .tab-led-strip .indicators {
     position: relative;
-    height: 30px
+    height: 24px
 }
 
 .tab-led-strip .indicators span {
@@ -218,8 +218,8 @@
 }
 
 .tab-led-strip .indicators .north {
-    top: -4px;
-    left: 7px;
+    top: -9px;
+    left: 4px;
     border-left: 7px solid transparent;
     border-right: 7px solid transparent;
     border-bottom: 7px solid rgba(0,0,0,.8);
@@ -227,23 +227,23 @@
 
 .tab-led-strip .indicators .south {
     bottom: -2px;
-    left: 7px;
+    left: 4px;
     border-left: 7px solid transparent;
     border-right: 7px solid transparent;
     border-top: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .east {
-    bottom: 8px;
-    right: -5px;
+    bottom: 11px;
+    right: -9px;
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
     border-left: 7px solid rgba(0,0,0,.8);
 }
 
 .tab-led-strip .indicators .west {
-    bottom: 8px;
-    left: -5px;
+    bottom: 11px;
+    left: -9px;
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
     border-right: 7px solid rgba(0,0,0,.8);
@@ -270,7 +270,6 @@
     position: relative;
     float: left;
     width: 285px;
-    height: calc((30px + 8px) * 16);
 }
 
 .tab-led-strip .directions,
@@ -321,15 +320,15 @@
 .gridSections {
     position: absolute;
     z-index: -1;
-    width: 608px;
+    width: 496px;
     border: 1px solid rgb(236, 236, 236);
     margin-top: -1px;
     margin-left: -1px;
 }
 
 .gridSections .block {
-    width: 150px;
-    height: 150px;
+    width: 122px;
+    height: 122px;
     float: left;
     border: solid 1px rgb(236, 236, 236);
 }
