@@ -160,10 +160,6 @@
 
 .tab-firmware_flasher .release_info {
     display: none;
-
-    margin-bottom: 10px;
-
-    border: 1px solid silver;
 }
 .tab-firmware_flasher .release_info .title {
     line-height: 20px;
