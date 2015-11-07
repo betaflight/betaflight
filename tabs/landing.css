@@ -95,10 +95,10 @@
 		display:block; 
 		color:white;
 		height:100px;
-		transform: rotate(90deg);
-	transform-origin: left top 0;
-	    margin-left: 23px;
-    margin-top: 10px;
+	    transform: rotate(270deg);
+    transform-origin: left top 0;
+    margin-left: 6px;
+    margin-top: 74px;
 		}
 		
 .changelog_wrapper {
