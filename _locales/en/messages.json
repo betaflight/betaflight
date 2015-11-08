@@ -860,7 +860,7 @@
         "message": "Direction and rate"
     },
     "servosLiveMode": {
-        "message": "Enable Live mode:"
+        "message": "Enable Live mode"
     },
     "servosButtonSave": {
         "message": "Save"
