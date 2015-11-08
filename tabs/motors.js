@@ -161,7 +161,19 @@ TABS.motors.initialize = function (callback) {
         documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
         documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
 
-        $('#motorsEnableTestMode').prop('disabled', 'true');
+		// load switchery
+		var elems = Array.prototype.slice.call(document.querySelectorAll('#motorsEnableTestMode'));
+		elems.forEach(function(html) {
+  		var switchery = new Switchery(html,
+  		{
+   		color: '#59aa29',
+		size: 'small', 
+    	secondaryColor: '#c4c4c4' 
+		});
+  		});
+		
+		
+		        $('#motorsEnableTestMode').prop('disabled', 'true');
 
         update_model(CONFIG.multiType);
         
@@ -434,10 +446,10 @@ TABS.motors.initialize = function (callback) {
                 var data = MOTOR_DATA[i] - MISC.mincommand,
                     margin_top = block_height - (data * (block_height / full_block_scale)).clamp(0, block_height),
                     height = (data * (block_height / full_block_scale)).clamp(0, block_height),
-                    color = parseInt(data * 0.256);
+                    color = parseInt(data * 0.01);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
-                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
@@ -445,10 +457,10 @@ TABS.motors.initialize = function (callback) {
                 var data = SERVO_DATA[i] - 1000,
                     margin_top = block_height - (data * (block_height / 1000)).clamp(0, block_height),
                     height = (data * (block_height / 1000)).clamp(0, block_height),
-                    color = parseInt(data * 0.256);
+                    color = parseInt(data * 0.01);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
-                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
             }
         }
 

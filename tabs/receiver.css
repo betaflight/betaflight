@@ -256,7 +256,7 @@
     float: right;
     position: relative;
     margin: 0px 0px 10px 0;
-	width:calc(70% - 3px);
+	width:calc(70% - 0px);
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
 	background-color:#DEDEDE;
