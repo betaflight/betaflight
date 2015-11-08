@@ -1,4 +1,5 @@
 .tab-receiver {
+	font-weight:normal;
 }
 
 .tab-receiver .spacer {
@@ -171,6 +172,8 @@
 	background: #828885;
     color: white;
 	border-right: 1px solid silver;
+	font-weight:normal;
+
 }
 
 
@@ -233,7 +236,7 @@
     padding: 4px;
     text-align: left;
     padding-left: 6px;
-	font-weight: bold;
+	font-weight: normal;
 	background: #828885;
     color: white;
 	border-top-right-radius: 5px;
@@ -265,7 +268,7 @@
     padding: 4px;
     text-align: left;
     padding-left: 6px;    
-	font-weight: bold;
+	font-weight: normal;
 	background: #828885;
     color: white;
 	border-top-left-radius: 5px;

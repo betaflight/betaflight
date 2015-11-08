@@ -19,6 +19,8 @@
 
 .tab-pid_tuning .cf th {
 	    border-right: solid 1px silver;
+	    height:19px;
+	    font-weight:normal;
 }
 
 .tab-pid_tuning .cf th:last-child {
@@ -165,6 +167,10 @@
     border-bottom: 1px solid #ccc;
 	background-color: #828885;
     color: white;
+	height:19px;
+	font-weight:normal;
+	padding: 2px;
+    padding-left: 6px;
 }
 .tab-pid_tuning .controller select {
     width: 100%;
@@ -186,6 +192,11 @@
     border-bottom: 1px solid #ccc;
 	background-color: #828885;
     color: white;
+	height:19px;
+	font-weight:normal;
+	padding: 2px;
+    padding-bottom: 3px;
+    padding-left: 6px;
 }
     
 .tab-pid_tuning .profile select {
