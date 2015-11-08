@@ -4,15 +4,68 @@
 
 .tab-pid_tuning .rate-tpa th {
     font-weight: normal;
-    background-color: #ECECEC;
+    background-color: #828885;
     padding: 4px;
-	border-left: 1px solid #ccc;
+	border-left: 0px solid #ccc;
 	border-bottom: 1px solid #ccc;
 	font-weight: bold;
+	color: white;
+    text-align: left;
 	}
 
+.tab-pid_tuning .cf tr{
+    background-color: #DEDEDE;
+}
+
+.tab-pid_tuning .cf th {
+	    border-right: solid 1px silver;
+}
+
+.tab-pid_tuning .cf th:last-child {
+	    border-right:0px;
+}
+
+	
+.tab-pid_tuning .cf td:first-child{
+	border-bottom-left-radius: 3px;
+}
+	
+.tab-pid_tuning .cf td:last-child{
+	border-bottom-right-radius: 3px;
+	border-right:0px;
+
+}
+	
+.tab-pid_tuning .cf input {
+	margin:4px;
+	width:calc(100% - 10px);
+	border: 1px solid silver;
+	border-radius:3px;
+}
+	
+.tab-pid_tuning .cf select {
+	margin:4px;
+	width:calc(100% - 10px);
+	border: 1px solid silver;
+}
+			
+			
+	.tab-pid_tuning .rate-tpa th:nth-child(2){
+        border-top-left-radius: 3px;
+	}
+	
+	.tab-pid_tuning .rate-tpa th:first-child {
+        border-top-left-radius: 3px;
+
+	}
+
+
+.tab-pid_tuning .rate-tpa th:last-child {
+    border-top-right-radius: 3px;
+	}	
+	
 .tab-pid_tuning .rate-tpa {
-	border:1px solid #ccc;
+	border:0px solid #ccc;
 	margin-bottom:10px;
 	}
 
@@ -34,7 +87,7 @@
 .tab-pid_tuning table,
 .tab-pid_tuning table td {
     padding: 1px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 0px solid #ccc;
 }
 
 .tab-pid_tuning table th {
@@ -110,7 +163,8 @@
     font-weight: bold;
 	padding-left:5px;
     border-bottom: 1px solid #ccc;
-    background-color: #ececec;
+	background-color: #828885;
+    color: white;
 }
 .tab-pid_tuning .controller select {
     width: 100%;
@@ -130,8 +184,10 @@
     font-weight: bold;
 	padding-left:5px;
     border-bottom: 1px solid #ccc;
-    background-color: #ececec;
+	background-color: #828885;
+    color: white;
 }
+    
 .tab-pid_tuning .profile select {
     width: 100%;
     padding-left: calc(100% - 35px);

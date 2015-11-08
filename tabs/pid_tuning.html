@@ -157,7 +157,7 @@
       </div>
       <div class="cf_column half">
          <div class="spacer_left">
-            <table class="rate-tpa">
+            <table class="rate-tpa cf">
                <thead>
                   <tr>
                      <th class="roll-pitch" i18n="pidTuningRollPitchRate"></th>
@@ -169,22 +169,24 @@
                <tbody>
                   <tr>
                      <td class="roll-pitch" ><input type="number" name="roll-pitch" step="0.01" min="0" max="1.00"/></td>
-                     <td class="roll" ><input type="number" name="roll" step="0.01" min="0" max="1.00"/></td>
+                     <td class="roll" style="border-bottom-left-radius: 3px;"
+><input type="number" name="roll" step="0.01" min="0" max="1.00"/></td>
                      <td class="pitch" ><input type="number" name="pitch" step="0.01" min="0" max="1.00"/></td>
                      <td><input type="number" name="yaw" step="0.01" min="0" max="2.55"/></td>
                   </tr>
                </tbody>
             </table>
-            <table class="rate-tpa">
+            <table class="rate-tpa cf">
                <thead>
                   <tr>
                      <th i18n="pidTuningTPA"></th>
-                     <th class="tpa-breakpoint" i18n="pidTuningTPABreakPoint"></th>
+                     <th class="tpa-breakpoint" i18n="pidTuningTPABreakPoint" style="border-top-left-radius:0px;
+"></th>
                   </tr>
                </thead>
                <tbody>
                   <tr>
-                     <td><input type="number" name="tpa" step="0.01" min="0" max="1.00"/></td>
+                     <td style="padding-left:0px;"><input type="number" name="tpa" step="0.01" min="0" max="1.00"/></td>
                      <td class="tpa-breakpoint"><input type="number" name="tpa-breakpoint" step="10" min="1000" max="2000" /></td>
                   </tr>
                </tbody>
