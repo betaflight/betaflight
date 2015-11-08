@@ -1,18 +1,10 @@
-
-
 .tab_setup .model-and-info {
 	float: left;
 }
 
-
-
 .tab_setup .default_btn {
 margin-bottom:10px;
 }
-
-
-
-
 
 #interactive_block  {
     position: absolute;
@@ -35,12 +27,9 @@ margin-bottom:10px;
     color: #616161;
 }
 
-
-
 .attitude_info dl {
 	width:100%;
 }
-
 
 .attitude_info dt {
 	width:50%;
@@ -75,12 +64,16 @@ margin-bottom:10px;
 #interactive_block a.reset:hover {
     background-color: #dedcdc;
 }
+
 #canvas_wrapper {
     position: absolute;
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
+	background-image:url(../images/paper.jpg);
+	background-size:100%;
+	background-position:center;
 }
 
 

@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.receiver = {
-  rateChartHeight: 120
+  rateChartHeight: 117
 };
 
 TABS.receiver.initialize = function (callback) {
@@ -219,21 +219,22 @@ TABS.receiver.initialize = function (callback) {
                 }
 
                 // math magic by englishman
-                var midx = 220 * mid,
+                var midx = 200 * mid,
                     midxl = midx * 0.5,
-                    midxr = (((220 - midx) * 0.5) + midx),
-                    midy = rateHeight - (midx * (rateHeight / 220)),
+                    midxr = (((200 - midx) * 0.5) + midx),
+                    midy = rateHeight - (midx * (rateHeight / 200)),
                     midyl = rateHeight - ((rateHeight - midy) * 0.5 *(expo + 1)),
                     midyr = (midy / 2) * (expo + 1);
 
                 // draw
-                context.clearRect(0, 0, 220, rateHeight);
+                context.clearRect(0, 0, 200, rateHeight);
                 context.beginPath();
                 context.moveTo(0, rateHeight);
                 context.quadraticCurveTo(midxl, midyl, midx, midy);
                 context.moveTo(midx, midy);
-                context.quadraticCurveTo(midxr, midyr, 220, 0);
+                context.quadraticCurveTo(midxr, midyr, 200, 0);
                 context.lineWidth = 2;
+				context.strokeStyle = '#59aa29';
                 context.stroke();
             }, 0);
         }).trigger('input');
@@ -261,11 +262,12 @@ TABS.receiver.initialize = function (callback) {
                 var ratey = rateHeight * rate;
 
                 // draw
-                context.clearRect(0, 0, 220, rateHeight);
+                context.clearRect(0, 0, 200, rateHeight);
                 context.beginPath();
                 context.moveTo(0, rateHeight);
-                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 220, rateHeight - ratey);
+                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 200, rateHeight - ratey);
                 context.lineWidth = 2;
+				context.strokeStyle = '#59aa29';
                 context.stroke();
             }, 0);
         }).trigger('input');
