@@ -168,8 +168,9 @@
 }
 
 .tab-receiver .tunings table th {
-	background: #8b8b8b;
+	background: #828885;
     color: white;
+	border-right: 1px solid silver;
 }
 
 
@@ -179,11 +180,14 @@
 
 .tab-receiver .tunings table th:last-child {
     border-top-right-radius: 3px;
+	border-right: 0px;
 }
 
 
 .tab-receiver .tunings table td {
 	background: #DEDEDE;
+	border-right: 1px solid silver;
+
 }
 
 .tab-receiver .tunings table td:first-child {
@@ -192,6 +196,7 @@
 
 .tab-receiver .tunings table td:last-child {
     border-bottom-right-radius: 5px;
+	border-right: 0px;
 }
 
 .tab-receiver .tunings table td {
@@ -229,7 +234,7 @@
     text-align: left;
     padding-left: 6px;
 	font-weight: bold;
-	background: #8b8b8b;
+	background: #828885;
     color: white;
 	border-top-right-radius: 5px;
 
@@ -261,13 +266,17 @@
     text-align: left;
     padding-left: 6px;    
 	font-weight: bold;
-	background: #8b8b8b;
+	background: #828885;
     color: white;
 	border-top-left-radius: 5px;
-
+	border-right: 1px solid silver;
 }
 
 .tab-receiver .rcmap_wrapper .head span {
+}
+
+.tab-receiver .hybrid_element {
+	border-right: 1px solid silver;
 }
 
 .tab-receiver .hybrid_element input {
