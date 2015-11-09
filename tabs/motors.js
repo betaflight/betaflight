@@ -449,7 +449,7 @@ TABS.motors.initialize = function (callback) {
                     color = parseInt(data * 0.009);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
-                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
+                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1.'+ color +')'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
@@ -460,7 +460,7 @@ TABS.motors.initialize = function (callback) {
                     color = parseInt(data * 0.009);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
-                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
+                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1'+ color +')'});
             }
         }
 
