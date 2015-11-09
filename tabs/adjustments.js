@@ -178,22 +178,7 @@ TABS.adjustments.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        // locating link to used CF version
-     	var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-		// load switchery
-		var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
-		elems.forEach(function(html) {
-  		var switchery = new Switchery(html,
-  		{
-   		color: '#59aa29', 
-    	secondaryColor: '#c4c4c4' 
-		});
-  		});
-  	
-  	// UI Hooks
+        // UI Hooks
         $('a.save').click(function () {
 
             // update internal data structures based on current UI elements

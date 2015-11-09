@@ -292,7 +292,6 @@
     margin-bottom: 10px;
 }
 
-.tab-motors .motor_testing .notice input[type="checkbox"] {
-    vertical-align: middle;
-    margin-right: 10px;
+.tab-motors .motor_testing .notice .motorsEnableTestMode {
+    margin-left: 10px;
 }
