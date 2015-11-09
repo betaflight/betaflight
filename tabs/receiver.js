@@ -39,12 +39,6 @@ TABS.receiver.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-   	// locating link to used CF version
-     var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-
         // fill in data from RC_tuning
         $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
         $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
