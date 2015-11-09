@@ -92,14 +92,15 @@
 	}
 	
 #changelog_button  {
-		display:block; 
-		color:white;
-		height:100px;
-	    transform: rotate(270deg);
-    transform-origin: left top 0;
+	display:block; 
+	color:white;
+	height:30px;
+	width: 100px;
+	transform: rotate(270deg);
+	transform-origin: left top 0;
     margin-left: 6px;
     margin-top: 74px;
-		}
+}
 		
 .changelog_wrapper {
 	right:0px;
