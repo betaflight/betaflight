@@ -341,12 +341,12 @@
 
 .tab-led-strip .ui-selected {
     box-shadow: inset 0 0 8px rgba(255, 0, 255, 1) !important;
-    border: solid 2px #000 !important;
+    border: solid 1px #000 !important;
 }
 
 .tab-led-strip .ui-selecting {
     box-shadow: inset 0 0 30px rgba(255, 0, 255, .7) !important;
-    border: solid 2px #000 !important;
+    border: solid 1px #000 !important;
 }
 
 .tab-led-strip .ui-selectable-helper {
