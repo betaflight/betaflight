@@ -141,7 +141,6 @@ input[type="number"]::-webkit-inner-spin-button {
 .headerbar {
 	height:110px;
 	width:100%;
-	float:left;
 	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
 }
 
@@ -1042,8 +1041,8 @@ dialog {
     for testing: */
   padding: 20px;
   position: relative;
-  float: left;
-  width:calc(100% - 40px);
+  /*float: left;
+  width:calc(100% - 40px);*/
 }
 
 .content_toolbar {
@@ -1575,8 +1574,7 @@ dialog {
 
 .content_wrapper {
   padding: 15px;
-    width:calc(100% - 30px);
-
+  /*width:calc(100% - 30px);*/
 }
 
 .tab_title {
