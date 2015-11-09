@@ -86,12 +86,19 @@
             <table id="pid_baro" class="pid_tuning">
                <tr>
                   <th colspan="4">
-                     <div class="pid_mode">Barometer/Altitude</div>
+                     <div class="pid_mode">Barometer & Sonar/Altitude</div>
                   </th>
                </tr>
                <tr class="ALT">
                   <!-- 3 -->
                   <td></td>
+                  <td><input type="number" name="p" step="0.1" min="0" max="25.5"/></td>
+                  <td><input type="number" name="i" step="0.001" min="0" max="0.255"/></td>
+                  <td><input type="number" name="d" step="1" min="0" max="255"/></td>
+               </tr>
+               <tr class="Vario">
+                  <!-- 9 -->
+                  <td>VEL</td>
                   <td><input type="number" name="p" step="0.1" min="0" max="25.5"/></td>
                   <td><input type="number" name="i" step="0.001" min="0" max="0.255"/></td>
                   <td><input type="number" name="d" step="1" min="0" max="255"/></td>
@@ -111,21 +118,7 @@
                   <td></td>
                </tr>
             </table>
-            <table id="pid_sonar" class="pid_tuning">
-               <tr>
-                  <th colspan="4">
-                     <div class="pid_mode">Sonar</div>
-                  </th>
-               </tr>
-               <tr class="Vario">
-                  <!-- 9 -->
-                  <td></td>
-                  <td><input type="number" name="p" step="0.1" min="0" max="25.5"/></td>
-                  <td><input type="number" name="i" step="0.001" min="0" max="0.255"/></td>
-                  <td><input type="number" name="d" step="1" min="0" max="255"/></td>
-               </tr>
-            </table>
-            <table id="pid_gps" class="pid_tuning">
+        <table id="pid_gps" class="pid_tuning">
                <tr>
                   <th colspan="4">
                      <div class="pid_mode">GPS Navigation</div>

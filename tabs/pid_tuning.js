@@ -257,7 +257,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('#pid_gps').show();
       }
       if (have_sensor(sensors_detected, 'sonar')) {
-        $('#pid_sonar').show();
+        $('#pid_baro').show();
       }
     }
     function process_html() {
@@ -269,18 +269,18 @@ TABS.pid_tuning.initialize = function (callback) {
         documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
         documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
 
-// loading tooltip
-$(document).ready(function() {
-$('.cf_tip').jBox('Tooltip', {
-    delayOpen: 100,
-    delayClose: 100,
-	position: {
+	// loading tooltip
+	$(document).ready(function() {
+	$('.cf_tip').jBox('Tooltip', {
+		delayOpen: 100,
+		delayClose: 100,
+		position: {
         x: 'right',
         y: 'center'
-    },
-	outside: 'x'
-});
-});
+		},
+		outside: 'x'
+	});
+	});
 
 
         hideUnusedPids(CONFIG.activeSensors);
