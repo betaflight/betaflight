@@ -3,34 +3,47 @@
 var BOARD_DEFINITIONS = [
     {
         name: "CC3D",
-        identifier: "CC3D"
+        identifier: "CC3D",
+        vcp: true
     }, {
         name: "ChebuzzF3",
-        identifier: "CHF3"
+        identifier: "CHF3",
+        vcp: false
     }, {
         name: "CJMCU",
-        identifier: "CJM1"
+        identifier: "CJM1",
+        vcp: false
     }, {
         name: "EUSTM32F103RB",
-        identifier: "EUF1"
+        identifier: "EUF1",
+        vcp: false
     }, {
         name: "Naze/Flip32+",
-        identifier: "AFNA"
+        identifier: "AFNA",
+        vcp: false
     }, {
         name: "Naze32Pro",
-        identifier: "AFF3"
+        identifier: "AFF3",
+        vcp: false
     }, {
         name: "Olimexino",
         identifier: "OLI1"
     }, {
         name: "Port103R",
-        identifier: "103R"
+        identifier: "103R",
+        vcp: false
     }, {
         name: "Sparky",
-        identifier: "SPKY"
+        identifier: "SPKY",
+        vcp: true
     }, {
         name: "STM32F3Discovery",
-        identifier: "SDF3"
+        identifier: "SDF3",
+        vcp: true
+    }, {
+        name: "Colibri Race",
+        identifier: "CLBR",
+        vcp: true
     }, {
         name: "SP Racing F3",
         identifier: "SRF3",
@@ -44,7 +57,8 @@ var BOARD_DEFINITIONS = [
 
 var DEFAULT_BOARD_DEFINITION = {
     name: "Unknown",
-    identifier: "????"
+    identifier: "????",
+    vcp: false
 };
 
 var BOARD = {
@@ -61,4 +75,3 @@ BOARD.find_board_definition = function (identifier) {
     }
     return DEFAULT_BOARD_DEFINITION;
 };
-
