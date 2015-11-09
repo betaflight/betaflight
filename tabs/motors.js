@@ -446,7 +446,7 @@ TABS.motors.initialize = function (callback) {
                 var data = MOTOR_DATA[i] - MISC.mincommand,
                     margin_top = block_height - (data * (block_height / full_block_scale)).clamp(0, block_height),
                     height = (data * (block_height / full_block_scale)).clamp(0, block_height),
-                    color = parseInt(data * 0.01);
+                    color = parseInt(data * 0.009);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
                 $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
@@ -457,7 +457,7 @@ TABS.motors.initialize = function (callback) {
                 var data = SERVO_DATA[i] - 1000,
                     margin_top = block_height - (data * (block_height / 1000)).clamp(0, block_height),
                     height = (data * (block_height / 1000)).clamp(0, block_height),
-                    color = parseInt(data * 0.01);
+                    color = parseInt(data * 0.009);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
                 $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,0.'+ color +')'});
