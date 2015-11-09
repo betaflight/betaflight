@@ -226,7 +226,7 @@
 }
 
 .tab-led-strip .indicators .south {
-    bottom: -2px;
+    bottom: -8px;
     left: 4px;
     border-left: 7px solid transparent;
     border-right: 7px solid transparent;
@@ -234,7 +234,7 @@
 }
 
 .tab-led-strip .indicators .east {
-    bottom: 11px;
+    bottom: 7px;
     right: -9px;
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
@@ -242,7 +242,7 @@
 }
 
 .tab-led-strip .indicators .west {
-    bottom: 11px;
+    bottom: 7px;
     left: -9px;
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
