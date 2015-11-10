@@ -1,46 +1,36 @@
 .tab-adjustments {
+    
 }
 
 #tab-adjustments-templates {
     display: none;
 }
 
-.tab-adjustments .range .marker,
-.tab-adjustments .channel-slider .noUi-connect {
-   	background: #92b67c;
-    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4),0px 1px 0px rgba(255, 255, 255, 0.6);
-
+.tab-adjustments .range .marker, .tab-adjustments .channel-slider .noUi-connect {
+    background: #92b67c;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
 }
 
 .noUi-target {
-	border-radius: 4px;
+    border-radius: 4px;
     border: 1px solid #D3D3D3;
-    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4),0px 1px 0px rgba(255, 255, 255, 0.6);
-    }
-    
-.noUi-background {
-    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4),0px 1px 0px rgba(255, 255, 255, 0.6);
-    background: #D2D2D2;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
 }
 
+.noUi-background {
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
+    background: #D2D2D2;
+}
 
 .tab-adjustments .adjustments {
     width: 100%;
     border-spacing: 0px;
-
 }
 
 .tab-adjustments td {
-	    border-top: 1px solid #fff;
+    border-top: 1px solid #fff;
     border-bottom: 1px solid #cccccc;
-	}
-
-
-
-
-
-
-
+}
 
 .tab-adjustments .range:first-child {
     border-top: 0px;
@@ -50,7 +40,6 @@
     border-bottom: 0px;
 }
 
-
 .tab-adjustments .adjustments thead td {
     text-align: center;
     white-space: nowrap;
@@ -58,6 +47,7 @@
     background-color: #828885;
     color: white;
 }
+
 .tab-adjustments .adjustments thead td:first-child {
     border-top-left-radius: 5px;
 }
@@ -67,19 +57,19 @@
 }
 
 .tab-adjustments .adjustment:nth-child(odd) {
-    background-color:#f4f4f4;
+    background-color: #f4f4f4;
 }
 
 .tab-adjustments .adjustments {
-	    background-color:#e4e4e4;
-
-	}
-
+    background-color: #e4e4e4;
+}
 
 .tab-adjustments .adjustment select {
     /* outline: 1px solid silver; */
     border-radius: 3px;
-    border: 1px solid silver;#}
+    border: 1px solid silver;
+    #
+}
 
 .tab-adjustments .adjustment td {
     text-align: center;
@@ -119,7 +109,7 @@
     height: 13px;
     width: 6px;
     margin-left: -3px;
-    border-radius:3px;
+    border-radius: 3px;
 }
 
 .tab-adjustments .adjustment .functionSelection {

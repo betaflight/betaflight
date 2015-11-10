@@ -1,9 +1,9 @@
 .tab-help .twothird {
-	width:calc(67% - 15px); 
-	margin-right:15px;
-	}
-	
+    width: calc(67% - 15px);
+    margin-right: 15px;
+}
+
 .tab-help .gui_box {
-min-height:500px;
-margin-bottom:0px;
+    min-height: 500px;
+    margin-bottom: 0px;
 }

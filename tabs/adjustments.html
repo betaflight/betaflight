@@ -1,45 +1,44 @@
 <div class="tab-adjustments toolbar_fixed_bottom">
-<div class="content_wrapper">
-<div class="tab_title" i18n="tabAdjustments"></div>
-<div class="cf_doc_version_bt">
-    <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
-</div>
-    <div class="note" style="margin-bottom:15px;">
-      <div class="note_spacer">
-        <p i18n="adjustmentsHelp"></p>
-        <p i18n="adjustmentsExamples"></p>
-		<ul>
-            <li i18n="adjustmentsExample1"></li>
-            <li i18n="adjustmentsExample2"></li>
-        </ul>
-      </div>
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabAdjustments"></div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation"
+                href="https://github.com/cleanflight/cleanflight/releases"
+                target="_blank"></a>
+        </div>
+        <div class="note" style="margin-bottom: 15px;">
+            <div class="note_spacer">
+                <p i18n="adjustmentsHelp"></p>
+                <p i18n="adjustmentsExamples"></p>
+                <ul>
+                    <li i18n="adjustmentsExample1"></li>
+                    <li i18n="adjustmentsExample2"></li>
+                </ul>
+            </div>
+        </div>
+
+        <table class="adjustments">
+            <thead>
+                <tr>
+                    <td class="column-enable"
+                        i18n="adjustmentsColumnEnable"></td>
+                    <td i18n="adjustmentsColumnWhenChannel"></td>
+                    <td i18n="adjustmentsColumnIsInRange"></td>
+                    <td i18n="adjustmentsColumnThenApplyFunction">
+                    </td>
+                    <td i18n="adjustmentsColumnUsingSlot"></td>
+                    <td i18n="adjustmentsColumnViaChannel"></td>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
-
-
-    <table class="adjustments">
-        <thead>
-            <tr>
-                <td class="column-enable" i18n="adjustmentsColumnEnable">
-                </td>
-                <td i18n="adjustmentsColumnWhenChannel">
-                </td>
-                <td i18n="adjustmentsColumnIsInRange">
-                </td>
-                <td i18n="adjustmentsColumnThenApplyFunction">
-                </td>
-                <td i18n="adjustmentsColumnUsingSlot">
-                </td>
-                <td i18n="adjustmentsColumnViaChannel">
-                </td>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-</div>
-<div class="content_toolbar">
-    <div class="btn save_btn"><a class="save" href="#" i18n="adjustmentsSave"></a></div>
-</div>
+    <div class="content_toolbar">
+        <div class="btn save_btn">
+            <a class="save" href="#" i18n="adjustmentsSave"></a>
+        </div>
+    </div>
 </div>
 
 <div id="tab-adjustments-templates">
@@ -48,7 +47,7 @@
             <tr class="adjustment">
                 <td class="info">
                     <div class="enabling">
-                        <input type="checkbox" class="enable toggle"/>
+                        <input type="checkbox" class="enable toggle" />
                     </div>
                 </td>
                 <td class="channelInfo">
@@ -58,8 +57,14 @@
                         </select>
                     </div>
                     <div class="limits">
-                        <p class="lowerLimit"><span i18n="adjustmentsMin"></span>: <span class="lowerLimitValue"></span></p>
-                        <p class="upperLimit"><span i18n="adjustmentsMax"></span>: <span class="upperLimitValue"></span></p>
+                        <p class="lowerLimit">
+                            <span i18n="adjustmentsMin"></span>: <span
+                                class="lowerLimitValue"></span>
+                        </p>
+                        <p class="upperLimit">
+                            <span i18n="adjustmentsMax"></span>: <span
+                                class="upperLimitValue"></span>
+                        </p>
                     </div>
                 </td>
                 <td class="range">
@@ -67,8 +72,8 @@
                         <div class="marker"></div>
                     </div>
                 </td>
-                <td class="functionSelection">
-                    <select class="function">
+                <td class="functionSelection"><select
+                    class="function">
                         <option value="0" i18n="adjustmentsFunction0"></option>
                         <option value="1" i18n="adjustmentsFunction1"></option>
                         <option value="2" i18n="adjustmentsFunction2"></option>
@@ -90,21 +95,17 @@
                         <option value="18" i18n="adjustmentsFunction18"></option>
                         <option value="19" i18n="adjustmentsFunction19"></option>
                         <option value="20" i18n="adjustmentsFunction20"></option>
-                    </select>
-                </td>
-                <td class="adjustmentSlot">
-                    <select class="slot">
+                </select></td>
+                <td class="adjustmentSlot"><select class="slot">
                         <option value="0" i18n="adjustmentsSlot0"></option>
                         <option value="1" i18n="adjustmentsSlot1"></option>
                         <option value="2" i18n="adjustmentsSlot2"></option>
                         <option value="3" i18n="adjustmentsSlot3"></option>
-                    </select>
-                </td>
-                <td class="functionSwitchChannel">
-                    <select class="channel">
+                </select></td>
+                <td class="functionSwitchChannel"><select
+                    class="channel">
                         <option value=""></option>
-                    </select>
-                </td>
+                </select></td>
             </tr>
         </tbody>
     </table>

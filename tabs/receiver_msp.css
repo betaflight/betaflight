@@ -9,77 +9,75 @@ body {
     /* A generous padding around the window edges ensures that we continue to receive mousemove events (since 
      * cursor stays in the window for longer)
      */
-    padding:25px;
-    padding-bottom:0;
-    text-align:center;
+    padding: 25px;
+    padding-bottom: 0;
+    text-align: center;
 }
 
 .control-gimbal {
-    position:relative;
-    width:120px;
-    height:120px;
-    background-color:#eee;
-    margin-left:1em;
-    margin-right:1em;
-    margin-bottom:2em;
-    display:inline-block;
-    border-radius:5px;
-    
-    cursor:pointer;
+    position: relative;
+    width: 120px;
+    height: 120px;
+    background-color: #eee;
+    margin-left: 1em;
+    margin-right: 1em;
+    margin-bottom: 2em;
+    display: inline-block;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .crosshair {
-    display:block;
-    position:absolute;
-    background-color:#ddd;
+    display: block;
+    position: absolute;
+    background-color: #ddd;
 }
 
 .crosshair-vert {
-    width:1px;
-    height:100%;
-    left:50%;
+    width: 1px;
+    height: 100%;
+    left: 50%;
 }
 
 .crosshair-horz {
-    height:1px;
-    width:100%;
-    top:50%;
+    height: 1px;
+    width: 100%;
+    top: 50%;
 }
 
 .gimbal-label {
-    display:block;
-    position:absolute;
-    text-align:center;
+    display: block;
+    position: absolute;
+    text-align: center;
 }
 
 .gimbal-label-horz {
-    top:calc(100% + 0.5em);
-    width:100%;
+    top: calc(100% + 0.5em);
+    width: 100%;
 }
 
 .gimbal-label-vert {
-    transform:rotate(-90deg);
+    transform: rotate(-90deg);
     /*transform-origin:0% 100%;*/
-    top:calc(50% - 0.5em);
-    width:100%;
-    left:calc(-50% - 1em);
+    top: calc(50% - 0.5em);
+    width: 100%;
+    left: calc(-50% - 1em);
 }
 
 .control-stick {
-    background-color:rgba(255,50,50,1.0);
-    width:20px;
-    height:20px;
-    margin-left:-10px;
-    margin-top:-10px;
-    display:block;
-    border-radius:100%;
-    position:absolute;
-    
-    cursor:pointer;
+    background-color: rgba(255, 50, 50, 1.0);
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    display: block;
+    border-radius: 100%;
+    position: absolute;
+    cursor: pointer;
 }
 
 .control-slider {
-    margin:20px;
+    margin: 20px;
 }
 
 .tooltip {
@@ -89,21 +87,21 @@ body {
 }
 
 .control-slider .slider {
-    margin-left:50px;
-    margin-right:50px;
+    margin-left: 50px;
+    margin-right: 50px;
 }
 
 .slider-label {
-    position:absolute;
-    text-align:right;
-    width:40px;
-    left:-65px;
+    position: absolute;
+    text-align: right;
+    width: 40px;
+    left: -65px;
 }
 
 .button-enable {
-    padding:0.5em;
-    font-size:110%;
-    margin-left:auto;
-    margin-right:auto;
-    display:block;
+    padding: 0.5em;
+    font-size: 110%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 }
