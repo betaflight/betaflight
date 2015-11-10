@@ -238,20 +238,6 @@ $(document).ready(function () {
                     googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
- // CSS switch TEST
-var css = $("#default");
-$("div#options-window #remove").click(function(){
-    css.remove();
-});
-
-$("div#options-window #restore").click(function(){
-    $("head").append(css);
-});
-   // CSS switch TEST END
-   
-   
-        
-        
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
                         $(document).unbind('click keyup', close_and_cleanup);
