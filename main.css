@@ -535,12 +535,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs ul {
     /* overflow-y: auto;  do not force scrollbars as it renders blank stripe on some user agents */
-    
+
 }
 
 #tabs.logopen ul {
     /* Cause the height to shrink to contain its floated contents while log is open */
-    
+
 }
 
 .header-wrapper .mode-connected {
@@ -959,7 +959,7 @@ dialog {
     cursor: default;
     color: #fff;
     background-color: #AFAFAF;
-    border: none;
+    border: 1px solid #AFAFAF;
     pointer-events: none;
     text-shadow: none;
     opacity: 0.5;
@@ -1407,12 +1407,12 @@ dialog {
     body {
         /*font-size: 11px;*/
         /* lets see if we really need this? */
-        
+
     }
     .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash,
         .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors,
         .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
-        
+
     }
     .cf_table td {
         padding-top: 2px;
@@ -1423,7 +1423,7 @@ dialog {
     }
     .default_btn a {
         /*font-size:11px;*/
-        
+
     }
     #tabs li a {
         font-family: 'open_sansregular', Arial;
