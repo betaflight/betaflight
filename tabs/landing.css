@@ -4,11 +4,12 @@
 /* general layout */
 
 .tab-landing {
+	min-height: 100%;
 }
 
 .tab-landing .content_wrapper {
 	padding: 0;
-	box-sizing: content-box;
+	min-height: 100%;
 }
 
 .tab-landing .content_top {
