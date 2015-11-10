@@ -178,69 +178,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-bottom: 5px;
 }
 
-/*
-#port-picker select {
-    height: 20px;
-    line-height: 20px;
-    float: left;
-    margin-right: 5px;
-    border: 1px solid silver;
-}
-#port-picker #port {
-    width: 130px;
-}
-#port-picker #baud {
-    width: 80px;
-}
-#port-picker #delay {
-    width: 60px;
-}
 
-
-#port-picker a {
-    float: left;
-    display: block;
-    width: 80px;
-    height: 18px;
-    border: 1px solid silver;
-    line-height: 18px;
-    text-align: center;
-}
-#port-picker a.connect {
-    margin-right: 10px;
-    background-color: #be2222;
-    color: white;
-    font-weight: bold;
-}
-#port-picker a.connect:hover {
-    text-decoration: none;
-    background-color: #ea3131;
-}
-#port-picker a.connect.active {
-    background-color: #0fab16;
-}
-#port-picker a.connect.active:hover {
-    background-color: #13d81d;
-}
-#port-picker input.auto_connect {
-    float: left;
-    margin-top: 4px;
-}
-#port-picker span.auto_connect {
-    float: left;
-    margin: 3px 0 0 5px;
-}
-
-
-#port-picker #port-override{
-    height: 20px;
-    line-height: 20px;
-    margin-right: 5px;
-    width: 120px;
-    padding: 0 5px;
-    border: 1px solid silver;
-}
-*/
 #port-override {
     background-color: rgba(0, 0, 0, 0.1);
     color: #888888;
