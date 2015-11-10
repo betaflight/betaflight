@@ -227,8 +227,9 @@
 }
 
 .changelog .changewrapper span {
-  font-weight: bold;
 	line-height:22px;
+	font-family: 'open_sansbold', Arial;
+
 }
 
 .changelog .changewrapper ul  {
