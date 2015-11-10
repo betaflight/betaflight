@@ -123,6 +123,17 @@ $(document).ready(function () {
                         $(html).removeClass('toggle');
                     });
                     
+                    $('.togglemedium').each(function(index, html) {
+                        var switchery = new Switchery(html,
+                        {
+                          className: 'switcherymid',
+                          color: '#59aa29', 
+                          secondaryColor: '#c4c4c4' 
+                        });
+                        
+                        $(html).removeClass('toggle');
+                    });
+                    
                     // Build link to in-use CF version documentation
                     var documentationButton = $('div#content #button-documentation');
                     documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
