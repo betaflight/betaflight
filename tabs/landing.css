@@ -13,7 +13,7 @@
 }
 
 .tab-landing .content_top {
-	height: 150px;
+	height: 120px;
   background: #59aa29;
   padding: 20px;
 }
@@ -37,7 +37,6 @@
 	margin-right:auto;
 	width:800px;
 	color:white;
-	margin-top:25px;
 	font-size:14px;
 	font-family: 'open_sanslight', Arial;
 }
