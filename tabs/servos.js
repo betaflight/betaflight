@@ -37,12 +37,10 @@ TABS.servos.initialize = function (callback) {
 
     function load_html() {
         $('#content').load("./tabs/servos.html", process_html);
-        
     }
     
-   MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
+    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
     
-
     function update_ui() {
             
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
@@ -176,7 +174,7 @@ TABS.servos.initialize = function (callback) {
             }
         });
         
-        $('a.save').click(function () {
+        $('a.update').click(function () {
             servos_update(true);
         });
         
