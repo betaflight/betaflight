@@ -135,23 +135,6 @@ $(document).ready(function () {
             
 
         });
-        
-
- /** toggle switch **/
-var elems = Array.prototype.slice.call(document.querySelectorAll('#togglesmall'));
-
-elems.forEach(function(html) {
-  var switchery = new Switchery(html,
-  {
-    size: 'small',
-	color: '#59aa29', 
-    secondaryColor: '#c4c4c4' 
-});
-  
-});
-/** toggle switch END **/
-
-
     });
 
 
@@ -276,14 +259,6 @@ function onConnect() {
 
     if ("CLFL" == CONFIG.flightControllerIdentifier){
         
-        /* placing this elsewhere 
-               documentationButton.show(); 
-               
-        var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-        
-        /* */
         var sensor_state = $('#sensor-status');
         sensor_state.show(); 
        	

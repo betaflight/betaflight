@@ -8,47 +8,42 @@
 
 .tab-ports table {
     margin-bottom: 10px;
-	width:100%;
-    border-collapse:collapse;
+    width: 100%;
+    border-collapse: collapse;
 }
-.tab-ports table,
-.tab-ports table th,
-.tab-ports table td {
-	border-left:0px;
-	border-right:0px;
-	border-top:0px;
-	
 
+.tab-ports table, .tab-ports table th, .tab-ports table td {
+    border-left: 0px;
+    border-right: 0px;
+    border-top: 0px;
 }
+
 .tab-ports table tr td:first-child {
-    text-align: left;	
+    text-align: left;
 }
 
 .tab-ports table td {
-	border-bottom:1px solid #e4e4e4;
-	padding-top:6px;
-	padding-bottom:7px;
-	padding-left:5px;
-	padding-right:5px;
-	border-left:1px solid #e4e4e4;
-	border-right:1px solid #e4e4e4;
-	}
+    border-bottom: 1px solid #e4e4e4;
+    padding-top: 6px;
+    padding-bottom: 7px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-left: 1px solid #e4e4e4;
+    border-right: 1px solid #e4e4e4;
+}
 
-
-.tab-ports table thead tr:first-child,
-.tab-ports table tr:nth-child(even) {
-    background-color:#f9f9f9;
- }
-
+.tab-ports table thead tr:first-child, .tab-ports table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
 
 .tab-ports table thead tr:first-child {
-	background-color:#e4e4e4;
-	font-size:12px;
-	height:25px;
-	font-family: 'open_sansregular', Arial;
-	border-top:0px;
-	border-right:0px;
-	border-left:0px;	
+    background-color: #e4e4e4;
+    font-size: 12px;
+    height: 25px;
+    font-family: 'open_sansregular', Arial;
+    border-top: 0px;
+    border-right: 0px;
+    border-left: 0px;
 }
 
 .tab-ports .function input {
@@ -63,18 +58,20 @@
     border: 1px solid silver;
 }
 
-
 .tab-ports .require-support {
-    display:none;
+    display: none;
 }
+
 .tab-ports.supported .require-support {
-    display:block;
+    display: block;
 }
+
 .tab-ports .require-upgrade {
-    display:block;
+    display: block;
 }
+
 .tab-ports.supported .require-upgrade {
-    display:none;
+    display: none;
 }
 
 .tab-ports .ports thead td {
@@ -87,23 +84,17 @@
 
 .tab-ports .ports thead td:first-child {
     border-top-left-radius: 5px;
-	border-left:0px;
-
+    border-left: 0px;
 }
 
 .tab-ports .ports thead td:last-child {
     border-top-right-radius: 5px;
-	border-right:0px;
-
-
+    border-right: 0px;
 }
 
-
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
-.tab-ports table thead tr:first-child {
-    font-size: 12px;
-    height: 22px;
-}
-
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-ports table thead tr:first-child {
+        font-size: 12px;
+        height: 22px;
+    }
 }

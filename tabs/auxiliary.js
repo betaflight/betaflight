@@ -23,7 +23,6 @@ TABS.auxiliary.initialize = function (callback) {
         $('#content').load("./tabs/auxiliary.html", process_html);
     }
 
-
     MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_mode_ranges);
 
     function createMode(modeIndex, modeId) {
@@ -169,12 +168,7 @@ TABS.auxiliary.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        // locating link to used CF version
-     	var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-		 // UI Hooks
+        // UI Hooks
         $('a.save').click(function () {
 
             // update internal data structures based on current UI elements

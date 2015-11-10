@@ -17,19 +17,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-	// load switchery
-	var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
-
-elems.forEach(function(html) {
-  var switchery = new Switchery(html,
-  {
-    color: '#59aa29', 
-    secondaryColor: '#c4c4c4' 
-});
-  });
-
-  
-          function parse_hex(str, callback) {
+        function parse_hex(str, callback) {
             // parsing hex in different thread
             var worker = new Worker('./js/workers/hex_parser.js');
 

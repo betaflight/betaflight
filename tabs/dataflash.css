@@ -2,6 +2,7 @@
     margin: 0 0 10px 0;
     position: relative;
 }
+
 .tab-dataflash .info .progressLabel {
     position: absolute;
     width: 100%;
@@ -18,9 +19,11 @@
 .tab-dataflash .properties {
     margin-top: 10px;
 }
+
 .tab-dataflash .dataflash-info {
-    overflow:hidden;
+    overflow: hidden;
 }
+
 .tab-dataflash .dataflash-info dt {
     float: left;
     width: 12em;
@@ -28,19 +31,23 @@
     line-height: 20px;
     font-weight: bold;
 }
+
 .tab-dataflash .dataflash-info dd {
     display: block;
     height: 20px;
     line-height: 20px;
 }
+
 .tab-dataflash .speed {
     margin-top: 5px;
     width: 80px;
     border: 1px solid silver;
 }
+
 .tab-dataflash .info {
     margin-top: 10px;
 }
+
 .tab-dataflash .info dt {
     float: left;
     width: 120px;
@@ -48,123 +55,133 @@
     line-height: 20px;
     font-weight: bold;
 }
+
 .tab-dataflash .info dd {
     display: block;
     margin-left: 130px;
     height: 20px;
     line-height: 20px;
 }
+
 .tab-dataflash .buttons {
     width: calc(100% - 20px);
     position: absolute;
     bottom: 10px;
 }
+
 .tab-dataflash .dataflash-progress {
     display: none;
 }
+
 .tab-dataflash .dataflash-contents {
-    margin-top:5px;   
-    border:1px solid silver;
-    background-color:#eee;
-    display:flex;
-    flex-direction:row;
-    flex-wrap:nowrap;
-    justify-content:flex-start;
-
-    border-radius:6px;
+    margin-top: 5px;
+    border: 1px solid silver;
+    background-color: #eee;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    border-radius: 6px;
 }
+
 .tab-dataflash .dataflash-contents li {
-    height:26px;
-    position:relative;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.20);
+    height: 26px;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.20);
     border-radius: 4px;
-
 }
+
 .tab-dataflash .dataflash-contents li div {
-    position:absolute;
-    top:26px;
-    margin-top:4px;
-    text-align:center;
+    position: absolute;
+    top: 26px;
+    margin-top: 4px;
+    text-align: center;
     left: 0;
     right: 0;
 }
+
 .tab-dataflash .dataflash-used {
-    background-color:#59AA29;
+    background-color: #59AA29;
     border-radius: 4px;
 }
+
 .tab-dataflash progress::-webkit-progress-bar {
-    height:24px;
-    background-color:#eee;
+    height: 24px;
+    background-color: #eee;
 }
+
 .tab-dataflash progress::-webkit-progress-value {
-    background-color:#bcf;
+    background-color: #bcf;
 }
 
 .tab-dataflash dialog {
-    width:40em;
-	border-radius: 5px;
-
+    width: 40em;
+    border-radius: 5px;
 }
+
 .tab-dataflash dialog .buttons {
-    position:static;
+    position: static;
     margin-top: 2em;
     overflow: hidden;
-    width:auto;
-
+    width: auto;
 }
+
 .tab-dataflash dialog h3 {
     margin-bottom: 0.5em;
 }
 
 .dataflash-confirm-erase .dataflash-erase-progress {
-    height:125px;
-    display:none;
+    height: 125px;
+    display: none;
     border-radius: 5px;
+}
 
-}
 .dataflash-confirm-erase.erasing .dataflash-erase-progress {
-    display:block;
+    display: block;
 }
-.dataflash-confirm-erase.erasing h3,
-.dataflash-confirm-erase.erasing .erase-flash-confirm,
-.dataflash-confirm-erase.erasing .dataflash-confirm-erase-note {
-    display:none;
+
+.dataflash-confirm-erase.erasing h3, .dataflash-confirm-erase.erasing .erase-flash-confirm, .dataflash-confirm-erase.erasing .dataflash-confirm-erase-note
+    {
+    display: none;
 }
 
 .tab-dataflash progress {
-    display:block;
-    width:100%;
-    margin:1em 0;
+    display: block;
+    width: 100%;
+    margin: 1em 0;
 }
 
 .dataflash-saving .dataflash-saving-after {
-    display:none;
+    display: none;
 }
+
 .dataflash-saving.done .dataflash-saving-before {
-    display:none;
+    display: none;
 }
+
 .dataflash-saving.done .dataflash-saving-after {
-    display:block;
+    display: block;
 }
 
 .require-dataflash {
-    display:none;
+    display: none;
 }
+
 .tab-dataflash.supported .require-dataflash {
-    display:block;
+    display: block;
 }
+
 .require-no-dataflash {
-    display:block;
+    display: block;
 }
+
 .tab-dataflash.supported .require-no-dataflash {
-    display:none;
+    display: none;
 }
 
-@media only screen and (max-width: 1055px), only screen and (max-device-width: 1055px) {
-
-.tab-dataflash table thead tr:first-child {
-    font-size: 12px;
-    height: 22px;
-}
-
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-dataflash table thead tr:first-child {
+        font-size: 12px;
+        height: 22px;
+    }
 }

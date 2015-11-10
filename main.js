@@ -101,6 +101,32 @@ $(document).ready(function () {
 
                 function content_ready() {
                     GUI.tab_switch_in_progress = false;
+                    
+                    $('.togglesmall').each(function(index, html) {
+                        var switchery = new Switchery(html,
+                        {
+                          size: 'small',
+                          color: '#59aa29', 
+                          secondaryColor: '#c4c4c4' 
+                        });
+                        
+                        $(html).removeClass('togglesmall');
+                    });
+
+                    $('.toggle').each(function(index, html) {
+                        var switchery = new Switchery(html,
+                        {
+                            color: '#59aa29', 
+                            secondaryColor: '#c4c4c4' 
+                        });
+                        
+                        $(html).removeClass('toggle');
+                    });
+                    
+                    // Build link to in-use CF version documentation
+                    var documentationButton = $('div#content #button-documentation');
+                    documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+                    documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
                 }
 
                 switch (tab) {
@@ -212,20 +238,6 @@ $(document).ready(function () {
                     googleAnalyticsConfig.setTrackingPermitted(check);
                 });
 
- // CSS switch TEST
-var css = $("#default");
-$("div#options-window #remove").click(function(){
-    css.remove();
-});
-
-$("div#options-window #restore").click(function(){
-    $("head").append(css);
-});
-   // CSS switch TEST END
-   
-   
-        
-        
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
                         $(document).unbind('click keyup', close_and_cleanup);

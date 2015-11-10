@@ -47,9 +47,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('#content').load("./tabs/configuration.html", process_html);
     }
 
-	
-	
-	
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
 
     function recalculate_cycles_sec() {
@@ -67,13 +64,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // translate to user-selected language
         localize();
 
-     	// locating link to used CF version
-    	var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-
-
-	var mixer_list_e = $('select.mixerList');
+        var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
         }
@@ -143,13 +134,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + '</td><span>');
                 radioGroups.push(features[i].group);
             } else {
-                row_e = $('<tr><td><input class="feature"'
+                row_e = $('<tr><td><input class="feature toggle"'
                         + i
                         + '" name="'
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox" id="toggle"/></td><td><label for="feature-'
+                        + '" type="checkbox"/></td><td><label for="feature-'
                         + i
                         + '">'
                         + features[i].name
@@ -367,18 +358,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
 
 
-// load switchery
-	var elems = Array.prototype.slice.call(document.querySelectorAll('#toggle'));
-
-elems.forEach(function(html) {
-  var switchery = new Switchery(html,
-  {
-    color: '#59aa29', 
-    secondaryColor: '#c4c4c4' 
-});
-  });
-	
-	
 // loading tooltip
 	$(document).ready(function() {
 		$('.cf_tip').jBox('Tooltip', {
@@ -466,12 +445,20 @@ elems.forEach(function(html) {
             function reinitialize() {
                 GUI.log(chrome.i18n.getMessage('deviceRebooting'));
 
-                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
-                        GUI.log(chrome.i18n.getMessage('deviceReady'));
-                        TABS.configuration.initialize(false, $('#content').scrollTop());
-                    });
-                },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
+                if (BOARD.find_board_definition(CONFIG.boardIdentifier).vcp) { // VCP-based flight controls may crash old drivers, we catch and reconnect
+                    $('a.connect').click();
+                    GUI.timeout_add('start_connection',function start_connection() {
+                        $('a.connect').click();
+                    },2000);
+                } else {
+
+                    GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                        MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                            GUI.log(chrome.i18n.getMessage('deviceReady'));
+                            TABS.configuration.initialize(false, $('#content').scrollTop());
+                        });
+                    },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
+                }
             }
 
             MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
@@ -486,9 +473,6 @@ elems.forEach(function(html) {
     }
 };
 
-
-	
-	
-	TABS.configuration.cleanup = function (callback) {
+TABS.configuration.cleanup = function (callback) {
     if (callback) callback();
 };

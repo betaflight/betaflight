@@ -1,44 +1,39 @@
 .tab-gps {
+    
 }
-.tab-gps progress {
-	width:100%;
-	border-radius:3px;
-}
-.tab-gps .GPS_info .head,
-.tab-gps .GPS_signal_strength .head {
-    display: block;
 
+.tab-gps progress {
+    width: 100%;
+    border-radius: 3px;
+}
+
+.tab-gps .GPS_info .head, .tab-gps .GPS_signal_strength .head {
+    display: block;
     text-align: center;
     line-height: 20px;
     font-weight: bold;
     border-bottom: 1px solid silver;
     background-color: #ececec;
 }
+
 .tab-gps a {
     font-weight: bold;
 }
+
 .tab-gps a:hover {
     text-decoration: underline;
 }
 
-
-	
-	progress[value]::-webkit-progress-bar {
-  background-color: #d2d2d2;
-  border-radius: 2px;
-  box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25) inset;
-
-
+progress[value]::-webkit-progress-bar {
+    background-color: #d2d2d2;
+    border-radius: 2px;
+    box-shadow: 1px 1px 0 rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.25) inset;
 }
 
 progress[value]::-webkit-progress-value {
-  background-image:
-	   -webkit-linear-gradient(top, 
-	                           rgba(255, 255, 255, .15), 
-	                           rgba(0, 0, 0, .15)),
-	   -webkit-linear-gradient(left, #59aa29, #59aa29);
-	     border-radius: 2px;
-		   box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.25) inset;
-
+    background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, .15), rgba(0, 0, 0, .15)),
+        -webkit-linear-gradient(left, #59aa29, #59aa29);
+    border-radius: 2px;
+    box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.25) inset;
 }
