@@ -73,13 +73,10 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
             $('#content').load("./tabs/ports.html", on_tab_loaded_handler);
             
-            
             board_definition = BOARD.find_board_definition(CONFIG.boardIdentifier);
             console.log('Using board definition', board_definition);
         }
- 
-
-   }
+    }
 
     function update_ui() {
         
@@ -168,11 +165,6 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                         var checkboxId = 'functionCheckbox-' + portIndex + '-' + columnIndex + '-' + i;
                         functions_e.prepend('<span class="function"><input type="checkbox" class="togglesmall" id="' + checkboxId + '" value="' + functionName + '" /><label for="' + checkboxId + '"> ' + functionRule.displayName + '</label></span>');
 
-
-
-  
-  
-  
                         if (serialPort.functions.indexOf(functionName) >= 0) {
                             var checkbox_e = functions_e.find('#' + checkboxId);
                             checkbox_e.prop("checked", true);
@@ -219,14 +211,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         if (callback) callback();
     }
 
- 
- 
- 
-	
-	
-	
-	
-	   function on_save_handler() {
+   function on_save_handler() {
         
         // update configuration based on current ui state
         SERIAL_CONFIG.ports = [];
@@ -254,11 +239,8 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                 blackbox_baudrate: $(portConfiguration_e).find('.blackbox_baudrate').val(),
                 identifier: oldSerialPort.identifier
             };
-            
-            console.log(serialPort);
             SERIAL_CONFIG.ports.push(serialPort);
         });
-        
         
         MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_to_eeprom);
 
@@ -277,22 +259,23 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         function on_reboot_success_handler() {
             GUI.log(chrome.i18n.getMessage('deviceRebooting'));
 
-            var rebootTimeoutDelay = 1500;  // seems to be just the right amount of delay to prevent data request timeouts
-            
-            GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
-                    GUI.log(chrome.i18n.getMessage('deviceReady'));
-                    TABS.ports.initialize(false, $('#content').scrollTop());
-                });
-            }, rebootTimeoutDelay); 
+            if (BOARD.find_board_definition(CONFIG.boardIdentifier).vcp) { // VCP-based flight controls may crash old drivers, we catch and reconnect
+                $('a.connect').click();
+                GUI.timeout_add('start_connection',function start_connection() {
+                    $('a.connect').click();
+                },2000);
+            } else {
+                GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                        GUI.log(chrome.i18n.getMessage('deviceReady'));
+                        TABS.ports.initialize(false, $('#content').scrollTop());
+                    });
+               },  1500); // seems to be just the right amount of delay to prevent data request timeouts
+            }
         }
     }
 };
 
-
-
-	
-	
 TABS.ports.cleanup = function (callback) {
     if (callback) callback();
 };
