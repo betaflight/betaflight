@@ -75,4 +75,3 @@ BOARD.find_board_definition = function (identifier) {
     }
     return DEFAULT_BOARD_DEFINITION;
 };
-

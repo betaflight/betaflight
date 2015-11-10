@@ -1,0 +1,572 @@
+
+/* Global */
+
+.jBox-wrapper {
+	text-align: left;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.jBox-title,
+.jBox-content,
+.jBox-container {
+	position: relative;
+	word-break: break-word;
+}
+
+.jBox-container {
+	background: #fff;
+	border:1px solid #59aa29;
+	max-width:180px;
+	font-size:11px;
+	line-height:13px;
+	color:#525352;
+}
+
+.jBox-content {
+	padding: 4px 5px;
+	overflow: auto;
+	-webkit-transition: opacity .15s;
+	transition: opacity .15s;
+}
+
+/* jBox Tooltip */
+
+.jBox-Tooltip .jBox-container,
+.jBox-Mouse .jBox-container {
+	border-radius: 3px;
+	box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+}
+
+.jBox-Tooltip .jBox-title,
+.jBox-Mouse .jBox-title {
+	padding: 8px 10px 0;
+	font-weight: bold;
+}
+
+.jBox-hasTitle.jBox-Tooltip .jBox-content,
+.jBox-hasTitle.jBox-Mouse .jBox-content {
+	padding-top: 5px;
+}
+
+/* Pointer */
+
+.jBox-pointer {
+	position: absolute;
+	overflow: hidden;
+}
+
+.jBox-pointer-top { top: 0; }
+.jBox-pointer-bottom { bottom: 0; }
+.jBox-pointer-left { left: 0; }
+.jBox-pointer-right { right: 0; }
+
+.jBox-pointer-top,
+.jBox-pointer-bottom {
+	width: 22px;
+	height: 10px;
+}
+
+.jBox-pointer-left,
+.jBox-pointer-right {
+	width: 10px;
+	height: 20px;
+}
+
+.jBox-pointer:after {
+	content: '';
+	width: 10px;
+	height: 9px;
+	position: absolute;
+	background: #fff;
+	-webkit-transform: rotate(45deg);
+	transform: rotate(45deg);
+	border:1px solid #59aa29;
+
+}
+
+.jBox-pointer-top:after {
+	left: 5px;
+	top: 6px;
+	box-shadow: -1px -1px 4px rgba(0, 0, 0, .2);
+}
+
+.jBox-pointer-right:after {
+	top: 5px;
+	right: 6px;
+	box-shadow: 1px -1px 4px rgba(0, 0, 0, .2);
+}
+
+.jBox-pointer-bottom:after {
+	left: 5px;
+	bottom: 6px;
+	box-shadow: 1px 1px 4px rgba(0, 0, 0, .2);
+}
+
+.jBox-pointer-left:after {
+	top: 5px;
+	left: 6px;
+	box-shadow: -1px 1px 4px rgba(0, 0, 0, .2);
+}
+
+/* jBox Modal & jBox Confirm */
+
+.jBox-Modal .jBox-container,
+.jBox-Confirm .jBox-container {
+	border-radius: 3px;
+	box-shadow: 0 3px 15px rgba(0, 0, 0, .4), 0 0 5px rgba(0, 0, 0, .4);
+}
+
+.jBox-Modal .jBox-title,
+.jBox-Confirm .jBox-title {
+	border-radius: 3px 3px 0 0;
+	padding: 10px 15px;
+	background: #f4f5f6;
+	border-bottom: 1px solid #ddd;
+	text-shadow: 0 1px 1px #fff;
+}
+
+.jBox-Modal.jBox-closeButton-title .jBox-title,
+.jBox-Confirm.jBox-closeButton-title .jBox-title {
+	padding-right: 55px;
+}
+
+.jBox-Modal.jBox-closeButton-box:before,
+.jBox-Confirm.jBox-closeButton-box:before {
+	box-shadow: 0 3px 15px rgba(0, 0, 0, .4), 0 0 5px rgba(0, 0, 0, .4);
+}
+
+/* jBox Modal */
+
+.jBox-Modal .jBox-content {
+	padding: 12px 15px;
+}
+
+/* jBox Confirm */
+
+.jBox-Confirm .jBox-content {
+	text-align: center;
+	padding: 45px 35px;
+}
+
+.jBox-Confirm-footer {
+	border-top: 1px solid #e2e2e2;
+	background: #fafafa;
+	border-radius: 0 0 3px 3px;
+	text-align: center;
+	padding: 10px 0;
+}
+
+.jBox-Confirm-button {
+	display: inline-block;
+	cursor: pointer;
+	font-size: 15px;
+	line-height: 30px;
+	height: 30px;
+	border-radius: 3px;
+	padding: 0 20px;
+	-webkit-transition: color .2s, background-color .2s;
+	transition: color .2s, background-color .2s;	
+}
+
+.jBox-Confirm-button-cancel {
+	text-shadow: 0 1px 1px rgba(255, 255, 255, .6);
+	background: #ddd;
+	color: #999;
+	margin-right: 25px;
+}
+
+.jBox-Confirm-button-cancel:hover {
+	background: #ccc;
+	color: #666;
+}
+
+.jBox-Confirm-button-submit {
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, .2);
+	background: #5fc04c;
+	color: #fff;
+}
+
+.jBox-Confirm-button-submit:hover {
+	background: #53a642;
+}
+
+.jBox-Confirm-button-cancel:active,
+.jBox-Confirm-button-submit:active {
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, .26);
+}
+
+/* jBox Notice */
+
+.jBox-Notice {
+	-webkit-transition: margin .2s;
+	transition: margin .2s;
+}
+
+.jBox-Notice .jBox-container {
+	border-radius: 3px;
+	box-shadow: 0 0 3px rgba(0, 0, 0, .2);
+	color: #fff;
+	text-shadow: 0 -1px 1px #000;
+	background: #333;
+	background-image: linear-gradient(to bottom, #444, #222);
+}
+
+.jBox-Notice .jBox-content {
+	border-radius: 3px;
+	padding: 12px 20px;
+}
+
+.jBox-Notice .jBox-title {
+	padding: 8px 20px 0;
+	font-weight: bold;
+}
+
+.jBox-hasTitle.jBox-Notice .jBox-content {
+	padding-top: 5px;
+}
+
+.jBox-Notice-color .jBox-container {
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, .3);
+}
+
+.jBox-Notice-gray .jBox-container {
+	color: #666;
+	text-shadow: 0 1px 1px #fff;
+	background: #f4f4f4;
+	background-image: linear-gradient(to bottom, #fafafa, #f0f0f0);
+}
+
+.jBox-Notice-red .jBox-container {
+	background: #b02222;
+	background-image: linear-gradient(to bottom, #ee2222, #b02222);
+}
+
+.jBox-Notice-green .jBox-container {
+	background: #70a800;
+	background-image: linear-gradient(to bottom, #95cc2a, #70a800);
+}
+
+.jBox-Notice-blue .jBox-container {
+	background: #2b91d9;
+	background-image: linear-gradient(to bottom, #5abaff, #2b91d9);
+}
+
+.jBox-Notice-yellow .jBox-container {
+	color: #744700;
+	text-shadow: 0 1px 1px rgba(255, 255, 255, .6);
+	background: #ffb11f;
+	background-image: linear-gradient(to bottom, #ffd665, #ffb11f);
+}
+
+/* jBox Image */
+
+.jBox-Image {
+	background: #fff;
+	padding: 8px 8px 45px;
+	border-radius: 5px;
+}
+
+.jBox-Image .jBox-content {
+	padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.jBox-image-container {
+	border-radius: 5px;
+	background: #fff center center no-repeat;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+}
+
+.jBox-image-label {
+	box-sizing: border-box;
+	position: absolute;
+	background: #fff;
+	top: 100%;
+	left: 0;
+	width: 100%;
+	color: #333;
+	margin-top: -35px;
+	padding: 0 90px 5px 10px;
+	border-radius: 0 0 5px 5px;
+	-webkit-transition: opacity .3s;
+	transition: opacity .3s;
+	opacity: 0;
+}
+
+.jBox-image-label.active {
+	opacity: 1;
+}
+
+.jBox-image-pointer-next,
+.jBox-image-pointer-prev {
+	position: absolute;
+	bottom: 0px;
+	width: 22px;
+	height: 45px;
+	background: no-repeat center center url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ijc0LjcgMjI0IDE4LjcgMzIiPg0KPHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTkzLDIyNy40TDgwLjQsMjQwTDkzLDI1Mi42YzAuNCwwLjQsMC40LDEuMSwwLDEuNWwtMS42LDEuNmMtMC40LDAuNC0xLDAuNS0xLjUsMEw3NSwyNDAuN2MtMC40LTAuNC0wLjUtMSwwLTEuNWwxNC45LTE0LjljMC40LTAuNCwxLTAuNCwxLjUsMGwxLjYsMS42QzkzLjUsMjI2LjQsOTMuNCwyMjcsOTMsMjI3LjR6Ii8+DQo8L3N2Zz4=);
+	background-size: 11px auto;
+	cursor: pointer;
+	opacity: .6;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-transition: opacity .2s;
+	transition: opacity .2s;
+}
+
+.jBox-image-pointer-next:hover,
+.jBox-image-pointer-prev:hover {
+	opacity: 1;
+}
+
+.jBox-image-pointer-next {
+	right: 8px;
+    -webkit-transform: scaleX(-1);
+    transform: scaleX(-1);
+}
+
+.jBox-image-pointer-prev {
+	right: 30px;
+}
+
+.jBox-image-open #jBox-overlay {
+	background-color: rgba(0, 0, 0, .86);
+}
+
+.jBox-Image.jBox-loading .jBox-container:before {
+	left: auto;
+	top: auto;
+	bottom: -33px;
+	right: 55px;
+	margin-top: -9px;
+	margin-left: -9px;
+}
+
+/* Close button */
+
+.jBox-closeButton {
+	cursor: pointer;
+	position: absolute;
+}
+
+.jBox-closeButton svg {
+	position: absolute;
+	top: 50%;
+	right: 50%;
+}
+
+.jBox-closeButton path {
+	-webkit-transition: fill .2s;
+	transition: fill .2s;
+}
+
+.jBox-closeButton path {
+	fill: #aaa;
+}
+
+.jBox-closeButton:hover path {
+	fill: #888;
+}
+
+.jBox-closeButton:active path {
+	fill: #666;
+}
+
+/* Close button in overlay */
+
+#jBox-overlay .jBox-closeButton {
+	top: 0;
+	right: 0;
+	width: 40px;
+	height: 40px;
+}
+
+#jBox-overlay .jBox-closeButton svg {
+	width: 20px;
+	height: 20px;
+	margin-top: -10px;
+	margin-right: -10px;
+}
+
+#jBox-overlay .jBox-closeButton path {
+	fill: #d2d4d6;
+}
+
+#jBox-overlay .jBox-closeButton:hover path {
+	fill: #fff;
+}
+
+#jBox-overlay .jBox-closeButton:active path {
+	fill: #b2b4b6;
+}
+
+/* Close button in title */
+
+.jBox-closeButton-title .jBox-closeButton {
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 40px;
+}
+
+.jBox-closeButton-title .jBox-closeButton svg {
+	width: 12px;
+	height: 12px;
+	margin-top: -6px;
+	margin-right: -6px;
+}
+
+/* Close button in box */
+
+.jBox-closeButton-box .jBox-closeButton {
+	top: -8px;
+	right: -10px;
+	width: 24px;
+	height: 24px;
+	background: #fff;
+	border-radius: 50%;
+}
+
+.jBox-closeButton-box .jBox-closeButton svg {
+	width: 10px;
+	height: 10px;
+	margin-top: -5px;
+	margin-right: -5px;
+}
+
+.jBox-hasTitle.jBox-Modal.jBox-closeButton-box .jBox-closeButton {
+	background: #f4f5f6;
+}
+
+.jBox-closeButton-box:before {
+	content: '';
+	position: absolute;
+	top: -8px;
+	right: -10px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+}
+
+.jBox-pointerPosition-top.jBox-closeButton-box:before {
+	top: 4px;
+}
+
+.jBox-pointerPosition-right.jBox-closeButton-box:before {
+	right: 2px;
+}
+
+/* Overlay */
+
+#jBox-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #000;
+	background-color: rgba(0, 0, 0, .6);
+}
+
+/* Block scrolling */
+
+body[class^="jBox-blockScroll-"],
+body[class*=" jBox-blockScroll-"] {
+	overflow: hidden;
+}
+
+/* Draggable */
+
+.jBox-draggable {
+	cursor: move;
+}
+
+/* Spinner */
+
+@keyframes jBoxLoading {
+	to {transform: rotate(360deg);}
+}
+
+@-webkit-keyframes jBoxLoading {
+	to {-webkit-transform: rotate(360deg);}
+}
+
+.jBox-loading .jBox-content {
+	min-height: 32px;
+	min-width: 38px;
+	opacity: 0;
+}
+
+.jBox-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+ 
+.jBox-spinner:before {
+    content: 'Loading…';
+    display: block;
+    width: 20px;
+    height: 20px;
+	text-align: center;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+ 
+.jBox-spinner:not(:required):before {
+    content: '';
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, .3);
+    border-top-color: rgba(0, 0, 0, .6);
+    animation: jBoxLoading .6s linear infinite;
+    -webkit-animation: jBoxLoading .6s linear infinite;
+}
+
+/* IE8 fixes */
+
+.jBox-IE8.jBox-Tooltip .jBox-container,
+.jBox-IE8.jBox-Mouse .jBox-container {
+	border: 1px solid #aaa;
+}
+
+.jBox-IE8 .jBox-pointer:after {
+	display: none;
+}
+
+.jBox-IE8 .jBox-pointer {
+	border: 0;
+	background: no-repeat url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAPJJREFUeNq01l0OwyAIAGAlvY+n8ZJ6Gk/EqqkNtf7ApCQ+LM34iuCmRUQzihjj6FH+kjWL8N4/Ph9GHpiTnC9SwDbhLGyvspSScc71KkOa/HpuuRhIK+psE2pjONouCQg7kBSEXUgC2tHo52mTTBpnaEATWlaYK6MrhIAaceWpOcsCrYp6FV4H/90zTWjUQ/gSevVQq0ecHqoOxWpYoO7p5O9ku2fnVtp7QAik2rsK3fnpWfjynJWpbw+1BkghurrYDjiCptg/4AxaYhJwBbEwDsiB2NgM5EIirAdKIDFGQSmU1+NaIPjJYt2I25vxT4ABAMhWvtle2YvmAAAAAElFTkSuQmCC);
+}
+
+.jBox-IE8 .jBox-pointer-top { background-position: center top; }
+.jBox-IE8 .jBox-pointer-bottom { background-position: center bottom; }
+.jBox-IE8 .jBox-pointer-left { background-position: left center; }
+.jBox-IE8 .jBox-pointer-right { background-position: right center; }
+
+.jBox-IE8.jBox-Modal .jBox-container {
+	border: 3px solid #aaa;
+}
+
+/* No SVG support fixes */
+
+.jBox-nosvg .jBox-closeButton:before {
+    font-family: Verdana, sans-serif;
+    content: 'x';
+    text-align: center;
+    font-size: 18px;
+    color: #888;
+}

@@ -18,6 +18,7 @@ $(document).ready(function () {
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
     $('#status-bar .version').text(chrome.runtime.getManifest().version);
+    $('#logo .version').text(chrome.runtime.getManifest().version);
 
     // notification messages for various operating systems
     switch (GUI.operating_system) {
@@ -100,6 +101,32 @@ $(document).ready(function () {
 
                 function content_ready() {
                     GUI.tab_switch_in_progress = false;
+                    
+                    $('.togglesmall').each(function(index, html) {
+                        var switchery = new Switchery(html,
+                        {
+                          size: 'small',
+                          color: '#59aa29', 
+                          secondaryColor: '#c4c4c4' 
+                        });
+                        
+                        $(html).removeClass('togglesmall');
+                    });
+
+                    $('.toggle').each(function(index, html) {
+                        var switchery = new Switchery(html,
+                        {
+                            color: '#59aa29', 
+                            secondaryColor: '#c4c4c4' 
+                        });
+                        
+                        $(html).removeClass('toggle');
+                    });
+                    
+                    // Build link to in-use CF version documentation
+                    var documentationButton = $('div#content #button-documentation');
+                    documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+                    documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
                 }
 
                 switch (tab) {
@@ -357,3 +384,49 @@ String.prototype.format = function () {
         return args[i] !== void 0 ? args[i] : "{"+(i-args.length)+"}";
     });
 };
+
+/** log trigger **/
+$(document).ready(function () {
+
+$("#showlog").on('click', function() {
+    var state = $(this).data('state');
+    if ( state ) {
+        $("#log").animate({height: 27}, 200);
+        $("#log").removeClass('active');
+		$("#content").removeClass('logopen');
+		$("#tabs").removeClass('logopen');
+        $("#scrollicon").removeClass('active');
+
+        state = false;
+    }else{
+        $("#log").animate({height: 111}, 200);
+        $("#log").addClass('active');
+        $("#content").addClass('logopen');
+        $("#tabs").addClass('logopen');
+        $("#scrollicon").addClass('active');
+
+        state = true;
+    }
+    $(this).text(state ? 'Hide Log' : 'Show Log');
+    $(this).data('state', state);
+    
+});
+
+});
+
+
+
+
+
+// loading tooltip
+$(document).ready(function() {
+$('.cf_tip').jBox('Tooltip', {
+    delayOpen: 100,
+    delayClose: 100,
+	position: {
+        x: 'right',
+        y: 'center'
+    },
+	outside: 'x'
+});
+});

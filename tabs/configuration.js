@@ -89,7 +89,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
             {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
             {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports'},
-            {bit: 7, group: 'gps', name: 'GPS', description: 'GPS (configure port scenario first)'},
+            {bit: 7, group: 'gps', name: 'GPS', description: 'Configure port scenario first<div class="helpicon cf_tip" title="Remember to select port scenario first!"></div>'},
             {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
             {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
             {bit: 10, group: 'other', name: 'TELEMETRY', description: 'Telemetry output'},
@@ -106,7 +106,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         
         if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
             features.push(
-                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to remaining servo outputs'}
+                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to servo outputs'}
             );
         }
 
@@ -117,7 +117,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             var row_e;
             
             if (features[i].mode === 'group') {
-                row_e = $('<tr><td><input class="feature" id="feature-'
+                row_e = $('<tr><td style="width: 15px;"><input style="width: 13px;" class="feature" id="feature-'
                         + i
                         + '" value="'
                         + features[i].bit
@@ -129,24 +129,24 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td>'
+                        + '</label></td><td><span>'
                         + features[i].description
-                        + '</td>');
+                        + '</td><span>');
                 radioGroups.push(features[i].group);
             } else {
-                row_e = $('<tr><td><input class="feature" id="feature-'
+                row_e = $('<tr><td><input class="feature toggle"'
                         + i
                         + '" name="'
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox" /></td><td><label for="feature-'
+                        + '" type="checkbox"/></td><td><label for="feature-'
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td>'
+                        + '</label></td><td><span>'
                         + features[i].description
-                        + '</td>');
+                        + '</span></td>');
                 
                 var feature_e = row_e.find('input.feature');
 
@@ -356,6 +356,23 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             });
         });
 
+
+
+// loading tooltip
+	$(document).ready(function() {
+		$('.cf_tip').jBox('Tooltip', {
+		delayOpen: 100,
+		delayClose: 100,
+		position: {
+			x: 'right',
+			y: 'center'
+		},
+		outside: 'x'
+		});
+	});
+	
+		
+	
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
             BF_CONFIG.board_align_roll = parseInt($('input[name="board_align_roll"]').val());
@@ -427,7 +444,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             function reinitialize() {
                 GUI.log(chrome.i18n.getMessage('deviceRebooting'));
-                
+
                 if (BOARD.find_board_definition(CONFIG.boardIdentifier).vcp) { // VCP-based flight controls may crash old drivers, we catch and reconnect
                     $('a.connect').click();
                     GUI.timeout_add('start_connection',function start_connection() {

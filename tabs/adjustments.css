@@ -1,23 +1,25 @@
 .tab-adjustments {
+    
 }
 
 #tab-adjustments-templates {
     display: none;
 }
 
-.tab-adjustments .help {
-    padding: 10px;
-    background-color: #ffcb18;
-    margin-bottom: 10px;
+.tab-adjustments .range .marker, .tab-adjustments .channel-slider .noUi-connect {
+    background: #92b67c;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
 }
 
-.tab-adjustments .help p {
-    padding-bottom: 5px;
+.noUi-target {
+    border-radius: 4px;
+    border: 1px solid #D3D3D3;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
 }
 
-.tab-adjustments .help li {
-    list-style-type: decimal;
-    margin-left: 20px;
+.noUi-background {
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
+    background: #D2D2D2;
 }
 
 .tab-adjustments .adjustments {
@@ -25,23 +27,48 @@
     border-spacing: 0px;
 }
 
+.tab-adjustments td {
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #cccccc;
+}
+
+.tab-adjustments .range:first-child {
+    border-top: 0px;
+}
+
+.tab-adjustments .range:last-child {
+    border-bottom: 0px;
+}
+
 .tab-adjustments .adjustments thead td {
     text-align: center;
     white-space: nowrap;
     padding: 10px 10px;
-    background-color: #61B665;
+    background-color: #828885;
+    color: white;
 }
 
-.tab-adjustments .adjustment {
-    background-color: #ececec;
+.tab-adjustments .adjustments thead td:first-child {
+    border-top-left-radius: 5px;
+}
+
+.tab-adjustments .adjustments thead td:last-child {
+    border-top-right-radius: 5px;
 }
 
 .tab-adjustments .adjustment:nth-child(odd) {
-    background-color: #ffffff;
+    background-color: #f4f4f4;
+}
+
+.tab-adjustments .adjustments {
+    background-color: #e4e4e4;
 }
 
 .tab-adjustments .adjustment select {
-    outline: 1px solid silver;
+    /* outline: 1px solid silver; */
+    border-radius: 3px;
+    border: 1px solid silver;
+    #
 }
 
 .tab-adjustments .adjustment td {
@@ -63,7 +90,7 @@
 }
 
 .tab-adjustments .adjustment .channelInfo .limits {
-    padding: 10px 0px;
+    padding: 5px 0px;
 }
 
 .tab-adjustments .adjustment .range {
@@ -82,7 +109,7 @@
     height: 13px;
     width: 6px;
     margin-left: -3px;
-    background: #ffcb18;
+    border-radius: 3px;
 }
 
 .tab-adjustments .adjustment .functionSelection {
@@ -95,28 +122,4 @@
 
 .tab-adjustments .adjustment .functionSwitchChannel {
     width: 5%;
-}
-
-.tab-adjustments > .buttons {
-    margin-top: 10px;
-}
-
-.tab-adjustments > .buttons a {
-    float: right;
-    height: 28px;
-    line-height: 28px;
-    padding: 0 15px 0 15px;
-    display: block;
-}
-
-.tab-adjustments .buttons a {
-    text-align: center;
-    font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
-}
-
-.tab-adjustments .buttons a:hover {
-    background-color: #dedcdc;
 }
