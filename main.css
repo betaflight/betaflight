@@ -128,11 +128,11 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .headerbar {
-    height: 110px;
-    width: 100%;
-    float: left;
-    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
+	height:110px;
+	width:100%;
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
 }
+
 
 #logo {
     position: relative;
@@ -905,10 +905,10 @@ dialog {
     /* leave 20px side padding always */
     /*padding: 0 20px 0 20px;
     for testing: */
-    padding: 20px;
-    position: relative;
-    float: left;
-    width: calc(100% - 40px);
+  padding: 20px;
+  position: relative;
+  /*float: left;
+  width:calc(100% - 40px);*/
 }
 
 .content_toolbar {
@@ -1370,7 +1370,7 @@ dialog {
     border-radius: 3px;
     color: #fff;
     font-size: 10px;
-}
+	}
 
 .fixfalse {
     background-color: #e60000;
@@ -1385,7 +1385,7 @@ dialog {
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .content_wrapper {
         padding: 15px;
-        width: calc(100% - 30px);
+  /*width:calc(100% - 30px);*/
     }
     .tab_title {
         font-size: 16px;
