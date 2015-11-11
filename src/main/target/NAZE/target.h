@@ -186,8 +186,8 @@
 #define BIND_PIN   Pin_3
 
 #define USE_SERIAL_1WIRE
-// How many escs does this board support?
-#define ESC_COUNT 6
+#define USE_SERIAL_1WIRE_CLI
+
 // STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
 #define S1W_TX_GPIO         GPIOA
 #define S1W_TX_PIN          GPIO_Pin_9

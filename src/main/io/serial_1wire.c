@@ -19,15 +19,20 @@
  */
 
 #include <stdbool.h>
-
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
 #include "platform.h"
 
 #ifdef USE_SERIAL_1WIRE
-
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
+#include "drivers/system.h"
 #include "io/serial_1wire.h"
+#include "drivers/pwm_mapping.h"
+#include "flight/mixer.h"
 
+/*
 const escHardware_t escHardware[ESC_COUNT] = {
 // Figure out esc clocks and pins, extrapolated from timer.c
 // Periphs could be pulled progmatically... but I'll leave that for another exercise
@@ -79,6 +84,12 @@ const escHardware_t escHardware[ESC_COUNT] = {
   { GPIOA, 2 }
 #endif
 };
+*/
+
+uint8_t escCount; // we detect the hardware dynamically
+
+
+static escHardware_t escHardware[MAX_PWM_MOTORS];
 
 static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
   gpio_config_t cfg;
@@ -88,11 +99,36 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
   gpioInit(gpio, &cfg);
 }
 
+
+static uint32_t GetPinPos(uint32_t pin) {
+  uint32_t pinPos;
+  for (pinPos = 0; pinPos < 16; pinPos++) {
+      uint32_t pinMask = (0x1 << pinPos);
+      if (pin & pinMask) {
+        // pos found
+        return pinPos;
+      }
+  }
+  return 0;
+}
+
+
 void usb1WireInitialize()
 {
-   for (volatile uint8_t i = 0; i < ESC_COUNT; i++) {
-      gpio_set_mode(escHardware[i].gpio, (1U << escHardware[i].pinpos), Mode_IPU); //GPIO_Mode_IPU
-   }
+  escCount = 0;
+  memset(&escHardware,0,sizeof(escHardware));
+  pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
+  for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
+    if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
+      if(motor[pwmOutputConfiguration->portConfigurations[i].index] >0 ) {
+        escHardware[escCount].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
+        escHardware[escCount].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
+        escHardware[escCount].pinpos = GetPinPos(escHardware[escCount].pin);
+        gpio_set_mode(escHardware[escCount].gpio,escHardware[escCount].pin, Mode_IPU); //GPIO_Mode_IPU
+        escCount++;
+      }
+    }
+  }
 #ifdef BEEPER
    // fix for buzzer often starts beeping continuously when the ESCs are read
    // switch beeper off until reboot
@@ -129,7 +165,7 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
   // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
   if (mode == Mode_IPU) {
     *cr = in_cr_mask;
-    escHardware[escIndex].gpio->ODR |= (1U << escHardware[escIndex].pinpos);
+    escHardware[escIndex].gpio->ODR |= escHardware[escIndex].pin;
   }
   else {
     *cr = out_cr_mask;
@@ -137,10 +173,10 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
 }
 #endif
 
-#define ESC_HI(escIndex)       ((escHardware[escIndex].gpio->IDR & (1U << escHardware[escIndex].pinpos)) != (uint32_t)Bit_RESET)
+#define ESC_HI(escIndex)       ((escHardware[escIndex].gpio->IDR & escHardware[escIndex].pin) != (uint32_t)Bit_RESET)
 #define RX_HI                  ((S1W_RX_GPIO->IDR & S1W_RX_PIN) != (uint32_t)Bit_RESET)
-#define ESC_SET_HI(escIndex)   escHardware[escIndex].gpio->BSRR = (1U << escHardware[escIndex].pinpos)
-#define ESC_SET_LO(escIndex)   escHardware[escIndex].gpio->BRR = (1U << escHardware[escIndex].pinpos)
+#define ESC_SET_HI(escIndex)   escHardware[escIndex].gpio->BSRR = escHardware[escIndex].pin
+#define ESC_SET_LO(escIndex)   escHardware[escIndex].gpio->BRR = escHardware[escIndex].pin
 #define TX_SET_HIGH            S1W_TX_GPIO->BSRR = S1W_TX_PIN
 #define TX_SET_LO              S1W_TX_GPIO->BRR = S1W_TX_PIN
 
@@ -154,39 +190,17 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
 #define ESC_OUTPUT(escIndex)   gpioSetOne(escIndex, Mode_Out_PP)
 #endif
 
-#if defined(STM32F3DISCOVERY)
-#define LED_PRGMR_RX GPIO_Pin_8
-#define LED_PRGMR_TX GPIO_Pin_10
-// Top Left LD4, PE8 (blue)-- from programmer (RX)
-#define RX_LED_OFF GPIOE->BRR =  LED_PRGMR_RX
-#define RX_LED_ON  GPIOE->BSRR = LED_PRGMR_RX
-// Top Right LD5, PE10 (orange) -- to programmer (TX)
-#define TX_LED_OFF GPIOE->BRR =  LED_PRGMR_TX
-#define TX_LED_ON  GPIOE->BSRR = LED_PRGMR_TX
-static void ledInitDebug(void)
-{
-  uint32_t pinmask = LED_PRGMR_RX|LED_PRGMR_TX;
-  GPIO_DeInit(GPIOE);
-  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
-  gpio_set_mode(GPIOE, pinmask, Mode_Out_PP);
-  GPIOE->BRR = pinmask;
-}
-#else
+
 #define RX_LED_OFF LED0_OFF
 #define RX_LED_ON LED0_ON
 #define TX_LED_OFF LED1_OFF
 #define TX_LED_ON LED1_ON
-#endif
 
 // This method translates 2 wires (a tx and rx line) to 1 wire, by letting the
 // RX line control when data should be read or written from the single line
 void usb1WirePassthrough(uint8_t escIndex)
 {
-#ifdef STM32F3DISCOVERY
-  ledInitDebug();
-#endif
-
-  //Disable all interrupts
+  // disable all interrupts
   __disable_irq();
 
   // reset all the pins
@@ -231,7 +245,7 @@ void usb1WirePassthrough(uint8_t escIndex)
     // At first Echo to the esc, which helps to charge input capacities at ESC
     ESC_SET_HI(escIndex);
     // Listen to the escIndex, input mode, pullup resistor is on
-    gpio_set_mode(escHardware[escIndex].gpio, (1U << escHardware[escIndex].pinpos), Mode_IPU);
+    gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
     TX_LED_OFF;
     if (ct==0) break; //we reached zero
     // Listen to the escIndex while there is no data from the programmer
@@ -246,6 +260,7 @@ void usb1WirePassthrough(uint8_t escIndex)
       }
     }
   }
+
   // we get here in case ct reached zero
   TX_SET_HIGH;
   RX_LED_OFF;

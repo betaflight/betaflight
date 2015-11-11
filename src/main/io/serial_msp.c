@@ -1761,13 +1761,19 @@ static bool processInCommand(void)
             // 0xFF -> preinitialize the Passthrough
             // switch all motor lines HI
             usb1WireInitialize();
+            // reply the count of ESC found
+            headSerialReply(1);
+            serialize8(escCount);
+
             // and come back right afterwards
             // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
             // bootloader mode before try to connect any ESC
+
+            return true;
         }
         else {
             // Check for channel number 0..ESC_COUNT-1
-            if (i < ESC_COUNT) {
+            if (i < escCount) {
                 // because we do not come back after calling usb1WirePassthrough
                 // proceed with a success reply first
                 headSerialReply(0);
