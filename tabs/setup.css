@@ -76,6 +76,11 @@
     background-position: center;
 }
 
+#canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .gui_box grey .block_wrapper {
     font-size: 0;
 }

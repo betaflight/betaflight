@@ -1,6 +1,3 @@
-
-
-
 /* general layout */
 
 .tab-landing {
@@ -13,12 +10,13 @@
 	min-height: 100%;
 	height: 100%;
 	overflow-y: auto;
+	background-color:#436c2c;
 }
 
 .tab-landing .content_top {
 	height: 120px;
-  background: #59aa29;
-  padding: 20px;
+	background: #59aa29;
+	padding: 20px;
 }
 
 .tab-landing .content_mid {
@@ -30,7 +28,6 @@
 	clear: both;
 	padding: 20px;
 }
-
 
 
 /* hero block */
@@ -55,13 +52,12 @@
 }
 
 
-
 /* sponsors blocks */
 
 .sponsors .title {
 	text-transform:uppercase;
 	font-size:10px;
-	}
+}
 
 .sponsors {
 	margin-left:auto;
@@ -71,7 +67,7 @@
 }
 
 .sponsors ul {
-	margin-top:10px;
+	margin-top:5px;
 }
 
 .sponsors li {
@@ -85,14 +81,15 @@
 	padding-left:4px;
 	padding-right:4px;
 	font-size:13px;
-	line-height:10px;
+    line-height: 25px;
+    color:white;	
 	font-weight:normal;
 	font-family: 'open_sanslight', Arial;
-	border: 1px solid white;
 }
 
 .sponsors li a:hover {
-	border-color: #eaeaea;
+	background-color:rgba(255,255,255,0.30);
+	color:#fff;
 }
 
 .text1, .text2, .text3 {
@@ -104,17 +101,27 @@
 }
 
 
-
 /* text columns */
 
 .tab-landing .content_mid .column .wrap {
-	padding: 20px;
+	padding: 15px;
+	padding-bottom: 0px;
+    padding-top: 0px;
+}
+
+
+.tab-landing .content_mid .column .wrap2 {
+	padding: 10px;
+	padding-bottom: 10px;
+    padding-top: 10px;
 }
 
 
 .tab-landing .content_mid h2,
 .tab-landing .content_mid h3 {
-	margin-bottom: 10px;
+	margin-bottom: 5px;
+	font-size:13px;
+
 }
 .tab-landing .content_mid h3 {
 	font-size: 12px;
@@ -125,34 +132,37 @@
 	width:37%;
 }
 
-
 .tab-landing .content_mid .text2 {
 	width:37%;
 }
+
 .tab-landing .content_mid .text2 ul {
 	margin-top: 10px;
 }
+
 .tab-landing .content_mid .text2 li {
 	padding: 5px 0;
-	border-top: 1px dashed silver;
+	border-top: 1px dotted silver;
 }
-
 
 .tab-landing .content_mid .text3 {
 	width:26%;
 }
-.tab-landing .content_mid .text3 .wrap {
+
+.tab-landing .content_mid .text3 .wrap2 {
 	border: 1px solid silver;
 	border-radius: 5px;
 	background: white;
 	margin-right: 20px;
+	margin-left:20px;
 	margin-top: 5px;
+	min-height: 200px;
 }
+
 .tab-landing .content_mid .text3 .donate {
 	margin-top: 10px;
+	text-align:center;
 }
-
-
 
 /* changelog block */
 

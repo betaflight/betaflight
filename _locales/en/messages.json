@@ -1202,5 +1202,11 @@
     },
     "controlAxisAux8": {
         "message": "AUX 8"
+    },
+    "pidHelp1": {
+        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
+    },
+    "configHelp1": {
+        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
     }
 }

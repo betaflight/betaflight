@@ -197,14 +197,14 @@
 
 .tab-motors .titles li {
     float: left;
-    width: calc(( 100% / 9)- 10px);
+    width: calc((100% / 9) - 10px);
     margin-right: 10px;
     text-align: center;
 }
 
 .tab-motors .servos .titles li {
     float: right;
-    width: calc(( 100% / 8)- 10px);
+    width: calc((100% / 8) - 10px);
     margin: 0 0 0 10px;
 }
 
@@ -214,7 +214,7 @@
 
 .tab-motors .m-block {
     float: left;
-    width: calc(( 100% / 9)- 10px);
+    width: calc((100% / 9) - 10px);
     height: 100px;
     margin-right: 10px;
     text-align: center;
@@ -248,7 +248,7 @@
 
 .tab-motors .servos .m-block {
     float: right;
-    width: calc(( 100% / 8)- 10px);
+    width: calc((100% / 8) - 10px);
     margin: 0 0 0 10px;
     border-radius: 3px;
 }
@@ -271,7 +271,7 @@
 
 .tab-motors .motor_testing .sliders input {
     -webkit-appearance: slider-vertical;
-    width: calc(( 100% / 9)- 13px);
+    width: calc((100% / 9) - 13px);
     height: 73px;
     margin-left: 10px;
 }
@@ -290,7 +290,7 @@
 
 .tab-motors .motor_testing .values li {
     float: left;
-    width: calc(( 100% / 9)- 10px);
+    width: calc((100% / 9) - 10px);
     margin-left: 10px;
     text-align: center;
 }

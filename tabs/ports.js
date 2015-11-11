@@ -163,7 +163,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                     var select_e;
                     if (column != 'telemetry') {
                         var checkboxId = 'functionCheckbox-' + portIndex + '-' + columnIndex + '-' + i;
-                        functions_e.prepend('<span class="function"><input type="checkbox" class="togglesmall" id="' + checkboxId + '" value="' + functionName + '" /><label for="' + checkboxId + '"> ' + functionRule.displayName + '</label></span>');
+                        functions_e.prepend('<span class="function"><input type="checkbox" class="togglemedium" id="' + checkboxId + '" value="' + functionName + '" /><label for="' + checkboxId + '"> ' + functionRule.displayName + '</label></span>');
 
                         if (serialPort.functions.indexOf(functionName) >= 0) {
                             var checkbox_e = functions_e.find('#' + checkboxId);
