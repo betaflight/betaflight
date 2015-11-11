@@ -83,7 +83,7 @@ class Model
 
   # Draw body parts, really just a rounded line
   def draw_body x1,y1,x2,y2
-    @cr.set_source_color(BODY_GRAY)
+    @cr.set_source_color(BODY_GREY)
     @cr.set_line_width(@lw)
     @cr.set_line_join(Cairo::LINE_JOIN_ROUND)
     @cr.move_to(x1,y1)
