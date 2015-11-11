@@ -195,13 +195,11 @@
 
 .sponsors ul {
     margin-top: 10px;
-    float: left;
 }
 
 .sponsors li {
-    float: left;
     margin-right: 10px;
-    display: block;
+    display: inline-block;
 }
 
 .sponsors li a {
