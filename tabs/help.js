@@ -12,7 +12,7 @@ TABS.help.initialize = function (callback) {
     $('#content').load("./tabs/help.html", function () {
         localize();
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     });
 };
 

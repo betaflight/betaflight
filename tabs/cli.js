@@ -62,7 +62,7 @@ TABS.cli.initialize = function (callback) {
         // give input element user focus
         textarea.focus();
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     });
 };
 

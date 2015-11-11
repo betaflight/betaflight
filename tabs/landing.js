@@ -37,8 +37,7 @@ TABS.landing.initialize = function (callback) {
             $(this).data('state2', state);
         });
 
-        if (callback) callback();
-
+        GUI.content_ready(callback);
     });
 
 };

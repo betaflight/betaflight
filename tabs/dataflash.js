@@ -113,7 +113,7 @@ TABS.dataflash.initialize = function (callback) {
         }
 
         
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
     
     // IO related methods
