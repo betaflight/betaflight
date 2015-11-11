@@ -193,7 +193,7 @@ TABS.setup.initialize = function (callback) {
         GUI.interval_add('setup_data_pull_fast', get_fast_data, 33, true); // 30 fps
         GUI.interval_add('setup_data_pull_slow', get_slow_data, 250, true); // 4 fps
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 };
 

@@ -1,121 +1,281 @@
 .tab-pid_tuning {
+    
 }
+
+.tab-pid_tuning .rate-tpa th {
+    font-weight: normal;
+    background-color: #828885;
+    padding: 4px;
+    border-left: 0px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    font-weight: bold;
+    color: white;
+    text-align: left;
+}
+
+.tab-pid_tuning .cf tr {
+    background-color: #DEDEDE;
+}
+
+.tab-pid_tuning .cf th {
+    border-right: solid 1px silver;
+    height: 19px;
+    font-weight: normal;
+}
+
+.tab-pid_tuning .cf th:last-child {
+    border-right: 0px;
+}
+
+.tab-pid_tuning .cf td:first-child {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-pid_tuning .cf td:last-child {
+    border-bottom-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-pid_tuning .cf input {
+    margin: 4px;
+    width: calc(100% - 10px);
+    border: 1px solid silver;
+    border-radius: 3px;
+}
+
+.tab-pid_tuning .cf select {
+    margin: 4px;
+    width: calc(100% - 10px);
+    border: 1px solid silver;
+}
+
+.tab-pid_tuning .rate-tpa th:nth-child(2) {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .rate-tpa th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .rate-tpa th:last-child {
+    border-top-right-radius: 3px;
+}
+
+.tab-pid_tuning .rate-tpa {
+    border: 0px solid #ccc;
+    margin-bottom: 10px;
+}
+
 .tab-pid_tuning input[type="number"]::-webkit-inner-spin-button {
     border: 0;
 }
+
 .tab-pid_tuning table {
     float: left;
-
-    margin-bottom: 10px;
-
+    margin: 0px;
     border-collapse: collapse;
+    width: calc(100% - -1px);
 }
-.tab-pid_tuning table,
-.tab-pid_tuning table th,
-.tab-pid_tuning table td {
-    padding: 4px;
-    border: 1px solid #8b8b8b;
+
+.tab-pid_tuning .gui_box {
+    margin-bottom: 0px !important;
 }
+
+.tab-pid_tuning table, .tab-pid_tuning table td {
+    padding: 1px;
+    border-bottom: 0px solid #ccc;
+}
+
+.tab-pid_tuning table th {
+    padding: 0px;
+    border: 0px;
+    height: 10px;
+    font-weight: normal;
+}
+
+.tab-pid_tuning .pid_titlebar th {
+    padding: 5px;
+    text-align: left;
+    border-right: 1px solid #ccc;
+    width: calc(100% -1px);
+}
+
+.tab-pid_tuning .pid_titlebar th:first-child {
+    text-align: left;
+}
+
+.tab-pid_tuning .pid_titlebar th:last-child {
+    border-right: none;
+}
+
 .tab-pid_tuning table tr td:first-child {
-    text-align: center;
+    text-align: left;
+    padding-left: 5px;
 }
+
+.tab-pid_tuning table tr td:last-child {
+    border-right: 0px solid #ccc;
+}
+
 .tab-pid_tuning table td {
     padding: 1px;
+    width: 25%;
+    border-right: 1px solid #ccc;
 }
+
+.tab-pid_tuning table tr td {
+    text-align: left;
+    padding-left: 0px;
+}
+
 .tab-pid_tuning table tr:nth-child(odd) {
-    background-color: #ececec;
+    
 }
+
 .tab-pid_tuning table input {
     display: block;
-
-    width: 100%;
+    width: calc(100% - 0px);
     height: 20px;
     line-height: 20px;
-
     text-align: right;
+    border: 0px solid #ccc;
+    border-radius: 0px;
 }
+
 .tab-pid_tuning .controller {
     float: left;
-
-    width: calc(18% - 2px); /* - border*/
-
+    width: calc(50% - 12px);
+    margin-left: 10px;
     margin-bottom: 10px;
-    border: 1px solid #8b8b8b;
+    border-radius: 3px;
+    border: 1px solid #ccc;
 }
+
 .tab-pid_tuning .controller .head {
     display: block;
-
-    text-align: center;
+    text-align: left;
     line-height: 20px;
     font-weight: bold;
-
-    border-bottom: 1px solid #8b8b8b;
-    background-color: #ececec;
+    padding-left: 5px;
+    border-bottom: 1px solid #ccc;
+    background-color: #828885;
+    color: white;
+    height: 19px;
+    font-weight: normal;
+    padding: 2px;
+    padding-left: 6px;
 }
+
 .tab-pid_tuning .controller select {
     width: 100%;
     height: 20px;
     line-height: 20px;
 }
+
 .tab-pid_tuning .profile {
     float: left;
-
-    width: calc(18% - 2px); /* - border*/
-
-    border: 1px solid #8b8b8b;
+    width: calc(25% - 2px); /* - border*/
+    border: 1px solid #ccc;
+    border-radius: 3px;
 }
+
 .tab-pid_tuning .profile .head {
     display: block;
-
-    text-align: center;
+    text-align: left;
     line-height: 20px;
     font-weight: bold;
-
-    border-bottom: 1px solid #8b8b8b;
-    background-color: #ececec;
+    padding-left: 5px;
+    border-bottom: 1px solid #ccc;
+    background-color: #828885;
+    color: white;
+    height: 19px;
+    font-weight: normal;
+    padding: 2px;
+    padding-bottom: 3px;
+    padding-left: 6px;
 }
+
 .tab-pid_tuning .profile select {
     width: 100%;
     padding-left: calc(100% - 35px);
     height: 20px;
     line-height: 20px;
 }
-.tab-pid_tuning .pid_tuning {
-    width: 60%;
-}
+
 .tab-pid_tuning .pid_tuning .name {
     width: 30%;
 }
+
 .tab-pid_tuning .rate-tpa {
     float: right;
-    width: calc(40% - 10px); /* - ( "virtual" margin) */
+    width: calc(100% - 0px); /* - ( "virtual" margin) */
 }
-.tab-pid_tuning .buttons {
-    width: calc(100% - 20px);
 
-    position: absolute;
-    bottom: 10px;
-}
-.tab-pid_tuning .update,
-.tab-pid_tuning .refresh {
-    display: block;
+.tab-pid_tuning .top-buttons {
     float: right;
+}
 
-    height: 28px;
-    line-height: 28px;
+.tab-pid_tuning .fixed_band {
+    position: absolute;
+    width: 100%;
+    bottom: 0px;
+}
 
-    padding: 0 15px 0 15px;
-
+.pid_mode {
+    width: calc(100% - 5px);
+    height: 20px;
+    background-color: #D6D6D6;
+    float: left;
+    margin: 0px;
+    padding: 0px;
     text-align: center;
-    font-weight: bold;
+    padding-left: 5px;
+    line-height: 13px;
+    padding-top: 6px;
+    font-size: 12px;
+    border-bottom: 1px solid #ccc;
+    color: #828282;
+    font-family: 'open_sans', Arial;
+    background-image: linear-gradient(-45deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%,
+        rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%,
+        rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%,
+        rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%,
+        rgba(255, 255, 255, .2) 80%, rgba(255, 255, 255, .2) 90%, transparent 90%, transparent 100%,
+        rgba(255, 255, 255, .2) 100%, transparent);
+}
 
-    border: 1px solid silver;
-    background-color: #ececec;
+.pid_titlebar {
+    color: #fff;
+    background-color: #828885;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    height: 20px;
 }
-.tab-pid_tuning .refresh {
-    margin-right: 10px;
+
+.pid_titlebar td:first-child {
+    text-align: left;
 }
-.tab-pid_tuning .update:hover,
-.tab-pid_tuning .refresh:hover {
-    background-color: #dedcdc;
+
+.show a {
+    margin-left: 10px;
+    width: calc(100% - 10px);
+}
+
+.tab-pid_tuning .helpicon {
+    margin-top: 0px;
+}
+
+#content-watermark {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    overflow: hidden;
+    background-image: url("../images/light-wide-2.svg");
+    background-repeat: no-repeat;
+    background-position: 95% 20%;
+    background-size: 430px;
+    height: 174px;
+    opacity: 0.15;
 }

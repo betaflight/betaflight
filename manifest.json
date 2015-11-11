@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "38",
-    "version": "0.66.0",
+    "version": "1.0.0",
     "author": "Hydra",
     "name": "Cleanflight - Configurator",
     "short_name": "cleanflight",
@@ -32,10 +32,7 @@
         "fileSystem.write",
         "fileSystem.retainEntries",
         "notifications",
-        "alwaysOnTopWindows"
-    ],
-
-    "optional_permissions": [
+        "alwaysOnTopWindows",
         {"usbDevices": [
             {"vendorId": 1155, "productId": 57105}
         ]}

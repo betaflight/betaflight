@@ -110,7 +110,7 @@ TABS.logging.initialize = function (callback) {
             }
         });
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 
     function print_head() {

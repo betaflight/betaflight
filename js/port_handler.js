@@ -1,9 +1,14 @@
 'use strict';
 
+var usbDevices = {
+    STM32DFU: {'vendorId': 1155, 'productId': 57105}
+};
+
 var PortHandler = new function () {
     this.initial_ports = false;
     this.port_detected_callbacks = [];
     this.port_removed_callbacks = [];
+    this.dfu_available = false;
 };
 
 PortHandler.initialize = function () {
@@ -131,30 +136,32 @@ PortHandler.check = function () {
             self.initial_ports = current_ports;
         }
 
-        if (GUI.optional_usb_permissions) {
-            check_usb_devices();
-        }
+        self.check_usb_devices();
 
         GUI.updateManualPortVisibility();
         setTimeout(function () {
             self.check();
         }, 250);
     });
+};
 
-    function check_usb_devices() {
-        chrome.usb.getDevices(usbDevices.STM32DFU, function (result) {
-            if (result.length) {
-                if (!$("div#port-picker #port [value='DFU']").length) {
-                    $('div#port-picker #port').append('<option value="DFU">DFU</option>');
-                    $('div#port-picker #port').val('DFU');
-                }
-            } else {
-                if ($("div#port-picker #port [value='DFU']").length) {
-                   $("div#port-picker #port [value='DFU']").remove();
-                }
+PortHandler.check_usb_devices = function (callback) {
+    chrome.usb.getDevices(usbDevices.STM32DFU, function (result) {
+        if (result.length) {
+            if (!$("div#port-picker #port [value='DFU']").length) {
+                $('div#port-picker #port').append($('<option/>', {value: "DFU", text: "DFU", data: {isDFU: true}}));
+                $('div#port-picker #port').val('DFU');
             }
-        });
-    }
+            self.dfu_available = true;
+        } else {
+            if ($("div#port-picker #port [value='DFU']").length) {
+               $("div#port-picker #port [value='DFU']").remove();
+            }
+            self.dfu_available = false;
+        }
+
+        if(callback) callback(self.dfu_available);
+    });
 };
 
 PortHandler.update_port_select = function (ports) {
