@@ -11,7 +11,7 @@
 }
 
 .tab-landing .content_top {
-	height: 120px;
+	height: 130px;
 	background: #59aa29;
 	padding: 20px;
 }
@@ -125,12 +125,18 @@
 }
 
 
+.tab-landing .content_mid .text1 .wrap {
+	margin-left:10px;
+}
+
+
 .tab-landing .content_mid .text1 {
 	width:37%;
 }
 
+
 .tab-landing .content_mid .text2 {
-	width:37%;
+	width:39%;
 }
 
 .tab-landing .content_mid .text2 ul {
@@ -143,17 +149,18 @@
 }
 
 .tab-landing .content_mid .text3 {
-	width:26%;
+	width:24%;
 }
 
 .tab-landing .content_mid .text3 .wrap2 {
 	border: 1px solid silver;
 	border-radius: 5px;
 	background: white;
-	margin-right: 20px;
+	margin-right: 30px;
 	margin-left:20px;
 	margin-top: 5px;
 	min-height: 200px;
+	font-size: 11px;
 }
 
 .tab-landing .content_mid .text3 .donate {
