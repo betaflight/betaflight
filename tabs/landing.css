@@ -5,11 +5,14 @@
 
 .tab-landing {
 	min-height: 100%;
+	overflow: hidden;
 }
 
 .tab-landing .content_wrapper {
 	padding: 0;
 	min-height: 100%;
+	height: 100%;
+	overflow-y: auto;
 }
 
 .tab-landing .content_top {
@@ -153,91 +156,77 @@
 
 /* changelog block */
 
-#changelog_bt {
-	height: 84px;
-	width:30px;
-	background-color:green;
-	margin-left:-30px;
-	margin-top:30px;
-	position:fixed;
-	border-top-left-radius:10px;
-	border-bottom-left-radius:10px;
-}
-
-#changelog_button  {
-	display:block;
-	color:white;
-	height:30px;
-	width:100px;
-	transform:rotate(270deg);
-	transform-origin: left top 0;
-  margin-left:6px;
-  margin-top:90px;
-	text-align: center;
-}
-
-.changelog_wrapper {
-	right:0px;
-	height:100%;
-  position:absolute;
-}
-
-.changelog {
-	height:100%;
-	right:0px;
-	width:0px;
-	position:absolute;
-	overflow-y: scroll;
-	background-color:white;
-	border-left: 3px solid green;
-}
-
-.changelog .title {
-  line-height: 20px;
-	text-align:left;
-	padding-left:20px;
-	font-weight: bold;
-	color: #56AC1D;
-	text-transform:uppercase;
-	margin-top: 10px;
-}
-
-.changelog .changewrapper {
+#changelog {
+	width: 250px;
 	height: 100%;
-  padding: 20px;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  -webkit-user-select: text;
-	opacity:0;
+  position: fixed;
+  right: -245px;
+  top: 0px;
 }
 
-.changelog .changewrapper.active {
-	overflow-y: scroll;
-  opacity:0;
+#changelog .wrapper {
+	height: 100%;
+	padding: 0 20px;
+  border-left: 5px solid green;
+  overflow-y: auto;
+	display: none;
 }
 
-.changelog .changewrapper span {
-  font-weight: bold;
-	line-height:22px;
+#changelog .button {
+	transform: rotate(270deg);
+	top: 50px;
+	right: 211px;
+	position: absolute;
+  background: white;
+  border: 5px solid green;
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
 }
 
-.changelog .changewrapper ul  {
-	margin-bottom:10px;
+#changelog .button a {
+	display: block;
+  padding: 5px 10px;
+  width: 70px;
+  text-align: center;
+}
+
+#changelog .title {
+	margin: 20px 0;
+  font-size: 16px;
+}
+
+#content.log_open #changelog {
+  right: 0px;
+	background: white;
+}
+#content.log_open #changelog .wrapper {
+	display: block;
+}
+
+
+/* changelog content */
+
+#changelog .log  {
 	line-height:17px;
 }
 
-.changelog .changewrapper ul span {
-  font-weight: bold;
+
+#changelog .log span {
+	display: block;
+	font-weight: bold;
+	padding-bottom: 5px;
+	border-bottom:1px solid #ddd;
 }
 
-.changelog .changewrapper li {
+#changelog .log ul  {
+	margin: 5px 0 20px 10px;
+}
+
+#changelog .log li {
   font-weight: normal;
-	margin-left: 0px;
-	border-top:1px solid #eee;
-	padding-top:5px;
-	padding-bottom:5px;
+	margin-bottom:5px;
 }
 
-.changelog .changewrapper p {
+#changelog .log p {
   margin-bottom: 20px;
 }
