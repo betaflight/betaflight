@@ -529,4 +529,3 @@ TABS.firmware_flasher.cleanup = function (callback) {
 
     if (callback) callback();
 };
-
