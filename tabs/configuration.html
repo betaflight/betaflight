@@ -241,6 +241,7 @@
             </tbody>
         </table>
     </div>
+    
     <div class="rightWrapper system">
         <div class="groupTitle" i18n="configurationSystem"></div>
         <div class="number">
@@ -303,6 +304,34 @@
             <p i18n="configurationGPSHelp"></p>
         </div>
         
+      <div class="leftWrapper 3d">
+        <div class="groupTitle" i18n="configuration3d"></div>
+        <div class="number">
+            <label>
+                <input type="number" name="3ddeadbandlow" step="1" min="1000" max="2000"/>
+                <span i18n="configuration3dDeadbandLow"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="3ddeadbandhigh" step="1" min="1000" max="2000"/>
+                <span i18n="configuration3dDeadbandHigh"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="3dneutral" step="1" min="1000" max="2000"/>
+                <span i18n="configuration3dNeutral"></span>
+            </label>
+        </div>
+        <div class="number">
+            <label>
+                <input type="number" name="3ddeadbandthrottle" step="1" min="0" max="1000"/>
+                <span i18n="configuration3dDeadbandThrottle"></span>
+            </label>
+        </div>
+    </div>
+        
     </div>
     <div class="rightWrapper">
         <div class="groupTitle" i18n="configurationFeatures"></div>
@@ -319,6 +348,9 @@
             </tbody>
         </table>
     </div>
+    
+    <div class="clear-both"></div>
+
     
     <div class="clear-both"></div>
     <div class="buttons">

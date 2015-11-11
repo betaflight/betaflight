@@ -52,6 +52,7 @@ var MSP_codes = {
     MSP_WP:                 118,
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
+    MSP_3D:		    124,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -67,6 +68,7 @@ var MSP_codes = {
     MSP_SET_HEAD:           211,
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
+    MSP_SET_3D:		    217,
     
     // MSP_BIND:               240,
     
@@ -409,6 +411,16 @@ var MSP = {
                 MISC.vbatmaxcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
                 MISC.vbatwarningcellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
                 break;
+	    case MSP_codes.MSP_3D:
+		var offset = 0;
+                _3D.deadband3d_low = data.getUint16(offset, 1);
+                offset += 2;
+		_3D.deadband3d_high = data.getUint16(offset, 1);
+		offset += 2;
+		_3D.neutral3d = data.getUint16(offset, 1);
+		offset += 2;
+		_3D.deadband3d_throttle = data.getUint16(offset, 1);
+		break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
                 break;
@@ -1128,6 +1140,16 @@ MSP.crunch = function (code) {
                     buffer.push(MSP.supportedBaudRates.indexOf(serialPort.blackbox_baudrate));
                 }
             }
+            break;
+        case MSP_codes.MSP_SET_3D:
+            buffer.push(lowByte(_3D.deadband3d_low));
+            buffer.push(highByte(_3D.deadband3d_low));
+            buffer.push(lowByte(_3D.deadband3d_high));
+            buffer.push(highByte(_3D.deadband3d_high));
+            buffer.push(lowByte(_3D.neutral3d));
+            buffer.push(highByte(_3D.neutral3d));
+            buffer.push(lowByte(_3D.deadband3d_throttle));
+            buffer.push(highByte(_3D.deadband3d_throttle));
             break;
             
         default:

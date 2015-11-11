@@ -503,6 +503,21 @@
     "configurationBatteryMultiwiiCurrent": {
         "message": "Enable support for legacy Multiwii MSP current output"
     },
+   "configuration3d": {
+        "message": "3D"
+    },
+    "configuration3dDeadbandLow": {
+        "message": "3D Deadband Low"
+    },
+    "configuration3dDeadbandHigh": {
+        "message": "3D Deadband High"
+    },
+    "configuration3dNeutral": {
+        "message": "3D Neutral"
+    },
+    "configuration3dDeadbandThrottle": {
+        "message": "3D Deadband Throttle"
+    },
     "configurationSystem": {
         "message": "System configuration"
     },

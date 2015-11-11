@@ -27,7 +27,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_misc() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, load_acc_trim);
+        MSP.send_message(MSP_codes.MSP_MISC, false, false, load_3d);
+    }
+    
+    function load_3d() {
+        MSP.send_message(MSP_codes.MSP_3D, false, false, load_acc_trim);
     }
 
     function load_acc_trim() {
@@ -312,7 +316,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="currentscale"]').val(BF_CONFIG.currentscale);
         $('input[name="currentoffset"]').val(BF_CONFIG.currentoffset);
         $('input[name="multiwiicurrentoutput"]').prop('checked', MISC.multiwiicurrentoutput);
-
+                
+        //fill 3D
+        $('input[name="3ddeadbandlow"]').val(_3D.deadband3d_low);
+        $('input[name="3ddeadbandhigh"]').val(_3D.deadband3d_high);
+        $('input[name="3dneutral"]').val(_3D.neutral3d);
+        $('input[name="3ddeadbandthrottle"]').val(_3D.deadband3d_throttle);
 
         // UI hooks
         $('input[name="looptime"]').change(function() {
@@ -383,6 +392,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.vbatmaxcellvoltage = parseFloat($('input[name="maxcellvoltage"]').val());
             MISC.vbatwarningcellvoltage = parseFloat($('input[name="warningcellvoltage"]').val());
             MISC.vbatscale = parseInt($('input[name="voltagescale"]').val());
+    
+            _3D.deadband3d_low = parseInt($('input[name="3ddeadbandlow"]').val());
+            _3D.deadband3d_high = parseInt($('input[name="3ddeadbandhigh"]').val());
+            _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
+            _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
 
             BF_CONFIG.currentscale = parseInt($('input[name="currentscale"]').val());
             BF_CONFIG.currentoffset = parseInt($('input[name="currentoffset"]').val());
@@ -397,7 +411,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_misc() {
-                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_acc_trim);
+                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_3d);
+            }
+            
+            function save_3d() {
+                MSP.send_message(MSP_codes.MSP_SET_3D, MSP.crunch(MSP_codes.MSP_SET_3D), false, save_acc_trim);
             }
 
             function save_acc_trim() {

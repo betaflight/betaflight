@@ -165,6 +165,13 @@ var MISC = {
     vbatwarningcellvoltage: 0
 };
 
+var _3D = {
+    deadband3d_low:         0,
+    deadband3d_high:        0,
+    neutral3d:              0,
+    deadband3d_throttle:    0
+};
+
 var DATAFLASH = {
     ready: false,
     sectors: 0,
