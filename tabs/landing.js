@@ -45,7 +45,7 @@ $("#changelog_button").on('click', function() {
 
 
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     });
 };
 

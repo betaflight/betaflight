@@ -450,7 +450,7 @@ TABS.motors.initialize = function (callback) {
         // enable Status and Motor data pulling
         GUI.interval_add('motor_and_status_pull', get_status, 50, true);
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 };
 

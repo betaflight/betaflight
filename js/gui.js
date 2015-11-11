@@ -237,5 +237,35 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
     }
 };
 
+GUI_control.prototype.content_ready = function (callback) {
+    $('.togglesmall').each(function(index, html) {
+        var switchery = new Switchery(html,
+        {
+          size: 'small',
+          color: '#59aa29', 
+          secondaryColor: '#c4c4c4' 
+        });
+        
+        $(html).removeClass('togglesmall');
+    });
+
+    $('.toggle').each(function(index, html) {
+        var switchery = new Switchery(html,
+        {
+            color: '#59aa29', 
+            secondaryColor: '#c4c4c4' 
+        });
+        
+        $(html).removeClass('toggle');
+    });
+    
+    // Build link to in-use CF version documentation
+    var documentationButton = $('div#content #button-documentation');
+    documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
+    documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+    
+    if (callback) callback();
+}
+
 // initialize object into GUI variable
 var GUI = new GUI_control();
