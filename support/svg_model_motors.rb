@@ -122,7 +122,7 @@ class Model
   # Draw a circle, perhaps with directional arrows
   # lyoffset, lxoffset change label position
   def draw_circle x,y,label,dirn=CCW,loc=NE,fill=nil,colour=nil,lyoffset=0,lxoffset=0
-    col = (colour||'#54AD1D')
+    col = (colour||CIRCLE_GREEN)
     @cr.set_font_size(@radius)
     @cr.set_line_join(Cairo::LINE_JOIN_MITER)
     @cr.set_line_width(3)
