@@ -37,17 +37,10 @@ a.disabled {
 }
 
 /* Help-Icon  */
-span .helpicon {
-    float: right;
-    margin-top: 2px;
-    margin-right: 0px;
-    display: block;
-    height: 14px;
-    width: 14px;
-    opacity: 0.2;
-    background-image: url(images/icons/cf_icon_info_grey.svg);
-    background-size: contain;
-    background-position: center;
+.helpicon:hover {
+    opacity: 1.0;
+    background-image: url(images/icons/cf_icon_info_green.svg);
+    transition: none;  
 }
 
 .helpicon {
@@ -61,12 +54,10 @@ span .helpicon {
     background-image: url(images/icons/cf_icon_info_grey.svg);
     background-size: contain;
     background-position: center;
+    transition: none;  
 }
 
-.helpicon:hover {
-    opacity: 1.0;
-    background-image: url(images/icons/cf_icon_info_green.svg);
-}
+
 
 /* Change here the content of the documentation button in all tabs!!!
 
@@ -1465,7 +1456,13 @@ dialog {
         margin-right: 7px;
         height: 14px;
         width: 14px;
+        transition: none;
+
     }
+    
+    #tooltiptext {
+    }
+    
     .gps_false {
         padding: 0px 3px 0px 3px;
         font-size: 10px;

@@ -131,8 +131,31 @@ $(document).ready(function () {
                           secondaryColor: '#c4c4c4' 
                         });
                         
-                        $(html).removeClass('toggle');
+                        $(html).removeClass('togglemedium');
                     });
+                    
+                    
+                    	// loading tooltip
+                    jQuery(document).ready(function($) {
+                    $('cf_tip').each(function() { // Grab all ".cf_tip" elements, and for each...
+                        log(this); // ...print out "this", which now refers to each ".cf_tip" DOM element 
+                    });
+
+                    $('.cf_tip').each(function() { 
+                        $(this).jBox('Tooltip', {
+                            content: $(this).children('.cf_tooltiptext'),		
+                            delayOpen: 100,
+                            delayClose: 100,
+                            position: {
+                                x: 'right',
+                                y: 'center'
+                            },
+                            outside: 'x'
+                            });
+                        });
+                    });
+    
+    
                     
                     // Build link to in-use CF version documentation
                     var documentationButton = $('div#content #button-documentation');
@@ -428,16 +451,6 @@ $("#showlog").on('click', function() {
 
 
 
+// loading tooltip PLACEHOLDER
 
-// loading tooltip
-$(document).ready(function() {
-$('.cf_tip').jBox('Tooltip', {
-    delayOpen: 100,
-    delayClose: 100,
-	position: {
-        x: 'right',
-        y: 'center'
-    },
-	outside: 'x'
-});
-});
+
