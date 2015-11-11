@@ -45,6 +45,11 @@ class Model
   SW=2
   NW=3
 
+  # Colours
+  BODY_GREY='#bababa'
+  CIRCLE_GREEN = '#54ad1d'
+  ARROW_RED = '#fa0700'
+
   # We use StringIO in order to be able to add a (non-)copyright statement
   def initialize filename
     @lw = RADIUS
@@ -56,7 +61,7 @@ class Model
   end
 
   # Draw an arbitrary path, x,y pairs terminated by !
-  def draw_path path,fill=:silver,round=false
+  def draw_path path,fill=BODY_GREY,round=false
     @cr.set_line_cap(Cairo::LINE_JOIN_ROUND) if round
     @cr.set_source_color(fill)
     @cr.set_line_width(@lw)
@@ -78,7 +83,7 @@ class Model
 
   # Draw body parts, really just a rounded line
   def draw_body x1,y1,x2,y2
-    @cr.set_source_color(:silver)
+    @cr.set_source_color(BODY_GRAY)
     @cr.set_line_width(@lw)
     @cr.set_line_join(Cairo::LINE_JOIN_ROUND)
     @cr.move_to(x1,y1)
@@ -100,7 +105,7 @@ class Model
   # Draw direction arrow at Y offset
   def draw_dirn y=80
     @cr.set_line_join(Cairo::LINE_JOIN_BEVEL)
-    @cr.set_source_color(:red)
+    @cr.set_source_color(ARROW_RED)
     @cr.move_to(100,y)
     @cr.set_line_width(12)
     @cr.rel_line_to(0, 40)
@@ -117,7 +122,7 @@ class Model
   # Draw a circle, perhaps with directional arrows
   # lyoffset, lxoffset change label position
   def draw_circle x,y,label,dirn=CCW,loc=NE,fill=nil,colour=nil,lyoffset=0,lxoffset=0
-    col = (colour||Cairo::Color::ROYAL_BLUE)
+    col = (colour||'#54AD1D')
     @cr.set_font_size(@radius)
     @cr.set_line_join(Cairo::LINE_JOIN_MITER)
     @cr.set_line_width(3)
