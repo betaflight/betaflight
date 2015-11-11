@@ -37,12 +37,6 @@ a.disabled {
 }
 
 /* Help-Icon  */
-.helpicon:hover {
-    opacity: 1.0;
-    background-image: url(images/icons/cf_icon_info_green.svg);
-    transition: none;  
-}
-
 .helpicon {
     float: right;
     margin-top: 7px;
@@ -57,14 +51,12 @@ a.disabled {
     transition: none;  
 }
 
+.helpicon:hover {
+    opacity: 1.0;
+    background-image: url(images/icons/cf_icon_info_green.svg);
+    transition: none;  
+}
 
-
-/* Change here the content of the documentation button in all tabs!!!
-
-.cf_doc_version_bt a:before {
-	content:"Documentation 1.10";
-	}
-*/
 .cf_doc_version_bt a {
     padding: 1px 9px 1px 9px;
     margin-top: -45px;
