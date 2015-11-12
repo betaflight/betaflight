@@ -178,35 +178,36 @@
 #changelog {
 	width: 250px;
 	height: 100%;
-  position: fixed;
-  right: -245px;
-  top: 0px;
+	position: fixed;
+	right: -245px;
+	top: 0px;
 }
 
 #changelog .wrapper {
 	height: 100%;
 	padding: 0 20px;
-  border-left: 5px solid green;
-  overflow-y: auto;
+	border-left: 5px solid green;
+	overflow-y: auto;
 	display: none;
 }
 
 #changelog .button {
 	transform: rotate(270deg);
 	top: 50px;
-	right: 211px;
+    right: 215px;
 	position: absolute;
-  background: white;
-  border: 5px solid green;
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
+	background: green;
+	border-radius: 5px 5px 0 0;
+	border-bottom: none;
+	height: 30px;
 }
 
 #changelog .button a {
 	display: block;
-  padding: 5px 10px;
-  width: 70px;
-  text-align: center;
+	padding: 5px 10px;
+	width: 70px;
+	text-align: center;
+	color: white;
 }
 
 #changelog .title {
