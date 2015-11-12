@@ -365,10 +365,17 @@ TABS.motors.initialize = function (callback) {
         var motors_running = false;
 
         for (var i = 0; i < MOTOR_DATA.length; i++) {
-            if (MOTOR_DATA[i] > MISC.mincommand) {
-                motors_running = true;
-                break;
-            }
+            if( ! bit_check(BF_CONFIG.features,12) ){
+                if (MOTOR_DATA[i] > MISC.mincommand) {
+                    motors_running = true;
+                    break;
+                }
+            }else{
+                if( (MOTOR_DATA[i] < _3D.deadband3d_low) || (MOTOR_DATA[i] > _3D.deadband3d_high) ){
+                    motors_running = true;
+                    break;
+                }
+            }    
         }
 
         if (motors_running) {
