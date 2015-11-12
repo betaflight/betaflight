@@ -12,7 +12,15 @@ TABS.motors.initialize = function (callback) {
     }
 
     function get_arm_status() {
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_motor_data);
+        MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_config);
+    }
+    
+    function load_config() {
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_3d);
+    }
+    
+    function load_3d() {
+        MSP.send_message(MSP_codes.MSP_3D, false, false, get_motor_data);
     }
     
     function update_arm_status() {
@@ -341,7 +349,12 @@ TABS.motors.initialize = function (callback) {
                 $('div.sliders input').prop('disabled', true);
 
                 // change all values to default
-                $('div.sliders input').val(MISC.mincommand);
+                if (! bit_check(BF_CONFIG.features,12)) {
+                    $('div.sliders input').val(MISC.mincommand);
+                } else {
+                    $('div.sliders input').val(_3D.neutral3d);
+                }
+                
 
                 // trigger change event so values are sent to mcu
                 $('div.sliders input').trigger('input');
