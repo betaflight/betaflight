@@ -14,7 +14,7 @@
 }
 
 .tab-landing .content_top {
-	height: 120px;
+	height: 140px;
 	background: #59aa29;
 	padding: 20px;
 }
@@ -27,6 +27,7 @@
 .tab-landing .content_foot {
 	clear: both;
 	padding: 20px;
+	padding-bottom:5px;
 }
 
 
@@ -35,6 +36,7 @@
 .tab-landing .logowrapper {
 	margin-left:auto;
 	margin-right:auto;
+	margin-top:5px;
 	width:800px;
 	color:white;
 	font-size:14px;
@@ -81,7 +83,7 @@
 	padding-left:4px;
 	padding-right:4px;
 	font-size:13px;
-    line-height: 25px;
+    line-height: 22px;
     color:white;	
 	font-weight:normal;
 	font-family: 'open_sanslight', Arial;
@@ -129,7 +131,7 @@
 
 
 .tab-landing .content_mid .text1 .wrap {
-	margin-left:10px;
+	margin-left:0px;
 }
 
 
@@ -139,7 +141,7 @@
 
 
 .tab-landing .content_mid .text2 {
-	width:39%;
+	width:40%;
 }
 
 .tab-landing .content_mid .text2 ul {
@@ -152,17 +154,17 @@
 }
 
 .tab-landing .content_mid .text3 {
-	width:24%;
+	width:23%;
 }
 
 .tab-landing .content_mid .text3 .wrap2 {
 	border: 1px solid silver;
 	border-radius: 5px;
 	background: white;
-	margin-right: 30px;
+	margin-right: 25px;
 	margin-left:20px;
 	margin-top: 5px;
-	min-height: 200px;
+	min-height: 187px;
 	font-size: 11px;
 }
 
