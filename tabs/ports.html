@@ -1,37 +1,44 @@
-<div id="content-watermark"></div>
-<div class="tab-ports">
-    <div class="require-support">
-        <div class="help">
-            <p i18n="portsHelp"></p>
+<div class="tab-ports toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabPorts">Ports</div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
         </div>
-        <table class="ports">
-            <thead>
-                <tr>
-                    <td>Identifier</td>
-                    <td>Data</td>
-                    <td>Logging</td>
-                    <td>Telemetry</td>
-                    <td>RX</td>
-                    <td>GPS</td>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-        
-        <div class="help">
-            <p i18n="portsMSPHelp"></p>
+        <div class="require-support">
+            <div class="note" style="margin-bottom: 20px;">
+                <div class="note_spacer">
+                    <p i18n="portsHelp"></p>
+                    <p i18n="portsMSPHelp"></p>
+                </div>
+            </div>
+            <table class="ports" style="margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <td>Identifier</td>
+                        <td>Data</td>
+                        <td>Logging</td>
+                        <td>Telemetry</td>
+                        <td>RX</td>
+                        <td>GPS</td>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <div class="clear-both"></div>
         </div>
-        
-        <div class="clear-both"></div>
-        <div class="buttons">
-            <a class="save" href="#" i18n="portsButtonSave"></a>
+        <div class="note require-upgrade">
+            <div class="note_spacer">
+                <p i18n="portsFirmwareUpgradeRequired"></p>
+            </div>
         </div>
     </div>
-    <div class="note require-upgrade" i18n="portsFirmwareUpgradeRequired">
+    <div class="content_toolbar">
+        <div class="btn save_btn">
+            <a class="save" href="#" i18n="configurationButtonSave"></a>
+        </div>
     </div>
 </div>
-
 <div id="tab-ports-templates">
     <table class="ports">
         <thead>
@@ -41,28 +48,19 @@
                 <td class="identifierCell">
                     <p class="identifier"></p>
                 </td>
-                <td class="functionsCell-data">
-                    <select class="msp_baudrate">
+                <td class="functionsCell-data"><select class="msp_baudrate">
                         <!-- list generated here -->
-                    </select>
-                </td>
-                <td class="functionsCell-logging">
-                    <select class="blackbox_baudrate">
+                </select></td>
+                <td class="functionsCell-logging"><select class="blackbox_baudrate">
                         <!-- list generated here -->
-                    </select>
-                </td>
-                <td class="functionsCell-telemetry">
-                    <select class="telemetry_baudrate">
+                </select></td>
+                <td class="functionsCell-telemetry"><select class="telemetry_baudrate">
                         <!-- list generated here -->
-                    </select>
-                </td>
-                <td class="functionsCell-rx">
-                </td>
-                <td class="functionsCell-gps">
-                    <select class="gps_baudrate">
+                </select></td>
+                <td class="functionsCell-rx"></td>
+                <td class="functionsCell-gps"><select class="gps_baudrate">
                         <!-- list generated here -->
-                    </select>
-                </td>
+                </select></td>
             </tr>
         </tbody>
     </table>

@@ -48,6 +48,10 @@ var BOARD_DEFINITIONS = [
         name: "SP Racing F3",
         identifier: "SRF3",
         vcp: false
+    }, {
+        name: "MotoLab",
+        identifier: "MOTO",
+        vcp: true
     }
 ];
 
@@ -71,4 +75,3 @@ BOARD.find_board_definition = function (identifier) {
     }
     return DEFAULT_BOARD_DEFINITION;
 };
-

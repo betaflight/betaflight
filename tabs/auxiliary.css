@@ -1,4 +1,5 @@
 .tab-auxiliary {
+    float: left;
 }
 
 .tab-auxiliary .help {
@@ -7,25 +8,30 @@
     margin-bottom: 10px;
 }
 
-.tab-auxiliary .range .marker,
-.tab-auxiliary .channel-slider .noUi-connect {
-    background: #ffcb18;
+.tab-auxiliary .range .marker, .tab-auxiliary .channel-slider .noUi-connect {
+    background: #59AA29;
+    background: #92b67c;
+    border-radius: 3px;
 }
 
 .tab-auxiliary .mode.on .info {
-    background: #61B665;
+    background: #59aa29;
+    color: white;
 }
 
 .tab-auxiliary .mode.on:nth-child(odd) .info {
-    background: #BAE2BC;
+    background: #59aa29;
 }
 
 .tab-auxiliary .mode.off .info {
-    background: #E86969;
+    background: #cb4747;
+    background: #828885;
+    color: white;
 }
 
 .tab-auxiliary .mode.off:nth-child(odd) .info {
-    background: #E7AEAE;
+    background: #cb4747;
+    background: #828885;
 }
 
 #tab-auxiliary-templates {
@@ -38,85 +44,102 @@
 }
 
 .tab-auxiliary .mode {
-    background-color: #ececec;
+    background-color: #f9f9f9;
     vertical-align: top;
 }
 
 .tab-auxiliary .mode:nth-child(odd) {
-    background-color: #ffffff;
+    
 }
 
 .tab-auxiliary .mode .name {
     min-height: 50px;
-    padding: 5px 0px;
+    padding: 13px 0px;
 }
 
-.tab-auxiliary .mode.off .info,
-.tab-auxiliary .mode.on .info {
-    color: white;
+.tab-auxiliary .mode.off .info, .tab-auxiliary .mode.on .info {
+    color:;
 }
 
 .tab-auxiliary .mode .info {
     text-align: center;
     width: 10%;
     position: relative;
+    background-color: #e4e4e4;
+    border-bottom: 5px solid white;
+    color: grey;
+    min-width: 100px;
 }
- 
-.tab-auxiliary .mode .info .name {   
+
+.tab-auxiliary .mode .info .name {
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 1.0em;
 }
 
 .tab-auxiliary .mode .info .buttons {
     position: absolute;
-    bottom: 10px;
+    bottom: 14px;
     width: 100%;
 }
 
 .tab-auxiliary .mode .info .buttons a {
     padding: 2px 5px;
+    border-radius: 4px;
 }
 
 .tab-auxiliary .ranges {
     margin: 10px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    padding-right: 2px;
+    padding-right: 0px;
+    border-bottom: 5px solid white;
 }
 
 .tab-auxiliary .range {
     position: relative;
     height: 70px;
-    padding-top: 8px;
-    padding-left: 10px;
+    padding-top: 15px;
+    padding-left: 0px;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #cccccc;
+    background-color: #ececec;
+    padding-bottom: 5px;
 }
 
-.tab-auxiliary .range > .buttons {
+.tab-auxiliary .range:first-child {
+    border-top: 0px;
+}
+
+.tab-auxiliary .range:last-child {
+    border-bottom: 0px;
+}
+
+.tab-auxiliary .range>.buttons {
     position: absolute;
     top: 0px;
     right: 0px;
 }
 
-.tab-auxiliary .range > .buttons .a {
+.tab-auxiliary .range>.buttons .a {
     padding: 2px;
 }
 
 .tab-auxiliary .range:nth-child(odd) {
+    
 }
 
 .tab-auxiliary .mode .range .channelInfo {
     display: inline-block;
     float: left;
-    max-width: 100px;
+    min-width: 90px;
     text-align: center;
 }
 
 .tab-auxiliary .mode .range .channelInfo .limits {
-    padding: 10px 0px;    
+    padding: 10px 0px;
 }
 
 .tab-auxiliary .range .channel {
-    outline: 1px solid silver;
+    border: 1px solid silver;
+    border-radius: 3px;
 }
 
 .tab-auxiliary .range .marker {
@@ -130,34 +153,80 @@
 
 .tab-auxiliary .range .channel-slider {
     display: inline-block;
-    float: right;
-    width: 85%;
-    margin-right: 35px;
+    float: left;
+    width: 80%;
+    margin-left: 20px;
+    margin-top: 1px;
 }
 
 .tab-auxiliary .channel-slider {
+    
 }
 
-.tab-auxiliary > .buttons {
+.tab-auxiliary>.buttons {
     margin-top: 10px;
 }
 
-.tab-auxiliary > .buttons a {
+.tab-auxiliary>.buttons a {
     float: right;
     height: 28px;
     line-height: 28px;
     padding: 0 15px 0 15px;
     display: block;
+    color: #000;
 }
 
 .tab-auxiliary .buttons a {
     text-align: center;
     font-weight: bold;
-
-    border: 1px solid silver;
-    background-color: #ececec;
+    background-color: #fff;
+    color: black;
+    opacity: 0.8;
+    transition: all ease 0.3s;
 }
 
 .tab-auxiliary .buttons a:hover {
-    background-color: #dedcdc;
+    background-color: #fff;
+    opacity: 1.0;
+    color: black;
+    transition: all ease 0.3s;
+}
+
+.tab-auxiliary .delete a {
+    height: 15px;
+    width: 15px;
+    transition: all ease 0.3s;
+    opacity: 0.3;
+    position: relative;
+    float: right;
+    margin-right: 5px;
+    margin-top: -9px;
+    background-image: url('../images/icons/close1.svg');
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    display: block;
+}
+
+.tab-auxiliary .delete a:hover {
+    transition: all ease 0.3s;
+    opacity: 0.6;
+}
+
+.tab-auxiliary .fixed_band {
+    bottom: 0px;
+}
+
+.tab-auxiliary .save_btn a {
+    line-height: 28px;
+}
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-auxiliary .fixed_band {
+        margin: 0px;
+        width: calc(100% - -30px);
+        margin-left: -15px;
+    }
+    .tab-auxiliary .fixed_band .save_btn a {
+        margin-right: 15px;
+    }
 }

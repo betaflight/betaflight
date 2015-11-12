@@ -38,7 +38,7 @@ TABS.servos.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/servos.html", process_html);
     }
-
+    
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
     
     function update_ui() {
@@ -58,7 +58,7 @@ TABS.servos.initialize = function (callback) {
                 <th >A' + (i+1) + '</th>\
             ';
         }
-        servoHeader = servoHeader + '<th style="width: 200px" i18n="servosDirectionAndRate"></th>';
+        servoHeader = servoHeader + '<th style="width: 110px" i18n="servosDirectionAndRate"></th>';
 
         for (var i = 0; i < RC.active_channels; i++) {
             servoCheckbox = servoCheckbox + '\
@@ -192,7 +192,7 @@ TABS.servos.initialize = function (callback) {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 };
 

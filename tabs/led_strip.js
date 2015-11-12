@@ -288,7 +288,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
         });
         
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
     
     function findLed(x, y) {

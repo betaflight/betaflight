@@ -18,6 +18,7 @@ $(document).ready(function () {
         'Configurator: <strong>' + chrome.runtime.getManifest().version + '</strong>');
 
     $('#status-bar .version').text(chrome.runtime.getManifest().version);
+    $('#logo .version').text(chrome.runtime.getManifest().version);
 
     // notification messages for various operating systems
     switch (GUI.operating_system) {
@@ -357,3 +358,49 @@ String.prototype.format = function () {
         return args[i] !== void 0 ? args[i] : "{"+(i-args.length)+"}";
     });
 };
+
+/** log trigger **/
+$(document).ready(function () {
+
+$("#showlog").on('click', function() {
+    var state = $(this).data('state');
+    if ( state ) {
+        $("#log").animate({height: 27}, 200);
+        $("#log").removeClass('active');
+		$("#content").removeClass('logopen');
+		$("#tabs").removeClass('logopen');
+        $("#scrollicon").removeClass('active');
+
+        state = false;
+    }else{
+        $("#log").animate({height: 111}, 200);
+        $("#log").addClass('active');
+        $("#content").addClass('logopen');
+        $("#tabs").addClass('logopen');
+        $("#scrollicon").addClass('active');
+
+        state = true;
+    }
+    $(this).text(state ? 'Hide Log' : 'Show Log');
+    $(this).data('state', state);
+    
+});
+
+});
+
+
+
+
+
+// loading tooltip
+$(document).ready(function() {
+$('.cf_tip').jBox('Tooltip', {
+    delayOpen: 100,
+    delayClose: 100,
+	position: {
+        x: 'right',
+        y: 'center'
+    },
+	outside: 'x'
+});
+});

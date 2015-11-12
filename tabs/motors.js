@@ -295,8 +295,13 @@ TABS.motors.initialize = function (callback) {
 
         $('div.sliders input').prop('min', MISC.mincommand);
         $('div.sliders input').prop('max', MISC.maxthrottle);
-        $('div.sliders input').val(MISC.mincommand);
         $('div.values li:not(:last)').text(MISC.mincommand);
+	
+	if(bit_check(BF_CONFIG.features,12)){
+            $('div.sliders input').val(_3D.neutral3d);
+        }else{
+	    $('div.sliders input').val(MISC.mincommand); 
+	}
 
         // UI hooks
         var buffering_set_motor = [],
@@ -354,7 +359,6 @@ TABS.motors.initialize = function (callback) {
                 } else {
                     $('div.sliders input').val(_3D.neutral3d);
                 }
-                
 
                 // trigger change event so values are sent to mcu
                 $('div.sliders input').trigger('input');
@@ -364,7 +368,7 @@ TABS.motors.initialize = function (callback) {
         // check if motors are already spinning
         var motors_running = false;
 
-        for (var i = 0; i < MOTOR_DATA.length; i++) {
+        for (var i = 0; i < number_of_valid_outputs; i++) {
             if( ! bit_check(BF_CONFIG.features,12) ){
                 if (MOTOR_DATA[i] > MISC.mincommand) {
                     motors_running = true;
@@ -375,7 +379,7 @@ TABS.motors.initialize = function (callback) {
                     motors_running = true;
                     break;
                 }
-            }    
+            } 
         }
 
         if (motors_running) {
@@ -449,10 +453,10 @@ TABS.motors.initialize = function (callback) {
                 var data = MOTOR_DATA[i] - MISC.mincommand,
                     margin_top = block_height - (data * (block_height / full_block_scale)).clamp(0, block_height),
                     height = (data * (block_height / full_block_scale)).clamp(0, block_height),
-                    color = parseInt(data * 0.256);
+                    color = parseInt(data * 0.009);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
-                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1.'+ color +')'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
@@ -460,17 +464,17 @@ TABS.motors.initialize = function (callback) {
                 var data = SERVO_DATA[i] - 1000,
                     margin_top = block_height - (data * (block_height / 1000)).clamp(0, block_height),
                     height = (data * (block_height / 1000)).clamp(0, block_height),
-                    color = parseInt(data * 0.256);
+                    color = parseInt(data * 0.009);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
-                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgb(' + color + ',0,0)'});
+                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1'+ color +')'});
             }
         }
 
         // enable Status and Motor data pulling
         GUI.interval_add('motor_and_status_pull', get_status, 50, true);
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 };
 

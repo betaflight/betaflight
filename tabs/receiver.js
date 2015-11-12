@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.receiver = {
-  rateChartHeight: 120
+  rateChartHeight: 117
 };
 
 TABS.receiver.initialize = function (callback) {
@@ -23,7 +23,7 @@ TABS.receiver.initialize = function (callback) {
     function get_rc_map() {
         MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_config);
     }
-    
+
     // Fetch features so we can check if RX_MSP is enabled:
     function load_config() {
         MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_html);
@@ -213,21 +213,22 @@ TABS.receiver.initialize = function (callback) {
                 }
 
                 // math magic by englishman
-                var midx = 220 * mid,
+                var midx = 200 * mid,
                     midxl = midx * 0.5,
-                    midxr = (((220 - midx) * 0.5) + midx),
-                    midy = rateHeight - (midx * (rateHeight / 220)),
+                    midxr = (((200 - midx) * 0.5) + midx),
+                    midy = rateHeight - (midx * (rateHeight / 200)),
                     midyl = rateHeight - ((rateHeight - midy) * 0.5 *(expo + 1)),
                     midyr = (midy / 2) * (expo + 1);
 
                 // draw
-                context.clearRect(0, 0, 220, rateHeight);
+                context.clearRect(0, 0, 200, rateHeight);
                 context.beginPath();
                 context.moveTo(0, rateHeight);
                 context.quadraticCurveTo(midxl, midyl, midx, midy);
                 context.moveTo(midx, midy);
-                context.quadraticCurveTo(midxr, midyr, 220, 0);
+                context.quadraticCurveTo(midxr, midyr, 200, 0);
                 context.lineWidth = 2;
+				context.strokeStyle = '#59aa29';
                 context.stroke();
             }, 0);
         }).trigger('input');
@@ -255,11 +256,12 @@ TABS.receiver.initialize = function (callback) {
                 var ratey = rateHeight * rate;
 
                 // draw
-                context.clearRect(0, 0, 220, rateHeight);
+                context.clearRect(0, 0, 200, rateHeight);
                 context.beginPath();
                 context.moveTo(0, rateHeight);
-                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 220, rateHeight - ratey);
+                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 200, rateHeight - ratey);
                 context.lineWidth = 2;
+				context.strokeStyle = '#59aa29';
                 context.stroke();
             }, 0);
         }).trigger('input');
@@ -317,17 +319,17 @@ TABS.receiver.initialize = function (callback) {
 
             MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
         });
-        
+
         $("a.sticks").click(function() {
             var
                 windowWidth = 370,
                 windowHeight = 510;
-            
+
             chrome.app.window.create("/tabs/receiver_msp.html", {
                 id: "receiver_msp",
                 innerBounds: {
                     minWidth: windowWidth, minHeight: windowHeight,
-                    width: windowWidth, height: windowHeight, 
+                    width: windowWidth, height: windowHeight,
                     maxWidth: windowWidth, maxHeight: windowHeight
                 },
                 alwaysOnTop: true
@@ -343,9 +345,9 @@ TABS.receiver.initialize = function (callback) {
                 }
             });
         });
-        
+
         // Only show the MSP control sticks if the MSP Rx feature is enabled
-        $("a.sticks").toggle(bit_check(BF_CONFIG.features, 14 /* RX_MSP */));
+        $(".sticks_btn").toggle(bit_check(BF_CONFIG.features, 14 /* RX_MSP */));
 
         $('select[name="rx_refresh_rate"]').change(function () {
             var plot_update_rate = parseInt($(this).val(), 10);
@@ -456,7 +458,7 @@ TABS.receiver.initialize = function (callback) {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
-        if (callback) callback();
+        GUI.content_ready(callback);
     }
 };
 
