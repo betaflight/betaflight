@@ -387,5 +387,3 @@ $("#showlog").on('click', function() {
 });
 
 });
-
-

@@ -52,7 +52,7 @@ a.disabled {
 }
 
 .helpicon:hover {
-    opacity: 1.0;
+    opacity: 0.9;
     background-image: url(images/icons/cf_icon_info_green.svg);
     transition: none;  
 }

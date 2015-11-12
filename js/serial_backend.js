@@ -257,14 +257,14 @@ function onConnect() {
     $('#tabs ul.mode-disconnected').hide();
     $('#tabs ul.mode-connected').show();
 
-    if ("CLFL" == CONFIG.flightControllerIdentifier){
-        
+    // if ("CLFL" == CONFIG.flightControllerIdentifier){
+    // not sure why this check was needed? disabling it to show sensors for all.    
         var sensor_state = $('#sensor-status');
         sensor_state.show(); 
        	
         var port_picker = $('#portsinput');
         port_picker.hide(); 
-    }
+   //}
 }
 
 function onClosed(result) {
