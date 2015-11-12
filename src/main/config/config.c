@@ -889,6 +889,11 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    if(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+	    featureClear(FEATURE_RX_PARALLEL_PWM);
+	    featureClear(FEATURE_RX_MSP);
+	    featureSet(FEATURE_RX_PPM);
+    }
     if(featureConfigured(FEATURE_RX_SERIAL)) {
 	    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 	    masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
