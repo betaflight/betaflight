@@ -60,6 +60,9 @@ typedef struct drv_pwm_config_s {
     bool useCurrentMeterADC;
 #ifdef STM32F10X
     bool useUART2;
+    bool useUART3;
+    bool useUART4;
+    bool useUART5;
 #endif
 #ifdef STM32F303xC
     bool useUART3;

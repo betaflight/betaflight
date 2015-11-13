@@ -48,6 +48,14 @@ static uartPort_t uartPort2;
 static uartPort_t uartPort3;
 #endif
 
+#ifdef USE_USART4
+static uartPort_t uartPort4;
+#endif
+
+#ifdef USE_USART5
+static uartPort_t uartPort5;
+#endif
+
 // Using RX DMA disables the use of receive callbacks
 #define USE_USART1_RX_DMA
 
@@ -312,6 +320,147 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
+    usartIrqCallback(s);
+}
+#endif
+
+#ifdef USE_USART4
+// UART4
+uartPort_t *serialUSART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx4Buffer[UART4_RX_BUFFER_SIZE];
+    static volatile uint8_t tx4Buffer[UART4_TX_BUFFER_SIZE];
+    gpio_config_t gpio;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    s = &uartPort4;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBuffer = rx4Buffer;
+    s->port.txBuffer = tx4Buffer;
+    s->port.rxBufferSize = UART4_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART4_TX_BUFFER_SIZE;
+
+    s->USARTx = UART4;
+
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+
+#ifdef USART4_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(USART4_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef USART4_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(USART4_APB2_PERIPHERALS, ENABLE);
+#endif
+
+    gpio.speed = Speed_2MHz;
+
+    gpio.pin = USART4_TX_PIN;
+    if (options & SERIAL_BIDIR) {
+        gpio.mode = Mode_AF_OD;
+        gpioInit(USART4_GPIO, &gpio);
+    } else {
+        if (mode & MODE_TX) {
+            gpio.mode = Mode_AF_PP;
+            gpioInit(USART4_GPIO, &gpio);
+        }
+
+        if (mode & MODE_RX) {
+            gpio.pin = USART4_RX_PIN;
+            gpio.mode = Mode_IPU;
+            gpioInit(USART4_GPIO, &gpio);
+        }
+    }
+
+    // RX/TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = UART4_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART4);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART4);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    return s;
+}
+
+// UART4 Rx/Tx IRQ Handler
+void UART4_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort4;
+    usartIrqCallback(s);
+}
+#endif
+
+#ifdef USE_USART5
+// UART5
+uartPort_t *serialUSART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx5Buffer[UART5_RX_BUFFER_SIZE];
+    static volatile uint8_t tx5Buffer[UART5_TX_BUFFER_SIZE];
+    gpio_config_t gpio;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    s = &uartPort5;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBuffer = rx5Buffer;
+    s->port.txBuffer = tx5Buffer;
+    s->port.rxBufferSize = UART5_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART5_TX_BUFFER_SIZE;
+
+    s->USARTx = UART5;
+
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+
+#ifdef USART5_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(USART5_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef USART5_APB2_PERIPHERALS_TX
+    RCC_APB2PeriphClockCmd(USART5_APB2_PERIPHERALS_TX, ENABLE);
+#endif
+#ifdef USART5_APB2_PERIPHERALS_RX
+    RCC_APB2PeriphClockCmd(USART5_APB2_PERIPHERALS_TX, ENABLE);
+#endif
+
+    gpio.speed = Speed_2MHz;
+
+    gpio.pin = USART5_TX_PIN;
+    if (options & SERIAL_BIDIR) {
+        gpio.mode = Mode_AF_OD;
+        gpioInit(USART5_GPIO_TX, &gpio);
+    } else {
+        if (mode & MODE_TX) {
+            gpio.mode = Mode_AF_PP;
+            gpioInit(USART5_GPIO_TX, &gpio);
+        }
+
+        if (mode & MODE_RX) {
+            gpio.pin = USART5_RX_PIN;
+            gpio.mode = Mode_IPU;
+            gpioInit(USART5_GPIO_RX, &gpio);
+        }
+    }
+
+    // RX/TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART5);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART5);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    return s;
+}
+
+// UART5 Rx/Tx IRQ Handler
+void UART5_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort5;
     usartIrqCallback(s);
 }
 #endif

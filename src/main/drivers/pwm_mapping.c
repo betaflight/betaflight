@@ -75,7 +75,7 @@ enum {
     MAP_TO_SERVO_OUTPUT,
 };
 
-#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R)
+#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R) || defined(PORT103V)
 static const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
@@ -603,9 +603,30 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef STM32F10X
-        // skip UART2 ports
+        // skip UART ports
         if (init->useUART2 && (timerIndex == PWM3 || timerIndex == PWM4))
             continue;
+
+#ifdef USE_USART3
+        if (init->useUART3 && timerHardwarePtr->gpio == USART3_GPIO && (timerHardwarePtr->pin == USART3_TX_PIN || timerHardwarePtr->pin == USART3_RX_PIN))
+            continue;
+#endif
+
+#ifdef USE_USART4
+        if (init->useUART4 && timerHardwarePtr->gpio == USART4_GPIO && (timerHardwarePtr->pin == USART4_TX_PIN || timerHardwarePtr->pin == USART4_RX_PIN))
+            continue;
+#endif
+
+#ifdef USE_USART5
+        if (init->useUART5 && ((timerHardwarePtr->gpio == USART5_GPIO_TX && timerHardwarePtr->pin == USART5_TX_PIN) || (timerHardwarePtr->gpio == USART5_GPIO_RX && timerHardwarePtr->pin == USART5_RX_PIN)))
+            continue;
+#endif
+#endif
+
+#if defined(STM32F10X) && I2C_DEVICE == I2CDEV_1
+        // skip I2C ports if device 1 is selected
+        if (timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
+        	continue;
 #endif
 
 #if defined(STM32F303xC) && defined(USE_USART3)
