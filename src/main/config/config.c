@@ -179,15 +179,15 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pterm_cut_hz = 0;
     pidProfile->gyro_cut_hz = 0;
 
-    pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
+    pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.4f;
     pidProfile->D_f[ROLL] = 0.03f;
-    pidProfile->P_f[PITCH] = 1.5f;
+    pidProfile->P_f[PITCH] = 1.4f;
     pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.03f;
-    pidProfile->P_f[YAW] = 2.5f;
-    pidProfile->I_f[YAW] = 1.0f;
-    pidProfile->D_f[YAW] = 0.00f;
+    pidProfile->P_f[YAW] = 3.5f;
+    pidProfile->I_f[YAW] = 0.4f;
+    pidProfile->D_f[YAW] = 0.01f;
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
     pidProfile->H_sensitivity = 75;
