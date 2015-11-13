@@ -56,6 +56,7 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 
     uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
+    uint8_t yaw_pterm_cut_hz;              // Yaw P low pass filter for pterm. very usefull on noisy setups
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

@@ -5,7 +5,7 @@
  *      Author: borisb
  */
 
-#define YAW_PTERM_FILTER 30
+
 
 typedef struct filterStatePt1_s {
 	float state;
