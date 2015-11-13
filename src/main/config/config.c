@@ -132,7 +132,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 106;
+static const uint8_t EEPROM_CONF_VERSION = 107;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -476,6 +476,7 @@ static void resetConf(void)
 
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
+    masterConfig.i2c_overclock = 0;
 
     resetPidProfile(&currentProfile->pidProfile);
 
