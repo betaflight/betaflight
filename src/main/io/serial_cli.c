@@ -186,11 +186,6 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-// sync this with pidControllerType_e
-static const char * const pidControllers[] = {
-    "REWRITE", "LUXFLOAT", "MULTIWII23", NULL
-};
-
 #ifndef CJMCU
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
@@ -1413,14 +1408,8 @@ static void dumpValues(uint16_t mask)
             continue;
         }
 
-        if (strstr(valueTable[i].name, "pid_controller")) {
-            void *pidPtr= value->ptr;
-            pidPtr= ((uint8_t *)pidPtr) + (sizeof(profile_t) * masterConfig.current_profile_index);
-            cliPrint(pidControllers[*(uint8_t *)pidPtr-1]);
-        } else {
-            cliPrintVar(value, 0);
-        }
-
+        printf("set %s = ", valueTable[i].name);
+        cliPrintVar(value, 0);
         cliPrint("\r\n");
     }
 }
@@ -2060,42 +2049,9 @@ static void cliSet(char *cmdline)
         valuef = fastA2F(eqptr);
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
+            // ensure exact match when setting to prevent setting variables with shorter names
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
-                // ensure exact match when setting to prevent setting variables with shorter names
-                if (strstr(valueTable[i].name, "pid_controller")) {
-                    int_float_value_t tmp;
-                    tmp.int_value = 0;
-                    bool pidControllerSet = false;
-
-                    if (value) {
-                        if (value >= valueTable[i].min && value <= valueTable[i].max) {
-                            tmp.int_value = value;
-                            cliSetVar(val, tmp);
-                            printf("%s set to %s \r\n", valueTable[i].name, pidControllers[value - 1]);
-                            pidControllerSet = true;
-                        }
-                    } else {
-                        for (int pid = 0; pid < (PID_COUNT - 1); pid++) {
-                            if (strstr(eqptr, pidControllers[pid])) {
-                                tmp.int_value = pid + 1;
-                                cliSetVar(val, tmp);
-                                printf("%s set to %s \r\n", valueTable[i].name, pidControllers[pid]);
-                                pidControllerSet = true;
-                            }
-                        }
-                    }
-
-                    if (!pidControllerSet) {
-                        printf("Invalid Value! (Available PID Controllers: ");
-                        for (int pid = 0; pid < (PID_COUNT - 1); pid++) {
-                            printf(pidControllers[pid]);
-                            printf(" ");
-                        }
-                        printf(")\r\n");
-                     }
-
-                    return;
-                } else if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
+                if (valuef >= valueTable[i].min && valuef <= valueTable[i].max) { // here we compare the float value since... it should work, RIGHT?
                     int_float_value_t tmp;
                     if (valueTable[i].type & VAR_FLOAT)
                         tmp.float_value = valuef;
@@ -2127,15 +2083,7 @@ static void cliGet(char *cmdline)
         if (strstr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
             printf("%s = ", valueTable[i].name);
-
-        	if (strstr(valueTable[i].name, "pid_controller")) {
-                void *pidPtr= val->ptr;
-                pidPtr= ((uint8_t *)pidPtr) + (sizeof(profile_t) * masterConfig.current_profile_index);
-                cliPrint(pidControllers[*(uint8_t *)pidPtr-1]);
-        	} else {
-                cliPrintVar(val, 0);
-        	}
-
+            cliPrintVar(val, 0);
             cliPrint("\r\n");
 
             matchedCommands++;
