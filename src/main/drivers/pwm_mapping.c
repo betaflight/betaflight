@@ -456,6 +456,11 @@ static const uint16_t * const hardwareMaps[] = {
     airPPM,
 };
 
+static pwmOutputConfiguration_t pwmOutputConfiguration;
+
+pwmOutputConfiguration_t *pwmGetOutputConfiguration(void){
+    return &pwmOutputConfiguration;
+}
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
@@ -463,7 +468,6 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
     int channelIndex = 0;
 
-    static pwmOutputConfiguration_t pwmOutputConfiguration;
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
 
@@ -651,16 +655,25 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 } else {
                     pwmOneshotMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount);
                 }
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
             } else if (isMotorBrushed(init->motorPwmRate)) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
             } else {
                 pwmBrushlessMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM ;
             }
+            pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].index = pwmOutputConfiguration.motorCount;
+            pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].timerHardware = timerHardwarePtr;
             pwmOutputConfiguration.motorCount++;
+            pwmOutputConfiguration.outputCount++;
         } else if (type == MAP_TO_SERVO_OUTPUT) {
 #ifdef USE_SERVOS
+            pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].index = pwmOutputConfiguration.servoCount;
             pwmServoConfig(timerHardwarePtr, pwmOutputConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
+            pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_SERVO | PWM_PF_OUTPUT_PROTOCOL_PWM;
             pwmOutputConfiguration.servoCount++;
+            pwmOutputConfiguration.outputCount++;
 #endif
         }
     }

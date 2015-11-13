@@ -22,10 +22,14 @@
 
 #ifdef USE_SERIAL_1WIRE
 
+extern uint8_t escCount;
+
 typedef struct {
   GPIO_TypeDef* gpio;
-  uint32_t pinpos;
+  uint16_t pinpos;
+  uint16_t pin;
 } escHardware_t;
+
 
 void usb1WireInitialize();
 void usb1WirePassthrough(uint8_t escIndex);
