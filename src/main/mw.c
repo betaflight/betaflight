@@ -568,7 +568,7 @@ void processRx(void)
          * Additional code to prevent Iterm reset below min_check. pid_at_min_throttle higher than 1 will
          * activate the feature. Experimental yet. Minimum configuration is 2 sec and maxx is 5seconds.
          */
-        if (masterConfig.mixerConfig.pid_at_min_throttle > 1) {
+        if (masterConfig.mixerConfig.pid_at_min_throttle > 1 && ARMING_FLAG(ARMED)) {
             if (pidResetErrorGyroTimeout < millis()) {
                 pidResetErrorGyro();
             }
