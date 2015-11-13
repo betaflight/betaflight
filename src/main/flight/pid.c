@@ -96,6 +96,7 @@ void pidResetErrorGyro(void)
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t DTermState[3];
+static filterStatePt1_t yawPTermState;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -171,6 +172,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
@@ -283,6 +288,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+
+        if (axis == YAW) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, YAW_PTERM_FILTER, dT);
+        }
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
