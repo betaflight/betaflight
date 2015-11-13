@@ -89,7 +89,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
             {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
             {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports'},
-            {bit: 7, group: 'gps', name: 'GPS', description: 'Configure port scenario first<div class="helpicon cf_tip" title="Remember to select port scenario first!"></div>'},
+            {bit: 7, group: 'gps', name: 'GPS', description: 'Configure port scenario first'},
             {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
             {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
             {bit: 10, group: 'other', name: 'TELEMETRY', description: 'Telemetry output'},
@@ -355,22 +355,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             });
         });
-
-
-
-// loading tooltip
-	$(document).ready(function() {
-		$('.cf_tip').jBox('Tooltip', {
-		delayOpen: 100,
-		delayClose: 100,
-		position: {
-			x: 'right',
-			y: 'center'
-		},
-		outside: 'x'
-		});
-	});
-	
 		
 	
         $('a.save').click(function () {

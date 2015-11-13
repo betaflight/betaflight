@@ -933,7 +933,7 @@
     },
 
     "cliInfo": {
-        "message": "<span style=\"color: red\">Note</span>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board.  With the latest firmware this will make the controller <span style=\"color: red\">restart</span> and unsaved changes will be <span style=\"color: red\">lost</span>."
+        "message": "<strong>Note</strong>: Leaving CLI tab or pressing Disconnect will <strong>automatically</strong> send \"<strong>exit</strong>\" to the board.  With the latest firmware this will make the controller <span style=\"color: red\">restart</span> and unsaved changes will be <span style=\"color: red\">lost</span>."
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"
@@ -1140,7 +1140,7 @@
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><span style=\"color: #57a929\">Note: </span>STM32 bootloader is stored in ROM, it cannot be bricked.<br />Note: <strong>Auto-Connect</strong> is always disabled while you are inside firmware flasher.<br /><span style=\"color: red\">Note: </span>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><span style=\"color: #57a929\">Note:</span> If you have problems flashing try disconnecting all cables from your FC.<br /><br /><span style=\"color: #57a929\">Note: </span>If you have lost comminication with your board then power off the board, jumper the bootloader pins, power on, enable 'No reboot sequence', enable 'Full chip erase', re-flash, then power off, remove bootloader jumper, power on and connect (For all firmware except OPBL firmware)."
+        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC.<br /><br /><strong>Note: </strong>If you have lost comminication with your board then power off the board, jumper the bootloader pins, power on, enable 'No reboot sequence', enable 'Full chip erase', re-flash, then power off, remove bootloader jumper, power on and connect (For all firmware except OPBL firmware)."
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
@@ -1202,5 +1202,11 @@
     },
     "controlAxisAux8": {
         "message": "AUX 8"
+    },
+    "pidHelp1": {
+        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
+    },
+    "configHelp1": {
+        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
     }
 }

@@ -12,10 +12,11 @@
 }
 
 .tab-led-strip .mainGrid {
-    width: calc((24px + 8px) * 16);
-    height: calc((24px + 8px) * 16);
+    width: calc((24px + 7px) * 16);
+    height: calc((24px + 7px) * 16);
     float: left;
     margin-right: 10px;
+	border-radius: 3px;
 }
 
 .tab-led-strip .mainGrid .gPoint {
@@ -110,15 +111,15 @@
 }
 
 .tab-led-strip .wire {
-    color: rgba(255,255,255,.5);
+	color: rgba(255,255,255,.5);
     text-align: center;
-    font-size: 16px;
+    font-size: 12px;
     text-shadow: 1px 1px rgba(0,0,0,.4);
     padding-top: 0px;
     display: block;
-    font-family: monospace;
+    /* font-family: monospace; */
     margin-left: -1px;
-    margin-top: -23px;
+    margin-top: -21px;
     width: 24px;
     height: 24px;
 }
@@ -324,6 +325,7 @@
     border: 1px solid rgb(236, 236, 236);
     margin-top: -1px;
     margin-left: -1px;
+    border-radius: 3px;
 }
 
 .gridSections .block {

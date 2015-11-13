@@ -37,19 +37,6 @@ a.disabled {
 }
 
 /* Help-Icon  */
-span .helpicon {
-    float: right;
-    margin-top: 2px;
-    margin-right: 0px;
-    display: block;
-    height: 14px;
-    width: 14px;
-    opacity: 0.2;
-    background-image: url(images/icons/cf_icon_info_grey.svg);
-    background-size: contain;
-    background-position: center;
-}
-
 .helpicon {
     float: right;
     margin-top: 7px;
@@ -61,19 +48,15 @@ span .helpicon {
     background-image: url(images/icons/cf_icon_info_grey.svg);
     background-size: contain;
     background-position: center;
+    transition: none;  
 }
 
 .helpicon:hover {
-    opacity: 1.0;
+    opacity: 0.9;
     background-image: url(images/icons/cf_icon_info_green.svg);
+    transition: none;  
 }
 
-/* Change here the content of the documentation button in all tabs!!!
-
-.cf_doc_version_bt a:before {
-	content:"Documentation 1.10";
-	}
-*/
 .cf_doc_version_bt a {
     padding: 1px 9px 1px 9px;
     margin-top: -45px;
@@ -128,11 +111,11 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .headerbar {
-    height: 110px;
-    width: 100%;
-    float: left;
-    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
+	height:110px;
+	width:100%;
+	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
 }
+
 
 #logo {
     position: relative;
@@ -151,7 +134,7 @@ input[type="number"]::-webkit-inner-spin-button {
 .logo_text {
     position: absolute;
     height: 20px;
-    width: 132px;
+    width: 125px;
     left: 31px;
     top: 63px;
     color: #949494;
@@ -535,12 +518,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs ul {
     /* overflow-y: auto;  do not force scrollbars as it renders blank stripe on some user agents */
-    
+
 }
 
 #tabs.logopen ul {
     /* Cause the height to shrink to contain its floated contents while log is open */
-    
+
 }
 
 .header-wrapper .mode-connected {
@@ -905,10 +888,10 @@ dialog {
     /* leave 20px side padding always */
     /*padding: 0 20px 0 20px;
     for testing: */
-    padding: 20px;
-    position: relative;
-    float: left;
-    width: calc(100% - 40px);
+  padding: 20px;
+  position: relative;
+  /*float: left;
+  width:calc(100% - 40px);*/
 }
 
 .content_toolbar {
@@ -959,7 +942,7 @@ dialog {
     cursor: default;
     color: #fff;
     background-color: #AFAFAF;
-    border: none;
+    border: 1px solid #AFAFAF;
     pointer-events: none;
     text-shadow: none;
     opacity: 0.5;
@@ -1370,7 +1353,7 @@ dialog {
     border-radius: 3px;
     color: #fff;
     font-size: 10px;
-}
+	}
 
 .fixfalse {
     background-color: #e60000;
@@ -1385,7 +1368,7 @@ dialog {
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .content_wrapper {
         padding: 15px;
-        width: calc(100% - 30px);
+  /*width:calc(100% - 30px);*/
     }
     .tab_title {
         font-size: 16px;
@@ -1407,12 +1390,12 @@ dialog {
     body {
         /*font-size: 11px;*/
         /* lets see if we really need this? */
-        
+
     }
     .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-dataflash,
         .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors,
         .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
-        
+
     }
     .cf_table td {
         padding-top: 2px;
@@ -1423,7 +1406,7 @@ dialog {
     }
     .default_btn a {
         /*font-size:11px;*/
-        
+
     }
     #tabs li a {
         font-family: 'open_sansregular', Arial;
@@ -1465,7 +1448,13 @@ dialog {
         margin-right: 7px;
         height: 14px;
         width: 14px;
+        transition: none;
+
     }
+    
+    #tooltiptext {
+    }
+    
     .gps_false {
         padding: 0px 3px 0px 3px;
         font-size: 10px;

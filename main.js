@@ -387,20 +387,3 @@ $("#showlog").on('click', function() {
 });
 
 });
-
-
-
-
-
-// loading tooltip
-$(document).ready(function() {
-$('.cf_tip').jBox('Tooltip', {
-    delayOpen: 100,
-    delayClose: 100,
-	position: {
-        x: 'right',
-        y: 'center'
-    },
-	outside: 'x'
-});
-});

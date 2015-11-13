@@ -1,45 +1,38 @@
 <div class="tab-landing">
-    <div class="content_wrapper">
-        <div class="content_top">
-            <div class="logowrapper" align="center">
-                <span>Welcome to</span><br> <img src="../images/cf_logo_white.svg" />
-                <div class="" i18n="defaultWelcomeIntro" align="center"></div>
-            </div>
+   <div class="content_wrapper">
+      <div class="content_top">
+        <div class="logowrapper" align="center">
+          <span>Welcome to</span><br>
+          <img src="../images/cf_logo_white.svg"/>
+          <div class="" i18n="defaultWelcomeIntro" align="center"></div>
         </div>
-        <div class="content_mid">
-            <div class="cf_column third_left text1" style="width: 41%">
-                <div class="spacer_left" style="width: calc(100% - 30px); padding-left: 20; padding-right: 10px;">
-                    <div class="mid_head">Hardware</div>
-                    <div i18n="defaultWelcomeText"></div>
-                </div>
-            </div>
-            <div class="cf_column third_center text2" style="width: 37%;">
-                <div class="spacer">
-                    <div i18n="defaultContributingHead" class="mid_head"></div>
-                    <div i18n="defaultContributingText"></div>
-                </div>
-            </div>
-            <div class="cf_column third_right text3" style="width: calc(22% - 15px); margin-right: 15px;">
-                <div class="spacer_right" style="padding-left: 15px; width: calc(100% - 25px);">
-                    <div class="gui_box grey" style="min-height: 200px; border: #59aa29 1px solid;">
-                        <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
-                            <div i18n="defaultDonateHead" class="mid_head"></div>
-                            <div i18n="defaultDonateText"></div>
-                            <div class="donate">
-                                <a
-                                    href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSQKVT6UYKGL6"
-                                    target="_blank" title="Donate"><img src="./images/btn-donate.png" alt="Paypal"
-                                    height="30" /></a>
-                                </li>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="content_foot">
-            <div class="sponsors">
-                <div class="title" i18n="defaultSponsorsHead"></div>
+      </div>
+      <div class="content_mid">
+         <div class="column third_left text1">
+           <div class="wrap">
+             <h2>Hardware</h2>
+             <div i18n="defaultWelcomeText"></div>
+           </div>
+         </div>
+         <div class="column third_center text2">
+           <div class="wrap">
+             <h2 i18n="defaultContributingHead"></h2>
+             <div i18n="defaultContributingText"></div>
+           </div>
+         </div>
+         <div class="column third_right text3">
+           <div class="wrap2">
+             <h3 i18n="defaultDonateHead"></h3>
+             <div i18n="defaultDonateText"></div>
+             <div class="donate">
+                <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSQKVT6UYKGL6" target="_blank" title="Donate"><img src="./images/btn-donate.png" alt="Paypal" height="30" /></a></li>
+             </div>
+           </div>
+         </div>
+      </div>
+      <div class="content_foot">
+         <div class="sponsors">
+            <div class="title" i18n="defaultSponsorsHead"></div>
                 <ul>
                     <li><a href="http://www.massiverc.com" title="www.massiverc.com" target="_blank">MassiveRC</a></li>
                     <li><a href="http://www.armattanquads.com" title="www.armattanquads.com" target="_blank">Armattan
@@ -58,18 +51,16 @@
                     <li><a href="http://www.scorpionsystem.com" title="www.scorpionsystem.com" target="_blank">Scorpion Power Systems</a></li>
                     <li><a href="http://www.multigp.com" title="www.multigp.com" target="_blank">MultiGP</a></li>
                 </ul>
-            </div>
-        </div>
-        <div class="changelog_wrapper">
-            <div class="changelog configurator">
-                <div id="changelog_bt">
-                    <a id="changelog_button" href="#">Changelog</a>
-                </div>
-                <div class="title" i18n="defaultChangelogHead"></div>
-                <div class="changewrapper">
-                    <!-- changelog content will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
+         </div>
+      </div>
+   </div>
+   <div id="changelog">
+      <div class="button"><a id="changelog_toggle" href="#">Changelog</a></div>
+      <div class="wrapper">
+         <div class="title" i18n="defaultChangelogHead"></div>
+         <div class="log">
+            <!-- changelog content will be loaded here -->
+         </div>
+      </div>
+   </div>
 </div>

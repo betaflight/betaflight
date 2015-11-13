@@ -74,6 +74,12 @@
     background-image: url(../images/paper.jpg);
     background-size: 100%;
     background-position: center;
+	border-radius: 5px;
+}
+
+#canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .gui_box grey .block_wrapper {
