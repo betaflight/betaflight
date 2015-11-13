@@ -100,8 +100,8 @@
 #define USE_CLI
 
 #define USE_SERIAL_1WIRE
-// How many escs does this board support?
-#define ESC_COUNT 6
+#define USE_SERIAL_1WIRE_CLI
+
 // STM32F3DISCOVERY TX - PD5 connects to UART RX
 #define S1W_TX_GPIO         GPIOD
 #define S1W_TX_PIN          GPIO_Pin_5
