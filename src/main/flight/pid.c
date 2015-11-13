@@ -142,11 +142,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
          } else {
             // calculate error and limit the angle to the max inclination
 #ifdef GPS
-            errorAngle = (constrainf(((float)rcCommand[axis] * ((float)max_angle_inclination / 500.0f)) + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+            errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
-            errorAngle = (constrainf((float)rcCommand[axis] * ((float)max_angle_inclination / 500.0f), -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+            errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
 
             if (FLIGHT_MODE(ANGLE_MODE)) {
