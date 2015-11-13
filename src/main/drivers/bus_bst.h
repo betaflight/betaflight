@@ -17,19 +17,20 @@
 
 #pragma once
 
-#define TBS_CORE_PNP_PRO					0x80
+#define TBS_CORE_PNP_PRO						0x80
 #define RESERVED							0x8A
-#define PNP_PRO_DIDITAL_CURRENT_SENSOR		0xC0
+#define PNP_PRO_DIDITAL_CURRENT_SENSOR			0xC0
 #define PNP_PRO_GPS							0xC2
 #define TSB_BLACKBOX						0xC4
 #define CLEANFLIGHT_FC						0xC8
 #define CROSSFIRE_UHF_RECEIVER				0xEC
 
-#define GPS_POSITION_FRAME_ID				0x02
+#define GPS_POSITION_FRAME_ID					0x02
 #define GPS_TIME_FRAME_ID					0x03
-#define FC_ATTITUDE_FRAME_ID				0x1E
+#define FC_ATTITUDE_FRAME_ID					0x1E
 #define RC_CHANNEL_FRAME_ID					0x15
 #define CROSSFIRE_RSSI_FRAME_ID				0x14
+#define CLEANFLIGHT_MODE_FRAME_ID				0x20
 
 typedef enum BSTDevice {
     BSTDEV_1,
@@ -49,6 +50,7 @@ void bstMasterWriteLoop(void);
 void bstMasterReadLoop(void);
 
 void crc8Cal(uint8_t data_in);
+
 
 
 

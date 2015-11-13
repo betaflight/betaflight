@@ -302,6 +302,13 @@ bool bstSlaveWrite(uint8_t* data) {
 				/* Decrement the read bytes counter */
 				len--;
 			}
+		     /* Wait until TXIS flag is set */
+			bstTimeout = BST_LONG_TIMEOUT;
+			while (I2C_GetFlagStatus(BSTx, I2C_ISR_TXIS) == RESET) {
+				if ((bstTimeout--) == 0) {
+			     	return bstTimeoutUserCallback(BSTx);
+				}
+			}
 			/* If all operations OK */
 			return true;
 	}
@@ -379,7 +386,7 @@ void crc8Cal(uint8_t data_in)
 		if (CRC8 & 0x80) {
 			MSB_Flag = true;
 		}
-
+	
 		CRC8 <<= 1;
 
 		/* MSB_Set = 80; */
@@ -387,7 +394,7 @@ void crc8Cal(uint8_t data_in)
 			CRC8++;
 		}
 		data_in <<= 1;
-
+	
 		if (MSB_Flag == true) {
 			CRC8 ^= Polynom;
 		}

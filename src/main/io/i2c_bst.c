@@ -275,9 +275,6 @@ static uint8_t activeBoxIdCount = 0;
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-extern float anglerad[2];
-extern int16_t heading;
-
 // cause reboot after BST processing complete
 static bool isRebootScheduled = false;
 
@@ -651,7 +648,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 	    case BST_ATTITUDE:
 			for (i = 0; i < 2; i++)
 				bstWrite16(attitude.raw[i]);
-			//bstWrite16(heading); //FIXME
+			//bstWrite16(heading);
 			break;
 	    case BST_ALTITUDE:
 #if defined(BARO) || defined(SONAR)
@@ -682,6 +679,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(masterConfig.disarm_kill_switch);
 			break;
 	    case BST_LOOP_TIME:
+			//bstWrite16(masterConfig.looptime);
 			bstWrite16(cycleTime);
 			break;
 	    case BST_RC_TUNING:
@@ -995,7 +993,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(masterConfig.profile[0].rcControlsConfig.yaw_deadband);
 			break;
 	    case BST_FC_FILTERS:
+			bstWrite16(masterConfig.gyro_lpf);
+			bstWrite8(0);//masterConfig.profile[0].pidProfile.gyro_cut_hz);
 			bstWrite8(masterConfig.profile[0].pidProfile.dterm_cut_hz);
+			bstWrite8(masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz);
 			break;
 		default:
 			// we do not know how to handle the (valid) message, indicate error BST
@@ -1045,7 +1046,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
 					rxMspFrameReceive(frame, channelCount);
 				}
-            }
+			}
 		case BST_SET_ACC_TRIM:
 			currentProfile->accelerometerTrims.values.pitch = bstRead16();
 			currentProfile->accelerometerTrims.values.roll  = bstRead16();
@@ -1056,6 +1057,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			break;
 		case BST_SET_LOOP_TIME:
 			//masterConfig.looptime = bstRead16();
+			cycleTime = bstRead16();
 			break;
 		case BST_SET_PID_CONTROLLER:
 			currentProfile->pidProfile.pidController = bstRead8();
@@ -1456,6 +1458,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			masterConfig.profile[0].rcControlsConfig.yaw_deadband = bstRead8();
 			break;
 	    case BST_SET_FC_FILTERS:
+			masterConfig.gyro_lpf = bstRead16();
+			bstRead8();//masterConfig.profile[0].pidProfile.gyro_cut_hz = bstRead8();
 			masterConfig.profile[0].pidProfile.dterm_cut_hz = bstRead8();
 			masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz = bstRead8();
 			break;
@@ -1521,30 +1525,35 @@ static void bstSlaveProcessInCommand(void)
 }
 
 /*************************************************************************************************/
-#define UPDATE_AT_20HZ ((1000 * 1000) / 20)
-static uint32_t next20hzUpdateAt = 0;
+#define UPDATE_AT_02HZ ((1000 * 1000) / 2)
+static uint32_t next02hzUpdateAt_1 = 0;
 
 #define UPDATE_AT_10HZ ((1000 * 1000) / 10)
 static uint32_t next10hzUpdateAt_1 = 0;
+static uint32_t next10hzUpdateAt_2 = 0;
 
 void bstProcess(void)
 {
 	if(coreProReady) {
 		uint32_t now = micros();
-		if(now >= next20hzUpdateAt && !bstWriteBusy()) {
-			writeRCChannelToBST();
-			next20hzUpdateAt = now + UPDATE_AT_20HZ;
+		if(now >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+			writeFCModeToBST();
+			next02hzUpdateAt_1 = now + UPDATE_AT_02HZ;
 		}
 		if(now >= next10hzUpdateAt_1 && !bstWriteBusy()) {
-			//writeRollPitchYawToBST(); FIXME
+			writeRCChannelToBST();
 			next10hzUpdateAt_1 = now + UPDATE_AT_10HZ;
+		}
+		if(now >= next10hzUpdateAt_2 && !bstWriteBusy()) {
+			writeRollPitchYawToBST();
+			next10hzUpdateAt_2 = now + UPDATE_AT_10HZ;
 		}
 		if(sensors(SENSOR_GPS) && !bstWriteBusy())
 			writeGpsPositionPrameToBST();
 	}
 	//Check if the BST input command available to out address
 	bstSlaveProcessInCommand();
-
+	
 	if (isRebootScheduled) {
 		stopMotors();
 		handleOneshotFeatureChangeOnRestart();
@@ -1614,11 +1623,10 @@ bool writeGpsPositionPrameToBST(void)
 		return false;
 }
 
-/* FIXME
 bool writeRollPitchYawToBST(void)
 {
-	int16_t X = -anglerad[1]*10000;
-	int16_t Y = anglerad[0]*10000;
+	int16_t X = -attitude.values.pitch * (M_PIf / 1800.0f) * 10000;
+	int16_t Y = attitude.values.roll * (M_PIf / 1800.0f) * 10000;
 	int16_t Z = 0;//radiusHeading * 10000;
 
 	bstMasterStartBuffer(PUBLIC_ADDRESS);
@@ -1629,29 +1637,68 @@ bool writeRollPitchYawToBST(void)
 
 	return bstMasterWrite(masterWriteData);
 }
-*/
 
 bool writeRCChannelToBST(void)
 {
-	uint8_t i = 0, tmp = 0;
-
-	tmp = IS_ENABLED(ARMING_FLAG(ARMED)) |
-		IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
-		IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << 2 |
-		IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
-		IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
-		IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << 5 |
-		IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << 6 |
-		IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
-
+	uint8_t i = 0;
 	bstMasterStartBuffer(PUBLIC_ADDRESS);
 	bstMasterWrite8(RC_CHANNEL_FRAME_ID);
 	for(i = 0; i < (USABLE_TIMER_CHANNEL_COUNT-1); i++) {
 		bstMasterWrite16(rcData[i]);
 	}
-	bstMasterWrite8(tmp);
 
 	return bstMasterWrite(masterWriteData);
 }
 
+bool writeFCModeToBST(void)
+{
+#ifdef CLEANFLIGHT_FULL_STATUS_SET
+	uint32_t tmp = 0;
+     tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
+            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
+            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+            IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
+		  IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
+		  IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
+            IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
+            IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
+	       IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
+	       IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
+	       IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
+	       IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
+	bstMasterStartBuffer(PUBLIC_ADDRESS);
+	bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);
+	bstMasterWrite32(tmp);
+	bstMasterWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+#else
+	uint8_t tmp = 0;
+	tmp = IS_ENABLED(ARMING_FLAG(ARMED)) |
+	       IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
+	       IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << 2 |
+	       IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << 3 |
+	       IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << 4 |
+	       IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << 5 |
+	       IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << 6 |
+	       IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << 7;
+
+	bstMasterStartBuffer(PUBLIC_ADDRESS);
+	bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);
+	bstMasterWrite8(tmp);
+	bstMasterWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+#endif
+
+	return bstMasterWrite(masterWriteData);
+}
 /*************************************************************************************************/

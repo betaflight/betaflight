@@ -577,8 +577,8 @@ CHEBUZZF3_SRC = \
 
 COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
-           io/i2c_bst.c \
-           drivers/bus_bst_stm32f30x.c \
+		   io/i2c_bst.c \
+		   drivers/bus_bst_stm32f30x.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
