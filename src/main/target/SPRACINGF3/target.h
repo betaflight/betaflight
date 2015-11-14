@@ -157,6 +157,8 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
 #define BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+
 #define DISPLAY
 #define GPS
 #define GTUNE

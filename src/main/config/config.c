@@ -55,6 +55,8 @@
 
 #include "rx/rx.h"
 
+#include "blackbox/blackbox_io.h"
+
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
@@ -540,11 +542,11 @@ static void resetConf(void)
 #endif
 
 #ifdef BLACKBOX
-#ifdef SPRACINGF3
+#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
     featureSet(FEATURE_BLACKBOX);
-    masterConfig.blackbox_device = 1;
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
 #else
-    masterConfig.blackbox_device = 0;
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
 #endif
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;

@@ -340,6 +340,10 @@ static const char * const lookupTablePidController[] = {
     "MW23", "MWREWRITE", "LUX"
 };
 
+static const char * const lookupTableBlackboxDevice[] = {
+    "SERIAL", "SPIFLASH"
+};
+
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
     "SPEK2048",
@@ -364,10 +368,13 @@ typedef enum {
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
 #endif
+#ifdef BLACKBOX
+    TABLE_BLACKBOX_DEVICE,
+#endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
-    TABLE_SERIAL_RX
+    TABLE_SERIAL_RX,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -377,6 +384,9 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef GPS
     { lookupTableGPSProvider, sizeof(lookupTableGPSProvider) / sizeof(char *) },
     { lookupTableGPSSBASMode, sizeof(lookupTableGPSSBASMode) / sizeof(char *) },
+#endif
+#ifdef BLACKBOX
+    { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
 #endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
@@ -648,7 +658,7 @@ const clivalue_t valueTable[] = {
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },
     { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, .config.minmax = { 1,  32 } },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_device, .config.lookup = { TABLE_OFF_ON } },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_device, .config.lookup = { TABLE_BLACKBOX_DEVICE } },
 #endif
 
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], .config.minmax = { -32768,  32767 } },

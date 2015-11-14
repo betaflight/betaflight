@@ -92,7 +92,7 @@ the best chance of writing at high speed. You must format it with either FAT, or
 
 ### Choosing a serial port for the OpenLog
 First, tell the Blackbox to log using a serial port (rather than to an onboard dataflash chip). Go to the
-Configurator's CLI tab, enter `set blackbox_device=0` to switch logging to serial (this is the default setting), and
+Configurator's CLI tab, enter `set blackbox_device=SERIAL` to switch logging to serial, and
 save.
 
 You need to let Cleanflight know which of [your serial ports][] you connect your OpenLog to (i.e. the Blackbox port),
@@ -190,7 +190,7 @@ These chips are also supported:
 * Winbond W25Q128 - 128 Mbit / 16 MByte
 
 #### Enable recording to dataflash
-On the Configurator's CLI tab, you must enter `set blackbox_device=1` to switch to logging to an onboard dataflash chip,
+On the Configurator's CLI tab, you must enter `set blackbox_device=SPIFLASH` to switch to logging to an onboard dataflash chip,
 then save.
 
 [your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
