@@ -14,6 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 
-rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c);
+typedef struct filterStatePt1_s {
+	float state;
+	float RC;
+	float constdT;
+} filterStatePt1_t;
+
+float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
