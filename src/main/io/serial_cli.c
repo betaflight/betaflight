@@ -337,7 +337,7 @@ static const char * const lookupTableGimbalMode[] = {
 };
 
 static const char * const lookupTablePidController[] = {
-    "MULTIWII", "REWRITE", "LUX"
+    "MW23", "MWREWRITE", "LUX"
 };
 
 static const char * const lookupTableSerialRX[] = {
