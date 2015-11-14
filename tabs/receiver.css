@@ -287,6 +287,8 @@
     border-radius: 0px;
     border: 1px solid silver;
     margin: 4px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
 }
 
 .tab-receiver .hybrid_element select {

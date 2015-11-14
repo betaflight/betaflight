@@ -64,24 +64,6 @@
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
-                    <table id="pid_accel" class="pid_tuning">
-                        <tr>
-                            <th colspan="4">
-                                <div class="pid_mode">
-                                    Accelerometer/Level
-                                    <div class="helpicon cf_tip"
-                                        title="The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."></div>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr class="LEVEL">
-                            <!-- 7 -->
-                            <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
-                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
-                        </tr>
-                    </table>
                     <table id="pid_baro" class="pid_tuning">
                         <tr>
                             <th colspan="4">
@@ -146,6 +128,32 @@
                         </tr>
                     </table>
                 </div>
+<div class="gui_box grey" style="margin-top:10px;">
+<table id="pid_accel" class="pid_tuning">
+                        <tr>
+                            <th colspan="4">
+                                <div class="pid_mode">
+                                    <div style="width: 25%; float: left; text-align: left;">
+                                        Angle/Horizon
+                                        <div class="helpicon cf_tip">
+                                            <div class="cf_tooltiptext" i18n="pidHelp1" style="display: none;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="width:25%; float:left;">Strength (Angle)</div>
+                                    <div style="width:25%; float:left;">Strength (Horizon)</div>
+                                    <div style="width:25%; float:left;">Transition (Horizon)</div>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr class="LEVEL">
+                            <!-- 7 -->
+                            <td></td>
+                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
+                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+                        </tr>
+                    </table>
+                  </div>    
             </div>
             <div class="cf_column half">
                 <div class="spacer_left">

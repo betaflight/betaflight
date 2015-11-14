@@ -18,7 +18,7 @@
   vertical-align: middle;
   width: 45px;
   z-index:1000;
-
+  opacity:1 !important;
   -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
@@ -35,13 +35,8 @@
   height: 14px;
   position: absolute;
   top: 0;
-  width: 14px;
-  
+  width: 14px; 
 }
-
-
-
-
 
 .switcherymid {
   background-color: #fff;
@@ -70,22 +65,13 @@
   height: 14px;
   position: absolute;
   top: 0;
-  width: 14px;
-  
+  width: 14px;  
 }
-
-
-
-
-
-
-
 
 /* Switchery sizes. */
 
 .switchery-small {
   border: none !important;
-
   border-radius: 20px;
   height: 10px;
   width: 20px;
