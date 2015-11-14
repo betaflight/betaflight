@@ -16,7 +16,7 @@
     height: calc((24px + 7px) * 16);
     float: left;
     margin-right: 10px;
-	border-radius: 3px;
+    border-radius: 3px;
 }
 
 .tab-led-strip .mainGrid .gPoint {
@@ -111,7 +111,7 @@
 }
 
 .tab-led-strip .wire {
-	color: rgba(255,255,255,.5);
+    color: rgba(255,255,255,.5);
     text-align: center;
     font-size: 12px;
     text-shadow: 1px 1px rgba(0,0,0,.4);
@@ -277,7 +277,7 @@
 .tab-led-strip .colors {
     height: 130px;
     position: relative;
-	display: inline-block;
+    display: inline-block;
     width: 49%;
 }
 
@@ -334,9 +334,6 @@
     float: left;
     border: solid 1px rgb(236, 236, 236);
 }
-
-
-
 
 
 /*******JQUERYUI**********/
