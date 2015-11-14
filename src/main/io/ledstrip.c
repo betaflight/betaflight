@@ -382,6 +382,10 @@ void updateLedCount(void)
     ledCount = 0;
     ledsInRingCount = 0;
 
+    if( ledConfigs == 0 ){
+        return;
+    }
+
     for (ledIndex = 0; ledIndex < MAX_LED_STRIP_LENGTH; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
