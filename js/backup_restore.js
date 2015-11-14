@@ -440,7 +440,7 @@ function configuration_restore(callback) {
         
         if (semver.lt(migratedVersion, '0.66.0')) {
             // api 1.12 updated servo configuration protocol and added servo mixer rules
-            for (var profileIndex = 0; i < configuration.profiles.length; i++) {
+            for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
                 
                 if (semver.eq(configuration.apiVersion, '1.10.0')) {
                     // drop two unused servo configurations
@@ -467,6 +467,22 @@ function configuration_restore(callback) {
             
             migratedVersion = '0.66.0';
 
+            appliedMigrationsCount++;
+        }
+        
+        if (semver.lt(configuration.apiVersion, '1.14.0') && semver.gte(CONFIG.apiVersion, "1.14.0")) {
+            // api 1.14 removed old pid controllers
+            for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
+                var newPidControllerIndex = configuration.profiles[profileIndex].PID.controller;
+                switch (newPidControllerIndex) {
+                    case 3: 
+                    case 4: 
+                    case 5: 
+                        newPidControllerIndex = 0;
+                        break;
+                }
+                configuration.profiles[profileIndex].PID.controller = newPidControllerIndex;
+            }
             appliedMigrationsCount++;
         }
         

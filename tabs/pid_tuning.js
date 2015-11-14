@@ -302,6 +302,32 @@ TABS.pid_tuning.initialize = function (callback) {
         pid_and_rc_to_form();
 
         var pidController_e = $('select[name="controller"]');
+
+
+        var pidControllerList;
+
+        if (semver.lt(CONFIG.apiVersion, "1.14.0")) {
+            pidControllerList = [
+                { name: "MultiWii (Old)"},
+                { name: "MultiWii (rewrite)"},
+                { name: "LuxFloat"},
+                { name: "MultiWii (2.3 - latest)"},
+                { name: "MultiWii (2.3 - hybrid)"},
+                { name: "Harakiri"}
+            ]
+        } else {
+            pidControllerList = [
+                { name: "MultiWii (2.3)"},
+                { name: "MultiWii (Rewrite)"},
+                { name: "LuxFloat"},
+            ]
+        }
+        
+        for (var i = 0; i < pidControllerList.length; i++) {
+            pidController_e.append('<option value="' + (i) + '">' + pidControllerList[i].name + '</option>');
+        }
+       
+        
         var profile_e = $('select[name="profile"]');
         var form_e = $('#pid-tuning');
 
