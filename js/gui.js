@@ -239,7 +239,7 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
 
 GUI_control.prototype.content_ready = function (callback) {
     
-        $('.togglesmall').each(function(index, html) {
+    $('.togglesmall').each(function(index, html) {
         var switchery = new Switchery(html,
         {
           size: 'small',
@@ -260,22 +260,22 @@ GUI_control.prototype.content_ready = function (callback) {
         $(html).removeClass('toggle');
     });
 
-    	$('.togglemedium').each(function(index, html) {
+    $('.togglemedium').each(function(index, html) {
         var switchery = new Switchery(html,
          {
-     		className: 'switcherymid',
+            className: 'switcherymid',
             color: '#59aa29', 
             secondaryColor: '#c4c4c4' 
          });
-                        
-        $(html).removeClass('togglemedium');
+
+         $(html).removeClass('togglemedium');
     });
     
     // Build link to in-use CF version documentation
     var documentationButton = $('div#content #button-documentation');
     documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
     documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
-    
+
     // loading tooltip
     jQuery(document).ready(function($) {
         $('cf_tip').each(function() { // Grab all ".cf_tip" elements, and for each...
@@ -284,21 +284,19 @@ GUI_control.prototype.content_ready = function (callback) {
 
     $('.cf_tip').each(function() { 
         $(this).jBox('Tooltip', {
-        content: $(this).children('.cf_tooltiptext'),		
-        delayOpen: 100,
-        delayClose: 100,
-        position: {
-        	x: 'right',
-        	y: 'center'
-        },
-        outside: 'x'
+            content: $(this).children('.cf_tooltiptext'),		
+            delayOpen: 100,
+            delayClose: 100,
+            position: {
+                x: 'right',
+                y: 'center'
+            },
+            outside: 'x'
+            });
         });
     });
-    });
-                    
-                    
-    if (callback) callback();
 
+    if (callback) callback();
 }
 
 // initialize object into GUI variable
