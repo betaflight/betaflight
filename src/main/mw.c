@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -73,8 +74,6 @@
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
 #include "flight/navigation.h"
-#include "flight/filter.h"
-
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -97,6 +96,7 @@ enum {
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+float dT;
 
 int16_t magHold;
 int16_t headFreeModeHold;
@@ -141,7 +141,7 @@ void updateGtuneState(void)
         }
     } else {
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-    	    DISABLE_FLIGHT_MODE(GTUNE_MODE);
+            DISABLE_FLIGHT_MODE(GTUNE_MODE);
         }
     }
 }
@@ -405,7 +405,7 @@ void updateInflightCalibrationState(void)
 
 void updateMagHold(void)
 {
-    if (ABS(rcCommand[YAW]) < 70 && FLIGHT_MODE(MAG_MODE)) {
+    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
         int16_t dif = heading - magHold;
         if (dif <= -180)
             dif += 360;
@@ -584,7 +584,7 @@ void processRx(void)
 
     if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
-    	canUseHorizonMode = false;
+        canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
             pidResetErrorAngle();
@@ -675,14 +675,14 @@ void filterRc(void){
     uint16_t rxRefreshRate, filteredCycleTime;
 
     // Set RC refresh rate for sampling and channels to filter
-   	initRxRefreshRate(&rxRefreshRate);
+    initRxRefreshRate(&rxRefreshRate);
 
-    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1);
+    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
     rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
-        	deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+            deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
             lastCommand[channel] = rcCommand[channel];
         }
 
@@ -699,6 +699,27 @@ void filterRc(void){
          }
     } else {
         factor = 0;
+    }
+}
+
+// Gyro Low Pass
+void filterGyro(void) {
+    int axis;
+    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (masterConfig.looptime > 0) {
+            // Static dT calculation based on configured looptime
+            if (!gyroADCState[axis].constdT) {
+                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
+            }
+
+            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
+        }
+
+        else {
+            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
+        }
     }
 }
 
@@ -758,14 +779,10 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
-        // Gyro Low Pass
-        if (currentProfile->pidProfile.gyro_cut_hz) {
-            int axis;
-            static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
+        dT = (float)cycleTime * 0.000001f;
 
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        	    gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz);
-            }
+        if (currentProfile->pidProfile.gyro_cut_hz) {
+            filterGyro();
         }
 
         annexCode();
@@ -780,7 +797,7 @@ void loop(void)
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
-        	updateMagHold();
+            updateMagHold();
         }
 #endif
 
