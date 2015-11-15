@@ -98,10 +98,44 @@ body {
     left: -65px;
 }
 
-.button-enable {
-    padding: 0.5em;
-    font-size: 110%;
-    margin-left: auto;
-    margin-right: auto;
+a {
+    text-decoration: none;
+    color: #000;
+    font-family: 'open_sanssemibold', Arial;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+.button-enable a {
+    /*  common styles for content toolbar buttons */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    background-color: #59aa29;
+    border-radius: 3px;
+    border: 1px solid #4c8829;
+    color: #fff;
+    float: left;
+    font-family: 'open_sansbold', Arial;
+    font-size: 12px;
+    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
     display: block;
+    cursor: pointer;
+    transition: all ease 0.2s;
+    padding: 0px;
+    padding-left: 9px;
+    padding-right: 9px;
+    line-height: 28px;
+}
+
+.button-enable a:hover {
+    background-color: #6ac435;
+    transition: all ease 0.2s;
+}
+.button-enable a:active {
+    background-color: #4d9324;
+    transition: all ease 0.0s;
+    box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
 }
