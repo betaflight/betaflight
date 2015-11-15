@@ -360,27 +360,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
 }
 
-/*
-#documentation-controls {
-    float: right;
-    height: 22px;
-    line-height: 22px;
-    margin-right: 10px;
-}
-
-
-#button-documentation {
-    float: left;
-    padding: 0 12px 0 12px;
-    height: 18px;
-    line-height: 18px;
-    background-color: #ffcb18;
-    color: #000;
-    font-weight: bold;
-    border: solid 1px #c0c0c0;
-    display: none;
-}
-*/
 #options {
     float: right;
     width: 20px;
@@ -885,13 +864,8 @@ dialog {
 }
 
 .content_wrapper {
-    /* leave 20px side padding always */
-    /*padding: 0 20px 0 20px;
-    for testing: */
   padding: 20px;
   position: relative;
-  /*float: left;
-  width:calc(100% - 40px);*/
 }
 
 .content_toolbar {
@@ -1097,9 +1071,6 @@ dialog {
 }
 
 .fixed_band .save_btn a {
-    /*	line-height:20px;
-	padding:3px 13px 5px 13px;
-	*/
     margin-top: 9px;
     margin-bottom: 0px;
     margin-right: 20px;
@@ -1353,7 +1324,7 @@ dialog {
     border-radius: 3px;
     color: #fff;
     font-size: 10px;
-	}
+}
 
 .fixfalse {
     background-color: #e60000;
@@ -1364,19 +1335,110 @@ dialog {
     color: #fff;
     font-size: 10px;
 }
+/* Dataflash element styling*/
+
+#dataflash_wrapper {
+    color:white;
+    font-size:10px;
+    margin-top: 20px;
+    width:95px;
+    float: right;
+    margin-right: 20px;
+    line-height: 12px;
+    height: 33px;
+    border-radius: 5px;
+    border: 1px solid #272727;
+    box-shadow: 0px 1px 0px rgba(92, 92, 92, 0.5);
+    background-color: #434343;
+    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.55));
+    padding-top:5px;
+    display:none;
+    text-shadow: 0px 1px rgba(0, 0, 0, 1.0);
+
+}
+
+#profile_change {
+    color:white;
+    margin-top: 16px;
+    width:95px;
+    float: right;
+    margin-right: 0px;
+    line-height: 12px;
+}
+
+.dataflash-contents {
+    margin-top: 18px;
+    border: 1px solid #4A4A4A;
+    background-color: #4A4A4A;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    border-radius: 3px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+
+.dataflash-contents .notsupported {
+    display: none;
+}
+
+.dataflash-contents li {
+    height: 6px;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.20);
+    border-radius: 4px;
+
+}
+
+.dataflash-contents li div {
+    position: absolute;
+    top: -18px;
+    margin-top: 0px;
+    text-align: center;
+    left: 0;
+    right: 0;
+    width:90px;
+    text-align:left;
+    color:silver;
+}
+
+.dataflash-used {
+    background-color: #59AA29;
+    border-radius: 4px;
+}
+
+progress::-webkit-progress-bar {
+    height: 8px;
+    background-color: #eee;
+}
+
+progress::-webkit-progress-value {
+    background-color: #bcf;
+}
+
+.noflash {
+    display:none;
+    color: #4f4f4f;
+    text-align: center;
+    text-shadow: 0px 1px rgba(0, 0, 0, 1.0);
+    margin-top:2px;
+}
+
+
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .content_wrapper {
         padding: 15px;
-  /*width:calc(100% - 30px);*/
-    }
+}
     .tab_title {
         font-size: 16px;
         line-height: 18px;
         font-family: 'open_sanslight', Arial;
         margin-bottom: 10px;
         height: 22px;
-    }
+}
     .cf_doc_version_bt a {
         padding: 1px 5px 1px 5px;
         margin-top: -35px;

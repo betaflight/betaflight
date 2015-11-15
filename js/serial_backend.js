@@ -254,10 +254,107 @@ function onConnect() {
 
     var sensor_state = $('#sensor-status');
     sensor_state.show(); 
-   	
+    
     var port_picker = $('#portsinput');
     port_picker.hide(); 
-}
+
+    var dataflash = $('#dataflash_wrapper');
+    dataflash.show(); 
+    
+    
+
+// TEST code for profile change in header
+    function get_pid_controller() {
+        if (GUI.canChangePidController) {
+            MSP.send_message(MSP_codes.MSP_PID_CONTROLLER, false, false, get_pid_names);
+        } else {
+            get_pid_names();
+        }
+    }
+
+    function get_pid_names() {
+        MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
+    }
+        
+    // requesting MSP_STATUS manually because it contains CONFIG.profile
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
+    
+        var profile_e = $('select[name="profilechange"]');
+
+        // Fill in currently selected profile
+        profile_e.val(CONFIG.profile);
+        // UI Hooks
+        profile_e.change(function () {
+            var profile = parseInt($(this).val());
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
+                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
+
+                GUI.tab_switch_cleanup(function () {
+
+                // < here goes the code to reinitialise the current tab
+                TABS[this.active_tab].initialize();
+
+                
+                });
+            });
+        });
+        
+// testing profile change END        
+        
+// TEST code for dataflash status in header
+        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+
+    function formatFilesize(bytes) {
+        if (bytes < 1024) {
+            return bytes + "B";
+        }
+        
+        var kilobytes = bytes / 1024;
+        
+        if (kilobytes < 1024) {
+            return Math.round(kilobytes) + "kB";
+        }
+        
+        var megabytes = kilobytes / 1024;
+        
+        return megabytes.toFixed(1) + "MB";
+    }
+    
+    function update_html() {
+        if (DATAFLASH.usedSize > 0) {
+            $(".dataflash-used").css({
+                width: (DATAFLASH.usedSize / DATAFLASH.totalSize * 100) + "%",
+                display: 'block'
+            });
+            
+            $(".dataflash-used div").text('Used space ' + formatFilesize(DATAFLASH.usedSize));
+        } else {
+            $(".dataflash-used").css({
+                display: 'none'
+            });
+        }
+
+        if (DATAFLASH.totalSize - DATAFLASH.usedSize > 0) {
+            $(".dataflash-free").css({
+                width: ((DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+                display: 'block'
+            });
+            $(".dataflash-free div").text('Free space ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+        } else {
+            $(".dataflash-free").css({
+                display: 'none'
+            });
+        }
+        
+    }
+    
+    // testing dataflash change END        
+
+    
+    
+    
+    
+    }
 
 function onClosed(result) {
     if (result) { // All went as expected
@@ -269,12 +366,15 @@ function onClosed(result) {
     $('#tabs ul.mode-connected').hide();
     $('#tabs ul.mode-disconnected').show();
 
-    var port_picker = $('#portsinput');
-    port_picker.show(); 
-
     var sensor_state = $('#sensor-status');
     sensor_state.hide();
-   
+    
+    var port_picker = $('#portsinput');
+    port_picker.show(); 
+    
+    var dataflash = $('#dataflash_wrapper');
+    dataflash.hide();
+
 }
 
 function read_serial(info) {

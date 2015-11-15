@@ -367,8 +367,8 @@ $("#showlog").on('click', function() {
     if ( state ) {
         $("#log").animate({height: 27}, 200);
         $("#log").removeClass('active');
-		$("#content").removeClass('logopen');
-		$("#tabs").removeClass('logopen');
+        $("#content").removeClass('logopen');
+        $("#tabs").removeClass('logopen');
         $("#scrollicon").removeClass('active');
 
         state = false;
