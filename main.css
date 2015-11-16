@@ -1412,12 +1412,12 @@ dialog {
     border-radius: 2px;
 }
 
-progress::-webkit-progress-bar {
+.dataflash-contents progress::-webkit-progress-bar {
     height: 8px;
     background-color: #eee;
 }
 
-progress::-webkit-progress-value {
+.dataflash-contents progress::-webkit-progress-value {
     background-color: #bcf;
 }
 
