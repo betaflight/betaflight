@@ -289,26 +289,21 @@ function onConnect() {
             MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
                 GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
 
-                GUI.tab_switch_cleanup(function () {
 
                 // < here goes the code to reinitialise the current tab
-                TABS[this.active_tab].initialize();
-
                 
-                });
             });
         });
         
 // testing profile change END        
         
 // TEST code for dataflash status in header
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+    MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
 
     function formatFilesize(bytes) {
         if (bytes < 1024) {
             return bytes + "B";
         }
-        
         var kilobytes = bytes / 1024;
         
         if (kilobytes < 1024) {
@@ -327,7 +322,7 @@ function onConnect() {
                 display: 'block'
             });
             
-            $(".dataflash-used div").text('Used space ' + formatFilesize(DATAFLASH.usedSize));
+            $(".dataflash-used div").text('Dataflash: used ' + formatFilesize(DATAFLASH.usedSize));
         } else {
             $(".dataflash-used").css({
                 display: 'none'
@@ -339,7 +334,7 @@ function onConnect() {
                 width: ((DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
                 display: 'block'
             });
-            $(".dataflash-free div").text('Free space ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+            $(".dataflash-free div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
         } else {
             $(".dataflash-free").css({
                 display: 'none'
@@ -347,7 +342,12 @@ function onConnect() {
         }
         
     }
-    
+    update_html();
+        
+        
+        
+        
+
     // testing dataflash change END        
 
     
