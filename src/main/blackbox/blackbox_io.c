@@ -76,6 +76,7 @@
 #include "config/config_master.h"
 
 #include "io/flashfs.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #ifdef BLACKBOX
 
@@ -90,12 +91,23 @@ int32_t blackboxHeaderBudget;
 static serialPort_t *blackboxPort = NULL;
 static portSharing_e blackboxPortSharing;
 
+#ifdef USE_SDCARD
+
+static afatfsFilePtr_t sdFile;
+
+#endif
+
 void blackboxWrite(uint8_t value)
 {
     switch (masterConfig.blackbox_device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsWriteByte(value); // Write byte asynchronously
+        break;
+#endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            afatfs_fputc(sdFile, value);
         break;
 #endif
         case BLACKBOX_DEVICE_SERIAL:
@@ -165,6 +177,13 @@ int blackboxPrint(const char *s)
         case BLACKBOX_DEVICE_FLASH:
             length = strlen(s);
             flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+        break;
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            length = strlen(s);
+            afatfs_fwrite(sdFile, (const uint8_t*) s, length); // Ignore failures due to buffers filling up
         break;
 #endif
 
@@ -504,6 +523,11 @@ bool blackboxDeviceFlush(void)
             return flashfsFlushAsync();
 #endif
 
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            return afatfs_flush();
+#endif
+
         default:
             return false;
     }
@@ -567,6 +591,17 @@ bool blackboxDeviceOpen(void)
             return true;
         break;
 #endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            if (afatfs_getFilesystemState() != AFATFS_FILESYSTEM_STATE_READY || afatfs_isFull()) {
+                return false;
+            }
+
+            blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
+
+            return true;
+        break;
+#endif
         default:
             return false;
     }
@@ -595,6 +630,28 @@ void blackboxDeviceClose(void)
             // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
             break;
 #endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            afatfs_fclose(sdFile, NULL);
+            sdFile = NULL;
+            break;
+#endif
+    }
+}
+
+/**
+ * Terminate the current log (for devices which support separations between the logs of multiple flights)
+ */
+void blackboxDeviceEndLog(void)
+{
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            if (afatfs_fclose(sdFile, NULL)) {
+                sdFile = NULL;
+            }
+        break;
+#endif
     }
 }
 
@@ -607,6 +664,11 @@ bool isBlackboxDeviceFull(void)
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             return flashfsIsEOF();
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            return afatfs_isFull();
 #endif
 
         default:
@@ -629,6 +691,11 @@ void blackboxReplenishHeaderBudget()
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             freeSpace = flashfsGetWriteBufferFreeSpace();
+        break;
+#endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            freeSpace = afatfs_getFreeBufferSpace();
         break;
 #endif
         default:
@@ -690,6 +757,12 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
                 flashfsFlushAsync();
             }
 
+            return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            // Assume that all writes will fit in the SDCard's buffers
             return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif
 

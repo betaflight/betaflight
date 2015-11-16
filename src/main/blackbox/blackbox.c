@@ -473,7 +473,7 @@ static void blackboxSetState(BlackboxState newState)
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             xmitState.u.startTime = millis();
-            blackboxDeviceFlush();
+            blackboxDeviceEndLog();
         break;
         default:
             ;
@@ -1388,7 +1388,7 @@ void handleBlackbox(void)
             blackboxAdvanceIterationTimers();
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
-            //On entry of this state, startTime is set and a flush is performed
+            //On entry of this state, startTime is set
 
             /*
              * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
