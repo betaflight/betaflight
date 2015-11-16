@@ -28,6 +28,9 @@ typedef enum BlackboxDevice {
 #ifdef USE_FLASHFS
     BLACKBOX_DEVICE_FLASH,
 #endif
+#ifdef USE_SDCARD
+    BLACKBOX_DEVICE_SDCARD,
+#endif
 
     BLACKBOX_DEVICE_END
 } BlackboxDevice;
@@ -72,6 +75,7 @@ void blackboxWriteFloat(float value);
 bool blackboxDeviceFlush(void);
 bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
+void blackboxDeviceEndLog(void);
 
 bool isBlackboxDeviceFull(void);
 

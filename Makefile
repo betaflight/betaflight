@@ -578,6 +578,8 @@ STM32F3DISCOVERY_SRC = \
 		   drivers/compass_ak8975.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
