@@ -360,27 +360,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
 }
 
-/*
-#documentation-controls {
-    float: right;
-    height: 22px;
-    line-height: 22px;
-    margin-right: 10px;
-}
-
-
-#button-documentation {
-    float: left;
-    padding: 0 12px 0 12px;
-    height: 18px;
-    line-height: 18px;
-    background-color: #ffcb18;
-    color: #000;
-    font-weight: bold;
-    border: solid 1px #c0c0c0;
-    display: none;
-}
-*/
 #options {
     float: right;
     width: 20px;
@@ -1472,3 +1451,12 @@ dialog {
         overflow-y: auto;
     }
 }
+
+@media only screen and (max-height: 700px) , only screen and (max-device-height: 700px) {
+
+.tab_container {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+    
+    }
