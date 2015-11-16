@@ -509,6 +509,8 @@ TABS.firmware_flasher.initialize = function (callback) {
                 chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
             });
 
+            $('input.erase_chip').change();
+
         });
 
         $(document).keypress(function (e) {
