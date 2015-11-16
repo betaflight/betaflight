@@ -12,7 +12,15 @@ TABS.motors.initialize = function (callback) {
     }
 
     function get_arm_status() {
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_motor_data);
+        MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_config);
+    }
+    
+    function load_config() {
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_3d);
+    }
+    
+    function load_3d() {
+        MSP.send_message(MSP_codes.MSP_3D, false, false, get_motor_data);
     }
     
     function update_arm_status() {
@@ -287,8 +295,13 @@ TABS.motors.initialize = function (callback) {
 
         $('div.sliders input').prop('min', MISC.mincommand);
         $('div.sliders input').prop('max', MISC.maxthrottle);
-        $('div.sliders input').val(MISC.mincommand);
         $('div.values li:not(:last)').text(MISC.mincommand);
+	
+	if(bit_check(BF_CONFIG.features,12)){
+            $('div.sliders input').val(_3D.neutral3d);
+        }else{
+	    $('div.sliders input').val(MISC.mincommand); 
+	}
 
         // UI hooks
         var buffering_set_motor = [],
@@ -341,7 +354,11 @@ TABS.motors.initialize = function (callback) {
                 $('div.sliders input').prop('disabled', true);
 
                 // change all values to default
-                $('div.sliders input').val(MISC.mincommand);
+                if (! bit_check(BF_CONFIG.features,12)) {
+                    $('div.sliders input').val(MISC.mincommand);
+                } else {
+                    $('div.sliders input').val(_3D.neutral3d);
+                }
 
                 // trigger change event so values are sent to mcu
                 $('div.sliders input').trigger('input');
@@ -351,11 +368,18 @@ TABS.motors.initialize = function (callback) {
         // check if motors are already spinning
         var motors_running = false;
 
-        for (var i = 0; i < MOTOR_DATA.length; i++) {
-            if (MOTOR_DATA[i] > MISC.mincommand) {
-                motors_running = true;
-                break;
-            }
+        for (var i = 0; i < number_of_valid_outputs; i++) {
+            if( ! bit_check(BF_CONFIG.features,12) ){
+                if (MOTOR_DATA[i] > MISC.mincommand) {
+                    motors_running = true;
+                    break;
+                }
+            }else{
+                if( (MOTOR_DATA[i] < _3D.deadband3d_low) || (MOTOR_DATA[i] > _3D.deadband3d_high) ){
+                    motors_running = true;
+                    break;
+                }
+            } 
         }
 
         if (motors_running) {

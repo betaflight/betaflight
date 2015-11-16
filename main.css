@@ -111,9 +111,9 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .headerbar {
-	height:110px;
-	width:100%;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
+    height:110px;
+    width:100%;
+    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
 }
 
 
@@ -491,6 +491,13 @@ input[type="number"]::-webkit-inner-spin-button {
     background-color: #2e2e2e;
 }
 
+.tab_container.logopen {
+    height: calc(100% - 235px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+
 #tabs {
     font-size: 13px;
 }
@@ -502,7 +509,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs.logopen ul {
     /* Cause the height to shrink to contain its floated contents while log is open */
-
 }
 
 .header-wrapper .mode-connected {
@@ -864,8 +870,8 @@ dialog {
 }
 
 .content_wrapper {
-  padding: 20px;
-  position: relative;
+    padding: 20px;
+    position: relative;
 }
 
 .content_toolbar {
@@ -1329,6 +1335,7 @@ dialog {
     font-size: 10px;
 }
 
+
 .fixfalse {
     background-color: #e60000;
     padding: 2px;
@@ -1539,3 +1546,12 @@ dialog {
         overflow-y: auto;
     }
 }
+
+@media only screen and (max-height: 700px) , only screen and (max-device-height: 700px) {
+
+.tab_container {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+    
+    }

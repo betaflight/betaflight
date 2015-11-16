@@ -124,8 +124,42 @@
 .tab-dataflash dialog .buttons {
     position: static;
     margin-top: 2em;
-    overflow: hidden;
-    width: auto;
+    float: left;
+}
+
+.tab-dataflash .buttons a {
+    margin-top: 9px;
+    margin-bottom: 0px;
+    margin-right: 10px;
+    background-color: #59aa29;
+    border-radius: 3px;
+    border: 1px solid #4c8829;
+    color: #fff;
+    float: left;
+    font-family: 'open_sansbold', Arial;
+    font-size: 12px;
+    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    display: block;
+    cursor: pointer;
+    transition: all ease 0.2s;
+    padding: 0px;
+    padding-left: 9px;
+    padding-right: 9px;
+    line-height: 28px;
+}
+
+.tab-dataflash .buttons a:hover {
+    background-color: #6ac435;
+    border: 1px solid #4d9324;
+    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    color: #fff;
+    transition: all ease 0.2s;
+}
+
+.tab-dataflash .buttons a:active {
+    background-color: #4d9324;
+    transition: all ease 0.0s;
+    box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
 }
 
 .tab-dataflash dialog h3 {
