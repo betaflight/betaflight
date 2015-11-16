@@ -69,6 +69,10 @@
 #define SDCARD_SPI_CS_GPIO                GPIOB
 #define SDCARD_SPI_CS_PIN                 GPIO_Pin_12
 #define SDCARD_SPI_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
+// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2
 
 #define ACC
 #define USE_ACC_LSM303DLHC

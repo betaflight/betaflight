@@ -370,7 +370,7 @@ static bool sdcard_completeInit()
         DESELECT_SDCARD;
     }
 
-    spiSetDivisor(SDCARD_SPI_INSTANCE, 4);
+    spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
 
     sdcard.state = SDCARD_STATE_READY;
 
@@ -400,7 +400,7 @@ static bool sdcard_checkInitDone() {
 bool sdcard_init()
 {
     // Max frequency is initially 400kHz
-    spiSetDivisor(SDCARD_SPI_INSTANCE, 128);
+    spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
 
     // SDCard wants 1ms minimum delay after power is applied to it
     delay(1000);
