@@ -1203,28 +1203,28 @@
     "controlAxisAux8": {
         "message": "AUX 8"
     },
-    "pid_label_basic": {
+    "pidTuningBasic": {
         "message": "Basic/Acro"
     },
-    "pid_label_level": {
+    "pidTuningLevel": {
         "message": "Angle/Horizon"
     },
-    "pid_label_alt": {
+    "pidTuningAltitude": {
         "message": "Barometer & Sonar/Altitude"
     },
-    "pid_label_mag": {
+    "pidTuningMag": {
         "message": "Magnometer/Heading"
     },
-    "pid_label_gps": {
+    "pidTuningGps": {
         "message": "GPS Navigation"
     },
-    "pid_level_labelP": {
+    "pidTuningLevelP": {
         "message": "Strength (Angle)"
     },
-    "pid_level_labelI": {
+    "pidTuningLevelI": {
         "message": "Strength (Horizon)"
     },
-    "pid_level_labelD": {
+    "pidTuningLevelD": {
         "message": "Transition (Horizon)"
     },
     "pidHelp1": {
