@@ -96,6 +96,9 @@ function configuration_backup(callback) {
             uniqueData.push(MSP_codes.MSP_LOOP_TIME);
             uniqueData.push(MSP_codes.MSP_ARMING_CONFIG);
         }
+        if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
+            uniqueData.push(MSP_codes.MSP_3D);
+        }
     }
     
     update_unique_data_list();
@@ -119,6 +122,9 @@ function configuration_backup(callback) {
                 if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
                     configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
                     configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
+                }
+                if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
+                    configuration._3D = jQuery.extend(true, {}, _3D);
                 }
 
                 save();
@@ -486,6 +492,21 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+
+        if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.14.0')) {
+            // api 1.14 exposes 3D configuration
+            
+            if (configuration._3D == undefined) {
+                configuration._3D = {
+                    deadband3d_low:         1406,
+                    deadband3d_high:        1514,
+                    neutral3d:              1460,
+                    deadband3d_throttle:    50
+                };
+            }
+            appliedMigrationsCount++;
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
@@ -593,6 +614,9 @@ function configuration_restore(callback) {
                         uniqueData.push(MSP_codes.MSP_SET_LOOP_TIME);
                         uniqueData.push(MSP_codes.MSP_SET_ARMING_CONFIG);
                     }
+                    if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
+                        uniqueData.push(MSP_codes.MSP_SET_3D);
+                    }
                 }
                 
                 function load_objects() {
@@ -603,6 +627,7 @@ function configuration_restore(callback) {
                     LED_STRIP = configuration.LED_STRIP;
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
+                    _3D = configuration._3D;
                 }
 
                 function send_unique_data_item() {
