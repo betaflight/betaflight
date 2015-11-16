@@ -71,10 +71,39 @@ TABS.gps.initialize = function (callback) {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
 
+
+//check for internet connection on load
+if (navigator.onLine) {
+  console.log('Online');
+  $('#connect').hide();
+  $('#map').show();
+} else {
+  console.log('Offline');
+  $('#connect').show();
+  $('#map').hide();
+}
+
+$("#check").on('click',function(){
+if (navigator.onLine) {
+  console.log('Online');
+  $('#connect').hide();
+  $('#map').show();
+
+} else {
+  console.log('Offline');
+  $('#connect').show();
+  $('#map').hide();
+  }
+ });
+ 
+ 
         GUI.content_ready(callback);
     }
+
 };
 
+
+ 
 TABS.gps.cleanup = function (callback) {
     if (callback) callback();
 };

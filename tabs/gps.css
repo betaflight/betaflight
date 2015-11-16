@@ -18,11 +18,14 @@
 
 .tab-gps a {
     font-weight: bold;
+    te
 }
 
-.tab-gps a:hover {
-    text-decoration: underline;
+#map {
+    display:none;
 }
+
+
 
 progress[value]::-webkit-progress-bar {
     background-color: #d2d2d2;
