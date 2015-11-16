@@ -11,7 +11,7 @@ function startApplication() {
         frame: 'chrome',
         innerBounds: {
             minWidth: 1024,
-            minHeight: 600
+            minHeight: 550
         }
     }, function (createdWindow) {
         createdWindow.contentWindow.addEventListener('load', function () {
