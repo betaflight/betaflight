@@ -1203,6 +1203,30 @@
     "controlAxisAux8": {
         "message": "AUX 8"
     },
+    "pidTuningBasic": {
+        "message": "Basic/Acro"
+    },
+    "pidTuningLevel": {
+        "message": "Angle/Horizon"
+    },
+    "pidTuningAltitude": {
+        "message": "Barometer & Sonar/Altitude"
+    },
+    "pidTuningMag": {
+        "message": "Magnometer/Heading"
+    },
+    "pidTuningGps": {
+        "message": "GPS Navigation"
+    },
+    "pidTuningLevelP": {
+        "message": "Strength (Angle)"
+    },
+    "pidTuningLevelI": {
+        "message": "Strength (Horizon)"
+    },
+    "pidTuningLevelD": {
+        "message": "Transition (Horizon)"
+    },
     "pidHelp1": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },

@@ -14,7 +14,6 @@
     border-radius: 5px;
     border: 1px solid #e4e4e4;
     margin-bottom: 10px;
-    /* min-height:400px; */
 }
 
 .attitude_info {
@@ -173,7 +172,6 @@
     #interactive_block {
         position: absolute;
         width: calc(75% - 20px);
-        min-height: 300px;
         height: calc(100% - 218px);
     }
 }

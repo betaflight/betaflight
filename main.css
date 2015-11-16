@@ -111,9 +111,9 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .headerbar {
-	height:110px;
-	width:100%;
-	background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
+    height:110px;
+    width:100%;
+    background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));
 }
 
 
@@ -360,27 +360,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
 }
 
-/*
-#documentation-controls {
-    float: right;
-    height: 22px;
-    line-height: 22px;
-    margin-right: 10px;
-}
-
-
-#button-documentation {
-    float: left;
-    padding: 0 12px 0 12px;
-    height: 18px;
-    line-height: 18px;
-    background-color: #ffcb18;
-    color: #000;
-    font-weight: bold;
-    border: solid 1px #c0c0c0;
-    display: none;
-}
-*/
 #options {
     float: right;
     width: 20px;
@@ -512,6 +491,13 @@ input[type="number"]::-webkit-inner-spin-button {
     background-color: #2e2e2e;
 }
 
+.tab_container.logopen {
+    height: calc(100% - 235px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+
 #tabs {
     font-size: 13px;
 }
@@ -523,7 +509,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs.logopen ul {
     /* Cause the height to shrink to contain its floated contents while log is open */
-
 }
 
 .header-wrapper .mode-connected {
@@ -885,13 +870,8 @@ dialog {
 }
 
 .content_wrapper {
-    /* leave 20px side padding always */
-    /*padding: 0 20px 0 20px;
-    for testing: */
-  padding: 20px;
-  position: relative;
-  /*float: left;
-  width:calc(100% - 40px);*/
+    padding: 20px;
+    position: relative;
 }
 
 .content_toolbar {
@@ -1097,9 +1077,6 @@ dialog {
 }
 
 .fixed_band .save_btn a {
-    /*	line-height:20px;
-	padding:3px 13px 5px 13px;
-	*/
     margin-top: 9px;
     margin-bottom: 0px;
     margin-right: 20px;
@@ -1353,7 +1330,7 @@ dialog {
     border-radius: 3px;
     color: #fff;
     font-size: 10px;
-	}
+    }
 
 .fixfalse {
     background-color: #e60000;
@@ -1474,3 +1451,12 @@ dialog {
         overflow-y: auto;
     }
 }
+
+@media only screen and (max-height: 700px) , only screen and (max-device-height: 700px) {
+
+.tab_container {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+    
+    }
