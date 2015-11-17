@@ -702,27 +702,6 @@ void filterRc(void){
     }
 }
 
-// Gyro Low Pass
-void filterGyro(void) {
-    int axis;
-    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (masterConfig.looptime > 0) {
-            // Static dT calculation based on configured looptime
-            if (!gyroADCState[axis].constdT) {
-                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
-            }
-
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
-        }
-
-        else {
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
-        }
-    }
-}
-
 void loop(void)
 {
     static uint32_t loopTime;
@@ -780,10 +759,6 @@ void loop(void)
         previousTime = currentTime;
 
         dT = (float)cycleTime * 0.000001f;
-
-        if (currentProfile->pidProfile.gyro_cut_hz) {
-            filterGyro();
-        }
 
         annexCode();
 
