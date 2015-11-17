@@ -285,17 +285,16 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
                 posEstimator.gps.pos = newLocalPos;
 
                 /* Use VELNED provided by GPS if available, calculate from coordinates otherwise */
+                float gpsScaleLonDown = constrainf(cos_approx((ABS(newLat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
                 if (velNEValid) {
                     posEstimator.gps.vel.V.X = velN;
                     posEstimator.gps.vel.V.Y = velE;
                 }
                 else {
-                    float gpsScaleLonDown = constrainf(cos_approx((ABS(newLat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
                     posEstimator.gps.vel.V.X = (posEstimator.gps.vel.V.X + (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLat - previousLat) / dT)) / 2.0f;
                     posEstimator.gps.vel.V.Y = (posEstimator.gps.vel.V.Y + (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLon - previousLon) / dT)) / 2.0f;
                 }
-                
-                float gpsScaleLonDown = constrainf(cos_approx((ABS(newLat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
+
                 NAV_BLACKBOX_DEBUG(0, velN);
                 NAV_BLACKBOX_DEBUG(1, (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLat - previousLat) / dT));
                 NAV_BLACKBOX_DEBUG(2, velE);
@@ -338,27 +337,33 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
 static void updateBaroTopic(uint32_t currentTime)
 {
     static navigationTimer_t baroUpdateTimer;
+    /*
     static filterWithBufferSample_t baroClimbRateFilterBuffer[INAV_BARO_CLIMB_RATE_FILTER_SIZE];
     static filterWithBufferState_t baroClimbRateFilter;
     static bool climbRateFiltersInitialized = false;
+    */
 
     if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTime)) {
+        /*
         if (!climbRateFiltersInitialized) {
             filterWithBufferInit(&baroClimbRateFilter, &baroClimbRateFilterBuffer[0], INAV_BARO_CLIMB_RATE_FILTER_SIZE);
             climbRateFiltersInitialized = true;
         }
+        */
 
         float newBaroAlt = baroCalculateAltitude();
         if (sensors(SENSOR_BARO) && isBaroCalibrationComplete()) {
+            /*
             filterWithBufferUpdate(&baroClimbRateFilter, newBaroAlt, currentTime);
             float baroClimbRate = filterWithBufferApply_Derivative(&baroClimbRateFilter) * 1e6f;
 
             // FIXME: do we need this?
             baroClimbRate = constrainf(baroClimbRate, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
             baroClimbRate = applyDeadband(baroClimbRate, 10);       // to reduce noise near zero
+            */
 
             posEstimator.baro.alt = newBaroAlt;
-            posEstimator.baro.vel = baroClimbRate;
+            posEstimator.baro.vel = 0; //baroClimbRate;
             posEstimator.baro.epv = posControl.navConfig->inav.baro_epv;
             posEstimator.baro.lastUpdateTime = currentTime;
         }
@@ -511,7 +516,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
         /* accelerometer bias correction for baro */
         if (isBaroValid) {
             accelBiasCorr.V.Z -= (posEstimator.baro.alt - posEstimator.est.pos.V.Z) * sq(posControl.navConfig->inav.w_z_baro_p);
-            accelBiasCorr.V.Z -= (posEstimator.baro.vel - posEstimator.est.vel.V.Z) * posControl.navConfig->inav.w_z_baro_v;
+            //accelBiasCorr.V.Z -= (posEstimator.baro.vel - posEstimator.est.vel.V.Z) * posControl.navConfig->inav.w_z_baro_v;
         }
 
         /* transform error vector from NEU frame to body frame */
@@ -533,7 +538,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
         if (isBaroValid) {
             /* Apply only baro correction, no sonar */
             inavFilterCorrectPos(Z, dt, posEstimator.baro.alt - posEstimator.est.pos.V.Z, posControl.navConfig->inav.w_z_baro_p);
-            inavFilterCorrectVel(Z, dt, posEstimator.baro.vel - posEstimator.est.vel.V.Z, posControl.navConfig->inav.w_z_baro_v);
+            //inavFilterCorrectVel(Z, dt, posEstimator.baro.vel - posEstimator.est.vel.V.Z, posControl.navConfig->inav.w_z_baro_v);
 
             /* Adjust EPV */
             posEstimator.est.epv = MIN(posEstimator.est.epv, posEstimator.baro.epv);
