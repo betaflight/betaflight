@@ -20,14 +20,14 @@
     font-weight: bold;
 }
 
-#map-canvas {
+.tab-gps #map-canvas {
     height: 100%;
     background: #ccc;
     width: 100%;
     float: left;
 }
 
-#map {
+.tab-gps #map {
     height: 100%;
     width: 100%;
 }
