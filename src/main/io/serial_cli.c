@@ -353,7 +353,7 @@ static const char * const lookupTableGimbalMode[] = {
 };
 
 static const char * const lookupTableBlackboxDevice[] = {
-    "SERIAL", "SPIFLASH"
+    "SERIAL", "SPIFLASH", "SDCARD"
 };
 
 
