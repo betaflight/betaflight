@@ -26,6 +26,7 @@
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -174,6 +175,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
+    pidProfile->gyro_soft_lpf = 0;   // LOW filtering by default
     pidProfile->dterm_cut_hz = 40;
     pidProfile->yaw_pterm_cut_hz = 50;
 
@@ -691,7 +693,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig);
+    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf));
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

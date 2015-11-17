@@ -350,6 +350,10 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B-RJ01"
 };
 
+static const char * const lookupTableGyroFilter[] = {
+    "OFF", "LOW", "MEDIUM", "HIGH"
+};
+
 
 typedef struct lookupTableEntry_s {
     const char * const *values;
@@ -367,7 +371,8 @@ typedef enum {
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
-    TABLE_SERIAL_RX
+    TABLE_SERIAL_RX,
+    TABLE_GYRO_FILTER,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -381,7 +386,8 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
-    { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) }
+    { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+	{ lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -626,8 +632,9 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], .config.minmax = { 0,  200 } },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
 
-    { "yaw_pterm_cut_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz, .config.minmax = { 0,  200 } },
-	{ "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = { 0,  200 } },
+    { "gyro_soft_lpf",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.gyro_soft_lpf, .config.lookup = { TABLE_GYRO_FILTER } },
+    { "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
+    { "yaw_pterm_cut_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz, .config.minmax = {0, 200 } },
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 } },

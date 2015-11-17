@@ -38,13 +38,16 @@ int16_t gyroADC[XYZ_AXIS_COUNT];
 int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
+static int8_t * gyroFIRTable = 0L;
+static int16_t gyroFIRState[3][9];
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse)
+void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t * filterTableToUse)
 {
     gyroConfig = gyroConfigToUse;
+    gyroFIRTable = filterTableToUse;
 }
 
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -121,9 +124,12 @@ void gyroUpdate(void)
     if (!gyro.read(gyroADC)) {
         return;
     }
-    alignSensors(gyroADC, gyroADC, gyroAlign);
 
-    filterApply7TapFIR(gyroADC); // Apply filter to gyro
+    if (gyroFIRTable) {
+        filterApply9TapFIR(gyroADC, gyroFIRState, gyroFIRTable);
+    }
+
+    alignSensors(gyroADC, gyroADC, gyroAlign);
 
     if (!isGyroCalibrationComplete()) {
         performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);

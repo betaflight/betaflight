@@ -18,6 +18,8 @@
 #pragma once
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
+#define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 
 typedef enum {
     PIDROLL,
@@ -34,15 +36,15 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_REWRITE = 1,
+    PID_CONTROLLER_MWREWRITE,
     PID_CONTROLLER_LUX_FLOAT,
-	PID_COUNT
+    PID_COUNT
 } pidControllerType_e;
 
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
-    uint8_t pidController;                  // 1 = rewrite, 2 = luxfloat
+    uint8_t pidController;                  // 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Luggi09s new baseflight pid
 
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
@@ -55,8 +57,10 @@ typedef struct pidProfile_s {
     float H_level;
     uint8_t H_sensitivity;
 
+    uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-    uint8_t yaw_pterm_cut_hz;              // Yaw P low pass filter for pterm. very usefull on noisy setups
+    uint8_t yaw_pterm_cut_hz;               // Used for filering Pterm noise on noisy frames
+    uint8_t gyro_soft_lpf;                  // Gyro FIR filter
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
