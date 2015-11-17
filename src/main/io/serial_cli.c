@@ -341,7 +341,7 @@ static const char * const lookupTablePidController[] = {
 };
 
 static const char * const lookupTableBlackboxDevice[] = {
-    "SERIAL", "SPIFLASH"
+    "SERIAL", "SPIFLASH", "SDCARD"
 };
 
 static const char * const lookupTableSerialRX[] = {

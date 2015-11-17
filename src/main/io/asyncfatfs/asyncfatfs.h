@@ -48,11 +48,12 @@ uint32_t afatfs_fread(afatfsFilePtr_t file, uint8_t *buffer, uint32_t len);
 afatfsOperationStatus_e afatfs_fseek(afatfsFilePtr_t file, int32_t offset, afatfsSeek_e whence);
 bool afatfs_ftell(afatfsFilePtr_t file, uint32_t *position);
 
-afatfsFilePtr_t afatfs_mkdir(const char *filename, afatfsFileCallback_t complete);
+bool afatfs_mkdir(const char *filename, afatfsFileCallback_t complete);
 bool afatfs_chdir(afatfsFilePtr_t dirHandle);
 
 void afatfs_findFirst(afatfsFilePtr_t directory, afatfsFinder_t *finder);
 afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_t *finder, fatDirectoryEntry_t **dirEntry);
+void afatfs_findLast(afatfsFilePtr_t directory);
 
 bool afatfs_flush();
 void afatfs_init();

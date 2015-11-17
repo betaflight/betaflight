@@ -129,6 +129,9 @@ typedef struct afatfsCacheBlockDescriptor_t {
     /*
      * The state of this block must not transition (do not flush to disk, do not discard). This is useful for a sector
      * which is currently being written to by the application (so flushing it would be a waste of time).
+     *
+     * This is a binary state rather than a counter because we assume that only one file will be responsible for the
+     * sectors it locks.
      */
     unsigned locked:1;
 
@@ -312,7 +315,9 @@ typedef struct afatfsFile_t {
      * seek across a sector boundary. This allows fwrite() to complete faster because it doesn't need to check the
      * cache on every call.
      */
-    int8_t lockedCacheIndex;
+    int8_t writeLockedCacheIndex;
+    // Ditto for fread():
+    int8_t readRetainCacheIndex;
 
     // The position of our directory entry on the disk (so we can update it without consulting a parent directory file)
     afatfsDirEntryPointer_t directoryEntryPos;
@@ -392,7 +397,7 @@ static afatfs_t afatfs;
 
 static void afatfs_fileOperationContinue(afatfsFile_t *file);
 static uint8_t* afatfs_fileLockCursorSectorForWrite(afatfsFilePtr_t file);
-static uint8_t* afatfs_fileGetCursorSectorForRead(afatfsFilePtr_t file);
+static uint8_t* afatfs_fileRetainCursorSectorForRead(afatfsFilePtr_t file);
 
 static uint32_t roundUpTo(uint32_t value, uint32_t rounding)
 {
@@ -659,6 +664,7 @@ bool afatfs_flush()
             if (afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY && !afatfs.cacheDescriptor[i].locked) {
                 afatfs_cacheFlushSector(i);
 
+                // That flush will take time to complete so we may as well tell caller to come back later
                 return false;
             }
         }
@@ -957,9 +963,13 @@ static afatfsOperationStatus_e afatfs_FATSetNextCluster(uint32_t startCluster, u
 
 static void afatfs_fileUnlockCacheSector(afatfsFilePtr_t file)
 {
-    if (file->lockedCacheIndex != -1) {
-        afatfs.cacheDescriptor[file->lockedCacheIndex].locked = 0;
-        file->lockedCacheIndex = -1;
+    if (file->writeLockedCacheIndex != -1) {
+        afatfs.cacheDescriptor[file->writeLockedCacheIndex].locked = 0;
+        file->writeLockedCacheIndex = -1;
+    }
+    if (file->readRetainCacheIndex != -1) {
+        afatfs.cacheDescriptor[file->readRetainCacheIndex].retainCount = MAX(afatfs.cacheDescriptor[file->readRetainCacheIndex].retainCount - 1, 0);
+        file->readRetainCacheIndex = -1;
     }
 }
 
@@ -1208,6 +1218,9 @@ static afatfsOperationStatus_e afatfs_saveDirectoryEntry(afatfsFilePtr_t file)
 {
     uint8_t *sector;
     afatfsOperationStatus_e result;
+
+    if (file->directoryEntryPos.sectorNumberPhysical == 0)
+        return AFATFS_OPERATION_SUCCESS; // Root directories don't have a directory entry
 
     result = afatfs_cacheSector(file->directoryEntryPos.sectorNumberPhysical, &sector, AFATFS_CACHE_READ | AFATFS_CACHE_WRITE);
 
@@ -1548,20 +1561,26 @@ static bool afatfs_isEndOfAllocatedFile(afatfsFilePtr_t file)
 }
 
 /**
+ * Take a lock on the sector at the current file cursor position.
  *
+ * Returns a pointer to the sector buffer if successful, or NULL if at the end of file (check afatfs_isEndOfAllocatedFile())
+ * or the sector has not yet been read in from disk.
  */
-static uint8_t* afatfs_fileGetCursorSectorForRead(afatfsFilePtr_t file)
+static uint8_t* afatfs_fileRetainCursorSectorForRead(afatfsFilePtr_t file)
 {
     uint8_t *result;
 
     uint32_t physicalSector = afatfs_fileGetCursorPhysicalSector(file);
 
-    if (file->lockedCacheIndex != -1) {
-        if (!afatfs_assert(physicalSector == afatfs.cacheDescriptor[file->lockedCacheIndex].sectorIndex)) {
+    /* If we've already got a locked sector then we can assume that was the same one that's at the cursor (because this
+     * cache is invalidated when crossing a sector boundary)
+     */
+    if (file->readRetainCacheIndex != -1) {
+        if (!afatfs_assert(physicalSector == afatfs.cacheDescriptor[file->readRetainCacheIndex].sectorIndex)) {
             return NULL;
         }
 
-        result = afatfs_cacheSectorGetMemory(file->lockedCacheIndex);
+        result = afatfs_cacheSectorGetMemory(file->readRetainCacheIndex);
     } else {
         if (afatfs_isEndOfAllocatedFile(file)) {
             return NULL;
@@ -1572,7 +1591,7 @@ static uint8_t* afatfs_fileGetCursorSectorForRead(afatfsFilePtr_t file)
         afatfsOperationStatus_e status = afatfs_cacheSector(
             physicalSector,
             &result,
-            AFATFS_CACHE_READ | AFATFS_CACHE_LOCK
+            AFATFS_CACHE_READ | AFATFS_CACHE_RETAIN
         );
 
         if (status != AFATFS_OPERATION_SUCCESS) {
@@ -1580,7 +1599,67 @@ static uint8_t* afatfs_fileGetCursorSectorForRead(afatfsFilePtr_t file)
             return NULL;
         }
 
-        file->lockedCacheIndex = afatfs_getCacheDescriptorIndexForBuffer(result);
+        file->readRetainCacheIndex = afatfs_getCacheDescriptorIndexForBuffer(result);
+    }
+
+    return result;
+}
+
+/**
+ * Lock the sector at the file's cursor position for write, and return a reference to the memory for that sector.
+ *
+ * Returns NULL if the cache was too busy, try again later.
+ */
+static uint8_t* afatfs_fileLockCursorSectorForWrite(afatfsFilePtr_t file)
+{
+    afatfsOperationStatus_e status;
+    uint8_t *result;
+
+
+    if (file->writeLockedCacheIndex != -1) {
+        uint32_t physicalSector = afatfs_fileGetCursorPhysicalSector(file);
+
+        if (!afatfs_assert(physicalSector == afatfs.cacheDescriptor[file->writeLockedCacheIndex].sectorIndex)) {
+            return NULL;
+        }
+
+        result = afatfs_cacheSectorGetMemory(file->writeLockedCacheIndex);
+    } else {
+        // Find / allocate a sector and lock it in the cache so we can rely on it sticking around
+
+        // Are we at the start of an empty file or the end of a non-empty file? If so we need to add a cluster
+        if (afatfs_isEndOfAllocatedFile(file) && afatfs_appendFreeCluster(file) != AFATFS_OPERATION_SUCCESS) {
+            // The extension of the file is in progress so please call us again later to try again
+            return NULL;
+        }
+
+        uint32_t physicalSector = afatfs_fileGetCursorPhysicalSector(file);
+        uint8_t cacheFlags = AFATFS_CACHE_WRITE | AFATFS_CACHE_LOCK;
+        uint32_t cursorOffsetInSector = file->cursorOffset % AFATFS_SECTOR_SIZE;
+
+        /*
+         * If there is data before the write point, or there could be data after the write-point
+         * then we need to have the original contents of the sector in the cache for us to merge into
+         */
+        if (
+            cursorOffsetInSector > 0
+            || (file->cursorOffset & ~(AFATFS_SECTOR_SIZE - 1)) + AFATFS_SECTOR_SIZE < file->directoryEntry.fileSize
+        ) {
+            cacheFlags |= AFATFS_CACHE_READ;
+        }
+
+        status = afatfs_cacheSector(
+            physicalSector,
+            &result,
+            cacheFlags
+        );
+
+        if (status != AFATFS_OPERATION_SUCCESS) {
+            // Not enough cache available to accept this write / sector not ready for read
+            return NULL;
+        }
+
+        file->writeLockedCacheIndex = afatfs_getCacheDescriptorIndexForBuffer(result);
     }
 
     return result;
@@ -1822,7 +1901,7 @@ afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_
         }
     }
 
-    sector = afatfs_fileGetCursorSectorForRead(directory);
+    sector = afatfs_fileRetainCursorSectorForRead(directory);
 
     if (sector) {
         finder->entryIndex++;
@@ -1841,6 +1920,14 @@ afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_
 
         return AFATFS_OPERATION_IN_PROGRESS;
     }
+}
+
+/**
+ * Release resources associated with a find operation.
+ */
+void afatfs_findLast(afatfsFilePtr_t directory)
+{
+    afatfs_fileUnlockCacheSector(directory);
 }
 
 /**
@@ -1888,8 +1975,8 @@ static afatfsOperationStatus_e afatfs_extendSubdirectoryContinue(afatfsFile_t *d
 
                 memset(sectorBuffer, 0, AFATFS_SECTOR_SIZE);
 
-                // If this is the first sector of the directory, create the "." and ".." entries
-                if (directory->cursorOffset == 0) {
+                // If this is the first sector of a non-root directory, create the "." and ".." entries
+                if (afatfs.currentDirectory.directoryEntryPos.sectorNumberPhysical != 0 && directory->cursorOffset == 0) {
                     fatDirectoryEntry_t *dirEntries = (fatDirectoryEntry_t *) sectorBuffer;
 
                     memset(dirEntries[0].filename, ' ', sizeof(dirEntries[0].filename));
@@ -2005,6 +2092,7 @@ static afatfsOperationStatus_e afatfs_allocateDirectoryEntry(afatfsFilePtr_t dir
             if (fat_isDirectoryEntryEmpty(*dirEntry) || fat_isDirectoryEntryTerminator(*dirEntry)) {
                 afatfs_cacheSectorMarkDirty((uint8_t*) *dirEntry);
 
+                afatfs_findLast(directory);
                 return AFATFS_OPERATION_SUCCESS;
             }
         } else {
@@ -2193,29 +2281,41 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
             do {
                 status = afatfs_findNext(&afatfs.currentDirectory, &file->directoryEntryPos, &entry);
 
-                if (status == AFATFS_OPERATION_SUCCESS) {
-                    if (entry == NULL || fat_isDirectoryEntryTerminator(entry)) {
-                        if ((file->mode & AFATFS_FILE_MODE_CREATE) != 0) {
-                            // The file didn't already exist, so we can create it. Allocate a new directory entry
-                            afatfs_findFirst(&afatfs.currentDirectory, &file->directoryEntryPos);
+                switch (status) {
+                    case AFATFS_OPERATION_SUCCESS:
+                        // Is this the last entry in the directory?
+                        if (entry == NULL || fat_isDirectoryEntryTerminator(entry)) {
+                            afatfs_findLast(&afatfs.currentDirectory);
 
-                            opState->phase = AFATFS_CREATEFILE_PHASE_CREATE_NEW_FILE;
-                            goto doMore;
-                        } else {
-                            // File not found.
-                            opState->phase = AFATFS_CREATEFILE_PHASE_FAILURE;
-                            goto doMore;
-                        }
-                    } else if (strncmp(entry->filename, (char*) file->directoryEntry.filename, FAT_FILENAME_LENGTH) == 0) {
-                        // We found a file with this name!
-                        memcpy(&file->directoryEntry, entry, sizeof(file->directoryEntry));
+                            if ((file->mode & AFATFS_FILE_MODE_CREATE) != 0) {
+                                // The file didn't already exist, so we can create it. Allocate a new directory entry
+                                afatfs_findFirst(&afatfs.currentDirectory, &file->directoryEntryPos);
 
-                        opState->phase = AFATFS_CREATEFILE_PHASE_SUCCESS;
+                                opState->phase = AFATFS_CREATEFILE_PHASE_CREATE_NEW_FILE;
+                                goto doMore;
+                            } else {
+                                // File not found.
+
+                                opState->phase = AFATFS_CREATEFILE_PHASE_FAILURE;
+                                goto doMore;
+                            }
+                        } else if (strncmp(entry->filename, (char*) file->directoryEntry.filename, FAT_FILENAME_LENGTH) == 0) {
+                            // We found a file with this name!
+                            memcpy(&file->directoryEntry, entry, sizeof(file->directoryEntry));
+
+                            afatfs_findLast(&afatfs.currentDirectory);
+
+                            opState->phase = AFATFS_CREATEFILE_PHASE_SUCCESS;
+                            goto doMore;
+                        } // Else this entry doesn't match, fall through and continue the search
+                    break;
+                    case AFATFS_OPERATION_FAILURE:
+                        afatfs_findLast(&afatfs.currentDirectory);
+                        opState->phase = AFATFS_CREATEFILE_PHASE_FAILURE;
                         goto doMore;
-                    }
-                } else if (status == AFATFS_OPERATION_FAILURE) {
-                    opState->phase = AFATFS_CREATEFILE_PHASE_FAILURE;
-                    goto doMore;
+                    break;
+                    case AFATFS_OPERATION_IN_PROGRESS:
+                        ;
                 }
             } while (status == AFATFS_OPERATION_SUCCESS);
         break;
@@ -2299,7 +2399,8 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
 static void afatfs_initFileHandle(afatfsFilePtr_t file)
 {
     memset(file, 0, sizeof(*file));
-    file->lockedCacheIndex = -1;
+    file->writeLockedCacheIndex = -1;
+    file->readRetainCacheIndex = -1;
 }
 
 static void afatfs_funlinkContinue(afatfsFilePtr_t file)
@@ -2410,12 +2511,12 @@ static void afatfs_closeFileContinue(afatfsFilePtr_t file)
 
     /*
      * Directories don't update their parent directory entries over time, because their fileSize field in the directory
-     * never changes (when we add the first clsuter to the directory we save the directory entry at that point and it
+     * never changes (when we add the first cluster to the directory we save the directory entry at that point and it
      * doesn't change afterwards).
      *
      * So don't bother trying to save their directory entries during fclose().
      */
-    if (file->type != AFATFS_FILE_TYPE_DIRECTORY) {
+    if (file->type != AFATFS_FILE_TYPE_DIRECTORY && file->type != AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY) {
         if (afatfs_saveDirectoryEntry(file) != AFATFS_OPERATION_SUCCESS) {
             return;
         }
@@ -2467,16 +2568,20 @@ bool afatfs_fclose(afatfsFilePtr_t file, afatfsCallback_t callback)
  * Create a new directory with the given name, or open the directory if it already exists.
  *
  * The directory will be passed to the callback, or NULL if the creation failed.
+ *
+ * Returns true if the directory creation was begun, or false if there are too many open files.
  */
-afatfsFilePtr_t afatfs_mkdir(const char *filename, afatfsFileCallback_t callback)
+bool afatfs_mkdir(const char *filename, afatfsFileCallback_t callback)
 {
     afatfsFilePtr_t file = afatfs_allocateFileHandle();
 
     if (file) {
         afatfs_createFile(file, filename, FAT_FILE_ATTRIBUTE_DIRECTORY, AFATFS_FILE_MODE_CREATE | AFATFS_FILE_MODE_READ | AFATFS_FILE_MODE_WRITE, callback);
+    } else if (callback) {
+        callback(NULL);
     }
 
-    return file;
+    return file != NULL;
 }
 
 /**
@@ -2508,6 +2613,9 @@ bool afatfs_chdir(afatfsFilePtr_t directory)
         afatfs.currentDirectory.directoryEntry.firstClusterHigh = afatfs.rootDirectoryCluster >> 16;
         afatfs.currentDirectory.directoryEntry.firstClusterLow = afatfs.rootDirectoryCluster & 0xFFFF;
         afatfs.currentDirectory.directoryEntry.attrib = FAT_FILE_ATTRIBUTE_DIRECTORY;
+
+        // Root directories don't have a directory entry to represent themselves:
+        afatfs.currentDirectory.directoryEntryPos.sectorNumberPhysical = 0;
 
         afatfs_fseek(&afatfs.currentDirectory, 0, AFATFS_SEEK_SET);
 
@@ -2582,76 +2690,17 @@ bool afatfs_fopen(const char *filename, const char *mode, afatfsFileCallback_t c
     return file != NULL;
 }
 
-/**
- * Lock the sector at the file's cursor position for write, and return a reference to the memory for that sector.
- *
- * Returns NULL if the cache was too busy, try again later.
- */
-static uint8_t* afatfs_fileLockCursorSectorForWrite(afatfsFilePtr_t file)
-{
-    afatfsOperationStatus_e status;
-    uint8_t *result;
-
-
-    if (file->lockedCacheIndex != -1) {
-        /*uint32_t physicalSector = afatfs_fileGetCursorPhysicalSector(file);
-
-        if (!afatfs_assert(physicalSector == afatfs.cacheDescriptor[file->lockedCacheIndex].sectorIndex)) {
-            return NULL;
-        }*/
-
-        result = afatfs_cacheSectorGetMemory(file->lockedCacheIndex);
-    } else {
-        // Find / allocate a sector and lock it in the cache so we can rely on it sticking around
-        if (afatfs_isEndOfAllocatedFile(file)) {
-            ;
-        }
-        // Are we at the start of an empty file or the end of a non-empty file? If so we need to add a cluster
-        if (afatfs_isEndOfAllocatedFile(file) && afatfs_appendFreeCluster(file) != AFATFS_OPERATION_SUCCESS) {
-            // The extension of the file is in progress so please call us again later to try again
-            return NULL;
-        }
-
-        uint32_t physicalSector = afatfs_fileGetCursorPhysicalSector(file);
-        uint8_t cacheFlags = AFATFS_CACHE_WRITE | AFATFS_CACHE_LOCK;
-        uint32_t cursorOffsetInSector = file->cursorOffset % AFATFS_SECTOR_SIZE;
-
-        /*
-         * If there is data before the write point, or there could be data after the write-point
-         * then we need to have the original contents of the sector in the cache for us to merge into
-         */
-        if (
-            cursorOffsetInSector > 0
-            || (file->cursorOffset & ~(AFATFS_SECTOR_SIZE - 1)) + AFATFS_SECTOR_SIZE < file->directoryEntry.fileSize
-        ) {
-            cacheFlags |= AFATFS_CACHE_READ;
-        }
-
-        status = afatfs_cacheSector(
-            physicalSector,
-            &result,
-            cacheFlags
-        );
-
-        if (status != AFATFS_OPERATION_SUCCESS) {
-            // Not enough cache available to accept this write / sector not ready for read
-            return NULL;
-        }
-
-        file->lockedCacheIndex = afatfs_getCacheDescriptorIndexForBuffer(result);
-    }
-
-    return result;
-}
-
 void afatfs_fputc(afatfsFilePtr_t file, uint8_t c)
 {
     uint32_t cursorOffsetInSector = file->cursorOffset % AFATFS_SECTOR_SIZE;
-    int cacheIndex = file->lockedCacheIndex;
+
+    int cacheIndex = file->writeLockedCacheIndex;
 
     if (cacheIndex != -1 && cursorOffsetInSector != AFATFS_SECTOR_SIZE - 1) {
         afatfs_cacheSectorGetMemory(cacheIndex)[cursorOffsetInSector] = c;
         file->cursorOffset++;
+
+        // TODO we could probably just defer this to the next seek, file close, or slow-path fwrite() call?
         file->directoryEntry.fileSize = MAX(file->directoryEntry.fileSize, file->cursorOffset);
     } else {
         // Slow path
@@ -2754,7 +2803,7 @@ uint32_t afatfs_fread(afatfsFilePtr_t file, uint8_t *buffer, uint32_t len)
         uint32_t bytesToReadThisSector = MIN(AFATFS_SECTOR_SIZE - cursorOffsetInSector, len);
         uint8_t *sectorBuffer;
 
-        sectorBuffer = afatfs_fileGetCursorSectorForRead(file);
+        sectorBuffer = afatfs_fileRetainCursorSectorForRead(file);
         if (!sectorBuffer) {
             // Cache is currently busy
             return readBytes;
@@ -3111,27 +3160,45 @@ void afatfs_init()
  */
 bool afatfs_destroy()
 {
-    // Don't attempt detailed cleanup if the filesystem is in an odd state
+    // Only attempt detailed cleanup if the filesystem is in reasonable looking state
     if (afatfs.filesystemState == AFATFS_FILESYSTEM_STATE_READY) {
-#ifdef AFATFS_USE_FREEFILE
-        afatfs_fclose(&afatfs.freeFile, NULL);
-#endif
+        int openFileCount = 0;
 
         for (int i = 0; i < AFATFS_MAX_OPEN_FILES; i++) {
-            afatfs_fclose(&afatfs.openFiles[i], NULL);
-        }
-
-        afatfs_poll();
-
-        for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
-            // Flush even if the pages are "locked"
-            if (afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY) {
-                if (afatfs_cacheFlushSector(i)) {
-                    // Card will be busy making that write so don't bother trying to flush any other pages right now
-                    return false;
-                }
+            if (afatfs.openFiles[i].type != AFATFS_FILE_TYPE_NONE) {
+                afatfs_fclose(&afatfs.openFiles[i], NULL);
+                openFileCount++;
             }
         }
+
+#ifdef AFATFS_USE_FREEFILE
+        if (afatfs.freeFile.type != AFATFS_FILE_TYPE_NONE) {
+            afatfs_fclose(&afatfs.freeFile, NULL);
+            openFileCount++;
+        }
+#endif
+        if (afatfs.currentDirectory.type != AFATFS_FILE_TYPE_NONE) {
+            afatfs_fclose(&afatfs.currentDirectory, NULL);
+            openFileCount++;
+        }
+
+        if (!afatfs_flush()) {
+            afatfs_poll();
+            return false;
+        }
+
+        if (openFileCount > 0) {
+            return false;
+        }
+
+#ifdef AFATFS_DEBUG
+        /* All sector locks should have been released by closing the files, so the subsequent flush should have written
+         * all dirty pages to disk. If not, something's wrong:
+         */
+        for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
+            afatfs_assert(afatfs.cacheDescriptor[i].state != AFATFS_CACHE_STATE_DIRTY);
+        }
+#endif
     }
 
     // Clear the afatfs so it's as if we never ran

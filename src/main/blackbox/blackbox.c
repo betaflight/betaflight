@@ -253,6 +253,7 @@ static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
 typedef enum BlackboxState {
     BLACKBOX_STATE_DISABLED = 0,
     BLACKBOX_STATE_STOPPED,
+    BLACKBOX_STATE_PREPARE_LOG_FILE,
     BLACKBOX_STATE_SEND_HEADER,
     BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER,
     BLACKBOX_STATE_SEND_GPS_H_HEADER,
@@ -473,7 +474,6 @@ static void blackboxSetState(BlackboxState newState)
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
             xmitState.u.startTime = millis();
-            blackboxDeviceEndLog();
         break;
         default:
             ;
@@ -779,8 +779,20 @@ static void validateBlackboxConfig()
         masterConfig.blackbox_rate_denom /= div;
     }
 
-    if (masterConfig.blackbox_device >= BLACKBOX_DEVICE_END) {
-        masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    // If we've chosen an unsupported device, change the device to serial
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_FLASHFS
+        case BLACKBOX_DEVICE_FLASH:
+#endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+#endif
+        case BLACKBOX_DEVICE_SERIAL:
+            // Device supported, leave the setting alone
+        break;
+
+        default:
+            masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -826,7 +838,7 @@ void startBlackbox(void)
          */
         blackboxLastArmingBeep = getArmingBeepTimeMicros();
 
-        blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
+        blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
     }
 }
 
@@ -1288,6 +1300,11 @@ void handleBlackbox(void)
     }
 
     switch (blackboxState) {
+        case BLACKBOX_STATE_PREPARE_LOG_FILE:
+            if (blackboxDeviceBeginLog()) {
+                blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
+            }
+        break;
         case BLACKBOX_STATE_SEND_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
 
@@ -1396,7 +1413,7 @@ void handleBlackbox(void)
              *
              * Don't wait longer than it could possibly take if something funky happens.
              */
-            if (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlush()) {
+            if (blackboxDeviceEndLog() && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlush())) {
                 blackboxDeviceClose();
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }

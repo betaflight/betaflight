@@ -60,6 +60,7 @@
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -457,6 +458,7 @@ void init(void)
 
 #ifdef USE_SDCARD
     sdcard_init();
+    afatfs_init();
 #endif
 
 #ifdef BLACKBOX
