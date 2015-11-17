@@ -18,7 +18,12 @@
         }
     },
 
-    "permissions": [
+    "sandbox": {
+    "pages": [
+      "tabs/map.html"]
+    },
+         
+        "permissions": [
         "https://www.google-analytics.com/",
         "https://*.github.com/",
         "https://*.githubusercontent.com/",
