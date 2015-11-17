@@ -76,23 +76,30 @@ TABS.gps.initialize = function (callback) {
 if (navigator.onLine) {
   console.log('Online');
   $('#connect').hide();
-  $('#map').show();
+  $('#waiting').show();
+  $('#loadmap').show();
+
 } else {
   console.log('Offline');
   $('#connect').show();
-  $('#map').hide();
+  $('#waiting').hide();
+  $('#loadmap').hide();
+
 }
 
 $("#check").on('click',function(){
 if (navigator.onLine) {
   console.log('Online');
   $('#connect').hide();
-  $('#map').show();
+  $('#waiting').show();
+  $('#loadmap').show();
 
 } else {
   console.log('Offline');
   $('#connect').show();
-  $('#map').hide();
+  $('#waiting').hide();
+  $('#loadmap').hide();
+
   }
  });
  

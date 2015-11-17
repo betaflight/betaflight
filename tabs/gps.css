@@ -27,12 +27,16 @@
     float: left;
 }
 
-.tab-gps #map {
-    height: 100%;
+.tab-gps #waiting {
     width: 100%;
 }
 
 .tab-gps iframe {
+    height: 100%;
+    width: 100%;
+}
+
+.tab-gps #loadmap {
     height: 100%;
     width: 100%;
 }
