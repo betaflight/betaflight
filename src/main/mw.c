@@ -696,6 +696,8 @@ void loop(void)
         cycleTime = (int32_t)(currentTime - previousTime);
         previousTime = currentTime;
 
+        dT = (float)cycleTime * 0.000001f;
+
         annexCode();
 
         if (masterConfig.rxConfig.rcSmoothing) {
