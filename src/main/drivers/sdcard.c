@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#include "nvic.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
 
@@ -41,12 +43,15 @@
 #define STATIC_ASSERT(condition, name ) \
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
 
+#define SDCARD_USE_DMA_FOR_TX
+
 typedef enum {
     SDCARD_STATE_NOT_PRESENT = 0,
     SDCARD_STATE_INITIALIZATION,
     SDCARD_STATE_INITIALIZATION_RECEIVE_CID,
     SDCARD_STATE_READY,
     SDCARD_STATE_READING,
+    SDCARD_STATE_SENDING_WRITE,
     SDCARD_STATE_WRITING,
 } sdcardState_e;
 
@@ -257,19 +262,8 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
     return SDCARD_RECEIVE_SUCCESS;
 }
 
-/**
- * Write the buffer of `count` bytes to the SD card.
- *
- * Returns true if the card accepted the write (card will enter a busy state).
- */
-static bool sdcard_sendDataBlock(uint8_t *buffer, int count)
+static bool sdcard_sendDataBlockFinish()
 {
-    // Card wants 8 dummy clock cycles after the command response to become ready
-    spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
-
-    spiTransferByte(SDCARD_SPI_INSTANCE, SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
-    spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, count);
-
     // Send a dummy CRC
     spiTransferByte(SDCARD_SPI_INSTANCE, 0x00);
     spiTransferByte(SDCARD_SPI_INSTANCE, 0x00);
@@ -289,6 +283,51 @@ static bool sdcard_sendDataBlock(uint8_t *buffer, int count)
      * 110 - Write error
      */
     return (dataResponseToken & 0x1F) == 0x05;
+}
+
+/**
+ * Write the buffer of `count` bytes to the SD card.
+ *
+ * Returns true if the write was begun (card will enter a busy state).
+ */
+static bool sdcard_sendDataBlock(uint8_t *buffer, int count)
+{
+    spiTransferByte(SDCARD_SPI_INSTANCE, SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
+
+#ifdef SDCARD_USE_DMA_FOR_TX
+    // Queue the transmission of the sector payload
+    DMA_InitTypeDef DMA_InitStructure;
+
+    DMA_StructInit(&DMA_InitStructure);
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+
+    DMA_InitStructure.DMA_BufferSize = count;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+
+    DMA_DeInit(SDCARD_DMA_CHANNEL_TX);
+    DMA_Init(SDCARD_DMA_CHANNEL_TX, &DMA_InitStructure);
+
+    DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
+
+    SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
+
+    return true;
+#else
+    // Send the sector payload now
+    spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, count);
+
+    // And check the SD card's acknowledgement
+    return sdcard_sendDataBlockFinish();
+#endif
 }
 
 static bool sdcard_receiveCID()
@@ -486,12 +525,47 @@ void sdcard_poll()
                 }
             }
         break;
+        case SDCARD_STATE_SENDING_WRITE:
+            // Has the DMA write finished yet?
+            if (DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
+                DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
+
+                DMA_Cmd(SDCARD_DMA_CHANNEL_TX, DISABLE);
+
+                // Drain anything left in the Rx FIFO (we didn't read it during the write)
+                while (SPI_I2S_GetFlagStatus(SDCARD_SPI_INSTANCE, SPI_I2S_FLAG_RXNE) == SET) {
+                    SDCARD_SPI_INSTANCE->DR;
+                }
+
+                // Wait for the final bit to be transmitted
+                while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
+                }
+
+                SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, DISABLE);
+
+                // Finish up by sending the CRC and checking the SD-card's acceptance/rejectance
+                if (sdcard_sendDataBlockFinish()) {
+                    // The SD card is now busy committing that write to the card
+                    sdcard.state = SDCARD_STATE_WRITING;
+
+                    // Since we've transmitted the buffer we may as well go ahead and tell the caller their operation is complete
+                    if (sdcard.pendingOperation.callback) {
+                        sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, sdcard.pendingOperation.buffer, sdcard.pendingOperation.callbackData);
+                    }
+                } else {
+                    // Our write was rejected! Bad CRC/address?
+                    sdcard.state = SDCARD_STATE_READY;
+                    if (sdcard.pendingOperation.callback) {
+                        sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, NULL, sdcard.pendingOperation.callbackData);
+                    }
+                }
+            }
+        break;
         case SDCARD_STATE_WRITING:
             if (sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY)) {
                 sdcard_deselect();
                 sdcard.state = SDCARD_STATE_READY;
             }
-
         break;
         case SDCARD_STATE_READING:
             switch (sdcard_receiveDataBlock(sdcard.pendingOperation.buffer, SDCARD_BLOCK_SIZE)) {
@@ -536,12 +610,12 @@ void sdcard_poll()
 /**
  * Write the 512-byte block from the given buffer into the block with the given index.
  *
- * Returns true if the write was successfully sent to the card, or false if the operation could
+ * Returns true if the write was successfully sent to the card for later commit, or false if the operation could
  * not be started due to the card being busy (try again later), or because the write was invalid (bad address).
  *
  * The buffer is not copied anywhere, you must keep the pointer to the buffer valid until the operation completes!
  */
-bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer)
+bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
     if (sdcard.state != SDCARD_STATE_READY)
         return false;
@@ -551,8 +625,29 @@ bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer)
     // Standard size cards use byte addressing, high capacity cards use block addressing
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_WRITE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
 
+    // Card wants 8 dummy clock cycles after the command response to become ready
+    spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
+
+#ifdef SDCARD_USE_DMA_FOR_TX
+    sdcard.pendingOperation.buffer = buffer;
+    sdcard.pendingOperation.blockIndex = blockIndex;
+    sdcard.pendingOperation.callback = callback;
+    sdcard.pendingOperation.callbackData = callbackData;
+#endif
+
     if (status == 0 && sdcard_sendDataBlock(buffer, SDCARD_BLOCK_SIZE)) {
+
+#ifdef SDCARD_USE_DMA_FOR_TX
+        sdcard.state = SDCARD_STATE_SENDING_WRITE;
+#else
+        /* The data has already been received by the SD card (buffer has been transmitted), we only have to wait for the
+         * card to commit it. Let the caller know it can free its buffer.
+         */
         sdcard.state = SDCARD_STATE_WRITING;
+        if (callback) {
+            callback(SDCARD_BLOCK_OPERATION_WRITE, blockIndex, buffer, callbackData);
+        }
+#endif
 
         // Leave the card selected while the write is in progress
         return true;

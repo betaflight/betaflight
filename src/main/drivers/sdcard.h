@@ -37,13 +37,6 @@ typedef struct sdcard_metadata_t {
 } sdcardMetadata_t;
 
 typedef enum {
-    SDCARD_NO_OPERATION,
-    SDCARD_OPERATION_IN_PROGRESS,
-    SDCARD_OPERATION_SUCCESS,
-    SDCARD_OPERATION_ERROR,
-} sdcardOperationStatus_e;
-
-typedef enum {
     SDCARD_BLOCK_OPERATION_READ,
     SDCARD_BLOCK_OPERATION_WRITE,
     SDCARD_BLOCK_OPERATION_ERASE,
@@ -53,8 +46,8 @@ typedef void(*sdcard_operationCompleteCallback_c)(sdcardBlockOperation_e operati
 
 bool sdcard_init();
 
-bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer);
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
+bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
 
 void sdcard_poll();
 bool sdcard_isReady();
