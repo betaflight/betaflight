@@ -1005,9 +1005,11 @@ void updateActualAltitudeAndClimbRate(bool hasValidSensor, float newAltitude, fl
 /*-----------------------------------------------------------
  * Processes an update to surface distance
  *-----------------------------------------------------------*/
-void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance)
+void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, float surfaceVelocity)
 {
     posControl.actualState.surface = surfaceDistance;
+    posControl.actualState.surfaceVel = surfaceVelocity;
+
     posControl.flags.hasValidSurfaceSensor = hasValidSensor;
 
     if (hasValidSensor) {

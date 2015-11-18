@@ -66,9 +66,12 @@
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
-#define INAV_SONAR_TIMEOUT_MS               300     // Sonar timeout    (missed two readings in a row
+#define INAV_SONAR_TIMEOUT_MS               250     // Sonar timeout    (missed two readings in a row
 
 #define INAV_BARO_CLIMB_RATE_FILTER_SIZE    7
+
+#define INAV_SONAR_W1                       0.8461f // Sonar predictive filter gain for altitude
+#define INAV_SONAR_W2                       6.2034f // Sonar predictive filter gain for velocity
 
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
@@ -99,7 +102,7 @@ typedef struct {
 typedef struct {
     uint32_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw altitude measurement (cm)
-    float       epv;
+    float       vel;
 } navPositionEstimatorSONAR_t;
 
 typedef struct {
@@ -107,6 +110,7 @@ typedef struct {
     t_fp_vector pos;
     t_fp_vector vel;
     float       surface;
+    float       surfaceVel;
     float       eph;
     float       epv;
 } navPositionEstimatorESTIMATE_t;
@@ -388,18 +392,26 @@ static void updateSonarTopic(uint32_t currentTime)
     if (updateTimer(&sonarUpdateTimer, HZ2US(INAV_SONAR_UPDATE_RATE), currentTime)) {
         if (sensors(SENSOR_SONAR)) {
             /* Read sonar */
-            float newSonarAltRaw = sonarRead();
+            float newSonarAlt = sonarRead();
+            newSonarAlt = sonarCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
-            posEstimator.sonar.alt = sonarCalculateAltitude(newSonarAltRaw, calculateCosTiltAngle());
-
-            /* If we have two valid sonar readings in a row - update topic */
+            /* Apply predictive filter to sonar readings (inspired by PX4Flow) */
             if (posEstimator.sonar.alt > 0) {
+                float sonarPredVel, sonarPredAlt;
+                float sonarDt = (currentTime - posEstimator.sonar.lastUpdateTime) * 1e-6;
                 posEstimator.sonar.lastUpdateTime = currentTime;
+
+                sonarPredVel = (sonarDt < 0.25f) ? posEstimator.sonar.vel : 0.0f;
+                sonarPredAlt = posEstimator.sonar.alt + sonarPredVel * sonarDt;
+
+                posEstimator.sonar.alt = sonarPredAlt + INAV_SONAR_W1 * (newSonarAlt - sonarPredAlt);
+                posEstimator.sonar.vel = sonarPredVel + INAV_SONAR_W2 * (newSonarAlt - sonarPredAlt);
             }
         }
         else {
             /* No sonar */
             posEstimator.sonar.alt = 0;
+            posEstimator.sonar.vel = 0;
             posEstimator.sonar.lastUpdateTime = 0;
         }
     }
@@ -592,14 +604,17 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
     /* Surface offset */
 #if defined(SONAR)
-        if (isSonarValid) {
-            posEstimator.est.surface = posEstimator.sonar.alt;
-        }
-        else {
-            posEstimator.est.surface = -1;
-        }
+    if (isSonarValid) {
+        posEstimator.est.surface = posEstimator.sonar.alt;
+        posEstimator.est.surfaceVel = posEstimator.sonar.vel;
+    }
+    else {
+        posEstimator.est.surface = -1;
+        posEstimator.est.surfaceVel = 0;
+    }
 #else
     posEstimator.est.surface = -1;
+    posEstimator.est.surfaceVel = 0;
 #endif
 
 }
@@ -635,10 +650,10 @@ static void publishEstimatedTopic(uint32_t currentTime)
 
         /* Publish surface distance */
         if (posEstimator.est.surface > 0) {
-            updateActualSurfaceDistance(true, posEstimator.est.surface);
+            updateActualSurfaceDistance(true, posEstimator.est.surface, posEstimator.est.surfaceVel);
         }
         else {
-            updateActualSurfaceDistance(false, -1);
+            updateActualSurfaceDistance(false, -1, 0);
         }
 
         /* Store history data */

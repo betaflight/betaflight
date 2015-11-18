@@ -107,6 +107,7 @@ typedef struct {
     float       sinYaw;
     float       cosYaw;
     float       surface;
+    float       surfaceVel;
 } navigationEstimatedState_t;
 
 typedef struct {
@@ -275,7 +276,7 @@ int16_t leanAngleToRcCommand(int16_t leanAngle);
 void updateActualHeading(int32_t newHeading);
 void updateActualHorizontalPositionAndVelocity(bool hasValidSensor, float newX, float newY, float newVelX, float newVelY);
 void updateActualAltitudeAndClimbRate(bool hasValidSensor, float newAltitude, float newVelocity);
-void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance);
+void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, float surfaceVelocity);
 
 /* Autonomous navigation functions */
 void setupAutonomousControllerRTH(void);
