@@ -26,7 +26,4 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);
 bool spiIsBusBusy(SPI_TypeDef *instance);
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len);
-
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
-void spiResetErrorCounter(SPI_TypeDef *instance);
+void spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len);
