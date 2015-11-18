@@ -26,12 +26,6 @@
 
 #include "bus_spi.h"
 
-static volatile uint16_t spi1ErrorCount = 0;
-static volatile uint16_t spi2ErrorCount = 0;
-#ifdef STM32F303xC
-static volatile uint16_t spi3ErrorCount = 0;
-#endif
-
 #ifdef USE_SPI_DEVICE_1
 
 #ifndef SPI1_GPIO
@@ -267,30 +261,10 @@ bool spiInit(SPI_TypeDef *instance)
     return false;
 }
 
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        spi1ErrorCount++;
-    } else if (instance == SPI2) {
-        spi2ErrorCount++;
-    }
-#ifdef STM32F303xC
-    else {
-        spi3ErrorCount++;
-        return spi3ErrorCount;
-    }
-#endif
-    return -1;
-}
-
-// return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 {
-    uint16_t spiTimeout = 1000;
-
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
+    }
 
 #ifdef STM32F303xC
     SPI_SendData8(instance, data);
@@ -298,10 +272,8 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #ifdef STM32F10X
     SPI_I2S_SendData(instance, data);
 #endif
-    spiTimeout = 1000;
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET){
+    }
 
 #ifdef STM32F303xC
     return ((uint8_t)SPI_ReceiveData8(instance));
@@ -325,17 +297,13 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+void spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
-    uint16_t spiTimeout = 1000;
-
     uint8_t b;
     instance->DR;
     while (len--) {
         b = in ? *(in++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
-            if ((spiTimeout--) == 0)
-                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         SPI_SendData8(instance, b);
@@ -345,8 +313,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         SPI_I2S_SendData(instance, b);
 #endif
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
-            if ((spiTimeout--) == 0)
-                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         b = SPI_ReceiveData8(instance);
@@ -358,8 +324,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         if (out)
             *(out++) = b;
     }
-
-    return true;
 }
 
 
@@ -419,23 +383,3 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 
     SPI_Cmd(instance, ENABLE);
 }
-
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        return spi1ErrorCount;
-    } else if (instance == SPI2) {
-        return spi2ErrorCount;
-    }
-    return 0;
-}
-
-void spiResetErrorCounter(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        spi1ErrorCount = 0;
-    } else if (instance == SPI2) {
-        spi2ErrorCount = 0;
-    }
-}
-

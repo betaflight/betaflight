@@ -128,8 +128,6 @@ void mpu6000SpiGyroInit(uint16_t lpf)
 
     mpu6000AccAndGyroInit();
 
-    spiResetErrorCounter(MPU6000_SPI_INSTANCE);
-
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 
     // Accel and Gyro DLPF Setting
@@ -139,8 +137,7 @@ void mpu6000SpiGyroInit(uint16_t lpf)
     int16_t data[3];
     mpuGyroRead(data);
 
-    if ((((int8_t)data[1]) == -1 && ((int8_t)data[0]) == -1) || spiGetErrorCounter(MPU6000_SPI_INSTANCE) != 0) {
-        spiResetErrorCounter(MPU6000_SPI_INSTANCE);
+    if (((int8_t)data[1]) == -1 && ((int8_t)data[0]) == -1) {
         failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 }
