@@ -80,8 +80,9 @@
 
 typedef enum {
     AFATFS_CACHE_STATE_EMPTY,
-    AFATFS_CACHE_STATE_READING,
     AFATFS_CACHE_STATE_IN_SYNC,
+    AFATFS_CACHE_STATE_READING,
+    AFATFS_CACHE_STATE_WRITING,
     AFATFS_CACHE_STATE_DIRTY
 } afatfsCacheBlockState_e;
 
@@ -354,7 +355,7 @@ typedef struct afatfs_t {
     uint8_t cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS];
     afatfsCacheBlockDescriptor_t cacheDescriptor[AFATFS_NUM_CACHE_SECTORS];
     uint32_t cacheTimer;
-    int cacheDirtyEntries; // The number of cache entries in the AFATFS_CACHE_STATE_DIRTY state
+    int cacheUnflushedEntries; // The number of cache entries in the AFATFS_CACHE_STATE_DIRTY or AFATFS_CACHE_STATE_WRITING states
 
     afatfsFile_t openFiles[AFATFS_MAX_OPEN_FILES];
 
@@ -508,7 +509,7 @@ static void afatfs_cacheSectorMarkDirty(uint8_t *memory)
 
     if (descriptor && descriptor->state != AFATFS_CACHE_STATE_DIRTY) {
         descriptor->state = AFATFS_CACHE_STATE_DIRTY;
-        afatfs.cacheDirtyEntries++;
+        afatfs.cacheUnflushedEntries++;
     }
 }
 
@@ -519,23 +520,6 @@ static void afatfs_cacheSectorInit(afatfsCacheBlockDescriptor_t *descriptor, uin
     descriptor->locked = locked;
     descriptor->discardable = 0;
     descriptor->state = AFATFS_CACHE_STATE_EMPTY;
-}
-
-/**
- * Attempt to flush the dirty cache entry with the given index to the SDcard. Returns true if the SDcard accepted
- * the write, false if the card was busy.
- */
-static bool afatfs_cacheFlushSector(int cacheIndex)
-{
-    if (afatfs.cacheDescriptor[cacheIndex].state != AFATFS_CACHE_STATE_DIRTY)
-        return true; // Already flushed
-
-    if (sdcard_writeBlock(afatfs.cacheDescriptor[cacheIndex].sectorIndex, afatfs_cacheSectorGetMemory(cacheIndex))) {
-        afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_IN_SYNC;
-        afatfs.cacheDirtyEntries--;
-        return true;
-    }
-    return false;
 }
 
 /**
@@ -562,6 +546,52 @@ static void afatfs_sdcardReadComplete(sdcardBlockOperation_e operation, uint32_t
             break;
         }
     }
+}
+
+/**
+ * Called by the SD card driver when one of our write operations completes.
+ */
+static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_t sectorIndex, uint8_t *buffer, uint32_t callbackData)
+{
+    (void) operation;
+    (void) callbackData;
+
+    for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
+        /* Keep in mind that someone may have marked the sector as dirty after writing had already begun. In this case we must leave
+         * it marked as dirty because those modifications may have been made too late to make it to the disk!
+         */
+        if (afatfs.cacheDescriptor[i].sectorIndex == sectorIndex
+            && afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_WRITING
+        ) {
+            if (buffer == NULL) {
+                // Write failed, remark the sector as dirty
+                afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_DIRTY;
+            } else {
+                afatfs_assert(afatfs_cacheSectorGetMemory(i) == buffer);
+
+                afatfs.cacheUnflushedEntries--;
+
+                afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_IN_SYNC;
+            }
+            break;
+        }
+    }
+}
+
+/**
+ * Attempt to flush the dirty cache entry with the given index to the SDcard. Returns true if the SDcard accepted
+ * the write, false if the card was busy.
+ */
+static bool afatfs_cacheFlushSector(int cacheIndex)
+{
+    if (afatfs.cacheDescriptor[cacheIndex].state != AFATFS_CACHE_STATE_DIRTY)
+        return true; // Already flushed
+
+    if (sdcard_writeBlock(afatfs.cacheDescriptor[cacheIndex].sectorIndex, afatfs_cacheSectorGetMemory(cacheIndex), afatfs_sdcardWriteComplete, 0)) {
+        afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_WRITING;
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -665,7 +695,7 @@ static int afatfs_allocateCacheSector(uint32_t sectorIndex)
  */
 bool afatfs_flush()
 {
-    if (afatfs.cacheDirtyEntries > 0) {
+    if (afatfs.cacheUnflushedEntries > 0) {
         for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
             if (afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY && !afatfs.cacheDescriptor[i].locked) {
                 afatfs_cacheFlushSector(i);
@@ -762,10 +792,11 @@ static void afatfs_fileGetCursorClusterAndSector(afatfsFilePtr_t file, uint32_t 
 
             // Fall through
 
+        case AFATFS_CACHE_STATE_WRITING:
         case AFATFS_CACHE_STATE_IN_SYNC:
             if ((sectorFlags & AFATFS_CACHE_WRITE) != 0) {
                 afatfs.cacheDescriptor[cacheSectorIndex].state = AFATFS_CACHE_STATE_DIRTY;
-                afatfs.cacheDirtyEntries++;
+                afatfs.cacheUnflushedEntries++;
             }
             // Fall through
 
