@@ -550,9 +550,15 @@ static void afatfs_sdcardReadComplete(sdcardBlockOperation_e operation, uint32_t
         if (afatfs.cacheDescriptor[i].state != AFATFS_CACHE_STATE_EMPTY
             && afatfs.cacheDescriptor[i].sectorIndex == sectorIndex
         ) {
-            afatfs_assert(afatfs_cacheSectorGetMemory(i) == buffer && afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_READING);
+            if (buffer == NULL) {
+                // Read failed, mark the sector as empty and whoever asked for it will ask for it again later to retry
+                afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_EMPTY;
+            } else {
+                afatfs_assert(afatfs_cacheSectorGetMemory(i) == buffer && afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_READING);
 
-            afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_IN_SYNC;
+                afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_IN_SYNC;
+            }
+
             break;
         }
     }
@@ -1019,6 +1025,9 @@ static afatfsFindClusterStatus_e afatfs_findClusterWithCondition(afatfsClusterSe
         case CLUSTER_SEARCH_FREE_SECTOR:
             jump = 1;
         break;
+        default:
+            afatfs_assert(false);
+            return AFATFS_FIND_CLUSTER_FATAL;
     }
 
     while (*cluster < searchLimit) {
@@ -3043,7 +3052,7 @@ static void afatfs_initContinue()
                     afatfs_chdir(NULL);
 
 #ifdef AFATFS_USE_FREEFILE
-                    afatfs_createFile(&afatfs.freeFile, AFATFS_FREESPACE_FILENAME, FAT_FILE_ATTRIBUTE_SYSTEM,
+                    afatfs_createFile(&afatfs.freeFile, AFATFS_FREESPACE_FILENAME, FAT_FILE_ATTRIBUTE_SYSTEM | FAT_FILE_ATTRIBUTE_READ_ONLY,
                         AFATFS_FILE_MODE_CREATE | AFATFS_FILE_MODE_RETAIN_DIRECTORY, afatfs_freeFileCreated);
                     afatfs.initPhase = AFATFS_INITIALIZATION_FREEFILE_CREATING;
 #else
@@ -3151,8 +3160,6 @@ void afatfs_init()
     afatfs.filesystemState = AFATFS_FILESYSTEM_STATE_INITIALIZATION;
     afatfs.initPhase = AFATFS_INITIALIZATION_READ_MBR;
     afatfs.lastClusterAllocated = 1;
-
-    afatfs_poll();
 }
 
 /**

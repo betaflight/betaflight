@@ -33,9 +33,6 @@
 #define SET_CS_HIGH          GPIO_SetBits(SDCARD_SPI_CS_GPIO,   SDCARD_SPI_CS_PIN)
 #define SET_CS_LOW           GPIO_ResetBits(SDCARD_SPI_CS_GPIO, SDCARD_SPI_CS_PIN)
 
-#define DESELECT_SDCARD      SET_CS_HIGH
-#define SELECT_SDCARD        SET_CS_LOW
-
 #define SDCARD_INIT_NUM_DUMMY_BYTES 10
 #define SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY 8
 // Chosen so that CMD8 will have the same CRC as CMD0:
@@ -47,6 +44,7 @@
 typedef enum {
     SDCARD_STATE_NOT_PRESENT = 0,
     SDCARD_STATE_INITIALIZATION,
+    SDCARD_STATE_INITIALIZATION_RECEIVE_CID,
     SDCARD_STATE_READY,
     SDCARD_STATE_READING,
     SDCARD_STATE_WRITING,
@@ -75,6 +73,22 @@ typedef struct sdcard_t {
 static sdcard_t sdcard;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
+
+static void sdcard_select()
+{
+    SET_CS_LOW;
+}
+
+static void sdcard_deselect()
+{
+    // As per the SD-card spec, give the card 8 dummy clocks so it can finish its operation
+    //spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
+
+    while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
+    }
+
+    SET_CS_HIGH;
+}
 
 
 /**
@@ -117,7 +131,7 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
  * with the given argument, waits up to SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY bytes for a reply, and returns the
  * first non-0xFF byte of the reply.
  *
- * You must select the card first with SELECT_SDCARD and deselect it afterwards with DESELECT_SDCARD.
+ * You must select the card first with sdcard_select() and deselect it afterwards with sdcard_deselect().
  *
  * Upon failure, 0xFF is returned.
  */
@@ -162,7 +176,7 @@ static bool sdcard_validateInterfaceCondition()
 
     sdcard.version = 0;
 
-    SELECT_SDCARD;
+    sdcard_select();
 
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_IF_COND, (SDCARD_VOLTAGE_ACCEPTED_2_7_to_3_6 << 8) | SDCARD_IF_COND_CHECK_PATTERN);
 
@@ -183,14 +197,14 @@ static bool sdcard_validateInterfaceCondition()
         }
     }
 
-    DESELECT_SDCARD;
+    sdcard_deselect();
 
     return sdcard.version > 0;
 }
 
 static bool sdcard_readOCRRegister(uint32_t *result)
 {
-    SELECT_SDCARD;
+    sdcard_select();
 
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_READ_OCR, 0);
 
@@ -199,27 +213,39 @@ static bool sdcard_readOCRRegister(uint32_t *result)
     spiTransfer(SDCARD_SPI_INSTANCE, response, NULL, sizeof(response));
 
     if (status == 0) {
-        DESELECT_SDCARD;
+        sdcard_deselect();
 
         *result = (response[0] << 24) | (response[1] << 16) | (response[2] << 8) | response[3];
 
         return true;
     } else {
-        DESELECT_SDCARD;
+        sdcard_deselect();
 
         return false;
     }
 }
+
+typedef enum {
+    SDCARD_RECEIVE_SUCCESS,
+    SDCARD_RECEIVE_BLOCK_IN_PROGRESS,
+    SDCARD_RECEIVE_ERROR,
+} sdcardReceiveBlockStatus_e;
 
 /**
  * Attempt to receive a data block from the SD card.
  *
  * Return true on success, otherwise the card has not responded yet and you should retry later.
  */
-static bool sdcard_receiveDataBlock(uint8_t *buffer, int count)
+static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int count)
 {
-    if (sdcard_waitForNonIdleByte(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY) != SDCARD_SINGLE_BLOCK_READ_START_TOKEN) {
-        return false;
+    uint8_t dataToken = sdcard_waitForNonIdleByte(8);
+
+    if (dataToken == 0xFF) {
+        return SDCARD_RECEIVE_BLOCK_IN_PROGRESS;
+    }
+
+    if (dataToken != SDCARD_SINGLE_BLOCK_READ_START_TOKEN) {
+        return SDCARD_RECEIVE_ERROR;
     }
 
     spiTransfer(SDCARD_SPI_INSTANCE, buffer, NULL, count);
@@ -228,7 +254,7 @@ static bool sdcard_receiveDataBlock(uint8_t *buffer, int count)
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
 
-    return true;
+    return SDCARD_RECEIVE_SUCCESS;
 }
 
 /**
@@ -265,17 +291,12 @@ static bool sdcard_sendDataBlock(uint8_t *buffer, int count)
     return (dataResponseToken & 0x1F) == 0x05;
 }
 
-static bool sdcard_fetchCID()
+static bool sdcard_receiveCID()
 {
     uint8_t cid[16];
 
-    SELECT_SDCARD;
-
-    uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_CID, 0);
-
-    if (status != 0 || !sdcard_receiveDataBlock(cid, sizeof(cid))) {
-        DESELECT_SDCARD;
-
+    if (sdcard_receiveDataBlock(cid, sizeof(cid)) != SDCARD_RECEIVE_SUCCESS) {
+        sdcard_deselect();
         return false;
     }
 
@@ -292,7 +313,7 @@ static bool sdcard_fetchCID()
     sdcard.metadata.productionYear = (((cid[13] & 0x0F) << 4) | (cid[14] >> 4)) + 2000;
     sdcard.metadata.productionMonth = cid[14] & 0x0F;
 
-    DESELECT_SDCARD;
+    sdcard_deselect();
 
     return true;
 }
@@ -301,11 +322,12 @@ static bool sdcard_fetchCSD()
 {
     uint32_t readBlockLen, blockCount, blockCountMult, capacityBytes;
 
-    SELECT_SDCARD;
+    sdcard_select();
 
+    // The CSD command's data block will arrive within 8 idle clock cycles (SD card spec)
     bool success =
         sdcard_sendCommand(SDCARD_COMMAND_SEND_CSD, 0) == 0
-        && sdcard_receiveDataBlock((uint8_t*) &sdcard.csd, sizeof(sdcard.csd))
+        && sdcard_receiveDataBlock((uint8_t*) &sdcard.csd, sizeof(sdcard.csd)) == SDCARD_RECEIVE_SUCCESS
         && SDCARD_GET_CSD_FIELD(sdcard.csd, 1, TRAILER) == 1;
 
     if (success) {
@@ -328,51 +350,33 @@ static bool sdcard_fetchCSD()
         }
     }
 
-    DESELECT_SDCARD;
+    sdcard_deselect();
 
     return success;
 }
 
 /**
- * Call once SDcard has finished its initialisation phase to read ID data from the card and complete our init.
+ * Call after the CID and CSD data have been read to set our preferred settings into the card (frequency and blocksize).
  *
  * Returns true on success, false on card init failure.
  */
-static bool sdcard_completeInit()
+static bool sdcard_setConfigurationAndFinalClock()
 {
-    if (sdcard.version == 2) {
-        // Check for high capacity card
-        uint32_t ocr;
-
-        if (!sdcard_readOCRRegister(&ocr)) {
-            return false;
-        }
-
-        sdcard.highCapacity = (ocr & (1 << 30)) != 0;
-    } else {
-        // Version 1 cards are always low-capacity
-        sdcard.highCapacity = false;
-    }
-
-    if (!sdcard_fetchCID() || !sdcard_fetchCSD())
-        return false;
-    
     /* The spec is a little iffy on what the default block size is for Standard Size cards (it can be changed on
      * standard size cards) so let's just set it to 512 explicitly so we don't have a problem.
      */
     if (!sdcard.highCapacity) {
-        SELECT_SDCARD;
+        sdcard_select();
 
         if (sdcard_sendCommand(SDCARD_COMMAND_SET_BLOCKLEN, SDCARD_BLOCK_SIZE) != 0) {
+            sdcard_deselect();
             return false;
         }
 
-        DESELECT_SDCARD;
+        sdcard_deselect();
     }
 
     spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
-
-    sdcard.state = SDCARD_STATE_READY;
 
     return true;
 }
@@ -380,21 +384,17 @@ static bool sdcard_completeInit()
 /**
  * Check if the SD Card has completed its startup sequence. Must be called with sdcard.state == SDCARD_STATE_INITIALIZATION.
  *
- * Changes sdcard.state to SDCARD_STATE_READY on success and returns true, returns false otherwise.
+ * Returns true if the card has finished its init process.
  */
 static bool sdcard_checkInitDone() {
-    SELECT_SDCARD;
+    sdcard_select();
 
     uint8_t status = sdcard_sendAppCommand(SDCARD_ACOMMAND_SEND_OP_COND, sdcard.version == 2 ? 1 << 30 /* We support high capacity cards */ : 0);
 
-    DESELECT_SDCARD;
+    sdcard_deselect();
 
     // When card init is complete, the idle bit in the response becomes zero.
-    if (status == 0x00) {
-        return sdcard_completeInit();
-    }
-
-    return false;
+    return status == 0x00;
 }
 
 bool sdcard_init()
@@ -410,15 +410,15 @@ bool sdcard_init()
 
     spiTransfer(SDCARD_SPI_INSTANCE, NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES);
 
-    // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles
+    // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles:
     while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
     }
 
-    SELECT_SDCARD;
+    sdcard_select();
 
     uint8_t initStatus = sdcard_sendCommand(SDCARD_COMMAND_GO_IDLE_STATE, 0);
 
-    DESELECT_SDCARD;
+    sdcard_deselect();
 
     if (initStatus != SDCARD_R1_STATUS_BIT_IDLE)
         return false;
@@ -445,32 +445,88 @@ bool sdcard_init()
  */
 void sdcard_poll()
 {
+    doMore:
     switch (sdcard.state) {
-        case SDCARD_STATE_READING:
-            if (sdcard_receiveDataBlock(sdcard.pendingOperation.buffer, SDCARD_BLOCK_SIZE)) {
-                DESELECT_SDCARD;
+        case SDCARD_STATE_INITIALIZATION:
+            if (sdcard_checkInitDone()) {
+                if (sdcard.version == 2) {
+                    // Check for high capacity card
+                    uint32_t ocr;
 
-                sdcard.state = SDCARD_STATE_READY;
+                    if (!sdcard_readOCRRegister(&ocr)) {
+                        break;
+                    }
 
-                if (sdcard.pendingOperation.callback) {
-                    sdcard.pendingOperation.callback(
-                        SDCARD_BLOCK_OPERATION_READ,
-                        sdcard.pendingOperation.blockIndex,
-                        sdcard.pendingOperation.buffer,
-                        sdcard.pendingOperation.callbackData
-                    );
+                    sdcard.highCapacity = (ocr & (1 << 30)) != 0;
+                } else {
+                    // Version 1 cards are always low-capacity
+                    sdcard.highCapacity = false;
+                }
+
+                if (sdcard_fetchCSD()) {
+                    sdcard_select();
+
+                    uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_CID, 0);
+
+                    if (status == 0) {
+                        sdcard.state = SDCARD_STATE_INITIALIZATION_RECEIVE_CID;
+                        goto doMore;
+                    } else {
+                        sdcard_deselect();
+                    }
                 }
             }
         break;
-        case SDCARD_STATE_INITIALIZATION:
-            sdcard_checkInitDone();
+        case SDCARD_STATE_INITIALIZATION_RECEIVE_CID:
+            if (sdcard_receiveCID()) {
+                if (sdcard_setConfigurationAndFinalClock()) {
+                    sdcard.state = SDCARD_STATE_READY;
+                } else {
+                    // TODO we could reset the card here and try again
+                }
+            }
         break;
         case SDCARD_STATE_WRITING:
             if (sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY)) {
-                DESELECT_SDCARD;
+                sdcard_deselect();
                 sdcard.state = SDCARD_STATE_READY;
             }
 
+        break;
+        case SDCARD_STATE_READING:
+            switch (sdcard_receiveDataBlock(sdcard.pendingOperation.buffer, SDCARD_BLOCK_SIZE)) {
+                case SDCARD_RECEIVE_SUCCESS:
+                    sdcard_deselect();
+
+                    sdcard.state = SDCARD_STATE_READY;
+
+                    if (sdcard.pendingOperation.callback) {
+                        sdcard.pendingOperation.callback(
+                            SDCARD_BLOCK_OPERATION_READ,
+                            sdcard.pendingOperation.blockIndex,
+                            sdcard.pendingOperation.buffer,
+                            sdcard.pendingOperation.callbackData
+                        );
+                    }
+                break;
+                case SDCARD_RECEIVE_ERROR:
+                    sdcard_deselect();
+
+                    sdcard.state = SDCARD_STATE_READY;
+
+                    if (sdcard.pendingOperation.callback) {
+                        sdcard.pendingOperation.callback(
+                            SDCARD_BLOCK_OPERATION_READ,
+                            sdcard.pendingOperation.blockIndex,
+                            NULL,
+                            sdcard.pendingOperation.callbackData
+                        );
+                    }
+                break;
+                case SDCARD_RECEIVE_BLOCK_IN_PROGRESS:
+                    ;
+                break;
+            }
         break;
         default:
             ;
@@ -490,7 +546,7 @@ bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer)
     if (sdcard.state != SDCARD_STATE_READY)
         return false;
 
-    SELECT_SDCARD;
+    sdcard_select();
 
     // Standard size cards use byte addressing, high capacity cards use block addressing
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_WRITE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
@@ -501,7 +557,7 @@ bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer)
         // Leave the card selected while the write is in progress
         return true;
     } else {
-        DESELECT_SDCARD;
+        sdcard_deselect();
         return false;
     }
 }
@@ -519,7 +575,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
     if (sdcard.state != SDCARD_STATE_READY)
         return false;
 
-    SELECT_SDCARD;
+    sdcard_select();
 
     // Standard size cards use byte addressing, high capacity cards use block addressing
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_READ_SINGLE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
@@ -535,7 +591,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
 
         return true;
     } else {
-        DESELECT_SDCARD;
+        sdcard_deselect();
 
         return false;
     }
