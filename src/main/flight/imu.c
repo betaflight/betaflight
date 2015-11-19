@@ -68,6 +68,7 @@ float fc_acc;
 float smallAngleCosZ = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
+static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
 static pidProfile_t *pidProfile;
@@ -423,12 +424,19 @@ static void imuCalculateEstimatedAttitude(void)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
-void imuUpdate(rollAndPitchTrims_t *accelerometerTrims)
+void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
+{
+    if (sensors(SENSOR_ACC)) {
+        updateAccelerationReadings(accelerometerTrims);
+        isAccelUpdatedAtLeastOnce = true;
+    }
+}
+
+void imuUpdateGyroAndAttitude(void)
 {
     gyroUpdate();
 
-    if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
+    if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {
         accADC[X] = 0;
