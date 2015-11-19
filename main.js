@@ -42,6 +42,13 @@ $(document).ready(function () {
         console.log('Application version expired');
         GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. There may be a more recent version with improvements and fixes.');
     }
+     
+    chrome.storage.local.get('logopen', function (result) {
+        if (result.logopen) {
+            $("#showlog").trigger('click');
+         }
+    });
+
 
     // log webgl capability
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future
@@ -370,6 +377,7 @@ $("#showlog").on('click', function() {
         $("#content").removeClass('logopen');
         $(".tab_container").removeClass('logopen');
         $("#scrollicon").removeClass('active');
+	chrome.storage.local.set({'logopen': false});
 
         state = false;
     }else{
@@ -378,6 +386,7 @@ $("#showlog").on('click', function() {
         $("#content").addClass('logopen');
         $(".tab_container").addClass('logopen');
         $("#scrollicon").addClass('active');
+	chrome.storage.local.set({'logopen': true});
 
         state = true;
     }
