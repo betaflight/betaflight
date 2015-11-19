@@ -628,6 +628,8 @@ void blackboxDeviceClose(void)
     }
 }
 
+#ifdef USE_SDCARD
+
 static void blackboxLogDirCreated(afatfsFilePtr_t directory)
 {
     blackboxSDCard.logDirectory = directory;
@@ -639,16 +641,19 @@ static void blackboxLogDirCreated(afatfsFilePtr_t directory)
 
 static void blackboxLogFileCreated(afatfsFilePtr_t file)
 {
-    blackboxSDCard.logFile = file;
-
-    blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_LOG;
+    if (file) {
+        blackboxSDCard.largestLogFileNumber++;
+        blackboxSDCard.logFile = file;
+        blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_LOG;
+    } else {
+        // FS must have been busy, retry
+        blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+    }
 }
 
 static void blackboxCreateLogFile()
 {
-    blackboxSDCard.largestLogFileNumber++;
-
-    uint32_t remainder = blackboxSDCard.largestLogFileNumber;
+    uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
     char filename[13];
 
@@ -740,6 +745,8 @@ static bool blackboxSDCardBeginLog()
     return false;
 }
 
+#endif
+
 /**
  * Begin a new log (for devices which support separations between the logs of multiple flights).
  *
@@ -761,15 +768,24 @@ bool blackboxDeviceBeginLog(void)
 /**
  * Terminate the current log (for devices which support separations between the logs of multiple flights).
  *
+ * retainLog - Pass true if the log should be kept, or false if the log should be discarded (if supported).
+ *
  * Keep calling until this returns true
  */
-bool blackboxDeviceEndLog(void)
+bool blackboxDeviceEndLog(bool retainLog)
 {
+#ifndef USE_SDCARD
+    (void) retainLog;
+#endif
+
     switch (masterConfig.blackbox_device) {
 #ifdef USE_SDCARD
         case BLACKBOX_DEVICE_SDCARD:
             // Keep retrying until the close operation queues
-            if (afatfs_fclose(blackboxSDCard.logFile, NULL)) {
+            if (
+                (retainLog && afatfs_fclose(blackboxSDCard.logFile, NULL))
+                || (!retainLog && afatfs_funlink(blackboxSDCard.logFile, NULL))
+            ) {
                 // Don't bother waiting the for the close to complete, it's queued now and will complete eventually
                 blackboxSDCard.logFile = NULL;
                 blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
