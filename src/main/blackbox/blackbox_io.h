@@ -77,7 +77,7 @@ bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
 
 bool blackboxDeviceBeginLog(void);
-bool blackboxDeviceEndLog(void);
+bool blackboxDeviceEndLog(bool retainLog);
 
 bool isBlackboxDeviceFull(void);
 
