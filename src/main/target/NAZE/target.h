@@ -190,7 +190,7 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define USE_SERIAL_1WIRE
+//#define USE_SERIAL_1WIRE
 
 // STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
 #define S1W_TX_GPIO         GPIOA

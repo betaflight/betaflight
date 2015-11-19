@@ -23,8 +23,8 @@
 
 #include "build_config.h"
 #include "debug.h"
-
 #include "platform.h"
+#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -317,10 +317,11 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
 
 // Additional commands that are not compatible with MultiWii
+#define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
+#define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
-#define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough 
@@ -716,9 +717,51 @@ void mspInit(serialConfig_t *serialConfig)
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
 
+static uint32_t packFlightModeFlags(void)
+{
+    uint32_t i, junk, tmp;
+
+    // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
+    // Requires new Multiwii protocol version to fix
+    // It would be preferable to setting the enabled bits based on BOXINDEX.
+    junk = 0;
+    tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
+        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+        IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
+        IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
+        IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
+        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
+        IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
+        IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
+        IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
+        IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
+
+    for (i = 0; i < activeBoxIdCount; i++) {
+        int flag = (tmp & (1 << activeBoxIds[i]));
+        if (flag)
+            junk |= 1 << i;
+    }
+    
+    return junk;
+}
+
 static bool processOutCommand(uint8_t cmdMSP)
 {
-    uint32_t i, tmp, junk;
+    uint32_t i;
 
 #ifdef NAV
     int8_t msp_wp_no;
@@ -806,6 +849,20 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
 
+    case MSP_STATUS_EX:
+        headSerialReply(14);
+        serialize16(cycleTime);
+#ifdef USE_I2C
+        serialize16(i2cGetErrorCounter());
+#else
+        serialize16(0);
+#endif
+        serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+        serialize32(packFlightModeFlags());
+        serialize8(masterConfig.current_profile_index);
+        serialize16(averageSystemLoadPercent);
+        break;
+
     case MSP_STATUS:
         headSerialReply(11);
         serialize16(cycleTime);
@@ -815,40 +872,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(0);
 #endif
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
-        // Requires new Multiwii protocol version to fix
-        // It would be preferable to setting the enabled bits based on BOXINDEX.
-        junk = 0;
-        tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
-            IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-            IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-            IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-            IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
-            IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
-            IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
-            IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
-        for (i = 0; i < activeBoxIdCount; i++) {
-            int flag = (tmp & (1 << activeBoxIds[i]));
-            if (flag)
-                junk |= 1 << i;
-        }
-        serialize32(junk);
+        serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
         break;
     case MSP_RAW_IMU:

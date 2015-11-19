@@ -75,6 +75,7 @@ t_fp_vector imuMeasuredRotationBF;
 float smallAngleCosZ = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
+static bool isAccelUpdatedAtLeastOnce = false;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 STATIC_UNIT_TESTED float rMat[3][3];
@@ -543,7 +544,22 @@ void imuHILUpdate(float dT)
 }
 #endif
 
-void imuUpdate(void)
+void imuUpdateAccelerometer(void)
+{
+#ifdef HIL
+    if (sensors(SENSOR_ACC) && !hilActive) {
+        updateAccelerationReadings();
+        isAccelUpdatedAtLeastOnce = true;
+    }
+#else
+    if (sensors(SENSOR_ACC)) {
+        updateAccelerationReadings();
+        isAccelUpdatedAtLeastOnce = true;
+    }
+#endif
+}
+
+void imuUpdateGyroAndAttitude(void)
 {
     /* Calculate dT */
     static uint32_t previousIMUUpdateTime;
@@ -554,10 +570,9 @@ void imuUpdate(void)
     /* Update gyroscope */
     gyroUpdate();
 
-    if (sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
 #ifdef HIL
         if (!hilActive) {
-            updateAccelerationReadings();       // Read ACC
             imuUpdateMeasuredRotationRate();    // Calculate gyro rate in body frame in rad/s
             imuUpdateMeasuredAcceleration(dT);  // Calculate accel in body frame in cm/s/s
             imuCalculateEstimatedAttitude(dT);  // Update attitude estimate
@@ -567,7 +582,6 @@ void imuUpdate(void)
             imuUpdateMeasuredAcceleration(dT);
         }
 #else
-            updateAccelerationReadings();       // Read ACC
             imuUpdateMeasuredRotationRate();    // Calculate gyro rate in body frame in rad/s
             imuUpdateMeasuredAcceleration(dT);  // Calculate accel in body frame in cm/s/s
             imuCalculateEstimatedAttitude(dT);  // Update attitude estimate

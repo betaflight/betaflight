@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "scheduler.h"
 #include "version.h"
 
 #include "build_config.h"
@@ -120,6 +121,9 @@ static void cliServoMix(char *cmdline);
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
 static void cliStatus(char *cmdline);
+#ifndef SKIP_TASK_STATISTICS
+static void cliTasks(char *cmdline);
+#endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
 static void cliPFlags(char *cmdline);
@@ -289,6 +293,9 @@ const clicmd_t cmdTable[] = {
         "\treverse <servo> <source> r|n", cliServoMix),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
+#ifndef SKIP_TASK_STATISTICS
+    CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
+#endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
@@ -2363,9 +2370,8 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s)\r\n",
-        millis() / 1000, vbat, batteryCellCount, getBatteryStateString());
-
+    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
+        millis() / 1000, vbat, batteryCellCount, getBatteryStateString(), averageSystemLoadPercent / 100, averageSystemLoadPercent % 100);
 
     printf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
@@ -2403,6 +2409,24 @@ static void cliStatus(char *cmdline)
 
     printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
+
+#ifndef SKIP_TASK_STATISTICS
+static void cliTasks(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    cfTaskId_e taskId;
+    cfTaskInfo_t taskInfo;
+
+    printf("Task list:\r\n");
+    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
+        getTaskInfo(taskId, &taskInfo);
+        if (taskInfo.isEnabled) {
+            printf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
+        }
+    }
+}
+#endif
 
 static void cliVersion(char *cmdline)
 {
