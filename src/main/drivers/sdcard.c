@@ -46,9 +46,13 @@
 #define SDCARD_USE_DMA_FOR_TX
 
 typedef enum {
+    // In these states we run at the initialization 400kHz clockspeed:
     SDCARD_STATE_NOT_PRESENT = 0,
-    SDCARD_STATE_INITIALIZATION,
+    SDCARD_STATE_RESET,
+    SDCARD_STATE_CARD_INIT_IN_PROGRESS,
     SDCARD_STATE_INITIALIZATION_RECEIVE_CID,
+
+    // In these states we run at full clock speed
     SDCARD_STATE_READY,
     SDCARD_STATE_READING,
     SDCARD_STATE_SENDING_WRITE,
@@ -64,6 +68,8 @@ typedef struct sdcard_t {
         sdcard_operationCompleteCallback_c callback;
         uint32_t callbackData;
     } pendingOperation;
+
+    uint32_t operationStartTime;
 
     uint8_t version;
     bool highCapacity;
@@ -95,6 +101,13 @@ static void sdcard_deselect()
     SET_CS_HIGH;
 }
 
+static void sdcard_reset()
+{
+    if (sdcard.state >= SDCARD_STATE_READY) {
+        spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
+    }
+    sdcard.state = SDCARD_STATE_RESET;
+}
 
 /**
  * The SD card spec requires 8 clock cycles to be sent by us on the bus after most commands so it can finish its
@@ -335,7 +348,6 @@ static bool sdcard_receiveCID()
     uint8_t cid[16];
 
     if (sdcard_receiveDataBlock(cid, sizeof(cid)) != SDCARD_RECEIVE_SUCCESS) {
-        sdcard_deselect();
         return false;
     }
 
@@ -352,18 +364,19 @@ static bool sdcard_receiveCID()
     sdcard.metadata.productionYear = (((cid[13] & 0x0F) << 4) | (cid[14] >> 4)) + 2000;
     sdcard.metadata.productionMonth = cid[14] & 0x0F;
 
-    sdcard_deselect();
-
     return true;
 }
 
 static bool sdcard_fetchCSD()
 {
-    uint32_t readBlockLen, blockCount, blockCountMult, capacityBytes;
+    uint32_t readBlockLen, blockCount, blockCountMult;
+    uint64_t capacityBytes;
 
     sdcard_select();
 
-    // The CSD command's data block will arrive within 8 idle clock cycles (SD card spec)
+    /* The CSD command's data block should always arrive within 8 idle clock cycles (SD card spec). This is because
+     * the information about card latency is stored in the CSD register itself, so we can't use that yet!
+     */
     bool success =
         sdcard_sendCommand(SDCARD_COMMAND_SEND_CSD, 0) == 0
         && sdcard_receiveDataBlock((uint8_t*) &sdcard.csd, sizeof(sdcard.csd)) == SDCARD_RECEIVE_SUCCESS
@@ -376,7 +389,9 @@ static bool sdcard_fetchCSD()
                 readBlockLen = 1 << SDCARD_GET_CSD_FIELD(sdcard.csd, 1, READ_BLOCK_LEN);
                 blockCountMult = 1 << (SDCARD_GET_CSD_FIELD(sdcard.csd, 1, CSIZE_MULT) + 2);
                 blockCount = (SDCARD_GET_CSD_FIELD(sdcard.csd, 1, CSIZE) + 1) * blockCountMult;
-                capacityBytes = blockCount * readBlockLen;
+
+                // We could do this in 32 bits but it makes the 2GB case awkward
+                capacityBytes = (uint64_t) blockCount * readBlockLen;
 
                 // Re-express that capacity (max 2GB) in our standard 512-byte block size
                 sdcard.metadata.numBlocks = capacityBytes / SDCARD_BLOCK_SIZE;
@@ -392,32 +407,6 @@ static bool sdcard_fetchCSD()
     sdcard_deselect();
 
     return success;
-}
-
-/**
- * Call after the CID and CSD data have been read to set our preferred settings into the card (frequency and blocksize).
- *
- * Returns true on success, false on card init failure.
- */
-static bool sdcard_setConfigurationAndFinalClock()
-{
-    /* The spec is a little iffy on what the default block size is for Standard Size cards (it can be changed on
-     * standard size cards) so let's just set it to 512 explicitly so we don't have a problem.
-     */
-    if (!sdcard.highCapacity) {
-        sdcard_select();
-
-        if (sdcard_sendCommand(SDCARD_COMMAND_SET_BLOCKLEN, SDCARD_BLOCK_SIZE) != 0) {
-            sdcard_deselect();
-            return false;
-        }
-
-        sdcard_deselect();
-    }
-
-    spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
-
-    return true;
 }
 
 /**
@@ -453,30 +442,20 @@ bool sdcard_init()
     while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
     }
 
+    sdcard.state = SDCARD_STATE_RESET;
+
+    return true;
+}
+
+static bool sdcard_setBlockLength(uint32_t blockLen)
+{
     sdcard_select();
 
-    uint8_t initStatus = sdcard_sendCommand(SDCARD_COMMAND_GO_IDLE_STATE, 0);
+    uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SET_BLOCKLEN, blockLen);
 
     sdcard_deselect();
 
-    if (initStatus != SDCARD_R1_STATUS_BIT_IDLE)
-        return false;
-
-    // Check card voltage and version
-    if (!sdcard_validateInterfaceCondition())
-        return false;
-
-    uint32_t ocr;
-
-    sdcard_readOCRRegister(&ocr);
-
-    /*
-     * Now the SD card will perform its startup, which can take hundreds of milliseconds. We won't wait for this to
-     * avoid slowing down system startup. Instead we'll periodically poll with sdcard_checkInitDone() later on.
-     */
-    sdcard.state = SDCARD_STATE_INITIALIZATION;
-
-    return true;
+    return status == 0;
 }
 
 /**
@@ -484,16 +463,38 @@ bool sdcard_init()
  */
 void sdcard_poll()
 {
+    uint8_t initStatus;
+
     doMore:
     switch (sdcard.state) {
-        case SDCARD_STATE_INITIALIZATION:
+        case SDCARD_STATE_RESET:
+            sdcard_select();
+
+            initStatus = sdcard_sendCommand(SDCARD_COMMAND_GO_IDLE_STATE, 0);
+
+            sdcard_deselect();
+
+            if (initStatus == SDCARD_R1_STATUS_BIT_IDLE) {
+                // Check card voltage and version
+                if (sdcard_validateInterfaceCondition()) {
+                    sdcard.state = SDCARD_STATE_CARD_INIT_IN_PROGRESS;
+                    goto doMore;
+                } else {
+                    // Bad reply/voltage, we ought to refrain from accessing the card.
+                    sdcard.state = SDCARD_STATE_NOT_PRESENT;
+                }
+            }
+        break;
+
+        case SDCARD_STATE_CARD_INIT_IN_PROGRESS:
             if (sdcard_checkInitDone()) {
                 if (sdcard.version == 2) {
                     // Check for high capacity card
                     uint32_t ocr;
 
                     if (!sdcard_readOCRRegister(&ocr)) {
-                        break;
+                        sdcard_reset();
+                        goto doMore;
                     }
 
                     sdcard.highCapacity = (ocr & (1 << 30)) != 0;
@@ -502,28 +503,43 @@ void sdcard_poll()
                     sdcard.highCapacity = false;
                 }
 
+                // Now fetch the CSD and CID registers
                 if (sdcard_fetchCSD()) {
                     sdcard_select();
 
                     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_CID, 0);
 
                     if (status == 0) {
+                        // Keep the card selected to receive the response block
                         sdcard.state = SDCARD_STATE_INITIALIZATION_RECEIVE_CID;
                         goto doMore;
                     } else {
                         sdcard_deselect();
+
+                        sdcard_reset();
+                        goto doMore;
                     }
                 }
             }
         break;
         case SDCARD_STATE_INITIALIZATION_RECEIVE_CID:
             if (sdcard_receiveCID()) {
-                if (sdcard_setConfigurationAndFinalClock()) {
-                    sdcard.state = SDCARD_STATE_READY;
-                } else {
-                    // TODO we could reset the card here and try again
+                sdcard_deselect();
+
+                /* The spec is a little iffy on what the default block size is for Standard Size cards (it can be changed on
+                 * standard size cards) so let's just set it to 512 explicitly so we don't have a problem.
+                 */
+                if (!sdcard.highCapacity && !sdcard_setBlockLength(SDCARD_BLOCK_SIZE)) {
+                    sdcard_reset();
+                    goto doMore;
                 }
-            }
+
+                // Now we're done with init and we can switch to the full speed clock (<25MHz)
+                spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
+
+                sdcard.state = SDCARD_STATE_READY;
+                goto doMore;
+            } // else keep waiting for the CID to arrive
         break;
         case SDCARD_STATE_SENDING_WRITE:
             // Has the DMA write finished yet?
@@ -547,17 +563,24 @@ void sdcard_poll()
                 if (sdcard_sendDataBlockFinish()) {
                     // The SD card is now busy committing that write to the card
                     sdcard.state = SDCARD_STATE_WRITING;
+                    sdcard.operationStartTime = millis();
 
-                    // Since we've transmitted the buffer we may as well go ahead and tell the caller their operation is complete
+                    // Since we've transmitted the buffer we can well go ahead and tell the caller their operation is complete
                     if (sdcard.pendingOperation.callback) {
                         sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, sdcard.pendingOperation.buffer, sdcard.pendingOperation.callbackData);
                     }
                 } else {
-                    // Our write was rejected! Bad CRC/address?
-                    sdcard.state = SDCARD_STATE_READY;
+                    /* Our write was rejected! This could be due to a bad address but we hope not to attempt that, so assume
+                     * the card is broken and needs reset.
+                     */
+                    sdcard_reset();
+
+                    // Announce write failure:
                     if (sdcard.pendingOperation.callback) {
                         sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, NULL, sdcard.pendingOperation.callbackData);
                     }
+
+                    goto doMore;
                 }
             }
         break;
@@ -565,6 +588,14 @@ void sdcard_poll()
             if (sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY)) {
                 sdcard_deselect();
                 sdcard.state = SDCARD_STATE_READY;
+            } else if (millis() > sdcard.operationStartTime + SDCARD_TIMEOUT_WRITE_MSEC) {
+                /*
+                 * The caller has already been told that their write has completed, so they will have discarded
+                 * their buffer and have no hope of retrying the operation. But this should be very rare and it allows
+                 * them to reuse their buffer milliseconds faster than they otherwise would.
+                 */
+                sdcard_reset();
+                goto doMore;
             }
         break;
         case SDCARD_STATE_READING:
@@ -583,10 +614,16 @@ void sdcard_poll()
                         );
                     }
                 break;
+                case SDCARD_RECEIVE_BLOCK_IN_PROGRESS:
+                    if (millis() <= sdcard.operationStartTime + SDCARD_TIMEOUT_READ_MSEC) {
+                        break; // Timeout not reached yet so keep waiting
+                    }
+                    // Timeout has expired, so fall through to convert to a fatal error
+
                 case SDCARD_RECEIVE_ERROR:
                     sdcard_deselect();
 
-                    sdcard.state = SDCARD_STATE_READY;
+                    sdcard_reset();
 
                     if (sdcard.pendingOperation.callback) {
                         sdcard.pendingOperation.callback(
@@ -596,9 +633,8 @@ void sdcard_poll()
                             sdcard.pendingOperation.callbackData
                         );
                     }
-                break;
-                case SDCARD_RECEIVE_BLOCK_IN_PROGRESS:
-                    ;
+
+                    goto doMore;
                 break;
             }
         break;
@@ -610,15 +646,24 @@ void sdcard_poll()
 /**
  * Write the 512-byte block from the given buffer into the block with the given index.
  *
- * Returns true if the write was successfully sent to the card for later commit, or false if the operation could
- * not be started due to the card being busy (try again later), or because the write was invalid (bad address).
- *
- * The buffer is not copied anywhere, you must keep the pointer to the buffer valid until the operation completes!
+ * Returns:
+ *     SDCARD_OPERATION_IN_PROGRESS - Your buffer is currently being transmitted to the card and your callback will be
+ *                                    called later to report the completion. The buffer pointer must remain valid until
+ *                                    that time.
+ *     SDCARD_OPERATION_SUCCESS     - Your buffer has been transmitted to the card now.
+ *     SDCARD_OPERATION_BUSY        - The card is already busy and cannot accept your write
+ *     SDCARD_OPERATION_FAILURE     - Your write was rejected by the card, card will be reset
  */
-bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
+sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
+#ifndef SDCARD_USE_DMA_FOR_TX
+    // When not using DMA, the writes complete before this routine returns, so we don't need the callback
+    (void) callback;
+    (void) callbackData;
+#endif
+
     if (sdcard.state != SDCARD_STATE_READY)
-        return false;
+        return SDCARD_OPERATION_BUSY;
 
     sdcard_select();
 
@@ -628,32 +673,33 @@ bool sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCom
     // Card wants 8 dummy clock cycles after the command response to become ready
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
 
-#ifdef SDCARD_USE_DMA_FOR_TX
-    sdcard.pendingOperation.buffer = buffer;
-    sdcard.pendingOperation.blockIndex = blockIndex;
-    sdcard.pendingOperation.callback = callback;
-    sdcard.pendingOperation.callbackData = callbackData;
-#endif
-
     if (status == 0 && sdcard_sendDataBlock(buffer, SDCARD_BLOCK_SIZE)) {
-
 #ifdef SDCARD_USE_DMA_FOR_TX
+        sdcard.pendingOperation.buffer = buffer;
+        sdcard.pendingOperation.blockIndex = blockIndex;
+        sdcard.pendingOperation.callback = callback;
+        sdcard.pendingOperation.callbackData = callbackData;
         sdcard.state = SDCARD_STATE_SENDING_WRITE;
+
+        return SDCARD_OPERATION_IN_PROGRESS;
 #else
         /* The data has already been received by the SD card (buffer has been transmitted), we only have to wait for the
          * card to commit it. Let the caller know it can free its buffer.
+         *
+         * Leave the card selected while the write is in progress.
          */
+        sdcard.operationStartTime = millis();
         sdcard.state = SDCARD_STATE_WRITING;
-        if (callback) {
-            callback(SDCARD_BLOCK_OPERATION_WRITE, blockIndex, buffer, callbackData);
-        }
-#endif
 
-        // Leave the card selected while the write is in progress
-        return true;
+        return SDCARD_OPERATION_SUCCESS;
+#endif
     } else {
         sdcard_deselect();
-        return false;
+
+        // Writes shouldn't really be failing unless we gave a bad address, so reset the card
+        sdcard_reset();
+
+        return SDCARD_OPERATION_FAILURE;
     }
 }
 
@@ -682,6 +728,9 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
         sdcard.pendingOperation.callbackData = callbackData;
         
         sdcard.state = SDCARD_STATE_READING;
+
+        sdcard.operationStartTime = millis();
+
         // Leave the card selected for the whole transaction
 
         return true;

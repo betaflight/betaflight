@@ -577,7 +577,6 @@ static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_
                 afatfs_assert(afatfs_cacheSectorGetMemory(i) == buffer);
 
                 afatfs.cacheUnflushedEntries--;
-
                 afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_IN_SYNC;
             }
             break;
@@ -594,11 +593,23 @@ static bool afatfs_cacheFlushSector(int cacheIndex)
     if (afatfs.cacheDescriptor[cacheIndex].state != AFATFS_CACHE_STATE_DIRTY)
         return true; // Already flushed
 
-    if (sdcard_writeBlock(afatfs.cacheDescriptor[cacheIndex].sectorIndex, afatfs_cacheSectorGetMemory(cacheIndex), afatfs_sdcardWriteComplete, 0)) {
-        afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_WRITING;
-        return true;
+    switch (sdcard_writeBlock(afatfs.cacheDescriptor[cacheIndex].sectorIndex, afatfs_cacheSectorGetMemory(cacheIndex), afatfs_sdcardWriteComplete, 0)) {
+        case SDCARD_OPERATION_IN_PROGRESS:
+            // The card will call us back later when the buffer transmission finishes
+            afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_WRITING;
+            return true;
+
+        case SDCARD_OPERATION_SUCCESS:
+            // Buffer is already transmitted
+            afatfs.cacheUnflushedEntries--;
+            afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_IN_SYNC;
+            return true;
+
+        case SDCARD_OPERATION_BUSY:
+        case SDCARD_OPERATION_FAILURE:
+        default:
+            return false;
     }
-    return false;
 }
 
 /**
