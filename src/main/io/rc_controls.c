@@ -150,6 +150,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     if (!isUsingSticksToArm) {
 
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            rcDisarmTicks = 0;
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -168,8 +169,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
                         mwDisarm();
                     }
                 }
-            } else {
-                rcDisarmTicks = 0;
             }
         }
     }
