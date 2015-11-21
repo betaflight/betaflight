@@ -414,7 +414,9 @@ void init(void)
             &masterConfig.serialConfig,
             &masterConfig.gpsConfig
         );
-        
+    }
+#endif
+
 #ifdef NAV
         navigationInit(
             &masterConfig.navConfig,
@@ -423,8 +425,6 @@ void init(void)
             &masterConfig.rxConfig,
             &masterConfig.escAndServoConfig
         );
-#endif
-    }
 #endif
 
 #ifdef SONAR
