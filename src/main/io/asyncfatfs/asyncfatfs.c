@@ -123,16 +123,27 @@ typedef union afatfsFATSector_t {
 } afatfsFATSector_t;
 
 typedef struct afatfsCacheBlockDescriptor_t {
+    /*
+     * The physical sector index on disk that this cached block corresponds to
+     */
     uint32_t sectorIndex;
+
+    // We use an increasing timestamp to identify cache access times.
+
+    // This is the timestamp that this sector was first marked dirty at (so we can flush sectors in write-order).
+    uint32_t writeTimestamp;
+
+    // This is the last time the sector was accessed
+    uint32_t accessTimestamp;
+
     afatfsCacheBlockState_e state;
-    uint32_t lastUse;
 
     /*
      * The state of this block must not transition (do not flush to disk, do not discard). This is useful for a sector
      * which is currently being written to by the application (so flushing it would be a waste of time).
      *
-     * This is a binary state rather than a counter because we assume that only one file will be responsible for the
-     * sectors it locks.
+     * This is a binary state rather than a counter because we assume that only one party will be responsible for and
+     * so consider locking a given sector.
      */
     unsigned locked:1;
 
@@ -356,7 +367,9 @@ typedef struct afatfs_t {
     uint8_t cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS];
     afatfsCacheBlockDescriptor_t cacheDescriptor[AFATFS_NUM_CACHE_SECTORS];
     uint32_t cacheTimer;
-    int cacheUnflushedEntries; // The number of cache entries in the AFATFS_CACHE_STATE_DIRTY or AFATFS_CACHE_STATE_WRITING states
+
+    int cacheDirtyEntries; // The number of cache entries in the AFATFS_CACHE_STATE_DIRTY state
+    bool cacheFlushInProgress;
 
     afatfsFile_t openFiles[AFATFS_MAX_OPEN_FILES];
 
@@ -498,31 +511,21 @@ static int afatfs_getCacheDescriptorIndexForBuffer(uint8_t *memory)
 
 static afatfsCacheBlockDescriptor_t* afatfs_getCacheDescriptorForBuffer(uint8_t *memory)
 {
-    int index = afatfs_getCacheDescriptorIndexForBuffer(memory);
-
-    if (index > -1) {
-        return afatfs.cacheDescriptor + index;
-    } else {
-        return NULL;
-    }
+    return afatfs.cacheDescriptor + afatfs_getCacheDescriptorIndexForBuffer(memory);
 }
 
-/**
- * Mark the cached sector that the given memory pointer lies inside as dirty.
- */
-static void afatfs_cacheSectorMarkDirty(uint8_t *memory)
+static void afatfs_cacheSectorMarkDirty(afatfsCacheBlockDescriptor_t *descriptor)
 {
-    afatfsCacheBlockDescriptor_t *descriptor = afatfs_getCacheDescriptorForBuffer(memory);
-
-    if (descriptor && descriptor->state != AFATFS_CACHE_STATE_DIRTY) {
+    if (descriptor->state != AFATFS_CACHE_STATE_DIRTY) {
+        descriptor->writeTimestamp = ++afatfs.cacheTimer;
         descriptor->state = AFATFS_CACHE_STATE_DIRTY;
-        afatfs.cacheUnflushedEntries++;
+        afatfs.cacheDirtyEntries++;
     }
 }
 
 static void afatfs_cacheSectorInit(afatfsCacheBlockDescriptor_t *descriptor, uint32_t sectorIndex, bool locked)
 {
-    descriptor->lastUse = ++afatfs.cacheTimer;
+    descriptor->accessTimestamp = descriptor->writeTimestamp = ++afatfs.cacheTimer;
     descriptor->sectorIndex = sectorIndex;
     descriptor->locked = locked;
     descriptor->discardable = 0;
@@ -563,6 +566,8 @@ static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_
     (void) operation;
     (void) callbackData;
 
+    afatfs.cacheFlushInProgress = false;
+
     for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
         /* Keep in mind that someone may have marked the sector as dirty after writing had already begun. In this case we must leave
          * it marked as dirty because those modifications may have been made too late to make it to the disk!
@@ -573,10 +578,10 @@ static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_
             if (buffer == NULL) {
                 // Write failed, remark the sector as dirty
                 afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_DIRTY;
+                afatfs.cacheDirtyEntries++;
             } else {
                 afatfs_assert(afatfs_cacheSectorGetMemory(i) == buffer);
 
-                afatfs.cacheUnflushedEntries--;
                 afatfs.cacheDescriptor[i].state = AFATFS_CACHE_STATE_IN_SYNC;
             }
             break;
@@ -585,30 +590,28 @@ static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_
 }
 
 /**
- * Attempt to flush the dirty cache entry with the given index to the SDcard. Returns true if the SDcard accepted
- * the write, false if the card was busy.
+ * Attempt to flush the dirty cache entry with the given index to the SDcard.
  */
-static bool afatfs_cacheFlushSector(int cacheIndex)
+static void afatfs_cacheFlushSector(int cacheIndex)
 {
-    if (afatfs.cacheDescriptor[cacheIndex].state != AFATFS_CACHE_STATE_DIRTY)
-        return true; // Already flushed
-
     switch (sdcard_writeBlock(afatfs.cacheDescriptor[cacheIndex].sectorIndex, afatfs_cacheSectorGetMemory(cacheIndex), afatfs_sdcardWriteComplete, 0)) {
         case SDCARD_OPERATION_IN_PROGRESS:
             // The card will call us back later when the buffer transmission finishes
+            afatfs.cacheDirtyEntries--;
             afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_WRITING;
-            return true;
+            afatfs.cacheFlushInProgress = true;
+            break;
 
         case SDCARD_OPERATION_SUCCESS:
             // Buffer is already transmitted
-            afatfs.cacheUnflushedEntries--;
+            afatfs.cacheDirtyEntries--;
             afatfs.cacheDescriptor[cacheIndex].state = AFATFS_CACHE_STATE_IN_SYNC;
-            return true;
+            break;
 
         case SDCARD_OPERATION_BUSY:
         case SDCARD_OPERATION_FAILURE:
         default:
-            return false;
+            ;
     }
 }
 
@@ -667,7 +670,7 @@ static int afatfs_allocateCacheSector(uint32_t sectorIndex)
             }
 
             // Bump the last access time
-            afatfs.cacheDescriptor[i].lastUse = ++afatfs.cacheTimer;
+            afatfs.cacheDescriptor[i].accessTimestamp = ++afatfs.cacheTimer;
             return i;
         }
 
@@ -679,9 +682,9 @@ static int afatfs_allocateCacheSector(uint32_t sectorIndex)
                 if (!afatfs.cacheDescriptor[i].locked && afatfs.cacheDescriptor[i].retainCount == 0) {
                     if (afatfs.cacheDescriptor[i].discardable) {
                         discardableIndex = i;
-                    } else if (afatfs.cacheDescriptor[i].lastUse < oldestSyncedSectorLastUse) {
+                    } else if (afatfs.cacheDescriptor[i].accessTimestamp < oldestSyncedSectorLastUse) {
                         // This block could be evicted from the cache to make room for us since it's idle and not dirty
-                        oldestSyncedSectorLastUse = afatfs.cacheDescriptor[i].lastUse;
+                        oldestSyncedSectorLastUse = afatfs.cacheDescriptor[i].accessTimestamp;
                         oldestSyncedSectorIndex = i;
                     }
                 }
@@ -713,14 +716,24 @@ static int afatfs_allocateCacheSector(uint32_t sectorIndex)
  */
 bool afatfs_flush()
 {
-    if (afatfs.cacheUnflushedEntries > 0) {
-        for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
-            if (afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY && !afatfs.cacheDescriptor[i].locked) {
-                afatfs_cacheFlushSector(i);
+    if (afatfs.cacheDirtyEntries > 0) {
+        uint32_t earliestSectorTime = 0xFFFFFFFF;
+        int earliestSectorIndex = -1;
 
-                // That flush will take time to complete so we may as well tell caller to come back later
-                return false;
+        for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
+            if (afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY && !afatfs.cacheDescriptor[i].locked
+                && (earliestSectorIndex == -1 || afatfs.cacheDescriptor[i].writeTimestamp < earliestSectorTime)
+            ) {
+                earliestSectorIndex = i;
+                earliestSectorTime = afatfs.cacheDescriptor[i].writeTimestamp;
             }
+        }
+
+        if (earliestSectorIndex > -1) {
+            afatfs_cacheFlushSector(earliestSectorIndex);
+
+            // That flush will take time to complete so we may as well tell caller to come back later
+            return false;
         }
     }
 
@@ -813,8 +826,7 @@ static void afatfs_fileGetCursorClusterAndSector(afatfsFilePtr_t file, uint32_t 
         case AFATFS_CACHE_STATE_WRITING:
         case AFATFS_CACHE_STATE_IN_SYNC:
             if ((sectorFlags & AFATFS_CACHE_WRITE) != 0) {
-                afatfs.cacheDescriptor[cacheSectorIndex].state = AFATFS_CACHE_STATE_DIRTY;
-                afatfs.cacheUnflushedEntries++;
+                afatfs_cacheSectorMarkDirty(&afatfs.cacheDescriptor[cacheSectorIndex]);
             }
             // Fall through
 
@@ -1217,8 +1229,17 @@ static afatfsOperationStatus_e afatfs_FATFillWithPattern(afatfsFATPattern_e patt
 
         result = afatfs_cacheSector(fatPhysicalSector, &sector.bytes, cacheFlags);
 
-        if (result != AFATFS_OPERATION_SUCCESS)
+        if (result != AFATFS_OPERATION_SUCCESS) {
             return result;
+        }
+
+#ifdef AFATFS_DEBUG_VERBOSE
+        if (pattern == AFATFS_FAT_PATTERN_FREE) {
+            fprintf(stderr, "Marking cluster %u to %u as free in FAT sector %u...\n", *startCluster, endCluster, fatPhysicalSector);
+        } else {
+            fprintf(stderr, "Writing FAT chain from cluster %u to %u in FAT sector %u...\n", *startCluster, endCluster, fatPhysicalSector);
+        }
+#endif
 
         switch (pattern) {
             case AFATFS_FAT_PATTERN_TERMINATED_CHAIN:
@@ -1282,6 +1303,10 @@ static afatfsOperationStatus_e afatfs_saveDirectoryEntry(afatfsFilePtr_t file)
         return AFATFS_OPERATION_SUCCESS; // Root directories don't have a directory entry
 
     result = afatfs_cacheSector(file->directoryEntryPos.sectorNumberPhysical, &sector, AFATFS_CACHE_READ | AFATFS_CACHE_WRITE);
+
+#ifdef AFATFS_DEBUG_VERBOSE
+    fprintf(stderr, "Saving directory entry for %.*s to sector %u...\n", FAT_FILENAME_LENGTH, file->directoryEntry.filename, file->directoryEntryPos.sectorNumberPhysical);
+#endif
 
     if (result == AFATFS_OPERATION_SUCCESS) {
         // (sub)directories don't store a filesize in their directory entry:
@@ -2149,7 +2174,7 @@ static afatfsOperationStatus_e afatfs_allocateDirectoryEntry(afatfsFilePtr_t dir
     while ((result = afatfs_findNext(directory, finder, dirEntry)) == AFATFS_OPERATION_SUCCESS) {
         if (*dirEntry) {
             if (fat_isDirectoryEntryEmpty(*dirEntry) || fat_isDirectoryEntryTerminator(*dirEntry)) {
-                afatfs_cacheSectorMarkDirty((uint8_t*) *dirEntry);
+                afatfs_cacheSectorMarkDirty(afatfs_getCacheDescriptorForBuffer((uint8_t*) *dirEntry));
 
                 afatfs_findLast(directory);
                 return AFATFS_OPERATION_SUCCESS;
@@ -2384,6 +2409,10 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
             if (status == AFATFS_OPERATION_SUCCESS) {
                 memcpy(entry, &file->directoryEntry, sizeof(file->directoryEntry));
 
+#ifdef AFATFS_DEBUG_VERBOSE
+                fprintf(stderr, "Adding directory entry for %.*s to sector %u\n", FAT_FILENAME_LENGTH, entry->filename, file->directoryEntryPos.sectorNumberPhysical);
+#endif
+
                 opState->phase = AFATFS_CREATEFILE_PHASE_SUCCESS;
                 goto doMore;
             } else if (status == AFATFS_OPERATION_FAILURE) {
@@ -2585,11 +2614,12 @@ static void afatfs_fcloseContinue(afatfsFilePtr_t file)
     /*
      * Directories don't update their parent directory entries over time, because their fileSize field in the directory
      * never changes (when we add the first cluster to the directory we save the directory entry at that point and it
-     * doesn't change afterwards).
+     * doesn't change afterwards). So don't bother trying to save their directory entries during fclose().
      *
-     * So don't bother trying to save their directory entries during fclose().
+     * Also if we only opened the file for read then we didn't change the directory entry either.
      */
-    if (file->type != AFATFS_FILE_TYPE_DIRECTORY && file->type != AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY) {
+    if (file->type != AFATFS_FILE_TYPE_DIRECTORY && file->type != AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY
+            && (file->mode & (AFATFS_FILE_MODE_APPEND | AFATFS_FILE_MODE_WRITE | AFATFS_FILE_MODE_CREATE)) != 0) {
         if (afatfs_saveDirectoryEntry(file) != AFATFS_OPERATION_SUCCESS) {
             return;
         }
@@ -3267,8 +3297,13 @@ bool afatfs_destroy()
             openFileCount++;
         }
 
+        afatfs_poll();
+
         if (!afatfs_flush()) {
-            afatfs_poll();
+            return false;
+        }
+
+        if (afatfs.cacheFlushInProgress) {
             return false;
         }
 
