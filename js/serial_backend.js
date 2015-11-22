@@ -260,42 +260,7 @@ function onConnect() {
 
     var dataflash = $('#dataflash_wrapper');
     dataflash.show(); 
-    
-    
-
-// TEST code for profile change in header
-    function get_pid_controller() {
-        if (GUI.canChangePidController) {
-            MSP.send_message(MSP_codes.MSP_PID_CONTROLLER, false, false, get_pid_names);
-        } else {
-            get_pid_names();
-        }
-    }
-
-    function get_pid_names() {
-        MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
-    }
-        
-    // requesting MSP_STATUS manually because it contains CONFIG.profile
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
-    
-        var profile_e = $('select[name="profilechange"]');
-
-        // Fill in currently selected profile
-        profile_e.val(CONFIG.profile);
-        // UI Hooks
-        profile_e.change(function () {
-            var profile = parseInt($(this).val());
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
-                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
-
-
-                // < here goes the code to reinitialise the current tab
-                
-            });
-        });
-        
-// testing profile change END        
+         
         
 // TEST code for dataflash status in header
     MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
