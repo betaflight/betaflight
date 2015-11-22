@@ -339,6 +339,7 @@ TABS.pid_tuning.initialize = function (callback) {
         // Fill in currently selected profile
 
         profile_e.val(CONFIG.profile);
+	$('select[name="profilechange"]').val(CONFIG.profile);
 
         // UI Hooks
         profile_e.change(function () {
@@ -402,7 +403,7 @@ TABS.pid_tuning.initialize = function (callback) {
                     MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
                         GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
                     });
-                    TABS.pid_tuning.initialize();
+                    //TABS.pid_tuning.initialize();
                 });
             } else {
                 send_pids();
