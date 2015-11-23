@@ -40,10 +40,13 @@
 // Chosen so that CMD8 will have the same CRC as CMD0:
 #define SDCARD_IF_COND_CHECK_PATTERN 0xAB
 
+/* Break up 512-byte SD card sectors into chunks of this size when writing without DMA to reduce the peak overhead
+ * per call to sdcard_poll().
+ */
+#define SDCARD_NON_DMA_CHUNK_SIZE 256
+
 #define STATIC_ASSERT(condition, name ) \
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
-
-#define SDCARD_USE_DMA_FOR_TX
 
 typedef enum {
     // In these states we run at the initialization 400kHz clockspeed:
@@ -62,8 +65,8 @@ typedef enum {
 typedef struct sdcard_t {
     struct {
         uint8_t *buffer;
-        int error;
         uint32_t blockIndex;
+        uint8_t chunkIndex;
 
         sdcard_operationCompleteCallback_c callback;
         uint32_t callbackData;
@@ -82,6 +85,13 @@ typedef struct sdcard_t {
 
 
 static sdcard_t sdcard;
+
+#ifdef SDCARD_DMA_CHANNEL_TX
+    static bool useDMAForTx;
+#else
+    // DMA channel not available so we can hard-code this to allow the non-DMA paths to be stripped by optimization
+    static const bool useDMAForTx = false;
+#endif
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
@@ -299,48 +309,41 @@ static bool sdcard_sendDataBlockFinish()
 }
 
 /**
- * Write the buffer of `count` bytes to the SD card.
- *
- * Returns true if the write was begun (card will enter a busy state).
+ * Begin sending a buffer of SDCARD_BLOCK_SIZE bytes to the SD card.
  */
-static bool sdcard_sendDataBlock(uint8_t *buffer, int count)
+static void sdcard_sendDataBlockBegin(uint8_t *buffer)
 {
     spiTransferByte(SDCARD_SPI_INSTANCE, SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
 
-#ifdef SDCARD_USE_DMA_FOR_TX
-    // Queue the transmission of the sector payload
-    DMA_InitTypeDef DMA_InitStructure;
+    if (useDMAForTx) {
+        // Queue the transmission of the sector payload
+        DMA_InitTypeDef DMA_InitStructure;
 
-    DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+        DMA_StructInit(&DMA_InitStructure);
+        DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
+        DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
+        DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+        DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+        DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
 
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+        DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+        DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
+        DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 
-    DMA_InitStructure.DMA_BufferSize = count;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+        DMA_InitStructure.DMA_BufferSize = SDCARD_BLOCK_SIZE;
+        DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+        DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 
-    DMA_DeInit(SDCARD_DMA_CHANNEL_TX);
-    DMA_Init(SDCARD_DMA_CHANNEL_TX, &DMA_InitStructure);
+        DMA_DeInit(SDCARD_DMA_CHANNEL_TX);
+        DMA_Init(SDCARD_DMA_CHANNEL_TX, &DMA_InitStructure);
 
-    DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
+        DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
 
-    SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
-
-    return true;
-#else
-    // Send the sector payload now
-    spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, count);
-
-    // And check the SD card's acknowledgement
-    return sdcard_sendDataBlockFinish();
-#endif
+        SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
+    } else {
+        // Send the first chunk now
+        spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, SDCARD_NON_DMA_CHUNK_SIZE);
+    }
 }
 
 static bool sdcard_receiveCID()
@@ -425,8 +428,18 @@ static bool sdcard_checkInitDone() {
     return status == 0x00;
 }
 
-bool sdcard_init()
+/**
+ * Begin the initialization process for the SD card. This must be called first before any other sdcard_ routine.
+ */
+void sdcard_init(bool useDMA)
 {
+#ifdef SDCARD_DMA_CHANNEL_TX
+    useDMAForTx = useDMA;
+#else
+    // DMA is not available
+    (void) useDMA;
+#endif
+
     // Max frequency is initially 400kHz
     spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
 
@@ -443,8 +456,6 @@ bool sdcard_init()
     }
 
     sdcard.state = SDCARD_STATE_RESET;
-
-    return true;
 }
 
 static bool sdcard_setBlockLength(uint32_t blockLen)
@@ -464,6 +475,7 @@ static bool sdcard_setBlockLength(uint32_t blockLen)
 void sdcard_poll()
 {
     uint8_t initStatus;
+    bool sendComplete;
 
     doMore:
     switch (sdcard.state) {
@@ -542,8 +554,10 @@ void sdcard_poll()
             } // else keep waiting for the CID to arrive
         break;
         case SDCARD_STATE_SENDING_WRITE:
-            // Has the DMA write finished yet?
-            if (DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
+            // Have we finished sending the write yet?
+            sendComplete = false;
+
+            if (useDMAForTx && DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
                 DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
 
                 DMA_Cmd(SDCARD_DMA_CHANNEL_TX, DISABLE);
@@ -559,6 +573,19 @@ void sdcard_poll()
 
                 SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, DISABLE);
 
+                sendComplete = true;
+            }
+
+            if (!useDMAForTx) {
+                // Send another chunk
+                spiTransfer(SDCARD_SPI_INSTANCE, NULL, sdcard.pendingOperation.buffer + SDCARD_NON_DMA_CHUNK_SIZE * sdcard.pendingOperation.chunkIndex, SDCARD_NON_DMA_CHUNK_SIZE);
+
+                sdcard.pendingOperation.chunkIndex++;
+
+                sendComplete = sdcard.pendingOperation.chunkIndex == SDCARD_BLOCK_SIZE / SDCARD_NON_DMA_CHUNK_SIZE;
+            }
+
+            if (sendComplete) {
                 // Finish up by sending the CRC and checking the SD-card's acceptance/rejectance
                 if (sdcard_sendDataBlockFinish()) {
                     // The SD card is now busy committing that write to the card
@@ -646,6 +673,9 @@ void sdcard_poll()
 /**
  * Write the 512-byte block from the given buffer into the block with the given index.
  *
+ * If the write does not complete immediately, your callback will be called later. If the write was successful, the
+ * buffer pointer will be the same buffer you originally passed in, otherwise the buffer will be set to NULL.
+ *
  * Returns:
  *     SDCARD_OPERATION_IN_PROGRESS - Your buffer is currently being transmitted to the card and your callback will be
  *                                    called later to report the completion. The buffer pointer must remain valid until
@@ -656,12 +686,6 @@ void sdcard_poll()
  */
 sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
-#ifndef SDCARD_USE_DMA_FOR_TX
-    // When not using DMA, the writes complete before this routine returns, so we don't need the callback
-    (void) callback;
-    (void) callbackData;
-#endif
-
     if (sdcard.state != SDCARD_STATE_READY)
         return SDCARD_OPERATION_BUSY;
 
@@ -673,30 +697,20 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
     // Card wants 8 dummy clock cycles after the command response to become ready
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
 
-    if (status == 0 && sdcard_sendDataBlock(buffer, SDCARD_BLOCK_SIZE)) {
-#ifdef SDCARD_USE_DMA_FOR_TX
+    if (status == 0) {
+        sdcard_sendDataBlockBegin(buffer);
+
         sdcard.pendingOperation.buffer = buffer;
         sdcard.pendingOperation.blockIndex = blockIndex;
         sdcard.pendingOperation.callback = callback;
         sdcard.pendingOperation.callbackData = callbackData;
+        sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
         sdcard.state = SDCARD_STATE_SENDING_WRITE;
 
         return SDCARD_OPERATION_IN_PROGRESS;
-#else
-        /* The data has already been received by the SD card (buffer has been transmitted), we only have to wait for the
-         * card to commit it. Let the caller know it can free its buffer.
-         *
-         * Leave the card selected while the write is in progress.
-         */
-        sdcard.operationStartTime = millis();
-        sdcard.state = SDCARD_STATE_WRITING;
-
-        return SDCARD_OPERATION_SUCCESS;
-#endif
     } else {
         sdcard_deselect();
 
-        // Writes shouldn't really be failing unless we gave a bad address, so reset the card
         sdcard_reset();
 
         return SDCARD_OPERATION_FAILURE;
@@ -706,10 +720,14 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
 /**
  * Read the 512-byte block with the given index into the given 512-byte buffer.
  *
- * Returns true if the operation was successfully queued for later completion, or false if the operation could
- * not be started due to the card being busy (try again later).
+ * When the read completes, your callback will be called. If the read was successful, the buffer pointer will be the
+ * same buffer you originally passed in, otherwise the buffer will be set to NULL.
  *
  * You must keep the pointer to the buffer valid until the operation completes!
+ *
+ * Returns:
+ *     true - The operation was successfully queued for later completion, your callback will be called later
+ *     false - The operation could not be started due to the card being busy (try again later).
  */
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
