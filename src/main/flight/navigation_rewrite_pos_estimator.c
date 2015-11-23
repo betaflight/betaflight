@@ -84,8 +84,10 @@ typedef struct {
 
 typedef struct {
     uint32_t    lastUpdateTime; // Last update time (us)
+#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
     bool        glitchDetected;
     bool        glitchRecovery;
+#endif
     t_fp_vector pos;            // GPS position in NEU coordinate system (cm)
     t_fp_vector vel;            // GPS velocity (cms)
     float       eph;
@@ -196,6 +198,7 @@ static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
     return dTus;                                                 // Filter failed. Set GPS Hz by measurement
 }
 
+#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
 static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
 {
     t_fp_vector posError;
@@ -220,6 +223,7 @@ static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
 
     return false;
 }
+#endif
 
 /**
  * Update GPS topic
@@ -274,6 +278,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
             if (!isFirstGPSUpdate) {
                 float dT = US2S(getGPSDeltaTimeFilter(currentTime - lastGPSNewDataTime));
 
+#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
                 /* GPS glitch protection */
                 if (detectGPSGlitch(&newLocalPos, dT)) {
                     posEstimator.gps.glitchRecovery = false;
@@ -284,6 +289,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
                     posEstimator.gps.glitchRecovery = posEstimator.gps.glitchDetected;
                     posEstimator.gps.glitchDetected = false;
                 }
+#endif
 
                 /* Even if GPS glitch is detected we continue to update GPS position and velocity to always have a previous reading */
                 posEstimator.gps.pos = newLocalPos;
@@ -491,11 +497,14 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
     /* Figure out if we have valid position data from our data sources */
     bool isGPSValid = sensors(SENSOR_MAG) && persistentFlag(FLAG_MAG_CALIBRATION_DONE) && posControl.gpsOrigin.valid &&
-                      sensors(SENSOR_GPS) && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS)) &&
-                      !posEstimator.gps.glitchDetected;
+                      sensors(SENSOR_GPS) && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
     bool isBaroValid = sensors(SENSOR_BARO) && ((currentTime - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
     bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTime - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
     bool useDeadReckoning = posControl.navConfig->inav.enable_dead_reckoning && (!isGPSValid);
+
+#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+    isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
+#endif
 
     /* Apply GPS altitude corrections only on fixed wing aircrafts */
     bool useGpsZ = STATE(FIXED_WING) && isGPSValid;
