@@ -260,7 +260,8 @@ function onConnect() {
 
     var dataflash = $('#dataflash_wrapper');
     dataflash.show(); 
-         
+     
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false);    
         
 // TEST code for dataflash status in header
     MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
@@ -313,13 +314,10 @@ function onConnect() {
         
         
 
-    // testing dataflash change END        
-
+    // testing dataflash change END      
     
     
-    
-    
-    }
+}
 
 function onClosed(result) {
     if (result) { // All went as expected
