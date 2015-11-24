@@ -256,52 +256,9 @@ function onConnect() {
         
 // TEST code for dataflash status in header
     //MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, update_html());
-
-    function formatFilesize(bytes) {
-        if (bytes < 1024) {
-            return bytes + "B";
-        }
-        var kilobytes = bytes / 1024;
-        
-        if (kilobytes < 1024) {
-            return Math.round(kilobytes) + "kB";
-        }
-        
-        var megabytes = kilobytes / 1024;
-        
-        return megabytes.toFixed(1) + "MB";
-    }
     
-    function update_dataflash_global() {
-        var supportsDataflash = DATAFLASH.totalSize > 0;
-        if (supportsDataflash){
-
-             $(".noflash_global").css({
-                 display: 'none'
-             }); 
-
-             $(".dataflash-contents_global").css({
-                 display: 'block'
-             }); 
-	     
-             $(".dataflash-free_global").css({
-                 width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
-                 display: 'block'
-             });
-             $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
-        } else {
-             $(".noflash_global").css({
-                 display: 'block'
-             }); 
-
-             $(".dataflash-contents_global").css({
-                 display: 'none'
-             }); 
-        }      
-        
-    }
     
-    MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, update_dataflash_global);
+    MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
     
     var sensor_state = $('#sensor-status');
     sensor_state.show(); 
@@ -439,7 +396,34 @@ function highByte(num) {
 
 function lowByte(num) {
     return 0x00FF & num;
-}
+}function update_dataflash_global() {
+        var supportsDataflash = DATAFLASH.totalSize > 0;
+        if (supportsDataflash){
+
+             $(".noflash_global").css({
+                 display: 'none'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'block'
+             }); 
+	     
+             $(".dataflash-free_global").css({
+                 width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+                 display: 'block'
+             });
+             $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+        } else {
+             $(".noflash_global").css({
+                 display: 'block'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'none'
+             }); 
+        }      
+        
+    }
 
 function specificByte(num, pos) {
     return 0x000000FF & (num >> (8 * pos));
@@ -457,3 +441,46 @@ function bit_clear(num, bit) {
     return num & ~(1 << bit);
 }
 
+function update_dataflash_global() {
+  function formatFilesize(bytes) {
+        if (bytes < 1024) {
+            return bytes + "B";
+        }
+        var kilobytes = bytes / 1024;
+        
+        if (kilobytes < 1024) {
+            return Math.round(kilobytes) + "kB";
+        }
+        
+        var megabytes = kilobytes / 1024;
+        
+        return megabytes.toFixed(1) + "MB";
+    }
+  
+        var supportsDataflash = DATAFLASH.totalSize > 0;
+        if (supportsDataflash){
+
+             $(".noflash_global").css({
+                 display: 'none'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'block'
+             }); 
+	     
+             $(".dataflash-free_global").css({
+                 width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+                 display: 'block'
+             });
+             $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+        } else {
+             $(".noflash_global").css({
+                 display: 'block'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'none'
+             }); 
+        }      
+        
+    }
