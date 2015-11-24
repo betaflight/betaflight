@@ -1098,7 +1098,7 @@ static void updateHomePositionCompatibility(void)
 static void updateDesiredRTHAltitude(void)
 {
     if (ARMING_FLAG(ARMED)) {
-        if (!(navGetStateFlags(posControl.navState) & NAV_MODE_RTH)) {
+        if (!(navGetStateFlags(posControl.navState) & NAV_AUTO_RTH)) {
             switch (posControl.navConfig->flags.rth_alt_control_style) {
             case NAV_RTH_NO_ALT:
                 posControl.homeWaypointAbove.pos.V.Z = posControl.actualState.pos.V.Z;
@@ -1467,7 +1467,7 @@ static void setDesiredPositionToWaypointAndUpdateInitialBearing(navWaypointPosit
  *  In PH mode our waypoint is hold position */
 bool isApproachingLastWaypoint(void)
 {
-    if (navGetStateFlags(posControl.navState) & NAV_MODE_WP) {
+    if (navGetStateFlags(posControl.navState) & NAV_AUTO_WP) {
         if (posControl.waypointCount == 0) {
             /* No waypoints, holding current position */
             return true;
@@ -1848,7 +1848,7 @@ void abortForcedRTH(void)
 
 rthState_e getStateOfForcedRTH(void)
 {
-    if (navGetStateFlags(posControl.navState) & NAV_MODE_RTH) {
+    if (navGetStateFlags(posControl.navState) & NAV_AUTO_RTH) {
 
         if (posControl.navState == NAV_STATE_RTH_2D_FINISHED || posControl.navState == NAV_STATE_RTH_3D_FINISHED) {
             return RTH_HAS_LANDED;

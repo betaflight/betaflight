@@ -38,17 +38,6 @@
 // Maximum number of waypoints, special waypoint 0 = home,
 #define NAV_MAX_WAYPOINTS       15
 
-// navigation mode
-typedef enum navigationMode_e {
-    NAV_MODE_NONE       = 0,
-    NAV_MODE_ALTHOLD,
-    NAV_MODE_POSHOLD_2D,
-    NAV_MODE_POSHOLD_3D,
-    NAV_MODE_WP,
-    NAV_MODE_RTH,
-    NAV_MODE_RTH_2D,
-} navigationMode_t;
-
 enum {
     NAV_GPS_ATTI    = 0,                    // Pitch/roll stick controls attitude (pitch/roll lean angles)
     NAV_GPS_CRUISE  = 1                     // Pitch/roll stick controls velocity (forward/right speed)
