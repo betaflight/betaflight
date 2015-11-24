@@ -484,10 +484,6 @@ void init(void)
     }
 #endif
 
-#ifdef USE_SD_CARD
-    SD_Detect_LowLevel_Init();
-#endif
-
 #ifdef USE_FLASHFS
 #ifdef NAZE
     if (hardwareRevision == NAZE32_REV5) {
