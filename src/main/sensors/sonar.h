@@ -16,11 +16,9 @@
  */
 
 #pragma once
-#include "sensors/battery.h"
 
 void sonarUpdate(void);
-
 int32_t sonarRead(void);
-int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle);
+int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t tiltAngle);
 int32_t sonarGetLatestAltitude(void);
 

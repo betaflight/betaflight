@@ -29,8 +29,8 @@
 #ifdef SONAR
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
- * When trigged it sends out a series of 40KHz ultrasonic pulses and receives
- * echo froman object. The distance between the unit and the object is calculated
+ * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
+ * echo from an object. The distance between the unit and the object is calculated
  * by measuring the traveling time of sound and output it as the width of a TTL pulse.
  *
  * *** Warning: HC-SR04 operates at +5V ***
@@ -152,7 +152,7 @@ void hcsr04_start_reading(void)
 
 /**
  * Get the distance that was measured by the last pulse, in centimeters. When the ground is too far away to be
- * reliably read by the sonar, -1 is returned instead.
+ * reliably read by the sonar, SONAR_OUT_OF_RANGE is returned instead.
  */
 int32_t hcsr04_get_distance(void)
 {
@@ -164,8 +164,8 @@ int32_t hcsr04_get_distance(void)
     int32_t distance = measurement / 59;
 
     // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-    if (distance > 300)
-        distance = -1;
+    if (distance > SONAR_MAX_RANGE_WITH_TILT)
+        distance = SONAR_OUT_OF_RANGE;
 
     return distance;
 }

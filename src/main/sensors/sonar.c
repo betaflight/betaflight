@@ -30,9 +30,11 @@
 #include "config/config.h"
 
 #include "sensors/sensors.h"
+#include "sensors/battery.h"
 #include "sensors/sonar.h"
 
-// in cm , -1 indicate sonar is not in range - inclination adjusted by imu
+// Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
+// Inclination is adjusted by imu
 
 #ifdef SONAR
 
@@ -100,7 +102,7 @@ void sonarInit(const sonarHardware_t *sonarHardware)
 {
     hcsr04_init(sonarHardware);
     sensorsSet(SENSOR_SONAR);
-    calculatedAltitude = -1;
+    calculatedAltitude = SONAR_OUT_OF_RANGE;
 }
 
 void sonarUpdate(void)
@@ -109,7 +111,7 @@ void sonarUpdate(void)
 }
 
 /**
- * Get the last distance measured by the sonar in centimeters. When the ground is too far away, -1 is returned instead.
+ * Get the last distance measured by the sonar in centimeters. When the ground is too far away, SONAR_OUT_OF_RANGE is returned.
  */
 int32_t sonarRead(void)
 {
@@ -120,21 +122,21 @@ int32_t sonarRead(void)
  * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
  * the altitude. Returns the computed altitude in centimeters.
  *
- * When the ground is too far away or the tilt is too strong, -1 is returned instead.
+ * When the ground is too far away or the tilt is too large, SONAR_OUT_OF_RANGE is returned.
  */
-int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle)
+int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t tiltAngle)
 {
     // calculate sonar altitude only if the sonar is facing downwards(<25deg)
-    if (tiltAngle > 250)
-        calculatedAltitude = -1;
+    if (tiltAngle > SONAR_MAX_TILT_ANGLE)
+        calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
-        calculatedAltitude = sonarAlt * (900.0f - tiltAngle) / 900.0f;
+        calculatedAltitude = sonarDistance * (900.0f - tiltAngle) / 900.0f;
 
     return calculatedAltitude;
 }
 
 /**
- * Get the latest altitude that was computed by a call to sonarCalculateAltitude(), or -1 if sonarCalculateAltitude
+ * Get the latest altitude that was computed by a call to sonarCalculateAltitude(), or SONAR_OUT_OF_RANGE if sonarCalculateAltitude
  * has never been called.
  */
 int32_t sonarGetLatestAltitude(void)

@@ -15,27 +15,26 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include "platform.h"
+extern "C" {
+    #include "drivers/sonar_hcsr04.h"
+    #include "sensors/sonar.h"
+    #include "build_config.h"
+}
 
-typedef struct sonarHardware_s {
-    uint16_t trigger_pin;
-    uint16_t echo_pin;
-    uint32_t exti_line;
-    uint8_t exti_pin_source;
-    IRQn_Type exti_irqn;
-} sonarHardware_t;
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
 
-#define SONAR_GPIO GPIOB
+TEST(SonarUnittest, TestConstants)
+{
+    // SONAR_OUT_OF_RANGE must be negative
+    EXPECT_LE(SONAR_OUT_OF_RANGE, 0);
+    // Check reasonable values for maximum tilt
+    EXPECT_GE(SONAR_MAX_TILT_ANGLE, 0);
+    EXPECT_LE(SONAR_MAX_TILT_ANGLE, 450);
+    // Check against gross errors in max range constants
+    EXPECT_LE(SONAR_MAX_RANGE_WITH_TILT, SONAR_MAX_RANGE);
+    EXPECT_LE(SONAR_MAX_RANGE_ACCURACY_HIGH, SONAR_MAX_RANGE);
+}
 
-#define SONAR_OUT_OF_RANGE (-1)
-#define SONAR_MAX_RANGE 400 // 4m
-#define SONAR_MAX_RANGE_WITH_TILT 300 // 3m, allow for tilt and roll
-#define SONAR_MAX_RANGE_ACCURACY_HIGH 200 // 2m
-#define SONAR_MAX_TILT_ANGLE 250 // 25 degrees
-
-void hcsr04_init(const sonarHardware_t *sonarHardware);
-
-void hcsr04_start_reading(void);
-int32_t hcsr04_get_distance(void);

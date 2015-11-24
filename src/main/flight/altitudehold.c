@@ -30,6 +30,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/sonar_hcsr04.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -228,7 +229,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     float vel_acc;
     int32_t vel_tmp;
     float accZ_tmp;
-    int32_t sonarAlt = -1;
+    int32_t sonarAlt = SONAR_OUT_OF_RANGE;
     static float accZ_old = 0.0f;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
@@ -265,13 +266,13 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < 200) {
+    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH) {
         baroAlt_offset = BaroAlt - sonarAlt;
         BaroAlt = sonarAlt;
     } else {
         BaroAlt -= baroAlt_offset;
-        if (sonarAlt > 0  && sonarAlt <= 300) {
-            sonarTransition = (300 - sonarAlt) / 100.0f;
+        if (sonarAlt > 0  && sonarAlt <= SONAR_MAX_RANGE_WITH_TILT) {
+            sonarTransition = (SONAR_MAX_RANGE_WITH_TILT - sonarAlt) / 100.0f;
             BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
@@ -305,7 +306,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < 200) {
+    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH) {
         // the sonar has the best range
         EstAlt = BaroAlt;
     } else {
