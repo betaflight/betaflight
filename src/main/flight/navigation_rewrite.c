@@ -131,7 +131,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_ALTHOLD_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_REQUIRE_THRTILT | NAV_RC_ALT,
         .mapToFlightModes = NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -159,7 +159,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_POSHOLD_2D_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_POSHOLD_2D_IN_PROGRESS,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_POS | NAV_REQUIRE_ANGLE | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_POSHOLD_MODE,
         .onEvent = {
@@ -187,7 +187,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_POSHOLD_3D_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_REQUIRE_ANGLE | NAV_REQUIRE_THRTILT | NAV_RC_ALT | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_ALTHOLD_MODE | NAV_POSHOLD_MODE,
         .onEvent = {
@@ -227,7 +227,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_2D_HEAD_HOME] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_RTH_MODE,
         .onEvent = {
@@ -254,7 +254,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_2D_FINISHED] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_2D_FINISHED,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_RTH_MODE,
         .onEvent = {
@@ -281,7 +281,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,     // allow pos adjustment while climbind to safe alt
         .mapToFlightModes = NAV_RTH_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -298,7 +298,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_3D_HEAD_HOME] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH | NAV_RC_ALT | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_RTH_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -331,7 +331,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_3D_LANDING] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_LANDING,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_RTH_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -358,7 +358,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_3D_FINISHED] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_FINISHED,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH,
         .mapToFlightModes = NAV_RTH_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -387,7 +387,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_WAYPOINT_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_WP,
         .mapToFlightModes = NAV_WP_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
@@ -448,7 +448,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_EMERG | NAV_REQUIRE_ANGLE,
         .mapToFlightModes = 0,
         .onEvent = {
@@ -459,7 +459,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_EMERGENCY_LANDING_FINISHED] = {
         .onEntry = navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_FINISHED,
-        .timeoutMs = 0,
+        .timeoutMs = 10,
         .stateFlags = NAV_CTL_EMERG | NAV_REQUIRE_ANGLE,
         .mapToFlightModes = 0,
         .onEvent = {
