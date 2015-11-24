@@ -400,6 +400,7 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
+    masterConfig.gyro_lpf = 1;                 // 1KHZ or 8KHZ
 
     resetAccelerometerTrims(&masterConfig.accZero);
 

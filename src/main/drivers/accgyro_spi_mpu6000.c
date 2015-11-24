@@ -120,11 +120,9 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu6000SpiGyroInit(uint16_t lpf)
+void mpu6000SpiGyroInit(uint8_t lpf)
 {
     mpuIntExtiInit();
-
-    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     mpu6000AccAndGyroInit();
 
@@ -135,7 +133,7 @@ void mpu6000SpiGyroInit(uint16_t lpf)
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 
     // Accel and Gyro DLPF Setting
-    mpu6000WriteRegister(MPU6000_CONFIG, mpuLowPassFilter);
+    mpu6000WriteRegister(MPU6000_CONFIG, lpf);
     delayMicroseconds(1);
 
     int16_t data[3];

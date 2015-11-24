@@ -71,7 +71,7 @@ void mpu6500AccInit(void)
     acc_1G = 512 * 8;
 }
 
-void mpu6500GyroInit(uint16_t lpf)
+void mpu6500GyroInit(uint8_t lpf)
 {
     mpuIntExtiInit();
 
@@ -90,8 +90,6 @@ void mpu6500GyroInit(uint16_t lpf)
 
     mpuIntExtiInit();
 
-    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
-
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
     mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
@@ -101,7 +99,7 @@ void mpu6500GyroInit(uint16_t lpf)
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
-    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter);
+    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
 
     // Data ready interrupt configuration
