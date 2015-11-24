@@ -146,22 +146,22 @@
             </div>
         </div>
         <div class="cf_column half">
-            <div class="gui_box grey" style="height: 444px;">
-                <div class="gui_box_titlebar">
+            <div class="gui_box grey" style="height: 460px;">
+                <div class="gui_box_titlebar" style="margin-bottom: 0px;">
                         <div class="spacer_box_title" i18n="gpsHead"></div>
                 </div>
-                <div id="connect" style="display:none; text-align:center;">
-                    please check your internet connection
+                <div id="connect">
+                    Please check your internet connection
                     <div class="default_btn" style="width:50px; margin-left:auto; margin-right:auto; float:none;"><a id="check">retry</a></div>
                 </div>
-                <div id="waiting" style="margin-top:0px; display:none;">
-                    Online check success! Waiting for GPS 3D fix…
-                </div>
-                <div id="loadmap" style="margin-top:0px; display:none;">
-                    <iframe src="tabs/map.html"></iframe>
+                <div id="waiting">
+                    <div class="info">Waiting for GPS 3D fix…</span>
                 </div>
             </div>
-
+                <div id="loadmap">
+                    <iframe src="tabs/map.html"></iframe>
+                    <div class="controls"><a href="#" id="">+</a><a href="#" id="">-</a></div>
+                </div>
         </div>
 
     </div>
