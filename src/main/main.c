@@ -49,6 +49,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/sdcard.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/sdcard.h"
 
 #include "rx/rx.h"
 
@@ -60,6 +61,7 @@
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -494,6 +496,25 @@ void init(void)
 #endif
 
     flashfsInit();
+#endif
+
+#ifdef USE_SDCARD
+    bool sdcardUseDMA = false;
+
+#ifdef SDCARD_DMA_CHANNEL_TX
+
+#if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
+    // Ensure the SPI Tx DMA doesn't overlap with the led strip
+    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
+#else
+    sdcardUseDMA = true;
+#endif
+
+#endif
+
+    sdcard_init(sdcardUseDMA);
+
+    afatfs_init();
 #endif
 
 #ifdef BLACKBOX

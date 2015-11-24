@@ -515,6 +515,9 @@ STM32F3DISCOVERY_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
@@ -608,6 +611,9 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sonar_hcsr04.c \
 		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)

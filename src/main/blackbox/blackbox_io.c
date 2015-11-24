@@ -76,6 +76,7 @@
 #include "config/config_master.h"
 
 #include "io/flashfs.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #ifdef BLACKBOX
 
@@ -90,12 +91,36 @@ int32_t blackboxHeaderBudget;
 static serialPort_t *blackboxPort = NULL;
 static portSharing_e blackboxPortSharing;
 
+#ifdef USE_SDCARD
+
+static struct {
+    afatfsFilePtr_t logFile;
+    afatfsFilePtr_t logDirectory;
+    afatfsFinder_t logDirectoryFinder;
+    uint32_t largestLogFileNumber;
+
+    enum {
+        BLACKBOX_SDCARD_INITIAL,
+        BLACKBOX_SDCARD_WAITING,
+        BLACKBOX_SDCARD_ENUMERATE_FILES,
+        BLACKBOX_SDCARD_READY_TO_CREATE_LOG,
+        BLACKBOX_SDCARD_READY_TO_LOG
+    } state;
+} blackboxSDCard;
+
+#endif
+
 void blackboxWrite(uint8_t value)
 {
     switch (masterConfig.blackbox_device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             flashfsWriteByte(value); // Write byte asynchronously
+        break;
+#endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            afatfs_fputc(blackboxSDCard.logFile, value);
         break;
 #endif
         case BLACKBOX_DEVICE_SERIAL:
@@ -165,6 +190,13 @@ int blackboxPrint(const char *s)
         case BLACKBOX_DEVICE_FLASH:
             length = strlen(s);
             flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+        break;
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            length = strlen(s);
+            afatfs_fwrite(blackboxSDCard.logFile, (const uint8_t*) s, length); // Ignore failures due to buffers filling up
         break;
 #endif
 
@@ -504,6 +536,11 @@ bool blackboxDeviceFlush(void)
             return flashfsFlushAsync();
 #endif
 
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            return afatfs_flush();
+#endif
+
         default:
             return false;
     }
@@ -567,6 +604,17 @@ bool blackboxDeviceOpen(void)
             return true;
         break;
 #endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_FATAL || afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_UNKNOWN || afatfs_isFull()) {
+                return false;
+            }
+
+            blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
+
+            return true;
+        break;
+#endif
         default:
             return false;
     }
@@ -579,6 +627,7 @@ void blackboxDeviceClose(void)
 {
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
+            // Since the serial port could be shared with other processes, we have to give it back here
             closeSerialPort(blackboxPort);
             blackboxPort = NULL;
 
@@ -589,12 +638,179 @@ void blackboxDeviceClose(void)
             if (blackboxPortSharing == PORTSHARING_SHARED) {
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
             }
-            break;
-#ifdef USE_FLASHFS
-        case BLACKBOX_DEVICE_FLASH:
-            // No-op since the flash doesn't have a "close" and there's nobody else to hand control of it to.
-            break;
+        break;
+        default:
+            ;
+    }
+}
+
+#ifdef USE_SDCARD
+
+static void blackboxLogDirCreated(afatfsFilePtr_t directory)
+{
+    blackboxSDCard.logDirectory = directory;
+
+    afatfs_findFirst(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder);
+
+    blackboxSDCard.state = BLACKBOX_SDCARD_ENUMERATE_FILES;
+}
+
+static void blackboxLogFileCreated(afatfsFilePtr_t file)
+{
+    if (file) {
+        blackboxSDCard.largestLogFileNumber++;
+        blackboxSDCard.logFile = file;
+        blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_LOG;
+    } else {
+        // FS must have been busy, retry
+        blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+    }
+}
+
+static void blackboxCreateLogFile()
+{
+    uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
+
+    char filename[13];
+
+    filename[0] = 'L';
+    filename[1] = 'O';
+    filename[2] = 'G';
+
+    for (int i = 7; i >= 3; i--) {
+        filename[i] = (remainder % 10) + '0';
+        remainder /= 10;
+    }
+
+    filename[8] = '.';
+    filename[9] = 'T';
+    filename[10] = 'X';
+    filename[11] = 'T';
+    filename[12] = 0;
+
+    blackboxSDCard.state = BLACKBOX_SDCARD_WAITING;
+
+    afatfs_fopen(filename, "as", blackboxLogFileCreated);
+}
+
+/**
+ * Begin a new log on the SDCard.
+ *
+ * Keep calling until the function returns true (open is complete).
+ */
+static bool blackboxSDCardBeginLog()
+{
+    fatDirectoryEntry_t *directoryEntry;
+
+    doMore:
+    switch (blackboxSDCard.state) {
+        case BLACKBOX_SDCARD_INITIAL:
+            if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY) {
+                blackboxSDCard.state = BLACKBOX_SDCARD_WAITING;
+
+                afatfs_mkdir("logs", blackboxLogDirCreated);
+            }
+
+            return false;
+
+        case BLACKBOX_SDCARD_WAITING:
+            // Waiting for directory entry to be created
+            return false;
+
+        case BLACKBOX_SDCARD_ENUMERATE_FILES:
+            while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
+                if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
+                    // If this is a log file, parse the log number from the filename
+                    if (
+                        directoryEntry->filename[0] == 'L' && directoryEntry->filename[1] == 'O' && directoryEntry->filename[2] == 'G'
+                        && directoryEntry->filename[8] == 'T' && directoryEntry->filename[9] == 'X' && directoryEntry->filename[10] == 'T'
+                    ) {
+                        char logSequenceNumberString[6];
+
+                        memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
+                        logSequenceNumberString[5] = '\0';
+
+                        blackboxSDCard.largestLogFileNumber = atoi(logSequenceNumberString);
+                    }
+                } else {
+                    afatfs_findLast(blackboxSDCard.logDirectory);
+
+                    // We're done checking all the files on the card, now we can create a new log file
+
+                    // Change into the log directory:
+                    afatfs_chdir(blackboxSDCard.logDirectory);
+
+                    // We no longer need our open handle on that Directory
+                    afatfs_fclose(blackboxSDCard.logDirectory, NULL);
+                    blackboxSDCard.logDirectory = NULL;
+
+                    blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+                    goto doMore;
+                }
+            }
+            return false;
+
+        case BLACKBOX_SDCARD_READY_TO_CREATE_LOG:
+            blackboxCreateLogFile();
+            return false;
+
+        case BLACKBOX_SDCARD_READY_TO_LOG:
+            return true;
+    }
+
+    return false;
+}
+
 #endif
+
+/**
+ * Begin a new log (for devices which support separations between the logs of multiple flights).
+ *
+ * Keep calling until the function returns true (open is complete).
+ */
+bool blackboxDeviceBeginLog(void)
+{
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            return blackboxSDCardBeginLog();
+#endif
+        default:
+            return true;
+    }
+
+}
+
+/**
+ * Terminate the current log (for devices which support separations between the logs of multiple flights).
+ *
+ * retainLog - Pass true if the log should be kept, or false if the log should be discarded (if supported).
+ *
+ * Keep calling until this returns true
+ */
+bool blackboxDeviceEndLog(bool retainLog)
+{
+#ifndef USE_SDCARD
+    (void) retainLog;
+#endif
+
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            // Keep retrying until the close operation queues
+            if (
+                (retainLog && afatfs_fclose(blackboxSDCard.logFile, NULL))
+                || (!retainLog && afatfs_funlink(blackboxSDCard.logFile, NULL))
+            ) {
+                // Don't bother waiting the for the close to complete, it's queued now and will complete eventually
+                blackboxSDCard.logFile = NULL;
+                blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+                return true;
+            }
+            return false;
+#endif
+        default:
+            return true;
     }
 }
 
@@ -607,6 +823,11 @@ bool isBlackboxDeviceFull(void)
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             return flashfsIsEOF();
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            return afatfs_isFull();
 #endif
 
         default:
@@ -629,6 +850,11 @@ void blackboxReplenishHeaderBudget()
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
             freeSpace = flashfsGetWriteBufferFreeSpace();
+        break;
+#endif
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            freeSpace = afatfs_getFreeBufferSpace();
         break;
 #endif
         default:
@@ -690,6 +916,12 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
                 flashfsFlushAsync();
             }
 
+            return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
+#endif
+
+#ifdef USE_SDCARD
+        case BLACKBOX_DEVICE_SDCARD:
+            // Assume that all writes will fit in the SDCard's buffers
             return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif
 
