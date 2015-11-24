@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "nvic.h"
+#include "gpio.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
@@ -94,6 +95,56 @@ static sdcard_t sdcard;
 #endif
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
+
+void sdcardInsertionDetectDeinit(void)
+{
+#ifdef SDCARD_DETECT_PIN
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Pin = SDCARD_DETECT_PIN;
+    GPIO_Init(SDCARD_DETECT_GPIO_PORT, &GPIO_InitStructure);
+#endif
+}
+
+void sdcardInsertionDetectInit(void)
+{
+#ifdef SDCARD_DETECT_PIN
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Pin = SDCARD_DETECT_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(SDCARD_DETECT_GPIO_PORT, &GPIO_InitStructure);
+#endif
+}
+
+/**
+ * @brief  Detect if SD card is correctly plugged in the memory slot.
+ * @param  None
+ * @retval Return if SD is detected or not
+ */
+bool sdcard_isInserted(void)
+{
+#ifdef SDCARD_DETECT_PIN
+  /*!< Check GPIO to detect SD */
+    if ((GPIO_ReadInputData(SDCARD_DETECT_GPIO_PORT) & SDCARD_DETECT_PIN) != 0)
+    {
+#ifdef SD_DETECT_INVERTED
+        return false;
+#else
+        return true;
+#endif
+    } else {
+#ifdef SD_DETECT_INVERTED
+        return true;
+#else
+        return false;
+#endif
+    }
+#else
+    return true;
+#endif
+}
 
 static void sdcard_select()
 {
@@ -759,8 +810,16 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
     }
 }
 
-bool sdcard_isReady() {
-    return sdcard.state == SDCARD_STATE_READY;
+/**
+ * Returns true if the SD card has successfully completed its startup procedures.
+ */
+bool sdcard_isInitialized() {
+    return sdcard.state >= SDCARD_STATE_READY;
+}
+
+const sdcardMetadata_t* sdcard_getMetadata()
+{
+    return &sdcard.metadata;
 }
 
 #endif

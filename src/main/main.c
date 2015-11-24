@@ -47,7 +47,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
-#include "drivers/sdcard.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 
@@ -500,6 +499,8 @@ void init(void)
 
 #ifdef USE_SDCARD
     bool sdcardUseDMA = false;
+
+    sdcardInsertionDetectInit();
 
 #ifdef SDCARD_DMA_CHANNEL_TX
 

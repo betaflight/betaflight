@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct sdcard_metadata_t {
+typedef struct sdcardMetadata_t {
     uint8_t manufacturerID;
     uint16_t oemID;
 
@@ -56,6 +56,10 @@ void sdcard_init(bool useDMA);
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
 sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
 
-void sdcard_poll();
-bool sdcard_isReady();
+void sdcardInsertionDetectDeinit(void);
+void sdcardInsertionDetectInit(void);
+bool sdcard_isInserted();
 
+void sdcard_poll();
+bool sdcard_isInitialized();
+const sdcardMetadata_t* sdcard_getMetadata();

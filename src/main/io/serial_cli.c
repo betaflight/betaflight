@@ -157,9 +157,8 @@ static void cliFlashRead(char *cmdline);
 static void cliUSB1Wire(char *cmdline);
 #endif
 
-#ifdef USE_SD_CARD
+#ifdef USE_SDCARD
 static void cliSdInfo(char *cmdline);
-static void cliSdRead(char *cmdline);
 #endif
 
 // buffer
@@ -302,9 +301,8 @@ const clicmd_t cmdTable[] = {
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> r|n", cliServoMix),
 #endif
-#ifdef USE_SD_CARD
+#ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
-    CLI_COMMAND_DEF("sd_read", NULL, "<length> <address>", cliSdRead),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
@@ -1448,101 +1446,41 @@ static void cliServoMix(char *cmdline)
 }
 #endif
 
-#ifdef USE_SD_CARD
+#ifdef USE_SDCARD
 
-static void cliSdShowError(char *message, SD_Error error)
+static void cliWriteBytes(const uint8_t *buffer, int count)
 {
-    cliPrintf("%s: %d\r\n", message, error);
+    while (count > 0) {
+        cliWrite(*buffer);
+        buffer++;
+        count--;
+    }
 }
 
 static void cliSdInfo(char *cmdline) {
     UNUSED(cmdline);
 
-    uint8_t sdPresent = SD_Detect();
-    if (sdPresent != SD_PRESENT) {
+    if (!sdcard_isInitialized()) {
         cliPrint("sd card not present\r\n");
         return;
     }
 
-    SD_Error error;
-    error = SD_Init();
-    cliSdShowError("SD init result", error);
+    const sdcardMetadata_t *metadata = sdcard_getMetadata();
 
-    SD_CardInfo cardInfo;
-    memset(&cardInfo, 0, sizeof(cardInfo));
-    error = SD_GetCardInfo(&cardInfo);
+    cliPrintf("manufacturer 0x%x, capacity: %ukB, %02d/%04d, v%d.%d, '",
+        metadata->manufacturerID,
+        metadata->numBlocks / 2, /* One block is half a kB */
+        metadata->productionMonth,
+        metadata->productionYear,
+        metadata->productRevisionMajor,
+        metadata->productRevisionMinor
+    );
 
-    cliSdShowError("SD card info result", error);
-    if (error == SD_RESPONSE_NO_ERROR) {
-        cliPrintf("capacity: %d, block size: %d\r\n",
-            cardInfo.CardCapacity,
-            cardInfo.CardBlockSize
-        );
-    }
-    SD_DeInit();
+    cliWriteBytes((uint8_t*)metadata->productName, sizeof(metadata->productName));
+
+    cliPrint("'\r\n");
 }
 
-static void cliSdRead(char *cmdline)
-{
-    uint32_t address = atoi(cmdline);
-    uint32_t length;
-    int i;
-
-    uint8_t buffer[32];
-
-    uint8_t sdPresent = SD_Detect();
-    if (sdPresent != SD_PRESENT) {
-        cliPrint("sd card not present\r\n");
-        return;
-    }
-
-    SD_Error error;
-
-    error = SD_Init();
-    if (error) {
-        SD_DeInit();
-        return;
-    }
-
-    char *nextArg = strchr(cmdline, ' ');
-
-    if (!nextArg) {
-        cliShowParseError();
-    } else {
-        length = atoi(nextArg);
-
-        cliPrintf("Reading %u bytes at %u:\r\n", length, address);
-
-        while (length > 0) {
-            int bytesRead;
-            int bytesToRead = length < sizeof(buffer) ? length : sizeof(buffer);
-
-            error = SD_ReadBlock(buffer, address, bytesToRead);
-
-            if (error != SD_RESPONSE_NO_ERROR) {
-                cliSdShowError("SD init result", error);
-                break;
-            }
-
-            bytesRead = bytesToRead;
-
-            for (i = 0; i < bytesRead; i++) {
-                cliWrite(buffer[i]);
-            }
-
-            length -= bytesRead;
-            address += bytesRead;
-
-            if (bytesRead == 0) {
-                //Assume we reached the end of the volume or something fatal happened
-                break;
-            }
-        }
-        cliPrintf("\r\n");
-    }
-
-    SD_DeInit();
-}
 #endif
 
 #ifdef USE_FLASHFS
