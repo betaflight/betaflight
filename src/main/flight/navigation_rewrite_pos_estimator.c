@@ -201,23 +201,21 @@ static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
 static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
 {
-    t_fp_vector posError;
+    t_fp_vector predictedGpsPosition;
     float gpsDistance;
 
-    /* Condition 1: We predict new position based on previous GPS velocity and position and received position must be within 
-       INAV_GPS_GLITCH_RADIUS from the predicted position */
-    posError.V.X = posEstimator.gps.pos.V.X + posEstimator.gps.vel.V.X * dT - newLocalPos->V.X;
-    posError.V.Y = posEstimator.gps.pos.V.Y + posEstimator.gps.vel.V.Y * dT - newLocalPos->V.Y;
+    /* We predict new position based on previous GPS velocity and position */
+    predictedGpsPosition.V.X = posEstimator.gps.pos.V.X + posEstimator.gps.vel.V.X * dT;
+    predictedGpsPosition.V.Y = posEstimator.gps.pos.V.Y + posEstimator.gps.vel.V.Y * dT - newLocalPos->V.Y;
 
-    gpsDistance = sqrtf(sq(posError.V.X) + sq(posError.V.Y));
+    /* Calculate position error */
+    gpsDistance = sqrtf(sq(predictedGpsPosition.V.X - newLocalPos->V.X) + sq(predictedGpsPosition.V.Y - newLocalPos->V.Y));
+
+    /* Condition 1: New pos is within predefined radius of predicted pos */
     if (gpsDistance > INAV_GPS_GLITCH_RADIUS)
         return true;
 
     /* Condition 2: New position must be reachable within INAV_GPS_GLITCH_ACCEL * dt * dt from previous position */
-    posError.V.X = posEstimator.gps.pos.V.X - newLocalPos->V.X;
-    posError.V.Y = posEstimator.gps.pos.V.Y - newLocalPos->V.Y;
-
-    gpsDistance = sqrtf(sq(posError.V.X) + sq(posError.V.Y));
     if (gpsDistance > (0.5f * INAV_GPS_GLITCH_ACCEL * dT * dT))
         return true;
 
