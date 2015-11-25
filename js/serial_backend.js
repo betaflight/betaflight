@@ -252,11 +252,7 @@ function onConnect() {
     $('#tabs ul.mode-disconnected').hide();
     $('#tabs ul.mode-connected').show(); 
      
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false);    
-        
-// TEST code for dataflash status in header
-    //MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, update_html());
-    
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false);      
     
     MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
     
@@ -267,14 +263,7 @@ function onConnect() {
     port_picker.hide(); 
 
     var dataflash = $('#dataflash_wrapper_global');
-    dataflash.show();
-        
-        
-        
-        
-
-    // testing dataflash change END      
-    
+    dataflash.show();    
     
 }
 
@@ -442,7 +431,7 @@ function bit_clear(num, bit) {
 }
 
 function update_dataflash_global() {
-  function formatFilesize(bytes) {
+    function formatFilesize(bytes) {
         if (bytes < 1024) {
             return bytes + "B";
         }
@@ -457,30 +446,29 @@ function update_dataflash_global() {
         return megabytes.toFixed(1) + "MB";
     }
   
-        var supportsDataflash = DATAFLASH.totalSize > 0;
-        if (supportsDataflash){
+    var supportsDataflash = DATAFLASH.totalSize > 0;
 
-             $(".noflash_global").css({
-                 display: 'none'
-             }); 
+    if (supportsDataflash){
+        $(".noflash_global").css({
+           display: 'none'
+        }); 
 
-             $(".dataflash-contents_global").css({
-                 display: 'block'
-             }); 
+        $(".dataflash-contents_global").css({
+           display: 'block'
+        }); 
 	     
-             $(".dataflash-free_global").css({
-                 width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
-                 display: 'block'
-             });
-             $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
-        } else {
-             $(".noflash_global").css({
-                 display: 'block'
-             }); 
+        $(".dataflash-free_global").css({
+           width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+           display: 'block'
+        });
+        $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+     } else {
+        $(".noflash_global").css({
+           display: 'block'
+        }); 
 
-             $(".dataflash-contents_global").css({
-                 display: 'none'
-             }); 
-        }      
-        
-    }
+        $(".dataflash-contents_global").css({
+           display: 'none'
+        }); 
+     }      
+}
