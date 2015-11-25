@@ -21,8 +21,8 @@
 
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR    1.113195f  // MagicEarthNumber from APM
 
-#define LAND_DETECTOR_TRIGGER_TIME_MS       2000
-#define NAV_ROLL_PITCH_MAX_DECIDEGREES      (30 * 10)      // Max control input from NAV (30 deg)
+#define LAND_DETECTOR_TRIGGER_TIME_MS       2000            // 2 seconds
+#define NAV_ROLL_PITCH_MAX_DECIDEGREES      (30 * 10)       // Max control input from NAV (30 deg)
 
 #define POSITION_TARGET_UPDATE_RATE_HZ      5       // Rate manual position target update (minumum possible speed in cms will be this value)
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
@@ -108,6 +108,7 @@ typedef struct {
     float       cosYaw;
     float       surface;
     float       surfaceVel;
+    float       surfaceMin;
 } navigationEstimatedState_t;
 
 typedef struct {

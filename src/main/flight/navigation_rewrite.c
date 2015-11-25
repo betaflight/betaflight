@@ -1010,6 +1010,15 @@ void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, flo
     posControl.actualState.surface = surfaceDistance;
     posControl.actualState.surfaceVel = surfaceVelocity;
 
+    if (surfaceDistance > 0) {
+        if (posControl.actualState.surfaceMin > 0) {
+            posControl.actualState.surfaceMin = MIN(posControl.actualState.surfaceMin, surfaceDistance);
+        }
+        else {
+            posControl.actualState.surfaceMin = surfaceDistance;
+        }
+    }
+
     posControl.flags.hasValidSurfaceSensor = hasValidSensor;
 
     if (hasValidSensor) {
@@ -1784,6 +1793,11 @@ void navigationInit(navConfig_t *initialnavConfig,
     posControl.flags.forcedRTHActivated = 0;
     posControl.waypointCount = 0;
     posControl.activeWaypointIndex = 0;
+
+    /* Set initial surface invalid */
+    posControl.actualState.surface = -1.0f;
+    posControl.actualState.surfaceVel = 0.0f;
+    posControl.actualState.surfaceMin = -1.0f;
 
     /* Use system config */
     navigationUseConfig(initialnavConfig);

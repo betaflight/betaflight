@@ -424,7 +424,17 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer)
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     bool minimalThrust = rcCommandAdjustedThrottle <= (posControl.escAndServoConfig->minthrottle + (posControl.escAndServoConfig->maxthrottle - posControl.escAndServoConfig->minthrottle) * 0.25f);
 
-    if (!minimalThrust || verticalMovement || horizontalMovement) {
+    bool possibleLandingDetected = false;
+
+    if (posControl.flags.hasValidSurfaceSensor) {
+        /* surfaceMin is our ground reference. If we are less than 5cm above the ground - we are likely landed */
+        possibleLandingDetected = (posControl.actualState.surface <= (posControl.actualState.surfaceMin + 5.0f));
+    }
+    else {
+        possibleLandingDetected = (minimalThrust && !verticalMovement && !horizontalMovement);
+    }
+
+    if (!possibleLandingDetected) {
         *landingTimer = currentTime;
         return false;
     }
