@@ -193,11 +193,11 @@
 }
 
 .tab-receiver .tunings table td:first-child {
-    border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 3px;
 }
 
 .tab-receiver .tunings table td:last-child {
-    border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 3px;
     border-right: 0px;
 }
 
@@ -224,8 +224,8 @@
     margin: 0px 0px 10px 0;
     border-left: 0;
     width: 30%;
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
     background-color: #DEDEDE;
 }
 
@@ -237,7 +237,7 @@
     font-weight: normal;
     background: #828885;
     color: white;
-    border-top-right-radius: 5px;
+    border-top-right-radius: 3px;
 }
 
 .tab-receiver .rssi_channel_wrapper select {
@@ -253,8 +253,8 @@
     position: relative;
     margin: 0px 0px 10px 0;
     width: calc(70% - 0px);
-    border-top-left-radius: 5px;
-    border-bottom-left-radius: 5px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
     background-color: #DEDEDE;
 }
 
@@ -266,7 +266,7 @@
     font-weight: normal;
     background: #828885;
     color: white;
-    border-top-left-radius: 5px;
+    border-top-left-radius: 3px;
     border-right: 1px solid silver;
 }
 
