@@ -131,11 +131,6 @@ int32_t quickMedianFilter5(int32_t * v);
 int32_t quickMedianFilter7(int32_t * v);
 int32_t quickMedianFilter9(int32_t * v);
 
-void filterWithBufferReset(filterWithBufferState_t * state);
-void filterWithBufferInit(filterWithBufferState_t * state, filterWithBufferSample_t * buffer, uint16_t size);
-void filterWithBufferUpdate(filterWithBufferState_t * state, float sample, uint32_t timestamp);
-float filterWithBufferApply_Derivative(filterWithBufferState_t * state);
-
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);

@@ -62,13 +62,11 @@
 
 #define INAV_POSITION_PUBLISH_RATE_HZ       50      // Publish position updates at this rate
 #define INAV_BARO_UPDATE_RATE               20
-#define INAV_SONAR_UPDATE_RATE              10      // Sonar is limited to 1/60ms update rate, go lower that that
+#define INAV_SONAR_UPDATE_RATE              15      // Sonar is limited to 1/60ms update rate, go lower that that
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
-#define INAV_SONAR_TIMEOUT_MS               250     // Sonar timeout    (missed two readings in a row
-
-#define INAV_BARO_CLIMB_RATE_FILTER_SIZE    7
+#define INAV_SONAR_TIMEOUT_MS               200     // Sonar timeout    (missed 3 readings in a row)
 
 #define INAV_SONAR_W1                       0.8461f // Sonar predictive filter gain for altitude
 #define INAV_SONAR_W2                       6.2034f // Sonar predictive filter gain for velocity
@@ -97,7 +95,6 @@ typedef struct {
 typedef struct {
     uint32_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw barometric altitude (cm)
-    float       vel;            // Altitude derivative - velocity (cms)
     float       epv;
 } navPositionEstimatorBARO_t;
 
@@ -345,39 +342,16 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
 static void updateBaroTopic(uint32_t currentTime)
 {
     static navigationTimer_t baroUpdateTimer;
-    /*
-    static filterWithBufferSample_t baroClimbRateFilterBuffer[INAV_BARO_CLIMB_RATE_FILTER_SIZE];
-    static filterWithBufferState_t baroClimbRateFilter;
-    static bool climbRateFiltersInitialized = false;
-    */
 
     if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTime)) {
-        /*
-        if (!climbRateFiltersInitialized) {
-            filterWithBufferInit(&baroClimbRateFilter, &baroClimbRateFilterBuffer[0], INAV_BARO_CLIMB_RATE_FILTER_SIZE);
-            climbRateFiltersInitialized = true;
-        }
-        */
-
         float newBaroAlt = baroCalculateAltitude();
         if (sensors(SENSOR_BARO) && isBaroCalibrationComplete()) {
-            /*
-            filterWithBufferUpdate(&baroClimbRateFilter, newBaroAlt, currentTime);
-            float baroClimbRate = filterWithBufferApply_Derivative(&baroClimbRateFilter) * 1e6f;
-
-            // FIXME: do we need this?
-            baroClimbRate = constrainf(baroClimbRate, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
-            baroClimbRate = applyDeadband(baroClimbRate, 10);       // to reduce noise near zero
-            */
-
             posEstimator.baro.alt = newBaroAlt;
-            posEstimator.baro.vel = 0; //baroClimbRate;
             posEstimator.baro.epv = posControl.navConfig->inav.baro_epv;
             posEstimator.baro.lastUpdateTime = currentTime;
         }
         else {
             posEstimator.baro.alt = 0;
-            posEstimator.baro.vel = 0;
             posEstimator.baro.lastUpdateTime = 0;
         }
     }
@@ -507,7 +481,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
     /* Apply GPS altitude corrections only on fixed wing aircrafts */
     bool useGpsZ = STATE(FIXED_WING) && isGPSValid;
 
-    /* Pre-calculate history index for GPS & baro delay compensation */
+    /* Pre-calculate history index for GPS delay compensation */
     int gpsHistoryIndex = (posEstimator.history.index - 1) - constrain(((int)posControl.navConfig->inav.gps_delay_ms / (1000 / INAV_POSITION_PUBLISH_RATE_HZ)), 0, INAV_HISTORY_BUF_SIZE - 1);
     if (gpsHistoryIndex < 0) {
         gpsHistoryIndex += INAV_HISTORY_BUF_SIZE;
@@ -535,7 +509,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
         /* accelerometer bias correction for baro */
         if (isBaroValid) {
             accelBiasCorr.V.Z -= (posEstimator.baro.alt - posEstimator.est.pos.V.Z) * sq(posControl.navConfig->inav.w_z_baro_p);
-            //accelBiasCorr.V.Z -= (posEstimator.baro.vel - posEstimator.est.vel.V.Z) * posControl.navConfig->inav.w_z_baro_v;
         }
 
         /* transform error vector from NEU frame to body frame */
@@ -548,7 +521,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
     }
 
     /* Estimate Z-axis */
-    /* FIXME: baro & sonar delay compensation (~100ms for sonar, about 500ms for baro) */
     if ((posEstimator.est.epv < posControl.navConfig->inav.max_eph_epv) || useGpsZ || isBaroValid) {
         /* Predict position/velocity based on acceleration */
         inavFilterPredict(Z, dt, posEstimator.imu.accelNEU.V.Z);
@@ -557,7 +529,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
         if (isBaroValid) {
             /* Apply only baro correction, no sonar */
             inavFilterCorrectPos(Z, dt, posEstimator.baro.alt - posEstimator.est.pos.V.Z, posControl.navConfig->inav.w_z_baro_p);
-            //inavFilterCorrectVel(Z, dt, posEstimator.baro.vel - posEstimator.est.vel.V.Z, posControl.navConfig->inav.w_z_baro_v);
 
             /* Adjust EPV */
             posEstimator.est.epv = MIN(posEstimator.est.epv, posEstimator.baro.epv);
