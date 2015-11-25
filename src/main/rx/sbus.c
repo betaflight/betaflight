@@ -161,14 +161,14 @@ static void sbusDataReceive(uint16_t c)
 
     if (sbusFramePosition < SBUS_FRAME_SIZE) {
         sbusFrame.bytes[sbusFramePosition++] = (uint8_t)c;
-    }
-    if (sbusFramePosition < SBUS_FRAME_SIZE) {
-        sbusFrameDone = false;
-    } else {
-        sbusFrameDone = true;
+        if (sbusFramePosition < SBUS_FRAME_SIZE) {
+            sbusFrameDone = false;
+        } else {
+            sbusFrameDone = true;
 #ifdef DEBUG_SBUS_PACKETS
         debug[2] = sbusFrameTime;
 #endif
+        }
     }
 }
 

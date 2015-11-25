@@ -152,7 +152,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 40;
     pidProfile->I8[PITCH] = 30;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 95;
+    pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 10;
     pidProfile->P8[PIDALT] = 50;
@@ -167,8 +167,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 20;
-    pidProfile->I8[PIDLEVEL] = 20;
+    pidProfile->P8[PIDLEVEL] = 50;
+    pidProfile->I8[PIDLEVEL] = 50;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 120;

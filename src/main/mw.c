@@ -100,6 +100,7 @@ enum {
 #define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 80 // Prevent RX processing before expected loop trigger
 #define PREVENT_BARO_READ_PRE_LOOP_TRIGGER 150 // Prevent BARO processing before expected loop trigger
 #define GYRO_RATE 0.001f  // Gyro refresh rate 1khz
+#define PID_AT_MIN_THROTTLE_ITERM_DELAY (3 * 1000)
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -578,7 +579,7 @@ void processRx(void)
             pidResetErrorGyro();
         }
     } else {
-        pidResetErrorGyroTimeout = millis() + (masterConfig.mixerConfig.pid_at_min_throttle * 1000);
+        pidResetErrorGyroTimeout = millis() + PID_AT_MIN_THROTTLE_ITERM_DELAY;
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
