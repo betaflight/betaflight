@@ -323,7 +323,7 @@ static const char * const lookupTableAlignment[] = {
 
 #ifdef GPS
 static const char * const lookupTableGPSProvider[] = {
-    "NMEA", "UBLOX"
+    "NMEA", "UBLOX", "I2C"
 };
 
 static const char * const lookupTableGPSSBASMode[] = {
