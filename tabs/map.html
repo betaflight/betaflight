@@ -33,12 +33,17 @@ function initialize() {
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
 
-  var marker = new google.maps.Marker({
-    // The below line is equivalent to writing:
-    // position: new google.maps.LatLng(-34.397, 150.644)
-    position: {lat: 53.570645, lng: 10.001362},
-    map: map
+var marker = new google.maps.Marker({
+    icon : '../images/icons/cf_icon_position.png',
+    position: new google.maps.LatLng(53.570645, 10.001362),
+    size: new google.maps.Size(10, 10),
+    map:map
+
   });
+  
+
+ 
+    
 
   // You can use a LatLng literal in place of a google.maps.LatLng object when
   // creating the Marker object. Once the Marker object is instantiated, its
@@ -46,7 +51,7 @@ function initialize() {
   // we retrieve the marker's position using the
   // google.maps.LatLng.getPosition() method.
   var infowindow = new google.maps.InfoWindow({
-    content: '<p>Marker Location:' + marker.getPosition() + '</p>'
+    content: '<p>Your Location: ' + marker.getPosition() + '</p>'
   });
 
   google.maps.event.addListener(marker, 'click', function() {
@@ -55,6 +60,7 @@ function initialize() {
 }
   // sandbox docs1: https://github.com/GoogleChrome/chrome-app-samples/tree/master/samples/sandbox
   // sandbox docs1: https://github.com/GoogleChrome/chrome-app-samples/tree/master/samples/sandboxed-content
+
 
     </script>
   </head>
