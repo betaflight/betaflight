@@ -1504,23 +1504,23 @@ void resetNavigation(void)
  *-----------------------------------------------------------*/
 static void processNavigationRCAdjustments(void)
 {
-    /* Process pilot's RC input */
+    /* Process pilot's RC input. Disable all pilot's input when in FAILSAFE_MODE */
     navigationFSMStateFlags_t navStateFlags = navGetStateFlags(posControl.navState);
-    if (navStateFlags & NAV_RC_ALT) {
+    if ((navStateFlags & NAV_RC_ALT) && (!FLIGHT_MODE(FAILSAFE_MODE))) {
         posControl.flags.isAdjustingAltitude = adjustAltitudeFromRCInput();
     }
     else {
         posControl.flags.isAdjustingAltitude = false;
     }
 
-    if (navStateFlags & NAV_RC_POS) {
+    if ((navStateFlags & NAV_RC_POS) && (!FLIGHT_MODE(FAILSAFE_MODE))) {
         posControl.flags.isAdjustingPosition = adjustPositionFromRCInput();
     }
     else {
         posControl.flags.isAdjustingPosition = false;
     }
 
-    if (navStateFlags & NAV_RC_YAW) {
+    if ((navStateFlags & NAV_RC_YAW) && (!FLIGHT_MODE(FAILSAFE_MODE))) {
         posControl.flags.isAdjustingHeading = adjustHeadingFromRCInput();
     }
     else {
@@ -1547,6 +1547,8 @@ void applyWaypointNavigationAndAltitudeHold(void)
 
     // No navigation when disarmed
     if (!ARMING_FLAG(ARMED)) {
+        // If we are disarmed, abort forced RTH
+        posControl.flags.forcedRTHActivated = false;
         return;
     }
 
@@ -1849,7 +1851,6 @@ void abortForcedRTH(void)
 rthState_e getStateOfForcedRTH(void)
 {
     if (navGetStateFlags(posControl.navState) & NAV_AUTO_RTH) {
-
         if (posControl.navState == NAV_STATE_RTH_2D_FINISHED || posControl.navState == NAV_STATE_RTH_3D_FINISHED) {
             return RTH_HAS_LANDED;
         }
