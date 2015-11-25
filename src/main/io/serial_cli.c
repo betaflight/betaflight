@@ -2173,15 +2173,20 @@ static void cliSet(char *cmdline)
             cliPrint("\r\n");
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
-        // has equal, set var
+        // has equals
+
         char *lastNonSpaceCharacter = eqptr;
         while (*(lastNonSpaceCharacter - 1) == ' ') {
             lastNonSpaceCharacter--;
         }
         uint8_t variableNameLength = lastNonSpaceCharacter - cmdline;
 
+        // skip the '=' and any ' ' characters
         eqptr++;
-        len--;
+        while (*(eqptr) == ' ') {
+            eqptr++;
+        }
+
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
             // ensure exact match when setting to prevent setting variables with shorter names
