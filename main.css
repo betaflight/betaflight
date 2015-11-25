@@ -489,12 +489,16 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 200px;
     border-right: 4px solid #59aa29;
     background-color: #2e2e2e;
+    transition: all 0.2s;
+
 }
 
 .tab_container.logopen {
     height: calc(100% - 235px);
     overflow-x: hidden;
     overflow-y: auto;
+    transition: all 0.5s;
+
 }
 
 
