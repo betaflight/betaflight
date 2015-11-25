@@ -315,13 +315,16 @@ $(document).ready(function () {
     $("#showlog").on('click', function() {
     var state = $(this).data('state');
     if ( state ) {
-        $("#log").animate({height: 27}, 200);
+        $("#log").animate({height: 27}, 200, function() {
+             var command_log = $('div#log');
+             command_log.scrollTop($('div.wrapper', command_log).height());
+        });
         $("#log").removeClass('active');
         $("#content").removeClass('logopen');
         $(".tab_container").removeClass('logopen');
         $("#scrollicon").removeClass('active');
-	chrome.storage.local.set({'logopen': false});
-
+        chrome.storage.local.set({'logopen': false});
+	
         state = false;
     }else{
         $("#log").animate({height: 111}, 200);
@@ -329,7 +332,7 @@ $(document).ready(function () {
         $("#content").addClass('logopen');
         $(".tab_container").addClass('logopen');
         $("#scrollicon").addClass('active');
-	chrome.storage.local.set({'logopen': true});
+        chrome.storage.local.set({'logopen': true});
 
         state = true;
     }
