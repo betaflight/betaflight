@@ -543,11 +543,12 @@ $(OBJECT_DIR)/drivers/sonar_hcsr04.o : \
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/sonar_hcsr04.c -o $@
 
 $(OBJECT_DIR)/sensors/sonar.o : \
-        $(USER_DIR)/sensors/sonar.c \
-        $(USER_DIR)/sensors/sonar.h \
-        $(GTEST_HEADERS)
+	$(USER_DIR)/sensors/sonar.c \
+	$(USER_DIR)/sensors/sonar.h \
+	$(GTEST_HEADERS)
+
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/sonar.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DSONAR -c $(USER_DIR)/sensors/sonar.c -o $@
 
 $(OBJECT_DIR)/sonar_unittest.o : \
 	$(TEST_DIR)/sonar_unittest.cc \

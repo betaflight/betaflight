@@ -93,6 +93,9 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
         .exti_irqn = EXTI1_IRQn
     };
     return &sonarHardware;
+#elif defined(UNIT_TEST)
+    UNUSED(batteryConfig);
+    return 0;
 #else
 #error Sonar not defined for target
 #endif

@@ -19,14 +19,13 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "system.h"
 #include "gpio.h"
 #include "nvic.h"
 
 #include "sonar_hcsr04.h"
-
-#ifdef SONAR
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
@@ -37,8 +36,12 @@
  *
  */
 
+#if defined(SONAR) || defined(UNIT_TEST)
+STATIC_UNIT_TESTED volatile int32_t measurement = -1;
+#endif
+
+#ifdef SONAR
 static uint32_t lastMeasurementAt;
-static volatile int32_t measurement = -1;
 static sonarHardware_t const *sonarHardware;
 
 static void ECHO_EXTI_IRQHandler(void)
@@ -149,7 +152,8 @@ void hcsr04_start_reading(void)
     delayMicroseconds(11);
     digitalLo(GPIOB, sonarHardware->trigger_pin);
 }
-
+#endif
+#if defined(SONAR) || defined(UNIT_TEST)
 /**
  * Get the distance that was measured by the last pulse, in centimeters. When the ground is too far away to be
  * reliably read by the sonar, SONAR_OUT_OF_RANGE is returned instead.
