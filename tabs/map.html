@@ -33,16 +33,16 @@ function initialize() {
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
 
+  var image = {
+    url: '../images/icons/cf_icon_position.png',
+    scaledSize: new google.maps.Size(70, 70)
+  };
+      
 var marker = new google.maps.Marker({
-    icon : '../images/icons/cf_icon_position.png',
+    icon : image,
     position: new google.maps.LatLng(53.570645, 10.001362),
-    size: new google.maps.Size(10, 10),
     map:map
-
   });
-  
-
- 
     
 
   // You can use a LatLng literal in place of a google.maps.LatLng object when
