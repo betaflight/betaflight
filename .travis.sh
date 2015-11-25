@@ -8,6 +8,7 @@ TARGET_FILE=obj/cleanflight_${TARGET}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
+MAKEFILE="-f Makefile"
 
 CURL_BASEOPTS=(
 	"--retry" "10"
@@ -51,7 +52,7 @@ elif [ $PUBLISHMETA ] ; then
 
 else
 	if [ $PUBLISH_URL ] ; then
-		make -j2
+		make -j2 $MAKEFILE
 		if   [ -f ${TARGET_FILE}.bin ] ; then
 			TARGET_FILE=${TARGET_FILE}.bin
 		elif [ -f ${TARGET_FILE}.hex ] ; then
@@ -64,6 +65,6 @@ else
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	else
-		make -j2
+		make -j2 $MAKEFILE
 	fi
 fi
