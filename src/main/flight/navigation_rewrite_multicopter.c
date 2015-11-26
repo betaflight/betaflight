@@ -52,7 +52,7 @@
 /*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
-static int16_t altholdInitialThrottle;      // Throttle input when althold was activated
+static int16_t altholdInitialRCThrottle;      // Throttle input when althold was activated
 static int16_t rcCommandAdjustedThrottle;
 
 /* Calculate global altitude setpoint based on surface setpoint */
@@ -83,8 +83,8 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
     static filterStatePt1_t throttleFilterState;
 
     // Calculate min and max throttle boundaries (to compensate for integral windup)
-    int32_t thrAdjustmentMin = posControl.escAndServoConfig->minthrottle - altholdInitialThrottle;
-    int32_t thrAdjustmentMax = posControl.escAndServoConfig->maxthrottle - altholdInitialThrottle;
+    int32_t thrAdjustmentMin = posControl.escAndServoConfig->minthrottle - posControl.navConfig->mc_hover_throttle;
+    int32_t thrAdjustmentMax = posControl.escAndServoConfig->maxthrottle - posControl.navConfig->mc_hover_throttle;
 
     posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
     posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &throttleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
@@ -93,7 +93,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
-    int16_t rcThrottleAdjustment = applyDeadband(rcCommand[THROTTLE] - altholdInitialThrottle, posControl.navConfig->alt_hold_deadband);
+    int16_t rcThrottleAdjustment = applyDeadband(rcCommand[THROTTLE] - altholdInitialRCThrottle, posControl.navConfig->alt_hold_deadband);
     if (rcThrottleAdjustment) {
         // set velocity proportional to stick movement
         float rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / 500;
@@ -114,10 +114,10 @@ bool adjustMulticopterAltitudeFromRCInput(void)
 void setupMulticopterAltitudeController(void)
 {
     if (posControl.navConfig->flags.use_midrc_for_althold) {
-        altholdInitialThrottle = posControl.rxConfig->midrc;
+        altholdInitialRCThrottle = posControl.rxConfig->midrc;
     }
     else {
-        altholdInitialThrottle = rcCommand[THROTTLE];
+        altholdInitialRCThrottle = rcCommand[THROTTLE];
     }
 }
 
@@ -164,7 +164,7 @@ void applyMulticopterAltitudeController(uint32_t currentTime)
     }
 
     // Update throttle controller
-    rcCommand[THROTTLE] = constrain(altholdInitialThrottle + posControl.rcAdjustment[THROTTLE], posControl.escAndServoConfig->minthrottle, posControl.escAndServoConfig->maxthrottle);
+    rcCommand[THROTTLE] = constrain((int16_t)posControl.navConfig->mc_hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.escAndServoConfig->minthrottle, posControl.escAndServoConfig->maxthrottle);
 
     // Save processed throttle for future use
     rcCommandAdjustedThrottle = rcCommand[THROTTLE];
