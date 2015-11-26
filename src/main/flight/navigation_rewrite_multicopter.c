@@ -82,12 +82,17 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
     static filterStatePt1_t throttleFilterState;
 
     // Calculate min and max throttle boundaries (to compensate for integral windup)
-    int32_t thrAdjustmentMin = posControl.escAndServoConfig->minthrottle - posControl.navConfig->mc_hover_throttle;
-    int32_t thrAdjustmentMax = posControl.escAndServoConfig->maxthrottle - posControl.navConfig->mc_hover_throttle;
+    int16_t thrAdjustmentMin = (int16_t)posControl.escAndServoConfig->minthrottle - (int16_t)posControl.navConfig->mc_hover_throttle;
+    int16_t thrAdjustmentMax = (int16_t)posControl.escAndServoConfig->maxthrottle - (int16_t)posControl.navConfig->mc_hover_throttle;
 
     posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
+
+    NAV_BLACKBOX_DEBUG(2, posControl.rcAdjustment[THROTTLE]);
+
     posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &throttleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
+
+    NAV_BLACKBOX_DEBUG(3, posControl.rcAdjustment[THROTTLE]);
 }
 
 bool adjustMulticopterAltitudeFromRCInput(void)
