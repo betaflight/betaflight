@@ -45,10 +45,6 @@
 
 #if defined(NAV)
 
-#define HOVER_ACCZ_THRESHOLD    5.0f    // cm/s/s
-#define HOVER_THR_FILTER        0.025f
-
-
 /*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
@@ -97,8 +93,8 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
-    int16_t rcThrottleAdjustment = applyDeadband(rcCommand[THROTTLE] - altholdInitialRCThrottle, posControl.navConfig->alt_hold_deadband);
-    if (rcThrottleAdjustment) {
+    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - altholdInitialRCThrottle;
+    if (ABS(rcThrottleAdjustment) > posControl.navConfig->alt_hold_deadband) {
         // set velocity proportional to stick movement
         float rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / 500;
         updateAltitudeTargetFromClimbRate(rcClimbRate);
@@ -179,8 +175,7 @@ void applyMulticopterAltitudeController(uint32_t currentTime)
  *-----------------------------------------------------------*/
 bool adjustMulticopterHeadingFromRCInput(void)
 {
-    int16_t rcYawAdjustment = applyDeadband(rcCommand[YAW], posControl.navConfig->pos_hold_deadband);
-    if (rcYawAdjustment) {
+    if (ABS(rcCommand[YAW]) > posControl.navConfig->pos_hold_deadband) {
         // Can only allow pilot to set the new heading if doing PH, during RTH copter will target itself to home
         posControl.desiredState.yaw = posControl.actualState.yaw;
 
@@ -196,7 +191,6 @@ bool adjustMulticopterHeadingFromRCInput(void)
  *-----------------------------------------------------------*/
 static filterStatePt1_t mcPosControllerAccFilterStateX, mcPosControllerAccFilterStateY;
 static float lastAccelTargetX = 0.0f, lastAccelTargetY = 0.0f;
-static bool brakeToPoshold = false;
 
 void resetMulticopterPositionController(void)
 {
@@ -208,9 +202,6 @@ void resetMulticopterPositionController(void)
         mcPosControllerAccFilterStateY.state = 0.0f;
         lastAccelTargetX = 0.0f;
         lastAccelTargetY = 0.0f;
-
-        // When initiating PH we must brake first
-        brakeToPoshold = true;
     }
 }
 
@@ -239,8 +230,9 @@ bool adjustMulticopterPositionFromRCInput(void)
     else {
         // Adjusting finished - reset desired position to stay exactly where pilot released the stick
         if (posControl.flags.isAdjustingPosition) {
-            posControl.desiredState.pos.V.X = posControl.actualState.pos.V.X;
-            posControl.desiredState.pos.V.Y = posControl.actualState.pos.V.Y;
+            t_fp_vector stopPosition;
+            calculateMulticopterInitialHoldPosition(&stopPosition);
+            setDesiredPosition(&stopPosition, 0, NAV_POS_UPDATE_XY);
         }
 
         return false;
@@ -326,22 +318,6 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -NAV_ROLL_PITCH_MAX_DECIDEGREES, NAV_ROLL_PITCH_MAX_DECIDEGREES);
 }
 
-bool applyBrakeToPosholdController_MC(void)
-{
-#if 0
-    float velMagnitude = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.X));
-
-    // If velocity is too high, move position setpoint. This will cause velocity setpoint=0 and PH controller will brake
-    if (velMagnitude >= 50.0f) {
-        posControl.desiredState.pos.V.X = posControl.actualState.pos.V.X;
-        posControl.desiredState.pos.V.Y = posControl.actualState.pos.V.Y;
-        return true;
-    }
-#endif
-
-    return false;
-}
-
 void applyMulticopterPositionController(uint32_t currentTime)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
@@ -362,11 +338,6 @@ void applyMulticopterPositionController(uint32_t currentTime)
         return;
     }
 
-    // If we are adjusting position set the flag to indicate that we should brake from flight
-    if (posControl.flags.isAdjustingPosition) {
-        brakeToPoshold = true;
-    }
-
     // Apply controller only if position source is valid. In absence of valid pos sensor (GPS loss), we'd stick in forced ANGLE mode
     // and pilots input would be passed thru to PID controller
     if (posControl.flags.hasValidPositionSensor) {
@@ -376,11 +347,6 @@ void applyMulticopterPositionController(uint32_t currentTime)
             previousTimePositionUpdate = currentTime;
 
             if (!bypassPositionController) {
-                // Process braking to poshold
-                if (brakeToPoshold) {
-                    brakeToPoshold = applyBrakeToPosholdController_MC();
-                }
-
                 // Update position controller
                 if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
                     updatePositionVelocityController_MC();
@@ -498,6 +464,18 @@ void applyMulticopterEmergencyLandingController(uint32_t currentTime)
         /* Sensors has gone haywire, attempt to land regardless */
         rcCommand[THROTTLE] = 1300; // FIXME
     }
+}
+
+/*-----------------------------------------------------------
+ * Calculate loiter target based on current position and velocity
+ *-----------------------------------------------------------*/
+void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
+{
+    float stoppingDistanceX = posControl.actualState.vel.V.X / posControl.pids.pos[X].param.kP;
+    float stoppingDistanceY = posControl.actualState.vel.V.Y / posControl.pids.pos[Y].param.kP;
+
+    pos->V.X = posControl.actualState.pos.V.X + stoppingDistanceX;
+    pos->V.Y = posControl.actualState.pos.V.X + stoppingDistanceY;
 }
 
 #endif  // NAV

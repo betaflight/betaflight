@@ -338,4 +338,12 @@ void applyFixedWingEmergencyLandingController(void)
     // TODO
 }
 
+/*-----------------------------------------------------------
+ * Calculate loiter target based on current position and velocity
+ *-----------------------------------------------------------*/
+void calculateFixedWingInitialHoldPosition(t_fp_vector * pos)
+{
+    // TODO: stub, this should account for velocity and target loiter radius
+    *pos = posControl.actualState.pos;
+}
 #endif  // NAV

@@ -71,6 +71,7 @@ static void setupAltitudeController(void);
 void resetNavigation(void);
 
 static void setDesiredPositionToWaypointAndUpdateInitialBearing(navWaypointPosition_t * waypoint);
+void calculateInitialHoldPosition(t_fp_vector * pos);
 
 /*************************************************************************************************/
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState_t previousState);
@@ -510,8 +511,11 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(nav
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(navigationFSMState_t previousState)
 {
     if ((navGetStateFlags(previousState) & NAV_CTL_POS) == 0) {
+        t_fp_vector targetHoldPos;
+
         resetPositionController();
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        calculateInitialHoldPosition(&targetHoldPos);
+        setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
     }
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -535,8 +539,11 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
     }
 
     if ((navGetStateFlags(previousState) & NAV_CTL_POS) == 0) {
+        t_fp_vector targetHoldPos;
+
         resetPositionController();
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        calculateInitialHoldPosition(&targetHoldPos);
+        setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
     }
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -615,6 +622,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
 {
     UNUSED(previousState);
 
+    t_fp_vector targetHoldPos;
+
     // If close to home - reset home position
     if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
         setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
@@ -624,6 +633,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
     resetAltitudeController();
     setupAltitudeController();
 
+    calculateInitialHoldPosition(&targetHoldPos);
     setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -1189,6 +1199,19 @@ void setDesiredSurfaceOffset(float surfaceOffset)
     }
     else {
         posControl.desiredState.surface = -1;
+    }
+}
+
+/*-----------------------------------------------------------
+ * Calculate platform-specific hold position (account for deceleration)
+ *-----------------------------------------------------------*/
+void calculateInitialHoldPosition(t_fp_vector * pos)
+{
+    if (STATE(FIXED_WING)) { // FIXED_WING
+        calculateFixedWingInitialHoldPosition(pos);
+    }
+    else {
+        calculateMulticopterInitialHoldPosition(pos);
     }
 }
 

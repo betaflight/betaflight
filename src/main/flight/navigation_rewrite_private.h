@@ -33,7 +33,7 @@
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
 
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
-//#define NAV_ACCEL_SLOW_XY_MAX               550.0f  // cm/s/s       // approx 29 deg lean angle
+#define NAV_ACCEL_SLOW_XY_MAX               490.0f  // cm/s/s
 
 #define HZ2US(hz)   (1000000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
@@ -44,11 +44,11 @@
 #define minFlyableThrottle  (posControl.escAndServoConfig->minthrottle + (posControl.escAndServoConfig->maxthrottle - posControl.escAndServoConfig->minthrottle) * 5 / 100)
 
 typedef enum {
-    NAV_POS_UPDATE_NONE     = 0,
-    NAV_POS_UPDATE_XY       = 1 << 0,
-    NAV_POS_UPDATE_Z        = 1 << 1,
-    NAV_POS_UPDATE_HEADING  = 1 << 2,
-    NAV_POS_UPDATE_BEARING  = 1 << 3
+    NAV_POS_UPDATE_NONE      = 0,
+    NAV_POS_UPDATE_XY        = 1 << 0,
+    NAV_POS_UPDATE_Z         = 1 << 1,
+    NAV_POS_UPDATE_HEADING   = 1 << 2,
+    NAV_POS_UPDATE_BEARING   = 1 << 3,
 } navSetWaypointFlags_t;
 
 typedef struct navigationFlags_s {
@@ -296,6 +296,7 @@ void applyMulticopterPositionController(uint32_t currentTime);
 bool adjustMulticopterPositionFromRCInput(void);
 void applyMulticopterEmergencyLandingController(uint32_t currentTime);
 bool isMulticopterLandingDetected(uint32_t * landingTimer);
+void calculateMulticopterInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing specific functions */
 void setupFixedWingAltitudeController(void);
@@ -308,3 +309,4 @@ void applyFixedWingPositionController(uint32_t currentTime);
 bool adjustFixedWingPositionFromRCInput(void);
 void applyFixedWingEmergencyLandingController(void);
 bool isFixedWingLandingDetected(uint32_t * landingTimer);
+void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
