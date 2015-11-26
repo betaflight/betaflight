@@ -74,7 +74,6 @@ static void updateAltitudeVelocityController_MC(void)
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[Z] = constrain(lrintf(posControl.desiredState.vel.V.Z), -32678, 32767);
-    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
 #endif
 }
 
@@ -263,8 +262,6 @@ static void updatePositionVelocityController_MC(void)
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[X] = constrain(lrintf(posControl.desiredState.vel.V.X), -32678, 32767);
     navDesiredVelocity[Y] = constrain(lrintf(posControl.desiredState.vel.V.Y), -32678, 32767);
-    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
-    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
 #endif
 }
 

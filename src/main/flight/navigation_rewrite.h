@@ -32,7 +32,7 @@
 
 // Features
 //#define INAV_ENABLE_AUTO_MAG_DECLINATION
-//#define INAV_ENABLE_GPS_GLITCH_DETECTION
+#define INAV_ENABLE_GPS_GLITCH_DETECTION
 
 
 // Maximum number of waypoints, special waypoint 0 = home,

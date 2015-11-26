@@ -300,11 +300,6 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
                     posEstimator.gps.vel.V.Y = (posEstimator.gps.vel.V.Y + (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLon - previousLon) / dT)) / 2.0f;
                 }
 
-                NAV_BLACKBOX_DEBUG(0, velN);
-                NAV_BLACKBOX_DEBUG(1, (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLat - previousLat) / dT));
-                NAV_BLACKBOX_DEBUG(2, velE);
-                NAV_BLACKBOX_DEBUG(3, (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLon - previousLon) / dT));
-
                 if (velDValid) {
                     posEstimator.gps.vel.V.Z = -velD;   // NEU
                 }
@@ -475,7 +470,8 @@ static void updateEstimatedTopic(uint32_t currentTime)
     bool useDeadReckoning = posControl.navConfig->inav.enable_dead_reckoning && (!isGPSValid);
 
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
-    isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
+    //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
+    NAV_BLACKBOX_DEBUG(0, posEstimator.gps.glitchDetected);
 #endif
 
     /* Apply GPS altitude corrections only on fixed wing aircrafts */

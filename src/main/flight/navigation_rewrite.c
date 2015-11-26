@@ -711,6 +711,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+    updateAltitudeTargetFromClimbRate(-50.0f);  // FIXME
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -718,6 +719,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHED(navigat
 {
     // Stay in this state
     UNUSED(previousState);
+    updateAltitudeTargetFromClimbRate(-50.0f);  // FIXME
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1215,6 +1217,12 @@ void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t us
     else if ((useMask & NAV_POS_UPDATE_BEARING) != 0) {
         posControl.desiredState.yaw = calculateBearingToDestination(pos);
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
+    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
+    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+#endif
 }
 
 void setDesiredPositionToFarAwayTarget(int32_t yaw, int32_t distance, navSetWaypointFlags_t useMask)
@@ -1240,12 +1248,18 @@ void resetLandingDetector(void)
 
 bool isLandingDetected(void)
 {
+    bool landingDetected;
+
     if (STATE(FIXED_WING)) { // FIXED_WING
-        return isFixedWingLandingDetected(&landingTimer);
+        landingDetected = isFixedWingLandingDetected(&landingTimer);
     }
     else {
-        return isMulticopterLandingDetected(&landingTimer);
+        landingDetected = isMulticopterLandingDetected(&landingTimer);
     }
+
+    NAV_BLACKBOX_DEBUG(1, landingDetected ? 1 : 0);
+
+    return landingDetected;
 }
 
 /*-----------------------------------------------------------
