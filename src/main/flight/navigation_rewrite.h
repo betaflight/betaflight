@@ -74,7 +74,6 @@ typedef struct navConfig_s {
         uint16_t gps_delay_ms;
 
         float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
-        float w_z_baro_v;   // Weight (cutoff frequency) for barometer velocity measurements
 
         float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements
         float w_z_sonar_v;  // Weight (cutoff frequency) for sonar velocity measurements

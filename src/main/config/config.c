@@ -227,7 +227,6 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.accz_unarmed_cal = 1;
 
     navConfig->inav.w_z_baro_p = 1.0f;
-    navConfig->inav.w_z_baro_v = 0.5f;
 
     navConfig->inav.w_z_gps_p = 0.3f;
     navConfig->inav.w_z_gps_v = 0.3f;

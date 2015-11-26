@@ -361,6 +361,16 @@ static const char * const lookupTableFailsafeProcedure[] = {
     "SET-THR", "RTH"
 };
 
+#ifdef NAV
+static const char * const lookupTableNavControlMode[] = {
+    "ATTI", "CRUISE"
+};
+
+static const char * const lookupTableNavRthAltMode[] = {
+    "CURRENT", "EXTRA", "FIXED", "MAX", "AT_LEAST"
+};
+#endif
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -382,6 +392,10 @@ typedef enum {
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
     TABLE_FAILSAFE_PROCEDURE,
+#ifdef NAV
+    TABLE_NAV_USER_CTL_MODE,
+    TABLE_NAV_RTH_ALT_MODE,
+#endif
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -400,6 +414,10 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
+#ifdef NAV
+    { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
+    { lookupTableNavRthAltMode, sizeof(lookupTableNavRthAltMode) / sizeof(char *) },
+#endif
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -523,7 +541,6 @@ const clivalue_t valueTable[] = {
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.inav.gps_delay_ms, .config.minmax = { 0,  500 }, 0 },
 
     { "inav_w_z_baro_p",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_baro_p, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_z_baro_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_baro_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_z_gps_p",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_gps_p, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_z_gps_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_gps_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_xy_gps_p",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_gps_p, .config.minmax = { 0,  10 }, 0 },
@@ -531,14 +548,14 @@ const clivalue_t valueTable[] = {
     { "inav_w_xy_dr_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_dr_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_z_res_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_res_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_xy_res_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_res_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_acc_bias",            VAR_FLOAT  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.w_acc_bias, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_w_acc_bias",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_acc_bias, .config.minmax = { 0,  1 }, 0 },
 
     { "inav_max_eph_epv",           VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.max_eph_epv, .config.minmax = { 0,  9999 }, 0 },
     { "inav_baro_epv",              VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.baro_epv, .config.minmax = { 0,  9999 }, 0 },
 
     { "nav_use_midrc_for_althold",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.use_midrc_for_althold, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_throttle_tilt_comp",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.throttle_tilt_comp, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_user_control_mode",      VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.flags.user_control_mode, .config.minmax = { 0,  1 }, 0 },
+    { "nav_user_control_mode",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.user_control_mode, .config.lookup = { TABLE_NAV_USER_CTL_MODE }, 0 },
     { "nav_dterm_cut_hz",           VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.dterm_cut_hz, .config.minmax = { 0,  100 }, 0 },
     { "nav_wp_radius",              VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.waypoint_radius, .config.minmax = { 100,  2000 }, 0 },
     { "nav_max_speed",              VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.max_speed, .config.minmax = { 10,  2000 }, 0 },
@@ -547,7 +564,7 @@ const clivalue_t valueTable[] = {
     { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, 0 },
     { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, 0 },
     { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
-    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.flags.rth_alt_control_style, .config.minmax = { 0,  4 }, 0 },
+    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.rth_alt_control_style, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
     { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.rth_altitude, .config.minmax = { 100,  10000 }, 0 },
     { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc_hover_throttle, .config.minmax = { 1000,  2000 }, 0 },
     { "nav_fw_cruise_thr",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw_cruise_throttle, .config.minmax = { 1000,  2000 }, 0 },

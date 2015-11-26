@@ -457,8 +457,7 @@ void applyMulticopterEmergencyLandingController(uint32_t currentTime)
         }
 
         // Update throttle controller
-        // FIXME: use hover throttle hint here
-        rcCommand[THROTTLE] = constrain(1500 + posControl.rcAdjustment[THROTTLE], posControl.escAndServoConfig->minthrottle, posControl.escAndServoConfig->maxthrottle);
+        rcCommand[THROTTLE] = constrain((int16_t)posControl.navConfig->mc_hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.escAndServoConfig->minthrottle, posControl.escAndServoConfig->maxthrottle);
     }
     else {
         /* Sensors has gone haywire, attempt to land regardless */
