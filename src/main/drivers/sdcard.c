@@ -119,31 +119,23 @@ void sdcardInsertionDetectInit(void)
 }
 
 /**
- * @brief  Detect if SD card is correctly plugged in the memory slot.
- * @param  None
- * @retval Return if SD is detected or not
+ * Detect if a SD card is physically present in the memory slot.
  */
 bool sdcard_isInserted(void)
 {
+    bool result = true;
+
 #ifdef SDCARD_DETECT_PIN
-  /*!< Check GPIO to detect SD */
-    if ((GPIO_ReadInputData(SDCARD_DETECT_GPIO_PORT) & SDCARD_DETECT_PIN) != 0)
-    {
-#ifdef SD_DETECT_INVERTED
-        return false;
-#else
-        return true;
+
+    result = (GPIO_ReadInputData(SDCARD_DETECT_GPIO_PORT) & SDCARD_DETECT_PIN) != 0;
+
+#ifdef SDCARD_DETECT_INVERTED
+    result = !result;
 #endif
-    } else {
-#ifdef SD_DETECT_INVERTED
-        return true;
-#else
-        return false;
+
 #endif
-    }
-#else
-    return true;
-#endif
+
+    return result;
 }
 
 static void sdcard_select()
@@ -247,7 +239,7 @@ static uint8_t sdcard_sendAppCommand(uint8_t commandCode, uint32_t commandArgume
 
 /**
  * Sends an IF_COND message to the card to check its version and validate its voltage requirements. Sets the global
- * sdCardVersion with the detected version (0, 1, or 2) and returns true if the card is compatbile.
+ * sdCardVersion with the detected version (0, 1, or 2) and returns true if the card is compatible.
  */
 static bool sdcard_validateInterfaceCondition()
 {
