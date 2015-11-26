@@ -402,6 +402,13 @@ bool gpsDetectI2C(void)
 
 void gpsInitI2C(void)
 {
+    static uint32_t lastRetryMillis = 0;
+
+    if ((millis() - lastRetryMillis) < 500)
+        return;
+
+    lastRetryMillis = millis();
+
     switch(gpsData.state) {
         case GPS_INITIALIZING:
         case GPS_CHANGE_BAUD:
