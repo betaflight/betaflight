@@ -57,6 +57,7 @@
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -1508,14 +1509,21 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
 static void cliSdInfo(char *cmdline) {
     UNUSED(cmdline);
 
+    cliPrint("SD card: ");
+
+    if (!sdcard_isInserted()) {
+        cliPrint("None inserted\r\n");
+        return;
+    }
+
     if (!sdcard_isInitialized()) {
-        cliPrint("sd card not present\r\n");
+        cliPrint("Startup failed\r\n");
         return;
     }
 
     const sdcardMetadata_t *metadata = sdcard_getMetadata();
 
-    cliPrintf("manufacturer 0x%x, capacity: %ukB, %02d/%04d, v%d.%d, '",
+    cliPrintf("Manufacturer 0x%x, %ukB, %02d/%04d, v%d.%d, '",
         metadata->manufacturerID,
         metadata->numBlocks / 2, /* One block is half a kB */
         metadata->productionMonth,
@@ -1526,7 +1534,35 @@ static void cliSdInfo(char *cmdline) {
 
     cliWriteBytes((uint8_t*)metadata->productName, sizeof(metadata->productName));
 
-    cliPrint("'\r\n");
+    cliPrint("'\r\n" "Filesystem: ");
+
+    switch (afatfs_getFilesystemState()) {
+        case AFATFS_FILESYSTEM_STATE_READY:
+            cliPrint("Ready");
+        break;
+        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+            cliPrint("Initializing");
+        break;
+        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+        case AFATFS_FILESYSTEM_STATE_FATAL:
+            cliPrint("Fatal");
+
+            switch (afatfs_getLastError()) {
+                case AFATFS_ERROR_BAD_MBR:
+                    cliPrint(" - no FAT MBR partitions");
+                break;
+                case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
+                    cliPrint(" - bad FAT header");
+                break;
+                case AFATFS_ERROR_GENERIC:
+                case AFATFS_ERROR_NONE:
+                    ; // Nothing more detailed to print
+                break;
+            }
+
+            cliPrint("\r\n");
+        break;
+    }
 }
 
 #endif

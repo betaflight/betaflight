@@ -37,6 +37,13 @@ typedef enum {
     AFATFS_OPERATION_FAILURE,
 } afatfsOperationStatus_e;
 
+typedef enum {
+    AFATFS_ERROR_NONE = 0,
+    AFATFS_ERROR_GENERIC = 1,
+    AFATFS_ERROR_BAD_MBR = 2,
+    AFATFS_ERROR_BAD_FILESYSTEM_HEADER = 3
+} afatfsError_e;
+
 typedef struct afatfsDirEntryPointer_t {
     uint32_t sectorNumberPhysical;
     int16_t entryIndex;
@@ -82,3 +89,4 @@ uint32_t afatfs_getContiguousFreeSpace();
 bool afatfs_isFull();
 
 afatfsFilesystemState_e afatfs_getFilesystemState();
+afatfsError_e afatfs_getLastError();
