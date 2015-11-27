@@ -467,7 +467,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
                       sensors(SENSOR_GPS) && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
     bool isBaroValid = sensors(SENSOR_BARO) && ((currentTime - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
     bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTime - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
-    bool useDeadReckoning = posControl.navConfig->inav.enable_dead_reckoning && (!isGPSValid);
 
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
@@ -545,7 +544,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
     }
 
     /* Estimate XY-axis */
-    if ((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid || useDeadReckoning) {
+    if ((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) {
         /* Predict position */
         inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
         inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
@@ -560,15 +559,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
             /* Adjust EPH */
             posEstimator.est.eph = MIN(posEstimator.est.eph, posEstimator.gps.eph);
-        }
-
-        /* Use dead reckoning */
-        if (useDeadReckoning) {
-            inavFilterCorrectVel(X, dt, 0.0f - posEstimator.est.vel.V.X, posControl.navConfig->inav.w_xy_dr_v);
-            inavFilterCorrectVel(Y, dt, 0.0f - posEstimator.est.vel.V.Y, posControl.navConfig->inav.w_xy_dr_v);
-
-            /* Adjust EPH to just below max_epe */
-            posEstimator.est.eph = posControl.navConfig->inav.max_eph_epv / (1.0f + dt);
         }
     }
     else {

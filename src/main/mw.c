@@ -258,14 +258,19 @@ void annexCode(void)
         }
 
         if (isCalibrating()) {
-            warningLedFlash();
             DISABLE_ARMING_FLAG(OK_TO_ARM);
+        }
+
+#if defined(NAV)
+        if (naivationBlockArming()) {
+            DISABLE_ARMING_FLAG(OK_TO_ARM);
+        }
+#endif
+
+        if (ARMING_FLAG(OK_TO_ARM)) {
+            warningLedDisable();
         } else {
-            if (ARMING_FLAG(OK_TO_ARM)) {
-                warningLedDisable();
-            } else {
-                warningLedFlash();
-            }
+            warningLedFlash();
         }
 
         warningLedUpdate();

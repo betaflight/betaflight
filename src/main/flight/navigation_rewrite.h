@@ -60,7 +60,7 @@ enum {
 typedef struct navConfig_s {
     struct {
         uint8_t use_midrc_for_althold;      // Don't remember throttle when althold was initiated, assume that throttle is at middle = zero climb rate
-        uint8_t throttle_tilt_comp;         // Forcibly apply 100% throttle tilt compensation
+        uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
         uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
         uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
     } flags;
@@ -69,7 +69,6 @@ typedef struct navConfig_s {
 #if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
         uint8_t automatic_mag_declination;
 #endif
-        uint8_t enable_dead_reckoning;
         uint8_t accz_unarmed_cal;
         uint16_t gps_delay_ms;
 
@@ -163,6 +162,7 @@ void updateHomePosition(void);
 bool naivationRequiresAngleMode(void);
 bool navigationRequiresThrottleTiltCompensation(void);
 int8_t naivationGetHeadingControlState(void);
+bool naivationBlockArming(void);
 
 float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);

@@ -1704,7 +1704,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
  *-----------------------------------------------------------*/
 bool navigationRequiresThrottleTiltCompensation(void)
 {
-    return !STATE(FIXED_WING) && posControl.navConfig->flags.throttle_tilt_comp && (navGetStateFlags(posControl.navState) & NAV_REQUIRE_THRTILT);
+    return !STATE(FIXED_WING) && (navGetStateFlags(posControl.navState) & NAV_REQUIRE_THRTILT);
 }
 
 /*-----------------------------------------------------------
@@ -1731,6 +1731,12 @@ int8_t naivationGetHeadingControlState(void)
     else {
         return NAV_HEADING_CONTROL_NONE;
     }
+}
+
+bool naivationBlockArming(void)
+{
+    bool okToArm = posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME);
+    return (posControl.navConfig->flags.extra_arming_safety && !okToArm);
 }
 
 /**
