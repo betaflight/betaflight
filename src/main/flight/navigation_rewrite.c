@@ -35,6 +35,8 @@
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 
+#include "io/beeper.h"
+
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
@@ -1175,9 +1177,6 @@ void updateHomePosition(void)
         if (posControl.flags.hasValidPositionSensor) {
             setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
         }
-        else {
-            DISABLE_STATE(GPS_FIX_HOME);
-        }
     }
     else {
         // Update distance and direction to home if armed (home is not updated when armed)
@@ -1729,6 +1728,20 @@ int8_t naivationGetHeadingControlState(void)
 }
 
 /**
+ * Indicate ready/not ready status
+ */
+static void updateReadyStatus(void)
+{
+    static bool posReadyBeepDone = false;
+
+    /* Beep out READY_BEEP once when position lock is firstly acquired and HOME set */
+    if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME) && !posReadyBeepDone) {
+        beeper(BEEPER_READY_BEEP);
+        posReadyBeepDone = true;
+    }
+}
+
+/**
  * Process NAV mode transition and WP/RTH state machine
  *  Update rate: RX (data driven or 50Hz)
  */
@@ -1738,6 +1751,9 @@ void updateWaypointsAndNavigationMode(bool isRXDataNew)
     if (isRXDataNew) {
         /* Initiate home position update */
         updateHomePosition();
+
+        /* Update NAV ready status */
+        updateReadyStatus();
 
         // Process switch to a different navigation mode (if needed)
         navProcessFSMEvents(selectNavEventFromBoxModeInput());
