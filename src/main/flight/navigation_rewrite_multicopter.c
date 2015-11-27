@@ -50,6 +50,7 @@
  *-----------------------------------------------------------*/
 static int16_t altholdInitialRCThrottle;      // Throttle input when althold was activated
 static int16_t rcCommandAdjustedThrottle;
+static filterStatePt1_t altholdThrottleFilterState;
 
 /* Calculate global altitude setpoint based on surface setpoint */
 static void updateSurfaceTrackingAltitudeSetpoint_MC(void)
@@ -75,8 +76,6 @@ static void updateAltitudeVelocityController_MC(void)
 
 static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 {
-    static filterStatePt1_t throttleFilterState;
-
     // Calculate min and max throttle boundaries (to compensate for integral windup)
     int16_t thrAdjustmentMin = (int16_t)posControl.escAndServoConfig->minthrottle - (int16_t)posControl.navConfig->mc_hover_throttle;
     int16_t thrAdjustmentMax = (int16_t)posControl.escAndServoConfig->maxthrottle - (int16_t)posControl.navConfig->mc_hover_throttle;
@@ -85,7 +84,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
     NAV_BLACKBOX_DEBUG(2, posControl.rcAdjustment[THROTTLE]);
 
-    posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &throttleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
+    posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &altholdThrottleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
 
     NAV_BLACKBOX_DEBUG(3, posControl.rcAdjustment[THROTTLE]);
@@ -124,6 +123,7 @@ void setupMulticopterAltitudeController(void)
 void resetMulticopterAltitudeController()
 {
     navPidReset(&posControl.pids.vel[Z]);
+    filterResetPt1(&altholdThrottleFilterState, 0.0f);
     posControl.rcAdjustment[THROTTLE] = 0;
 }
 
@@ -198,8 +198,8 @@ void resetMulticopterPositionController(void)
     for (axis = 0; axis < 2; axis++) {
         navPidReset(&posControl.pids.vel[axis]);
         posControl.rcAdjustment[axis] = 0;
-        mcPosControllerAccFilterStateX.state = 0.0f;
-        mcPosControllerAccFilterStateY.state = 0.0f;
+        filterResetPt1(&mcPosControllerAccFilterStateX, 0.0f);
+        filterResetPt1(&mcPosControllerAccFilterStateY, 0.0f);
         lastAccelTargetX = 0.0f;
         lastAccelTargetY = 0.0f;
     }

@@ -27,7 +27,7 @@
 #define POSITION_TARGET_UPDATE_RATE_HZ      5       // Rate manual position target update (minumum possible speed in cms will be this value)
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 
-#define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     2       // low-pass filter on throttle output
+#define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
 #define NAV_ACCEL_CUTOFF_FREQUENCY_HZ       2       // low-pass filter on XY-acceleration target
 
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing

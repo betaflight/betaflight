@@ -37,6 +37,11 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
+void filterResetPt1(filterStatePt1_t *filter, float input)
+{
+    filter->state = input;
+}
+
 /**
  * Typical quadcopter motor noise frequency (at 50% throttle):
  *  450-sized, 920kv, 9.4x4.3 props, 3S : 4622rpm = 77Hz
