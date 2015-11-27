@@ -70,18 +70,19 @@ TEST(SonarUnittest, TestAltitude)
 
     // Check distance at various roll angles
     // distance 400, 5 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 50, 0), 377);
-    EXPECT_EQ(sonarGetLatestAltitude(), 377);
+    EXPECT_EQ(sonarCalculateAltitude(400, 50, 0), 398);
+    EXPECT_EQ(sonarGetLatestAltitude(), 398);
     // distance 400, 10 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 100, 0), 355);
-    EXPECT_EQ(sonarGetLatestAltitude(), 355);
+    EXPECT_EQ(sonarCalculateAltitude(400, 100, 0), 393);
+    EXPECT_EQ(sonarGetLatestAltitude(), 393);
     // distance 400, 20 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 200, 0), 311);
-    EXPECT_EQ(sonarGetLatestAltitude(), 311);
+    EXPECT_EQ(sonarCalculateAltitude(400, 200, 0), 375);
+    EXPECT_EQ(sonarGetLatestAltitude(), 375);
     // distance 400, maximum roll
-    EXPECT_EQ(sonarCalculateAltitude(400, HCSR04_MAX_TILT_ANGLE_DECIDEGREES, 0), 300);
-    EXPECT_EQ(sonarGetLatestAltitude(), 300);
+    EXPECT_EQ(sonarCalculateAltitude(400, HCSR04_MAX_TILT_ANGLE_DECIDEGREES, 0), 369);
+    EXPECT_EQ(sonarGetLatestAltitude(), 369);
 }
+
 typedef struct rollAndPitch_s {
     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
     int16_t rollDeciDegrees;

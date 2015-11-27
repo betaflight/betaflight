@@ -142,14 +142,14 @@ int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegree
  */
 int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
 {
-	int16_t tiltAngle = sonarCalculateTiltAngle(rollDeciDegrees, pitchDeciDegrees);
+#define coefX2 1.52309E-06f // (PI/1800)^2/2, coefficient of x^2 in Taylor expansion of cos(x)
+    int16_t tiltAngle = sonarCalculateTiltAngle(rollDeciDegrees, pitchDeciDegrees);
     // calculate sonar altitude only if the ground is in the sonar cone
     if (tiltAngle > HCSR04_MAX_TILT_ANGLE_DECIDEGREES)
         calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
         // altitude = distance * cos(tiltAngle), use approximation
-        calculatedAltitude = sonarDistance * (900.0f - tiltAngle) / 900.0f;
-
+        calculatedAltitude = sonarDistance * (1.0f - tiltAngle*tiltAngle*coefX2);
     return calculatedAltitude;
 }
 
