@@ -474,7 +474,7 @@ void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
     float stoppingDistanceY = posControl.actualState.vel.V.Y / posControl.pids.pos[Y].param.kP;
 
     pos->V.X = posControl.actualState.pos.V.X + stoppingDistanceX;
-    pos->V.Y = posControl.actualState.pos.V.X + stoppingDistanceY;
+    pos->V.Y = posControl.actualState.pos.V.Y + stoppingDistanceY;
 }
 
 #endif  // NAV
