@@ -29,11 +29,11 @@ typedef struct sonarHardware_s {
 
 #define SONAR_GPIO GPIOB
 
-#define SONAR_OUT_OF_RANGE (-1)
-#define SONAR_MAX_RANGE 400 // 4m
-#define SONAR_MAX_RANGE_WITH_TILT 300 // 3m, allow for tilt and roll
-#define SONAR_MAX_RANGE_ACCURACY_HIGH 200 // 2m
-#define SONAR_MAX_TILT_ANGLE 250 // 25 degrees
+#define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
+
+#define HCSR04_DETECTION_CONE_ANGLE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
+#define HCSR04_DETECTION_CONE_ANGLE_MAX_DECIDEGREES 450 // in practice 45 degrees seems to work well
+#define HCSR04_MAX_TILT_ANGLE_DECIDEGREES 225 // 22.5 degrees, half of 45 degree cone angle
 
 void hcsr04_init(const sonarHardware_t *sonarHardware);
 

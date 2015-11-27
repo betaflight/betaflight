@@ -40,7 +40,7 @@
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig) 
+const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
 {
 #if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R)
     static const sonarHardware_t sonarPWM56 = {
@@ -118,7 +118,20 @@ void sonarUpdate(void)
  */
 int32_t sonarRead(void)
 {
-    return hcsr04_get_distance();
+    int32_t distance = hcsr04_get_distance();
+    if (distance > HCSR04_MAX_RANGE_CM)
+        distance = SONAR_OUT_OF_RANGE;
+    return distance;
+}
+
+/*
+* This (poorly named) function merely returns whichever is higher, roll inclination or pitch inclination.
+* //TODO: Fix this up. We could either actually return the angle between 'down' and the normal of the craft
+* (my best interpretation of scalar 'tiltAngle') or rename the function.
+*/
+int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
+{
+    return MAX(ABS(rollDeciDegrees), ABS(pitchDeciDegrees));
 }
 
 /**
@@ -127,12 +140,14 @@ int32_t sonarRead(void)
  *
  * When the ground is too far away or the tilt is too large, SONAR_OUT_OF_RANGE is returned.
  */
-int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t tiltAngle)
+int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
 {
-    // calculate sonar altitude only if the sonar is facing downwards(<25deg)
-    if (tiltAngle > SONAR_MAX_TILT_ANGLE)
+	int16_t tiltAngle = sonarCalculateTiltAngle(rollDeciDegrees, pitchDeciDegrees);
+    // calculate sonar altitude only if the ground is in the sonar cone
+    if (tiltAngle > HCSR04_MAX_TILT_ANGLE_DECIDEGREES)
         calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
+        // altitude = distance * cos(tiltAngle), use approximation
         calculatedAltitude = sonarDistance * (900.0f - tiltAngle) / 900.0f;
 
     return calculatedAltitude;

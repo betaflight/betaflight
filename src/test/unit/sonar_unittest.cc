@@ -32,11 +32,11 @@ TEST(SonarUnittest, TestConstants)
     // SONAR_OUT_OF_RANGE must be negative
     EXPECT_LE(SONAR_OUT_OF_RANGE, 0);
     // Check reasonable values for maximum tilt
-    EXPECT_GE(SONAR_MAX_TILT_ANGLE, 0);
-    EXPECT_LE(SONAR_MAX_TILT_ANGLE, 450);
+    EXPECT_GE(HCSR04_MAX_TILT_ANGLE_DECIDEGREES, 0);
+    EXPECT_LE(HCSR04_MAX_TILT_ANGLE_DECIDEGREES, 450);
     // Check against gross errors in max range constants
-    EXPECT_LE(SONAR_MAX_RANGE_WITH_TILT, SONAR_MAX_RANGE);
-    EXPECT_LE(SONAR_MAX_RANGE_ACCURACY_HIGH, SONAR_MAX_RANGE);
+    EXPECT_GT(HCSR04_MAX_RANGE_CM, 100);
+    EXPECT_LE(SONAR_MAX_RANGE_ACCURACY_HIGH_CM, HCSR04_MAX_RANGE_CM);
 }
 
 TEST(SonarUnittest, TestDistance)
@@ -52,36 +52,73 @@ TEST(SonarUnittest, TestDistance)
     measurement =  10 * returnMicroSecondsPerCm;
     EXPECT_EQ(hcsr04_get_distance(), 10);
 
-    measurement =  SONAR_MAX_RANGE_WITH_TILT * returnMicroSecondsPerCm;
-    EXPECT_EQ(hcsr04_get_distance(), SONAR_MAX_RANGE_WITH_TILT);
+    measurement =  HCSR04_MAX_RANGE_CM * returnMicroSecondsPerCm;
+    EXPECT_EQ(hcsr04_get_distance(), HCSR04_MAX_RANGE_CM);
 }
 
 TEST(SonarUnittest, TestAltitude)
 {
     // Check distance not modified if no tilt
-    EXPECT_EQ(sonarCalculateAltitude(0, 0), 0);
+    EXPECT_EQ(sonarCalculateAltitude(0, 0, 0), 0);
     EXPECT_EQ(sonarGetLatestAltitude(), 0);
-    EXPECT_EQ(sonarCalculateAltitude(100, 0), 100);
+    EXPECT_EQ(sonarCalculateAltitude(100, 0, 0), 100);
     EXPECT_EQ(sonarGetLatestAltitude(), 100);
 
     // Check that out of range is returned if tilt is too large
-    EXPECT_EQ(sonarCalculateAltitude(0, SONAR_MAX_TILT_ANGLE+1), SONAR_OUT_OF_RANGE);
+    EXPECT_EQ(sonarCalculateAltitude(0, HCSR04_MAX_TILT_ANGLE_DECIDEGREES+1, 0), SONAR_OUT_OF_RANGE);
     EXPECT_EQ(sonarGetLatestAltitude(), SONAR_OUT_OF_RANGE);
 
-    // Check distance at various tilt angles
-    // distance 400, 5 degrees of tilt
-    EXPECT_EQ(sonarCalculateAltitude(400, 50), 377);
+    // Check distance at various roll angles
+    // distance 400, 5 degrees of roll
+    EXPECT_EQ(sonarCalculateAltitude(400, 50, 0), 377);
     EXPECT_EQ(sonarGetLatestAltitude(), 377);
-    // distance 400, 10 degrees of tilt
-    EXPECT_EQ(sonarCalculateAltitude(400, 100), 355);
+    // distance 400, 10 degrees of roll
+    EXPECT_EQ(sonarCalculateAltitude(400, 100, 0), 355);
     EXPECT_EQ(sonarGetLatestAltitude(), 355);
-    // distance 400, 20 degrees of tilt
-    EXPECT_EQ(sonarCalculateAltitude(400, 200), 311);
+    // distance 400, 20 degrees of roll
+    EXPECT_EQ(sonarCalculateAltitude(400, 200, 0), 311);
     EXPECT_EQ(sonarGetLatestAltitude(), 311);
-    // distance 400, maximum tilt
-    EXPECT_EQ(sonarCalculateAltitude(400, SONAR_MAX_TILT_ANGLE), 288);
-    EXPECT_EQ(sonarGetLatestAltitude(), 288);
+    // distance 400, maximum roll
+    EXPECT_EQ(sonarCalculateAltitude(400, HCSR04_MAX_TILT_ANGLE_DECIDEGREES, 0), 300);
+    EXPECT_EQ(sonarGetLatestAltitude(), 300);
 }
+typedef struct rollAndPitch_s {
+    // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+    int16_t rollDeciDegrees;
+    int16_t pitchDeciDegrees;
+} rollAndPitch_t;
+
+typedef struct inclinationAngleExpectations_s {
+    rollAndPitch_t inclination;
+    int16_t expected_angle;
+} inclinationAngleExpectations_t;
+
+TEST(SonarUnittest, TestCalculateTiltAngle)
+{
+    const int testCount = 9;
+    inclinationAngleExpectations_t inclinationAngleExpectations[testCount] = {
+        { { 0,  0}, 0},
+        { { 1,  0}, 1},
+        { { 0,  1}, 1},
+        { { 0, -1}, 1},
+        { {-1,  0}, 1},
+        { {-1, -2}, 2},
+        { {-2, -1}, 2},
+        { { 1,  2}, 2},
+        { { 2,  1}, 2}
+    };
+
+    rollAndPitch_t inclination = {0, 0};
+    int tilt_angle = sonarCalculateTiltAngle(inclination.rollDeciDegrees, inclination.pitchDeciDegrees);
+    EXPECT_EQ(tilt_angle, 0);
+
+    for (int i = 0; i < testCount; i++) {
+        inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
+        int result = sonarCalculateTiltAngle(expectation->inclination.rollDeciDegrees, expectation->inclination.pitchDeciDegrees);
+        EXPECT_EQ(expectation->expected_angle, result);
+    }
+}
+
 
 // STUBS
 extern "C" {

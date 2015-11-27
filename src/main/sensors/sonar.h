@@ -17,8 +17,14 @@
 
 #pragma once
 
+#define SONAR_OUT_OF_RANGE (-1)
+#define SONAR_MAX_RANGE_CM 400
+#define SONAR_MAX_RANGE_ACCURACY_HIGH_CM 200
+#define SONAR_MAX_RANGE_WITH_TILT_CM 300
+
 void sonarUpdate(void);
 int32_t sonarRead(void);
-int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t tiltAngle);
+int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
+int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
 int32_t sonarGetLatestAltitude(void);
 

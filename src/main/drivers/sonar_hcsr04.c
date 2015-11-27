@@ -155,8 +155,7 @@ void hcsr04_start_reading(void)
 #endif
 #if defined(SONAR) || defined(UNIT_TEST)
 /**
- * Get the distance that was measured by the last pulse, in centimeters. When the ground is too far away to be
- * reliably read by the sonar, SONAR_OUT_OF_RANGE is returned instead.
+ * Get the distance that was measured by the last pulse, in centimeters.
  */
 int32_t hcsr04_get_distance(void)
 {
@@ -166,10 +165,6 @@ int32_t hcsr04_get_distance(void)
     //
     // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
     int32_t distance = measurement / 59;
-
-    // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-    if (distance > SONAR_MAX_RANGE_WITH_TILT)
-        distance = SONAR_OUT_OF_RANGE;
 
     return distance;
 }

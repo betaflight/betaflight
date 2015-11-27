@@ -174,16 +174,6 @@ bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
     return ABS(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && ABS(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
 }
 
-/*
-* This (poorly named) function merely returns whichever is higher, roll inclination or pitch inclination.
-* //TODO: Fix this up. We could either actually return the angle between 'down' and the normal of the craft
-* (my best interpretation of scalar 'tiltAngle') or rename the function.
-*/
-int16_t calculateTiltAngle(rollAndPitchInclination_t *inclination)
-{
-    return MAX(ABS(inclination->values.rollDeciDegrees), ABS(inclination->values.pitchDeciDegrees));
-}
-
 int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, float accZ_old)
 {
     int32_t result = 0;
@@ -238,10 +228,6 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     static int32_t baroAlt_offset = 0;
     float sonarTransition;
 
-#ifdef SONAR
-    int16_t tiltAngle;
-#endif
-
     dTime = currentTime - previousTime;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
         return;
@@ -261,18 +247,18 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 #endif
 
 #ifdef SONAR
-    tiltAngle = calculateTiltAngle(&inclination);
     sonarAlt = sonarRead();
-    sonarAlt = sonarCalculateAltitude(sonarAlt, tiltAngle);
+    sonarAlt = sonarCalculateAltitude(sonarAlt, inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees);
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH) {
+    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH_CM) {
+        // SONAR accuracy high, so just use SONAR altitude
         baroAlt_offset = BaroAlt - sonarAlt;
         BaroAlt = sonarAlt;
     } else {
         BaroAlt -= baroAlt_offset;
-        if (sonarAlt > 0  && sonarAlt <= SONAR_MAX_RANGE_WITH_TILT) {
-            sonarTransition = (SONAR_MAX_RANGE_WITH_TILT - sonarAlt) / 100.0f;
+        if (sonarAlt > 0  && sonarAlt <= SONAR_MAX_RANGE_WITH_TILT_CM) {
+            sonarTransition = (SONAR_MAX_RANGE_WITH_TILT_CM - sonarAlt) / 100.0f;
             BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
@@ -306,7 +292,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH) {
+    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH_CM) {
         // the sonar has the best range
         EstAlt = BaroAlt;
     } else {
