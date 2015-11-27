@@ -724,6 +724,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         int16_t  p1, p2, p3;
         uint8_t  flag;
     } msp_wp;
+    bool msp_wp_last;
 #endif
 
     switch (cmdMSP) {
@@ -1082,7 +1083,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_WP:
         msp_wp.wp_no = read8();    // get the wp number
-        getWaypoint(msp_wp.wp_no, &msp_wp.lat, &msp_wp.lon, &msp_wp.alt);
+        getWaypoint(msp_wp.wp_no, &msp_wp.lat, &msp_wp.lon, &msp_wp.alt, &msp_wp_last);
         headSerialReply(21);
         serialize8(msp_wp.wp_no);   // wp_no
         serialize8(1);              // action (WAYPOINT)
@@ -1092,7 +1093,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(0);             // P1
         serialize16(0);             // P2
         serialize16(0);             // P3
-        serialize8(0);              // flags
+        serialize8(msp_wp_last ? 0xA5 : 00);              // flags
         break;
     case MSP_GPSSVINFO:
         headSerialReply(1 + (GPS_numCh * 4));
@@ -1566,7 +1567,9 @@ static bool processInCommand(void)
         msp_wp.p2 = read16();       // P2
         msp_wp.p3 = read16();       // P3
         msp_wp.flag = read8();      // future: to set nav flag
-        setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt);
+        if (msp_wp.action == 1) {   // support only WAYPOINT types
+            setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt);
+        }
         break;
 #endif
     case MSP_SET_FEATURE:

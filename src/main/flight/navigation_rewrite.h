@@ -167,7 +167,7 @@ int8_t naivationGetHeadingControlState(void);
 float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);
 
-void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt);
+void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt, bool * isLastWaypoint);
 void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt);
 
 void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos);

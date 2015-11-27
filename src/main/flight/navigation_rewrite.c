@@ -1413,7 +1413,7 @@ static void applyEmergencyLandingController(uint32_t currentTime)
 /*-----------------------------------------------------------
  * WP controller
  *-----------------------------------------------------------*/
-void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt)
+void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt, bool * isLastWaypoint)
 {
     gpsLocation_t wpLLH;
 
@@ -1426,16 +1426,21 @@ void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * w
         if (STATE(GPS_FIX_HOME)) {
             wpLLH = GPS_home;
         }
+
+        *isLastWaypoint = true;
     }
     // WP #255 - special waypoint - directly get actualPosition
     else if (wpNumber == 255) {
         geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.actualState.pos, &wpLLH);
+        *isLastWaypoint = true;
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
         if (wpNumber <= posControl.waypointCount) {
             geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.waypointList[wpNumber - 1].pos, &wpLLH);
         }
+
+        *isLastWaypoint = (wpNumber >= posControl.waypointCount);
     }
 
     *wpLat = wpLLH.lat;
@@ -1488,8 +1493,9 @@ void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt)
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
         uint8_t wpIndex = wpNumber - 1;
+
         /* Sanity check - can set waypoints only sequentially - one by one */
-        if (wpIndex <= posControl.waypointCount) {
+        if (wpIndex <= posControl.waypointCount) {  // condition is true if wpIndex is at most 1 record ahead the waypointCount
             wpPos.flags.isHomeWaypoint = false;
             posControl.waypointList[wpIndex] = wpPos;
             posControl.waypointCount = wpIndex + 1;
