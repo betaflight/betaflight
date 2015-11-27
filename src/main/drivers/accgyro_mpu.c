@@ -83,7 +83,11 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     // MPU datasheet specifies 30ms.
     delay(35);
 
+#ifndef USE_I2C
+    ack = false;
+#else
     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
+#endif
     if (ack) {
         mpuConfiguration.read = mpuReadRegisterI2C;
         mpuConfiguration.write = mpuWriteRegisterI2C;
