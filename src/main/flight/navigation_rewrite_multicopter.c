@@ -112,7 +112,11 @@ bool adjustMulticopterAltitudeFromRCInput(void)
 
 void setupMulticopterAltitudeController(void)
 {
-    if (posControl.navConfig->flags.use_midrc_for_althold) {
+    // Use midrc as neutral point for throttle if explicitly selected or if not possible to ascend or descend due to deadband
+    if (posControl.navConfig->flags.use_midrc_for_althold ||
+        (((int16_t)rcCommand[THROTTLE] - (int16_t)posControl.navConfig->alt_hold_deadband) <= ((int16_t)posControl.rxConfig->mincheck)) ||
+        (((int16_t)rcCommand[THROTTLE] + (int16_t)posControl.navConfig->alt_hold_deadband) >= ((int16_t)posControl.rxConfig->maxcheck)) ||
+        !ARMING_FLAG(ARMED)) {
         altholdInitialRCThrottle = posControl.rxConfig->midrc;
     }
     else {
