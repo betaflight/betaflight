@@ -152,8 +152,6 @@ static void sbusDataReceive(uint16_t c)
         sbusFramePosition = 0;
     }
 
-    sbusFrame.bytes[sbusFramePosition] = (uint8_t)c;
-
     if (sbusFramePosition == 0) {
         if (c != SBUS_FRAME_BEGIN_BYTE) {
             return;
@@ -161,16 +159,17 @@ static void sbusDataReceive(uint16_t c)
         sbusFrameStartAt = now;
     }
 
-    sbusFramePosition++;
-
-    if (sbusFramePosition == SBUS_FRAME_SIZE) {
-        // endByte currently ignored
-        sbusFrameDone = true;
+    if (sbusFramePosition < SBUS_FRAME_SIZE) {
+        sbusFrame.bytes[sbusFramePosition++] = (uint8_t)c;
+        if (sbusFramePosition == SBUS_FRAME_SIZE) {
+            // endByte currently ignored
+            sbusFrameDone = true;
 #ifdef DEBUG_SBUS_PACKETS
-        debug[2] = sbusFrameTime;
+            debug[2] = sbusFrameTime;
 #endif
-    } else {
-        sbusFrameDone = false;
+        } else {
+            sbusFrameDone = false;
+        }
     }
 }
 
