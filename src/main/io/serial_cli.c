@@ -2411,7 +2411,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("# Cleanflight/%s %s %s / %s (%s)",
+    printf("# iNav/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,

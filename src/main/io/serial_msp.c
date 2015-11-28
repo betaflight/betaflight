@@ -139,10 +139,11 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 
 #define MULTIWII_IDENTIFIER "MWII";
 #define CLEANFLIGHT_IDENTIFIER "CLFL"
+#define INAV_IDENTIFIER "INAV"
 #define BASEFLIGHT_IDENTIFIER "BAFL";
 
 #define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
-static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
 #define FLIGHT_CONTROLLER_VERSION_LENGTH    3
 #define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF

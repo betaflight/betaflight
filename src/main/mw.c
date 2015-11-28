@@ -575,36 +575,26 @@ void processRx(void)
     }
 
 #if defined(MAG)
-#if defined(NAV)
-    if (naivationGetHeadingControlState() != NAV_HEADING_CONTROL_NONE) {
-        DISABLE_FLIGHT_MODE(MAG_MODE);
-        DISABLE_FLIGHT_MODE(HEADFREE_MODE);
-    }
-    else {
-#endif
-        if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-            if (IS_RC_MODE_ACTIVE(BOXMAG)) {
-                if (!FLIGHT_MODE(MAG_MODE)) {
-                    ENABLE_FLIGHT_MODE(MAG_MODE);
-                    magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-                }
-            } else {
-                DISABLE_FLIGHT_MODE(MAG_MODE);
+    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
+            if (!FLIGHT_MODE(MAG_MODE)) {
+                ENABLE_FLIGHT_MODE(MAG_MODE);
+                magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             }
-            if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
-                if (!FLIGHT_MODE(HEADFREE_MODE)) {
-                    ENABLE_FLIGHT_MODE(HEADFREE_MODE);
-                }
-            } else {
-                DISABLE_FLIGHT_MODE(HEADFREE_MODE);
-            }
-            if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-                headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
-            }
+        } else {
+            DISABLE_FLIGHT_MODE(MAG_MODE);
         }
-#if defined(NAV)        
+        if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
+            if (!FLIGHT_MODE(HEADFREE_MODE)) {
+                ENABLE_FLIGHT_MODE(HEADFREE_MODE);
+            }
+        } else {
+            DISABLE_FLIGHT_MODE(HEADFREE_MODE);
+        }
+        if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
+            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
+        }
     }
-#endif
 #endif
 
     if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {

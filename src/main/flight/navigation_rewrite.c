@@ -36,6 +36,7 @@
 #include "sensors/boardalignment.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -512,7 +513,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(nav
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(navigationFSMState_t previousState)
 {
-    if ((navGetStateFlags(previousState) & NAV_CTL_POS) == 0) {
+    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         t_fp_vector targetHoldPos;
 
         resetPositionController();
@@ -531,7 +534,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_IN_PROGRESS(
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(navigationFSMState_t previousState)
 {
-    if ((navGetStateFlags(previousState) & NAV_CTL_ALT) == 0) {
+    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         resetAltitudeController();
         setupAltitudeController();
 
@@ -540,7 +545,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
         setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
     }
 
-    if ((navGetStateFlags(previousState) & NAV_CTL_POS) == 0) {
+    if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         t_fp_vector targetHoldPos;
 
         resetPositionController();
@@ -1588,12 +1593,10 @@ void applyWaypointNavigationAndAltitudeHold(void)
 
 #if defined(NAV_BLACKBOX)
     navFlags = 0;
-    if (posControl.flags.verticalPositionNewData)   navFlags |= (1 << 0);
-    if (posControl.flags.horizontalPositionNewData) navFlags |= (1 << 1);
-    if (posControl.flags.headingNewData)            navFlags |= (1 << 2);
-    if (posControl.flags.hasValidAltitudeSensor)    navFlags |= (1 << 3);
-    if (posControl.flags.hasValidSurfaceSensor)     navFlags |= (1 << 4);
-    if (posControl.flags.hasValidPositionSensor)    navFlags |= (1 << 5);
+    if (posControl.flags.hasValidAltitudeSensor)    navFlags |= (1 << 0);
+    if (posControl.flags.hasValidSurfaceSensor)     navFlags |= (1 << 1);
+    if (posControl.flags.hasValidPositionSensor)    navFlags |= (1 << 2);
+    if ((STATE(GPS_FIX) && GPS_numSat >= 5))        navFlags |= (1 << 3);
 #endif
 
     // No navigation when disarmed
@@ -1679,7 +1682,8 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-        return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
+        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
+            return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) && IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
