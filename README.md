@@ -105,7 +105,7 @@ Before creating new issues please check to see if there is an existing one, sear
 
 ## Developers
 
-Please refer to the development section in the `docs/development` folder.
+Please refer to the development section in the [docs/development](https://github.com/cleanflight/cleanflight/tree/master/docs/development) folder.
 
 TravisCI is used to run automatic builds
 

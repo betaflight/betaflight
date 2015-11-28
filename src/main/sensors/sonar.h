@@ -16,11 +16,16 @@
  */
 
 #pragma once
-#include "sensors/battery.h"
+
+#define SONAR_OUT_OF_RANGE (-1)
+
+extern int16_t sonarMaxRangeCm;
+extern int16_t sonarCfAltCm;
+extern int16_t sonarMaxAltWithTiltCm;
 
 void sonarUpdate(void);
-
 int32_t sonarRead(void);
-int32_t sonarCalculateAltitude(int32_t sonarAlt, int16_t tiltAngle);
+int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
+int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
 int32_t sonarGetLatestAltitude(void);
 

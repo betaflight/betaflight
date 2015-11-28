@@ -99,36 +99,6 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
     }
 }
 
-typedef struct inclinationAngleExpectations_s {
-    rollAndPitchInclination_t inclination;
-    uint16_t expected_angle;
-} inclinationAngleExpectations_t;
-
-TEST(AltitudeHoldTest, TestCalculateTiltAngle)
-{
-    inclinationAngleExpectations_t inclinationAngleExpectations[] = {
-        { {{ 0,  0}}, 0},
-        { {{ 1,  0}}, 1},
-        { {{ 0,  1}}, 1},
-        { {{ 0, -1}}, 1},
-        { {{-1,  0}}, 1},
-        { {{-1, -2}}, 2},
-        { {{-2, -1}}, 2},
-        { {{ 1,  2}}, 2},
-        { {{ 2,  1}}, 2}
-    };
-
-    rollAndPitchInclination_t inclination = {{0, 0}};
-    uint16_t tilt_angle = calculateTiltAngle(&inclination);
-    EXPECT_EQ(tilt_angle, 0);
-
-    for (uint8_t i = 0; i < 9; i++) {
-        inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
-        uint16_t result = calculateTiltAngle(&expectation->inclination);
-        EXPECT_EQ(expectation->expected_angle, result);
-    }
-}
-
 // STUBS
 
 extern "C" {
@@ -155,6 +125,8 @@ uint16_t flightModeFlags;
 uint8_t armingFlags;
 
 int32_t sonarAlt;
+int16_t sonarCfAltCm;
+int16_t sonarMaxAltWithTiltCm;
 
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
