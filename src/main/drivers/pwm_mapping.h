@@ -80,12 +80,12 @@ typedef struct drv_pwm_config_s {
 
 
 typedef enum {
-  PWM_PF_NONE = 0,
-  PWM_PF_MOTOR = (1 << 0),
-  PWM_PF_SERVO = (1 << 1),
-  PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
-  PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
-  PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
+    PWM_PF_NONE = 0,
+    PWM_PF_MOTOR = (1 << 0),
+    PWM_PF_SERVO = (1 << 1),
+    PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
+    PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
+    PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
 

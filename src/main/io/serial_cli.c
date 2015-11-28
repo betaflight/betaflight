@@ -2316,7 +2316,8 @@ static void cliUSB1Wire(char *cmdline)
         cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2\r\n");
         return;
     } else {
-        usb1WireInitialize(); // init ESC outputs and get escCount value
+        usb1WireInitialize();
+
         int i;
         i = atoi(cmdline);
         if (i >= 0 && i <= escCount) {
@@ -2326,7 +2327,6 @@ static void cliUSB1Wire(char *cmdline)
         }
         else {
             printf("Invalid motor port, valid range: 1 to %d\r\n", escCount);
-           // cliReboot();
         }
     }
 }
