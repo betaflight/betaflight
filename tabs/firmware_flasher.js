@@ -8,11 +8,11 @@ TABS.firmware_flasher.initialize = function (callback) {
         GUI.active_tab = 'firmware_flasher';
         googleAnalytics.sendAppView('Firmware Flasher');
     }
-	
-	
+
+
     var intel_hex = false, // standard intel hex in string format
         parsed_hex = false; // parsed raw hex in array format
-        
+
     $('#content').load("./tabs/firmware_flasher.html", function () {
         // translate to user-selected language
         localize();
@@ -137,7 +137,7 @@ TABS.firmware_flasher.initialize = function (callback) {
         $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases){
             processReleases(releases);
             TABS.firmware_flasher.releases = releases;
-            
+
             // bind events
             $('select[name="release"]').change(function() {
                 if (!GUI.connect_lock) {
@@ -155,7 +155,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             }
             $('select[name="release"]').empty().append('<option value="0">Offline</option>');
         });
-        
+
 
         // UI Hooks
         $('a.load_file').click(function () {
@@ -221,7 +221,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $("a.load_remote_file").removeClass('disabled');
             }
         });
-        
+
         $('a.load_remote_file').click(function (evt) {
 
             if ($('select[name="release"]').val() == "0") {
@@ -249,34 +249,34 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     d = new Date(data.commit.author.date),
                                     offset = d.getTimezoneOffset() / 60,
                                     date;
-    
+
                                 date = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + (d.getDate())).slice(-2);
                                 date += ' @ ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
                                 date += (offset > 0) ? ' GMT+' + offset : ' GMT' + offset;
-    
+
                                 $('div.git_info .committer').text(data.commit.author.name);
                                 $('div.git_info .date').text(date);
                                 $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/cleanflight/cleanflight/commit/' + data.sha);
-                                
+
                                 $('div.git_info .message').text(data.commit.message);
-    
+
                                 $('div.git_info').slideDown();
                             });
                         }
-                        
+
                         $('div.release_info .target').text(summary.target);
-                        
+
                         var status_e = $('div.release_info .status');
                         if (summary.status == 'release-candidate') {
                             $('div.release_info .status').html(chrome.i18n.getMessage('firmwareFlasherReleaseStatusReleaseCandidate')).show();
                         } else {
                             status_e.hide();
                         }
-                        
+
                         $('div.release_info .name').text(summary.name).prop('href', summary.releaseUrl);
                         $('div.release_info .date').text(summary.date);
                         $('div.release_info .file').text(summary.file).prop('href', summary.url);
-                        
+
                         var formattedNotes = summary.notes.trim('\r').replace(/\r/g, '<br />');
                         $('div.release_info .notes').html(formattedNotes);
 
@@ -303,7 +303,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
             }
         });
-        
+
         $('a.flash_firmware').click(function () {
             if (!$(this).hasClass('disabled')) {
                 if (!GUI.connect_lock) { // button disabled while flashing is in progress
@@ -424,6 +424,8 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                 chrome.storage.local.set({'no_reboot_sequence': status});
             });
+
+            $('input.updating').change();
         });
 
         chrome.storage.local.get('flash_manual_baud', function (result) {
@@ -436,22 +438,21 @@ TABS.firmware_flasher.initialize = function (callback) {
             // bind UI hook so the status is saved on change
             $('input.flash_manual_baud').change(function() {
                 var status = $(this).is(':checked');
-
                 chrome.storage.local.set({'flash_manual_baud': status});
             });
-            
+
             $('input.flash_manual_baud').change();
         });
 
         chrome.storage.local.get('flash_manual_baud_rate', function (result) {
             $('#flash_manual_baud_rate').val(result.flash_manual_baud_rate);
-            
+
             // bind UI hook so the status is saved on change
             $('#flash_manual_baud_rate').change(function() {
                 var baud = parseInt($('#flash_manual_baud_rate').val());
                 chrome.storage.local.set({'flash_manual_baud_rate': baud});
             });
-            
+
             $('input.flash_manual_baud_rate').change();
         });
 
@@ -507,6 +508,9 @@ TABS.firmware_flasher.initialize = function (callback) {
             $('input.erase_chip').change(function () {
                 chrome.storage.local.set({'erase_chip': $(this).is(':checked')});
             });
+
+            $('input.erase_chip').change();
+
         });
 
         $(document).keypress(function (e) {
