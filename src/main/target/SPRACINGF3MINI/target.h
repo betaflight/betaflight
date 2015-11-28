@@ -202,3 +202,11 @@
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PORT  BUTTON_B_PORT
 #define BINDPLUG_PIN   BUTTON_B_PIN
+
+#define USE_SERIAL_1WIRE
+#define USE_SERIAL_1WIRE_CLI
+
+#define S1W_TX_GPIO         UART1_GPIO
+#define S1W_TX_PIN          UART1_TX_PIN
+#define S1W_RX_GPIO         UART1_GPIO
+#define S1W_RX_PIN          UART1_RX_PIN
