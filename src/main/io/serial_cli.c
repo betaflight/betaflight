@@ -1102,7 +1102,7 @@ static void cliMotorMix(char *cmdline)
                 cliMotorMix("");
             }
         } else {
-            cliShowArgumentRangeError("index", 1, MAX_SUPPORTED_MOTORS);
+            cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
 #endif
@@ -1935,7 +1935,7 @@ static void cliMotor(char *cmdline)
     }
 
     if (motor_index < 0 || motor_index >= MAX_SUPPORTED_MOTORS) {
-        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS);
+        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         return;
     }
 
@@ -2313,20 +2313,18 @@ static void cliStatus(char *cmdline)
 static void cliUSB1Wire(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2\r\n");
+        cliShowParseError();
         return;
     } else {
         usb1WireInitialize();
 
         int i;
         i = atoi(cmdline);
-        if (i >= 0 && i <= escCount) {
+        if (i >= 0 && i < escCount) {
             printf("Switching to BlHeli mode on motor port %d\r\n", i);
-            // motor 1 => index 0
-            usb1WirePassthrough(i-1);
-        }
-        else {
-            printf("Invalid motor port, valid range: 1 to %d\r\n", escCount);
+            usb1WirePassthrough(i);
+        } else {
+            cliShowArgumentRangeError("motor", 0, escCount - 1);
         }
     }
 }
