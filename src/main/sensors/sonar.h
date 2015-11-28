@@ -18,9 +18,10 @@
 #pragma once
 
 #define SONAR_OUT_OF_RANGE (-1)
-#define SONAR_MAX_RANGE_CM 400
-#define SONAR_MAX_RANGE_ACCURACY_HIGH_CM 200
-#define SONAR_MAX_RANGE_WITH_TILT_CM 300
+
+extern int16_t sonarMaxRangeCm;
+extern int16_t sonarCfAltCm;
+extern int16_t sonarMaxAltWithTiltCm;
 
 void sonarUpdate(void);
 int32_t sonarRead(void);

@@ -125,6 +125,8 @@ uint16_t flightModeFlags;
 uint8_t armingFlags;
 
 int32_t sonarAlt;
+int16_t sonarCfAltCm;
+int16_t sonarMaxAltWithTiltCm;
 
 
 uint16_t enableFlightMode(flightModeFlags_e mask)

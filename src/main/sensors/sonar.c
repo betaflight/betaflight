@@ -35,8 +35,14 @@
 
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
 // Inclination is adjusted by imu
+    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
+    float baro_cf_alt;                      // apply CF to use ACC for height estimation
 
 #ifdef SONAR
+int16_t sonarMaxRangeCm;
+int16_t sonarMaxAltWithTiltCm;
+int16_t sonarCfAltCm; // Complimentary Filter altitude
+STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
 
 static int32_t calculatedAltitude;
 
@@ -101,10 +107,21 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 #endif
 }
 
+// (PI/1800)^2/2, coefficient of x^2 in Taylor expansion of cos(x)
+#define coefX2 1.52309E-06f
+#define cosDeciDegrees(x) (1.0f - x * x * coefX2)
+
+
 void sonarInit(const sonarHardware_t *sonarHardware)
 {
-    hcsr04_init(sonarHardware);
+    sonarRange_t sonarRange;
+
+    hcsr04_init(sonarHardware, &sonarRange);
     sensorsSet(SENSOR_SONAR);
+    sonarMaxRangeCm = sonarRange.maxRangeCm;
+    sonarCfAltCm = sonarMaxRangeCm / 2;
+    sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
+    sonarMaxAltWithTiltCm = sonarMaxRangeCm * cosDeciDegrees(sonarMaxTiltDeciDegrees);
     calculatedAltitude = SONAR_OUT_OF_RANGE;
 }
 
@@ -142,14 +159,13 @@ int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegree
  */
 int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
 {
-#define coefX2 1.52309E-06f // (PI/1800)^2/2, coefficient of x^2 in Taylor expansion of cos(x)
     int16_t tiltAngle = sonarCalculateTiltAngle(rollDeciDegrees, pitchDeciDegrees);
     // calculate sonar altitude only if the ground is in the sonar cone
-    if (tiltAngle > HCSR04_MAX_TILT_ANGLE_DECIDEGREES)
+    if (tiltAngle > sonarMaxTiltDeciDegrees)
         calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
         // altitude = distance * cos(tiltAngle), use approximation
-        calculatedAltitude = sonarDistance * (1.0f - tiltAngle*tiltAngle*coefX2);
+        calculatedAltitude = sonarDistance * cosDeciDegrees(tiltAngle);
     return calculatedAltitude;
 }
 

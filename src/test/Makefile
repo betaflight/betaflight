@@ -540,7 +540,7 @@ $(OBJECT_DIR)/drivers/sonar_hcsr04.o : \
         $(USER_DIR)/drivers/sonar_hcsr04.h \
         $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/sonar_hcsr04.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DSONAR -c $(USER_DIR)/drivers/sonar_hcsr04.c -o $@
 
 $(OBJECT_DIR)/sensors/sonar.o : \
 	$(USER_DIR)/sensors/sonar.c \

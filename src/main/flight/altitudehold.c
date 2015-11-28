@@ -251,14 +251,15 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     sonarAlt = sonarCalculateAltitude(sonarAlt, inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees);
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH_CM) {
-        // SONAR accuracy high, so just use SONAR altitude
+    if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {
+        // just use the SONAR
         baroAlt_offset = BaroAlt - sonarAlt;
         BaroAlt = sonarAlt;
     } else {
         BaroAlt -= baroAlt_offset;
-        if (sonarAlt > 0  && sonarAlt <= SONAR_MAX_RANGE_WITH_TILT_CM) {
-            sonarTransition = (SONAR_MAX_RANGE_WITH_TILT_CM - sonarAlt) / 100.0f;
+        if (sonarAlt > 0  && sonarAlt <= sonarMaxAltWithTiltCm) {
+            // SONAR in range, so use complementary filter
+            sonarTransition = (sonarMaxAltWithTiltCm - sonarAlt) / 100.0f;
             BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
@@ -292,7 +293,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 #endif
 
-    if (sonarAlt > 0 && sonarAlt < SONAR_MAX_RANGE_ACCURACY_HIGH_CM) {
+    if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {
         // the sonar has the best range
         EstAlt = BaroAlt;
     } else {
