@@ -2209,10 +2209,11 @@ static void cliUSB1Wire(char *cmdline)
             printf("Switching to BlHeli mode on motor port %d\r\n", i);
             // motor 1 => index 0
             usb1WirePassthrough(i-1);
+            // after return need to reboot in order to restore normal port operation
+            cliReboot();
         }
         else {
             printf("Invalid motor port, valid range: 1 to %d\r\n", escCount);
-           // cliReboot();
         }
     }
 }
