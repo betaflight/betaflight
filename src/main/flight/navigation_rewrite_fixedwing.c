@@ -94,7 +94,7 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
     posControl.desiredState.vel.V.Z = filterApplyPt1(posControl.desiredState.vel.V.Z, &velzFilterState, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate pitch angle (plane should be trimmed to horizontal flight with PITCH=0
-    posControl.rcAdjustment[PITCH] = RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
+    posControl.rcAdjustment[PITCH] = -RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
     posControl.rcAdjustment[PITCH] = constrain(posControl.rcAdjustment[PITCH],
                                               -posControl.navConfig->fw_max_dive_angle * 10,
                                                posControl.navConfig->fw_max_climb_angle * 10);
