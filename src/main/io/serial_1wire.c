@@ -16,6 +16,7 @@
  *
  * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
  *  by Nathan Tsoi <nathan@vertile.com>
+ * Several updates by 4712 in order to optimize interaction with BLHeliSuite
  */
 
 #include <stdbool.h>
@@ -29,111 +30,50 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "io/serial_1wire.h"
+#include "io/beeper.h"
 #include "drivers/pwm_mapping.h"
 #include "flight/mixer.h"
 
-/*
-const escHardware_t escHardware[ESC_COUNT] = {
-// Figure out esc clocks and pins, extrapolated from timer.c
-// Periphs could be pulled progmatically... but I'll leave that for another exercise
-#if defined(STM32F3DISCOVERY) && !(defined(CHEBUZZF3))
-  { GPIOD, 12 },
-  { GPIOD, 13 },
-  { GPIOD, 14 },
-  { GPIOD, 15 },
-  { GPIOA, 1 },
-  { GPIOA, 2 }
-#elif defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
-  { GPIOA, 8 },
-  { GPIOA, 11 },
-  { GPIOB, 6 },
-  { GPIOB, 7 },
-  { GPIOB, 8 },
-  { GPIOB, 9 }
-#elif CC3D
-  { GPIOB, 9 },
-  { GPIOB, 8 },
-  { GPIOB, 7 },
-  { GPIOA, 8 },
-  { GPIOB, 4 },
-  { GPIOA, 2 }
-#elif SPRACINGF3
-  { GPIOA, 6 },
-  { GPIOA, 7 },
-  { GPIOA, 11 },
-  { GPIOA, 12 },
-  { GPIOB, 8 },
-  { GPIOB, 9 },
-  { GPIOA, 2 },
-  { GPIOA, 3 }
-#elif MOTOLAB
-  { GPIOA, 4 },
-  { GPIOA, 6 },
-  { GPIOB, 0 },
-  { GPIOB, 1 },
-  { GPIOA, 1 },
-  { GPIOA, 2 },
-  { GPIOA, 3 },
-  { GPIOA, 8 }
-#elif SPARKY
-  { GPIOB, 15 },
-  { GPIOB, 14 },
-  { GPIOA, 8 },
-  { GPIOB, 0 },
-  { GPIOA, 6 },
-  { GPIOA, 2 }
-#endif
-};
-*/
-
 uint8_t escCount; // we detect the hardware dynamically
-
 
 static escHardware_t escHardware[MAX_PWM_MOTORS];
 
 static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
-  gpio_config_t cfg;
-  cfg.pin = pin;
-  cfg.mode = mode;
-  cfg.speed = Speed_10MHz;
-  gpioInit(gpio, &cfg);
+    gpio_config_t cfg;
+    cfg.pin = pin;
+    cfg.mode = mode;
+    cfg.speed = Speed_10MHz;
+    gpioInit(gpio, &cfg);
 }
-
 
 static uint32_t GetPinPos(uint32_t pin) {
-  uint32_t pinPos;
-  for (pinPos = 0; pinPos < 16; pinPos++) {
-      uint32_t pinMask = (0x1 << pinPos);
-      if (pin & pinMask) {
+    uint32_t pinPos;
+    for (pinPos = 0; pinPos < 16; pinPos++) {
+        uint32_t pinMask = (0x1 << pinPos);
+        if (pin & pinMask) {
         // pos found
         return pinPos;
-      }
-  }
-  return 0;
+        }
+    }
+    return 0;
 }
-
 
 void usb1WireInitialize()
 {
-  escCount = 0;
-  memset(&escHardware,0,sizeof(escHardware));
-  pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
-  for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
-    if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
-      if(motor[pwmOutputConfiguration->portConfigurations[i].index] >0 ) {
-        escHardware[escCount].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
-        escHardware[escCount].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
-        escHardware[escCount].pinpos = GetPinPos(escHardware[escCount].pin);
-        gpio_set_mode(escHardware[escCount].gpio,escHardware[escCount].pin, Mode_IPU); //GPIO_Mode_IPU
-        escCount++;
-      }
+    escCount = 0;
+    memset(&escHardware,0,sizeof(escHardware));
+    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
+    for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
+        if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
+            if(motor[pwmOutputConfiguration->portConfigurations[i].index] >0 ) {
+                escHardware[escCount].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
+                escHardware[escCount].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
+                escHardware[escCount].pinpos = GetPinPos(escHardware[escCount].pin);
+                gpio_set_mode(escHardware[escCount].gpio,escHardware[escCount].pin, Mode_IPU); //GPIO_Mode_IPU
+                escCount++;
+            }
+        }
     }
-  }
-#ifdef BEEPER
-   // fix for buzzer often starts beeping continuously when the ESCs are read
-   // switch beeper off until reboot
-   gpio_set_mode(BEEP_GPIO, BEEP_PIN, Mode_IN_FLOATING); // set input no pull up or down
-#endif
 }
 
 #ifdef STM32F10X
@@ -142,34 +82,34 @@ static volatile uint32_t in_cr_mask, out_cr_mask;
 static __IO uint32_t *cr;
 static void gpio_prep_vars(uint32_t escIndex)
 {
-  GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
-  uint32_t pinpos = escHardware[escIndex].pinpos;
-  // mask out extra bits from pinmode, leaving just CNF+MODE
-  uint32_t inmode = Mode_IPU & 0x0F;
-  uint32_t outmode = (Mode_Out_PP & 0x0F) | Speed_10MHz;
-  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
-  cr = &gpio->CRL + (pinpos / 8);
-  // offset to CNF and MODE portions of CRx register
-  uint32_t shift = (pinpos % 8) * 4;
-  // Read out current CRx value
-  in_cr_mask = out_cr_mask = *cr;
-  // Mask out 4 bits
-  in_cr_mask &= ~(0xF << shift);
-  out_cr_mask &= ~(0xF << shift);
-  // save current pinmode
-  in_cr_mask |= inmode << shift;
-  out_cr_mask |= outmode << shift;
+     GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
+     uint32_t pinpos = escHardware[escIndex].pinpos;
+     // mask out extra bits from pinmode, leaving just CNF+MODE
+     uint32_t inmode = Mode_IPU & 0x0F;
+     uint32_t outmode = (Mode_Out_PP & 0x0F) | Speed_10MHz;
+     // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+     cr = &gpio->CRL + (pinpos / 8);
+     // offset to CNF and MODE portions of CRx register
+     uint32_t shift = (pinpos % 8) * 4;
+     // Read out current CRx value
+     in_cr_mask = out_cr_mask = *cr;
+     // Mask out 4 bits
+     in_cr_mask &= ~(0xF << shift);
+     out_cr_mask &= ~(0xF << shift);
+     // save current pinmode
+     in_cr_mask |= inmode << shift;
+     out_cr_mask |= outmode << shift;
 }
 
 static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
-  // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
-  if (mode == Mode_IPU) {
-    *cr = in_cr_mask;
-    escHardware[escIndex].gpio->ODR |= escHardware[escIndex].pin;
-  }
-  else {
-    *cr = out_cr_mask;
-  }
+    // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+    if (mode == Mode_IPU) {
+        *cr = in_cr_mask;
+        escHardware[escIndex].gpio->ODR |= escHardware[escIndex].pin;
+    }
+    else {
+        *cr = out_cr_mask;
+    }
 }
 #endif
 
@@ -190,7 +130,6 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
 #define ESC_OUTPUT(escIndex)   gpioSetOne(escIndex, Mode_Out_PP)
 #endif
 
-
 #define RX_LED_OFF LED0_OFF
 #define RX_LED_ON LED0_ON
 #define TX_LED_OFF LED1_OFF
@@ -200,73 +139,78 @@ static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
 // RX line control when data should be read or written from the single line
 void usb1WirePassthrough(uint8_t escIndex)
 {
-  // disable all interrupts
-  __disable_irq();
-
-  // reset all the pins
-  GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
-  GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
-  // configure gpio
-  gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
-  gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
-  // hey user, turn on your ESC now
-
-#ifdef STM32F10X
-  // reset our gpio register pointers and bitmask values
-  gpio_prep_vars(escIndex);
+#ifdef BEEPER
+    // fix for buzzer often starts beeping continuously when the ESCs are read
+    // switch beeper silent here
+    beeperSilence();
 #endif
 
-  ESC_OUTPUT(escIndex);
-  ESC_SET_HI(escIndex);
-  TX_SET_HIGH;
-  // Wait for programmer to go from 1 -> 0 indicating incoming data
-  while(RX_HI);
+    // disable all interrupts
+    __disable_irq();
 
-  while(1) {
-    // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
-    // Setup escIndex pin to send data, pullup is the default
+    // prepare MSP UART port for direct pin access
+    // reset all the pins
+    GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
+    GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
+    // configure gpio
+    gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+    gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
+
+#ifdef STM32F10X
+    // reset our gpio register pointers and bitmask values
+    gpio_prep_vars(escIndex);
+#endif
+
     ESC_OUTPUT(escIndex);
-    // Write the first bit
-    ESC_SET_LO(escIndex);
-    // Echo on the programmer tx line
-    TX_SET_LO;
-    //set LEDs
-    RX_LED_OFF;
-    TX_LED_ON;
-    // Wait for programmer to go 0 -> 1
-    uint32_t ct=3333;
-    while(!RX_HI) {
-      if (ct > 0) ct--; // count down until 0;
-      // check for low time ->ct=3333 ~600uS //byte LO time for 0 @ 19200 baud -> 9*52 uS => 468.75uS
-      // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more) > 0 =  937.5uS LO
-      // BLHeliSuite will use 4800 baud
-    }
-    // Programmer is high, end of bit
-    // At first Echo to the esc, which helps to charge input capacities at ESC
     ESC_SET_HI(escIndex);
-    // Listen to the escIndex, input mode, pullup resistor is on
-    gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
-    TX_LED_OFF;
-    if (ct==0) break; //we reached zero
-    // Listen to the escIndex while there is no data from the programmer
-    while (RX_HI) {
-      if (ESC_HI(escIndex)) {
-        TX_SET_HIGH;
-        RX_LED_OFF;
-      }
-      else {
+    TX_SET_HIGH;
+    // Wait for programmer to go from 1 -> 0 indicating incoming data
+    while(RX_HI);
+
+    while(1) {
+        // A new iteration on this loop starts when we have data from the programmer (read_programmer goes low)
+        // Setup escIndex pin to send data, pullup is the default
+        ESC_OUTPUT(escIndex);
+        // Write the first bit
+        ESC_SET_LO(escIndex);
+        // Echo on the programmer tx line
         TX_SET_LO;
-        RX_LED_ON;
-      }
+        //set LEDs
+        RX_LED_OFF;
+        TX_LED_ON;
+        // Wait for programmer to go 0 -> 1
+        uint32_t ct=3333;
+        while(!RX_HI) {
+            if (ct > 0) ct--; // count down until 0;
+            // check for low time ->ct=3333 ~600uS //byte LO time for 0 @ 19200 baud -> 9*52 uS => 468.75uS
+            // App must send a 0 at 9600 baud (or lower) which has a LO time of at 104uS (or more) > 0 =  937.5uS LO
+            // BLHeliSuite will use 4800 baud
+        }
+        // Programmer is high, end of bit
+        // At first Echo to the esc, which helps to charge input capacities at ESC
+        ESC_SET_HI(escIndex);
+        // Listen to the escIndex, input mode, pullup resistor is on
+        gpio_set_mode(escHardware[escIndex].gpio, escHardware[escIndex].pin, Mode_IPU);
+        TX_LED_OFF;
+        if (ct==0) break; //we reached zero
+        // Listen to the escIndex while there is no data from the programmer
+        while (RX_HI) {
+            if (ESC_HI(escIndex)) {
+                TX_SET_HIGH;
+                RX_LED_OFF;
+            }
+            else {
+                TX_SET_LO;
+                RX_LED_ON;
+            }
+        }
     }
-  }
 
-  // we get here in case ct reached zero
-  TX_SET_HIGH;
-  RX_LED_OFF;
-  // Enable all irq (for Hardware UART)
-  __enable_irq();
-  return;
+    // we get here in case ct reached zero
+    TX_SET_HIGH;
+    RX_LED_OFF;
+    // Enable all irq (for Hardware UART)
+    __enable_irq();
+    return;
 }
-
 #endif
