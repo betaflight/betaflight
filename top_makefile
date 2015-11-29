@@ -1,0 +1,75 @@
+ALL_TARGETS :=  naze \
+                cc3d \
+                cc3d_opbl \
+                cc3d_bp6 \
+                cc3d_opbl_bp6 \
+                nazepro \
+                olimexino \
+                stm32f3discovery \
+                chebuzzf3 \
+                cjmcu \
+                eustm32f103rc \
+                spracingf3 \
+                port103r \
+                sparky \
+                alienwiif1 \
+                alienwiif3 \
+                colibri_race \
+                motolab \
+                rmdo \
+                ircfusionf3 \
+
+
+CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
+
+clean_naze naze :                         opts := TARGET=NAZE
+clean_cc3d cc3d:                          opts := TARGET=CC3D
+clean_cc3d_opbl cc3d_opbl :               opts := TARGET=CC3D_OPBL
+clean_cc3d_bp6 cc3d_bp6 :                 opts := TARGET=CC3D_BP6
+clean_cc3d_opbl_bp6 cc3d_opbl_bp6 :       opts := TARGET=CC3D_OPBL_BP6
+clean_nazepro nazepro :                   opts := TARGET=NAZE32PRO
+clean_olimexino olimexino :               opts := TARGET=OLIMEXINO
+clean_stm32f3discovery stm32f3discovery : opts := TARGET=STM32F3DISCOVERY
+clean_chebuzzf3 chebuzzf3 :               opts := TARGET=CHEBUZZF3
+clean_cjmcu cjmcu :                       opts := TARGET=CJMCU
+clean_eustm32f103rc eustm32f103rc :       opts := TARGET=EUSTM32F103RC
+clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3
+clean_port103r port103r  :                opts := TARGET=PORT103R
+clean_sparky sparky :                     opts := TARGET=SPARKY
+clean_alienwiif1 alienwiif1 :             opts := TARGET=ALIENWIIF1
+clean_alienwiif3 alienwiif3  :            opts := TARGET=ALIENWIIF3
+clean_colibri_race colibri_race :         opts := TARGET=COLIBRI_RACE
+clean_motolab motolab :                   opts := TARGET=MOTOLAB
+clean_rmdo rmdo :                         opts := TARGET=RMDO
+clean_ircfusionf3 ircfusionf3 :           opts := TARGET=IRCFUSIONF3
+
+
+.PHONY: all clean
+all: everything
+clean: clean_everything
+
+
+.PHONY: clean_everything
+clean_everything: $(CLEAN_TARGETS)
+
+.PHONY: everything
+everything: $(ALL_TARGETS)
+
+
+.PHONY:$(ALL_TARGETS)
+$(ALL_TARGETS):
+	make -f Makefile $(opts)
+
+.PHONY: $(CLEAN_TARGETS)
+$(CLEAN_TARGETS):
+	make -f Makefile clean $(opts)
+
+.PHONY: help
+help:
+	@echo "This is your new top makefile. synopsis: make <target>" .
+	@echo "Valid targets":
+	@echo "all"
+	@echo "clean"
+	@echo "$(ALL_TARGETS)"
+	@echo "$(CLEAN_TARGETS)"
+

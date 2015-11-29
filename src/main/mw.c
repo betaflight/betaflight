@@ -37,6 +37,7 @@
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/bus_bst.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
@@ -59,6 +60,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/i2c_bst.h"
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
@@ -98,6 +100,7 @@ enum {
 #define PREVENT_RX_PROCESS_PRE_LOOP_TRIGGER 80 // Prevent RX processing before expected loop trigger
 #define PREVENT_BARO_READ_PRE_LOOP_TRIGGER 150 // Prevent BARO processing before expected loop trigger
 #define GYRO_RATE 0.001f  // Gyro refresh rate 1khz
+#define PID_AT_MIN_THROTTLE_ITERM_DELAY (3 * 1000)
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -568,7 +571,7 @@ void processRx(void)
          * Additional code to prevent Iterm reset below min_check. pid_at_min_throttle higher than 1 will
          * activate the feature. Experimental yet. Minimum configuration is 2 sec and maxx is 5seconds.
          */
-        if (masterConfig.mixerConfig.pid_at_min_throttle > 1) {
+        if (masterConfig.mixerConfig.pid_at_min_throttle > 1 && ARMING_FLAG(ARMED)) {
             if (pidResetErrorGyroTimeout < millis()) {
                 pidResetErrorGyro();
             }
@@ -576,7 +579,7 @@ void processRx(void)
             pidResetErrorGyro();
         }
     } else {
-        pidResetErrorGyroTimeout = millis() + (masterConfig.mixerConfig.pid_at_min_throttle * 1000);
+        pidResetErrorGyroTimeout = millis() + PID_AT_MIN_THROTTLE_ITERM_DELAY;
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -883,6 +886,12 @@ void loop(void)
         telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
     }
 #endif
+
+#ifdef USE_BST
+    bstProcess();
+    bstMasterWriteLoop();
+#endif
+
 
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {

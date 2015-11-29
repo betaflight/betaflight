@@ -44,6 +44,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -303,6 +304,10 @@ void init(void)
     initInverter();
 #endif
 
+#ifdef USE_BST
+    bstInit(BST_DEVICE);
+#endif
+
 
 #ifdef USE_SPI
     spiInit(SPI1);
@@ -373,7 +378,7 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination, masterConfig.gyro_lpf)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }

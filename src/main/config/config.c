@@ -26,6 +26,7 @@
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -132,7 +133,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 112;
+static const uint8_t EEPROM_CONF_VERSION = 114;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -151,7 +152,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 40;
     pidProfile->I8[PITCH] = 30;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 95;
+    pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 10;
     pidProfile->P8[PIDALT] = 50;
@@ -166,15 +167,17 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 20;
-    pidProfile->I8[PIDLEVEL] = 20;
+    pidProfile->P8[PIDLEVEL] = 50;
+    pidProfile->I8[PIDLEVEL] = 50;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 120;
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
+    pidProfile->gyro_soft_lpf = 0;   // LOW filtering by default
     pidProfile->dterm_cut_hz = 40;
+    pidProfile->yaw_pterm_cut_hz = 50;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.4f;
@@ -183,8 +186,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.02f;
     pidProfile->P_f[YAW] = 4.0f;
-    pidProfile->I_f[YAW] = 0.7f;
-    pidProfile->D_f[YAW] = 0.00f;
+    pidProfile->I_f[YAW] = 0.4f;
+    pidProfile->D_f[YAW] = 0.01f;
     pidProfile->A_level = 6.0f;
     pidProfile->H_level = 6.0f;
     pidProfile->H_sensitivity = 75;
@@ -395,8 +398,9 @@ static void resetConf(void)
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
-    masterConfig.dcm_kp = 10000;                // 1.0 * 10000
+    masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
+    masterConfig.gyro_lpf = 1;                 // 1KHZ or 8KHZ
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -690,12 +694,12 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig);
+    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf));
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
-
+    currentProfile->pidProfile.pidController = constrain(currentProfile->pidProfile.pidController, 1, 2); // This should prevent UNUSED values. CF 1.11 support
     pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
@@ -834,6 +838,14 @@ void validateAndFixConfig(void)
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         featureClear(FEATURE_SONAR);
+    }
+#endif
+
+#if defined(COLIBRI_RACE)
+    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    if(featureConfigured(FEATURE_RX_SERIAL)) {
+	    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+	    masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
     }
 #endif
 

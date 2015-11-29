@@ -83,7 +83,11 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     // MPU datasheet specifies 30ms.
     delay(35);
 
+#ifndef USE_I2C
+    ack = false;
+#else
     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
+#endif
     if (ack) {
         mpuConfiguration.read = mpuReadRegisterI2C;
         mpuConfiguration.write = mpuWriteRegisterI2C;
@@ -289,30 +293,6 @@ void mpuIntExtiInit(void)
     configureMPUDataReadyInterruptHandling();
 
     mpuExtiInitDone = true;
-}
-
-uint8_t determineMPULPF(uint16_t lpf)
-{
-    uint8_t mpuLowPassFilter;
-
-    if (lpf == 256)
-        mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
-    else if (lpf >= 188)
-        mpuLowPassFilter = INV_FILTER_188HZ;
-    else if (lpf >= 98)
-        mpuLowPassFilter = INV_FILTER_98HZ;
-    else if (lpf >= 42)
-        mpuLowPassFilter = INV_FILTER_42HZ;
-    else if (lpf >= 20)
-        mpuLowPassFilter = INV_FILTER_20HZ;
-    else if (lpf >= 10)
-        mpuLowPassFilter = INV_FILTER_10HZ;
-    else if (lpf > 0)
-        mpuLowPassFilter = INV_FILTER_5HZ;
-    else
-        mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
-
-    return mpuLowPassFilter;
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)

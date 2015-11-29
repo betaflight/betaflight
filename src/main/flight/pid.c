@@ -96,6 +96,7 @@ void pidResetErrorGyro(void)
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t DTermState[3];
+static filterStatePt1_t yawPTermState;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -171,6 +172,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+
+        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
+        }
 
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
@@ -284,6 +289,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
 
+        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
+            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
+        }
+
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
@@ -332,7 +341,7 @@ void pidSetController(pidControllerType_e type)
 {
     switch (type) {
         default:
-        case PID_CONTROLLER_REWRITE:
+        case PID_CONTROLLER_MWREWRITE:
             pid_controller = pidRewrite;
             break;
         case PID_CONTROLLER_LUX_FLOAT:

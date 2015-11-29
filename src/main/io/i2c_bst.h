@@ -17,7 +17,14 @@
 
 #pragma once
 
-typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype
-typedef void (*sensorGyroInitFuncPtr)(uint8_t lpf);        // gyro sensor init prototype
-typedef void (*sensorInterruptFuncPtr)(bool *data);         // sensor Interrupt Data Ready
+#include "drivers/bus_bst.h"
+
+void bstProcess(void);
+
+//void writeGpsPositionPrameToBST(void);
+//void writeGPSTimeFrameToBST(void);
+//void writeDataToBST(void);
+bool writeGpsPositionPrameToBST(void);
+bool writeRollPitchYawToBST(void);
+bool writeRCChannelToBST(void);
+
