@@ -25,9 +25,9 @@
 extern uint8_t escCount;
 
 typedef struct {
-  GPIO_TypeDef* gpio;
-  uint16_t pinpos;
-  uint16_t pin;
+    GPIO_TypeDef* gpio;
+    uint16_t pinpos;
+    uint16_t pin;
 } escHardware_t;
 
 
