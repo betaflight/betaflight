@@ -1,0 +1,141 @@
+<div class="tab-onboard_logging toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabOnboardLogging"></div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+        </div>
+        <div class="require-blackbox-unsupported note">
+            <div class="note_spacer">
+                <p i18n="blackboxNotSupported"></p>
+            </div>
+        </div>
+        <div class="require-blackbox-maybe-supported note">
+            <div class="note_spacer">
+                <p i18n="blackboxMaybeSupported"></p>
+            </div>
+        </div>
+        <div class="require-blackbox-supported">
+            <div class="gui_box grey require-blackbox-config-supported">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="blackboxConfiguration"></div>
+                </div>
+                <div class="spacer_box">
+                    <div class="line blackboxDevice">
+                        <select name="blackbox_device">
+                        </select>
+                        <span>Blackbox logging device</span>
+                    </div>
+                    <div class="line blackboxRate">
+                        <select name="blackbox_rate">
+                        </select>
+                        <span>Portion of flight loop iterations to log (logging rate)</span>
+                    </div>
+                    <div class="line">
+                        <a href="#" class="save-settings regular-button" i18n="blackboxButtonSave"></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gui_box grey">
+                <div class="gui_box_titlebar" align="left">
+                    <div class="spacer_box_title">
+                        Outboard serial logging device
+                    </div>
+                </div>
+                <div class="spacer_box">
+                    <p i18n="serialLoggingSupportedNote"></p>
+                </div>
+            </div>
+            
+            <div class="gui_box grey require-dataflash-supported">
+                <div class="gui_box_titlebar" align="left">
+                    <div class="spacer_box_title">
+                        Onboard dataflash chip
+                    </div>
+                </div>
+                <div class="spacer_box">
+                    <div class="require-dataflash-supported">
+                        <p i18n="dataflashNote"></p>
+                        
+                        <dialog class="dataflash-confirm-erase">
+                            <h3 i18n="dataflashConfirmEraseTitle"></h3>
+                            <div class="dataflash-confirm-erase-note" i18n="dataflashConfirmEraseNote"></div>
+                            <div class="dataflash-erase-progress">
+                                <div class="data-loading">
+                                    <p>Erase in progress, please wait...</p>
+                                </div>
+                            </div>
+                            <div class="buttons">
+                                <a href="#" class="erase-flash-confirm regular-button" i18n="dataflashButtonEraseConfirm"></a>
+                                <a href="#" class="erase-flash-cancel regular-button" i18n="dataflashButtonEraseCancel"></a> 
+                            </div>
+                        </dialog>
+                        
+                        <dialog class="dataflash-saving">
+                            <h3 i18n="dataflashSavingTitle"></h3>
+                            <div class="dataflash-saving-before">
+                                <div i18n="dataflashSavingNote"></div>
+                                <progress value="0" min="0" max="100"></progress>
+                                <div class="buttons">
+                                    <a href="#" class="save-flash-cancel regular-button" i18n="dataflashButtonSaveCancel"></a>
+                                </div>
+                            </div>
+                            <div class="dataflash-saving-after">
+                                <div i18n="dataflashSavingNoteAfter"></div>
+                                <div class="buttons">
+                                    <a href="#" class="save-flash-dismiss regular-button" i18n="dataflashButtonSaveDismiss"></a>
+                                </div>
+                            </div>
+                        </dialog>
+                        
+                        <ul class="dataflash-contents">
+                            <li class="dataflash-used">
+                                <div class="legend"></div>
+                            </li>
+                            <li class="dataflash-free">
+                                <div class="legend"></div>
+                            </li>
+                        </ul>
+                        
+                        <div>
+                            <a class="regular-button erase-flash" href="#" i18n="dataflashButtonErase"></a>
+                            <a class="regular-button save-flash" href="#" i18n="dataflashButtonSaveFile"></a>
+                        </div>
+                    </div>
+                    
+                    <p class="require-dataflash-not-present" i18n="dataflashNotPresentNote"></p>
+                    <p class="require-dataflash-unsupported" i18n="dataflashFirmwareUpgradeRequired"></p>
+                </div>
+            </div>
+            <div class="require-sdcard-supported">
+                <div class="gui_box grey">
+                    <div class="gui_box_titlebar" align="left">
+                        <div class="spacer_box_title">
+                            Onboard SD card
+                        </div>
+                    </div>
+                    <div class="spacer_box">
+                            <div class="sdcard">
+                                <div class="sdcard-icon"></div>
+                                <div class="sdcard-status"></div>
+                            </div>
+                        
+                            <p i18n="sdcardNote"></p>
+                            
+                            <div class="require-sdcard-ready">
+                                <ul class="sdcard-contents">
+                                    <li class="sdcard-other">
+                                        <div class="legend"></div>
+                                    </li>
+                                    <li class="sdcard-free">
+                                        <div class="legend"></div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

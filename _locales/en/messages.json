@@ -103,10 +103,10 @@
         "message": "CLI"
     },
     "tabLogging": {
-        "message": "Logging"
+        "message": "Tethered Logging"
     },
-    "tabDataflash": {
-        "message": "Dataflash"
+    "tabOnboardLogging": {
+        "message": "Blackbox"
     },
     "tabAdjustments": {
         "message": "Adjustments"
@@ -988,10 +988,30 @@
         "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
-    "dataflashNote": {
-        "message": "Blackbox flight logs can be recorded to your flight controller's onboard dataflash chip."
+    "blackboxNotSupported": {
+        "message": "Your flight controller's firmware does not support Blackbox logging."
     },
-    "dataflashNotSupportedNote": {
+    "blackboxMaybeSupported": {
+        "message": "Your flight controller's firmware is too old to support this tab, or the Blackbox feature is disabled on the Configuration tab."
+    },
+    "blackboxConfiguration": {
+        "message": "Blackbox configuration"
+    },
+    "blackboxButtonSave": {
+        "message": "Save and reboot"
+    },
+    
+    "serialLoggingSupportedNote": {
+        "message": "You can log to an external logging device (such as an OpenLog or compatible clone) by using a serial port. Configure the port on the Ports tab."
+    },
+    "sdcardNote": {
+        "message": "Flight logs can be recorded to your flight controller's onboard SD card slot."
+    },
+    
+    "dataflashNote": {
+        "message": "Flight logs can be recorded to your flight controller's onboard dataflash chip."
+    },
+    "dataflashNotPresentNote": {
         "message": "Your flight controller does not have a compatible dataflash chip available."
     },
     "dataflashFirmwareUpgradeRequired": {

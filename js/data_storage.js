@@ -174,7 +174,23 @@ var _3D = {
 
 var DATAFLASH = {
     ready: false,
+    supported: false,
     sectors: 0,
     totalSize: 0,
     usedSize: 0
+};
+
+var SDCARD = {
+    supported: false,
+    state: 0,
+    filesystemLastError: 0,
+    freeSizeKB: 0,
+    totalSizeKB: 0,
+};
+
+var BLACKBOX = {
+    supported: false,
+    blackboxDevice: 0,
+    blackboxRateNum: 1,
+    blackboxRateDenom: 1
 };

@@ -25,7 +25,7 @@ var GUI_control = function () {
         'gps',
         'led_strip',
         'logging', 
-        'dataflash',
+        'onboard_logging',
         'modes',
         'motors',
         'pid_tuning',

@@ -29,6 +29,10 @@ var MSP_codes = {
     MSP_DATAFLASH_ERASE:        72,
     MSP_LOOP_TIME:              73,
     MSP_SET_LOOP_TIME:          74,
+    
+    MSP_SDCARD_SUMMARY:         79,
+    MSP_BLACKBOX_CONFIG:        80,
+    MSP_SET_BLACKBOX_CONFIG:    81,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -811,13 +815,17 @@ var MSP = {
                 break;
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
                 if (data.byteLength >= 13) {
-                    DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                    var
+                        flags = data.getUint8(0);
+                    DATAFLASH.ready = (flags & 1) != 0;
+                    DATAFLASH.supported = (flags & 2) != 0 || DATAFLASH.ready;
                     DATAFLASH.sectors = data.getUint32(1, 1);
                     DATAFLASH.totalSize = data.getUint32(5, 1);
                     DATAFLASH.usedSize = data.getUint32(9, 1);
                 } else {
                     // Firmware version too old to support MSP_DATAFLASH_SUMMARY
                     DATAFLASH.ready = false;
+                    DATAFLASH.supported = false;
                     DATAFLASH.sectors = 0;
                     DATAFLASH.totalSize = 0;
                     DATAFLASH.usedSize = 0;
@@ -828,6 +836,24 @@ var MSP = {
                 break;
             case MSP_codes.MSP_DATAFLASH_ERASE:
                 console.log("Data flash erase begun...");
+                break;
+            case MSP_codes.MSP_SDCARD_SUMMARY:
+                var flags = data.getUint8(0); 
+                
+                SDCARD.supported = (flags & 0x01) != 0;
+                SDCARD.state = data.getUint8(1);
+                SDCARD.filesystemLastError = data.getUint8(2);
+                SDCARD.freeSizeKB = data.getUint32(3, 1);
+                SDCARD.totalSizeKB = data.getUint32(7, 1);
+                break;
+            case MSP_codes.MSP_BLACKBOX_CONFIG:
+                BLACKBOX.supported = (data.getUint8(0) & 1) != 0;
+                BLACKBOX.blackboxDevice = data.getUint8(1);
+                BLACKBOX.blackboxRateNum = data.getUint8(2);
+                BLACKBOX.blackboxRateDenom = data.getUint8(3);
+                break;
+            case MSP_codes.MSP_SET_BLACKBOX_CONFIG:
+                console.log("Blackbox config saved");
                 break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
@@ -1176,6 +1202,19 @@ MSP.setRawRx = function(channels) {
     MSP.send_message(MSP_codes.MSP_SET_RAW_RC, buffer, false);
 }
 
+MSP.sendBlackboxConfiguration = function(onDataCallback) {
+    var 
+        message = [
+            BLACKBOX.blackboxDevice & 0xFF, 
+            BLACKBOX.blackboxRateNum & 0xFF, 
+            BLACKBOX.blackboxRateDenom & 0xFF
+        ];
+    
+    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, message, false, function(response) {
+        onDataCallback();
+    });
+}
+
 /**
  * Send a request to read a block of data from the dataflash at the given address and pass that address and a dataview
  * of the returned data to the given callback (or null for the data if an error occured).
@@ -1438,3 +1477,9 @@ MSP.serialPortFunctionsToMask = function(functions) {
     }
     return mask;
 }
+
+MSP.SDCARD_STATE_NOT_PRESENT = 0;
+MSP.SDCARD_STATE_FATAL       = 1;
+MSP.SDCARD_STATE_CARD_INIT   = 2;
+MSP.SDCARD_STATE_FS_INIT     = 3;
+MSP.SDCARD_STATE_READY       = 4;
