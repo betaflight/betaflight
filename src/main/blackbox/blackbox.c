@@ -367,6 +367,14 @@ static blackboxMainState_t* blackboxHistory[3];
 
 static bool blackboxModeActivationConditionPresent = false;
 
+/**
+ * Return true if it is safe to edit the Blackbox configuration in the emasterConfig.
+ */
+bool blackboxMayEditConfig()
+{
+    return blackboxState <= BLACKBOX_STATE_STOPPED;
+}
+
 static bool blackboxIsOnlyLoggingIntraframes() {
     return masterConfig.blackbox_rate_num == 1 && masterConfig.blackbox_rate_denom == 32;
 }
