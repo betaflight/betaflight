@@ -1909,7 +1909,10 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
 
     posControl.pidProfile = initialPidProfile;
 
-    // Initialize position hold PI-controller
+    // Brake time parameter
+    posControl.posDecelerationTime = (float)posControl.pidProfile->I8[PIDPOS] / 100.0f;
+
+    // Initialize position hold P-controller
     for (axis = 0; axis < 2; axis++) {
         navPInit(&posControl.pids.pos[axis], (float)posControl.pidProfile->P8[PIDPOS] / 100.0f);
 

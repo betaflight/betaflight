@@ -223,8 +223,9 @@ typedef struct {
     bool                    enabled;
     navigationFlags_t       flags;
 
-    /* Navigation PID controllers */
+    /* Navigation PID controllers + pre-computed flight parameters */
     navigationPIDControllers_t  pids;
+    float                       posDecelerationTime;
 
     /* Local system state, both actual (estimated) and desired (target setpoint)*/
     navigationEstimatedState_t  actualState;

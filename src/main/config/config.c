@@ -163,7 +163,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDALT] = 0;     // not used
     pidProfile->D8[PIDALT] = 0;     // not used
     pidProfile->P8[PIDPOS] = 15;    // NAV_POS_XY_P * 100
-    pidProfile->I8[PIDPOS] = 0;     // not used
+    pidProfile->I8[PIDPOS] = 100;   // posDecelerationTime * 100
     pidProfile->D8[PIDPOS] = 0;     // not used
     pidProfile->P8[PIDPOSR] = 90;   // NAV_VEL_XY_P * 100
     pidProfile->I8[PIDPOSR] = 15;   // NAV_VEL_XY_I * 100

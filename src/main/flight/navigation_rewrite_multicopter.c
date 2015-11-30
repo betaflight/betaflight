@@ -474,8 +474,8 @@ void applyMulticopterEmergencyLandingController(uint32_t currentTime)
  *-----------------------------------------------------------*/
 void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
 {
-    float stoppingDistanceX = posControl.actualState.vel.V.X / posControl.pids.pos[X].param.kP;
-    float stoppingDistanceY = posControl.actualState.vel.V.Y / posControl.pids.pos[Y].param.kP;
+    float stoppingDistanceX = posControl.actualState.vel.V.X * posControl.posDecelerationTime;
+    float stoppingDistanceY = posControl.actualState.vel.V.Y * posControl.posDecelerationTime;
 
     pos->V.X = posControl.actualState.pos.V.X + stoppingDistanceX;
     pos->V.Y = posControl.actualState.pos.V.Y + stoppingDistanceY;
