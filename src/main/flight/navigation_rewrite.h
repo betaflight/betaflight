@@ -133,6 +133,7 @@ typedef struct gpsOrigin_s {
 typedef struct {
     struct {
         bool isHomeWaypoint;       // for home waypoint yaw is set to "launch heading", for common waypoints - to "initial bearing"
+        bool isLastWaypoint;
     }              flags;
     t_fp_vector    pos;
     int32_t        yaw;             // deg * 100
@@ -168,7 +169,7 @@ float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);
 
 void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt, bool * isLastWaypoint);
-void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt);
+void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt, bool isLastWaypoint);
 
 void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos);
 void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh);

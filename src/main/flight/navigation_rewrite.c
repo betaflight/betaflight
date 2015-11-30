@@ -755,18 +755,17 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_INITIALIZE(nav
 {
     UNUSED(previousState);
 
-    // Prepare controllers
-    resetPositionController();
-    resetAltitudeController();
-    setupAltitudeController();
-
-    if (posControl.waypointCount == 0) {
-        // No waypoints defined, enter PH and end sequence
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-        return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED;
+    if (posControl.waypointCount == 0 || !posControl.waypointListValid) {
+        return NAV_FSM_EVENT_ERROR;
     }
     else {
+        // Prepare controllers
+        resetPositionController();
+        resetAltitudeController();
+        setupAltitudeController();
+
         posControl.activeWaypointIndex = 0;
+
         setDesiredPositionToWaypointAndUpdateInitialBearing(&posControl.waypointList[posControl.activeWaypointIndex]);
         return NAV_FSM_EVENT_SUCCESS;
     }
@@ -796,14 +795,16 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_REACHED(naviga
 {
     UNUSED(previousState);
 
-    // Waypoint reached, do something and move on to next waypoint
-    posControl.activeWaypointIndex++;
+    bool isLastWaypoint = posControl.waypointList[posControl.activeWaypointIndex].flags.isLastWaypoint ||
+                          (posControl.activeWaypointIndex >= (posControl.waypointCount - 1));
 
-    if (posControl.activeWaypointIndex >= posControl.waypointCount) {
+    if (isLastWaypoint) {
         // This is the last waypoint - finalize
         return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED;
     }
     else {
+        // Waypoint reached, do something and move on to next waypoint
+        posControl.activeWaypointIndex++;
         setDesiredPositionToWaypointAndUpdateInitialBearing(&posControl.waypointList[posControl.activeWaypointIndex]);
         return NAV_FSM_EVENT_SUCCESS;
     }
@@ -1454,9 +1455,14 @@ void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * w
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
         if (wpNumber <= posControl.waypointCount) {
             geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.waypointList[wpNumber - 1].pos, &wpLLH);
+            *isLastWaypoint = posControl.waypointList[wpNumber - 1].flags.isLastWaypoint;
         }
-
-        *isLastWaypoint = (wpNumber >= posControl.waypointCount);
+        else {
+            wpLLH.lat = 0;
+            wpLLH.lon = 0;
+            wpLLH.alt = 0;
+            *isLastWaypoint = false;
+        }
     }
 
     *wpLat = wpLLH.lat;
@@ -1464,7 +1470,7 @@ void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * w
     *wpAlt = wpLLH.alt;
 }
 
-void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt)
+void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt, bool isLastWaypoint)
 {
     gpsLocation_t wpLLH;
     navWaypointPosition_t wpPos;
@@ -1508,13 +1514,14 @@ void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt)
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
-        uint8_t wpIndex = wpNumber - 1;
-
         /* Sanity check - can set waypoints only sequentially - one by one */
-        if (wpIndex <= posControl.waypointCount) {  // condition is true if wpIndex is at most 1 record ahead the waypointCount
+        if (wpNumber <= (posControl.waypointCount + 1)) {  // condition is true if wpIndex is at most 1 record ahead the waypointCount
             wpPos.flags.isHomeWaypoint = false;
-            posControl.waypointList[wpIndex] = wpPos;
-            posControl.waypointCount = wpIndex + 1;
+            wpPos.flags.isLastWaypoint = isLastWaypoint;
+
+            posControl.waypointList[wpNumber - 1] = wpPos;
+            posControl.waypointCount = wpNumber;
+            posControl.waypointListValid = isLastWaypoint;
         }
     }
 }
@@ -1539,7 +1546,8 @@ bool isApproachingLastWaypoint(void)
             /* No waypoints, holding current position */
             return true;
         }
-        else if (posControl.activeWaypointIndex == (posControl.waypointCount - 1)) {
+        else if (posControl.activeWaypointIndex == (posControl.waypointCount - 1) ||
+                 posControl.waypointList[posControl.activeWaypointIndex].flags.isLastWaypoint) {
             return true;
         }
         else {
@@ -1693,7 +1701,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
+        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid)
             return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
     }
 
@@ -1873,6 +1881,7 @@ void navigationInit(navConfig_t *initialnavConfig,
     posControl.flags.forcedRTHActivated = 0;
     posControl.waypointCount = 0;
     posControl.activeWaypointIndex = 0;
+    posControl.waypointListValid = false;
 
     /* Set initial surface invalid */
     posControl.actualState.surface = -1.0f;

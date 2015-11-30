@@ -1569,7 +1569,7 @@ static bool processInCommand(void)
         msp_wp.p3 = read16();       // P3
         msp_wp.flag = read8();      // future: to set nav flag
         if (msp_wp.action == 1) {   // support only WAYPOINT types
-            setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt);
+            setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt, (msp_wp.flag == 0xA5));
         }
         break;
 #endif

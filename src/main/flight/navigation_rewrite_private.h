@@ -238,6 +238,7 @@ typedef struct {
     navWaypointPosition_t       waypointList[NAV_MAX_WAYPOINTS];
     int8_t                      waypointCount;
     int8_t                      activeWaypointIndex;
+    bool                        waypointListValid;
 
     /* Internals */
     int16_t                     rcAdjustment[4];
