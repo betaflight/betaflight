@@ -14,9 +14,9 @@ TABS.gps.initialize = function (callback) {
     }
 
     MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_html);
-
+    
     function process_html() {
-        // translate to user-selected language
+        // translate to user-selected languageconsole.log('Online');
         localize();
 
         function get_raw_gps_data() {
@@ -72,37 +72,53 @@ TABS.gps.initialize = function (callback) {
         }, 250, true);
 
 
-//check for internet connection on load
-if (navigator.onLine) {
-  console.log('Online');
-  $('#connect').hide();
-  $('#waiting').show();
-  $('#loadmap').show();
+        //check for internet connection on load
+        if (navigator.onLine) {
+            console.log('Online');
+            $('#connect').hide();
+            $('#waiting').show();
+            $('#loadmap').show();
 
-} else {
-  console.log('Offline');
-  $('#connect').show();
-  $('#waiting').hide();
-  $('#loadmap').hide();
+        } else {
+            console.log('Offline');
+            $('#connect').show();
+            $('#waiting').hide();
+            $('#loadmap').hide();
 
-}
+        }
 
-$("#check").on('click',function(){
-if (navigator.onLine) {
-  console.log('Online');
-  $('#connect').hide();
-  $('#waiting').show();
-  $('#loadmap').show();
+        $("#check").on('click',function(){
+            if (navigator.onLine) {
+                console.log('Online');
+                $('#connect').hide();
+                $('#waiting').show();
+                $('#loadmap').show();
 
-} else {
-  console.log('Offline');
-  $('#connect').show();
-  $('#waiting').hide();
-  $('#loadmap').hide();
+            } else {
+                console.log('Offline');
+                $('#connect').show();
+                $('#waiting').hide();
+                $('#loadmap').hide();
+            }
+        });
 
-  }
- });
- 
+        var frame = document.getElementById('map');
+
+        $('#zoom_in').click(function() {
+            console.log('zoom in');
+            var message = {
+		action: 'zoom_in',
+	    };
+	    frame.contentWindow.postMessage(message, '*');
+        });
+        
+        $('#zoom_out').click(function() {
+            console.log('zoom out');
+	    var message = {
+		action: 'zoom_out'
+	    };
+	    frame.contentWindow.postMessage(message, '*');
+        });
  
         GUI.content_ready(callback);
     }

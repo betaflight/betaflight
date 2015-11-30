@@ -19,8 +19,7 @@
     },
 
     "sandbox": {
-    "pages": [
-      "tabs/map.html"]
+    "pages": ["tabs/map.html"]
     },
          
         "permissions": [
