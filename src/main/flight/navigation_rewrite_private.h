@@ -21,8 +21,10 @@
 
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR    1.113195f  // MagicEarthNumber from APM
 
-#define LAND_DETECTOR_TRIGGER_TIME_MS       2000            // 2 seconds
-#define NAV_ROLL_PITCH_MAX_DECIDEGREES      (30 * 10)       // Max control input from NAV (30 deg)
+#define LAND_DETECTOR_TRIGGER_TIME_MS       2000        // 2 seconds
+#define NAV_ROLL_PITCH_MAX_DECIDEGREES      (30 * 10)   // Max control input from NAV (30 deg)
+
+#define RTH_WAIT_FOR_GPS_TIMEOUT_MS         2000        // GPS wait timeout for RTH
 
 #define POSITION_TARGET_UPDATE_RATE_HZ      5       // Rate manual position target update (minumum possible speed in cms will be this value)
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
@@ -158,25 +160,27 @@ typedef enum {
 
     NAV_STATE_RTH_2D_INITIALIZE,                // 9
     NAV_STATE_RTH_2D_HEAD_HOME,                 // 10
-    NAV_STATE_RTH_2D_FINISHING,                 // 11
-    NAV_STATE_RTH_2D_FINISHED,                  // 12
+    NAV_STATE_RTH_2D_GPS_FAILING,               // 11
+    NAV_STATE_RTH_2D_FINISHING,                 // 12
+    NAV_STATE_RTH_2D_FINISHED,                  // 13
 
-    NAV_STATE_RTH_3D_INITIALIZE,                // 13
-    NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,         // 14
-    NAV_STATE_RTH_3D_HEAD_HOME,                 // 15
-    NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,    // 16
-    NAV_STATE_RTH_3D_LANDING,                   // 17
-    NAV_STATE_RTH_3D_FINISHING,                 // 18
-    NAV_STATE_RTH_3D_FINISHED,                  // 19
+    NAV_STATE_RTH_3D_INITIALIZE,                // 14
+    NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,         // 15
+    NAV_STATE_RTH_3D_HEAD_HOME,                 // 16
+    NAV_STATE_RTH_3D_GPS_FAILING,               // 17
+    NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,    // 18
+    NAV_STATE_RTH_3D_LANDING,                   // 19
+    NAV_STATE_RTH_3D_FINISHING,                 // 20
+    NAV_STATE_RTH_3D_FINISHED,                  // 21
 
-    NAV_STATE_WAYPOINT_INITIALIZE,              // 20
-    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 21
-    NAV_STATE_WAYPOINT_REACHED,                 // 22
-    NAV_STATE_WAYPOINT_FINISHED,                // 23
+    NAV_STATE_WAYPOINT_INITIALIZE,              // 22
+    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 23
+    NAV_STATE_WAYPOINT_REACHED,                 // 24
+    NAV_STATE_WAYPOINT_FINISHED,                // 25
 
-    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 24
-    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 25
-    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 26
+    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 26
+    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 27
+    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 28
 
     NAV_STATE_COUNT,
 } navigationFSMState_t;
@@ -214,6 +218,8 @@ typedef struct {
 typedef struct {
     /* Flags and navigation system state */
     navigationFSMState_t    navState;
+    uint32_t                navStateActivationTimeMs;
+
     bool                    enabled;
     navigationFlags_t       flags;
 
