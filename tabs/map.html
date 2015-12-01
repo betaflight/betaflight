@@ -29,6 +29,8 @@
               zoom--;
               map.setZoom(zoom);
               break;
+            case 'center':
+              map.setCenter(new google.maps.LatLng(e.data.lat, e.data.lon));
          }
        } catch (e) {
          console.log('message error');
