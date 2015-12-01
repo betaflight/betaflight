@@ -24,14 +24,14 @@ var GUI_control = function () {
         'configuration',
         'gps',
         'led_strip',
-        'logging', 
+        'logging',
         'dataflash',
         'modes',
         'motors',
         'pid_tuning',
         'ports',
         'receiver',
-        'sensors', 
+        'sensors',
         'servos',
         'setup'
     ];
@@ -238,39 +238,42 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
 };
 
 GUI_control.prototype.content_ready = function (callback) {
-    
-    $('.togglesmall').each(function(index, html) {
-        var switchery = new Switchery(html,
-        {
+
+    $('.togglesmall').each(function(index, elem) {
+        var switchery = new Switchery(elem, {
           size: 'small',
-          color: '#59aa29', 
-          secondaryColor: '#c4c4c4' 
+          color: '#59aa29',
+          secondaryColor: '#c4c4c4'
         });
-        
-        $(html).removeClass('togglesmall');
+        $(elem).on("change", function (evt) {
+            switchery.setPosition();
+        });
+        $(elem).removeClass('togglesmall');
     });
 
-    $('.toggle').each(function(index, html) {
-        var switchery = new Switchery(html,
-        {
-            color: '#59aa29', 
-            secondaryColor: '#c4c4c4' 
+    $('.toggle').each(function(index, elem) {
+        var switchery = new Switchery(elem, {
+            color: '#59aa29',
+            secondaryColor: '#c4c4c4'
         });
-        
-        $(html).removeClass('toggle');
+        $(elem).on("change", function (evt) {
+            switchery.setPosition();
+        });
+        $(elem).removeClass('toggle');
     });
 
-    $('.togglemedium').each(function(index, html) {
-        var switchery = new Switchery(html,
-         {
+    $('.togglemedium').each(function(index, elem) {
+        var switchery = new Switchery(elem, {
             className: 'switcherymid',
-            color: '#59aa29', 
-            secondaryColor: '#c4c4c4' 
+            color: '#59aa29',
+            secondaryColor: '#c4c4c4'
          });
-
-         $(html).removeClass('togglemedium');
+         $(elem).on("change", function (evt) {
+             switchery.setPosition();
+         });
+         $(elem).removeClass('togglemedium');
     });
-    
+
     // Build link to in-use CF version documentation
     var documentationButton = $('div#content #button-documentation');
     documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
@@ -279,12 +282,12 @@ GUI_control.prototype.content_ready = function (callback) {
     // loading tooltip
     jQuery(document).ready(function($) {
         $('cf_tip').each(function() { // Grab all ".cf_tip" elements, and for each...
-        log(this); // ...print out "this", which now refers to each ".cf_tip" DOM element 
+        log(this); // ...print out "this", which now refers to each ".cf_tip" DOM element
     });
 
-    $('.cf_tip').each(function() { 
+    $('.cf_tip').each(function() {
         $(this).jBox('Tooltip', {
-            content: $(this).children('.cf_tooltiptext'),		
+            content: $(this).children('.cf_tooltiptext'),
             delayOpen: 100,
             delayClose: 100,
             position: {

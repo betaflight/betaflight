@@ -69,8 +69,6 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         MSP.send_message(MSP_codes.MSP_CF_SERIAL_CONFIG, false, false, on_configuration_loaded_handler);
         
         function on_configuration_loaded_handler() {
-            console.log(SERIAL_CONFIG.ports);
-
             $('#content').load("./tabs/ports.html", on_tab_loaded_handler);
             
             board_definition = BOARD.find_board_definition(CONFIG.boardIdentifier);
