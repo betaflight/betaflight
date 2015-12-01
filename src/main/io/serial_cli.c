@@ -544,7 +544,6 @@ const clivalue_t valueTable[] = {
     { "inav_w_z_gps_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_gps_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_xy_gps_p",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_gps_p, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_xy_gps_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_gps_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_xy_dr_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_dr_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_z_res_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_z_res_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_xy_res_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_xy_res_v, .config.minmax = { 0,  10 }, 0 },
     { "inav_w_acc_bias",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.w_acc_bias, .config.minmax = { 0,  1 }, 0 },

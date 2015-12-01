@@ -74,6 +74,7 @@ static void setupAltitudeController(void);
 void resetNavigation(void);
 
 static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint);
+static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos);
 void calculateInitialHoldPosition(t_fp_vector * pos);
 
 /*************************************************************************************************/
@@ -99,6 +100,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHED(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_INITIALIZE(navigationFSMState_t previousState);
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_PRE_ACTION(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_REACHED(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_FINISHED(navigationFSMState_t previousState);
@@ -419,6 +421,19 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_WP,
         .mapToFlightModes = NAV_WP_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_WAYPOINT_PRE_ACTION,
+            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED] = NAV_STATE_WAYPOINT_FINISHED,
+        }
+    },
+
+    [NAV_STATE_WAYPOINT_PRE_ACTION] = {
+        .onEntry = navOnEnteringState_NAV_STATE_WAYPOINT_PRE_ACTION,
+        .timeoutMs = 0,
+        .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_WP,
+        .mapToFlightModes = NAV_WP_MODE | NAV_ALTHOLD_MODE,
+        .onEvent = {
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_WAYPOINT_IN_PROGRESS,
             [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
@@ -449,7 +464,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_WP,
         .mapToFlightModes = NAV_WP_MODE | NAV_ALTHOLD_MODE,
         .onEvent = {
-            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_WAYPOINT_IN_PROGRESS,
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_WAYPOINT_PRE_ACTION,
             [NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED] = NAV_STATE_WAYPOINT_FINISHED,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
@@ -828,10 +843,25 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_INITIALIZE(nav
         setupAltitudeController();
 
         posControl.activeWaypointIndex = 0;
-
-        calcualteAndSetActiveWaypoint(&posControl.waypointList[posControl.activeWaypointIndex]);
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_PRE_ACTION
     }
+}
+
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_PRE_ACTION(navigationFSMState_t previousState)
+{
+    /* A helper function to do waypoint-specific action */
+    UNUSED(previousState);
+
+    switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
+        case NAV_WP_ACTION_WAYPOINT:
+            calcualteAndSetActiveWaypoint(&posControl.waypointList[posControl.activeWaypointIndex]);
+            return NAV_FSM_EVENT_SUCCESS;       // will switch to NAV_STATE_WAYPOINT_IN_PROGRESS
+
+        case NAV_WP_ACTION_RTH:
+        default:
+            calcualteAndSetActiveWaypointToLocalPosition(&posControl.homeWaypointAbove.pos);
+            return NAV_FSM_EVENT_SUCCESS;       // will switch to NAV_STATE_WAYPOINT_IN_PROGRESS
+    };
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(navigationFSMState_t previousState)
@@ -843,14 +873,19 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(na
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
-    if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
-        // Waypoint reached
-        return NAV_FSM_EVENT_SUCCESS;
-    }
-    else {
-        // Update XY-position target to active waypoint
-        setDesiredPosition(&posControl.activeWaypoint.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
-        return NAV_FSM_EVENT_NONE;
+    switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
+        case NAV_WP_ACTION_WAYPOINT:
+        case NAV_WP_ACTION_RTH:
+        default:
+            if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
+                // Waypoint reached
+                return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_REACHED
+            }
+            else {
+                // Update XY-position target to active waypoint
+                setDesiredPosition(&posControl.activeWaypoint.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+                return NAV_FSM_EVENT_NONE;      // will re-process state in >10ms
+            }
     }
 }
 
@@ -862,14 +897,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_REACHED(naviga
                           (posControl.activeWaypointIndex >= (posControl.waypointCount - 1));
 
     if (isLastWaypoint) {
-        // This is the last waypoint - finalize
+        // Last waypoint reached
         return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED;
     }
     else {
         // Waypoint reached, do something and move on to next waypoint
         posControl.activeWaypointIndex++;
-        calcualteAndSetActiveWaypoint(&posControl.waypointList[posControl.activeWaypointIndex]);
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_PRE_ACTION
     }
 }
 
@@ -1527,7 +1561,7 @@ void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
         wpData->alt = wpLLH.alt;
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
-    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS) && posControl.waypointListValid) {
+    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
         if (wpNumber <= posControl.waypointCount) {
             *wpData = posControl.waypointList[wpNumber - 1];
         }
@@ -1583,21 +1617,28 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     }
 }
 
+static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos)
+{
+    posControl.activeWaypoint.pos = *pos;
+
+    // Calculate initial bearing towards waypoint and store it in waypoint yaw parameter (this will further be used to detect missed waypoints)
+    posControl.activeWaypoint.yaw = calculateBearingToDestination(pos);
+
+    // Set desired position to next waypoint (XYZ-controller)
+    setDesiredPosition(&posControl.activeWaypoint.pos, posControl.activeWaypoint.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+}
+
 static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint)
 {
     gpsLocation_t wpLLH;
+    t_fp_vector localPos;
 
     wpLLH.lat = waypoint->lat;
     wpLLH.lon = waypoint->lon;
     wpLLH.alt = waypoint->alt;
 
-    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &posControl.activeWaypoint.pos);
-
-    // Calculate initial bearing towards waypoint and store it in waypoint yaw parameter (this will further be used to detect missed waypoints)
-    posControl.activeWaypoint.yaw = calculateBearingToDestination(&posControl.activeWaypoint.pos);
-
-    // Set desired position to next waypoint (XYZ-controller)
-    setDesiredPosition(&posControl.activeWaypoint.pos, posControl.activeWaypoint.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &localPos);
+    calcualteAndSetActiveWaypointToLocalPosition(&localPos);
 }
 
 /**

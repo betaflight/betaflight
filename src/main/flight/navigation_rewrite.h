@@ -83,8 +83,6 @@ typedef struct navConfig_s {
         float w_xy_gps_p;   // Weight (cutoff frequency) for GPS position measurements
         float w_xy_gps_v;   // Weight (cutoff frequency) for GPS velocity measurements
 
-        float w_xy_dr_v;    // When we are using dead reckoning, loosely assume that we don't move and stay at the same place
-
         float w_z_res_v;    // When velocity sources lost slowly decrease estimated velocity with this weight
         float w_xy_res_v;
 
@@ -109,9 +107,9 @@ typedef struct navConfig_s {
     uint16_t fw_cruise_throttle;            // Cruise throttle
     uint16_t fw_min_throttle;               // Minimum allowed throttle in auto mode
     uint16_t fw_max_throttle;               // Maximum allowed throttle in auto mode
-    uint8_t fw_max_bank_angle;              // Fixed wing max banking angle (deg)
-    uint8_t fw_max_climb_angle;             // Fixed wing max banking angle (deg)
-    uint8_t fw_max_dive_angle;              // Fixed wing max banking angle (deg)
+    uint8_t  fw_max_bank_angle;             // Fixed wing max banking angle (deg)
+    uint8_t  fw_max_climb_angle;            // Fixed wing max banking angle (deg)
+    uint8_t  fw_max_dive_angle;             // Fixed wing max banking angle (deg)
     uint8_t  fw_pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
 } navConfig_t;
 
