@@ -716,16 +716,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     uint32_t i, tmp, junk;
 
 #ifdef GPS
-    struct {
-        uint8_t  wp_no;
-        uint8_t  action;
-        int32_t  lat;
-        int32_t  lon;
-        int32_t  alt;
-        int16_t  p1, p2, p3;
-        uint8_t  flag;
-    } msp_wp;
-    bool msp_wp_last;
+    int8_t msp_wp_no;
+    navWaypoint_t msp_wp;
 #endif
 
     switch (cmdMSP) {
@@ -1083,18 +1075,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(GPS_update & 1);
         break;
     case MSP_WP:
-        msp_wp.wp_no = read8();    // get the wp number
-        getWaypoint(msp_wp.wp_no, &msp_wp.lat, &msp_wp.lon, &msp_wp.alt, &msp_wp_last);
+        msp_wp_no = read8();    // get the wp number
+        getWaypoint(msp_wp_no, &msp_wp);
         headSerialReply(21);
-        serialize8(msp_wp.wp_no);   // wp_no
-        serialize8(1);              // action (WAYPOINT)
+        serialize8(msp_wp_no);   // wp_no
+        serialize8(msp_wp.action);  // action (WAYPOINT)
         serialize32(msp_wp.lat);    // lat
         serialize32(msp_wp.lon);    // lon
         serialize32(msp_wp.alt);    // altitude (cm)
-        serialize16(0);             // P1
-        serialize16(0);             // P2
-        serialize16(0);             // P3
-        serialize8(msp_wp_last ? 0xA5 : 00);              // flags
+        serialize16(msp_wp.p1);     // P1
+        serialize16(msp_wp.p2);     // P2
+        serialize16(msp_wp.p3);     // P3
+        serialize8(msp_wp.flag);    // flags
         break;
     case MSP_GPSSVINFO:
         headSerialReply(1 + (GPS_numCh * 4));
@@ -1294,15 +1286,8 @@ static bool processInCommand(void)
     uint8_t rate;
 
 #ifdef GPS
-    struct {
-        uint8_t  wp_no;
-        uint8_t  action;
-        int32_t  lat;
-        int32_t  lon;
-        int32_t  alt;
-        int16_t  p1, p2, p3;
-        uint8_t  flag;
-    } msp_wp;
+    uint8_t msp_wp_no;
+    navWaypoint_t msp_wp;
 #endif
 
     switch (currentPort->cmdMSP) {
@@ -1559,7 +1544,7 @@ static bool processInCommand(void)
         onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude, 0, 0, 0, false, false, 9999);
         break;
     case MSP_SET_WP:
-        msp_wp.wp_no = read8();     // get the wp number
+        msp_wp_no = read8();     // get the wp number
         msp_wp.action = read8();    // action
         msp_wp.lat = read32();      // lat
         msp_wp.lon = read32();      // lon
@@ -1568,8 +1553,8 @@ static bool processInCommand(void)
         msp_wp.p2 = read16();       // P2
         msp_wp.p3 = read16();       // P3
         msp_wp.flag = read8();      // future: to set nav flag
-        if (msp_wp.action == 1) {   // support only WAYPOINT types
-            setWaypoint(msp_wp.wp_no, msp_wp.lat, msp_wp.lon, msp_wp.alt, (msp_wp.flag == 0xA5));
+        if (msp_wp.action == NAV_WP_ACTION_WAYPOINT) {   // support only WAYPOINT types
+            setWaypoint(msp_wp_no, &msp_wp);
         }
         break;
 #endif

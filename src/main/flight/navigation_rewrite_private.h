@@ -242,10 +242,12 @@ typedef struct {
     int32_t                     homeDirection;  // deg*100
 
     /* Waypoint list */
-    navWaypointPosition_t       waypointList[NAV_MAX_WAYPOINTS];
-    int8_t                      waypointCount;
-    int8_t                      activeWaypointIndex;
+    navWaypoint_t               waypointList[NAV_MAX_WAYPOINTS];
     bool                        waypointListValid;
+    int8_t                      waypointCount;
+
+    navWaypointPosition_t       activeWaypoint;     // Local position and initial bearing, filled on waypoint activation
+    int8_t                      activeWaypointIndex;
 
     /* Internals */
     int16_t                     rcAdjustment[4];

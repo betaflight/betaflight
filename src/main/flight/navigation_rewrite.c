@@ -73,7 +73,7 @@ static void resetPositionController(void);
 static void setupAltitudeController(void);
 void resetNavigation(void);
 
-static void setDesiredPositionToWaypointAndUpdateInitialBearing(navWaypointPosition_t * waypoint);
+static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint);
 void calculateInitialHoldPosition(t_fp_vector * pos);
 
 /*************************************************************************************************/
@@ -829,7 +829,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_INITIALIZE(nav
 
         posControl.activeWaypointIndex = 0;
 
-        setDesiredPositionToWaypointAndUpdateInitialBearing(&posControl.waypointList[posControl.activeWaypointIndex]);
+        calcualteAndSetActiveWaypoint(&posControl.waypointList[posControl.activeWaypointIndex]);
         return NAV_FSM_EVENT_SUCCESS;
     }
 }
@@ -843,13 +843,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(na
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
-    if (isWaypointReached(&posControl.waypointList[posControl.activeWaypointIndex]) || isWaypointMissed(&posControl.waypointList[posControl.activeWaypointIndex])) {
+    if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
         // Waypoint reached
         return NAV_FSM_EVENT_SUCCESS;
     }
     else {
         // Update XY-position target to active waypoint
-        setDesiredPosition(&posControl.waypointList[posControl.activeWaypointIndex].pos, posControl.waypointList[posControl.activeWaypointIndex].yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+        setDesiredPosition(&posControl.activeWaypoint.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
         return NAV_FSM_EVENT_NONE;
     }
 }
@@ -858,7 +858,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_REACHED(naviga
 {
     UNUSED(previousState);
 
-    bool isLastWaypoint = posControl.waypointList[posControl.activeWaypointIndex].flags.isLastWaypoint ||
+    bool isLastWaypoint = (posControl.waypointList[posControl.activeWaypointIndex].flag == NAV_WP_FLAG_LAST) ||
                           (posControl.activeWaypointIndex >= (posControl.waypointCount - 1));
 
     if (isLastWaypoint) {
@@ -868,7 +868,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_REACHED(naviga
     else {
         // Waypoint reached, do something and move on to next waypoint
         posControl.activeWaypointIndex++;
-        setDesiredPositionToWaypointAndUpdateInitialBearing(&posControl.waypointList[posControl.activeWaypointIndex]);
+        calcualteAndSetActiveWaypoint(&posControl.waypointList[posControl.activeWaypointIndex]);
         return NAV_FSM_EVENT_SUCCESS;
     }
 }
@@ -1168,20 +1168,14 @@ int32_t calculateBearingToDestination(t_fp_vector * destinationPos)
 }
 
 /*-----------------------------------------------------------
- * Check if waypoint is/was reached
+ * Check if waypoint is/was reached. Assume that waypoint-yaw stores initial bearing
  *-----------------------------------------------------------*/
 bool isWaypointMissed(navWaypointPosition_t * waypoint)
 {
-    // We only can miss not home waypoint
-    if (waypoint->flags.isHomeWaypoint) {
-        return false;
-    }
-    else {
-        int32_t bearingError = calculateBearingToDestination(&waypoint->pos) - waypoint->yaw;
-        bearingError = wrap_18000(bearingError);
+    int32_t bearingError = calculateBearingToDestination(&waypoint->pos) - waypoint->yaw;
+    bearingError = wrap_18000(bearingError);
 
-        return ABS(bearingError) > 10000; // TRUE if we passed the waypoint by 100 degrees
-    }
+    return ABS(bearingError) > 10000; // TRUE if we passed the waypoint by 100 degrees
 }
 
 bool isWaypointReached(navWaypointPosition_t * waypoint)
@@ -1242,7 +1236,6 @@ static void updateDesiredRTHAltitude(void)
  *-----------------------------------------------------------*/
 void setHomePosition(t_fp_vector * pos, int32_t yaw)
 {
-    posControl.homePosition.flags.isHomeWaypoint = true;
     posControl.homePosition.pos = *pos;
     posControl.homePosition.yaw = yaw;
 
@@ -1503,76 +1496,73 @@ static void applyEmergencyLandingController(uint32_t currentTime)
 /*-----------------------------------------------------------
  * WP controller
  *-----------------------------------------------------------*/
-void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt, bool * isLastWaypoint)
+void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
 {
-    gpsLocation_t wpLLH;
-
-    wpLLH.lat = 0.0f;
-    wpLLH.lon = 0.0f;
-    wpLLH.alt = 0.0f;
+    /* Default waypoint to send */
+    wpData->action = NAV_WP_ACTION_RTH;
+    wpData->lat = 0;
+    wpData->lon = 0;
+    wpData->alt = 0;
+    wpData->p1 = 0;
+    wpData->p2 = 0;
+    wpData->p3 = 0;
+    wpData->flag = NAV_WP_FLAG_LAST;
 
     // WP #0 - special waypoint - HOME
     if (wpNumber == 0) {
         if (STATE(GPS_FIX_HOME)) {
-            wpLLH = GPS_home;
+            wpData->lat = GPS_home.lat;
+            wpData->lon = GPS_home.lon;
+            wpData->alt = GPS_home.alt;
         }
-
-        *isLastWaypoint = true;
     }
     // WP #255 - special waypoint - directly get actualPosition
     else if (wpNumber == 255) {
+        gpsLocation_t wpLLH;
+
         geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.actualState.pos, &wpLLH);
-        *isLastWaypoint = true;
+
+        wpData->lat = wpLLH.lat;
+        wpData->lon = wpLLH.lon;
+        wpData->alt = wpLLH.alt;
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
-    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
+    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS) && posControl.waypointListValid) {
         if (wpNumber <= posControl.waypointCount) {
-            geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.waypointList[wpNumber - 1].pos, &wpLLH);
-            *isLastWaypoint = posControl.waypointList[wpNumber - 1].flags.isLastWaypoint;
-        }
-        else {
-            wpLLH.lat = 0;
-            wpLLH.lon = 0;
-            wpLLH.alt = 0;
-            *isLastWaypoint = false;
+            *wpData = posControl.waypointList[wpNumber - 1];
         }
     }
-
-    *wpLat = wpLLH.lat;
-    *wpLon = wpLLH.lon;
-    *wpAlt = wpLLH.alt;
 }
 
-void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt, bool isLastWaypoint)
+void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
 {
     gpsLocation_t wpLLH;
     navWaypointPosition_t wpPos;
 
-    // Ignore mission updates if position estimator is not ready yet
-    if (posControl.flags.hasValidPositionSensor)
-        return;
-
-    // Convert to local coordinates
-    wpLLH.lat = wpLat;
-    wpLLH.lon = wpLon;
-    wpLLH.alt = wpAlt;
-    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos);
-    wpPos.yaw = 0;  // FIXME
+    // Pre-fill structure to convert to local coordinates
+    wpLLH.lat = wpData->lat;
+    wpLLH.lon = wpData->lon;
+    wpLLH.alt = wpData->alt;
 
     // WP #0 - special waypoint - HOME
-    if ((wpNumber == 0) && ARMING_FLAG(ARMED)) {
+    if ((wpNumber == 0) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid) {
         // Forcibly set home position. Note that this is only valid if already armed, otherwise home will be reset instantly
-        setHomePosition(&wpPos.pos, wpPos.yaw);
+        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos);
+        setHomePosition(&wpPos.pos, 0);
     }
     // WP #255 - special waypoint - directly set desiredPosition
     // Only valid when armed and in poshold mode
-    else if ((wpNumber == 255) && ARMING_FLAG(ARMED) && (posControl.navState == NAV_STATE_POSHOLD_2D_IN_PROGRESS || posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
+    else if ((wpNumber == 255) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid && 
+             (posControl.navState == NAV_STATE_POSHOLD_2D_IN_PROGRESS || posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
+        // Converto to local coordinates
+        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos);
+
         // If close to actualPos, use heading, if far - use bearing
         uint32_t wpDistance = calculateDistanceToDestination(&wpPos.pos);
         navSetWaypointFlags_t waypointUpdateFlags = NAV_POS_UPDATE_XY;
 
         // If we received global altitude == 0, use current altitude
-        if (wpAlt != 0) {
+        if (wpData->alt != 0) {
             waypointUpdateFlags |= NAV_POS_UPDATE_Z;
         }
 
@@ -1587,25 +1577,27 @@ void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt, 
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
-        /* Sanity check - can set waypoints only sequentially - one by one */
-        if (wpNumber <= (posControl.waypointCount + 1)) {  // condition is true if wpIndex is at most 1 record ahead the waypointCount
-            wpPos.flags.isHomeWaypoint = false;
-            wpPos.flags.isLastWaypoint = isLastWaypoint;
-
-            posControl.waypointList[wpNumber - 1] = wpPos;
-            posControl.waypointCount = wpNumber;
-            posControl.waypointListValid = isLastWaypoint;
-        }
+        posControl.waypointList[wpNumber - 1] = *wpData;
+        posControl.waypointCount = wpNumber;
+        posControl.waypointListValid = (wpData->flag == NAV_WP_FLAG_LAST);
     }
 }
 
-static void setDesiredPositionToWaypointAndUpdateInitialBearing(navWaypointPosition_t * waypoint)
+static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint)
 {
+    gpsLocation_t wpLLH;
+
+    wpLLH.lat = waypoint->lat;
+    wpLLH.lon = waypoint->lon;
+    wpLLH.alt = waypoint->alt;
+
+    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &posControl.activeWaypoint.pos);
+
     // Calculate initial bearing towards waypoint and store it in waypoint yaw parameter (this will further be used to detect missed waypoints)
-    waypoint->yaw = calculateBearingToDestination(&waypoint->pos);
+    posControl.activeWaypoint.yaw = calculateBearingToDestination(&posControl.activeWaypoint.pos);
 
     // Set desired position to next waypoint (XYZ-controller)
-    setDesiredPosition(&waypoint->pos, waypoint->yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+    setDesiredPosition(&posControl.activeWaypoint.pos, posControl.activeWaypoint.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
 }
 
 /**
@@ -1616,11 +1608,11 @@ bool isApproachingLastWaypoint(void)
 {
     if (navGetStateFlags(posControl.navState) & NAV_AUTO_WP) {
         if (posControl.waypointCount == 0) {
-            /* No waypoints, holding current position */
+            /* No waypoints */
             return true;
         }
-        else if (posControl.activeWaypointIndex == (posControl.waypointCount - 1) ||
-                 posControl.waypointList[posControl.activeWaypointIndex].flags.isLastWaypoint) {
+        else if ((posControl.activeWaypointIndex == (posControl.waypointCount - 1)) ||
+                 (posControl.waypointList[posControl.activeWaypointIndex].flag == NAV_WP_FLAG_LAST)) {
             return true;
         }
         else {

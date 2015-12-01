@@ -130,13 +130,22 @@ typedef struct gpsOrigin_s {
     int32_t alt;    // Altitude in centimeters (meters * 100)
 } gpsOrigin_s;
 
+#define NAV_WP_FLAG_LAST        0xA5
+#define NAV_WP_ACTION_WAYPOINT  0x01
+#define NAV_WP_ACTION_RTH       0x04
+
 typedef struct {
-    struct {
-        bool isHomeWaypoint;       // for home waypoint yaw is set to "launch heading", for common waypoints - to "initial bearing"
-        bool isLastWaypoint;
-    }              flags;
-    t_fp_vector    pos;
-    int32_t        yaw;             // deg * 100
+    uint8_t action;
+    int32_t lat;
+    int32_t lon;
+    int32_t alt;
+    int16_t p1, p2, p3;
+    uint8_t flag;
+} navWaypoint_t;
+
+typedef struct {
+    t_fp_vector pos;
+    int32_t     yaw;             // deg * 100
 } navWaypointPosition_t;
 
 #if defined(NAV)
@@ -168,8 +177,8 @@ bool naivationBlockArming(void);
 float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);
 
-void getWaypoint(uint8_t wpNumber, int32_t * wpLat, int32_t * wpLon, int32_t * wpAlt, bool * isLastWaypoint);
-void setWaypoint(uint8_t wpNumber, int32_t wpLat, int32_t wpLon, int32_t wpAlt, bool isLastWaypoint);
+void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
+void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
 
 void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos);
 void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh);
