@@ -54,6 +54,7 @@
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -565,6 +566,13 @@ static void resetConf(void)
     applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
     masterConfig.ledstrip_visual_beeper = 0;
+#endif
+
+#ifdef VTX
+    masterConfig.vtx_band = 4;    //Fatshark/Airwaves
+    masterConfig.vtx_channel = 1; //CH1
+    masterConfig.vtx_mode = 0;    //CH+BAND mode
+    masterConfig.vtx_mhz = 5740;  //F0
 #endif
 
 #ifdef SPRACINGF3
