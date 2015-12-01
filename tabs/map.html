@@ -12,6 +12,31 @@
       }
     </style>
     <script>
+
+     window.addEventListener('message', function (e) {
+       var mainWindow = e.source;
+       var result = '';
+       try {
+         switch(e.data.action){
+            case 'zoom_in':
+              var zoom = map.getZoom();
+              zoom++;
+              map.setZoom(zoom);
+              break;
+              
+            case 'zoom_out':
+              var zoom = map.getZoom();
+              zoom--;
+              map.setZoom(zoom);
+              break;
+            case 'center':
+              map.setCenter(new google.maps.LatLng(e.data.lat, e.data.lon));
+         }
+       } catch (e) {
+         console.log('message error');
+       }
+     });
+     
   function loadMapScript() {
       var script = document.createElement('script');
       script.type = 'text/javascript';
@@ -23,9 +48,10 @@ window.onload = loadMapScript;
 
 var map;
 function initialize() {
+
   var mapOptions = {
     zoom: 17,
-    zoomControl: true,
+    zoomControl: false,
     streetViewControl: false,
  // mapTypeId: google.maps.MapTypeId.SATELLITE,
     center: {lat: 53.570645, lng: 10.001362}
@@ -57,6 +83,12 @@ var marker = new google.maps.Marker({
   google.maps.event.addListener(marker, 'click', function() {
     infowindow.open(map, marker);
   });
+  
+  window.addEventListener('message', function(e) {
+
+    var data = e.data;
+    var origin = e.origin;
+});
 }
   // sandbox docs1: https://github.com/GoogleChrome/chrome-app-samples/tree/master/samples/sandbox
   // sandbox docs1: https://github.com/GoogleChrome/chrome-app-samples/tree/master/samples/sandboxed-content
