@@ -384,7 +384,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(SINGULARITY)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -690,6 +690,19 @@ static void resetConf(void)
     masterConfig.customMotorMixer[7].roll = 1.0f;
     masterConfig.customMotorMixer[7].pitch = 0.414178f;
     masterConfig.customMotorMixer[7].yaw = -1.0f;
+#endif
+
+    // alternative defaults settings for SINGULARITY target
+#if defined(SINGULARITY)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 1;
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+    
+    masterConfig.batteryConfig.vbatscale = 77;
+
+    featureSet(FEATURE_RX_SERIAL);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 
     // copy first profile into remaining profile
