@@ -78,7 +78,7 @@ TABS.gps.initialize = function (callback) {
             if (navigator.onLine) {
                 $('#connect').hide();
 
-                if(lat != 0 && lon != 0){
+                if(GPS_DATA.fix){
                    frame.contentWindow.postMessage(message, '*');
                    $('#loadmap').show();
                    $('#waiting').hide();
