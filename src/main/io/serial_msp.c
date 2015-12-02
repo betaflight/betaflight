@@ -1338,7 +1338,7 @@ static bool processInCommand(void)
         masterConfig.looptime = read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = constrain(read8(), 0, 2);  // Temporary configurator compatibility
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);  // Temporary configurator compatibility
         pidSetController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:

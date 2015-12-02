@@ -171,8 +171,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 14;   // FW_NAV_P * 100
     pidProfile->I8[PIDNAVR] = 2;    // FW_NAV_I * 100
     pidProfile->D8[PIDNAVR] = 80;   // FW_NAV_D * 1000
-    pidProfile->P8[PIDLEVEL] = 90;
-    pidProfile->I8[PIDLEVEL] = 10;
+    pidProfile->P8[PIDLEVEL] = 20;
+    pidProfile->I8[PIDLEVEL] = 20;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 100;   // NAV_VEL_Z_P * 100
@@ -760,6 +760,7 @@ void activateConfig(void)
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
 
+    currentProfile->pidProfile.pidController = constrain(currentProfile->pidProfile.pidController, 1, 2); // This should limit to USED values only
     pidSetController(currentProfile->pidProfile.pidController);
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
