@@ -920,6 +920,15 @@
     "gpsHead": {
         "message": "GPS"
     },
+    "gpsMapHead": {
+        "message": "Current GPS location"
+    },
+    "gpsMapMessage1": {
+        "message": "Please check your internet connection"
+    },
+    "gpsMapMessage2": {
+        "message": "Waiting for GPS 3D fix…"
+    },
     "gps3dFix": {
         "message": "3D Fix:"
     },

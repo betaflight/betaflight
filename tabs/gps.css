@@ -87,6 +87,14 @@
     float: right;
 }
 
+.tab-gps #loadmap .controls a:hover {
+    background-color: #f5f5f5;
+}
+
+.tab-gps #loadmap .controls a:active {
+    background-color: #e6e6e6;
+}
+
 .tab-gps #loadmap .controls a:first-child {
     margin-left: -1px;
     margin-right: 5px;
