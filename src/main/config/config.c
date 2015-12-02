@@ -550,13 +550,20 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
-#ifdef BLACKBOX
 #ifdef SPRACINGF3
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
+
+#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
+#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
     masterConfig.blackbox_device = 0;
 #endif
+
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
