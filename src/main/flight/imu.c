@@ -265,9 +265,10 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
             while (yawError >  M_PIf) yawError -= (2.0f * M_PIf);
             while (yawError < -M_PIf) yawError += (2.0f * M_PIf);
 
-            ex = 0;
-            ey = 0;
-            ez = sin_approx(yawError / 2.0f);
+            float ez_ef = sin_approx(yawError / 2.0f);
+            ex = rMat[2][0] * ez_ef;
+            ey = rMat[2][1] * ez_ef;
+            ez = rMat[2][2] * ez_ef;
         }
         else {
             ex = 0;
@@ -462,7 +463,7 @@ static void imuCalculateEstimatedAttitude(void)
             static bool gpsHeadingInitialized = false;
 
             if (gpsHeadingInitialized) {
-                rawYawError = DECIDEGREES_TO_RADIANS(GPS_ground_course - attitude.values.yaw);
+                rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - GPS_ground_course);
                 useYaw = true;
             }
             else {

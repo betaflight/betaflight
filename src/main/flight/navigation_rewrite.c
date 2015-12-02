@@ -2037,8 +2037,6 @@ void updateWaypointsAndNavigationMode(bool isRXDataNew)
         swithNavigationFlightModes();
     }
 
-    debug[0] = posControl.navState;
-    debug[1] = navGetCurrentStateTime();
 #if defined(NAV_BLACKBOX)
     navCurrentState = (int16_t)posControl.navState;
 #endif
