@@ -1074,6 +1074,16 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(GPS_directionToHome);
         serialize8(GPS_update & 1);
         break;
+    case MSP_NAV_STATUS:
+        headSerialReply(7);
+        serialize8(NAV_Status.mode);
+        serialize8(NAV_Status.state);
+        serialize8(NAV_Status.activeWpAction);
+        serialize8(NAV_Status.activeWpNumber);
+        serialize8(NAV_Status.error);
+        //serialize16( (int16_t)(target_bearing/100));
+        serialize16(magHold);
+        break;
     case MSP_WP:
         msp_wp_no = read8();    // get the wp number
         getWaypoint(msp_wp_no, &msp_wp);

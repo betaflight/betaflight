@@ -173,12 +173,14 @@ static void ltm_sframe(void)
     uint8_t lt_statemode;
     if (FLIGHT_MODE(PASSTHRU_MODE))
         lt_flightmode = 0;
+    else if (FLIGHT_MODE(NAV_WP_MODE))
+        lt_flightmode = 10;
     else if (FLIGHT_MODE(NAV_RTH_MODE))
         lt_flightmode = 13;
     else if (FLIGHT_MODE(NAV_POSHOLD_MODE))
         lt_flightmode = 9;
-    else if (FLIGHT_MODE(HEADFREE_MODE))
-        lt_flightmode = 4;
+    else if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(MAG_MODE))
+        lt_flightmode = 11;
     else if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
         lt_flightmode = 8;
     else if (FLIGHT_MODE(ANGLE_MODE))
@@ -223,24 +225,66 @@ static void ltm_oframe()
     ltm_initialise_packet('O');
     ltm_serialise_32(GPS_home.lat);
     ltm_serialise_32(GPS_home.lon);
-    ltm_serialise_32(0);                // Don't have GPS home altitude
+    ltm_serialise_32(GPS_home.alt);
     ltm_serialise_8(1);                 // OSD always ON
     ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
     ltm_finalise();
 }
 
+/** OSD additional data frame, ~4 Hz rate, navigation system status
+ */
+static void ltm_nframe(void)
+{
+    ltm_initialise_packet('N');
+    ltm_serialise_8(NAV_Status.mode);
+    ltm_serialise_8(NAV_Status.state);
+    ltm_serialise_8(NAV_Status.activeWpAction);
+    ltm_serialise_8(NAV_Status.activeWpNumber);
+    ltm_serialise_8(NAV_Status.error);
+    ltm_serialise_8(NAV_Status.flags);
+    ltm_finalise();
+}
+
+#define LTM_BIT_AFRAME  (1 << 0)
+#define LTM_BIT_GFRAME  (1 << 1)
+#define LTM_BIT_SFRAME  (1 << 2)
+#define LTM_BIT_OFRAME  (1 << 3)
+#define LTM_BIT_NFRAME  (1 << 4)
+
+static uint8_t ltm_schedule[10] = {
+    LTM_BIT_AFRAME | LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_OFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME
+};
+
 static void process_ltm(void)
 {
     static uint8_t ltm_scheduler;
-    ltm_aframe();
-    if (ltm_scheduler & 1)
+    uint8_t current_schedule = ltm_schedule[ltm_scheduler];
+
+    if (current_schedule & LTM_BIT_AFRAME)
+        ltm_aframe();
+
+    if (current_schedule & LTM_BIT_GFRAME)
         ltm_gframe();
-    else
+
+    if (current_schedule & LTM_BIT_SFRAME)
         ltm_sframe();
-    if (ltm_scheduler == 0)
+
+    if (current_schedule & LTM_BIT_OFRAME)
         ltm_oframe();
-    ltm_scheduler++;
-    ltm_scheduler %= 10;
+
+    if (current_schedule & LTM_BIT_NFRAME)
+        ltm_nframe();
+
+    ltm_scheduler = (ltm_scheduler + 1) % 10;
 }
 
 void handleLtmTelemetry(void)

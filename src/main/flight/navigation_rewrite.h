@@ -128,9 +128,14 @@ typedef struct gpsOrigin_s {
     int32_t alt;    // Altitude in centimeters (meters * 100)
 } gpsOrigin_s;
 
-#define NAV_WP_FLAG_LAST        0xA5
-#define NAV_WP_ACTION_WAYPOINT  0x01
-#define NAV_WP_ACTION_RTH       0x04
+typedef enum {
+    NAV_WP_ACTION_WAYPOINT = 0x01,
+    NAV_WP_ACTION_RTH      = 0x04
+} navWaypointActions_e;
+
+typedef enum {
+    NAV_WP_FLAG_LAST = 0xA5
+} navWaypointFlags_e;
 
 typedef struct {
     uint8_t action;
@@ -145,6 +150,60 @@ typedef struct {
     t_fp_vector pos;
     int32_t     yaw;             // deg * 100
 } navWaypointPosition_t;
+
+/* MultiWii-compatible params for telemetry */
+typedef enum {
+    MW_GPS_MODE_NONE = 0,
+    MW_GPS_MODE_HOLD,
+    MW_GPS_MODE_RTH,
+    MW_GPS_MODE_NAV,
+    MW_GPS_MODE_EMERG = 15
+} navSystemStatus_Mode_e;
+
+typedef enum {
+    MW_NAV_STATE_NONE = 0,                // None
+    MW_NAV_STATE_RTH_START,               // RTH Start
+    MW_NAV_STATE_RTH_ENROUTE,             // RTH Enroute
+    MW_NAV_STATE_HOLD_INFINIT,            // PosHold infinit
+    MW_NAV_STATE_HOLD_TIMED,              // PosHold timed
+    MW_NAV_STATE_WP_ENROUTE,              // WP Enroute
+    MW_NAV_STATE_PROCESS_NEXT,            // Process next
+    MW_NAV_STATE_DO_JUMP,                 // Jump
+    MW_NAV_STATE_LAND_START,              // Start Land
+    MW_NAV_STATE_LAND_IN_PROGRESS,        // Land in Progress
+    MW_NAV_STATE_LANDED,                  // Landed
+    MW_NAV_STATE_LAND_SETTLE,             // Settling before land
+    MW_NAV_STATE_LAND_START_DESCENT       // Start descent
+} navSystemStatus_State_e;
+
+typedef enum {
+    MW_NAV_ERROR_NONE = 0,            //All systems clear
+    MW_NAV_ERROR_TOOFAR,              //Next waypoint distance is more than safety distance
+    MW_NAV_ERROR_SPOILED_GPS,         //GPS reception is compromised - Nav paused - copter is adrift !
+    MW_NAV_ERROR_WP_CRC,              //CRC error reading WP data from EEPROM - Nav stopped
+    MW_NAV_ERROR_FINISH,              //End flag detected, navigation finished
+    MW_NAV_ERROR_TIMEWAIT,            //Waiting for poshold timer
+    MW_NAV_ERROR_INVALID_JUMP,        //Invalid jump target detected, aborting
+    MW_NAV_ERROR_INVALID_DATA,        //Invalid mission step action code, aborting, copter is adrift
+    MW_NAV_ERROR_WAIT_FOR_RTH_ALT,    //Waiting to reach RTH Altitude
+    MW_NAV_ERROR_GPS_FIX_LOST,        //Gps fix lost, aborting mission
+    MW_NAV_ERROR_DISARMED,            //NAV engine disabled due disarm
+    MW_NAV_ERROR_LANDING              //Landing
+} navSystemStatus_Error_e;
+
+typedef enum {
+    MW_NAV_FLAG_ADJUSTING_POSITION  = 1 << 0,
+    MW_NAV_FLAG_ADJUSTING_ALTITUDE  = 1 << 1,
+} navSystemStatus_Flags_e;
+
+typedef struct {
+    navSystemStatus_Mode_e  mode;
+    navSystemStatus_State_e state;
+    navSystemStatus_Error_e error;
+    navSystemStatus_Flags_e flags;
+    uint8_t                 activeWpNumber;
+    navWaypointActions_e    activeWpAction;
+} navSystemStatus_t;
 
 #if defined(NAV)
 void navigationUsePIDs(pidProfile_t *pidProfile);
@@ -186,9 +245,10 @@ void activateForcedRTH(void);
 void abortForcedRTH(void);
 rthState_e getStateOfForcedRTH(void);
 
-extern gpsLocation_t GPS_home;
-extern uint16_t      GPS_distanceToHome;        // distance to home point in meters
-extern int16_t       GPS_directionToHome;       // direction to home point in degrees
+extern gpsLocation_t        GPS_home;
+extern uint16_t             GPS_distanceToHome;        // distance to home point in meters
+extern int16_t              GPS_directionToHome;       // direction to home point in degrees
+extern navSystemStatus_t    NAV_Status;
 
 #if defined(BLACKBOX)
 extern int16_t navCurrentState;

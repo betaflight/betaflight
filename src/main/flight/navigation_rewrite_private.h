@@ -211,6 +211,8 @@ typedef enum {
 typedef struct {
     navigationFSMEvent_t                (*onEntry)(navigationFSMState_t previousState);
     uint32_t                            timeoutMs;
+    navSystemStatus_State_e             mwState;
+    navSystemStatus_Error_e             mwError;
     navigationFSMStateFlags_t           stateFlags;
     flightModeFlags_e                   mapToFlightModes;
     navigationFSMState_t                onEvent[NAV_FSM_EVENT_COUNT];
