@@ -63,6 +63,7 @@ typedef struct navConfig_s {
         uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
         uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
         uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
+        uint8_t rth_tail_first;             // Return to home tail first
     } flags;
 
     struct {

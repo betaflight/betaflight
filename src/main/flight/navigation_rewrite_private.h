@@ -46,11 +46,12 @@
 #define minFlyableThrottle  (posControl.escAndServoConfig->minthrottle + (posControl.escAndServoConfig->maxthrottle - posControl.escAndServoConfig->minthrottle) * 5 / 100)
 
 typedef enum {
-    NAV_POS_UPDATE_NONE      = 0,
-    NAV_POS_UPDATE_XY        = 1 << 0,
-    NAV_POS_UPDATE_Z         = 1 << 1,
-    NAV_POS_UPDATE_HEADING   = 1 << 2,
-    NAV_POS_UPDATE_BEARING   = 1 << 3,
+    NAV_POS_UPDATE_NONE                 = 0,
+    NAV_POS_UPDATE_XY                   = 1 << 0,
+    NAV_POS_UPDATE_Z                    = 1 << 1,
+    NAV_POS_UPDATE_HEADING              = 1 << 2,
+    NAV_POS_UPDATE_BEARING              = 1 << 3,
+    NAV_POS_UPDATE_BEARING_TAIL_FIRST   = 1 << 4,
 } navSetWaypointFlags_t;
 
 typedef struct navigationFlags_s {

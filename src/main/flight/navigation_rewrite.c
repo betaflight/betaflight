@@ -288,6 +288,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_2D_GPS_FAILING,    // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_2D_HEAD_HOME,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING] = NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
         }
     },
@@ -634,10 +635,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(n
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
+    if ((prevFlags & NAV_CTL_POS) == 0) {
+        resetPositionController();
+    }
+
     if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         t_fp_vector targetHoldPos;
-
-        resetPositionController();
         calculateInitialHoldPosition(&targetHoldPos);
         setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
     }
@@ -655,10 +658,16 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
-    if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
+    if ((prevFlags & NAV_CTL_POS) == 0) {
+        resetPositionController();
+    }
+
+    if ((prevFlags & NAV_CTL_ALT) == 0) {
         resetAltitudeController();
         setupAltitudeController();
+    }
 
+    if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         // If low enough and surface offset valid - enter surface tracking
         setDesiredSurfaceOffset(posControl.actualState.surface);
         setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
@@ -666,8 +675,6 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 
     if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         t_fp_vector targetHoldPos;
-
-        resetPositionController();
         calculateInitialHoldPosition(&targetHoldPos);
         setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
     }
@@ -706,13 +713,17 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_INITIALIZE(navigationFSMState_t previousState)
 {
-    UNUSED(previousState);
+    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    if ((prevFlags & NAV_CTL_POS) == 0) {
+        resetPositionController();
+    }
+
     // If close to home - reset home position
     if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
         setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
     }
 
-    resetPositionController();
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -722,16 +733,22 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(naviga
 
     // If no position sensor available - switch to NAV_STATE_RTH_2D_GPS_FAILING
     if (!posControl.flags.hasValidPositionSensor) {
-        return NAV_FSM_EVENT_ERROR;
+        return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_2D_GPS_FAILING
     }
 
     if (isWaypointReached(&posControl.homeWaypointAbove)) {
         // Successfully reached position target
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_FINISHING
     }
     else {
         // Update XY-position target
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+        if (posControl.navConfig->flags.rth_tail_first) {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+        }
+        else {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+        }
+
         return NAV_FSM_EVENT_NONE;
     }
 }
@@ -742,7 +759,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navi
 
     /* Wait for GPS to be online again */
     if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME)) {
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_HEAD_HOME
     }
     /* No pos sensor available for RTH_WAIT_FOR_GPS_TIMEOUT_MS - land */
     else if (navGetCurrentStateTime() > RTH_WAIT_FOR_GPS_TIMEOUT_MS) {
@@ -757,7 +774,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navi
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
-    setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+    setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -769,23 +786,31 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_FINISHED(navigat
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navigationFSMState_t previousState)
 {
-    UNUSED(previousState);
+    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    if ((prevFlags & NAV_CTL_POS) == 0) {
+        resetPositionController();
+    }
+
+    if ((prevFlags & NAV_CTL_ALT) == 0) {
+        resetAltitudeController();
+        setupAltitudeController();
+    }
 
     t_fp_vector targetHoldPos;
 
     // If close to home - reset home position
     if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
         setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+        targetHoldPos = posControl.actualState.pos;
+    }
+    else {
+        calculateInitialHoldPosition(&targetHoldPos);
     }
 
-    resetPositionController();
-    resetAltitudeController();
-    setupAltitudeController();
+    setDesiredPosition(&targetHoldPos, 0, NAV_POS_UPDATE_XY);
 
-    calculateInitialHoldPosition(&targetHoldPos);
-    setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
-
-    return NAV_FSM_EVENT_SUCCESS;
+    return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT(navigationFSMState_t previousState)
@@ -798,10 +823,15 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
     }
 
     if ((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) {
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
     }
 
-    setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z);
+    if (posControl.navConfig->flags.rth_tail_first) {
+        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+    }
+    else {
+        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+    }
 
     return NAV_FSM_EVENT_NONE;
 }
@@ -812,16 +842,21 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
 
     // If no position sensor available - land immediately
     if (!posControl.flags.hasValidPositionSensor) {
-        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+        return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_3D_GPS_FAILING
     }
 
     if (isWaypointReached(&posControl.homeWaypointAbove)) {
         // Successfully reached position target
-        return NAV_FSM_EVENT_SUCCESS;
+        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
     }
     else {
         // Update XYZ-position target
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+        if (posControl.navConfig->flags.rth_tail_first) {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+        }
+        else {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+        }
         return NAV_FSM_EVENT_NONE;
     }
 }
@@ -844,6 +879,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_L
     // Update XYZ-position target
     setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
     resetLandingDetector();
+
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1447,6 +1483,9 @@ void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t us
     }
     else if ((useMask & NAV_POS_UPDATE_BEARING) != 0) {
         posControl.desiredState.yaw = calculateBearingToDestination(pos);
+    }
+    else if ((useMask & NAV_POS_UPDATE_BEARING_TAIL_FIRST) != 0) {
+        posControl.desiredState.yaw = wrap_36000(calculateBearingToDestination(pos) - 18000);
     }
 
 #if defined(NAV_BLACKBOX)
