@@ -16,6 +16,11 @@
     background-color: #ececec;
 }
 
+.tab-gps .gps_map {
+    height: 460px;
+}
+
+
 .tab-gps #connect {
    display:none; 
    text-align:center;
@@ -113,4 +118,19 @@ progress[value]::-webkit-progress-value {
         -webkit-linear-gradient(left, #59aa29, #59aa29);
     border-radius: 2px;
     box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.25) inset;
+}
+
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+
+.tab-gps iframe {
+    height: 347px;
+    width: 100%;
+    float: left;
+}
+
+.tab-gps .gps_map {
+    height: 403px;
+}
+
 }
