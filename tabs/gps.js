@@ -18,7 +18,7 @@ TABS.gps.initialize = function (callback) {
     function set_online(){
         $('#connect').hide();
         $('#waiting').show();
-        $('#loadmap').show();
+        $('#loadmap').hide();
     }
     
     function set_offline(){
