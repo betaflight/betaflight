@@ -67,6 +67,7 @@ TABS.gps.initialize = function (callback) {
                 $('td', row).eq(2).find('progress').val(GPS_DATA.cno[i]);
             }
             
+
             var message = {
                 action: 'center',
                 lat: lat,
@@ -74,13 +75,21 @@ TABS.gps.initialize = function (callback) {
             };
 
             var frame = document.getElementById('map');
-            if(lat != 0 && lon != 0){
-                frame.contentWindow.postMessage(message, '*');
-                $('#waiting').hide();
-                $('#loadmap').show();
+            if (navigator.onLine) {
+                $('#connect').hide();
+
+                if(lat != 0 && lon != 0){
+                   frame.contentWindow.postMessage(message, '*');
+                   $('#loadmap').show();
+                   $('#waiting').hide();
+                }else{
+                   $('#loadmap').hide();
+                   $('#waiting').show();
+                }
             }else{
+                $('#connect').show();
+                $('#waiting').hide(); 
                 $('#loadmap').hide();
-                $('#waiting').show();
             }
         }
 
