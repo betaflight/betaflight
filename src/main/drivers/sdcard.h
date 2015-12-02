@@ -58,8 +58,10 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
 
 void sdcardInsertionDetectDeinit(void);
 void sdcardInsertionDetectInit(void);
-bool sdcard_isInserted();
 
-void sdcard_poll();
+bool sdcard_isInserted();
 bool sdcard_isInitialized();
+bool sdcard_isFunctional();
+
+bool sdcard_poll();
 const sdcardMetadata_t* sdcard_getMetadata();
