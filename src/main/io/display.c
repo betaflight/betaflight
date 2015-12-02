@@ -58,6 +58,10 @@
 #include "flight/navigation.h"
 #endif
 
+#ifdef SONAR
+#include "sensors/sonar.h"
+#endif
+
 #include "config/runtime_config.h"
 
 #include "config/config.h"
@@ -485,6 +489,16 @@ void showSensorsPage(void)
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+
+#ifdef SONAR
+    if (sensors(SENSOR_SONAR)) {
+        static const char *sonarFormat = "%s             %5d";
+        tfp_sprintf(lineBuffer, sonarFormat, "SNR", sonarGetLatestAltitude());
+        padLineBuffer();
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
+    }
+#endif
 
     uint8_t length;
 
