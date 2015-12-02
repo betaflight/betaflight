@@ -580,8 +580,10 @@ static void serializeSDCardSummaryReply(void)
     serialize8(flags);
 
     // Merge the card and filesystem states together
-    if (!sdcard_isInserted() || !sdcard_isFunctional()) {
+    if (!sdcard_isInserted()) {
         state = MSP_SDCARD_STATE_NOT_PRESENT;
+    } else if (!sdcard_isFunctional()) {
+        state = MSP_SDCARD_STATE_FATAL;
     } else {
         switch (afatfs_getFilesystemState()) {
             case AFATFS_FILESYSTEM_STATE_READY:
