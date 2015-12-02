@@ -3370,19 +3370,20 @@ static void afatfs_initContinue()
  */
 void afatfs_poll()
 {
-    sdcard_poll();
+    // Only attempt to continue FS operations if the card is present & ready, otherwise we would just be wasting time
+    if (sdcard_poll()) {
+        afatfs_flush();
 
-    afatfs_flush();
-
-    switch (afatfs.filesystemState) {
-        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-            afatfs_initContinue();
-        break;
-        case AFATFS_FILESYSTEM_STATE_READY:
-            afatfs_fileOperationsPoll();
-        break;
-        default:
-            ;
+        switch (afatfs.filesystemState) {
+            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+                afatfs_initContinue();
+            break;
+            case AFATFS_FILESYSTEM_STATE_READY:
+                afatfs_fileOperationsPoll();
+            break;
+            default:
+                ;
+        }
     }
 }
 
