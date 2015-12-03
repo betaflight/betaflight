@@ -318,8 +318,9 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     float desiredPitch = atan2_approx(accelForward, GRAVITY_CMSS);
     float desiredRoll = atan2_approx(accelRight * cos_approx(desiredPitch), GRAVITY_CMSS);
 
-    posControl.rcAdjustment[ROLL] = constrain(RADIANS_TO_DECIDEGREES(desiredRoll), -NAV_ROLL_PITCH_MAX_DECIDEGREES, NAV_ROLL_PITCH_MAX_DECIDEGREES);
-    posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -NAV_ROLL_PITCH_MAX_DECIDEGREES, NAV_ROLL_PITCH_MAX_DECIDEGREES);
+    int16_t maxBankAngle = DEGREES_TO_DECIDEGREES(posControl.navConfig->mc_max_bank_angle);
+    posControl.rcAdjustment[ROLL] = constrain(RADIANS_TO_DECIDEGREES(desiredRoll), -maxBankAngle, maxBankAngle);
+    posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -maxBankAngle, maxBankAngle);
 }
 
 void applyMulticopterPositionController(uint32_t currentTime)
@@ -394,7 +395,7 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer)
     // Throttle should be low enough
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
-    bool minimalThrust = rcCommandAdjustedThrottle <= (posControl.escAndServoConfig->minthrottle + (posControl.escAndServoConfig->maxthrottle - posControl.escAndServoConfig->minthrottle) * 0.25f);
+    bool minimalThrust = rcCommandAdjustedThrottle < posControl.navConfig->mc_min_fly_throttle;
 
     bool possibleLandingDetected = false;
 

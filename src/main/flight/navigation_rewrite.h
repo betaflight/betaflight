@@ -103,7 +103,9 @@ typedef struct navConfig_s {
     uint8_t  pos_hold_deadband;             // Adds ability to adjust the Hold-position when moving the sticks (assisted mode)
     uint8_t  alt_hold_deadband;             // Defines the neutral zone of throttle stick during altitude hold
 
+    uint8_t  mc_max_bank_angle;             // multicopter max banking angle (deg)
     uint16_t mc_hover_throttle;             // multicopter hover throttle
+    uint16_t mc_min_fly_throttle;           // multicopter minimum throttle to consider machine flying
 
     uint16_t fw_cruise_throttle;            // Cruise throttle
     uint16_t fw_min_throttle;               // Minimum allowed throttle in auto mode

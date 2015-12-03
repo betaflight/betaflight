@@ -254,7 +254,9 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->alt_hold_deadband = 50;
 
     // MC-specific
+    navConfig->mc_max_bank_angle = 30;
     navConfig->mc_hover_throttle = 1500;
+    navConfig->mc_min_fly_throttle = 1200;
 
     // Fixed wing
     navConfig->fw_max_bank_angle = 20;

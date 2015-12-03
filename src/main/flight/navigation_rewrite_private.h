@@ -22,11 +22,8 @@
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR    1.113195f  // MagicEarthNumber from APM
 
 #define LAND_DETECTOR_TRIGGER_TIME_MS       2000        // 2 seconds
-#define NAV_ROLL_PITCH_MAX_DECIDEGREES      (30 * 10)   // Max control input from NAV (30 deg)
-
 #define RTH_WAIT_FOR_GPS_TIMEOUT_MS         2000        // GPS wait timeout for RTH
 
-#define POSITION_TARGET_UPDATE_RATE_HZ      5       // Rate manual position target update (minumum possible speed in cms will be this value)
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
@@ -35,15 +32,11 @@
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
 
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
-#define NAV_ACCEL_SLOW_XY_MAX               490.0f  // cm/s/s
 
 #define HZ2US(hz)   (1000000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
 #define MS2US(ms)   ((ms) * 1000)
 #define HZ2S(hz)    US2S(HZ2US(hz))
-
-// FIXME: Make this configurable, default to about 5% highet than minthrottle
-#define minFlyableThrottle  (posControl.escAndServoConfig->minthrottle + (posControl.escAndServoConfig->maxthrottle - posControl.escAndServoConfig->minthrottle) * 5 / 100)
 
 typedef enum {
     NAV_POS_UPDATE_NONE                 = 0,
