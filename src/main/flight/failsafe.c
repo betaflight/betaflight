@@ -252,25 +252,27 @@ void failsafeUpdateState(void)
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 }
-                if (armed) {
-                    beeperMode = BEEPER_RX_LOST_LANDING;
-                }
-                switch (getStateOfForcedRTH()) {
-                    case RTH_IN_PROGRESS_OK:
-                    case RTH_IN_PROGRESS_LOST_GPS:
-                        rthIdleOrLanded = false;
-                        break;
+                else {
+                    if (armed) {
+                        beeperMode = BEEPER_RX_LOST_LANDING;
+                    }
+                    switch (getStateOfForcedRTH()) {
+                        case RTH_IN_PROGRESS_OK:
+                        case RTH_IN_PROGRESS_LOST_GPS:
+                            rthIdleOrLanded = false;
+                            break;
 
-                    default:
-                    case RTH_IDLE:
-                    case RTH_HAS_LANDED:
-                        rthIdleOrLanded = true;
-                        break;
-                }
-                if (rthIdleOrLanded || !armed) {
-                    failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
-                    failsafeState.phase = FAILSAFE_LANDED;
-                    reprocessState = true;
+                        default:
+                        case RTH_IDLE:
+                        case RTH_HAS_LANDED:
+                            rthIdleOrLanded = true;
+                            break;
+                    }
+                    if (rthIdleOrLanded || !armed) {
+                        failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
+                        failsafeState.phase = FAILSAFE_LANDED;
+                        reprocessState = true;
+                    }
                 }
                 break;
 #endif
