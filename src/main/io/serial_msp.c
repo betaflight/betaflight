@@ -67,6 +67,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/hil.h"
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
@@ -172,6 +173,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_FC_VERSION                  3    //out message
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
+
+#define MSP_SET_HIL_STATE               11    // in message  roll , pitch , trueHeading, baroAltitude, accel forward, right, up
+#define MSP_HIL_STATE                   12    // out message
 
 //
 // MSP commands for Cleanflight original features
@@ -791,6 +795,16 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(CAP_PLATFORM_32BIT | CAP_DYNBALANCE | CAP_FLAPS | CAP_NAVCAP | CAP_EXTAUX); // "capability"
         break;
 
+#ifdef HIL
+    case MSP_HIL_STATE:
+        headSerialReply(8);
+        serialize16(hilToSIM.pidCommand[ROLL]);
+        serialize16(hilToSIM.pidCommand[PITCH]);
+        serialize16(hilToSIM.pidCommand[YAW]);
+        serialize16(hilToSIM.pidCommand[THROTTLE]);
+        break;
+#endif
+
     case MSP_STATUS:
         headSerialReply(11);
         serialize16(cycleTime);
@@ -1301,6 +1315,18 @@ static bool processInCommand(void)
 #endif
 
     switch (currentPort->cmdMSP) {
+#ifdef HIL
+    case MSP_SET_HIL_STATE:
+        hilToFC.rollAngle = read16();
+        hilToFC.pitchAngle = read16();
+        hilToFC.yawAngle = read16();
+        hilToFC.baroAlt = read32();
+        hilToFC.bodyAccel[0] = read16();
+        hilToFC.bodyAccel[1] = read16();
+        hilToFC.bodyAccel[2] = read16();
+        hilActive = true;
+        break;
+#endif
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
             masterConfig.current_profile_index = read8();

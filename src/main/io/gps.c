@@ -48,6 +48,7 @@
 
 #include "flight/gps_conversion.h"
 #include "flight/pid.h"
+#include "flight/hil.h"
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
@@ -423,6 +424,17 @@ void gpsInitI2C(void)
     }
 }
 
+static void gpsOnNewDataAvailable(void)
+{
+#ifdef HIL
+    if (!hilActive) {
+        onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
+    }
+#else
+    onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
+#endif
+}
+
 void gpsReadNewDataI2C(void)
 {
     static gpsDataGeneric_t gpsMsg;
@@ -472,7 +484,7 @@ void gpsReadNewDataI2C(void)
                 gpsData.lastLastMessage = gpsData.lastMessage;
                 gpsData.lastMessage = millis();
 
-                onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
+                gpsOnNewDataAvailable();
             }
 
             sensorsSet(SENSOR_GPS);
@@ -575,7 +587,7 @@ static void gpsNewDataSerial(uint16_t c)
     debug[3] = GPS_update;
 #endif
 
-    onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
+    gpsOnNewDataAvailable();
 }
 
 bool gpsNewFrameFromSerial(uint8_t c)

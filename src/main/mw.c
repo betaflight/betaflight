@@ -71,6 +71,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/hil.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
 #include "flight/navigation_rewrite.h"
@@ -760,6 +761,13 @@ void loop(void)
             masterConfig.max_angle_inclination,
             &masterConfig.rxConfig
         );
+
+#ifdef HIL
+        if (hilActive) {
+            hilUpdateControlState();
+            motorControlEnable = false;
+        }
+#endif
 
         mixTable();
 

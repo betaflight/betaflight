@@ -107,6 +107,8 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
+#define HIL
+
 #define GPS
 #define NAV
 //#define LED_STRIP

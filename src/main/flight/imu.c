@@ -45,6 +45,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/hil.h"
 
 #include "io/gps.h"
 
@@ -485,13 +486,41 @@ static void imuCalculateEstimatedAttitude(void)
     imuCalculateAcceleration(dT); // rotate acc vector into earth frame and store it for future usage
 }
 
+#ifdef HIL
+void imuHILUpdateAttitude(void)
+{
+    /* Set attitude */
+    attitude.values.roll = hilToFC.rollAngle;
+    attitude.values.pitch = hilToFC.pitchAngle;
+    attitude.values.yaw = hilToFC.yawAngle;
+
+    /* Compute rotation quaternion for future use */
+    imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, attitude.values.yaw);
+
+    /* Calculate NEU acceleration */
+    imuAccelInBodyFrame.A[X] = hilToFC.bodyAccel[X];
+    imuAccelInBodyFrame.A[Y] = hilToFC.bodyAccel[Y];
+    imuAccelInBodyFrame.A[Z] = hilToFC.bodyAccel[Z];
+}
+#endif
+
 void imuUpdate(void)
 {
     gyroUpdate();
 
     if (sensors(SENSOR_ACC)) {
         updateAccelerationReadings();
+
+#ifdef HIL
+        if (!hilActive) {
+            imuCalculateEstimatedAttitude();
+        }
+        else {
+            imuHILUpdateAttitude();
+        }
+#else
         imuCalculateEstimatedAttitude();
+#endif
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
