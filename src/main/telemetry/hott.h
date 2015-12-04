@@ -202,7 +202,7 @@ typedef struct HOTT_GAM_MSG_s {
     uint8_t pressure;            //#42 Pressure up to 16bar. 0,1bar scale. 20 = 2bar
     uint8_t version;             //#43 version number TODO: more info?
     uint8_t stop_byte;           //#44 stop uint8_t
-} OTT_GAM_MSG_t;
+} HOTT_GAM_MSG_t;
 
 #define HOTT_VARIO_MSG_TEXT_LEN 21
 typedef struct HOTT_VARIO_MSG_s {
