@@ -329,7 +329,6 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 }
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
-    mixerConfig->pid_at_min_throttle = 1;
     mixerConfig->yaw_motor_direction = 1;
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
@@ -826,14 +825,6 @@ void validateAndFixConfig(void)
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
     masterConfig.telemetryConfig.telemetry_inversion = 1;
 #endif
-
-    /*
-     * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
-     * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
-     */
-    if (masterConfig.retarded_arm && masterConfig.mixerConfig.pid_at_min_throttle) {
-        masterConfig.mixerConfig.pid_at_min_throttle = 0;
-    }
 
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {

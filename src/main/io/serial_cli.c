@@ -356,12 +356,6 @@ static const char * const lookupTableGyroSampling[] = {
     "1KHZ"
 };
 
-static const char * const lookupTablePidAtMinThrottle[] = {
-    "OFF",
-    "PD",
-    "PID"
-};
-
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -384,7 +378,6 @@ typedef enum {
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
     TABLE_GYRO_SAMPLING,
-    TABLE_PID_AT_MIN_THROTTLE,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -401,8 +394,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
-    { lookupTableGyroSampling, sizeof(lookupTableGyroSampling) / sizeof(char *) },
-    { lookupTablePidAtMinThrottle, sizeof(lookupTablePidAtMinThrottle) / sizeof(char *) }
+    { lookupTableGyroSampling, sizeof(lookupTableGyroSampling) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -568,7 +560,6 @@ const clivalue_t valueTable[] = {
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
 
-    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.pid_at_min_throttle, .config.lookup = { TABLE_PID_AT_MIN_THROTTLE } },
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } },
 #ifdef USE_SERVOS

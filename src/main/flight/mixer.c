@@ -783,7 +783,7 @@ void mixTable(void)
             motor[i] -= maxThrottleDifference;
 
             if (feature(FEATURE_3D)) {
-                if (mixerConfig->pid_at_min_throttle
+                if ((IS_RC_MODE_ACTIVE(BOXIDLE_UP))
                         || rcData[THROTTLE] <= rxConfig->midrc - flight3DConfig->deadband3d_throttle
                         || rcData[THROTTLE] >= rxConfig->midrc + flight3DConfig->deadband3d_throttle) {
                     if (rcData[THROTTLE] > rxConfig->midrc) {
@@ -805,10 +805,10 @@ void mixTable(void)
                     // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                     // do not spin the motors.
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-                    if ((rcData[THROTTLE]) < rxConfig->mincheck) {
+                    if (((rcData[THROTTLE]) < rxConfig->mincheck) && !(IS_RC_MODE_ACTIVE(BOXIDLE_UP))) {
                         if (feature(FEATURE_MOTOR_STOP)) {
                             motor[i] = escAndServoConfig->mincommand;
-                        } else if (mixerConfig->pid_at_min_throttle == 0) {
+                        } else {
                             motor[i] = escAndServoConfig->minthrottle;
                         }
                     }
