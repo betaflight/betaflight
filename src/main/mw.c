@@ -774,11 +774,11 @@ void loop(void)
 
         haveProcessedRxOnceBeforeLoop = false;
 
+        imuUpdateGyro();
+
         // Determine current flight mode. When no acc needed in pid calculations we should only read gyro to reduce latency
-        if (!flightModeFlags) {
-            imuUpdate(&currentProfile->accelerometerTrims, ONLY_GYRO);  // When no level modes active read only gyro
-        } else {
-            imuUpdate(&currentProfile->accelerometerTrims, ACC_AND_GYRO);  // When level modes active read gyro and acc
+        if (flightModeFlags) {
+            imuUpdateAcc(&currentProfile->accelerometerTrims);  // When level modes active read gyro and acc
         }
 
         // Measure loop rate just after reading the sensors
@@ -859,7 +859,7 @@ void loop(void)
 
         // When no level modes active read acc after motor update
         if (!flightModeFlags) {
-            imuUpdate(&currentProfile->accelerometerTrims, ONLY_ACC);
+        	imuUpdateAcc(&currentProfile->accelerometerTrims);
         }
 
 #ifdef BLACKBOX
