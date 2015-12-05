@@ -431,7 +431,7 @@ typedef struct HOTT_GPS_MSG_s {
 
 typedef struct HOTT_AIRESC_MSG_s {
     uint8_t start_byte;      //#01 constant value 0x7c
-    uint8_t gps_sensor_id;   //#02 constant value 0x8c
+    uint8_t airesc_sensor_id;   //#02 constant value 0x8c
     uint8_t warning_beeps;   //#03 1=A 2=B ...
                             // A
                             // L
