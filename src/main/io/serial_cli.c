@@ -357,6 +357,10 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B-RJ01"
 };
 
+static const char * const lookupTableSoftFilter[] = {
+    "LOW", "MEDIUM", "HIGH"
+};
+
 static const char * const lookupTableFailsafeProcedure[] = {
     "SET-THR", "RTH"
 };
@@ -391,6 +395,7 @@ typedef enum {
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
+    TABLE_SOFT_FILTER,
     TABLE_FAILSAFE_PROCEDURE,
 #ifdef NAV
     TABLE_NAV_USER_CTL_MODE,
@@ -413,6 +418,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+    { lookupTableSoftFilter, sizeof(lookupTableSoftFilter) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
 #ifdef NAV
     { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
@@ -664,8 +670,8 @@ const clivalue_t valueTable[] = {
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
-	{ "gyro_soft_filter",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].gyro_soft_filter, .config.minmax = { 0,  3 }, 0 },
-    { "acc_soft_filter",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].acc_soft_filter, .config.minmax = { 0,  3 }, 0 },
+	{ "gyro_soft_filter",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gyro_soft_filter, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
+    { "acc_soft_filter",            VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].acc_soft_filter, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
 
     { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX }, 0 },
     { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_noise_lpf, .config.minmax = { 0,  1 }, 0 },
