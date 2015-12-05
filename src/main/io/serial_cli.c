@@ -559,8 +559,8 @@ const clivalue_t valueTable[] = {
     { "nav_max_speed",              VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.max_speed, .config.minmax = { 10,  2000 }, 0 },
     { "nav_manual_speed",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.max_manual_speed, .config.minmax = { 10,  2000 }, 0 },
     { "nav_manual_climb_rate",      VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.max_manual_climb_rate, .config.minmax = { 10,  2000 }, 0 },
-    { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, 0 },
-    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, 0 },
+    { "nav_pos_hold_deadband",      VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, 0 },
+    { "nav_alt_hold_deadband",      VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, 0 },
     { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
     { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.rth_alt_control_style, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
@@ -568,7 +568,7 @@ const clivalue_t valueTable[] = {
 
     { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.mc_max_bank_angle, .config.minmax = { 15,  45 }, 0 },
     { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc_hover_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "mc_min_fly_throttle",        VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc_min_fly_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_mc_min_fly_thr",         VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc_min_fly_throttle, .config.minmax = { 1000,  2000 }, 0 },
 
     { "nav_fw_cruise_thr",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw_cruise_throttle, .config.minmax = { 1000,  2000 }, 0 },
     { "nav_fw_min_thr",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw_min_throttle, .config.minmax = { 1000,  2000 }, 0 },
