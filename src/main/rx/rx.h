@@ -117,6 +117,7 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t rcSmoothing;
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;

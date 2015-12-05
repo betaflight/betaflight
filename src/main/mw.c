@@ -279,7 +279,9 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    filterRc();  // rcCommand smoothing function
+    if (masterConfig.rxConfig.rcSmoothing) {
+        filterRc();  // rcCommand smoothing function
+    }
 
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
