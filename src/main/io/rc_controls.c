@@ -455,6 +455,97 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_ALT_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_ALT_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_ALT_D,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_VEL_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_VEL_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_VEL_D,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    
+    {
+        .adjustmentFunction = ADJUSTMENT_MAG_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_POS_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_POS_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_POSR_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_POSR_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_POSR_D,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_NAVR_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_NAVR_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_NAVR_D,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_LEVEL_P,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_LEVEL_I,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_LEVEL_D,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
