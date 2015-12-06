@@ -47,8 +47,6 @@
 
 #include "config/runtime_config.h"
 
-extern uint16_t cycleTime;
-extern uint8_t motorCount;
 extern float dT;
 extern float rpy_limiting;
 
