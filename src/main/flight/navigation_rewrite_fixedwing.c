@@ -99,20 +99,19 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
     posControl.desiredState.vel.V.Z = navPidApply2(posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), &posControl.pids.fw_alt, maxVelocityDive, maxVelocityClimb, false);
     posControl.desiredState.vel.V.Z = filterApplyPt1(posControl.desiredState.vel.V.Z, &velzFilterState, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
-    // Calculate pitch angle (plane should be trimmed to horizontal flight with PITCH=0
-    posControl.rcAdjustment[PITCH] = -RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
+    // Calculate climb angle ( >0 - climb, <0 - dive)
+    int16_t climbAngleDeciDeg = RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
+
     // FIXME: Roll-to-Pitch compensation
-    //posControl.rcAdjustment[PITCH] -= (ABS(attitude.values.roll) * posControl.navConfig->fw_roll_comp) / 10;
-    posControl.rcAdjustment[PITCH] = constrain(posControl.rcAdjustment[PITCH],
-                                              -posControl.navConfig->fw_max_dive_angle * 10,
-                                               posControl.navConfig->fw_max_climb_angle * 10);
+    //climbAngleDeciDeg += (ABS(attitude.values.roll) * posControl.navConfig->fw_roll_comp) / 10;
+    climbAngleDeciDeg = constrain(climbAngleDeciDeg, -posControl.navConfig->fw_max_dive_angle * 10, posControl.navConfig->fw_max_climb_angle * 10);
+
+    // PITCH angle is measured in opposite direction ( >0 - dive, <0 - climb)
+    posControl.rcAdjustment[PITCH] = -climbAngleDeciDeg;
 
     // Calculate throttle adjustment
-    posControl.rcAdjustment[THROTTLE] = posControl.navConfig->fw_cruise_throttle +
-                                        DECIDEGREES_TO_DEGREES(posControl.rcAdjustment[PITCH]) * posControl.navConfig->fw_pitch_to_throttle;
-    posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE],
-                                                  posControl.navConfig->fw_min_throttle,
-                                                  posControl.navConfig->fw_max_throttle);
+    posControl.rcAdjustment[THROTTLE] = posControl.navConfig->fw_cruise_throttle + DECIDEGREES_TO_DEGREES(climbAngleDeciDeg) * posControl.navConfig->fw_pitch_to_throttle;
+    posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], posControl.navConfig->fw_min_throttle, posControl.navConfig->fw_max_throttle);
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[Z] = constrain(posControl.desiredState.vel.V.Z, -32678, 32767);
