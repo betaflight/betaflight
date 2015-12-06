@@ -50,6 +50,7 @@
 #include "io/gps.h"
 
 #include "config/runtime_config.h"
+#include "config/config.h"
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
@@ -71,6 +72,8 @@ static imuRuntimeConfig_t *imuRuntimeConfig;
 static pidProfile_t *pidProfile;
 
 static float gyroScale;
+
+static bool gpsHeadingInitialized = false;
 
 STATIC_UNIT_TESTED void imuCompureRotationMatrix(void)
 {
@@ -461,8 +464,6 @@ static void imuCalculateEstimatedAttitude(void)
 #if defined(GPS)
         else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
             // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-            static bool gpsHeadingInitialized = false;
-
             if (gpsHeadingInitialized) {
                 rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - GPS_ground_course);
                 useYaw = true;
@@ -531,6 +532,11 @@ void imuUpdate(void)
 bool isImuReady(void)
 {
     return sensors(SENSOR_ACC) && isGyroCalibrationComplete();
+}
+
+bool isImuHeadingValid(void)
+{
+    return (sensors(SENSOR_MAG) && persistentFlag(FLAG_MAG_CALIBRATION_DONE)) || (STATE(FIXED_WING) && gpsHeadingInitialized);
 }
 
 float calculateCosTiltAngle(void)

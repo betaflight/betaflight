@@ -463,8 +463,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
     }
 
     /* Figure out if we have valid position data from our data sources */
-    bool isGPSValid = sensors(SENSOR_MAG) && persistentFlag(FLAG_MAG_CALIBRATION_DONE) && posControl.gpsOrigin.valid &&
-                      sensors(SENSOR_GPS) && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
+    bool isGPSValid = sensors(SENSOR_GPS) && posControl.gpsOrigin.valid && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
     bool isBaroValid = sensors(SENSOR_BARO) && ((currentTime - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
     bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTime - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
 
@@ -545,11 +544,13 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
     /* Estimate XY-axis */
     if ((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) {
-        /* Predict position */
-        inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
-        inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+        /* Predict position only if heading is valid (X-Y acceleration is North-East)*/
+        if (isImuHeadingValid()) {
+            inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
+            inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+        }
 
-        /* Correct position */
+        /* Correct position from GPS - always if GPS is valid */
         if (isGPSValid) {
             inavFilterCorrectPos(X, dt, posEstimator.gps.pos.V.X - posEstimator.history.pos[gpsHistoryIndex].V.X, posControl.navConfig->inav.w_xy_gps_p);
             inavFilterCorrectPos(Y, dt, posEstimator.gps.pos.V.Y - posEstimator.history.pos[gpsHistoryIndex].V.Y, posControl.navConfig->inav.w_xy_gps_p);

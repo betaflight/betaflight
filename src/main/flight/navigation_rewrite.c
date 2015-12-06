@@ -1901,24 +1901,12 @@ void swithNavigationFlightModes(void)
  *-----------------------------------------------------------*/
 static bool canActivateAltHoldMode(void)
 {
-    // FIXME: This should be made independent of airplane/multicopter
-    if (STATE(FIXED_WING)) {
-        return posControl.flags.hasValidAltitudeSensor;
-    }
-    else {
-        return posControl.flags.hasValidAltitudeSensor;
-    }
+    return posControl.flags.hasValidAltitudeSensor;
 }
 
 static bool canActivatePosHoldMode(void)
 {
-    // FIXME: This should be made independent of airplane/multicopter
-    if (STATE(FIXED_WING)) {
-        return false;
-    }
-    else {
-        return posControl.flags.hasValidPositionSensor;
-    }
+    return posControl.flags.hasValidPositionSensor;
 }
 
 static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)

@@ -52,6 +52,7 @@ void imuUpdate(void);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);
 float calculateCosTiltAngle(void);
 bool isImuReady(void);
+bool isImuHeadingValid(void);
 
 void imuTransformVectorBodyToEarth(t_fp_vector * v);
 void imuTransformVectorEarthToBody(t_fp_vector * v);
