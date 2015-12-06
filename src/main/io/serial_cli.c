@@ -358,7 +358,7 @@ static const char * const lookupTableSerialRX[] = {
 };
 
 static const char * const lookupTableSoftFilter[] = {
-    "LOW", "MEDIUM", "HIGH"
+    "NONE", "LOW", "MEDIUM", "HIGH"
 };
 
 static const char * const lookupTableFailsafeProcedure[] = {
