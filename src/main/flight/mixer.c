@@ -801,7 +801,7 @@ void mixTable(void)
         }
 
         // adjust feedback to scale PID error inputs to our limitations.
-        rpy_limiting = constrainf(((rpy_limiting * th_range) / rpy_range), 0.1f, 1.0f);
+        rpy_limiting = constrainf(((rpy_limiting * th_range) / rpy_range), 0.2f, 1.0f);
     }
 
     if (ARMING_FLAG(ARMED)) {
@@ -857,8 +857,6 @@ void mixTable(void)
                     if (((rcData[THROTTLE]) < rxConfig->mincheck) && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) {
                         if (feature(FEATURE_MOTOR_STOP)) {
                             motor[i] = escAndServoConfig->mincommand;
-                        } else {
-                            motor[i] = escAndServoConfig->minthrottle;
                         }
                     }
                 }
