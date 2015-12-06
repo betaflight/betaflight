@@ -103,6 +103,7 @@ static struct {
         BLACKBOX_SDCARD_INITIAL,
         BLACKBOX_SDCARD_WAITING,
         BLACKBOX_SDCARD_ENUMERATE_FILES,
+        BLACKBOX_SDCARD_CHANGE_INTO_LOG_DIRECTORY,
         BLACKBOX_SDCARD_READY_TO_CREATE_LOG,
         BLACKBOX_SDCARD_READY_TO_LOG
     } state;
@@ -648,21 +649,28 @@ void blackboxDeviceClose(void)
 
 static void blackboxLogDirCreated(afatfsFilePtr_t directory)
 {
-    blackboxSDCard.logDirectory = directory;
+    if (directory) {
+        blackboxSDCard.logDirectory = directory;
 
-    afatfs_findFirst(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder);
+        afatfs_findFirst(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder);
 
-    blackboxSDCard.state = BLACKBOX_SDCARD_ENUMERATE_FILES;
+        blackboxSDCard.state = BLACKBOX_SDCARD_ENUMERATE_FILES;
+    } else {
+        // Retry
+        blackboxSDCard.state = BLACKBOX_SDCARD_INITIAL;
+    }
 }
 
 static void blackboxLogFileCreated(afatfsFilePtr_t file)
 {
     if (file) {
-        blackboxSDCard.largestLogFileNumber++;
         blackboxSDCard.logFile = file;
+
+        blackboxSDCard.largestLogFileNumber++;
+
         blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_LOG;
     } else {
-        // FS must have been busy, retry
+        // Retry
         blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
     }
 }
@@ -710,12 +718,11 @@ static bool blackboxSDCardBeginLog()
 
                 afatfs_mkdir("logs", blackboxLogDirCreated);
             }
-
-            return false;
+            break;
 
         case BLACKBOX_SDCARD_WAITING:
             // Waiting for directory entry to be created
-            return false;
+            break;
 
         case BLACKBOX_SDCARD_ENUMERATE_FILES:
             while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
@@ -730,34 +737,39 @@ static bool blackboxSDCardBeginLog()
                         memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
                         logSequenceNumberString[5] = '\0';
 
-                        blackboxSDCard.largestLogFileNumber = atoi(logSequenceNumberString);
+                        blackboxSDCard.largestLogFileNumber = MAX((uint32_t) atoi(logSequenceNumberString), blackboxSDCard.largestLogFileNumber);
                     }
                 } else {
+                    // We're done checking all the files on the card, now we can create a new log file
                     afatfs_findLast(blackboxSDCard.logDirectory);
 
-                    // We're done checking all the files on the card, now we can create a new log file
-
-                    // Change into the log directory:
-                    afatfs_chdir(blackboxSDCard.logDirectory);
-
-                    // We no longer need our open handle on that Directory
-                    afatfs_fclose(blackboxSDCard.logDirectory, NULL);
-                    blackboxSDCard.logDirectory = NULL;
-
-                    blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+                    blackboxSDCard.state = BLACKBOX_SDCARD_CHANGE_INTO_LOG_DIRECTORY;
                     goto doMore;
                 }
             }
-            return false;
+            break;
+
+        case BLACKBOX_SDCARD_CHANGE_INTO_LOG_DIRECTORY:
+            // Change into the log directory:
+            if (afatfs_chdir(blackboxSDCard.logDirectory)) {
+                // We no longer need our open handle on the log directory
+                afatfs_fclose(blackboxSDCard.logDirectory, NULL);
+                blackboxSDCard.logDirectory = NULL;
+
+                blackboxSDCard.state = BLACKBOX_SDCARD_READY_TO_CREATE_LOG;
+                goto doMore;
+            }
+            break;
 
         case BLACKBOX_SDCARD_READY_TO_CREATE_LOG:
             blackboxCreateLogFile();
-            return false;
+            break;
 
         case BLACKBOX_SDCARD_READY_TO_LOG:
-            return true;
+            return true; // Log has been created!
     }
 
+    // Not finished init yet
     return false;
 }
 
