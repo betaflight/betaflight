@@ -676,7 +676,13 @@ void loop(void)
         // change this based on available hardware
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
+#ifdef HIL
+            // Don't call gpsThread at all when in HIL mode
+            if (!hilActive)
+                gpsThread();
+#else
             gpsThread();
+#endif
         }
 #endif
     }

@@ -1580,6 +1580,7 @@ static bool processInCommand(void)
         GPS_altitude = read16();
         GPS_speed = read16();
         // Feed data to navigation
+        sensorsSet(SENSOR_GPS);
         onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude, 0, 0, 0, false, false, 9999);
         break;
     case MSP_SET_WP:
