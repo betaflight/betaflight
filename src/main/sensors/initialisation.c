@@ -105,11 +105,15 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_irqn = EXTI15_10_IRQn
     };
 
+#ifdef AFROMINI
+    return &nazeRev5MPUIntExtiConfig;
+#else
     if (hardwareRevision < NAZE32_REV5) {
         return &nazeRev4MPUIntExtiConfig;
     } else {
         return &nazeRev5MPUIntExtiConfig;
     }
+#endif
 #endif
 
 #if defined(SPRACINGF3)
