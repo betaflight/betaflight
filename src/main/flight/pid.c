@@ -50,6 +50,7 @@
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
 extern float dT;
+extern float rpy_limiting;
 
 int16_t axisPID[3];
 
@@ -170,6 +171,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            RateError = RateError * rpy_limiting;
+        }
+
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
@@ -285,6 +290,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRateTmp - (gyroADC[axis] / 4);
+
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            RateError = RateError * rpy_limiting;
+        }
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;

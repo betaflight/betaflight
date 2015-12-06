@@ -565,7 +565,7 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    if (throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXIDLE_UP))) {
+    if ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED))) {
         pidResetErrorAngle();
         pidResetErrorGyro();
     }
