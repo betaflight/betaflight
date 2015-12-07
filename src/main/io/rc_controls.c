@@ -65,6 +65,7 @@ static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
+static bool rollPitchCentered = true;      // Roll and pitch are centered, AIR Mode condition
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
@@ -106,6 +107,10 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+bool isRollPitchCentered(void)
+{
+    return rollPitchCentered;
+}
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
@@ -145,6 +150,12 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     } else
         rcDelayCommand = 0;
     rcSticks = stTmp;
+
+    if (rcSticks == PIT_CE + ROL_CE) {
+        rollPitchCentered = true;
+    } else {
+        rollPitchCentered = false;
+    }
 
     // perform actions
     if (!isUsingSticksToArm) {

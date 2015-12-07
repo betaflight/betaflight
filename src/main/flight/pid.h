@@ -75,6 +75,5 @@ extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
 

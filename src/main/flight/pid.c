@@ -61,8 +61,6 @@ uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
 static int32_t errorGyroI[3] = { 0, 0, 0 };
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
-static int32_t errorAngleI[2] = { 0, 0 };
-static float errorAngleIf[2] = { 0.0f, 0.0f };
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -71,15 +69,6 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 pidControllerFuncPtr pid_controller = pidRewrite; // which pid controller are we using, defaultMultiWii
-
-void pidResetErrorAngle(void)
-{
-    errorAngleI[ROLL] = 0;
-    errorAngleI[PITCH] = 0;
-
-    errorAngleIf[ROLL] = 0.0f;
-    errorAngleIf[PITCH] = 0.0f;
-}
 
 void pidResetErrorGyro(void)
 {

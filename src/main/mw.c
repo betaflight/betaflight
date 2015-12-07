@@ -101,6 +101,10 @@ enum {
 #define PREVENT_BARO_READ_PRE_LOOP_TRIGGER 150 // Prevent BARO processing before expected loop trigger
 #define GYRO_RATE 0.001f  // Gyro refresh rate 1khz
 
+// AIR MODE Reset timers
+#define ERROR_RESET_DEACTIVATE_DELAY (1 * 1000)   // 1 sec delay to disable AIR MODE Iterm resetting
+#define ERROR_RESET_ACTIVATE_DELAY (5 * 1000)     // 5 sec delay to enable AIR MODE Iterm resetting
+
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -565,9 +569,36 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    if (SHOULD_RESET_ERRORS)  {
-        pidResetErrorAngle();
-        pidResetErrorGyro();
+    static bool airModeErrorResetIsEnabled = true;       // Should always initialize with reset enabled
+    static uint32_t airModeErrorResetToggleTimeout = 0;  // Timeout for both activate and deactivate mode
+
+    if (throttleStatus == THROTTLE_LOW)  {
+
+        // Evaluate if the error needs resetting again. Should be entered when in air mode during landings etc...
+        if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled) {
+            if ((millis() > airModeErrorResetToggleTimeout) && isRollPitchCentered()) {
+                airModeErrorResetIsEnabled = true;
+            }
+        }
+
+        // Conditions to reset Error
+        if (!IS_RC_MODE_ACTIVE(BOXARM) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled)) {
+            pidResetErrorGyro();
+            airModeErrorResetToggleTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
+        }
+    } else {
+        if (!(feature(FEATURE_MOTOR_STOP)) && IS_RC_MODE_ACTIVE(BOXARM) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            if (airModeErrorResetIsEnabled) {
+                if ((millis() > airModeErrorResetToggleTimeout) && !isRollPitchCentered()) {  // Only disable error reset when roll and pitch not centered
+                    airModeErrorResetIsEnabled = false;
+                    airModeErrorResetToggleTimeout = millis() + ERROR_RESET_ACTIVATE_DELAY; // Start reset activate timer
+                }
+            } else if (!airModeErrorResetIsEnabled) {
+                airModeErrorResetToggleTimeout = millis() + ERROR_RESET_ACTIVATE_DELAY; // Reset activate timer
+            }
+        } else {
+            airModeErrorResetIsEnabled = true;  // This is needed to reset procedure when switch is toggled in air
+        }
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -634,7 +665,6 @@ void processRx(void)
     	canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -646,7 +676,6 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {

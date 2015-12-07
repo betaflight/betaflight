@@ -126,7 +126,6 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-#define SHOULD_RESET_ERRORS ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED)) || ((throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))))
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
     uint8_t rcExpo8;
@@ -244,3 +243,4 @@ bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+bool isRollPitchCentered(void);
