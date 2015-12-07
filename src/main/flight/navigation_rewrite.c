@@ -1527,8 +1527,6 @@ bool isLandingDetected(void)
         landingDetected = isMulticopterLandingDetected(&landingTimer);
     }
 
-    NAV_BLACKBOX_DEBUG(1, landingDetected ? 1 : 0);
-
     return landingDetected;
 }
 
@@ -2024,6 +2022,11 @@ void updateWaypointsAndNavigationMode(bool isRXDataNew)
         // Map navMode back to enabled flight modes
         swithNavigationFlightModes();
     }
+
+    NAV_BLACKBOX_DEBUG(0, posControl.waypointListValid);
+    NAV_BLACKBOX_DEBUG(1, posControl.waypointCount);
+    NAV_BLACKBOX_DEBUG(2, posControl.activeWaypointIndex);
+    NAV_BLACKBOX_DEBUG(3, selectNavEventFromBoxModeInput());
 
 #if defined(NAV_BLACKBOX)
     navCurrentState = (int16_t)posControl.navState;

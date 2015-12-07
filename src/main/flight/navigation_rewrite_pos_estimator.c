@@ -469,7 +469,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
-    NAV_BLACKBOX_DEBUG(0, posEstimator.gps.glitchDetected);
 #endif
 
     /* Apply GPS altitude corrections only on fixed wing aircrafts */

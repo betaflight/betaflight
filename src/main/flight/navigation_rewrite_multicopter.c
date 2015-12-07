@@ -82,12 +82,8 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
     posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
 
-    NAV_BLACKBOX_DEBUG(2, posControl.rcAdjustment[THROTTLE]);
-
     posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &altholdThrottleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
-
-    NAV_BLACKBOX_DEBUG(3, posControl.rcAdjustment[THROTTLE]);
 }
 
 bool adjustMulticopterAltitudeFromRCInput(void)
