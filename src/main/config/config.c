@@ -491,7 +491,7 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.retarded_arm = 0;
+    masterConfig.retarded_arm = 0;  // FIXME: cleanup retarded arm
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
