@@ -48,7 +48,7 @@ typedef enum {
     BOXBLACKBOX,
     BOXFAILSAFE,
     BOXNAVWP,
-    BOXIDLE_UP,
+    BOXAIRMODE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -125,6 +125,8 @@ typedef struct modeActivationCondition_s {
 } modeActivationCondition_t;
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
+
+#define SHOULD_RESET_ERRORS ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED)) || ((throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))))
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;

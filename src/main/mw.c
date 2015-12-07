@@ -485,8 +485,7 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    if (throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXIDLE_UP))) {
-        pidResetErrorAngle();
+    if (SHOULD_RESET_ERRORS) {
         pidResetErrorGyro();
     }
 
@@ -550,7 +549,6 @@ void processRx(void)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -562,7 +560,6 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            pidResetErrorAngle();
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {

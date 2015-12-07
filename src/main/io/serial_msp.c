@@ -356,7 +356,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXNAVWP, "NAV WP;", 28 },
-    { BOXIDLE_UP, "IDLE UP;", 29 },
+    { BOXAIRMODE, "AIR MODE;", 29 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -642,7 +642,7 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIdCount = 0;
     activeBoxIds[activeBoxIdCount++] = BOXARM;
-    activeBoxIds[activeBoxIdCount++] = BOXIDLE_UP;
+    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
@@ -843,7 +843,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
             IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
             IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXIDLE_UP)) << BOXIDLE_UP;
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
         for (i = 0; i < activeBoxIdCount; i++) {
             int flag = (tmp & (1 << activeBoxIds[i]));
             if (flag)
