@@ -126,7 +126,7 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-#define SHOULD_RESET_ERRORS ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED)) || failsafeIsActive())
+#define SHOULD_RESET_ERRORS ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED)) || failsafeIsActive()|| feature(FEATURE_MOTOR_STOP))
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;

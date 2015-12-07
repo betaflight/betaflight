@@ -161,10 +161,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             }
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            AngleRate = AngleRate * rpy_limiting;
-        }
-
         gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
 
         // --------low-level gyro-based PID. ----------
@@ -172,6 +168,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
+
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        	RateError = RateError * rpy_limiting;
+        }
 
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
@@ -283,15 +283,15 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             }
         }
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            AngleRateTmp = AngleRateTmp * rpy_limiting;
-        }
-
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRateTmp - (gyroADC[axis] / 4);
+
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            RateError = RateError * rpy_limiting;
+        }
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
