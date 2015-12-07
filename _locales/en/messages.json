@@ -249,13 +249,40 @@
         "message": "Documentation / Manual"
     },
     "defaultDocumentation": {
-        "message": "Cleanflight documentation is available in Markdown and PDF formats.<br /><br />The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/cleanflight/cleanflight/releases\" target=\"_blank\">here</a>.<br />The Markdown latest online documentation is available <a href=\"https://github.com/cleanflight/cleanflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
+        "message": "Cleanflight documentation is available in Markdown and PDF formats.<br /><br />"
+    },
+    "defaultDocumentation1": {
+        "message": "The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/cleanflight/cleanflight/releases\" target=\"_blank\">here</a>."
+    },
+    "defaultDocumentation2": {
+        "message": "The Markdown latest online documentation is available <a href=\"https://github.com/cleanflight/cleanflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
     },
     "defaultSupportHead": {
         "message": "Support"
     },
-    "defaultSupport": {
-        "message": "For support please search the forums first or contact your vendor.<br /><br />RC Groups thread is <a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">here</a>. MultiWii forums thread is <a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">here</a>.<br /><br />Developers and users hang out in IRC channel on freenode<br /><a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">irc://irc.freenode.net/#cleanflight</a> or <a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via web client</a>."
+    "defaultSupportSubline1": {
+        "message": "Support Scources"
+    },
+    "defaultSupportSubline2": {
+        "message": "Developer"
+    },
+   "defaultSupport": {
+        "message": "For support please search the forums first or contact your vendor.<br /><br />"
+    },
+    "defaultSupport1": {
+        "message": "<a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">RC Groups thread</a>"
+    },
+    "defaultSupport2": {
+        "message": "<a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">MultiWii forums thread</a>"
+    },
+    "defaultSupport3": {
+        "message": "<a href=\"https://github.com/cleanflight\" target=\"_blank\">GitHub</a>"
+    },
+    "defaultSupport4": {
+        "message": "<a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">IRC channel on freenode</a>"
+    },
+    "defaultSupport5": {
+        "message": "<a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via WebClient</a>"
     },
     "initialSetupBackupAndRestoreApiVersion": {
         "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: #57a929\">$2</span>.  Please backup your settings via the CLI, see Cleanflight documentation for procedure."
@@ -838,6 +865,60 @@
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
     },
+    "adjustmentsFunction21": {
+        "message": "Alt P Adjustment"
+    },
+    "adjustmentsFunction22": {
+        "message": "Alt I Adjustment"
+    },
+    "adjustmentsFunction23": {
+        "message": "Alt D Adjustment"
+    },
+    "adjustmentsFunction24": {
+        "message": "Vel P Adjustment"
+    },
+    "adjustmentsFunction25": {
+        "message": "Vel I Adjustment"
+    },
+    "adjustmentsFunction26": {
+        "message": "Vel D Adjustment"
+    },
+    "adjustmentsFunction27": {
+        "message": "Pos P Adjustment"
+    },
+    "adjustmentsFunction28": {
+        "message": "Pos I Adjustment"
+    },
+    "adjustmentsFunction29": {
+        "message": "Roll D Adjustment"
+    },
+    "adjustmentsFunction30": {
+        "message": "PosR P Adjustment"
+    },
+    "adjustmentsFunction31": {
+        "message": "PosR I Adjustment"
+    },
+    "adjustmentsFunction32": {
+        "message": "PosR D Adjustment"
+    },
+    "adjustmentsFunction33": {
+        "message": "NavR P Adjustment"
+    },
+    "adjustmentsFunction34": {
+        "message": "NavR I Adjustment"
+    },
+    "adjustmentsFunction35": {
+        "message": "NavR D Adjustment"
+    },
+    "adjustmentsFunction36": {
+        "message": "Level P Adjustment"
+    },
+    "adjustmentsFunction37": {
+        "message": "Level I Adjustment"
+    },
+    "adjustmentsFunction38": {
+        "message": "Level D Adjustment"
+    },
     "adjustmentsSave": {
         "message": "Save"
     },
@@ -892,6 +973,15 @@
 
     "gpsHead": {
         "message": "GPS"
+    },
+    "gpsMapHead": {
+        "message": "Current GPS location"
+    },
+    "gpsMapMessage1": {
+        "message": "Please check your internet connection"
+    },
+    "gpsMapMessage2": {
+        "message": "Waiting for GPS 3D fix…"
     },
     "gps3dFix": {
         "message": "3D Fix:"
@@ -1270,6 +1360,6 @@
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },
     "configHelp1": {
-        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
+        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft is going out of range or if it is suffering RF interference."
     }
 }
