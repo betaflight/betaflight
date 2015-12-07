@@ -1926,7 +1926,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid)
+        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0))
             return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
     }
 
