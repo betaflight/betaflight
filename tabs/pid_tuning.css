@@ -270,6 +270,14 @@
     margin-right: 0px;
 }
 
+.tab-pid_tuning .gui_box_titlebar .helpicon {
+    margin-top: 5px;
+    margin-right: 5px;
+}
+
+
+
+
 .tab-pid_tuning .numberspacer {
     float: left;
     width: 65px;

@@ -159,7 +159,7 @@
             </div>
             <div class="cf_column half">
                 <div class="spacer_left">
-                    <table class="rate-tpa cf" style="display:none;">
+                    <table class="rate-tpa cf" style="display:xnone;">
                         <thead>
                             <tr>
                                 <th class="roll-pitch" i18n="pidTuningRollPitchRate"></th>
@@ -179,7 +179,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    <table class="rate-tpa cf" style="display:none;">
+                    <table class="rate-tpa cf" style="display:xnone;">
                         <thead>
                             <tr>
                                 <th i18n="pidTuningTPA"></th>
@@ -196,94 +196,7 @@
                             </tr>
                         </tbody>
                     </table>
-
-
-                    <div class="rate-tpa gui_box grey" style="margin-bottom: 0px;">
-                        <div class="gui_box_titlebar">
-                            <div class="spacer_box_title">Rates</div>
-                        </div>
-                        <div class="spacer_box" >
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer roll">
-                                        <input type="number"
-                                    name="roll" step="0.01" min="0" max="1.00" />
-                                    </div>
-                                    <span i18n="pidTuningRollRate"></span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">xxxx</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer pitch">
-                                        <input type="number" name="pitch" step="0.01" min="0" max="1.00" />
-                                    </div>
-                                    <span i18n="pidTuningPitchRate"></span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">xxxx</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer yaw">
-                                        <input type="number" name="yaw" step="0.01" min="0" max="2.55" />
-                                    </div>
-                                    <span i18n="pidTuningYawRate"></span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">xxx</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    
-                    
-                    
-                    <div class="rate-tpa gui_box grey" style="margin-top:15px;">
-                        <div class="gui_box_titlebar">
-                            <div class="spacer_box_title">TPA Settings</div>
-                        </div>
-                        <div class="spacer_box">
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="tpa" step="0.01" min="0"
-                                    max="1.00" />
-                                    </div>
-                                    <span i18n="pidTuningTPA"></span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">xxxx</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer tpa-breakpoint">
-                                        <input type="number" name="tpa-breakpoint" step="10"
-                                    min="1000" max="2000" />
-                                    </div>
-                                    <span i18n="pidTuningTPABreakPoint"></span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">xxx</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    
-                    
-                    
-                    
-                    
-
-
-
-                    <div class="gui_box grey" style="margin-top:15px;">
+                    <div class="gui_box grey" style="margin-top:7px;">
                         <div class="gui_box_titlebar">
                             <div class="spacer_box_title">Filter Settings</div>
                         </div>
