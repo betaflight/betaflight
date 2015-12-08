@@ -58,7 +58,8 @@
                             <label>
                                 <div class="numberspacer">
                                     <input type="number" name="autodisarmdelay" min="0" max="60" />
-                                </div> <span i18n="configurationAutoDisarmDelay"></span>
+                                </div>
+                                <span i18n="configurationAutoDisarmDelay"></span>
                             </label>
                         </div>
                     </div>
@@ -67,28 +68,32 @@
                         <label>
                             <div class="numberspacer">
                                 <input type="number" name="minthrottle" min="0" max="2000" />
-                            </div> <span i18n="configurationThrottleMinimum"></span>
+                            </div>
+                            <span i18n="configurationThrottleMinimum"></span>
                         </label>
                     </div>
                     <div class="number">
                         <label>
                             <div class="numberspacer">
                                 <input type="number" name="midthrottle" min="0" max="2000" />
-                            </div> <span i18n="configurationThrottleMid"></span>
+                            </div>
+                            <span i18n="configurationThrottleMid"></span>
                         </label>
                     </div>
                     <div class="number">
                         <label>
                             <div class="numberspacer">
                                 <input type="number" name="maxthrottle" min="0" max="2000" />
-                            </div> <span i18n="configurationThrottleMaximum"></span>
+                            </div>
+                            <span i18n="configurationThrottleMaximum"></span>
                         </label>
                     </div>
                     <div class="number">
                         <label>
                             <div class="numberspacer">
                                 <input type="number" name="mincommand" min="0" max="2000" />
-                            </div> <span i18n="configurationThrottleMinimumCommand"></span>
+                            </div>
+                            <span i18n="configurationThrottleMinimumCommand"></span>
                         </label>
                     </div>
                 </div>
@@ -101,20 +106,45 @@
                     <div class="spacer_box_title" i18n="configurationBoardAlignment"></div>
                 </div>
                 <div class="spacer_box">
-                    <div class="number">
-                        <label> <input type="number" name="board_align_roll" step="1" min="-180" max="360" /> <span
-                            i18n="configurationBoardAlignmentRoll"></span>
-                        </label>
-                    </div>
-                    <div class="number">
-                        <label> <input type="number" name="board_align_pitch" step="1" min="-180" max="360" />
+                    <div style="width:60%; float:left;">
+                        <div class="number">
+                            <label> <input type="number" name="board_align_roll" step="1" min="-180" max="360" /> <span
+                                i18n="configurationBoardAlignmentRoll"></span>
+                            </label>
+                            <div class="alignicon roll"></div>
+                        </div>
+                        <div class="number">
+                            <label> <input type="number" name="board_align_pitch" step="1" min="-180" max="360" />
                             <span i18n="configurationBoardAlignmentPitch"></span>
-                        </label>
+                            </label>
+                            <div class="alignicon pitch"></div>
+                        </div>
+                        <div class="number">
+                            <label> <input type="number" name="board_align_yaw" step="1" min="-180" max="360" /> <span
+                                i18n="configurationBoardAlignmentYaw"></span>
+                            </label>
+                            <div class="alignicon yaw"></div>
+                        </div>
                     </div>
-                    <div class="number">
-                        <label> <input type="number" name="board_align_yaw" step="1" min="-180" max="360" /> <span
-                            i18n="configurationBoardAlignmentYaw"></span>
-                        </label>
+                    <div class="sensoralignment" style="width:40%; float:left;">
+                        <div class="number">
+                            <select class="gyroalign">
+                                <option>Gyro Alignment</option>
+                                <!-- list generated here -->
+                            </select>
+                        </div>
+                        <div class="number">
+                            <select class="accalign">
+                                <option>Acc Alignment</option>
+                                <!-- list generated here -->
+                            </select>
+                        </div>
+                        <div class="number">
+                            <select class="magalign">
+                                <option>Mag Alignment</option>
+                                <!-- list generated here -->
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -281,10 +311,10 @@
             <div class="gui_box grey">
                 <div class="gui_box_titlebar">
                     <div class="spacer_box_title" i18n="configurationRSSI"></div>
-                        <div class="helpicon cf_tip">
-                            <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
-                        </div>
+                    <div class="helpicon cf_tip">
+                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
                     </div>
+                </div>
                 <div class="spacer_box">
                     <table cellpadding="0" cellspacing="0">
                         <thead>
@@ -352,21 +382,24 @@
                     <div class="line">
                         <select class="gps_protocol">
                             <!-- list generated here -->
-                        </select> <span i18n="configurationGPSProtocol"></span>
+                        </select>
+                        <span i18n="configurationGPSProtocol"></span>
                     </div>
                     <div class="line">
                         <select class="gps_baudrate">
                             <!-- list generated here -->
-                        </select> <span i18n="configurationGPSBaudrate"></span>
+                        </select>
+                        <span i18n="configurationGPSBaudrate"></span>
                     </div>
                     <div class="line">
                         <select class="gps_ubx_sbas">
                             <!-- list generated here -->
-                        </select> <span i18n="configurationGPSubxSbas"></span>
+                        </select>
+                        <span i18n="configurationGPSubxSbas"></span>
                     </div>
                     <div class="number">
                         <label> <input type="number" name="mag_declination" step="0.1" min="-180" max="180" />
-                            <span i18n="configurationMagDeclination"></span>
+                        <span i18n="configurationMagDeclination"></span>
                         </label>
                     </div>
                 </div>

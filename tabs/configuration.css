@@ -81,11 +81,6 @@
     line-height: 18px;
 }
 
-.tab-configuration .number {
-    margin-bottom: 5px;
-    clear: left;
-}
-
 .tab-configuration .number input {
     width: 50px;
     padding-left: 3px;
@@ -193,13 +188,6 @@
     width: calc(100% - 20px);
 }
 
-.tab-configuration .number {
-    padding-bottom: 5px;
-    border-bottom: 1px solid #ddd;
-    width: 100%;
-    float: left;
-}
-
 .tab-configuration .disarm {
     margin-bottom: 5px;
     float: left;
@@ -212,6 +200,15 @@
     float: left;
     width: 100%;
     border-bottom: 1px solid #ddd;
+}
+
+.tab-configuration .number {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
 }
 
 .tab-configuration .number:last-child {
@@ -330,6 +327,117 @@
     color: #7d7d7d;
     font-size: 11px;
 }
+
+.tab-configuration .alignicon {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-left: -5px;
+    margin-right: 3px;
+}
+
+.tab-configuration .pitch {
+    background-image: url(../images/icons/cf_icon_pitch.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .yaw {
+    background-image: url(../images/icons/cf_icon_yaw.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .roll {
+    background-image: url(../images/icons/cf_icon_roll.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .board select {
+    float: left;
+    width: 100%;
+    height: 20px;
+    margin: 0 0px 2px 0;
+    border: 1px solid silver;
+    brder-radius:3px;
+}
+
+
+#mixercontent .mixerheadline {
+    font-size: 13px;
+    width: 100%;
+    padding-bottom: 0px;
+    float: left;
+    margin-bottom: 7px;
+    font-family: 'open_sanssemibold', Arial;
+}
+
+#mixercontent select {
+    float: left;
+    width: 100%;
+    height: 20px;
+    margin: 0 0px 2px 0;
+    border: 1px solid silver;
+    brder-radius:3px;
+    margin-bottom: 20px;
+    margin-top:3px;
+
+}
+
+#mixercontent input {
+    width: 50px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+
+}
+
+#mixercontent .mixerletter {
+    width: 23px;
+    height: 23px;
+    background-color: #d0d0d0;
+    line-height: 23px;
+    text-align: center;
+    border-radius: 100px;
+    margin-right: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    float: left;
+}
+
+#mixercontent .number {
+    margin-bottom: 5px;
+    clear: left;
+    padding-top: 5px;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+#mixercontent .number:last-child {
+    padding-top: 0px;
+    margin-bottom: 0px;
+}
+
+#mixercontent .mixercanvas {
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #e4e4e4;
+    height:340px;
+    margin-top:3px;
+}
+
+
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .tab-configuration .gui_box span {

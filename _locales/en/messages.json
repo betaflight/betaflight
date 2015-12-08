@@ -470,7 +470,7 @@
     },
 
     "configurationBoardAlignment": {
-        "message": "Board Alignment"
+        "message": "Board and Sensor Alignment"
     },
     "configurationBoardAlignmentRoll": {
         "message": "Roll Adjustment [deg]"
