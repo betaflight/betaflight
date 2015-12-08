@@ -219,16 +219,53 @@
     text-align: right;
 }
 
+.tab-receiver .deadband_wrapper {
+    float: right;
+    margin: 0px 0px 10px 0;
+    border-left: 0;
+    width: calc(25% - 2px);
+    background-color: #DEDEDE;
+    border-right: 1px solid silver;
+
+}
+
+.tab-receiver .deadband_wrapper .head {
+    height: 15px;
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+    font-weight: normal;
+    background: #828885;
+    color: white;
+
+}
+
+.tab-receiver .deadband_wrapper input {
+    height: 20px;
+    padding-left: 5px;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 18px);
+    border-radius: 3px;
+}
+
 .tab-receiver .rssi_channel_wrapper {
     float: right;
     margin: 0px 0px 10px 0;
     border-left: 0;
-    width: 30%;
+    width: 25%;
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
     background-color: #DEDEDE;
 }
 
+.tab-receiver .rssi_channel_wrapper select {
+    height: 22px;
+    padding-left: 5px;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 8px);
+}
 .tab-receiver .rssi_channel_wrapper .head {
     height: 15px;
     padding: 4px;
@@ -252,7 +289,7 @@
     float: right;
     position: relative;
     margin: 0px 0px 10px 0;
-    width: calc(70% - 0px);
+    width: calc(25% - 0px);
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
     background-color: #DEDEDE;
