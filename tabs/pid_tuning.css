@@ -144,8 +144,8 @@
 
 .tab-pid_tuning .controller {
     float: left;
-    width: calc(50% - 12px);
-    margin-left: 10px;
+    width: calc(50% - 2px);
+    margin-left: 0px;
     margin-bottom: 10px;
     border-radius: 3px;
     border: 1px solid #ccc;

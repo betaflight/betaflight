@@ -260,7 +260,7 @@
 .tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
     min-height: 355px;
     float: left;
-    margin-bottom: 0px;
+    margin-bottom: 10px;
 }
 
 .tab-configuration .current .gui_box {
