@@ -59,13 +59,11 @@
 
 #include "mw.h"
 
-
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
-static bool rollPitchCentered = true;      // Roll and pitch are centered, AIR Mode condition
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
@@ -107,11 +105,6 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
-bool isRollPitchCentered(void)
-{
-    return rollPitchCentered;
-}
-
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
@@ -125,6 +118,18 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
         return THROTTLE_LOW;
 
     return THROTTLE_HIGH;
+}
+
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
+{
+    if (feature(FEATURE_3D)) // TODO
+        return CENTERED;
+    else if (!feature(FEATURE_3D)
+            && ((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
+            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODEDEADBAND))))
+        return CENTERED;
+
+    return NOT_CENTERED;
 }
 
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
@@ -150,12 +155,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     } else
         rcDelayCommand = 0;
     rcSticks = stTmp;
-
-    if (rcSticks == PIT_CE + ROL_CE) {
-        rollPitchCentered = true;
-    } else {
-        rollPitchCentered = false;
-    }
 
     // perform actions
     if (!isUsingSticksToArm) {

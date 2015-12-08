@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "debug.h"
 #include "platform.h"
 
 #include "common/maths.h"
@@ -574,27 +573,31 @@ void processRx(void)
 
     if (throttleStatus == THROTTLE_LOW)  {
         // When in AIR Mode LOW Throttle and reset was already disabled we will only prevent further growing
-        if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled) {
-            if (isRollPitchCentered()) {
+        if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled)  {
+            if (calculateRollPitchCenterStatus(&masterConfig.rxConfig) == CENTERED) {
                 allowITermShrinkOnly = true;   // Iterm is now only allowed to shrink
+            } else {
+                allowITermShrinkOnly = false;   // Iterm should considered safe to increase
             }
         }
 
         // Conditions to reset Error
-        if (!IS_RC_MODE_ACTIVE(BOXARM) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled)) {
+        if (!ARMING_FLAG(ARMED) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled) || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             pidResetErrorGyro();
             airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
+            airModeErrorResetIsEnabled = true;                                  // Enable Reset again especially after Disarm
+            allowITermShrinkOnly = false;                                       // Disable shrink especially after Disarm
         }
     } else {
-        if (!(feature(FEATURE_MOTOR_STOP)) && IS_RC_MODE_ACTIVE(BOXARM) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (!(feature(FEATURE_MOTOR_STOP)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (airModeErrorResetIsEnabled) {
-                if ((millis() > airModeErrorResetTimeout) && !isRollPitchCentered()) {  // Only disable error reset when roll and pitch not centered
+                if (millis() > airModeErrorResetTimeout && calculateRollPitchCenterStatus(&masterConfig.rxConfig) == NOT_CENTERED) {  // Only disable error reset when roll and pitch not centered
                     airModeErrorResetIsEnabled = false;
                     allowITermShrinkOnly = false;   // Reset shrinking for Iterm
                 }
+            } else {
+                allowITermShrinkOnly = false;   // Reset shrinking for Iterm
             }
-        } else {
-            airModeErrorResetIsEnabled = true;  // This is needed to reset procedure when switch is toggled in air
         }
     }
 

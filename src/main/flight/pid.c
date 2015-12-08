@@ -321,7 +321,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             if (CALC_OFFSET(errorGyroI[axis]) < CALC_OFFSET(previousErrorGyroI[axis])) {
                 previousErrorGyroI[axis] = errorGyroI[axis];
             } else {
-                errorGyroIf[axis] = constrain(errorGyroIf[axis], -CALC_OFFSET(previousErrorGyroI[axis]), CALC_OFFSET(previousErrorGyroI[axis]));
+                errorGyroI[axis] = constrain(errorGyroI[axis], -CALC_OFFSET(previousErrorGyroI[axis]), CALC_OFFSET(previousErrorGyroI[axis]));
             }
         } else {
             previousErrorGyroI[axis] = errorGyroI[axis];
