@@ -58,8 +58,6 @@
 #define INAV_GPS_GLITCH_RADIUS              250.0f  // 2.5m GPS glitch radius
 #define INAV_GPS_GLITCH_ACCEL               1000.0f // 10m/s/s max possible acceleration for GPS glitch detection
 
-#define INAV_MIN_GPS_SAT_COUNT              5       // Minimum satellite count
-
 #define INAV_POSITION_PUBLISH_RATE_HZ       50      // Publish position updates at this rate
 #define INAV_BARO_UPDATE_RATE               20
 #define INAV_SONAR_UPDATE_RATE              15      // Sonar is limited to 1/60ms update rate, go lower that that
@@ -244,7 +242,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
     velDValid = false;
 
     if (sensors(SENSOR_GPS)) {
-        if (!(STATE(GPS_FIX) && GPS_numSat >= INAV_MIN_GPS_SAT_COUNT)) {
+        if (!(STATE(GPS_FIX) && GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) {
             isFirstGPSUpdate = true;
             return;
         }
@@ -264,7 +262,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
 
         /* Process position update if GPS origin is already set, or precision is good enough */
         // FIXME: use HDOP here
-        if ((posControl.gpsOrigin.valid) || (GPS_numSat >= INAV_MIN_GPS_SAT_COUNT)) {
+        if ((posControl.gpsOrigin.valid) || (GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) {
             /* Convert LLH position to local coordinates */
             t_fp_vector newLocalPos;
             geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, &newLocalPos);

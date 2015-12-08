@@ -1850,7 +1850,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
     if (posControl.flags.hasValidAltitudeSensor)    navFlags |= (1 << 0);
     if (posControl.flags.hasValidSurfaceSensor)     navFlags |= (1 << 1);
     if (posControl.flags.hasValidPositionSensor)    navFlags |= (1 << 2);
-    if ((STATE(GPS_FIX) && GPS_numSat >= 5))        navFlags |= (1 << 3);
+    if ((STATE(GPS_FIX) && GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) navFlags |= (1 << 3);
 #endif
 
     // No navigation when disarmed

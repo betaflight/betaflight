@@ -122,7 +122,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
     return THROTTLE_HIGH;
 }
 
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -218,12 +218,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
         if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
             // Arm via YAW
-            mwArm();
-            return;
-        }
-
-        if (retarded_arm && (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI)) {
-            // Arm via ROLL
             mwArm();
             return;
         }

@@ -533,7 +533,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
     updateActivatedModes(currentProfile->modeActivationConditions);
 

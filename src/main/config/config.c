@@ -223,6 +223,7 @@ void resetNavConfig(navConfig_t * navConfig)
 #if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
     navConfig->inav.automatic_mag_declination = 1;
 #endif
+    navConfig->inav.gps_min_sats = 5;
     navConfig->inav.gps_delay_ms = 200;
     navConfig->inav.accz_unarmed_cal = 1;
 
@@ -491,7 +492,6 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.retarded_arm = 0;  // FIXME: cleanup retarded arm
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;

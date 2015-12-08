@@ -71,7 +71,6 @@ typedef struct master_t {
 
     failsafeConfig_t failsafeConfig;
 
-    uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
     uint8_t small_angle;
