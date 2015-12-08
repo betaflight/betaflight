@@ -219,7 +219,7 @@
                                     </div>
                                     <span>Gyro Lowpass Filter (gyro_lpf)</span>
                                     <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                        <div class="cf_tooltiptext" style="display:none;">Hardware lowpass filter for gyro. Allowed values depend on the driver - For example MPU6050 allows 5,10,20,42,98,188,256Hz, while MPU3050 doesn't allow 5Hz. If you have to set gyro lpf below 42Hz generally means the frame is vibrating too much, and that should be fixed first. Values outside of supported range will usually be ignored by drivers, and will configure lpf to default value of 42Hz.</div>
                                     </div>
                                 </label>
                             </div>
@@ -228,7 +228,7 @@
                                     <div class="numberspacer">
                                         <input type="number" name="midthrottle" min="0" max="2000" />
                                     </div>
-                                    <span>Gyro Filter (gyro_cut_hz)</span>
+                                    <span>Gyro Lowpass Cutoff Filter (gyro_cut_hz)</span>
                                     <div class="helpicon cf_tip">
                                         <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
                                     </div>
@@ -239,7 +239,7 @@
                                     <div class="numberspacer">
                                         <input type="number" name="midthrottle" min="0" max="2000" />
                                     </div>
-                                    <span>P-Term Filter (pterm_cut_hz)</span>
+                                    <span>P-Term Lowpass Cutoff Filter (pterm_cut_hz)</span>
                                     <div class="helpicon cf_tip">
                                         <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
                                     </div>
@@ -250,7 +250,7 @@
                                     <div class="numberspacer">
                                         <input type="number" name="midthrottle" min="0" max="2000" />
                                     </div>
-                                    <span>D-Term Filter (dterm_cut_hz)</span>
+                                    <span>D-Term Lowpass Cutoff Filter (dterm_cut_hz)</span>
                                     <div class="helpicon cf_tip">
                                         <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
                                     </div>
