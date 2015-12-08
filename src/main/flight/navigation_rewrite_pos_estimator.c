@@ -201,7 +201,7 @@ static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
 
     /* We predict new position based on previous GPS velocity and position */
     predictedGpsPosition.V.X = posEstimator.gps.pos.V.X + posEstimator.gps.vel.V.X * dT;
-    predictedGpsPosition.V.Y = posEstimator.gps.pos.V.Y + posEstimator.gps.vel.V.Y * dT - newLocalPos->V.Y;
+    predictedGpsPosition.V.Y = posEstimator.gps.pos.V.Y + posEstimator.gps.vel.V.Y * dT;
 
     /* Calculate position error */
     gpsDistance = sqrtf(sq(predictedGpsPosition.V.X - newLocalPos->V.X) + sq(predictedGpsPosition.V.Y - newLocalPos->V.Y));
@@ -578,7 +578,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
     posEstimator.est.surface = -1;
     posEstimator.est.surfaceVel = 0;
 #endif
-
 }
 
 /**
@@ -626,6 +625,11 @@ static void publishEstimatedTopic(uint32_t currentTime)
             posEstimator.history.index = 0;
         }
     }
+}
+
+bool isGPSGlitchDetected(void)
+{
+    return posEstimator.gps.glitchDetected;
 }
 
 /**

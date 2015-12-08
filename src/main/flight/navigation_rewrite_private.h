@@ -286,6 +286,8 @@ void updateActualHorizontalPositionAndVelocity(bool hasValidSensor, float newX, 
 void updateActualAltitudeAndClimbRate(bool hasValidSensor, float newAltitude, float newVelocity);
 void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, float surfaceVelocity);
 
+bool isGPSGlitchDetected(void);
+
 /* Autonomous navigation functions */
 void setupAutonomousControllerRTH(void);
 void resetAutonomousControllerForWP(void);

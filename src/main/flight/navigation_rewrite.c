@@ -1851,6 +1851,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
     if (posControl.flags.hasValidSurfaceSensor)     navFlags |= (1 << 1);
     if (posControl.flags.hasValidPositionSensor)    navFlags |= (1 << 2);
     if ((STATE(GPS_FIX) && GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) navFlags |= (1 << 3);
+    if (isGPSGlitchDetected())                      navFlags |= (1 << 4);
 #endif
 
     // No navigation when disarmed
