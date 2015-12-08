@@ -103,7 +103,7 @@ enum {
 
 // AIR MODE Reset timers
 #define ERROR_RESET_DEACTIVATE_DELAY (1 * 1000)   // 1 sec delay to disable AIR MODE Iterm resetting
-#define ERROR_RESET_ACTIVATE_DELAY (5 * 1000)     // 5 sec delay to enable AIR MODE Iterm resetting
+bool allowITermShrinkOnly = false;
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -569,32 +569,29 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    static bool airModeErrorResetIsEnabled = true;       // Should always initialize with reset enabled
-    static uint32_t airModeErrorResetToggleTimeout = 0;  // Timeout for both activate and deactivate mode
+    static bool airModeErrorResetIsEnabled = true; // Should always initialize with reset enabled
+    static uint32_t airModeErrorResetTimeout = 0;  // Timeout for both activate and deactivate mode
 
     if (throttleStatus == THROTTLE_LOW)  {
-
-        // Evaluate if the error needs resetting again. Should be entered when in air mode during landings etc...
+        // When in AIR Mode LOW Throttle and reset was already disabled we will only prevent further growing
         if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled) {
-            if ((millis() > airModeErrorResetToggleTimeout) && isRollPitchCentered()) {
-                airModeErrorResetIsEnabled = true;
+            if (isRollPitchCentered()) {
+                allowITermShrinkOnly = true;   // Iterm is now only allowed to shrink
             }
         }
 
         // Conditions to reset Error
         if (!IS_RC_MODE_ACTIVE(BOXARM) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled)) {
             pidResetErrorGyro();
-            airModeErrorResetToggleTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
+            airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
         }
     } else {
         if (!(feature(FEATURE_MOTOR_STOP)) && IS_RC_MODE_ACTIVE(BOXARM) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (airModeErrorResetIsEnabled) {
-                if ((millis() > airModeErrorResetToggleTimeout) && !isRollPitchCentered()) {  // Only disable error reset when roll and pitch not centered
+                if ((millis() > airModeErrorResetTimeout) && !isRollPitchCentered()) {  // Only disable error reset when roll and pitch not centered
                     airModeErrorResetIsEnabled = false;
-                    airModeErrorResetToggleTimeout = millis() + ERROR_RESET_ACTIVATE_DELAY; // Start reset activate timer
+                    allowITermShrinkOnly = false;   // Reset shrinking for Iterm
                 }
-            } else if (!airModeErrorResetIsEnabled) {
-                airModeErrorResetToggleTimeout = millis() + ERROR_RESET_ACTIVATE_DELAY; // Reset activate timer
             }
         } else {
             airModeErrorResetIsEnabled = true;  // This is needed to reset procedure when switch is toggled in air

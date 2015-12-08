@@ -49,6 +49,9 @@
 
 extern float dT;
 extern float rpy_limiting;
+extern bool allowITermShrinkOnly;
+
+#define CALC_OFFSET(x) ( (x > 0) ?  x : -x )
 
 int16_t axisPID[3];
 
@@ -96,6 +99,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float delta;
     int axis;
     float horizonLevelStrength = 1;
+    static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
@@ -172,6 +176,16 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
+        if (allowITermShrinkOnly) {
+            if (CALC_OFFSET(errorGyroIf[axis]) < CALC_OFFSET(previousErrorGyroIf[axis])) {
+                previousErrorGyroIf[axis] = errorGyroIf[axis];
+            } else {
+                errorGyroIf[axis] = constrain(errorGyroIf[axis], -CALC_OFFSET(previousErrorGyroIf[axis]), CALC_OFFSET(previousErrorGyroIf[axis]));
+            }
+        } else {
+            previousErrorGyroIf[axis] = errorGyroIf[axis];
+        }
+
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         ITerm = errorGyroIf[axis];
@@ -218,6 +232,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t delta;
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
+    static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
     int32_t AngleRateTmp, RateError;
 
     int8_t horizonLevelStrength = 100;
@@ -299,7 +314,18 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
+
         ITerm = errorGyroI[axis] >> 13;
+
+        if (allowITermShrinkOnly) {
+            if (CALC_OFFSET(errorGyroI[axis]) < CALC_OFFSET(previousErrorGyroI[axis])) {
+                previousErrorGyroI[axis] = errorGyroI[axis];
+            } else {
+                errorGyroIf[axis] = constrain(errorGyroIf[axis], -CALC_OFFSET(previousErrorGyroI[axis]), CALC_OFFSET(previousErrorGyroI[axis]));
+            }
+        } else {
+            previousErrorGyroI[axis] = errorGyroI[axis];
+        }
 
         //-----calculate D-term
         delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
