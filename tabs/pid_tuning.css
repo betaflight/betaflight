@@ -62,7 +62,7 @@
 }
 
 .tab-pid_tuning .rate-tpa {
-    border: 0px solid #ccc;
+    /*border: 0px solid #ccc; */
     margin-bottom: 10px;
 }
 
@@ -208,7 +208,7 @@
 
 .tab-pid_tuning .rate-tpa {
     float: right;
-    width: calc(100% - 0px); /* - ( "virtual" margin) */
+    width: calc(100% - 2px); /* - ( "virtual" margin) */
 }
 
 .tab-pid_tuning .top-buttons {
@@ -299,7 +299,6 @@
     border: 1px solid silver;
     border-radius: 3px;
     margin-right: 11px;
-    font-size: 12px;
     font-weight: normal;
 }
 

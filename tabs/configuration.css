@@ -187,7 +187,8 @@
     width: 100%;
 }
 
-.tab-configuration .spacer_box {padding-bottom 10px;
+.tab-configuration .spacer_box {
+    padding-bottom: 10px;
     float: left;
     width: calc(100% - 20px);
 }
