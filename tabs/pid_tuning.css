@@ -275,8 +275,11 @@
     margin-right: 5px;
 }
 
-
-
+.tab-pid_tuning .spacer_left {    
+    padding-left: 15px;
+    float: right;
+    width: calc(100% - 20px)
+}
 
 .tab-pid_tuning .numberspacer {
     float: left;
