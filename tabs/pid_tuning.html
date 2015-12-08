@@ -7,14 +7,16 @@
         </div>
         <div class="cf_column half">
             <div class="profile">
-                <span class="head" i18n="pidTuningProfileHead"></span> <select name="profile">
+                <span class="head" i18n="pidTuningProfileHead"></span> 
+                <select name="profile">
                     <option value="0">1</option>
                     <option value="1">2</option>
                     <option value="2">3</option>
                 </select>
             </div>
             <div class="controller">
-                <span class="head" i18n="pidTuningControllerHead"></span> <select name="controller">
+                <span class="head" i18n="pidTuningControllerHead"></span> 
+                <select name="controller">
                     <!-- list generated here -->
                 </select>
             </div>
@@ -128,8 +130,8 @@
                         </tr>
                     </table>
                 </div>
-<div class="gui_box grey" style="margin-top:10px;">
-<table id="pid_accel" class="pid_tuning">
+                <div class="gui_box grey" style="margin-top:10px;">
+                    <table id="pid_accel" class="pid_tuning">
                         <tr>
                             <th colspan="4">
                                 <div class="pid_mode">
@@ -153,7 +155,7 @@
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
-                  </div>    
+                </div>
             </div>
             <div class="cf_column half">
                 <div class="spacer_left">
@@ -194,6 +196,68 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div class="gui_box grey" style="margin-top:7px;">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">Filter Settings</div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="number">
+                                <label>
+                                    <div class="numberspacer">
+                                        <input type="number" name="midthrottle" min="0" max="2000" />
+                                    </div>
+                                    <span>acc_lpf_factor</span>
+                                    <div class="helpicon cf_tip">
+                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="number">
+                                <label>
+                                    <div class="numberspacer">
+                                        <input type="number" name="midthrottle" min="0" max="2000" />
+                                    </div>
+                                    <span>gyro_lpf</span>
+                                    <div class="helpicon cf_tip">
+                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="number">
+                                <label>
+                                    <div class="numberspacer">
+                                        <input type="number" name="midthrottle" min="0" max="2000" />
+                                    </div>
+                                    <span>gyro_cut_hz</span>
+                                    <div class="helpicon cf_tip">
+                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="number">
+                                <label>
+                                    <div class="numberspacer">
+                                        <input type="number" name="midthrottle" min="0" max="2000" />
+                                    </div>
+                                    <span>pterm_cut_hz</span>
+                                    <div class="helpicon cf_tip">
+                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="number">
+                                <label>
+                                    <div class="numberspacer">
+                                        <input type="number" name="midthrottle" min="0" max="2000" />
+                                    </div>
+                                    <span>dterm_cut_hz</span>
+                                    <div class="helpicon cf_tip">
+                                        <div class="cf_tooltiptext" i18n="configHelp1" style="display:none;"></div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -205,6 +269,9 @@
         </div>
         <div class="btn refresh_btn">
             <a class="refresh" href="#" i18n="pidTuningButtonRefresh"></a>
+        </div>
+        <div class="btn reset">
+            <a class="reset" href="#">Reset PID Controller</a>
         </div>
     </div>
 </div>
