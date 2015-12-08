@@ -884,13 +884,13 @@
         "message": "Vel D Adjustment"
     },
     "adjustmentsFunction27": {
-        "message": "Pos P Adjustment"
+        "message": "MAG P Adjustment"
     },
     "adjustmentsFunction28": {
-        "message": "Pos I Adjustment"
+        "message": "Pos P Adjustment"
     },
     "adjustmentsFunction29": {
-        "message": "Roll D Adjustment"
+        "message": "Pos I Adjustment"
     },
     "adjustmentsFunction30": {
         "message": "PosR P Adjustment"
