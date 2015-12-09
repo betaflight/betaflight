@@ -290,6 +290,10 @@ void init(void)
 #endif
     };
 #ifdef NAZE
+#ifdef AFROMINI
+    beeperConfig.gpioMode = Mode_Out_PP;   // AFROMINI override
+    beeperConfig.isInverted = true;
+#endif
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperConfig.gpioMode = Mode_Out_PP;
