@@ -22,11 +22,12 @@ typedef enum {
     BARO_NONE = 1,
     BARO_BMP085 = 2,
     BARO_MS5611 = 3,
-    BARO_BMP280 = 4
+    BARO_BMP280 = 4,
+    BARO_FAKE = 5
 } baroSensor_e;
 
 #define BARO_SAMPLE_COUNT_MAX   48
-#define BARO_MAX BARO_MS5611
+#define BARO_MAX BARO_FAKE
 
 typedef struct barometerConfig_s {
     uint8_t baro_sample_count;              // size of baro filter array

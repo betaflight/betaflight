@@ -140,3 +140,8 @@
 // USART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
+
+// DEBUG
+#define USE_FAKE_MAG
+#define USE_FAKE_BARO
+#define USE_FAKE_GPS

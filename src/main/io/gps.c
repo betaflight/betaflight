@@ -515,9 +515,40 @@ void gpsReadNewData(void)
     }
 }
 
+#ifdef USE_FAKE_GPS
+static void gpsFakeGPSUpdate(void)
+{
+    if (millis() - gpsData.lastMessage > 100) {
+        sensorsSet(SENSOR_GPS);
+        ENABLE_STATE(GPS_FIX);
+        GPS_numSat = 6;
+
+        GPS_coord[LAT] = 509102311;
+        GPS_coord[LON] = -15349744;
+        GPS_altitude = 0;
+        GPS_velned[X] = 0;
+        GPS_velned[Y] = 0;
+        GPS_velned[Z] = 0;
+        GPS_have_horizontal_velocity = 1;
+        GPS_have_vertical_velocity = 1;
+        GPS_hdop = 9999;
+
+        onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude * 100, GPS_velned[X], GPS_velned[Y], GPS_velned[Z], GPS_have_horizontal_velocity, GPS_have_vertical_velocity, GPS_hdop);
+        gpsData.lastLastMessage = gpsData.lastMessage;
+        gpsData.lastMessage = millis();
+
+        gpsSetState(GPS_RECEIVING_DATA);
+    }
+}
+#endif
+
 void gpsThread(void)
 {
+#ifdef USE_FAKE_GPS
+    gpsFakeGPSUpdate();
+#else
     gpsReadNewData();
+#endif
 
     switch (gpsData.state) {
         case GPS_UNKNOWN:

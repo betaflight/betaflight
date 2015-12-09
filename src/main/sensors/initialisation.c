@@ -196,6 +196,59 @@ bool fakeAccDetect(acc_t *acc)
 }
 #endif
 
+#ifdef USE_FAKE_BARO
+static void fakeBaroStartGet(void)
+{
+}
+
+static void fakeBaroCalculate(int32_t *pressure, int32_t *temperature)
+{
+    if (pressure)
+        *pressure = 101325;    // pressure in Pa (0m MSL)
+    if (temperature)
+        *temperature = 2500;   // temperature in 0.01 C = 25 deg
+}
+
+bool fakeBaroDetect(baro_t *baro)
+{
+    // these are dummy as temperature is measured as part of pressure
+    baro->ut_delay = 10000;
+    baro->get_ut = fakeBaroStartGet;
+    baro->start_ut = fakeBaroStartGet;
+
+    // only _up part is executed, and gets both temperature and pressure
+    baro->up_delay = 10000;
+    baro->start_up = fakeBaroStartGet;
+    baro->get_up = fakeBaroStartGet;
+    baro->calculate = fakeBaroCalculate;
+
+    return true;
+}
+#endif
+
+#ifdef USE_FAKE_MAG
+static void fakeMagInit(void)
+{
+}
+
+static bool fakeMagRead(int16_t *magData)
+{
+    // Always pointint North
+    magData[X] = 4096;
+    magData[Y] = 0;
+    magData[Z] = 0;
+    return true;
+}
+
+static bool fakeMagDetect(mag_t *mag)
+{
+    mag->init = fakeMagInit;
+    mag->read = fakeMagRead;
+
+    return true;
+}
+#endif
+
 bool detectGyro(void)
 {
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
@@ -500,6 +553,15 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
+            ; // fallthrough
+        case BARO_FAKE:
+#ifdef USE_FAKE_BARO
+            if (fakeBaroDetect(&baro)) {
+                baroHardware = BARO_FAKE;
+                break;
+            }
+#endif
+            ; // fallthrough
         case BARO_NONE:
             baroHardware = BARO_NONE;
             break;
@@ -593,6 +655,15 @@ retry:
                 magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
+                break;
+            }
+#endif
+            ; // fallthrough
+
+        case MAG_FAKE:
+#ifdef USE_FAKE_MAG
+            if (fakeMagDetect(&mag)) {
+                magHardware = MAG_FAKE;
                 break;
             }
 #endif
