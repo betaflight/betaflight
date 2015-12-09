@@ -16,14 +16,6 @@
                     <!-- list generated here -->
                 </select>
             </div>
-            <div class="deadband_wrapper">
-                <div class="head">Yaw Deadband</div>
-                <input type="number" name="mid" step="1" min="0" max="50" />
-            </div>
-            <div class="deadband_wrapper">
-                <div class="head">RC Deadband</div>
-                <input type="number" name="mid" step="1" min="0" max="50" />
-            </div>
             <div class="rcmap_wrapper">
                 <div class="head">
                     <span i18n="receiverChannelMap" i18n_title="receiverChannelMapTitle"></span>
@@ -55,6 +47,16 @@
                             <tr>
                                 <td><input type="number" name="mid" step="0.01" min="0" max="1" /></td>
                                 <td><input type="number" name="expo" step="0.01" min="0" max="1" /></td>
+                            </tr>
+                        </table>
+                        <table class="deadband">
+                            <tr>
+                                <th>RC Deadband</th>
+                                <th>YAW Deadband</th>
+                            </tr>
+                            <tr>
+                                <td><input type="number" name="deadband" step="1" min="0" max="50" /></td>
+                                <td><input type="number" name="yaw_deadband" step="1" min="0" max="50" /></td>
                             </tr>
                         </table>
                     </div>
