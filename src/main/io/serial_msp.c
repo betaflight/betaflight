@@ -1593,9 +1593,7 @@ static bool processInCommand(void)
         msp_wp.p2 = read16();       // P2
         msp_wp.p3 = read16();       // P3
         msp_wp.flag = read8();      // future: to set nav flag
-        if (msp_wp.action == NAV_WP_ACTION_WAYPOINT) {   // support only WAYPOINT types
-            setWaypoint(msp_wp_no, &msp_wp);
-        }
+        setWaypoint(msp_wp_no, &msp_wp);
         break;
 #endif
     case MSP_SET_FEATURE:

@@ -142,6 +142,6 @@
 #define BIND_PIN   Pin_11
 
 // DEBUG
-#define USE_FAKE_MAG
-#define USE_FAKE_BARO
-#define USE_FAKE_GPS
+//#define USE_FAKE_MAG
+//#define USE_FAKE_BARO
+//#define USE_FAKE_GPS

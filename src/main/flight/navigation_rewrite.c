@@ -1740,9 +1740,14 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
-        posControl.waypointList[wpNumber - 1] = *wpData;
-        posControl.waypointCount = wpNumber;
-        posControl.waypointListValid = (wpData->flag == NAV_WP_FLAG_LAST);
+        if (wpData->action == NAV_WP_ACTION_WAYPOINT || wpData->action == NAV_WP_ACTION_RTH) {
+            // Only allow upload next waypoint (continue upload mission) or first waypoint (new mission)
+            if (wpNumber == (posControl.waypointCount + 1) || wpNumber == 1) {
+                posControl.waypointList[wpNumber - 1] = *wpData;
+                posControl.waypointCount = wpNumber;
+                posControl.waypointListValid = (wpData->flag == NAV_WP_FLAG_LAST);
+            }
+        }
     }
 }
 
@@ -2023,11 +2028,6 @@ void updateWaypointsAndNavigationMode(bool isRXDataNew)
         // Map navMode back to enabled flight modes
         swithNavigationFlightModes();
     }
-
-    NAV_BLACKBOX_DEBUG(0, posControl.waypointListValid);
-    NAV_BLACKBOX_DEBUG(1, posControl.waypointCount);
-    NAV_BLACKBOX_DEBUG(2, posControl.activeWaypointIndex);
-    NAV_BLACKBOX_DEBUG(3, selectNavEventFromBoxModeInput());
 
 #if defined(NAV_BLACKBOX)
     navCurrentState = (int16_t)posControl.navState;
