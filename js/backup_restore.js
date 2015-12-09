@@ -99,6 +99,9 @@ function configuration_backup(callback) {
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             uniqueData.push(MSP_codes.MSP_3D);
         }
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            uniqueData.push(MSP_codes.MSP_RC_CONTROLS);
+        }
     }
     
     update_unique_data_list();
@@ -125,6 +128,9 @@ function configuration_backup(callback) {
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                     configuration._3D = jQuery.extend(true, {}, _3D);
+                }
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    configuration.RC_controls = jQuery.extend(true, {}, RC_controls);
                 }
 
                 save();
@@ -507,6 +513,20 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+        if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
+            // api 1.14 exposes deadband and yaw_deadband
+            
+            if (configuration.RC_controls == undefined) {
+                configuration.RC_controls = {
+                    deadband:                0,
+                    yaw_deadband:            0,
+                    alt_hold_deadband:       40,
+                    alt_hold_fast_change:    1
+                };
+            }
+            appliedMigrationsCount++;
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
@@ -617,6 +637,9 @@ function configuration_restore(callback) {
                     if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                         uniqueData.push(MSP_codes.MSP_SET_3D);
                     }
+                    if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                        uniqueData.push(MSP_codes.MSP_SET_RC_CONTROLS);
+                    }
                 }
                 
                 function load_objects() {
@@ -628,6 +651,7 @@ function configuration_restore(callback) {
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
+		    RC_controls = configuration.RC_controls;
                 }
 
                 function send_unique_data_item() {
