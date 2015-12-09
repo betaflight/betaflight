@@ -751,6 +751,7 @@ void mixTable(void)
     }
 
     if (!(IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !(feature(FEATURE_3D))) {
+        totalErrorRatioLimit = 1.0f; // It  always needs to be full ratio so it can't get stuck when flipping back and fourth
         // motors for non-servo mixes
         for (i = 0; i < motorCount; i++) {
             motor[i] =
@@ -794,7 +795,6 @@ void mixTable(void)
         // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
         //
         // TODO: handle the case when motors don't all get the same throttle factor...
-        //       too lazy to sort out the math right now.
         for (i = 0; i < motorCount; i++) {
             motor[i] = rollPitchYawMix[i] + constrainf(rcCommand[THROTTLE] * currentMixer[i].throttle, throttleMin, throttleMax);
         }

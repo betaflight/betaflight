@@ -598,6 +598,8 @@ void processRx(void)
             } else {
                 allowITermShrinkOnly = false;   // Reset shrinking for Iterm
             }
+        } else {
+            allowITermShrinkOnly = false;   // Reset shrinking. Usefull when flipping between normal and AIR mode
         }
     }
 
