@@ -69,8 +69,7 @@ static rxConfig_t *rxConfig;
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
-float rpy_limiting = 1.0f;
-
+float totalErrorRatioLimit = 1.0f;
 
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
@@ -761,34 +760,34 @@ void mixTable(void)
                 -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
         }
     } else {
-        int16_t rpy[MAX_SUPPORTED_MOTORS];
-        int16_t rpy_max = 0; // assumption: symetrical about zero.
-        int16_t rpy_min = 0;
+        int16_t rollPitchYawMix[MAX_SUPPORTED_MOTORS];
+        int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
+        int16_t rollPitchYawMixMin = 0;
 
         // Find roll/pitch/yaw desired output
         for (i = 0; i < motorCount; i++) {
-            rpy[i] =
+            rollPitchYawMix[i] =
                 axisPID[PITCH] * currentMixer[i].pitch +
                 axisPID[ROLL] * currentMixer[i].roll +
                 -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-            if (rpy[i] > rpy_max) rpy_max = rpy[i];
-            if (rpy[i] < rpy_min) rpy_min = rpy[i];
+            if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
+            if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
         }
 
         // Scale roll/pitch/yaw uniformly to fit within throttle range
-        int16_t rpy_range = rpy_max - rpy_min;
-        int16_t th_range = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
-        int16_t th_min, th_max;
+        int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
+        int16_t throttleRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
+        int16_t throttleMin, throttleMax;
 
-        if (rpy_range > th_range) {
+        if (rollPitchYawMixRange > throttleRange) {
             for (i = 0; i < motorCount; i++) {
-                rpy[i] = (rpy[i] * th_range) / rpy_range;
+                rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
             }
-            th_min = th_max = escAndServoConfig->minthrottle + (th_range / 2);
+            throttleMin = throttleMax = escAndServoConfig->minthrottle + (throttleRange / 2);
         } else {
-            th_min = escAndServoConfig->minthrottle + (rpy_range / 2);
-            th_max = escAndServoConfig->maxthrottle - (rpy_range / 2);
+            throttleMin = escAndServoConfig->minthrottle + (rollPitchYawMixRange / 2);
+            throttleMax = escAndServoConfig->maxthrottle - (rollPitchYawMixRange / 2);
         }
 
         // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -797,11 +796,11 @@ void mixTable(void)
         // TODO: handle the case when motors don't all get the same throttle factor...
         //       too lazy to sort out the math right now.
         for (i = 0; i < motorCount; i++) {
-            motor[i] = rpy[i] + constrainf(rcCommand[THROTTLE] * currentMixer[i].throttle, th_min, th_max);
+            motor[i] = rollPitchYawMix[i] + constrainf(rcCommand[THROTTLE] * currentMixer[i].throttle, throttleMin, throttleMax);
         }
 
         // adjust feedback to scale PID error inputs to our limitations.
-        rpy_limiting = constrainf(((float)th_range / rpy_range), 0.1f, 1.0f);
+        totalErrorRatioLimit = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.1f, 1.0f);
     }
 
     if (ARMING_FLAG(ARMED)) {

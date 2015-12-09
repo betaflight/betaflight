@@ -48,7 +48,7 @@
 #include "config/runtime_config.h"
 
 extern float dT;
-extern float rpy_limiting;
+extern float totalErrorRatioLimit;
 extern bool allowITermShrinkOnly;
 
 #define CALC_OFFSET(x) ( (x > 0) ?  x : -x )
@@ -163,7 +163,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         RateError = AngleRate - gyroRate;
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        	RateError = RateError * rpy_limiting;
+            RateError = RateError * totalErrorRatioLimit;
         }
 
         // -----calculate P component
@@ -176,7 +176,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
-        if (allowITermShrinkOnly) {
+        if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
             if (CALC_OFFSET(errorGyroIf[axis]) < CALC_OFFSET(previousErrorGyroIf[axis])) {
                 previousErrorGyroIf[axis] = errorGyroIf[axis];
             } else {
@@ -294,7 +294,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         RateError = AngleRateTmp - (gyroADC[axis] / 4);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            RateError = RateError * rpy_limiting;
+            RateError = RateError * totalErrorRatioLimit;
         }
 
         // -----calculate P component
@@ -317,7 +317,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         ITerm = errorGyroI[axis] >> 13;
 
-        if (allowITermShrinkOnly) {
+        if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
             if (CALC_OFFSET(errorGyroI[axis]) < CALC_OFFSET(previousErrorGyroI[axis])) {
                 previousErrorGyroI[axis] = errorGyroI[axis];
             } else {
