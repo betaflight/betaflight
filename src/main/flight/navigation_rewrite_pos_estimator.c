@@ -265,7 +265,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
         if ((posControl.gpsOrigin.valid) || (GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) {
             /* Convert LLH position to local coordinates */
             t_fp_vector newLocalPos;
-            geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, &newLocalPos);
+            geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, &newLocalPos, GEO_ALT_ABSOLUTE);
 
             /* If not the first update - calculate velocities */
             if (!isFirstGPSUpdate) {

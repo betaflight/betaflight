@@ -133,9 +133,10 @@ float geoCalculateMagDeclination(gpsLocation_t * llh) // degrees units
 }
 #endif
 
-void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos)
+void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv)
 {
-    if (!origin->valid) {
+    // Origin can only be set if GEO_ALT_ABSOLUTE to get a valid reference
+    if ((!origin->valid) && (altConv == GEO_ALT_ABSOLUTE)) {
         origin->valid = true;
         origin->lat = llh->lat;
         origin->lon = llh->lon;
@@ -143,9 +144,22 @@ void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_v
         origin->scale = constrainf(cos_approx((ABS(origin->lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
     }
 
-    pos->V.X = (llh->lat - origin->lat) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
-    pos->V.Y = (llh->lon - origin->lon) * (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * origin->scale);
-    pos->V.Z = (llh->alt - origin->alt);
+    if (origin->valid) {
+        pos->V.X = (llh->lat - origin->lat) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
+        pos->V.Y = (llh->lon - origin->lon) * (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * origin->scale);
+
+        // If flag GEO_ALT_RELATIVE, than llh altitude is already relative to origin
+        if (altConv == GEO_ALT_RELATIVE) {
+            pos->V.Z = llh->alt;
+        } else {
+            pos->V.Z = llh->alt - origin->alt;
+        }
+    }
+    else {
+        pos->V.X = 0.0f;
+        pos->V.Y = 0.0f;
+        pos->V.Z = 0.0f;
+    }
 }
 
 void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh)

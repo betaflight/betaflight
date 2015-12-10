@@ -1710,7 +1710,7 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     // WP #0 - special waypoint - HOME
     if ((wpNumber == 0) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid) {
         // Forcibly set home position. Note that this is only valid if already armed, otherwise home will be reset instantly
-        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos);
+        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
         setHomePosition(&wpPos.pos, 0);
     }
     // WP #255 - special waypoint - directly set desiredPosition
@@ -1718,7 +1718,7 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     else if ((wpNumber == 255) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid &&
              (posControl.navState == NAV_STATE_POSHOLD_2D_IN_PROGRESS || posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
         // Converto to local coordinates
-        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos);
+        geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
 
         // If close to actualPos, use heading, if far - use bearing
         uint32_t wpDistance = calculateDistanceToDestination(&wpPos.pos);
@@ -1771,7 +1771,7 @@ static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint)
     wpLLH.lon = waypoint->lon;
     wpLLH.alt = waypoint->alt;
 
-    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &localPos);
+    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &localPos, GEO_ALT_RELATIVE);
     calcualteAndSetActiveWaypointToLocalPosition(&localPos);
 }
 

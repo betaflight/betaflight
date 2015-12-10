@@ -241,7 +241,13 @@ float getEstimatedActualPosition(int axis);
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
 void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
 
-void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos);
+
+typedef enum {
+    GEO_ALT_ABSOLUTE,
+    GEO_ALT_RELATIVE
+} geoAltitudeConversionMode_e;
+
+void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv);
 void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh);
 float geoCalculateMagDeclination(gpsLocation_t * llh); // degrees units
 
