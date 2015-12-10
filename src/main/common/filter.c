@@ -34,18 +34,16 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
  *  450-sized, 920kv, 9.4x4.3 props, 3S : 4622rpm = 77Hz
  *  250-sized, 2300kv, 5x4.5 props, 4S : 14139rpm = 235Hz
  */
-static int8_t gyroFIRCoeff_1000[3][9] = { { 0, 0, 12, 23, 40, 51, 52, 40, 38 },    // 1khz; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
-                                          { 18, 30, 42, 46, 40, 34, 22, 8, 8},     // 1khz; group delay 3ms;   -0.5db = 18Hz ; -1db = 33Hz; -5db = 81Hz; -10db = 113Hz
-                                          { 18, 12, 28, 40, 44, 40, 32, 22, 20} }; // 1khz; group delay 4ms;   -0.5db = 23Hz ; -1db = 35Hz; -5db = 75Hz; -10db = 103Hz
+static int8_t gyroFIRCoeff_1000[7] = { 12, 23, 40, 51, 52, 40, 38 };   // 1khz; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132hz
 
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level)
+int8_t * filterGetFIRCoefficientsTable(void)
 {
-    return gyroFIRCoeff_1000[filter_level-1];
+    return gyroFIRCoeff_1000;
 }
 
 // 9 Tap FIR filter as described here:
 // Thanks to Qcopter & BorisB & DigitalEntity
-void filterApply9TapFIR(int16_t data[3], int16_t state[3][9], int8_t coeff[9])
+void filterApplyFIR(int16_t data[3], int16_t state[3][7], int8_t coeff[7])
 {
     int32_t FIRsum;
     int axis, i;

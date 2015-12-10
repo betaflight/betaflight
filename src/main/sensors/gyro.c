@@ -39,7 +39,7 @@ int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
 static int8_t * gyroFIRTable = 0L;
-static int16_t gyroFIRState[3][9];
+static int16_t gyroFIRState[3][7];
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
@@ -126,7 +126,7 @@ void gyroUpdate(void)
     }
 
     if (gyroFIRTable) {
-        filterApply9TapFIR(gyroADC, gyroFIRState, gyroFIRTable);
+        filterApplyFIR(gyroADC, gyroFIRState, gyroFIRTable);
     }
 
     alignSensors(gyroADC, gyroADC, gyroAlign);

@@ -175,7 +175,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
-    pidProfile->gyro_soft_lpf = 1;   // LOW filtering by default
+    pidProfile->gyro_soft_lpf = 1;   // filtering ON by default
     pidProfile->dterm_cut_hz = 40;
     pidProfile->yaw_pterm_cut_hz = 50;
 
@@ -695,7 +695,7 @@ void activateConfig(void)
     );
 
     if (currentProfile->pidProfile.gyro_soft_lpf) {
-        useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf));
+        useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable()); // Leave this for more coefficients in the future
     }
 
 #ifdef TELEMETRY
