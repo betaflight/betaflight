@@ -704,6 +704,12 @@
     "receiverDeadband": {
         "message": "RC Deadband"
     },
+    "receiverHelpDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle."
+    },
+    "receiverHelpYawDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle. This setting is for YAW only."
+    },    
     "receiverYawDeadband": {
         "message": "YAW Deadband"
     },
