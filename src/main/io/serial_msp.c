@@ -642,12 +642,13 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIdCount = 0;
     activeBoxIds[activeBoxIdCount++] = BOXARM;
-    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
+
+    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
