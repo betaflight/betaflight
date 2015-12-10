@@ -40,7 +40,7 @@ static int8_t gyroFIRCoeff_1000[3][9] = { { 0, 0, 12, 23, 40, 51, 52, 40, 38 }, 
 
 int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level)
 {
-    return gyroFIRCoeff_1000[filter_level];
+    return gyroFIRCoeff_1000[filter_level-1];
 }
 
 // 9 Tap FIR filter as described here:

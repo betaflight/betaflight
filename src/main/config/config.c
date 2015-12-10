@@ -133,7 +133,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 115;
+static const uint8_t EEPROM_CONF_VERSION = 116;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -175,7 +175,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
-    pidProfile->gyro_soft_lpf = 0;   // LOW filtering by default
+    pidProfile->gyro_soft_lpf = 1;   // LOW filtering by default
     pidProfile->dterm_cut_hz = 40;
     pidProfile->yaw_pterm_cut_hz = 50;
 
@@ -399,7 +399,7 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
-    masterConfig.gyro_lpf = 1;                 // 1KHZ or 8KHZ
+    masterConfig.gyro_lpf = 1;                 // 188HZ
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -694,7 +694,9 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf));
+    if (currentProfile->pidProfile.gyro_soft_lpf) {
+        useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf));
+    }
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

@@ -96,7 +96,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
-    float delta;
+    static float delta1[3], delta2[3];
+    float delta, deltaSum;
     int axis;
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
@@ -198,12 +199,21 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        // Dterm low pass
-        if (pidProfile->dterm_cut_hz) {
-            delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        if (!pidProfile->gyro_soft_lpf) {
+            // add moving average here to reduce noise
+            deltaSum = (delta1[axis] + delta2[axis] + delta) / 3;
+            delta2[axis] = delta1[axis];
+            delta1[axis] = delta;
+        } else {
+            deltaSum = delta;
         }
 
-        DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
+        // Dterm low pass
+        if (pidProfile->dterm_cut_hz) {
+            deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        }
+
+        DTerm = constrainf(deltaSum * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
@@ -229,7 +239,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     int32_t errorAngle;
     int axis;
-    int32_t delta;
+    int32_t delta, deltaSum;
+    static int32_t delta1[3], delta2[3];
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
@@ -335,12 +346,21 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        // Dterm delta low pass
-        if (pidProfile->dterm_cut_hz) {
-            delta = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        if (!pidProfile->gyro_soft_lpf) {
+            // add moving average here to reduce noise
+            deltaSum = delta1[axis] + delta2[axis] + delta;
+            delta2[axis] = delta1[axis];
+            delta1[axis] = delta;
+        } else {
+            deltaSum = delta * 2;
         }
 
-        DTerm = (delta * 2 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8; // Multiplied by 2 to approximately match old scaling
+        // Dterm delta low pass
+        if (pidProfile->dterm_cut_hz) {
+            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        }
+
+        DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
