@@ -694,9 +694,8 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    if (currentProfile->pidProfile.gyro_soft_lpf) {
-        useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable()); // Leave this for more coefficients in the future
-    }
+
+    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_soft_lpf); // Leave this for more coefficients in the future
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
