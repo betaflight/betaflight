@@ -53,6 +53,7 @@ var MSP_codes = {
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
+    MSP_RC_CONTROLS:        125,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -69,6 +70,7 @@ var MSP_codes = {
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
+    MSP_SET_RC_CONTROLS:    218,
     
     // MSP_BIND:               240,
     
@@ -513,6 +515,13 @@ var MSP = {
                         } 
                     }
                 }
+                break;
+            case MSP_codes.MSP_RC_CONTROLS:
+                var offset = 0;
+                RC_controls.deadband = data.getUint8(offset++, 1);
+                RC_controls.yaw_deadband = data.getUint8(offset++, 1);
+                RC_controls.alt_hold_deadband = data.getUint8(offset++, 1);
+                RC_controls.alt_hold_fast_change = data.getUint8(offset++, 1);
                 break;
             case MSP_codes.MSP_SET_RAW_RC:
                 break;
@@ -1153,8 +1162,15 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.neutral3d));
             buffer.push(lowByte(_3D.deadband3d_throttle));
             buffer.push(highByte(_3D.deadband3d_throttle));
+            break;    
+
+        case MSP_codes.MSP_SET_RC_CONTROLS:
+            buffer.push(RC_controls.deadband);
+            buffer.push(RC_controls.yaw_deadband); 
+            buffer.push(RC_controls.alt_hold_deadband);
+            buffer.push(RC_controls.alt_hold_fast_change);
             break;
-            
+
         default:
             return false;
     }

@@ -178,3 +178,10 @@ var DATAFLASH = {
     totalSize: 0,
     usedSize: 0
 };
+
+var RC_controls = {
+    deadband:               0,
+    yaw_deadband:           0,
+    alt_hold_deadband:      0,
+    alt_hold_fast_change:   0
+};
