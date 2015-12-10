@@ -51,8 +51,6 @@ extern float dT;
 extern float totalErrorRatioLimit;
 extern bool allowITermShrinkOnly;
 
-#define CALC_OFFSET(x) ( (x > 0) ?  x : -x )
-
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -178,10 +176,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
-            if (CALC_OFFSET(errorGyroIf[axis]) < CALC_OFFSET(previousErrorGyroIf[axis])) {
+            if (ABS(errorGyroIf[axis]) < ABS(previousErrorGyroIf[axis])) {
                 previousErrorGyroIf[axis] = errorGyroIf[axis];
             } else {
-                errorGyroIf[axis] = constrain(errorGyroIf[axis], -CALC_OFFSET(previousErrorGyroIf[axis]), CALC_OFFSET(previousErrorGyroIf[axis]));
+                errorGyroIf[axis] = constrain(errorGyroIf[axis], -ABS(previousErrorGyroIf[axis]), ABS(previousErrorGyroIf[axis]));
             }
         } else {
             previousErrorGyroIf[axis] = errorGyroIf[axis];
@@ -329,10 +327,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         ITerm = errorGyroI[axis] >> 13;
 
         if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
-            if (CALC_OFFSET(errorGyroI[axis]) < CALC_OFFSET(previousErrorGyroI[axis])) {
+            if (ABS(errorGyroI[axis]) < ABS(previousErrorGyroI[axis])) {
                 previousErrorGyroI[axis] = errorGyroI[axis];
             } else {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -CALC_OFFSET(previousErrorGyroI[axis]), CALC_OFFSET(previousErrorGyroI[axis]));
+                errorGyroI[axis] = constrain(errorGyroI[axis], -ABS(previousErrorGyroI[axis]), ABS(previousErrorGyroI[axis]));
             }
         } else {
             previousErrorGyroI[axis] = errorGyroI[axis];
