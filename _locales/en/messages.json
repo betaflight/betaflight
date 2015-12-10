@@ -701,6 +701,12 @@
     "receiverRcRate": {
         "message": "RC Rate"
     },
+    "receiverDeadband": {
+        "message": "RC Deadband"
+    },
+    "receiverYawDeadband": {
+        "message": "YAW Deadband"
+    },
     "receiverRcExpo": {
         "message": "RC Expo"
     },
