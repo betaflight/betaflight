@@ -88,6 +88,13 @@ void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
     return;
 }
 
+#ifdef NAV
+bool failsafeMayRequireNavigationMode(void)
+{
+    return failsafeConfig->failsafe_procedure == FAILSAFE_PROCEDURE_RTH;
+}
+#endif
+
 failsafePhase_e failsafePhase()
 {
     return failsafeState.phase;

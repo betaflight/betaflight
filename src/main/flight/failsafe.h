@@ -92,6 +92,7 @@ bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
+bool failsafeMayRequireNavigationMode(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);

@@ -1987,8 +1987,16 @@ int8_t naivationGetHeadingControlState(void)
 
 bool naivationBlockArming(void)
 {
-    bool okToArm = posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME);
-    return (posControl.navConfig->flags.extra_arming_safety && !okToArm);
+    if (!posControl.navConfig->flags.extra_arming_safety)
+        return false;
+
+    // Apply extra arming safety only if pilot has any of GPS modes configured
+    if (isUsingNavigationModes() || failsafeMayRequireNavigationMode()) {
+        return posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME);
+    }
+    else {
+        return false;
+    }
 }
 
 /**

@@ -66,6 +66,11 @@ static pidProfile_t *pidProfile;
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
+#ifdef NAV
+// true if pilot has any of GPS modes configured
+static bool isUsingNAVModes = false;
+#endif
+
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
@@ -106,6 +111,10 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+bool isUsingNavigationModes(void)
+{
+    return isUsingNAVModes;
+}
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
@@ -709,6 +718,12 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
     pidProfile = pidProfileToUse;
 
     isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
+
+#ifdef NAV
+    isUsingNAVModes = isModeActivationConditionPresent(modeActivationConditions, BOXNAVPOSHOLD) ||
+                        isModeActivationConditionPresent(modeActivationConditions, BOXNAVRTH) ||
+                        isModeActivationConditionPresent(modeActivationConditions, BOXNAVWP);
+#endif
 }
 
 void resetAdjustmentStates(void)
