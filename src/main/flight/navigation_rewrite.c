@@ -1018,6 +1018,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_INITI
 {
     // TODO:
     UNUSED(previousState);
+
+    // Emergency landing MAY use common altitude controller if vertical position is valid - initialize it
+    resetAltitudeController();
+
     return NAV_FSM_EVENT_SUCCESS;
 }
 

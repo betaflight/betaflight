@@ -63,11 +63,17 @@ static void updateSurfaceTrackingAltitudeSetpoint_MC(void)
 }
 
 // Position to velocity controller for Z axis
-static void updateAltitudeVelocityController_MC(void)
+static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
 {
     float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
-    posControl.desiredState.vel.V.Z = altitudeError * posControl.pids.pos[Z].param.kP;
-    posControl.desiredState.vel.V.Z = constrainf(posControl.desiredState.vel.V.Z, -300.0f, 300.0f); // hard limit velocity to +/- 3 m/s
+    float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
+
+    // hard limit desired target velocity to +/- 20 m/s
+    targetVel = constrainf(posControl.desiredState.vel.V.Z, -2000.0f, 2000.0f);
+
+    // limit max vertical acceleration 250 cm/s/s - reach the max 20 m/s target in 80 seconds
+    float maxVelDifference = US2S(deltaMicros) * 250.0f;
+    posControl.desiredState.vel.V.Z = constrainf(targetVel, posControl.desiredState.vel.V.Z - maxVelDifference, posControl.desiredState.vel.V.Z + maxVelDifference);
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[Z] = constrain(lrintf(posControl.desiredState.vel.V.Z), -32678, 32767);
@@ -124,6 +130,7 @@ void resetMulticopterAltitudeController()
 {
     navPidReset(&posControl.pids.vel[Z]);
     filterResetPt1(&altholdThrottleFilterState, 0.0f);
+    posControl.desiredState.vel.V.Z = 0.0f;
     posControl.rcAdjustment[THROTTLE] = 0;
 }
 
@@ -151,7 +158,7 @@ void applyMulticopterAltitudeController(uint32_t currentTime)
         // Check if last correction was too log ago - ignore this update
         if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
             updateSurfaceTrackingAltitudeSetpoint_MC();
-            updateAltitudeVelocityController_MC();
+            updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
             updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
         }
         else {
@@ -445,7 +452,7 @@ void applyMulticopterEmergencyLandingController(uint32_t currentTime)
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
                 updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate);
-                updateAltitudeVelocityController_MC();
+                updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }
             else {
