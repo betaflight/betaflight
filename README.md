@@ -1,4 +1,4 @@
-# Cleanflight
+# Implement Motor Stop feature as RC switchable mode in betaflight
 
 ![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
 
