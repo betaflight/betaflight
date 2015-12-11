@@ -704,7 +704,9 @@ void loop(void)
         }
 
 #if defined(NAV)
-        updateWaypointsAndNavigationMode(isRXDataNew);
+        if (isRXDataNew) {
+            updateWaypointsAndNavigationMode();
+        }
 #endif
 
         isRXDataNew = false;

@@ -38,6 +38,8 @@
 // Maximum number of waypoints, special waypoint 0 = home,
 #define NAV_MAX_WAYPOINTS       15
 
+#if defined(NAV)
+
 enum {
     NAV_GPS_ATTI    = 0,                    // Pitch/roll stick controls attitude (pitch/roll lean angles)
     NAV_GPS_CRUISE  = 1                     // Pitch/roll stick controls velocity (forward/right speed)
@@ -209,7 +211,6 @@ typedef struct {
     navWaypointActions_e    activeWpAction;
 } navSystemStatus_t;
 
-#if defined(NAV)
 void navigationUsePIDs(pidProfile_t *pidProfile);
 void navigationUseConfig(navConfig_t *navConfigToUse);
 void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig);
@@ -221,27 +222,28 @@ void navigationInit(navConfig_t *initialnavConfig,
                     rxConfig_t * initialRxConfig,
                     escAndServoConfig_t * initialEscAndServoConfig);
 
+/* Navigation system updates */
 void onNewGPSData(int32_t lat, int32_t lon, int32_t alt, int16_t vel_n, int16_t vel_e, int16_t vel_d, bool vel_ne_valid, bool vel_d_valid, int16_t hdop);
-
-
-void updateWaypointsAndNavigationMode(bool isRXDataNew);
+void updateWaypointsAndNavigationMode(void);
 void updatePositionEstimator(void);
 void applyWaypointNavigationAndAltitudeHold(void);
-void resetHomePosition(void);
-void updateHomePosition(void);
 
+/* Functions to signal navigation requirements to main loop */
 bool naivationRequiresAngleMode(void);
 bool navigationRequiresThrottleTiltCompensation(void);
 int8_t naivationGetHeadingControlState(void);
 bool naivationBlockArming(void);
 
+/* Access to estimated position and velocity */
 float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);
 
+/* Waypoint list access functions */
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
 void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
+void resetWaypointList(void);
 
-
+/* Geodetic functions */
 typedef enum {
     GEO_ALT_ABSOLUTE,
     GEO_ALT_RELATIVE
@@ -251,10 +253,12 @@ void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_v
 void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh);
 float geoCalculateMagDeclination(gpsLocation_t * llh); // degrees units
 
+/* Failsafe-forced RTH mode */
 void activateForcedRTH(void);
 void abortForcedRTH(void);
 rthState_e getStateOfForcedRTH(void);
 
+/* Compatibility data */
 extern gpsLocation_t        GPS_home;
 extern uint16_t             GPS_distanceToHome;        // distance to home point in meters
 extern int16_t              GPS_directionToHome;       // direction to home point in degrees

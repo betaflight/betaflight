@@ -1739,7 +1739,7 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
         setDesiredPosition(&wpPos.pos, posControl.actualState.yaw, waypointUpdateFlags);
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
-    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS)) {
+    else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS) && !ARMING_FLAG(ARMED)) {
         if (wpData->action == NAV_WP_ACTION_WAYPOINT || wpData->action == NAV_WP_ACTION_RTH) {
             // Only allow upload next waypoint (continue upload mission) or first waypoint (new mission)
             if (wpNumber == (posControl.waypointCount + 1) || wpNumber == 1) {
@@ -1748,6 +1748,15 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
                 posControl.waypointListValid = (wpData->flag == NAV_WP_FLAG_LAST);
             }
         }
+    }
+}
+
+void resetWaypointList(void)
+{
+    /* Can only reset waypoint list if not armed */
+    if (!ARMING_FLAG(ARMED)) {
+        posControl.waypointCount = 0;
+        posControl.waypointListValid = false;
     }
 }
 
@@ -2017,25 +2026,22 @@ static void updateReadyStatus(void)
  * Process NAV mode transition and WP/RTH state machine
  *  Update rate: RX (data driven or 50Hz)
  */
-void updateWaypointsAndNavigationMode(bool isRXDataNew)
+void updateWaypointsAndNavigationMode(void)
 {
-    // Process this on each update.
-    if (isRXDataNew) {
-        /* Initiate home position update */
-        updateHomePosition();
+    /* Initiate home position update */
+    updateHomePosition();
 
-        /* Update NAV ready status */
-        updateReadyStatus();
+    /* Update NAV ready status */
+    updateReadyStatus();
 
-        // Process switch to a different navigation mode (if needed)
-        navProcessFSMEvents(selectNavEventFromBoxModeInput());
+    // Process switch to a different navigation mode (if needed)
+    navProcessFSMEvents(selectNavEventFromBoxModeInput());
 
-        // Process pilot's RC input to adjust behaviour
-        processNavigationRCAdjustments();
+    // Process pilot's RC input to adjust behaviour
+    processNavigationRCAdjustments();
 
-        // Map navMode back to enabled flight modes
-        swithNavigationFlightModes();
-    }
+    // Map navMode back to enabled flight modes
+    swithNavigationFlightModes();
 
 #if defined(NAV_BLACKBOX)
     navCurrentState = (int16_t)posControl.navState;
