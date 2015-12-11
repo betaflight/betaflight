@@ -896,13 +896,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
     else {
         // Gradually reduce descent speed depending on actual altitude.
         if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1000.0f)) {
-            updateAltitudeTargetFromClimbRate(-200.0f);
+            updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
         }
         else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 250.0f)) {
-            updateAltitudeTargetFromClimbRate(-100.0f);
+            updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
         }
         else {
-            updateAltitudeTargetFromClimbRate(-50.0f);
+            updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);
         }
 
         return NAV_FSM_EVENT_NONE;
@@ -912,7 +912,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-50.0f);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -920,7 +920,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHED(navigat
 {
     // Stay in this state
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-50.0f);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
     return NAV_FSM_EVENT_NONE;
 }
 

@@ -444,7 +444,7 @@ void applyMulticopterEmergencyLandingController(uint32_t currentTime)
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-                updateAltitudeTargetFromClimbRate(-100.0f);
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate);
                 updateAltitudeVelocityController_MC();
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }

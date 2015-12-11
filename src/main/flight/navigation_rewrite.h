@@ -100,6 +100,8 @@ typedef struct navConfig_s {
     uint16_t max_speed;                     // autonomous navigation speed cm/sec
     uint16_t max_manual_speed;              // manual velocity control max horizontal speed
     uint16_t max_manual_climb_rate;         // manual velocity control max vertical speed
+    uint16_t land_descent_rate;             // normal RTH landing descent rate
+    uint16_t emerg_descent_rate;            // emergency landing descent rate
     uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_style) (cm)
     uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
     uint8_t  dterm_cut_hz;                  // Low pass filter cut frequency for D-term calculation (default 5Hz)
