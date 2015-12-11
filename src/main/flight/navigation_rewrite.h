@@ -104,7 +104,6 @@ typedef struct navConfig_s {
     uint16_t emerg_descent_rate;            // emergency landing descent rate
     uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_style) (cm)
     uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
-    uint8_t  dterm_cut_hz;                  // Low pass filter cut frequency for D-term calculation (default 5Hz)
     uint8_t  pos_hold_deadband;             // Adds ability to adjust the Hold-position when moving the sticks (assisted mode)
     uint8_t  alt_hold_deadband;             // Defines the neutral zone of throttle stick during altitude hold
 

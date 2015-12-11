@@ -1171,10 +1171,7 @@ float navPidApply2(float setpoint, float measurement, float dt, pidController_t 
         pid->last_input = measurement;
     }
 
-    if (posControl.navConfig->dterm_cut_hz)
-        newDerivative = pid->param.kD * filterApplyPt1(newDerivative, &pid->dterm_filter_state, posControl.navConfig->dterm_cut_hz, dt);
-    else
-        newDerivative = pid->param.kD * newDerivative;
+    newDerivative = pid->param.kD * filterApplyPt1(newDerivative, &pid->dterm_filter_state, NAV_DTERM_CUT_HZ, dt);
 
     /* Pre-calculate output and limit it if actuator is saturating */
     float outVal = newProportional + pid->integrator + newDerivative;

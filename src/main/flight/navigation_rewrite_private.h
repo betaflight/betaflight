@@ -31,6 +31,8 @@
 
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
 
+#define NAV_DTERM_CUT_HZ                    10
+
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
 #define HZ2US(hz)   (1000000 / (hz))

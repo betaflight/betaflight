@@ -245,7 +245,6 @@ void resetNavConfig(navConfig_t * navConfig)
 
     // General navigation parameters
     navConfig->waypoint_radius = 300;
-    navConfig->dterm_cut_hz = 15;
     navConfig->max_speed = 250;
     navConfig->max_manual_speed = 500;
     navConfig->max_manual_climb_rate = 200;
