@@ -69,7 +69,7 @@ static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
 
     // hard limit desired target velocity to +/- 20 m/s
-    targetVel = constrainf(posControl.desiredState.vel.V.Z, -2000.0f, 2000.0f);
+    targetVel = constrainf(targetVel, -2000.0f, 2000.0f);
 
     // limit max vertical acceleration 250 cm/s/s - reach the max 20 m/s target in 80 seconds
     float maxVelDifference = US2S(deltaMicros) * 250.0f;
