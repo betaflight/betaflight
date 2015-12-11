@@ -701,8 +701,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
             return NAV_FSM_EVENT_SWITCH_TO_RTH_2D;
         }
     }
-    /* No pos sensor available for RTH_WAIT_FOR_GPS_TIMEOUT_MS - land */
-    else if (navGetCurrentStateTime() > RTH_WAIT_FOR_GPS_TIMEOUT_MS) {
+    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
+    else if (navGetCurrentStateTime() > NAV_WAIT_FOR_GPS_TIMEOUT_MS) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     /* No valid POS sensor but still within valid timeout - wait */
@@ -761,8 +761,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navi
     if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME)) {
         return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_HEAD_HOME
     }
-    /* No pos sensor available for RTH_WAIT_FOR_GPS_TIMEOUT_MS - land */
-    else if (navGetCurrentStateTime() > RTH_WAIT_FOR_GPS_TIMEOUT_MS) {
+    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
+    else if (navGetCurrentStateTime() > NAV_WAIT_FOR_GPS_TIMEOUT_MS) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     /* No valid POS sensor but still within valid timeout - wait */
@@ -964,23 +964,29 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(na
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (!posControl.flags.hasValidPositionSensor) {
+    if (posControl.flags.hasValidPositionSensor) {
+        switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
+            case NAV_WP_ACTION_WAYPOINT:
+            case NAV_WP_ACTION_RTH:
+            default:
+                if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
+                    // Waypoint reached
+                    return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_REACHED
+                }
+                else {
+                    // Update XY-position target to active waypoint
+                    setDesiredPosition(&posControl.activeWaypoint.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+                    return NAV_FSM_EVENT_NONE;      // will re-process state in >10ms
+                }
+                break;
+        }
+    }
+    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
+    else if (navGetCurrentStateTime() > NAV_WAIT_FOR_GPS_TIMEOUT_MS) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
-
-    switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
-        case NAV_WP_ACTION_WAYPOINT:
-        case NAV_WP_ACTION_RTH:
-        default:
-            if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
-                // Waypoint reached
-                return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_REACHED
-            }
-            else {
-                // Update XY-position target to active waypoint
-                setDesiredPosition(&posControl.activeWaypoint.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
-                return NAV_FSM_EVENT_NONE;      // will re-process state in >10ms
-            }
+    else {
+        return NAV_FSM_EVENT_NONE;      // will re-process state in >10ms
     }
 }
 
@@ -1007,11 +1013,16 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_FINISHED(navig
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (!posControl.flags.hasValidPositionSensor) {
+    if (posControl.flags.hasValidPositionSensor) {
+        return NAV_FSM_EVENT_NONE;
+    }
+    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
+    else if (navGetCurrentStateTime() > NAV_WAIT_FOR_GPS_TIMEOUT_MS) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
-
-    return NAV_FSM_EVENT_NONE;
+    else {
+        return NAV_FSM_EVENT_NONE;      // will re-process state in >10ms
+    }
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_INITIALIZE(navigationFSMState_t previousState)
