@@ -246,22 +246,39 @@ bool adjustMulticopterPositionFromRCInput(void)
     }
 }
 
+static float getVelocityAttenuationFactor(void)
+{
+    // In WP mode scale velocity if heading is different from bearing
+    if (navGetCurrentStateFlags() & NAV_AUTO_WP) {
+        int32_t headingError = constrain(wrap_18000(posControl.desiredState.yaw - posControl.actualState.yaw), -9000, 9000);
+        float velScaling = cos_approx(CENTIDEGREES_TO_RADIANS(headingError));
+
+        return constrainf(velScaling * velScaling, 0.05f, 1.0f);
+    } else {
+        return 1.0f;
+    }
+}
+
 static void updatePositionVelocityController_MC(void)
 {
     float posErrorX = posControl.desiredState.pos.V.X - posControl.actualState.pos.V.X;
     float posErrorY = posControl.desiredState.pos.V.Y - posControl.actualState.pos.V.Y;
 
+    // Calculate target velocity
     float newVelX = posErrorX * posControl.pids.pos[X].param.kP;
     float newVelY = posErrorY * posControl.pids.pos[Y].param.kP;
-    float newVelTotal = sqrtf(sq(newVelX) + sq(newVelY));
 
+    // Scale velocity to respect max_speed
+    float newVelTotal = sqrtf(sq(newVelX) + sq(newVelY));
     if (newVelTotal > posControl.navConfig->max_speed) {
         newVelX = posControl.navConfig->max_speed * (newVelX / newVelTotal);
         newVelY = posControl.navConfig->max_speed * (newVelY / newVelTotal);
     }
 
-    posControl.desiredState.vel.V.X = newVelX;
-    posControl.desiredState.vel.V.Y = newVelY;
+    // Apply attenuation if heading in wrong direction - turn first, accelerate later (effective only in WP mode)
+    float velAttFactor = getVelocityAttenuationFactor();
+    posControl.desiredState.vel.V.X = newVelX * velAttFactor;
+    posControl.desiredState.vel.V.Y = newVelY * velAttFactor;
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[X] = constrain(lrintf(posControl.desiredState.vel.V.X), -32678, 32767);

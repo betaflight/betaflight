@@ -602,6 +602,11 @@ static uint32_t navGetCurrentStateTime(void)
     return millis() - posControl.navStateActivationTimeMs;
 }
 
+navigationFSMStateFlags_t navGetCurrentStateFlags(void)
+{
+    return navGetStateFlags(posControl.navState);
+}
+
 /*************************************************************************************************/
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState_t previousState)
 {
@@ -742,7 +747,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(naviga
     }
     else {
         // Update XY-position target
-        if (posControl.navConfig->flags.rth_tail_first) {
+        if (posControl.navConfig->flags.rth_tail_first && !STATE(FIXED_WING)) {
             setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
         }
         else {
@@ -825,15 +830,17 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
     if ((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) {
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
     }
-
-    if (posControl.navConfig->flags.rth_tail_first) {
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
-    }
     else {
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
-    }
+        // Climb to safe altitude and turn to correct direction
+        if (posControl.navConfig->flags.rth_tail_first && !STATE(FIXED_WING)) {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+        }
+        else {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+        }
 
-    return NAV_FSM_EVENT_NONE;
+        return NAV_FSM_EVENT_NONE;
+    }
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(navigationFSMState_t previousState)
@@ -851,7 +858,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
     }
     else {
         // Update XYZ-position target
-        if (posControl.navConfig->flags.rth_tail_first) {
+        if (posControl.navConfig->flags.rth_tail_first && !STATE(FIXED_WING)) {
             setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
         }
         else {
