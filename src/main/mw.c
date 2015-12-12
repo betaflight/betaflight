@@ -794,7 +794,9 @@ void loop(void)
         // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
                 && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+#endif
                 && masterConfig.mixerMode != MIXER_AIRPLANE
                 && masterConfig.mixerMode != MIXER_FLYING_WING
 #endif
