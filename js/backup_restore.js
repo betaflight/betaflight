@@ -678,7 +678,11 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_config() {
-                MSP.sendLedStripConfig(reboot);
+                MSP.sendLedStripConfig(save_to_eeprom);
+            }
+            
+            function save_to_eeprom() {
+                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
             }
             
             function reboot() {
