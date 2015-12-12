@@ -12,10 +12,15 @@
                     <!-- list generated here -->
                 </select>
             </div>
-            <div class="cf_column fourth">
-                <div class="default_btn show">
+            <div class="cf_column" style="float:right;">
+                <div class="default_btn show" style="width:110px; float:right; margin-right:3px;">
                     <a href="#" id="showAllPids">Show all PIDs</a>
                 </div>
+                <div class="default_btn" style="width:140px; float:right;">
+                    <a href="#" id="resetPIDs">Reset PID Controller</a>
+                </div>
+
+
             </div>
         </div>
         <form name="pid-tuning" id="pid-tuning">
@@ -188,73 +193,6 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="gui_box grey" style="margin-top:7px;">
-                        <div class="gui_box_titlebar">
-                            <div class="spacer_box_title">Filter Settings</div>
-                        </div>
-                        <div class="spacer_box">
-                            <div class="note" style="margin-top:5px; margin-bottom:10px; float:left; width: calc(100% - 2px);">
-                                <div class="note_spacer">
-                                    <p i18n="configurationLoopTimeHelp"></p>
-                                </div>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="midthrottle" min="0" max="2000" />
-                                    </div>
-                                    <span>Accel Lowpass Filter (acc_lpf_factor)</span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">This setting controls the Low Pass Filter factor for ACC. Increasing this value reduces ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="midthrottle" min="0" max="2000" />
-                                    </div>
-                                    <span>Gyro Lowpass Filter (gyro_lpf)</span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">Hardware lowpass filter for gyro. Allowed values depend on the driver - For example MPU6050 allows 5,10,20,42,98,188,256Hz, while MPU3050 doesn't allow 5Hz. If you have to set gyro lpf below 42Hz generally means the frame is vibrating too much, and that should be fixed first. Values outside of supported range will usually be ignored by drivers, and will configure lpf to default value of 42Hz.</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="midthrottle" min="0" max="2000" />
-                                    </div>
-                                    <span>Gyro Lowpass Cutoff Filter (gyro_cut_hz)</span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">placeholder</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="midthrottle" min="0" max="2000" />
-                                    </div>
-                                    <span>P-Term Lowpass Cutoff Filter (pterm_cut_hz)</span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">placeholder</div>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="number">
-                                <label>
-                                    <div class="numberspacer">
-                                        <input type="number" name="midthrottle" min="0" max="2000" />
-                                    </div>
-                                    <span>D-Term Lowpass Cutoff Filter (dterm_cut_hz)</span>
-                                    <div class="helpicon cf_tip">
-                                        <div class="cf_tooltiptext" style="display:none;">placeholder</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </form>
@@ -266,9 +204,6 @@
         </div>
         <div class="btn refresh_btn">
             <a class="refresh" href="#" i18n="pidTuningButtonRefresh"></a>
-        </div>
-        <div class="btn reset">
-            <a class="reset" href="#">Reset PID Controller</a>
         </div>
     </div>
 </div>
