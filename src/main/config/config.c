@@ -118,8 +118,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #error "Flash page count not defined for target."
 #endif
 
-#if FLASH_SIZE <= 128
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
+#if FLASH_SIZE <= 64
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800
 #else
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
 #endif
