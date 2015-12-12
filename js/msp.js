@@ -71,6 +71,7 @@ var MSP_codes = {
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
     MSP_SET_RC_CONTROLS:    218,
+    MSP_SET_RESET_CURR_PID: 219,
     
     // MSP_BIND:               240,
     
@@ -858,6 +859,9 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_ARMING_CONFIG:
                 console.log('Arming config saved');
+                break;
+            case MSP_codes.MSP_SET_RESET_CURR_PID:
+                console.log('Current PID profile reset');
                 break;
                 
             default:
