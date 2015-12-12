@@ -11,20 +11,7 @@ function configuration_backup(callback) {
         'apiVersion': CONFIG.apiVersion,
         'profiles': [],
     };
-
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
-        activeProfile = CONFIG.profile;
-        select_profile();
-    });
-
-    function select_profile() {
-        if (activeProfile > 0) {
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
-        } else {
-            fetch_specific_data();
-        }
-    }
-
+    
     var profileSpecificData = [
         MSP_codes.MSP_PID_CONTROLLER,
         MSP_codes.MSP_PID,
@@ -41,9 +28,25 @@ function configuration_backup(callback) {
         } else {            
             profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
         }
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            profileSpecificData.push(MSP_codes.MSP_RC_CONTROLS);
+        }
     }
     
     update_profile_specific_data_list();
+
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+        activeProfile = CONFIG.profile;
+        select_profile();
+    });
+
+    function select_profile() {
+        if (activeProfile > 0) {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
+        } else {
+            fetch_specific_data();
+        }
+    }
 
     function fetch_specific_data() {
         var fetchingProfile = 0,
@@ -68,6 +71,9 @@ function configuration_backup(callback) {
                             'AdjustmentRanges': jQuery.extend(true, [], ADJUSTMENT_RANGES)
                         });
 
+                        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                            configuration.profiles[fetchingProfile].RCcontrols = jQuery.extend(true, {}, RC_controls);
+                        }
                         codeKey = 0;
                         fetchingProfile++;
 
@@ -99,9 +105,6 @@ function configuration_backup(callback) {
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             uniqueData.push(MSP_codes.MSP_3D);
         }
-        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            uniqueData.push(MSP_codes.MSP_RC_CONTROLS);
-        }
     }
     
     update_unique_data_list();
@@ -128,9 +131,6 @@ function configuration_backup(callback) {
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                     configuration._3D = jQuery.extend(true, {}, _3D);
-                }
-                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                    configuration.RC_controls = jQuery.extend(true, {}, RC_controls);
                 }
 
                 save();
@@ -515,14 +515,17 @@ function configuration_restore(callback) {
         
         if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
             // api 1.14 exposes deadband and yaw_deadband
+
             
-            if (configuration.RC_controls == undefined) {
-                configuration.RC_controls = {
+            for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
+                 if (configuration.profile[profileIndex].RCcontrols == undefined) {
+                    configuration.profile[profileIndex].RCcontrols = {
                     deadband:                0,
                     yaw_deadband:            0,
                     alt_hold_deadband:       40,
                     alt_hold_fast_change:    1
-                };
+                    };                
+                }
             }
             appliedMigrationsCount++;
         }
@@ -545,6 +548,10 @@ function configuration_restore(callback) {
                 MSP_codes.MSP_SET_RC_TUNING,
                 MSP_codes.MSP_SET_ACC_TRIM
             ];
+
+            if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                profileSpecificData.push(MSP_codes.MSP_SET_RC_CONTROLS);
+            }
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
                 activeProfile = CONFIG.profile;
@@ -572,6 +579,7 @@ function configuration_restore(callback) {
                     SERVO_RULES = configuration.profiles[profile].ServoRules;
                     MODE_RANGES = configuration.profiles[profile].ModeRanges;
                     ADJUSTMENT_RANGES = configuration.profiles[profile].AdjustmentRanges;
+                    RC_controls = configuration.profiles[profile].RCcontrols;
                 }
 
                 function upload_using_specific_commands() {
@@ -637,9 +645,6 @@ function configuration_restore(callback) {
                     if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                         uniqueData.push(MSP_codes.MSP_SET_3D);
                     }
-                    if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                        uniqueData.push(MSP_codes.MSP_SET_RC_CONTROLS);
-                    }
                 }
                 
                 function load_objects() {
@@ -651,7 +656,6 @@ function configuration_restore(callback) {
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
-		    RC_controls = configuration.RC_controls;
                 }
 
                 function send_unique_data_item() {
