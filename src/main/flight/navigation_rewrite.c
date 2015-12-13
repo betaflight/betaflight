@@ -2012,7 +2012,7 @@ bool naivationBlockArming(void)
 
     // Apply extra arming safety only if pilot has any of GPS modes configured
     if (isUsingNavigationModes() || failsafeMayRequireNavigationMode()) {
-        return posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME);
+        return !(posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME));
     }
     else {
         return false;
