@@ -130,7 +130,7 @@ void resetMulticopterAltitudeController()
 {
     navPidReset(&posControl.pids.vel[Z]);
     filterResetPt1(&altholdThrottleFilterState, 0.0f);
-    posControl.desiredState.vel.V.Z = 0.0f;
+    posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;
 }
 
