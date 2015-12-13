@@ -265,6 +265,7 @@ void init(void)
 
     pwmRxInit(masterConfig.inputFilteringMode);
 
+    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
