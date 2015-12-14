@@ -594,6 +594,9 @@
     "portsFunction_TELEMETRY_HOTT": {
         "message": "HoTT"
     },
+    "portsFunction_TELEMETRY_LTM": {
+        "message": "LTM"
+    },
     "portsFunction_TELEMETRY_MSP": {
         "message": "MSP"
     },
