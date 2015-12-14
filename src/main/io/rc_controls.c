@@ -216,9 +216,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
 #endif
 
-        if (!sensors(SENSOR_MAG))
-            heading = 0; // reset heading to zero after gyro calibration
-
         return;
     }
 

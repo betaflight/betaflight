@@ -50,7 +50,6 @@ extern uint16_t cycleTime;
 extern uint8_t motorCount;
 extern float dT;
 
-int16_t heading;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -143,10 +142,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             // calculate error and limit the angle to the max inclination
 #ifdef GPS
             errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
             errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
 
             if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -257,10 +256,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             // 50 degrees max inclination
 #ifdef GPS
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
-                +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis];
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
 
             errorAngleI[axis]  = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
@@ -394,10 +393,10 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
             // calculate error and limit the angle to max configured inclination
 #ifdef GPS
             errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #else
             errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - inclination.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
 
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
