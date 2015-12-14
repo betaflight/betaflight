@@ -98,6 +98,8 @@
     text-align: center;
     left: 0;
     right: 0;
+    width: 100%;
+    color: black;
 }
 
 .tab-dataflash .dataflash-used {
