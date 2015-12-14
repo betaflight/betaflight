@@ -54,26 +54,26 @@ TABS.dataflash.initialize = function (callback) {
     
     function update_html() {
         if (DATAFLASH.usedSize > 0) {
-            $(".tab-dataflash .dataflash-used").css({
+            $(".dataflash-used").css({
                 width: (DATAFLASH.usedSize / DATAFLASH.totalSize * 100) + "%",
                 display: 'block'
             });
             
-            $(".tab-dataflash .dataflash-used div").text('Used space ' + formatFilesize(DATAFLASH.usedSize));
+            $(".dataflash-used div").text('Used space ' + formatFilesize(DATAFLASH.usedSize));
         } else {
-            $(".tab-dataflash .dataflash-used").css({
+            $(".dataflash-used").css({
                 display: 'none'
             });
         }
 
         if (DATAFLASH.totalSize - DATAFLASH.usedSize > 0) {
-            $(".tab-dataflash .dataflash-free").css({
+            $(".dataflash-free").css({
                 width: ((DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
                 display: 'block'
             });
-            $(".tab-dataflash .dataflash-free div").text('Free space ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+            $(".dataflash-free div").text('Free space ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
         } else {
-            $(".tab-dataflash .dataflash-free").css({
+            $(".dataflash-free").css({
                 display: 'none'
             });
         }

@@ -18,8 +18,13 @@
         }
     },
 
-    "permissions": [
+    "sandbox": {
+    "pages": ["tabs/map.html"]
+    },
+         
+        "permissions": [
         "https://www.google-analytics.com/",
+        "https://maps.googleapis.com/*",    
         "https://*.github.com/",
         "https://*.githubusercontent.com/",
         "http://*.baseflight.net/",
