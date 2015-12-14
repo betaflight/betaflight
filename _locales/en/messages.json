@@ -1270,7 +1270,7 @@
         "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
     },
     "failsafeFeaturesHelpOld": {
-        "message": "Failsafe configuration has changed considerably. You should use a version above <strong>v1.11.0-RC1</strong> to enable the improved configuration panel."
+        "message": "Failsafe configuration has changed considerably. Use Cleanflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
     },
     "failsafePaneTitleOld": {
         "message": "Receiver failsafe"
