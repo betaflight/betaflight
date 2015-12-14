@@ -208,9 +208,9 @@ static void ltm_sframe(void)
 static void ltm_aframe()
 {
     ltm_initialise_packet('A');
-    ltm_serialise_16(inclination.values.pitchDeciDegrees / 10);
-    ltm_serialise_16(inclination.values.rollDeciDegrees / 10);
-    ltm_serialise_16(heading);
+    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.pitch));
+    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.roll));
+    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     ltm_finalise();
 }
 
@@ -290,7 +290,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = determineNewTelemetryEnabledState(ltmPortSharing);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
     if (newTelemetryEnabledValue == ltmEnabled)
         return;
     if (newTelemetryEnabledValue)
