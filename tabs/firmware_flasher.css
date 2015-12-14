@@ -17,16 +17,6 @@
     /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
 }
 
-.red {
-    background-color: #dc0000;
-    background-image: linear-gradient(-45deg, rgba(255, 255, 255, .3) 10%, transparent 10%, transparent 20%,
-        rgba(255, 255, 255, .3) 20%, rgba(255, 255, 255, .3) 30%, transparent 30%, transparent 40%,
-        rgba(255, 255, 255, .3) 40%, rgba(255, 255, 255, .3) 50%, transparent 50%, transparent 60%,
-        rgba(255, 255, 255, .3) 60%, rgba(255, 255, 255, .3) 70%, transparent 70%, transparent 80%,
-        rgba(255, 255, 255, .3) 80%, rgba(255, 255, 255, .3) 90%, transparent 90%, transparent 100%,
-        rgba(255, 255, 255, .4) 100%, transparent);
-}
-
 .darkgrey {
     background-color: #575757;
 }
@@ -88,6 +78,12 @@
 .tab-firmware_flasher .info .progress.invalid::-webkit-progress-value {
     background-color: #A62E32;
     border-radius: 4px;
+}
+
+.tab-firmware_flasher ul li {
+    list-style: initial;
+    list-style-type: circle;
+    margin-left: 30px;
 }
 
 .tab-firmware_flasher .options {

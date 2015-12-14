@@ -1086,25 +1086,25 @@
         "message": "Available online firmware releases - Select the correct firmware appropriate for your board."
     },
     "firmwareFlasherNoRebootDescription": {
-        "message": "Enable if you are flashing board with bootloader pins shorted"
+        "message": "Enable if you powered your FC while the bootloader pins are jumpered or have your FC's BOOT button pressed."
     },
     "firmwareFlasherFlashOnConnect": {
         "message": "Flash on connect"
     },
     "firmwareFlasherFlashOnConnectDescription": {
-        "message": "Attempt to flash the board automatically (triggered by newly detected serial port)"
+        "message": "Attempt to flash the board automatically (triggered by newly detected serial port)."
     },
     "firmwareFlasherFullChipErase": {
         "message": "Full chip erase"
     },
     "firmwareFlasherFullChipEraseDescription": {
-        "message": "Wipes all configuration data currently stored on the board"
+        "message": "Wipes all configuration data currently stored on the board."
     },
     "firmwareFlasherFlashDevelopmentFirmware": {
         "message": "Use Development Firmware"
     },
     "firmwareFlasherFlashDevelopmentFirmwareDescription": {
-        "message": "Flash most recent (untested) development firmware"
+        "message": "Flash most recent (untested) development firmware."
     },
     "firmwareFlasherManualBaud": {
         "message": "Manual baud rate"
@@ -1116,7 +1116,7 @@
       "message": "Show unstable releases"
     },
     "firmwareFlasherShowDevelopmentReleasesDescription":{
-      "message": "Show Release-Candidates and Development Releases"
+      "message": "Show Release-Candidates and Development Releases."
     },
     "firmwareFlasherOptionLabelSelectFirmware": {
         "message": "Choose a Firmware / Board"
@@ -1148,11 +1148,17 @@
     "firmwareFlasherMessage": {
         "message": "Message:"
     },
-    "firmwareFlasherWarninghead": {
+    "firmwareFlasherWarningHead": {
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC.<br /><br /><strong>Note: </strong>If you have lost comminication with your board then power off the board, jumper the bootloader pins, power on, enable 'No reboot sequence', enable 'Full chip erase', re-flash, then power off, remove bootloader jumper, power on and connect."
+        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC first, try rebooting, upgrade chrome, upgrade drivers.<br />"
+    },
+    "firmwareFlasherRecoveryHead": {
+        "message": "<strong>Recovery / Lost communication<strong>"
+    },
+    "firmwareFlasherRecoveryText": {
+        "message": "If you have lost comminication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"

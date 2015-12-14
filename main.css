@@ -1041,6 +1041,35 @@ dialog {
     font-family: 'open_sansregular', Arial;
 }
 
+.gui_warning {
+    background: #ffdddd;
+}
+
+.gui_note {
+    background: #ffffdd;
+}
+
+.gui_warning .gui_box_titlebar {
+    background-color: #dc0000;
+    background-image: linear-gradient(-45deg, rgba(255, 255, 255, .3) 10%, transparent 10%, transparent 20%,
+        rgba(255, 255, 255, .3) 20%, rgba(255, 255, 255, .3) 30%, transparent 30%, transparent 40%,
+        rgba(255, 255, 255, .3) 40%, rgba(255, 255, 255, .3) 50%, transparent 50%, transparent 60%,
+        rgba(255, 255, 255, .3) 60%, rgba(255, 255, 255, .3) 70%, transparent 70%, transparent 80%,
+        rgba(255, 255, 255, .3) 80%, rgba(255, 255, 255, .3) 90%, transparent 90%, transparent 100%,
+        rgba(255, 255, 255, .4) 100%, transparent);
+}
+
+.gui_note .gui_box_titlebar {
+    background-color: #cccc00;
+    background-image: linear-gradient(-45deg, rgba(255, 255, 255, .3) 10%, transparent 10%, transparent 20%,
+        rgba(255, 255, 255, .3) 20%, rgba(255, 255, 255, .3) 30%, transparent 30%, transparent 40%,
+        rgba(255, 255, 255, .3) 40%, rgba(255, 255, 255, .3) 50%, transparent 50%, transparent 60%,
+        rgba(255, 255, 255, .3) 60%, rgba(255, 255, 255, .3) 70%, transparent 70%, transparent 80%,
+        rgba(255, 255, 255, .3) 80%, rgba(255, 255, 255, .3) 90%, transparent 90%, transparent 100%,
+        rgba(255, 255, 255, .4) 100%, transparent);
+}
+
+
 .grey {
     /* background-color:#f5f5f5; */
     background-color: #f9f9f9
