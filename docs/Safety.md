@@ -13,7 +13,7 @@ You are highly advised to use the Receiver tab in the CleanFlight Configurator, 
 values are centered at 1500 (1520 for Futaba RC) with minimum & maximums of 1000 and 2000 (respectively) 
 are reached when controls are operated.  Failure to configure these ranges properly can create
 problems, such as inability to arm (because you can't reach the endpoints) or immediate activation of
-[failsafe](failsafe.md).
+[failsafe](Failsafe.md).
 
 You may have to adjust your channel endpoints and trims/sub-trims on your RC transmitter to achieve the 
 expected range of 1000 to 2000.
