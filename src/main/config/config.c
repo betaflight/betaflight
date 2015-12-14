@@ -548,7 +548,7 @@ static void resetConf(void)
     masterConfig.blackbox_device = 0;
 #endif
     masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
+    masterConfig.blackbox_rate_denom = 2;
 #endif
 
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
