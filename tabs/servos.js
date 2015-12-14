@@ -78,7 +78,7 @@ TABS.servos.initialize = function (callback) {
                     <td class="middle"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].middle + '" /></td>\
                     <td class="min"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].min +'" /></td>\
                     <td class="max"><input type="number" min="500" max="2500" value="' + SERVO_CONFIG[obj].max +'" /></td>\
-                    <td class="angleAtMin"><input type="number" min="-90" max="0" value="' + SERVO_CONFIG[obj].angleAtMin +'" /></td>\
+                    <td class="angleAtMin"><input type="number" min="-90" max="0" value="' + (-SERVO_CONFIG[obj].angleAtMin) +'" /></td>\
                     <td class="angleAtMax"><input type="number" min="0" max="90" value="' + SERVO_CONFIG[obj].angleAtMax +'" /></td>\
                     ' + servoCheckbox + '\
                     <td class="direction">\
@@ -133,7 +133,7 @@ TABS.servos.initialize = function (callback) {
                 SERVO_CONFIG[info.obj].middle = parseInt($('.middle input', this).val());
                 SERVO_CONFIG[info.obj].min = parseInt($('.min input', this).val());
                 SERVO_CONFIG[info.obj].max = parseInt($('.max input', this).val());
-                SERVO_CONFIG[info.obj].angleAtMin = parseInt($('.angleAtMin input', this).val());
+                SERVO_CONFIG[info.obj].angleAtMin = -parseInt($('.angleAtMin input', this).val());
                 SERVO_CONFIG[info.obj].angleAtMax = parseInt($('.angleAtMax input', this).val());
 
                 var val = parseInt($('.direction select', this).val());
