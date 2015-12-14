@@ -432,7 +432,7 @@ static void sendFuelLevel(void)
 static void sendHeading(void)
 {
     sendDataHead(ID_COURSE_BP);
-    serialize16(heading);
+    serialize16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     sendDataHead(ID_COURSE_AP);
     serialize16(0);
 }

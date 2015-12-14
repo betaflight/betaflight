@@ -72,9 +72,6 @@ typedef struct pidProfile_s {
 #endif
 } pidProfile_t;
 
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10.0f)
-
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
