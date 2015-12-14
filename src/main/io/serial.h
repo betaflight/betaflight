@@ -29,12 +29,10 @@ typedef enum {
     FUNCTION_GPS                 = (1 << 1), // 2
     FUNCTION_TELEMETRY_FRSKY     = (1 << 2), // 4
     FUNCTION_TELEMETRY_HOTT      = (1 << 3), // 8
-    FUNCTION_TELEMETRY_MSP       = (1 << 4), // 16 - Note: Unused since Cleanflight 1.12.0, likely use this bitmask for flag for LTM in the future.
+    FUNCTION_TELEMETRY_LTM       = (1 << 4), // 16
     FUNCTION_TELEMETRY_SMARTPORT = (1 << 5), // 32
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
-    FUNCTION_TELEMETRY_LTM       = (1 << 8)  // 256
-
 } serialPortFunction_e;
 
 typedef enum {
