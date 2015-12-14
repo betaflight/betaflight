@@ -425,9 +425,6 @@
     "configurationReceiver": {
         "message": "Receiver Mode"
     },
-    "configurationFailsafe": {
-        "message": "Receiver failsafe"
-    },
     "configurationRSSI": {
         "message": "RSSI (Signal Strength)"
     },
@@ -480,9 +477,6 @@
     },
     "configurationThrottleMaximum": {
         "message": "Maximum Throttle"
-    },
-    "configurationThrottleFailsafe": {
-        "message": "Failsafe Throttle"
     },
     "configurationThrottleMinimumCommand": {
         "message": "Minimum Command"
@@ -1274,5 +1268,83 @@
     },
     "configHelp1": {
         "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
+    },
+    "failsafeFeaturesHelpOld": {
+        "message": "Failsafe configuration has changed considerably. You should use a version above <strong>v1.11.0-RC1</strong> to enable the improved configuration panel."
+    },
+    "failsafePaneTitleOld": {
+        "message": "Receiver failsafe"
+    },
+    "failsafeFeatureItemOld": {
+        "message": "Failsafe settings on RX signal loss"
+    },
+    "failsafeThrottleItemOld": {
+        "message": "Failsafe Throttle"
+    },
+    "failsafeFeaturesHelpNew": {
+        "message": "Failsafe has two stages. <strong>Stage 1</strong> is entered when a flightchannel has an invalid pulse length, the receiver reports failsafe mode or there is no signal from the receiver at all, the channel fallback settings are applied to <span style=\"color: red\">all channels</span> and a short amount of time is provided to allow for recovery. <strong>Stage 2</strong> is entered when the error condition takes longer then the configured guard time while the craft is <span style=\"color: red\">armed</span>, all channels will remain at the applied channel fallback setting unless overruled by the chosen procedure. <br /><strong>Note:</strong> Prior to entering stage 1, channel fallback settings are also applied to individual AUX channels that have invalid pulses."
+    },
+    "failsafePulsrangeTitle": {
+        "message": "Valid Pulse Range Settings"
+    },
+    "failsafePulsrangeHelp": {
+        "message": "Pulses shorter then minimum or longer then maximum are invalid and will trigger application of individual channel fallback settings for AUX channels or entering stage 1 for flightchannels"
+    },
+    "failsafeRxMinUsecItem": {
+       "message": "Minimum length"
+    },
+    "failsafeRxMaxUsecItem": {
+       "message": "Maximum length"
+    },
+    "failsafeChannelFallbackSettingsTitle": {
+       "message": "Channel Fallback Settings"
+    },
+    "failsafeChannelFallbackSettingsHelp": {
+       "message": "These settings are applied to invalid individual AUX channels or to all channels when entering stage 1. <strong>Note:</strong> values are saved in steps of 25usec, so small changes disappear"
+    },
+    "failsafeStageTwoSettingsTitle": {
+       "message": "Stage 2 - Settings"
+    },
+    "failsafeFeatureItem": {
+       "message": "Failsafe Stage 2 enabled"
+    },
+    "failsafeFeatureHelp": {
+       "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
+    },
+    "failsafeDelayItem": {
+       "message": "Guard time for stage 2 activation after signal lost [1 = 0.1 sec.]"
+    },
+    "failsafeDelayHelp": {
+       "message": "Time for stage 1 to wait for recovery"
+    },
+    "failsafeThrottleLowItem": {
+       "message": "Failsafe Throttle Low Delay [1 = 0.1 sec.]"
+    },
+    "failsafeThrottleLowHelp": {
+       "message": "Just disarm the craft instead of executing the selected failsafe procedure when the throttle was low for this amount of time"
+    },
+    "failsafeThrottleItem": {
+        "message": "Throttle value used while landing"
+    },
+    "failsafeOffDelayItem": {
+       "message": "Delay for turning off the Motors during Failsafe [1 = 0.1 sec.]"
+    },
+    "failsafeOffDelayHelp": {
+       "message": "Time to stay in landing mode untill the motors are turned off and the craft is disarmed"
+    },
+    "failsafeSubTitle1": {
+       "message": "Stage 2 - Failsafe Procedure"
+    },
+    "failsafeProcedureItemSelect1": {
+       "message": "Land"
+    },
+    "failsafeProcedureItemSelect2": {
+       "message": "Drop"
+    },
+    "failsafeKillSwitchItem": {
+       "message": "Failsafe Kill Switch (setup Failsafe in Modes Tab)"
+    },
+    "failsafeKillSwitchHelp": {
+       "message": "Set this option to make the failsafe switch, configured in the modes tab, act as a direct kill switch, bypassing the selected failsafe procedure. <strong>Note:</strong> Arming is blocked with the failsafe kill switch in the ON position"
     }
 }
