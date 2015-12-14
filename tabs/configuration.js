@@ -267,6 +267,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'XBUS_MODE_B_RJ01'
         ];
 
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            serialRXtypes.push('IBUS');
+        }
+
         var serialRX_e = $('select.serialRX');
         for (var i = 0; i < serialRXtypes.length; i++) {
             serialRX_e.append('<option value="' + i + '">' + serialRXtypes[i] + '</option>');
