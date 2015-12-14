@@ -129,6 +129,7 @@ static void ltm_finalise(void)
  */
 static void ltm_gframe(void)
 {
+#if defined (GPS)
     uint8_t gps_fix_type = 0;
     int32_t ltm_alt;
 
@@ -155,6 +156,7 @@ static void ltm_gframe(void)
     ltm_serialise_32(ltm_alt);
     ltm_serialise_8((GPS_numSat << 2) | gps_fix_type);
     ltm_finalise();
+#endif
 }
 
 /*
