@@ -262,12 +262,15 @@
 .tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
     min-height: 355px;
     float: left;
-    margin-bottom: 0px;
+    margin-bottom: 10px;
 }
 
 .tab-configuration .current .gui_box {
-    min-height: 230px;
     float: left;
+}
+
+.tab-configuration .rxprovider {
+    min-height: 214px;
 }
 
 .tab-configuration .current td:nth-child(2) {
@@ -359,7 +362,6 @@
         float: left;
     }
     .tab-configuration .current .gui_box {
-        min-height: 230px;
         float: left;
     }
 }
