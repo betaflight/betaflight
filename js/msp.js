@@ -54,6 +54,7 @@ var MSP_codes = {
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
     MSP_RC_CONTROLS:        125,
+    MSP_SENSOR_ALIGNMENT:   126,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -72,6 +73,7 @@ var MSP_codes = {
     MSP_SET_3D:             217,
     MSP_SET_RC_CONTROLS:    218,
     MSP_SET_RESET_CURR_PID: 219,
+    MSP_SET_SENSOR_ALIGNMENT: 220,
     
     // MSP_BIND:               240,
     
@@ -524,6 +526,12 @@ var MSP = {
                 RC_controls.alt_hold_deadband = data.getUint8(offset++, 1);
                 RC_controls.alt_hold_fast_change = data.getUint8(offset++, 1);
                 break;
+            case MSP_codes.MSP_SENSOR_ALIGNMENT:
+                var offset = 0;
+                SENSOR_ALIGNMENT.align_gyro = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_acc = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_mag = data.getUint8(offset++, 1);
+                break;
             case MSP_codes.MSP_SET_RAW_RC:
                 break;
             case MSP_codes.MSP_SET_RAW_GPS:
@@ -863,6 +871,12 @@ var MSP = {
             case MSP_codes.MSP_SET_RESET_CURR_PID:
                 console.log('Current PID profile reset');
                 break;
+            case MSP_codes.MSP_SET_3D:
+                console.log('3D settings saved');
+                break;
+	    case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+                console.log('Sensor alignment saved');
+                break; 
                 
             default:
                 console.log('Unknown code detected: ' + code);
@@ -1174,6 +1188,12 @@ MSP.crunch = function (code) {
             buffer.push(RC_controls.alt_hold_deadband);
             buffer.push(RC_controls.alt_hold_fast_change);
             break;
+
+        case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+            buffer.push(SENSOR_ALIGNMENT.align_gyro);
+            buffer.push(SENSOR_ALIGNMENT.align_acc);
+            buffer.push(SENSOR_ALIGNMENT.align_mag);
+            break
 
         default:
             return false;

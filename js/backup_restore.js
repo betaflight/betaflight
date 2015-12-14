@@ -105,6 +105,9 @@ function configuration_backup(callback) {
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             uniqueData.push(MSP_codes.MSP_3D);
         }
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            uniqueData.push(MSP_codes.MSP_SENSOR_ALIGNMENT);
+        }
     }
     
     update_unique_data_list();
@@ -131,6 +134,9 @@ function configuration_backup(callback) {
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                     configuration._3D = jQuery.extend(true, {}, _3D);
+                }
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    configuration.SENSOR_ALIGNMENT = jQuery.extend(true, {}, SENSOR_ALIGNMENT);
                 }
 
                 save();
@@ -513,8 +519,9 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+        
         if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
-            // api 1.14 exposes deadband and yaw_deadband
+            // api 1.15 exposes RCcontrols and sensor alignment
 
             
             for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
@@ -526,6 +533,13 @@ function configuration_restore(callback) {
                     alt_hold_fast_change:    1
                     };                
                 }
+            }
+            if (configuration.SENSOR_ALIGNMENT == undefined) {
+                    configuration.SENSOR_ALIGNMENT = {
+                    align_gyro:              0,
+                    align_acc:               0,
+                    align_mag:               0
+                    };                
             }
             appliedMigrationsCount++;
         }
@@ -645,6 +659,9 @@ function configuration_restore(callback) {
                     if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                         uniqueData.push(MSP_codes.MSP_SET_3D);
                     }
+                    if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                        uniqueData.push(MSP_codes.MSP_SET_SENSOR_ALIGNMENT);
+                    }
                 }
                 
                 function load_objects() {
@@ -656,6 +673,7 @@ function configuration_restore(callback) {
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
+		    SENSOR_ALIGNMENT = configuration.SENSOR_ALIGNMENT;
                 }
 
                 function send_unique_data_item() {
