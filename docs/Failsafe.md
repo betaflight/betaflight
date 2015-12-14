@@ -33,7 +33,7 @@ __Stage 2__ will be aborted when it was due to:
 * a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_kill_switch` is set to OFF).
 
 Note that:
-* At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked untill the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when one is in use).
+* At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
 
 * When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
 
