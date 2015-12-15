@@ -1,4 +1,6 @@
 /*
+ * ltm.h
+ *
  * This file is part of Cleanflight.
  *
  * Cleanflight is free software: you can redistribute it and/or modify
@@ -15,21 +17,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * telemetry_MSP.h
- *
- *  Created on: 22 Apr 2014
- *      Author: trey marc
- */
+#ifndef TELEMETRY_LTM_H_
+#define TELEMETRY_LTM_H_
 
-#ifndef TELEMETRY_MSP_H_
-#define TELEMETRY_MSP_H_
+void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig);
+void handleLtmTelemetry(void);
+void checkLtmTelemetryState(void);
 
-void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig);
-void handleMSPTelemetry(void);
-void checkMSPTelemetryState(void);
+void freeLtmTelemetryPort(void);
+void configureLtmTelemetryPort(void);
 
-void freeMSPTelemetryPort(void);
-void configureMSPTelemetryPort(void);
-
-#endif /* TELEMETRY_MSP_H_ */
+#endif /* TELEMETRY_LTM_H_ */

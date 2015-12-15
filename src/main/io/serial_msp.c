@@ -134,7 +134,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   14 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   15 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -388,14 +388,8 @@ typedef enum {
     COMMAND_RECEIVED
 } mspState_e;
 
-typedef enum {
-    UNUSED_PORT = 0,
-    FOR_GENERAL_MSP,
-    FOR_TELEMETRY
-} mspPortUsage_e;
-
 typedef struct mspPort_s {
-    serialPort_t *port;
+    serialPort_t *port; // null when port unused.
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
@@ -403,7 +397,6 @@ typedef struct mspPort_s {
     uint8_t inBuf[INBUF_SIZE];
     mspState_e c_state;
     uint8_t cmdMSP;
-    mspPortUsage_e mspPortUsage;
 } mspPort_t;
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
@@ -584,12 +577,11 @@ static void serializeDataflashReadReply(uint32_t address, uint8_t size)
 }
 #endif
 
-static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, mspPortUsage_e usage)
+static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
 {
     memset(mspPortToReset, 0, sizeof(mspPort_t));
 
     mspPortToReset->port = serialPort;
-    mspPortToReset->mspPortUsage = usage;
 }
 
 void mspAllocateSerialPorts(serialConfig_t *serialConfig)
@@ -604,14 +596,14 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
 
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
-        if (mspPort->mspPortUsage != UNUSED_PORT) {
+        if (mspPort->port) {
             portIndex++;
             continue;
         }
 
         serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
-            resetMspPort(mspPort, serialPort, FOR_GENERAL_MSP);
+            resetMspPort(mspPort, serialPort);
             portIndex++;
         }
 
@@ -1176,10 +1168,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_FAILSAFE_CONFIG:
-        headSerialReply(4);
+        headSerialReply(8);
         serialize8(masterConfig.failsafeConfig.failsafe_delay);
         serialize8(masterConfig.failsafeConfig.failsafe_off_delay);
         serialize16(masterConfig.failsafeConfig.failsafe_throttle);
+        serialize8(masterConfig.failsafeConfig.failsafe_kill_switch);
+        serialize16(masterConfig.failsafeConfig.failsafe_throttle_low_delay);
+        serialize8(masterConfig.failsafeConfig.failsafe_procedure);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -1632,6 +1627,9 @@ static bool processInCommand(void)
         masterConfig.failsafeConfig.failsafe_delay = read8();
         masterConfig.failsafeConfig.failsafe_off_delay = read8();
         masterConfig.failsafeConfig.failsafe_throttle = read16();
+        masterConfig.failsafeConfig.failsafe_kill_switch = read8();
+        masterConfig.failsafeConfig.failsafe_throttle_low_delay = read16();
+        masterConfig.failsafeConfig.failsafe_procedure = read8();
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
@@ -1886,7 +1884,7 @@ void mspProcess(void)
 
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         candidatePort = &mspPorts[portIndex];
-        if (candidatePort->mspPortUsage != FOR_GENERAL_MSP) {
+        if (!candidatePort->port) {
             continue;
         }
 
@@ -1913,74 +1911,5 @@ void mspProcess(void)
             handleOneshotFeatureChangeOnRestart();
             systemReset();
         }
-    }
-}
-
-static const uint8_t mspTelemetryCommandSequence[] = {
-    MSP_BOXNAMES,   // repeat boxnames, in case the first transmission was lost or never received.
-    MSP_STATUS,
-    MSP_IDENT,
-    MSP_RAW_IMU,
-    MSP_ALTITUDE,
-    MSP_RAW_GPS,
-    MSP_RC,
-    MSP_MOTOR_PINS,
-    MSP_ATTITUDE,
-    MSP_SERVO
-};
-
-#define TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
-
-static mspPort_t *mspTelemetryPort = NULL;
-
-void mspSetTelemetryPort(serialPort_t *serialPort)
-{
-    uint8_t portIndex;
-    mspPort_t *candidatePort = NULL;
-    mspPort_t *matchedPort = NULL;
-
-    // find existing telemetry port
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        candidatePort = &mspPorts[portIndex];
-        if (candidatePort->mspPortUsage == FOR_TELEMETRY) {
-            matchedPort = candidatePort;
-            break;
-        }
-    }
-
-    if (!matchedPort) {
-        // find unused port
-        for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-            candidatePort = &mspPorts[portIndex];
-            if (candidatePort->mspPortUsage == UNUSED_PORT) {
-                matchedPort = candidatePort;
-                break;
-            }
-        }
-    }
-    mspTelemetryPort = matchedPort;
-    if (!mspTelemetryPort) {
-        return;
-    }
-
-    resetMspPort(mspTelemetryPort, serialPort, FOR_TELEMETRY);
-}
-
-void sendMspTelemetry(void)
-{
-    static uint32_t sequenceIndex = 0;
-
-    if (!mspTelemetryPort) {
-        return;
-    }
-
-    setCurrentPort(mspTelemetryPort);
-
-    processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
-    tailSerialReply();
-
-    sequenceIndex++;
-    if (sequenceIndex >= TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT) {
-        sequenceIndex = 0;
     }
 }

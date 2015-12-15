@@ -100,7 +100,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 VPATH := $(VPATH):$(USBFS_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
-		   $(USBPERIPH_SRC) 
+		   $(USBPERIPH_SRC)
 
 endif
 
@@ -182,7 +182,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 VPATH := $(VPATH):$(USBFS_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
-		   $(USBPERIPH_SRC) 
+		   $(USBPERIPH_SRC)
 
 endif
 
@@ -251,6 +251,7 @@ COMMON_SRC = build_config.c \
 		   rx/sumh.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
+		   rx/ibus.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -271,8 +272,8 @@ HIGHEND_SRC = \
 		   telemetry/telemetry.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
-		   telemetry/msp.c \
 		   telemetry/smartport.c \
+		   telemetry/ltm.c \
 		   sensors/sonar.c \
 		   sensors/barometer.c \
 		   blackbox/blackbox.c \
@@ -680,7 +681,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
-	$(SIZE) $(TARGET_ELF) 
+	$(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
