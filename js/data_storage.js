@@ -1,7 +1,7 @@
 'use strict';
 
 var CONFIGURATOR = {
-    'releaseDate': 1447275720339, // new Date().getTime() - Wed Nov 11 2015 21:02:18 GMT+0000 (GMT)
+    'releaseDate': 1448724175378, // new Date().getTime() - Sat Nov 28 2015 15:22:51 GMT+0000 (GMT Standard Time)
     
      // all versions are specified and compared using semantic versioning http://semver.org/
     'apiVersionAccepted': '1.2.0',
@@ -194,3 +194,24 @@ var BLACKBOX = {
     blackboxRateNum: 1,
     blackboxRateDenom: 1
 };
+
+var RX_CONFIG = {
+    serialrx_provider:      0,
+    maxcheck:               0,
+    midrc:                  0,
+    mincheck:               0,
+    spektrum_sat_bind:      0,
+    rx_min_usec:            0,
+    rx_max_usec:            0
+};
+
+var FAILSAFE_CONFIG = {
+    failsafe_delay:                 0,
+    failsafe_off_delay:             0,
+    failsafe_throttle:              0,
+    failsafe_kill_switch:           0,
+    failsafe_throttle_low_delay:    0,
+    failsafe_procedure:             0
+};
+
+var RXFAIL_CONFIG = [];

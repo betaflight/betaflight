@@ -129,6 +129,15 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             );
         }
 
+        function isFeatureEnabled(featureName) {
+            for (var i = 0; i < features.length; i++) {
+                if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         var radioGroups = [];
         
         var features_e = $('.features');
@@ -267,6 +276,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'XBUS_MODE_B_RJ01'
         ];
 
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            serialRXtypes.push('IBUS');
+        }
+
         var serialRX_e = $('select.serialRX');
         for (var i = 0; i < serialRXtypes.length; i++) {
             serialRX_e.append('<option value="' + i + '">' + serialRXtypes[i] + '</option>');
@@ -318,7 +331,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
-        $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
         $('input[name="mincommand"]').val(MISC.mincommand);
 
         // fill battery
@@ -405,7 +417,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
-            MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());
 
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val());
@@ -421,6 +432,18 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             _3D.deadband3d_high = parseInt($('input[name="3ddeadbandhigh"]').val());
             _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
             _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
+
+            // track feature usage
+            if (isFeatureEnabled('RX_SERIAL')) {
+                googleAnalytics.sendEvent('Setting', 'SerialRxProvider', serialRXtypes[BF_CONFIG.serialrx_type]);
+            }
+            
+            for (var i = 0; i < features.length; i++) {
+                var featureName = features[i].name;
+                if (isFeatureEnabled(featureName)) {
+                    googleAnalytics.sendEvent('Setting', 'Feature', featureName);
+                }
+            }
 
             function save_serial_config() {
                 if (semver.lt(CONFIG.apiVersion, "1.6.0")) {

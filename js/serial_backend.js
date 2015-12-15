@@ -250,13 +250,21 @@ function onConnect() {
     $('div#connectbutton a.connect_state').text(chrome.i18n.getMessage('disconnect')).addClass('active');
     $('div#connectbutton a.connect').addClass('active');
     $('#tabs ul.mode-disconnected').hide();
-    $('#tabs ul.mode-connected').show();
-
+    $('#tabs ul.mode-connected').show(); 
+     
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false);      
+    
+    MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+    
     var sensor_state = $('#sensor-status');
     sensor_state.show(); 
-   	
+    
     var port_picker = $('#portsinput');
     port_picker.hide(); 
+
+    var dataflash = $('#dataflash_wrapper_global');
+    dataflash.show();    
+    
 }
 
 function onClosed(result) {
@@ -269,12 +277,15 @@ function onClosed(result) {
     $('#tabs ul.mode-connected').hide();
     $('#tabs ul.mode-disconnected').show();
 
-    var port_picker = $('#portsinput');
-    port_picker.show(); 
-
     var sensor_state = $('#sensor-status');
     sensor_state.hide();
-   
+    
+    var port_picker = $('#portsinput');
+    port_picker.show(); 
+    
+    var dataflash = $('#dataflash_wrapper_global');
+    dataflash.hide();
+
 }
 
 function read_serial(info) {
@@ -374,7 +385,34 @@ function highByte(num) {
 
 function lowByte(num) {
     return 0x00FF & num;
-}
+}function update_dataflash_global() {
+        var supportsDataflash = DATAFLASH.totalSize > 0;
+        if (supportsDataflash){
+
+             $(".noflash_global").css({
+                 display: 'none'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'block'
+             }); 
+	     
+             $(".dataflash-free_global").css({
+                 width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+                 display: 'block'
+             });
+             $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+        } else {
+             $(".noflash_global").css({
+                 display: 'block'
+             }); 
+
+             $(".dataflash-contents_global").css({
+                 display: 'none'
+             }); 
+        }      
+        
+    }
 
 function specificByte(num, pos) {
     return 0x000000FF & (num >> (8 * pos));
@@ -392,3 +430,45 @@ function bit_clear(num, bit) {
     return num & ~(1 << bit);
 }
 
+function update_dataflash_global() {
+    function formatFilesize(bytes) {
+        if (bytes < 1024) {
+            return bytes + "B";
+        }
+        var kilobytes = bytes / 1024;
+        
+        if (kilobytes < 1024) {
+            return Math.round(kilobytes) + "kB";
+        }
+        
+        var megabytes = kilobytes / 1024;
+        
+        return megabytes.toFixed(1) + "MB";
+    }
+  
+    var supportsDataflash = DATAFLASH.totalSize > 0;
+
+    if (supportsDataflash){
+        $(".noflash_global").css({
+           display: 'none'
+        }); 
+
+        $(".dataflash-contents_global").css({
+           display: 'block'
+        }); 
+	     
+        $(".dataflash-free_global").css({
+           width: (100-(DATAFLASH.totalSize - DATAFLASH.usedSize) / DATAFLASH.totalSize * 100) + "%",
+           display: 'block'
+        });
+        $(".dataflash-free_global div").text('Dataflash: free ' + formatFilesize(DATAFLASH.totalSize - DATAFLASH.usedSize));
+     } else {
+        $(".noflash_global").css({
+           display: 'block'
+        }); 
+
+        $(".dataflash-contents_global").css({
+           display: 'none'
+        }); 
+     }      
+}

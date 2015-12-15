@@ -13,6 +13,8 @@ var MSP_codes = {
     MSP_SET_CHANNEL_FORWARDING: 33,
     MSP_MODE_RANGES:            34,
     MSP_SET_MODE_RANGE:         35,
+    MSP_RX_CONFIG:              44,
+    MSP_SET_RX_CONFIG:          45,
     MSP_LED_STRIP_CONFIG:       48,
     MSP_SET_LED_STRIP_CONFIG:   49,
     MSP_ADJUSTMENT_RANGES:      52,
@@ -29,7 +31,10 @@ var MSP_codes = {
     MSP_DATAFLASH_ERASE:        72,
     MSP_LOOP_TIME:              73,
     MSP_SET_LOOP_TIME:          74,
-    
+    MSP_FAILSAFE_CONFIG:        75,
+    MSP_SET_FAILSAFE_CONFIG:    76,
+    MSP_RXFAIL_CONFIG:          77,
+    MSP_SET_RXFAIL_CONFIG:      78,
     MSP_SDCARD_SUMMARY:         79,
     MSP_BLACKBOX_CONFIG:        80,
     MSP_SET_BLACKBOX_CONFIG:    81,
@@ -231,6 +236,7 @@ var MSP = {
                 CONFIG.activeSensors = data.getUint16(4, 1);
                 CONFIG.mode = data.getUint32(6, 1);
                 CONFIG.profile = data.getUint8(10);
+                $('select[name="profilechange"]').val(CONFIG.profile);
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
@@ -759,6 +765,7 @@ var MSP = {
                     ADJUSTMENT_RANGES.push(adjustmentRange);
                 }
                 break;
+
             case MSP_codes.MSP_CHANNEL_FORWARDING:
                 for (var i = 0; i < data.byteLength && i < SERVO_CONFIG.length; i ++) {
                     var channelIndex = data.getUint8(i);
@@ -769,6 +776,56 @@ var MSP = {
                     }
                 }
                 break;
+
+            case MSP_codes.MSP_RX_CONFIG:
+                var offset = 0;
+                RX_CONFIG.serialrx_provider = data.getUint8(offset, 1);
+                offset++;
+                RX_CONFIG.maxcheck = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.midrc = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.mincheck = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.spektrum_sat_bind = data.getUint8(offset, 1);
+                offset++;
+                RX_CONFIG.rx_min_usec = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
+                offset += 2;
+                break;
+
+            case MSP_codes.MSP_FAILSAFE_CONFIG:
+                var offset = 0;
+                FAILSAFE_CONFIG.failsafe_delay = data.getUint8(offset, 1);
+                offset++;
+                FAILSAFE_CONFIG.failsafe_off_delay = data.getUint8(offset, 1);
+                offset++;
+                FAILSAFE_CONFIG.failsafe_throttle = data.getUint16(offset, 1);
+                offset += 2;
+                FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
+                offset++;
+                FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
+                offset += 2;
+                FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
+                offset++;
+                break;
+
+            case MSP_codes.MSP_RXFAIL_CONFIG:
+                RXFAIL_CONFIG = []; // empty the array as new data is coming in
+
+                var channelCount = data.byteLength / 3;
+
+                var offset = 0;
+                for (var i = 0; offset < data.byteLength && i < channelCount; i++, offset++) {
+                    var rxfailChannel = {
+                        mode:  data.getUint8(offset++, 1),
+                        value: data.getUint16(offset++, 1)
+                    };
+                    RXFAIL_CONFIG.push(rxfailChannel);
+                }
+                break;
+
 
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
@@ -830,6 +887,7 @@ var MSP = {
                     DATAFLASH.totalSize = 0;
                     DATAFLASH.usedSize = 0;
                 }
+                update_dataflash_global();
                 break;
             case MSP_codes.MSP_DATAFLASH_READ:
                 // No-op, let callback handle it
@@ -874,7 +932,15 @@ var MSP = {
             case MSP_codes.MSP_SET_ARMING_CONFIG:
                 console.log('Arming config saved');
                 break;
-                
+            case MSP_codes.MSP_SET_RX_CONFIG:
+                console.log('Rx config saved');
+                break;
+            case MSP_codes.MSP_SET_RXFAIL_CONFIG:
+                console.log('Rxfail config saved');
+                break;
+            case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
+                console.log('Failsafe config saved');
+                break;
             default:
                 console.log('Unknown code detected: ' + code);
         } else {
@@ -1116,6 +1182,41 @@ MSP.crunch = function (code) {
             buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
             buffer.push(Math.round(MISC.vbatwarningcellvoltage * 10));
             break;
+
+        case MSP_codes.MSP_SET_RX_CONFIG:
+            buffer.push(RX_CONFIG.serialrx_provider);
+            buffer.push(lowByte(RX_CONFIG.maxcheck));
+            buffer.push(highByte(RX_CONFIG.maxcheck));
+            buffer.push(lowByte(RX_CONFIG.midrc));
+            buffer.push(highByte(RX_CONFIG.midrc));
+            buffer.push(lowByte(RX_CONFIG.mincheck));
+            buffer.push(highByte(RX_CONFIG.mincheck));
+            buffer.push(RX_CONFIG.spektrum_sat_bind);
+            buffer.push(lowByte(RX_CONFIG.rx_min_usec));
+            buffer.push(highByte(RX_CONFIG.rx_min_usec));
+            buffer.push(lowByte(RX_CONFIG.rx_max_usec));
+            buffer.push(highByte(RX_CONFIG.rx_max_usec));
+            break;
+
+        case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
+            buffer.push(FAILSAFE_CONFIG.failsafe_delay);
+            buffer.push(FAILSAFE_CONFIG.failsafe_off_delay);
+            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
+            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
+            buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
+            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+            buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+            break;
+
+        case MSP_codes.MSP_SET_RXFAIL_CONFIG:
+            for (var i = 0; i < RXFAIL_CONFIG.length; i++) {
+                buffer.push(RXFAIL_CONFIG[i].mode);
+                buffer.push(lowByte(RXFAIL_CONFIG[i].value));
+                buffer.push(highByte(RXFAIL_CONFIG[i].value));
+            }
+            break;
+
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
                 var out = SERVO_CONFIG[i].indexOfChannelToForward;
