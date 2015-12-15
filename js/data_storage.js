@@ -191,3 +191,24 @@ var SENSOR_ALIGNMENT = {
     align_acc:              0,
     align_mag:              0
 };
+
+var RX_CONFIG = {
+    serialrx_provider:      0,
+    maxcheck:               0,
+    midrc:                  0,
+    mincheck:               0,
+    spektrum_sat_bind:      0,
+    rx_min_usec:            0,
+    rx_max_usec:            0
+};
+
+var FAILSAFE_CONFIG = {
+    failsafe_delay:                 0,
+    failsafe_off_delay:             0,
+    failsafe_throttle:              0,
+    failsafe_kill_switch:           0,
+    failsafe_throttle_low_delay:    0,
+    failsafe_procedure:             0
+};
+
+var RXFAIL_CONFIG = [];
