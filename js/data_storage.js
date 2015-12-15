@@ -186,6 +186,12 @@ var RC_controls = {
     alt_hold_fast_change:   0
 };
 
+var SENSOR_ALIGNMENT = {
+    align_gyro:             0,
+    align_acc:              0,
+    align_mag:              0
+};
+
 var RX_CONFIG = {
     serialrx_provider:      0,
     maxcheck:               0,
