@@ -772,4 +772,4 @@ function configuration_restore(callback) {
 
         upload();
     }
-}
+

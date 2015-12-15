@@ -179,14 +179,13 @@ var DATAFLASH = {
     usedSize: 0
 };
 
-<<<<<<< HEAD
 var RC_controls = {
     deadband:               0,
     yaw_deadband:           0,
     alt_hold_deadband:      0,
     alt_hold_fast_change:   0
 };
-=======
+
 var RX_CONFIG = {
     serialrx_provider:      0,
     maxcheck:               0,
@@ -207,4 +206,3 @@ var FAILSAFE_CONFIG = {
 };
 
 var RXFAIL_CONFIG = [];
->>>>>>> cleanflight/development
