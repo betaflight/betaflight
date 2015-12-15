@@ -225,8 +225,9 @@ function configuration_backup(callback) {
             });
         });
     }
-}
 
+}
+    
 function configuration_restore(callback) {
     var chosenFileEntry = null;
 
@@ -306,6 +307,7 @@ function configuration_restore(callback) {
         }
         return semver.gte(generated, required);
     }
+    
 
     function migrate(configuration) {
         var appliedMigrationsCount = 0;
@@ -531,8 +533,8 @@ function configuration_restore(callback) {
 
             
             for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
-                 if (configuration.profile[profileIndex].RCcontrols == undefined) {
-                    configuration.profile[profileIndex].RCcontrols = {
+                 if (configuration.profiles[profileIndex].RCcontrols == undefined) {
+                    configuration.profiles[profileIndex].RCcontrols = {
                     deadband:                0,
                     yaw_deadband:            0,
                     alt_hold_deadband:       40,
@@ -547,8 +549,6 @@ function configuration_restore(callback) {
                     align_mag:               0
                     };                
             }
-            appliedMigrationsCount++;
-        }
         
             // api 1.15 exposes RX_CONFIG, FAILSAFE_CONFIG and RXFAIL_CONFIG configuration
 
@@ -597,8 +597,7 @@ function configuration_restore(callback) {
 
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
-        }
-                
+        }        
         return true;
     }
     
@@ -783,4 +782,4 @@ function configuration_restore(callback) {
 
         upload();
     }
-
+}
