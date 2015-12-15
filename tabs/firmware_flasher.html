@@ -75,20 +75,33 @@
                     i18n_title="firmwareFlasherReleaseFileUrl" class="file" href="#" target="_blank"></a><br /> <strong
                     i18n="firmwareFlasherReleaseDate"></strong> <span class="date"></span><br /> <strong
                     i18n="firmwareFlasherReleaseStatus"></strong> <span class="status"></span><br /> <strong
-                    i18n="firmwareFlasherReleaseNotes"></strong> <br />
+                    i18n="firmwareFlasherReleaseNotes"></strong>
                 <div class=notes></div>
             </div>
         </div>
-        <div class="gui_box">
-            <div class="gui_box_titlebar red">
+        <div class="gui_box gui_warning">
+            <div class="gui_box_titlebar">
                 <div class="spacer_box_title" style="text-align: center; color: white;"
-                    i18n="firmwareFlasherWarninghead"></div>
+                    i18n="firmwareFlasherWarningHead">
+                </div>
             </div>
             <div class="spacer" style="margin-bottom: 10px;">
-                <p i18n="firmwareFlasherWarningText">
+                <p i18n="firmwareFlasherWarningText"></p>
+                <br />
                 <p i18n="firmwareFlasherTargetWarning"></p>
             </div>
         </div>
+        <div class="gui_box gui_note">
+            <div class="gui_box_titlebar">
+                <div class="spacer_box_title" style="text-align: center; color: white;"
+                    i18n="firmwareFlasherRecoveryHead">
+                </div>
+            </div>
+            <div class="spacer" style="margin-bottom: 10px;">
+                <p i18n="firmwareFlasherRecoveryText"></p>
+            </div>
+        </div>
+            
         <div class="info"><a name="progressbar"></a>
             <progress class="progress" value="0" min="0" max="100"></progress>
             <span class="progressLabel" i18n="firmwareFlasherLoadFirmwareFile"></span>

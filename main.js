@@ -133,7 +133,9 @@ $(document).ready(function () {
                     case 'led_strip':
                         TABS.led_strip.initialize(content_ready);
                         break;
-                                                
+                    case 'failsafe':
+                        TABS.failsafe.initialize(content_ready);
+                        break;
                     case 'setup':
                         TABS.setup.initialize(content_ready);
                         break;

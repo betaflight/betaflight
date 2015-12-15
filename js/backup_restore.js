@@ -105,6 +105,11 @@ function configuration_backup(callback) {
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             uniqueData.push(MSP_codes.MSP_3D);
         }
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            uniqueData.push(MSP_codes.MSP_RX_CONFIG);
+            uniqueData.push(MSP_codes.MSP_FAILSAFE_CONFIG);
+            uniqueData.push(MSP_codes.MSP_RXFAIL_CONFIG);
+        }
     }
     
     update_unique_data_list();
@@ -131,6 +136,11 @@ function configuration_backup(callback) {
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                     configuration._3D = jQuery.extend(true, {}, _3D);
+                }
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    configuration.RX_CONFIG = jQuery.extend(true, {}, RX_CONFIG);
+                    configuration.FAILSAFE_CONFIG = jQuery.extend(true, {}, FAILSAFE_CONFIG);
+                    configuration.RXFAIL_CONFIG = jQuery.extend(true, [], RXFAIL_CONFIG);
                 }
 
                 save();
@@ -514,8 +524,9 @@ function configuration_restore(callback) {
         }
         
         if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
-            // api 1.14 exposes deadband and yaw_deadband
 
+            // api 1.14 exposes deadband and yaw_deadband
+            
             
             for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
                  if (configuration.profile[profileIndex].RCcontrols == undefined) {
@@ -530,6 +541,51 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+            // api 1.15 exposes RX_CONFIG, FAILSAFE_CONFIG and RXFAIL_CONFIG configuration
+
+            if (configuration.RX_CONFIG == undefined) {
+                configuration.RX_CONFIG = {
+                    serialrx_provider:      0,
+                    spektrum_sat_bind:      0,
+                    midrc:                  1500,
+                    mincheck:               1100,
+                    maxcheck:               1900,
+                    rx_min_usec:            885,
+                    rx_max_usec:            2115
+                };
+            }
+
+            if (configuration.FAILSAFE_CONFIG == undefined) {
+                configuration.FAILSAFE_CONFIG = {
+                    failsafe_delay:                 10,
+                    failsafe_off_delay:             200,
+                    failsafe_throttle:              1000,
+                    failsafe_kill_switch:           0,
+                    failsafe_throttle_low_delay:    100,
+                    failsafe_procedure:             0
+                };
+            }
+
+            if (configuration.RXFAIL_CONFIG == undefined) {
+                configuration.RXFAIL_CONFIG = [
+                    {mode: 0, value: 1500},
+                    {mode: 0, value: 1500},
+                    {mode: 0, value: 1500},
+                    {mode: 0, value: 875}
+                ];
+
+                for (var i = 0; i < 14; i++) {
+                    var rxfailChannel = {
+                        mode:  1,
+                        value: 1500
+                    };
+                    configuration.RXFAIL_CONFIG.push(rxfailChannel);
+                }
+            }
+
+            appliedMigrationsCount++;
+        }
+
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }
@@ -645,6 +701,11 @@ function configuration_restore(callback) {
                     if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
                         uniqueData.push(MSP_codes.MSP_SET_3D);
                     }
+                    if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                        uniqueData.push(MSP_codes.MSP_SET_RX_CONFIG);
+                        uniqueData.push(MSP_codes.MSP_SET_FAILSAFE_CONFIG);
+                        uniqueData.push(MSP_codes.MSP_SET_RXFAIL_CONFIG);
+                    }
                 }
                 
                 function load_objects() {
@@ -656,6 +717,9 @@ function configuration_restore(callback) {
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
+                    RX_CONFIG = configuration.RX_CONFIG;
+                    FAILSAFE_CONFIG = configuration.FAILSAFE_CONFIG;
+                    RXFAIL_CONFIG = configuration.RXFAIL_CONFIG;
                 }
 
                 function send_unique_data_item() {

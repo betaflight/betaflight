@@ -267,6 +267,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'XBUS_MODE_B_RJ01'
         ];
 
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            serialRXtypes.push('IBUS');
+        }
+
         var serialRX_e = $('select.serialRX');
         for (var i = 0; i < serialRXtypes.length; i++) {
             serialRX_e.append('<option value="' + i + '">' + serialRXtypes[i] + '</option>');
@@ -318,7 +322,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
-        $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
         $('input[name="mincommand"]').val(MISC.mincommand);
 
         // fill battery
@@ -405,7 +408,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
-            MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());
 
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val());
