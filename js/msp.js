@@ -818,12 +818,14 @@ var MSP = {
                 offset++;
                 FAILSAFE_CONFIG.failsafe_throttle = data.getUint16(offset, 1);
                 offset += 2;
-                FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
-                offset++;
-                FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
-                offset += 2;
-                FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
-                offset++;
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
+                    offset++;
+                    FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
+                    offset += 2;
+                    FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
+                    offset++;
+                }
                 break;
 
             case MSP_codes.MSP_RXFAIL_CONFIG:
@@ -1206,9 +1208,11 @@ MSP.crunch = function (code) {
             buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
             buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
             buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
-            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-            buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+            if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+            }
             break;
 
         case MSP_codes.MSP_SET_RXFAIL_CONFIG:
