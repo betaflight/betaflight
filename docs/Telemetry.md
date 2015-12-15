@@ -10,7 +10,8 @@ Telemetry is enabled using the 'TELEMETRY` feature.
 feature TELEMETRY
 ```
 
-Multiple telemetry providers are currently supported, FrSky, Graupner HoTT V4, SmartPort (S.Port) and MultiWii Serial Protocol (MSP)
+Multiple telemetry providers are currently supported, FrSky, Graupner
+HoTT V4, SmartPort (S.Port) and LightTelemetry (LTM)
 
 All telemetry systems use serial ports, configure serial ports to use the telemetry system required.
 
@@ -62,7 +63,7 @@ Only Electric Air Modules and GPS Modules are emulated.
 Use the latest Graupner firmware for your transmitter and receiver.
 
 Older HoTT transmitters required the EAM and GPS modules to be enabled in the telemetry menu of the transmitter. (e.g. on MX-20)
- 
+
 Serial ports use two wires but HoTT uses a single wire so some electronics are required so that the signals don't get mixed up.  The TX and RX pins of
 a serial port should be connected using a diode and a single wire to the `T` port on a HoTT receiver.
 
@@ -83,11 +84,31 @@ As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC
 
 Note: The SoftSerial ports may not be 5V tolerant on your board.  Verify if you require a 5v/3.3v level shifters.
 
-## MultiWii Serial Protocol (MSP)
+## LightTelemetry (LTM)
 
-MSP Telemetry simply transmits MSP packets in sequence to any MSP device attached to the telemetry port.  It rotates though a fixes sequence of command responses.
+LTM is a lightweight streaming telemetry protocol supported by a
+number of OSDs, ground stations and antenna trackers.
 
-It is transmit only, it can work at any supported baud rate.
+The Cleanflight implementation of LTM implements the following frames:
+
+* G-FRAME: GPS information (lat, long, ground speed, altitude, sat
+  info)
+* A-FRAME: Attitude (pitch, roll, heading)
+* S-FRAME: Status (voltage, current+, RSSI, airspeed+, status). Item
+  suffixed '+' not implemented in Cleanflight.
+* O-FRAME: Origin (home position, lat, long, altitude, fix)
+
+In addition, in the inav (navigation-rewrite) fork:
+* N-FRAME: Navigation information (GPS mode, Nav mode, Nav action,
+  Waypoint number, Nav Error, Nav Flags).
+
+LTM is transmit only, and can work at any supported baud rate. It is
+designed to operate over 2400 baud (9600 in Cleanflight) and does not
+benefit from higher rates. It is thus usable on soft serial.
+
+More information about the fields, encoding and enumerations may be
+found at
+https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
 
 ## SmartPort (S.Port)
 
