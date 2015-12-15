@@ -25,7 +25,6 @@ extern int16_t sonarMaxAltWithTiltCm;
 
 void sonarUpdate(void);
 int32_t sonarRead(void);
-int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
-int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees);
+int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
 int32_t sonarGetLatestAltitude(void);
 
