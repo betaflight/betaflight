@@ -1477,6 +1477,9 @@ dialog {
     margin-top:2px;
 }
 
+.cf_tooltiptext {
+    display:none;
+}
 
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {

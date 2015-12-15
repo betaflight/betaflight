@@ -33,13 +33,6 @@
                 </div>
                 <div class="spacer_box">
                     <table cellpadding="0" cellspacing="0">
-                        <thead style="display: none;">
-                            <tr>
-                                <th i18n="configurationFeatureEnabled"></th>
-                                <th i18n="configurationFeatureDescription"></th>
-                                <th i18n="configurationFeatureName"></th>
-                            </tr>
-                        </thead>
                         <tbody class="features esc">
                             <!-- table generated here -->
                         </tbody>
@@ -105,11 +98,11 @@
                 <div class="gui_box_titlebar">
                     <div class="spacer_box_title" i18n="configurationBoardAlignment"></div>
                     <div class="helpicon cf_tip">
-                        <div class="cf_tooltiptext" i18n="configHelp2" style="display:none;"></div>
+                        <div class="cf_tooltiptext" i18n="configHelp2"></div>
                     </div>
                 </div>
                 <div class="spacer_box">
-                    <div style="width:60%; float:left;">
+                    <div class="board_align_content">
                         <div class="number">
                             <label> <input type="number" name="board_align_roll" step="1" min="-180" max="360" /> <span
                                 i18n="configurationBoardAlignmentRoll"></span>
@@ -129,22 +122,22 @@
                             <div class="alignicon yaw"></div>
                         </div>
                     </div>
-                    <div class="sensoralignment" style="width:40%; float:left;">
+                    <div class="sensoralignment">
                         <div class="number">
                             <select class="gyroalign">
-                                <option value="0">Gyro Alignment</option>
+                                <option value="0">GYRO alignment: default</option>
                                 <!-- list generated here -->
                             </select>
                         </div>
                         <div class="number">
                             <select class="accalign">
-                                <option value="0">Acc Alignment</option>
+                                <option value="0">ACC alignment: default</option>
                                 <!-- list generated here -->
                             </select>
                         </div>
                         <div class="number">
                             <select class="magalign">
-                                <option value="0">Mag Alignment</option>
+                                <option value="0">MAG alignment: default</option>
                                 <!-- list generated here -->
                             </select>
                         </div>
@@ -291,7 +284,7 @@
                 <div class="gui_box_titlebar">
                     <div class="spacer_box_title" i18n="configurationRSSI"></div>
                         <div class="helpicon cf_tip">
-                            <div class="cf_tooltiptext" i18n="configurationRSSIHelp" style="display:none;"></div>
+                            <div class="cf_tooltiptext" i18n="configurationRSSIHelp"></div>
                         </div>
                     </div>
                 <div class="spacer_box">

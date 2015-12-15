@@ -213,14 +213,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         
         var alignments = [
-            'CW0',
-            'CW90',
-            'CW180',
-            'CW270',
-            'CW0FLIP',
-            'CW90FLIP',
-            'CW180FLIP',
-            'CW270FLIP'
+            'CW 0°',
+            'CW 90°',
+            'CW 180°',
+            'CW 270°',
+            'CW 0° flip',
+            'CW 90° flip',
+            'CW 180° flip',
+            'CW 270° flip'
         ];
 
         if (semver.lt(CONFIG.apiVersion, "1.15.0")) {
@@ -230,9 +230,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             var orientation_acc_e = $('select.accalign');
             var orientation_mag_e = $('select.magalign');
             for (var i = 0; i < alignments.length; i++) {
-                orientation_gyro_e.append('<option value="' + (i+1) + '">' + alignments[i] + '</option>');
-                orientation_acc_e.append('<option value="' + (i+1) + '">' + alignments[i] + '</option>');
-                orientation_mag_e.append('<option value="' + (i+1) + '">' + alignments[i] + '</option>');
+                orientation_gyro_e.append('<option value="' + (i+1) + '">GYRO align: '+ alignments[i] + '</option>');
+                orientation_acc_e.append('<option value="' + (i+1) + '">ACC align: '+ alignments[i] + '</option>');
+                orientation_mag_e.append('<option value="' + (i+1) + '">MAG align: '+ alignments[i] + '</option>');
             }
             orientation_gyro_e.val(SENSOR_ALIGNMENT.align_gyro);
             orientation_acc_e.val(SENSOR_ALIGNMENT.align_acc);

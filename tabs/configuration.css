@@ -436,10 +436,19 @@
     background-color: #f9f9f9;
     border-radius: 5px;
     border: 1px solid #e4e4e4;
-    height:340px;
-    margin-top:3px;
+    height: 340px;
+    margin-top: 3px;
 }
 
+.tab-configuration .sensoralignment {
+    width: 40%; 
+    float: left;
+}
+
+.tab-configuration .board_align_content {
+    width: 60%;
+    float: left;
+}
 
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
