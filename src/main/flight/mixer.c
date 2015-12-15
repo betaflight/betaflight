@@ -800,7 +800,7 @@ void mixTable(void)
         }
 
         // adjust feedback to scale PID error inputs to our limitations.
-        totalErrorRatioLimit = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.1f, 1.0f);
+        totalErrorRatioLimit = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.4f, 1.0f);
     }
 
     if (ARMING_FLAG(ARMED)) {
