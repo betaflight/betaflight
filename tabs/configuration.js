@@ -138,6 +138,15 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             );
         }
 
+        function isFeatureEnabled(featureName) {
+            for (var i = 0; i < features.length; i++) {
+                if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         var radioGroups = [];
         
         var features_e = $('.features');
@@ -425,8 +434,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             });
         });
-		
-	
+
+
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
             BF_CONFIG.board_align_roll = parseInt($('input[name="board_align_roll"]').val());
@@ -463,9 +472,23 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
             _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
 
+
             SENSOR_ALIGNMENT.align_gyro = parseInt(orientation_gyro_e.val());
             SENSOR_ALIGNMENT.align_acc = parseInt(orientation_acc_e.val());
             SENSOR_ALIGNMENT.align_mag = parseInt(orientation_mag_e.val());
+
+            // track feature usage
+            if (isFeatureEnabled('RX_SERIAL')) {
+                googleAnalytics.sendEvent('Setting', 'SerialRxProvider', serialRXtypes[BF_CONFIG.serialrx_type]);
+            }
+            
+            for (var i = 0; i < features.length; i++) {
+                var featureName = features[i].name;
+                if (isFeatureEnabled(featureName)) {
+                    googleAnalytics.sendEvent('Setting', 'Feature', featureName);
+                }
+            }
+
 
             function save_serial_config() {
                 if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
