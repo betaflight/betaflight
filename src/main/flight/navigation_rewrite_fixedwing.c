@@ -197,37 +197,32 @@ static void calculateVirtualPositionTarget_FW(float trackingPeriod)
     float forwardVelocity = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y));
 
     // Limit minimum forward velocity to 1 m/s
-    forwardVelocity = MAX(forwardVelocity, 100.0f);
-    float trackingDistance = trackingPeriod * forwardVelocity;
+    float trackingDistance = trackingPeriod * MAX(forwardVelocity, 100.0f);
 
-    // If angular visibility of a waypoint is less than 10deg, don't calculate circular loiter, go straight to the target
-    #define TAN_5DEG    0.087489f
-    bool needToCalculateCircularLoiter = isApproachingLastWaypoint() && (distanceToActualTarget <= (posControl.navConfig->waypoint_radius / TAN_5DEG));
+    // If angular visibility of a waypoint is less than 30deg, don't calculate circular loiter, go straight to the target
+    #define TAN_15DEG    0.26795f
+    bool needToCalculateCircularLoiter = isApproachingLastWaypoint()
+                                            && (distanceToActualTarget <= (posControl.navConfig->waypoint_radius / TAN_15DEG))
+                                            && (distanceToActualTarget > 50.0f);
 
     // Calculate virtual position for straight movement
     if (needToCalculateCircularLoiter) {
         // We are closing in on a waypoint, calculate circular loiter
-        // Find a point on our circular loiter path closest to the airplane, calculate angle from waypoint venter to airplane
         float loiterRadius = posControl.navConfig->waypoint_radius * 0.9f;
-        float loiterTargetAngleStep = constrainf(trackingDistance / loiterRadius, 10.0f * RAD, 90.0f * RAD);
-        float loiterTargetAngle = atan2_approx(-posErrorY, -posErrorX) + loiterTargetAngleStep;
-        float loiterTargetX = posControl.desiredState.pos.V.X + loiterRadius * cos_approx(loiterTargetAngle);
-        float loiterTargetY = posControl.desiredState.pos.V.Y + loiterRadius * sin_approx(loiterTargetAngle);
+        float loiterAngle = atan2_approx(-posErrorY, -posErrorX) + DEGREES_TO_RADIANS(45.0f);
+
+        float loiterTargetX = posControl.desiredState.pos.V.X + loiterRadius * cos_approx(loiterAngle);
+        float loiterTargetY = posControl.desiredState.pos.V.Y + loiterRadius * sin_approx(loiterAngle);
 
         // We have temporary loiter target. Recalculate distance and position error
         posErrorX = loiterTargetX - posControl.actualState.pos.V.X;
         posErrorY = loiterTargetY - posControl.actualState.pos.V.Y;
         distanceToActualTarget = sqrtf(sq(posErrorX) + sq(posErrorY));
+    }
 
-        // Calculate cirtual waypoint at some close distance in front of the plain
-        virtualDesiredPosition.V.X = posControl.actualState.pos.V.X + posErrorX * (trackingDistance / distanceToActualTarget);
-        virtualDesiredPosition.V.Y = posControl.actualState.pos.V.Y + posErrorY * (trackingDistance / distanceToActualTarget);
-    }
-    else {
-        // If angular visibility of a waypoint is less than 10deg, don't calculate circular loiter, go straight to the target
-        virtualDesiredPosition.V.X = posControl.actualState.pos.V.X + posErrorX * (trackingDistance / distanceToActualTarget);
-        virtualDesiredPosition.V.Y = posControl.actualState.pos.V.Y + posErrorY * (trackingDistance / distanceToActualTarget);
-    }
+    // Calculate virtual waypoint
+    virtualDesiredPosition.V.X = posControl.actualState.pos.V.X + posErrorX * (trackingDistance / distanceToActualTarget);
+    virtualDesiredPosition.V.Y = posControl.actualState.pos.V.Y + posErrorY * (trackingDistance / distanceToActualTarget);
 
     // Shift position according to pilot's ROLL input (up to max_manual_speed velocity)
     if (posControl.flags.isAdjustingPosition) {
@@ -259,12 +254,9 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     // Calculate NAV heading error
     int32_t headingError = wrap_18000(virtualTargetBearing - posControl.actualState.yaw);
 
-    // Update desired heading (for MAGHOLD)
-    posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
-
     // Forced turn direction
-    if (ABS(headingError) > 9000) {
-        headingError = 9000;
+    if (ABS(headingError) > 17000) {
+        headingError = 17500;
     }
 
     // Input error in (deg*100), output pitch angle (deg*100)
@@ -277,6 +269,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     posControl.rcAdjustment[ROLL] = CENTIDEGREES_TO_DECIDEGREES(rollAdjustment);
 
     // Update magHold heading lock in case pilot is using MAG mode (prevent MAGHOLD to fight navigation)
+    posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
     magHold = CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw);
 }
 

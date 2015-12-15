@@ -107,8 +107,6 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
-//#define HIL
-
 #define GPS
 #define NAV
 //#define LED_STRIP
@@ -142,6 +140,7 @@
 #define BIND_PIN   Pin_11
 
 // DEBUG
+//#define HIL
 //#define USE_FAKE_MAG
 //#define USE_FAKE_BARO
 //#define USE_FAKE_GPS

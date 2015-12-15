@@ -77,6 +77,7 @@ void resetNavigation(void);
 static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint);
 static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos);
 void calculateInitialHoldPosition(t_fp_vector * pos);
+void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t distance);
 
 /*************************************************************************************************/
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState_t previousState);
@@ -803,7 +804,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
         targetHoldPos = posControl.actualState.pos;
     }
     else {
-        calculateInitialHoldPosition(&targetHoldPos);
+        if (!STATE(FIXED_WING)) {
+            // Multicopter, hover and climb
+            calculateInitialHoldPosition(&targetHoldPos);
+        } else {
+            // Airplane - climbout before turning around
+            calculateFarAwayTarget(&targetHoldPos, posControl.actualState.yaw, 100000.0f);  // 1km away
+        }
     }
 
     setDesiredPosition(&targetHoldPos, 0, NAV_POS_UPDATE_XY);
@@ -846,9 +853,14 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
     }
 
     if (isWaypointReached(&posControl.homeWaypointAbove)) {
-        // Successfully reached position target - update XYZ-position
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
+        if (!STATE(FIXED_WING)) {
+            // Successfully reached position target - update XYZ-position
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+            return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
+        } else {
+            // Don't switch to landing for airplanes
+            return NAV_FSM_EVENT_NONE;
+        }
     }
     else {
         // Update XYZ-position target
@@ -1506,15 +1518,11 @@ void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t us
 #endif
 }
 
-void setDesiredPositionToFarAwayTarget(int32_t yaw, int32_t distance, navSetWaypointFlags_t useMask)
+void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t distance)
 {
-    t_fp_vector farAwayPos;
-
-    farAwayPos.V.X = posControl.actualState.pos.V.X + distance * cos_approx(CENTIDEGREES_TO_RADIANS(yaw));
-    farAwayPos.V.Y = posControl.actualState.pos.V.Y + distance * sin_approx(CENTIDEGREES_TO_RADIANS(yaw));
-    farAwayPos.V.Z = posControl.actualState.pos.V.Z;
-
-    setDesiredPosition(&farAwayPos, yaw, useMask);
+    farAwayPos->V.X = posControl.actualState.pos.V.X + distance * cos_approx(CENTIDEGREES_TO_RADIANS(yaw));
+    farAwayPos->V.Y = posControl.actualState.pos.V.Y + distance * sin_approx(CENTIDEGREES_TO_RADIANS(yaw));
+    farAwayPos->V.Z = posControl.actualState.pos.V.Z;
 }
 
 /*-----------------------------------------------------------
