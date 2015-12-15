@@ -129,6 +129,7 @@ static void ltm_finalise(void)
  */
 static void ltm_gframe(void)
 {
+#if defined(GPS)
     uint8_t gps_fix_type = 0;
     int32_t ltm_alt;
 
@@ -155,6 +156,7 @@ static void ltm_gframe(void)
     ltm_serialise_32(ltm_alt);
     ltm_serialise_8((GPS_numSat << 2) | gps_fix_type);
     ltm_finalise();
+#endif
 }
 
 /*
@@ -222,8 +224,13 @@ static void ltm_aframe()
 static void ltm_oframe()
 {
     ltm_initialise_packet('O');
+#if defined(GPS)
     ltm_serialise_32(GPS_home[LAT]);
     ltm_serialise_32(GPS_home[LON]);
+#else
+    ltm_serialise_32(0);
+    ltm_serialise_32(0);
+#endif
     ltm_serialise_32(0);                // Don't have GPS home altitude
     ltm_serialise_8(1);                 // OSD always ON
     ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
