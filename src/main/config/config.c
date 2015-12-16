@@ -154,7 +154,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PITCH] = 23;
     pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
-    pidProfile->D8[YAW] = 12;
+    pidProfile->D8[YAW] = 10;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -177,13 +177,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->gyro_soft_lpf = 1;   // filtering ON by default
     pidProfile->dterm_cut_hz = 40;
-    pidProfile->yaw_pterm_cut_hz = 50;
+    pidProfile->yaw_pterm_cut_hz = 0;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
-    pidProfile->I_f[ROLL] = 0.4f;
+    pidProfile->I_f[ROLL] = 0.3f;
     pidProfile->D_f[ROLL] = 0.02f;
     pidProfile->P_f[PITCH] = 1.5f;
-    pidProfile->I_f[PITCH] = 0.4f;
+    pidProfile->I_f[PITCH] = 0.3f;
     pidProfile->D_f[PITCH] = 0.02f;
     pidProfile->P_f[YAW] = 4.0f;
     pidProfile->I_f[YAW] = 0.4f;
@@ -439,7 +439,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = 1;
+    masterConfig.rxConfig.rcSmoothing = 0;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
