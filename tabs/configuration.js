@@ -55,7 +55,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
     function load_3d() {
         var next_callback = load_html;
-        if (semver.lt(CONFIG.apiVersion, "1.14.0")) {
+        if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             MSP.send_message(MSP_codes.MSP_3D, false, false, next_callback);
         } else {
             next_callback();
