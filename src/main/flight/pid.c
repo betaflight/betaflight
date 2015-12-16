@@ -48,7 +48,7 @@
 #include "config/runtime_config.h"
 
 extern float dT;
-extern float totalErrorRatioLimit;
+extern bool motorLimitReached;
 extern bool allowITermShrinkOnly;
 
 int16_t axisPID[3];
@@ -161,10 +161,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            RateError = RateError * totalErrorRatioLimit;
-        }
-
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
@@ -173,9 +169,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         }
 
         // -----calculate I component.
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + 0.5f * (lastError[axis] + RateError) * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
-        if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
+        if (allowITermShrinkOnly || motorLimitReached) {
             if (ABS(errorGyroIf[axis]) < ABS(previousErrorGyroIf[axis])) {
                 previousErrorGyroIf[axis] = errorGyroIf[axis];
             } else {
@@ -302,10 +298,6 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRateTmp - (gyroADC[axis] / 4);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            RateError = RateError * totalErrorRatioLimit;
-        }
-
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
 
@@ -318,7 +310,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((((lastError[axis] + RateError) / 2) * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -326,7 +318,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         ITerm = errorGyroI[axis] >> 13;
 
-        if (allowITermShrinkOnly || totalErrorRatioLimit < 0.98f) {
+        if (allowITermShrinkOnly || motorLimitReached) {
             if (ABS(errorGyroI[axis]) < ABS(previousErrorGyroI[axis])) {
                 previousErrorGyroI[axis] = errorGyroI[axis];
             } else {
