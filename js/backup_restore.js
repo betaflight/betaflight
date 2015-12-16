@@ -739,7 +739,7 @@ function configuration_restore(callback) {
                             send_unique_data_item();
                         });
                     } else {
-                        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, send_led_strip_config);
+                        send_led_strip_config();
                     }
                 }
 
