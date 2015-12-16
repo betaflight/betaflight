@@ -1207,8 +1207,8 @@ MSP.crunch = function (code) {
             buffer.push(FAILSAFE_CONFIG.failsafe_off_delay);
             buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
             buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
-            buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
                 buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
                 buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
                 buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
