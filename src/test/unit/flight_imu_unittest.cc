@@ -55,49 +55,72 @@ void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
 }
 
+void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
+{
+    if (initialRoll > 1800) initialRoll -= 3600;
+    if (initialPitch > 1800) initialPitch -= 3600;
+    if (initialYaw > 1800) initialYaw -= 3600;
+
+    float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+
+    float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+
+    float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+
+    q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+    q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+    q2 = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+    q3 = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
+
+    imuComputeRotationMatrix();
+}
+
 TEST(FlightImuTest, TestEulerAngleCalculation)
 {
-    q0 = 1; q1 = 0; q2 = 0; q3 = 0;
-    imuComputeRotationMatrix();
+    imuComputeQuaternionFromRPY(0, 0, 0);
     imuUpdateEulerAngles();
     EXPECT_FLOAT_EQ(attitude.values.roll, 0);
     EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
     EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = -1; q1 = 0; q2 = 0; q3 = 0;
-    imuComputeRotationMatrix();
+    imuComputeQuaternionFromRPY(450, 450, 0);
     imuUpdateEulerAngles();
-    EXPECT_FLOAT_EQ(attitude.values.roll, 0);
+    EXPECT_FLOAT_EQ(attitude.values.roll, 450);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 450);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
+
+    imuComputeQuaternionFromRPY(-450, -450, 0);
+    imuUpdateEulerAngles();
+    EXPECT_FLOAT_EQ(attitude.values.roll, -450);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, -450);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
+
+    imuComputeQuaternionFromRPY(1790, 0, 0);
+    imuUpdateEulerAngles();
+    EXPECT_FLOAT_EQ(attitude.values.roll, 1790);
     EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
     EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = 0.7071068; q1 = 0; q2 = 0.7071068; q3 = 0;
-    imuComputeRotationMatrix();
+    imuComputeQuaternionFromRPY(-1790, 0, 0);
     imuUpdateEulerAngles();
-    EXPECT_FLOAT_EQ(attitude.values.roll, 1800);
+    EXPECT_FLOAT_EQ(attitude.values.roll, -1790);
     EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
-    EXPECT_FLOAT_EQ(attitude.values.yaw, 1800);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = -0.7071068; q1 = 0; q2 = -0.7071068; q3 = 0;
-    imuComputeRotationMatrix();
-    imuUpdateEulerAngles();
-    EXPECT_FLOAT_EQ(attitude.values.roll, -1800);
-    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
-    EXPECT_FLOAT_EQ(attitude.values.yaw, 1800);
-
-    q0 = 0; q1 = 0; q2 = 0; q3 = 1;
-    imuComputeRotationMatrix();
+    imuComputeQuaternionFromRPY(0, 0, 900);
     imuUpdateEulerAngles();
     EXPECT_FLOAT_EQ(attitude.values.roll, 0);
     EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
-    EXPECT_FLOAT_EQ(attitude.values.yaw, 1800);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 900);
 
-    q0 = 0; q1 = 0; q2 = 0; q3 = -1;
-    imuComputeRotationMatrix();
+    imuComputeQuaternionFromRPY(0, 0, 2700);
     imuUpdateEulerAngles();
     EXPECT_FLOAT_EQ(attitude.values.roll, 0);
     EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
-    EXPECT_FLOAT_EQ(attitude.values.yaw, 1800);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 2700);
 }
 
 // STUBS
