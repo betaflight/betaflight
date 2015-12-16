@@ -569,6 +569,7 @@ $(OBJECT_DIR)/sonar_unittest.o : \
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/sonar_unittest.cc -o $@
 
 $(OBJECT_DIR)/sonar_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/drivers/sonar_hcsr04.o \
 	$(OBJECT_DIR)/sensors/sonar.o \
 	$(OBJECT_DIR)/sonar_unittest.o \
