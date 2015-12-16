@@ -5,10 +5,9 @@ There are two types of failsafe:
 1. Receiver based failsafe
 2. Flight controller based failsafe
 
-Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss and goes to __rx-failsafe-state__.
-The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.  See your receiver's documentation for this method.
+Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss and goes to the __failsafe mode__. The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.  See your receiver's documentation for this method.
 
-Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __rx-failsafe-state__ of your receiver and upon detection goes to __fc-failsafe-state__. The idea is that the flight controller starts using substitutes for all controls, which are set by you, using the CLI command `rxfail` (see `rxfail` document) or the cleanflight-configurator GUI.
+Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __failsafe mode__ of your receiver and upon detection goes to __failsafe stage 1__. The idea is that the flight controller starts using __fallback settings__ for all controls, which are set by you, using the CLI command `rxfail` (see `rxfail` section in rx documentation) or the cleanflight-configurator GUI.
 
 It is possible to use both types at the same time, which may be desirable.  Flight controller failsafe can even help if your receiver signal wires come loose, get damaged or your receiver malfunctions in a way the receiver itself cannot detect.
 
@@ -16,24 +15,29 @@ Alternatively you may configure a transmitter switch to activate failsafe mode. 
 
 ## Flight controller failsafe system 
 
-The __failsafe-auto-landing__ system is not activated until 5 seconds after the flight controller boots up.  This is to prevent __failsafe-auto-landing__ from activating, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
+This system has two stages.
 
-The __failsafe-detection__ system attempts to detect when your receiver loses signal *continuously* but the __failsafe-auto-landing__ starts *only when your craft is __armed__*.  It then attempts to prevent your aircraft from flying away uncontrollably by enabling an auto-level mode and setting the throttle that should allow the craft to come to a safer landing.
+__Stage 1__ is entered when __a flightchannel__ has an __*invalid pulse length*__, the receiver reports __*failsafe mode*__ or there is __*no signal*__ from the receiver. Fallback settings are applied to __*all channels*__ and a short amount of time is provided to allow for recovery.
 
-**The failsafe is activated when the craft is armed and either:**
+__Note:__ Prior to entering __stage 1__, fallback settings are also applied to __*individual AUX channels*__ that have invalid pulses.
 
-* The control (stick) channels do not have valid signals AND the failsafe guard time specified by `failsafe_delay` has elapsed.
-* A transmitter switch that is configured to control the failsafe mode is switched ON (and 'failsafe_kill_switch' is set to 0).
+__Stage 2__ is entered when your craft is __armed__ and __stage 1__ persists longer then the configured guard time (`failsafe_delay`). All channels will remain at the applied fallback setting unless overruled by the chosen stage 2 procedure (`failsafe_procedure`).
 
-Failsafe intervention will be aborted when it was due to:
+__Stage 2__ is not activated until 5 seconds after the flight controller boots up.  This is to prevent unwanted activation, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
+
+__Stage 2__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON (and `failsafe_kill_switch` is set to OFF).
+
+__Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
-* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and 'failsafe_kill_switch' is set to 0).
+* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_kill_switch` is set to OFF).
 
 Note that:
-* At the end of a failsafe intervention, the flight controller will be disarmed and re-arming will be locked. From that moment on it is no longer possible to abort or re-arm and the flight controller has to be reset.
-* When 'failsafe_kill_switch' is set to 1 and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed (but re-arming is not locked). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0 (but arming is locked).
-* Prior to starting a failsafe intervention it is checked if the throttle position was below 'min_throttle' level for the last 'failsafe_throttle_low_delay' seconds. If it was the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle.     
+* At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
+
+* When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
+
+* Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle.     
 
 Some notes about **SAFETY**:
 * The failsafe system will be activated regardless of current throttle position. So when the failsafe intervention is aborted (RC signal restored/failsafe switch set to OFF) the current stick position will direct the craft !
@@ -46,7 +50,7 @@ When configuring the flight controller failsafe, use the following steps:
 1.  Configure your receiver to do one of the following:
 
 * Upon signal loss, send no signal/pulses over the channels
-* Send an invalid signal over the channels (for example, send values lower than 'rx_min_usec')
+* Send an invalid signal over the channels (for example, send values lower than `rx_min_usec`)
 
 and
 
@@ -56,9 +60,9 @@ See your receiver's documentation for direction on how to accomplish one of thes
 
 * Configure one of the transmitter switches to activate the failsafe mode.
 
-2.  Set 'failsafe_off_delay' to an appropriate value based on how high you fly
+2.  Set `failsafe_off_delay` to an appropriate value based on how high you fly
 
-3.  Set 'failsafe_throttle' to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
+3.  Set `failsafe_throttle` to a value that allows the aircraft to descend at approximately one meter per second (default is 1000 which should be throttle off).
 
 
 
@@ -87,13 +91,18 @@ Throttle level used for landing.  Specify a value that causes the aircraft to de
 
 ### `failsafe_kill_switch`
 
-Configure the rc switched failsafe action: the same action as when the rc link is lost (set to 0) or disarms instantly (set to 1). Also see above.
+Configure the rc switched failsafe action: the same action as when the rc link is lost (set to OFF) or disarms instantly (set to ON). Also see above.
 
 ### `failsafe_throttle_low_delay`
 
 Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_.
 
 Use standard RX usec values.  See Rx documentation.
+
+### `failsafe_procedure`
+
+* __Drop:__ Just kill the motors and disarm (crash the craft).
+* __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
 
 ### `rx_min_usec`
 

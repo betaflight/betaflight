@@ -48,6 +48,7 @@
 #include "rx/sumh.h"
 #include "rx/msp.h"
 #include "rx/xbus.h"
+#include "rx/ibus.h"
 
 #include "rx/rx.h"
 
@@ -60,6 +61,7 @@ bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, r
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
@@ -228,6 +230,9 @@ void serialRxInit(rxConfig_t *rxConfig)
             rxRefreshRate = 11000;
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+        case SERIALRX_IBUS:
+            enabled = ibusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+            break;
     }
 
     if (!enabled) {
@@ -260,6 +265,8 @@ uint8_t serialRxFrameStatus(rxConfig_t *rxConfig)
         case SERIALRX_XBUS_MODE_B:
         case SERIALRX_XBUS_MODE_B_RJ01:
             return xBusFrameStatus();
+        case SERIALRX_IBUS:
+            return ibusFrameStatus();
     }
     return SERIAL_RX_FRAME_PENDING;
 }
@@ -399,8 +406,14 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 static uint16_t getRxfailValue(uint8_t channel)
 {
     rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
+    uint8_t mode = channelFailsafeConfiguration->mode;
 
-    switch(channelFailsafeConfiguration->mode) {
+    // force auto mode to prevent fly away when failsafe stage 2 is disabled
+    if ( channel < NON_AUX_CHANNEL_COUNT && (!feature(FEATURE_FAILSAFE)) ) {
+        mode = RX_FAILSAFE_MODE_AUTO;
+    }
+
+    switch(mode) {
         case RX_FAILSAFE_MODE_AUTO:
             switch (channel) {
                 case ROLL:
@@ -510,7 +523,7 @@ static void detectAndApplySignalLossBehaviour(void)
 
     rxFlightChannelsValid = rxHaveValidFlightChannels();
 
-    if ((rxFlightChannelsValid) && !IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+    if ((rxFlightChannelsValid) && !(IS_RC_MODE_ACTIVE(BOXFAILSAFE) && feature(FEATURE_FAILSAFE))) {
         failsafeOnValidDataReceived();
     } else {
         rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven = true;
