@@ -1633,16 +1633,12 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
-        {
-            uint8_t channelCount = currentPort->dataSize / 3;
-            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-                headSerialError(0);
-            } else {
-                for (i = 0; i < channelCount; i++) {
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
-                }
-            }
+        i = read8();
+        if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+            masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
+            masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+        } else {
+            headSerialError(0);
         }
         break;
 
