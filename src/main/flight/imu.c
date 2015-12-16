@@ -52,6 +52,17 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+/**
+ * In Cleanflight accelerometer is aligned in the following way:
+ *      X-axis = Forward
+ *      Y-axis = Left
+ *      Z-axis = Up
+ * Our INAV uses different convention
+ *      X-axis = North/Forward
+ *      Y-axis = East/Right
+ *      Z-axis = Up
+ */
+
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
@@ -59,6 +70,8 @@
 #define SPIN_RATE_LIMIT 20
 
 t_fp_vector imuAccelInBodyFrame;
+t_fp_vector imuMeasuredGravityBF;
+t_fp_vector imuMeasuredRotationBF;
 float smallAngleCosZ = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
@@ -75,7 +88,7 @@ static float gyroScale;
 
 static bool gpsHeadingInitialized = false;
 
-STATIC_UNIT_TESTED void imuCompureRotationMatrix(void)
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     float q1q1 = q1 * q1;
     float q2q2 = q2 * q2;
@@ -118,7 +131,7 @@ void imuInit(void)
         imuAccelInBodyFrame.A[axis] = 0;
     }
 
-    imuCompureRotationMatrix();
+    imuComputeRotationMatrix();
 }
 
 void imuTransformVectorBodyToEarth(t_fp_vector * v)
@@ -151,20 +164,6 @@ void imuTransformVectorEarthToBody(t_fp_vector * v)
     v->V.Z = z;
 }
 
-#define ACCELERATION_LPF_HZ             10
-
-// Calculate acceleration in body frame
-static void imuCalculateAcceleration(float dT)
-{
-    static filterStatePt1_t accFilter[XYZ_AXIS_COUNT];
-    int axis;
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        float accValueCMSS = accADC[axis] * (GRAVITY_CMSS / acc_1G);
-        imuAccelInBodyFrame.A[axis] = filterApplyPt1(accValueCMSS, &accFilter[axis], ACCELERATION_LPF_HZ, dT);
-    }
-}
-
 static float invSqrt(float x)
 {
     return 1.0f / sqrtf(x);
@@ -190,7 +189,7 @@ STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t
     q2 = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
     q3 = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
 
-    imuCompureRotationMatrix();
+    imuComputeRotationMatrix();
 }
 
 static bool imuUseFastGains(void)
@@ -360,7 +359,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q3 *= recipNorm;
 
     // Pre-compute rotation matrix from quaternion
-    imuCompureRotationMatrix();
+    imuComputeRotationMatrix();
 }
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
@@ -401,19 +400,14 @@ static bool isMagnetometerHealthy(void)
     return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
 }
 
-static void imuCalculateEstimatedAttitude(void)
+static void imuCalculateEstimatedAttitude(float dT)
 {
-    static uint32_t previousIMUUpdateTime;
     static bool isImuInitialized = false;
     float rawYawError;
 
     bool useAcc = false;
     bool useMag = false;
     bool useYaw = false;
-
-    uint32_t currentTime = micros();
-    float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
-    previousIMUUpdateTime = currentTime;
 
     if (!isImuInitialized) {
         /* Initialize initial attitude guess from accelerometer and magnetometer readings */
@@ -476,19 +470,59 @@ static void imuCalculateEstimatedAttitude(void)
         }
 #endif
 
-        imuMahonyAHRSupdate(dT,
-                            gyroADC[X] * gyroScale, gyroADC[Y] * gyroScale, gyroADC[Z] * gyroScale,
-                            useAcc, accADC[X], accADC[Y], accADC[Z],
+        imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
+                            useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
                             useMag, magADC[X], magADC[Y], magADC[Z],
                             useYaw, rawYawError);
     }
 
     imuUpdateEulerAngles();
-    imuCalculateAcceleration(dT); // rotate acc vector into earth frame and store it for future usage
+}
+
+/* Calculate rotation rate in rad/s in body frame */
+static void imuUpdateMeasuredRotationRate(void)
+{
+    int axis;
+
+    for (axis = 0; axis < 3; axis++) {
+        imuMeasuredRotationBF.A[axis] = gyroADC[axis] * gyroScale;
+    }
+}
+
+/* Calculate measured acceleration in body frame cm/s/s */
+#define ACCELERATION_LPF_HZ 10
+static void imuUpdateMeasuredAcceleration(float dT)
+{
+    t_fp_vector measuredAccelerationBF;
+    static filterStatePt1_t accFilter[XYZ_AXIS_COUNT];
+    int axis;
+
+    /* Convert acceleration to cm/s/s */
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        measuredAccelerationBF.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc_1G);
+        imuMeasuredGravityBF.A[axis] = measuredAccelerationBF.A[axis];
+    }
+
+#ifdef GPS
+    /** Centrifugal force compensation on a fixed-wing aircraft
+      * a_c_body = omega x vel_tangential_body
+      * assumption: tangential velocity only along body x-axis
+      * assumption: GPS velocity equal to body x-axis velocity
+      */
+    if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5) {
+        imuMeasuredGravityBF.A[Y] -= GPS_speed * imuMeasuredRotationBF.A[Z];
+        imuMeasuredGravityBF.A[Z] += GPS_speed * imuMeasuredRotationBF.A[Y];
+    }
+#endif
+
+    /* Apply LPF to acceleration readings and publish imuAccelInBodyFrame */
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccelInBodyFrame.A[axis] = filterApplyPt1(measuredAccelerationBF.A[axis], &accFilter[axis], ACCELERATION_LPF_HZ, dT);
+    }
 }
 
 #ifdef HIL
-void imuHILUpdateAttitude(void)
+void imuHILUpdate(float dT)
 {
     /* Set attitude */
     attitude.values.roll = hilToFC.rollAngle;
@@ -498,29 +532,41 @@ void imuHILUpdateAttitude(void)
     /* Compute rotation quaternion for future use */
     imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, attitude.values.yaw);
 
-    /* Calculate NEU acceleration */
-    imuAccelInBodyFrame.A[X] = hilToFC.bodyAccel[X];
-    imuAccelInBodyFrame.A[Y] = hilToFC.bodyAccel[Y];
-    imuAccelInBodyFrame.A[Z] = hilToFC.bodyAccel[Z];
+    /* Fake accADC readings */
+    accADC[X] = hilToFC.bodyAccel[X] * (acc_1G / GRAVITY_CMSS);
+    accADC[Y] = hilToFC.bodyAccel[Y] * (acc_1G / GRAVITY_CMSS);
+    accADC[Z] = hilToFC.bodyAccel[Z] * (acc_1G / GRAVITY_CMSS);
 }
 #endif
 
 void imuUpdate(void)
 {
+    /* Calculate dT */
+    static uint32_t previousIMUUpdateTime;
+    uint32_t currentTime = micros();
+    float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
+    previousIMUUpdateTime = currentTime;
+
+    /* Update gyroscope */
     gyroUpdate();
 
     if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings();
-
 #ifdef HIL
         if (!hilActive) {
-            imuCalculateEstimatedAttitude();
+            updateAccelerationReadings();       // Read ACC
+            imuUpdateMeasuredRotationRate();    // Calculate gyro rate in body frame in rad/s
+            imuUpdateMeasuredAcceleration(dT);  // Calculate accel in body frame in cm/s/s
+            imuCalculateEstimatedAttitude(dT);  // Update attitude estimate
         }
         else {
-            imuHILUpdateAttitude();
+            imuHILUpdate();
+            imuUpdateMeasuredAcceleration(dT);
         }
 #else
-        imuCalculateEstimatedAttitude();
+            updateAccelerationReadings();       // Read ACC
+            imuUpdateMeasuredRotationRate();    // Calculate gyro rate in body frame in rad/s
+            imuUpdateMeasuredAcceleration(dT);  // Calculate accel in body frame in cm/s/s
+            imuCalculateEstimatedAttitude(dT);  // Update attitude estimate
 #endif
     } else {
         accADC[X] = 0;
