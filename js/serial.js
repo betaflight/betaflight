@@ -68,6 +68,12 @@ var serial = {
                                 });
                             }
                             break;
+                        case 'break':
+                            // This occurs on F1 boards with old firmware.
+                            if (GUI.connected_to || GUI.connecting_to) {
+                                $('a.connect').click();
+                            }
+                            break;
                         case 'timeout':
                             // TODO
                             break;
