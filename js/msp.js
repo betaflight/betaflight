@@ -1446,9 +1446,9 @@ MSP.sendModeRanges = function(onCompleteCallback) {
 
     if (MODE_RANGES.length == 0) {
         onCompleteCallback();
-    }
-    
+    } else {
     send_next_mode_range();
+}
 
     
     function send_next_mode_range() {
