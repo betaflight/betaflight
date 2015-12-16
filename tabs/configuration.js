@@ -222,13 +222,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'CW 180° flip',
             'CW 270° flip'
         ];
+        
+        var orientation_gyro_e = $('select.gyroalign');
+        var orientation_acc_e = $('select.accalign');
+        var orientation_mag_e = $('select.magalign');
 
         if (semver.lt(CONFIG.apiVersion, "1.15.0")) {
             $('.tab-configuration .sensoralignment').hide();
         } else {
-            var orientation_gyro_e = $('select.gyroalign');
-            var orientation_acc_e = $('select.accalign');
-            var orientation_mag_e = $('select.magalign');
             for (var i = 0; i < alignments.length; i++) {
                 orientation_gyro_e.append('<option value="' + (i+1) + '">GYRO align: '+ alignments[i] + '</option>');
                 orientation_acc_e.append('<option value="' + (i+1) + '">ACC align: '+ alignments[i] + '</option>');
@@ -503,11 +504,21 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
             
             function save_3d() {
-                MSP.send_message(MSP_codes.MSP_SET_3D, MSP.crunch(MSP_codes.MSP_SET_3D), false, save_sensor_alignment);
+                var next_callback = save_sensor_alignment;
+                if(semver.gte(CONFIG.apiVersion, "1.14.0")) {
+                   MSP.send_message(MSP_codes.MSP_SET_3D, MSP.crunch(MSP_codes.MSP_SET_3D), false, next_callback);
+                } else {
+                   next_callback();
+                }     
             }
             
             function save_sensor_alignment() {
-                MSP.send_message(MSP_codes.MSP_SET_SENSOR_ALIGNMENT, MSP.crunch(MSP_codes.MSP_SET_SENSOR_ALIGNMENT), false, save_acc_trim);
+                var next_callback = save_acc_trim;
+                if(semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                   MSP.send_message(MSP_codes.MSP_SET_SENSOR_ALIGNMENT, MSP.crunch(MSP_codes.MSP_SET_SENSOR_ALIGNMENT), false, next_callback);
+                } else {
+                   next_callback();
+                }     
             }
 
             function save_acc_trim() {
