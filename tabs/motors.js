@@ -9,6 +9,8 @@ TABS.motors.initialize = function (callback) {
     var self = this;
 
     self.armed = false;
+    self.feature3DSupported = false;
+    self.allowTestMode = true;
     
     if (GUI.active_tab != 'motors') {
         GUI.active_tab = 'motors';
@@ -176,7 +178,7 @@ TABS.motors.initialize = function (callback) {
         localize();
 
         self.feature3DEnabled = bit_check(BF_CONFIG.features, 12);
-        self.allowTestMode = true;
+
         if (self.feature3DEnabled && !self.feature3DSupported) {
             self.allowTestMode = false;
         }
