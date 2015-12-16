@@ -133,7 +133,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     [NAV_STATE_ALTHOLD_INITIALIZE] = {
         .onEntry = navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE,
         .timeoutMs = 0,
-        .stateFlags = NAV_CTL_ALT | NAV_REQUIRE_THRTILT,
+        .stateFlags = NAV_CTL_ALT | NAV_REQUIRE_ANGLE_FW | NAV_REQUIRE_THRTILT,
         .mapToFlightModes = NAV_ALTHOLD_MODE,
         .mwState = MW_NAV_STATE_NONE,
         .mwError = MW_NAV_ERROR_NONE,
@@ -147,7 +147,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     [NAV_STATE_ALTHOLD_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS,
         .timeoutMs = 10,
-        .stateFlags = NAV_CTL_ALT | NAV_REQUIRE_THRTILT | NAV_RC_ALT,
+        .stateFlags = NAV_CTL_ALT | NAV_REQUIRE_ANGLE_FW | NAV_REQUIRE_THRTILT | NAV_RC_ALT,
         .mapToFlightModes = NAV_ALTHOLD_MODE,
         .mwState = MW_NAV_STATE_NONE,
         .mwError = MW_NAV_ERROR_NONE,
@@ -1992,7 +1992,8 @@ bool navigationRequiresThrottleTiltCompensation(void)
  *-----------------------------------------------------------*/
 bool naivationRequiresAngleMode(void)
 {
-    return navGetStateFlags(posControl.navState) & NAV_REQUIRE_ANGLE;
+    navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
+    return (currentState & NAV_REQUIRE_ANGLE) || ((currentState & NAV_REQUIRE_ANGLE_FW) && STATE(FIXED_WING));
 }
 
 /**

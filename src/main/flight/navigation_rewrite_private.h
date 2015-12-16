@@ -185,24 +185,25 @@ typedef enum {
 
 typedef enum {
     /* Navigation controllers */
-    NAV_CTL_ALT         = (1 << 0),     // Altitude controller
-    NAV_CTL_POS         = (1 << 1),     // Position controller
-    NAV_CTL_YAW         = (1 << 2),
-    NAV_CTL_EMERG       = (1 << 3),
+    NAV_CTL_ALT             = (1 << 0),     // Altitude controller
+    NAV_CTL_POS             = (1 << 1),     // Position controller
+    NAV_CTL_YAW             = (1 << 2),
+    NAV_CTL_EMERG           = (1 << 3),
 
     /* Navigation requirements for flight modes and controllers */
-    NAV_REQUIRE_ANGLE   = (1 << 4),
-    NAV_REQUIRE_MAGHOLD = (1 << 5),
-    NAV_REQUIRE_THRTILT = (1 << 6),
+    NAV_REQUIRE_ANGLE       = (1 << 4),
+    NAV_REQUIRE_ANGLE_FW    = (1 << 5),
+    NAV_REQUIRE_MAGHOLD     = (1 << 6),
+    NAV_REQUIRE_THRTILT     = (1 << 7),
 
     /* Navigation autonomous modes */
-    NAV_AUTO_RTH        = (1 << 7),
-    NAV_AUTO_WP         = (1 << 8),
+    NAV_AUTO_RTH            = (1 << 8),
+    NAV_AUTO_WP             = (1 << 9),
 
     /* Adjustments for navigation modes from RC input */
-    NAV_RC_ALT          = (1 << 9),
-    NAV_RC_POS          = (1 << 10),
-    NAV_RC_YAW          = (1 << 11),
+    NAV_RC_ALT              = (1 << 10),
+    NAV_RC_POS              = (1 << 12),
+    NAV_RC_YAW              = (1 << 13),
 } navigationFSMStateFlags_t;
 
 typedef struct {
