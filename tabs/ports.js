@@ -266,7 +266,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                 $('a.connect').click();
                 GUI.timeout_add('start_connection',function start_connection() {
                     $('a.connect').click();
-                },2000);
+                },2500);
             } else {
                 GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
                     MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
