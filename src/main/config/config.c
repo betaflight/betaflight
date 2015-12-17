@@ -551,6 +551,59 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 #endif
 
+    // alternative defaults settings for COLIBRI RACE targets
+#if defined(COLIBRI_RACE)
+    currentProfile->pidProfile.pidController = 1;
+
+    masterConfig.rxConfig.rcmap[0] = 1;
+    masterConfig.rxConfig.rcmap[1] = 2;
+    masterConfig.rxConfig.rcmap[2] = 3;
+    masterConfig.rxConfig.rcmap[3] = 0;
+    masterConfig.rxConfig.rcmap[4] = 4;
+    masterConfig.rxConfig.rcmap[5] = 5;
+    masterConfig.rxConfig.rcmap[6] = 6;
+    masterConfig.rxConfig.rcmap[7] = 7;
+
+    //masterConfig.gyro_lpf = 188;
+    //masterConfig.profile[0].pidProfile.pterm_cut_hz = 50;
+    //masterConfig.profile[0].pidProfile.dterm_cut_hz = 17;
+
+    masterConfig.rxConfig.rcSmoothing = 0;
+    currentProfile->pidProfile.pidController = 2;
+
+    currentProfile->pidProfile.P_f[ROLL] = 0.7f;     // new PID with preliminary defaults test carefully
+    currentProfile->pidProfile.I_f[ROLL] = 0.4f;
+    currentProfile->pidProfile.D_f[ROLL] = 0.025f;
+    currentProfile->pidProfile.P_f[PITCH] = 1.5f;
+    currentProfile->pidProfile.I_f[PITCH] = 0.4f;
+    currentProfile->pidProfile.D_f[PITCH] = 0.035f;
+    currentProfile->pidProfile.P_f[YAW] = 3.5f;
+    currentProfile->pidProfile.I_f[YAW] = 0.9f;
+    currentProfile->pidProfile.D_f[YAW] = 0.01f;
+
+    masterConfig.controlRateProfiles[0].rcRate8 = 100;
+    masterConfig.controlRateProfiles[0].rcExpo8 = 70;
+    masterConfig.controlRateProfiles[0].rcYawExpo8 = 70;
+    masterConfig.controlRateProfiles[0].thrMid8 = 50;
+    masterConfig.controlRateProfiles[0].thrExpo8 = 0;
+    masterConfig.controlRateProfiles[0].rates[FD_ROLL] = 90;
+    masterConfig.controlRateProfiles[0].rates[FD_PITCH] = 90;
+    masterConfig.controlRateProfiles[0].rates[FD_YAW] = 90;
+    masterConfig.controlRateProfiles[0].dynThrPID = 30;
+    masterConfig.controlRateProfiles[0].tpa_breakpoint = 1500;
+    masterConfig.profile[0].rcControlsConfig.deadband = 10;
+
+    masterConfig.escAndServoConfig.minthrottle = 1025;
+    masterConfig.escAndServoConfig.maxthrottle = 1980;
+    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
+    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+
+    featureSet(FEATURE_ONESHOT125);
+    featureSet(FEATURE_VBAT);
+    featureSet(FEATURE_LED_STRIP);
+    featureSet(FEATURE_FAILSAFE);
+#endif
+
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
