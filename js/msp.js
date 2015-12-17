@@ -1353,7 +1353,6 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
     }
 
 
->>>>>>> cleanflight/development
     function send_next_servo_configuration() {
         
         var buffer = [];
