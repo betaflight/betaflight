@@ -1215,14 +1215,6 @@ MSP.crunch = function (code) {
             }
             break;
 
-        case MSP_codes.MSP_SET_RXFAIL_CONFIG:
-            for (var i = 0; i < RXFAIL_CONFIG.length; i++) {
-                buffer.push(RXFAIL_CONFIG[i].mode);
-                buffer.push(lowByte(RXFAIL_CONFIG[i].value));
-                buffer.push(highByte(RXFAIL_CONFIG[i].value));
-            }
-            break;
-
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
                 var out = SERVO_CONFIG[i].indexOfChannelToForward;
@@ -1359,7 +1351,9 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
     } else {
         nextFunction();
     }
-    
+
+
+>>>>>>> cleanflight/development
     function send_next_servo_configuration() {
         
         var buffer = [];
@@ -1448,9 +1442,8 @@ MSP.sendModeRanges = function(onCompleteCallback) {
         onCompleteCallback();
     } else {
         send_next_mode_range();
-}
+    }
 
-    
     function send_next_mode_range() {
         
         var modeRange = MODE_RANGES[modeRangeIndex];
@@ -1482,7 +1475,8 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
     } else {
         send_next_adjustment_range();
     }
-    
+
+
     function send_next_adjustment_range() {
         
         var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
@@ -1583,3 +1577,34 @@ MSP.serialPortFunctionsToMask = function(functions) {
     }
     return mask;
 }
+
+MSP.sendRxFailConfig = function(onCompleteCallback) {
+    var nextFunction = send_next_rxfail_config;
+
+    var rxFailIndex = 0;
+
+    if (RXFAIL_CONFIG.length == 0) {
+        onCompleteCallback();
+    } else {
+        send_next_rxfail_config();
+    }
+
+    function send_next_rxfail_config() {
+
+        var rxFail = RXFAIL_CONFIG[rxFailIndex];
+
+        var buffer = [];
+        buffer.push(rxFailIndex);
+        buffer.push(rxFail.mode);
+        buffer.push(lowByte(rxFail.value));
+        buffer.push(highByte(rxFail.value));
+
+        // prepare for next iteration
+        rxFailIndex++;
+        if (rxFailIndex == RXFAIL_CONFIG.length) {
+            nextFunction = onCompleteCallback;
+
+        }
+        MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, buffer, false, nextFunction);
+    }
+};

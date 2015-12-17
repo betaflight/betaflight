@@ -713,7 +713,6 @@ function configuration_restore(callback) {
                         uniqueData.push(MSP_codes.MSP_SET_SENSOR_ALIGNMENT);
                         uniqueData.push(MSP_codes.MSP_SET_RX_CONFIG);
                         uniqueData.push(MSP_codes.MSP_SET_FAILSAFE_CONFIG);
-                        uniqueData.push(MSP_codes.MSP_SET_RXFAIL_CONFIG);
                     }
                 }
                 
@@ -755,10 +754,18 @@ function configuration_restore(callback) {
                 MSP.sendLedStripConfig(save_to_eeprom);
             }
             
+            function send_rxfail_config() {
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    MSP.sendRxFailConfig(save_to_eeprom);
+                } else {
+                    save_to_eeprom();
+                }
+            }
+
             function save_to_eeprom() {
                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
             }
-            
+
             function reboot() {
                 GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
 
