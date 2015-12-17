@@ -1357,7 +1357,7 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
     if (SERVO_CONFIG.length == 0) {
         onCompleteCallback();
     } else {
-    nextFunction();
+        nextFunction();
     }
     
     function send_next_servo_configuration() {
@@ -1447,7 +1447,7 @@ MSP.sendModeRanges = function(onCompleteCallback) {
     if (MODE_RANGES.length == 0) {
         onCompleteCallback();
     } else {
-    send_next_mode_range();
+        send_next_mode_range();
 }
 
     
@@ -1480,7 +1480,7 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
     if (ADJUSTMENT_RANGES.length == 0) {
         onCompleteCallback();
     } else {
-    send_next_adjustment_range();
+        send_next_adjustment_range();
     }
     
     function send_next_adjustment_range() {
@@ -1515,7 +1515,7 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
     if (LED_STRIP.length == 0) {
         onCompleteCallback();
     } else {
-    send_next_led_strip_config();
+        send_next_led_strip_config();
     }
 
     function send_next_led_strip_config() {
