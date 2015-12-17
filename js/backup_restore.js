@@ -751,7 +751,7 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_config() {
-                MSP.sendLedStripConfig(save_to_eeprom);
+                MSP.sendLedStripConfig(send_rxfail_config);
             }
             
             function send_rxfail_config() {
