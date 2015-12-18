@@ -214,7 +214,10 @@
 }
 
 .tab-failsafe .channelname {
+    float:left;
     margin-right: 3px;
+    width:60%;
+    padding-top: 2px;
 }
 
 .tab-failsafe .note {

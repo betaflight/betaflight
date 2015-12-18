@@ -1349,6 +1349,12 @@
     "failsafeChannelFallbackSettingsHelp": {
         "message": "These settings are applied to invalid individual AUX channels or to all channels when entering stage 1. <strong>Note:</strong> values are saved in steps of 25usec, so small changes disappear"
     },
+    "failsafeChannelFallbackSettingsAuto": {
+        "message": "<strong>Auto</strong> means Roll, Pitch and Yaw to center and Throttle low. <strong>Hold</strong> means maintain the last good value received"
+    },
+    "failsafeChannelFallbackSettingsHold": {
+        "message": "<strong>Hold</strong> means maintain the last good value received. <strong>Set</strong> means the value given here will be used"
+    },
     "failsafeStageTwoSettingsTitle": {
         "message": "Stage 2 - Settings"
     },
