@@ -803,12 +803,14 @@ var MSP = {
                 offset++;
                 FAILSAFE_CONFIG.failsafe_throttle = data.getUint16(offset, 1);
                 offset += 2;
-                FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
-                offset++;
-                FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
-                offset += 2;
-                FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
-                offset++;
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
+                    offset++;
+                    FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
+                    offset += 2;
+                    FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
+                    offset++;
+                }
                 break;
 
             case MSP_codes.MSP_RXFAIL_CONFIG:
@@ -1203,17 +1205,11 @@ MSP.crunch = function (code) {
             buffer.push(FAILSAFE_CONFIG.failsafe_off_delay);
             buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
             buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
-            buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
-            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-            buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
-            break;
-
-        case MSP_codes.MSP_SET_RXFAIL_CONFIG:
-            for (var i = 0; i < RXFAIL_CONFIG.length; i++) {
-                buffer.push(RXFAIL_CONFIG[i].mode);
-                buffer.push(lowByte(RXFAIL_CONFIG[i].value));
-                buffer.push(highByte(RXFAIL_CONFIG[i].value));
+            if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
+                buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
             }
             break;
 
@@ -1350,10 +1346,10 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
 
     if (SERVO_CONFIG.length == 0) {
         onCompleteCallback();
+    } else {
+        nextFunction();
     }
-    
-    nextFunction();
-    
+
     function send_next_servo_configuration() {
         
         var buffer = [];
@@ -1440,11 +1436,10 @@ MSP.sendModeRanges = function(onCompleteCallback) {
 
     if (MODE_RANGES.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_mode_range();
     }
-    
-    send_next_mode_range();
 
-    
     function send_next_mode_range() {
         
         var modeRange = MODE_RANGES[modeRangeIndex];
@@ -1473,11 +1468,10 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
 
     if (ADJUSTMENT_RANGES.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_adjustment_range();
     }
-    
-    send_next_adjustment_range();
 
-    
     function send_next_adjustment_range() {
         
         var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
@@ -1509,9 +1503,9 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
 
     if (LED_STRIP.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_led_strip_config();
     }
-    
-    send_next_led_strip_config();
 
     function send_next_led_strip_config() {
         
@@ -1579,8 +1573,41 @@ MSP.serialPortFunctionsToMask = function(functions) {
     return mask;
 }
 
+MSP.sendRxFailConfig = function(onCompleteCallback) {
+    var nextFunction = send_next_rxfail_config;
+
+    var rxFailIndex = 0;
+
+    if (RXFAIL_CONFIG.length == 0) {
+        onCompleteCallback();
+    } else {
+        send_next_rxfail_config();
+    }
+
+    function send_next_rxfail_config() {
+
+        var rxFail = RXFAIL_CONFIG[rxFailIndex];
+
+        var buffer = [];
+        buffer.push(rxFailIndex);
+        buffer.push(rxFail.mode);
+        buffer.push(lowByte(rxFail.value));
+        buffer.push(highByte(rxFail.value));
+
+        // prepare for next iteration
+        rxFailIndex++;
+        if (rxFailIndex == RXFAIL_CONFIG.length) {
+            nextFunction = onCompleteCallback;
+
+        }
+        MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, buffer, false, nextFunction);
+    }
+};
+
 MSP.SDCARD_STATE_NOT_PRESENT = 0;
 MSP.SDCARD_STATE_FATAL       = 1;
 MSP.SDCARD_STATE_CARD_INIT   = 2;
 MSP.SDCARD_STATE_FS_INIT     = 3;
 MSP.SDCARD_STATE_READY       = 4;
+
+

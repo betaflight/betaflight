@@ -1,10 +1,16 @@
 'use strict';
 
-TABS.motors = {};
+TABS.motors = {
+    allowTestMode: false,
+    feature3DEnabled: false,
+    feature3DSupported: false
+};
 TABS.motors.initialize = function (callback) {
     var self = this;
 
     self.armed = false;
+    self.feature3DSupported = false;
+    self.allowTestMode = true;
     
     if (GUI.active_tab != 'motors') {
         GUI.active_tab = 'motors';
@@ -20,13 +26,16 @@ TABS.motors.initialize = function (callback) {
     }
     
     function load_3d() {
-        MSP.send_message(MSP_codes.MSP_3D, false, false, get_motor_data);
+        var next_callback = get_motor_data;
+        if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
+            self.feature3DSupported = true;
+            MSP.send_message(MSP_codes.MSP_3D, false, false, next_callback);
+        } else {
+            next_callback();
+        }
+        
     }
     
-    function update_arm_status() {
-        self.armed = bit_check(CONFIG.mode, 0);
-    }
-
     function get_motor_data() {
         update_arm_status();
         MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
@@ -37,6 +46,10 @@ TABS.motors.initialize = function (callback) {
     }
 
     MSP.send_message(MSP_codes.MSP_MISC, false, false, get_arm_status);
+
+    function update_arm_status() {
+        self.armed = bit_check(CONFIG.mode, 0);
+    }
 
     function initSensorData() {
         for (var i = 0; i < 3; i++) {
@@ -164,8 +177,14 @@ TABS.motors.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        $('#motorsEnableTestMode').prop('disabled', 'true');
+        self.feature3DEnabled = bit_check(BF_CONFIG.features, 12);
 
+        if (self.feature3DEnabled && !self.feature3DSupported) {
+            self.allowTestMode = false;
+        }
+        
+        $('#motorsEnableTestMode').prop('disabled', 'true');
+        
         update_model(CONFIG.multiType);
         
         // Always start with default/empty sensor data array, clean slate all
@@ -296,12 +315,12 @@ TABS.motors.initialize = function (callback) {
         $('div.sliders input').prop('min', MISC.mincommand);
         $('div.sliders input').prop('max', MISC.maxthrottle);
         $('div.values li:not(:last)').text(MISC.mincommand);
-	
-	if(bit_check(BF_CONFIG.features,12)){
+        
+        if(self.feature3DEnabled && self.feature3DSupported) {
             $('div.sliders input').val(_3D.neutral3d);
-        }else{
-	    $('div.sliders input').val(MISC.mincommand); 
-	}
+        } else {
+            $('div.sliders input').val(MISC.mincommand); 
+        }
 
         // UI hooks
         var buffering_set_motor = [],
@@ -354,10 +373,10 @@ TABS.motors.initialize = function (callback) {
                 $('div.sliders input').prop('disabled', true);
 
                 // change all values to default
-                if (! bit_check(BF_CONFIG.features,12)) {
-                    $('div.sliders input').val(MISC.mincommand);
-                } else {
+                if (self.feature3DEnabled && self.feature3DSupported) {
                     $('div.sliders input').val(_3D.neutral3d);
+                } else {
+                    $('div.sliders input').val(MISC.mincommand);
                 }
 
                 // trigger change event so values are sent to mcu
@@ -439,7 +458,9 @@ TABS.motors.initialize = function (callback) {
                 $('#motorsEnableTestMode').prop('disabled', true);
                 $('#motorsEnableTestMode').prop('checked', false);
             } else {
-                $('#motorsEnableTestMode').prop('disabled', false);
+                if (self.allowTestMode) {
+                    $('#motorsEnableTestMode').prop('disabled', false);
+                }
             }
 
             if (previousArmState != self.armed) {

@@ -317,7 +317,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             }
 
             function save_rxfail_config() {
-                MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_RXFAIL_CONFIG), false, save_bf_config);
+                MSP.sendRxFailConfig(save_bf_config);
             }
 
             function save_bf_config() {
@@ -349,7 +349,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                     $('a.connect').click();
                     GUI.timeout_add('start_connection',function start_connection() {
                         $('a.connect').click();
-                    },2000);
+                    },2500);
                 } else {
 
                     GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
