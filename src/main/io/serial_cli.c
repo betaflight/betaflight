@@ -343,7 +343,8 @@ static const char * const lookupTableSerialRX[] = {
     "SUMD",
     "SUMH",
     "XB-B",
-    "XB-B-RJ01"
+    "XB-B-RJ01",
+    "IBUS"
 };
 
 static const char * const lookupTableGyroFilter[] = {
