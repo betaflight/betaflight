@@ -281,7 +281,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
 #define MSP_3D                   124    //out message         Settings needed for reversible ESCs
-#define MSP_RC_CONTROLS          125    //out message         deadbands for yaw alt pitch roll
+#define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
+#define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -299,7 +300,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 #define MSP_SET_3D               217    //in message          Settings needed for reversible ESCs
-#define MSP_SET_RC_CONTROLS      218    //in message          deadbands for yaw alt pitch roll
+#define MSP_SET_RC_DEADBAND      218    //in message          deadbands for yaw alt pitch roll
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -1285,12 +1286,11 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
 
-    case MSP_RC_CONTROLS:
-        headSerialReply(4);
+    case MSP_RC_DEADBAND:
+        headSerialReply(3);
         serialize8(currentProfile->rcControlsConfig.deadband);
         serialize8(currentProfile->rcControlsConfig.yaw_deadband);
         serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
-        serialize8(currentProfile->rcControlsConfig.alt_hold_fast_change);
         break;
 
     default:
@@ -1522,11 +1522,10 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
-    case MSP_SET_RC_CONTROLS:
+    case MSP_SET_RC_DEADBAND:
         currentProfile->rcControlsConfig.deadband = read8();
         currentProfile->rcControlsConfig.yaw_deadband = read8();
         currentProfile->rcControlsConfig.alt_hold_deadband = read8();
-        currentProfile->rcControlsConfig.alt_hold_fast_change = read8();
         break;
         
     case MSP_RESET_CONF:
