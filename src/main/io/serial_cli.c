@@ -51,7 +51,6 @@
 #include "io/gimbal.h"
 #include "io/rc_controls.h"
 #include "io/serial.h"
-#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -149,10 +148,6 @@ static void cliFlashRead(char *cmdline);
 #endif
 #endif
 
-#ifdef USE_SERIAL_1WIRE_CLI
-static void cliUSB1Wire(char *cmdline);
-#endif
-
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -229,9 +224,6 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-#ifdef USE_SERIAL_1WIRE_CLI
-    CLI_COMMAND_DEF("1wire", "1-wire interface to escs", "<esc index>", cliUSB1Wire),
-#endif
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
@@ -2316,27 +2308,6 @@ static void cliStatus(char *cmdline)
 
     printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
-
-#ifdef USE_SERIAL_1WIRE_CLI
-static void cliUSB1Wire(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliShowParseError();
-        return;
-    } else {
-        usb1WireInitialize();
-
-        int i;
-        i = atoi(cmdline);
-        if (i >= 0 && i < escCount) {
-            printf("Switching to BlHeli mode on motor port %d\r\n", i);
-            usb1WirePassthrough(i);
-        } else {
-            cliShowArgumentRangeError("motor", 0, escCount - 1);
-        }
-    }
-}
-#endif
 
 static void cliVersion(char *cmdline)
 {
