@@ -268,6 +268,7 @@ COMMON_SRC = build_config.c \
 		   common/typeconversion.c \
 		   common/encoding.c \
 		   common/filter.c \
+		   scheduler.c \
 		   main.c \
 		   mw.c \
 		   flight/altitudehold.c \

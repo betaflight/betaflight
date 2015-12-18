@@ -20,15 +20,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <string.h>
 
 #include "common/maths.h"
-#include "common/filter.h"
 
+#include "build_config.h"
 #include "platform.h"
 #include "debug.h"
 
 #include "common/axis.h"
+#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -62,30 +62,30 @@ int32_t accSum[XYZ_AXIS_COUNT];
 uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
 float accVelScale;
-float fc_acc;
 
 float throttleAngleScale;
+float fc_acc;
 float smallAngleCosZ = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
+static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
 static pidProfile_t *pidProfile;
 static accDeadband_t *accDeadband;
 
-
-static float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
+STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
 static float gyroScale;
 
-static void imuCompureRotationMatrix(void)
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
-    float q1q1 = q1 * q1;
-    float q2q2 = q2 * q2;
-    float q3q3 = q3 * q3;
+    float q1q1 = sq(q1);
+    float q2q2 = sq(q2);
+    float q3q3 = sq(q3);
     
     float q0q1 = q0 * q1;
     float q0q2 = q0 * q2;
@@ -128,7 +128,7 @@ void imuInit(void)
     gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
     accVelScale = 9.80665f / acc_1G / 10000.0f;
 
-    imuCompureRotationMatrix();
+    imuComputeRotationMatrix();
 }
 
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
@@ -248,7 +248,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Use measured magnetic field vector
-    recipNorm = mx * mx + my * my + mz * mz;
+    recipNorm = sq(mx) + sq(my) + sq(mz);
     if (useMag && recipNorm > 0.01f) {
         // Normalise magnetometer measurement
         recipNorm = invSqrt(recipNorm);
@@ -275,7 +275,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Use measured acceleration vector
-    recipNorm = ax * ax + ay * ay + az * az;
+    recipNorm = sq(ax) + sq(ay) + sq(az);
     if (useAcc && recipNorm > 0.01f) {
         // Normalise accelerometer measurement
         recipNorm = invSqrt(recipNorm);
@@ -327,17 +327,17 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q3 += (qa * gz + qb * gy - qc * gx);
 
     // Normalise quaternion
-    recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+    recipNorm = invSqrt(sq(q0) + sq(q1) + sq(q2) + sq(q3));
     q0 *= recipNorm;
     q1 *= recipNorm;
     q2 *= recipNorm;
     q3 *= recipNorm;
 
     // Pre-compute rotation matrix from quaternion
-    imuCompureRotationMatrix();
+    imuComputeRotationMatrix();
 }
 
-static void imuUpdateEulerAngles(void)
+STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
     /* Compute pitch/roll angles */
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
@@ -364,7 +364,7 @@ static bool imuIsAccelerometerHealthy(void)
         accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
 
-    accMagnitude = accMagnitude * 100 / ((int32_t)acc_1G * acc_1G);
+    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc_1G));
 
     // Accept accel readings only in range 0.90g - 1.10g
     return (81 < accMagnitude) && (accMagnitude < 121);
@@ -389,16 +389,15 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
-    // If reading is considered valid - apply filter
+    // Smooth and use only valid accelerometer readings
     for (axis = 0; axis < 3; axis++) {
         if (imuRuntimeConfig->acc_cut_hz > 0) {
-            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6);
+            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
         } else {
             accSmooth[axis] = accADC[axis];
         }
     }
 
-    // Smooth and use only valid accelerometer readings
     if (imuIsAccelerometerHealthy()) {
         useAcc = true;
     }
@@ -409,7 +408,7 @@ static void imuCalculateEstimatedAttitude(void)
 #if defined(GPS)
     else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-        rawYawError = DECIDEGREES_TO_RADIANS(GPS_ground_course - attitude.values.yaw);
+        rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - GPS_ground_course);
         useYaw = true;
     }
 #endif
@@ -425,21 +424,30 @@ static void imuCalculateEstimatedAttitude(void)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
-void imuUpdateGyro(void)
-{
-    gyroUpdate();
-}
-
-void imuUpdateAcc(rollAndPitchTrims_t *accelerometerTrims)
+void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
 {
     if (sensors(SENSOR_ACC)) {
         updateAccelerationReadings(accelerometerTrims);
+        isAccelUpdatedAtLeastOnce = true;
+    }
+}
+
+void imuUpdateGyroAndAttitude(void)
+{
+    gyroUpdate();
+
+    if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {
         accADC[X] = 0;
         accADC[Y] = 0;
         accADC[Z] = 0;
     }
+}
+
+float getCosTiltAngle(void)
+{
+    return rMat[2][2];
 }
 
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
