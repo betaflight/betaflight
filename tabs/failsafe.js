@@ -126,32 +126,31 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                 if (i < channelNames.length) {
                     fullChannels_e.append('\
                         <div class="number">\
-                            <div class="channelname">\
+                            <div class="channelprimary">\
                                 <span>' + channelNames[i] + '</span>\
                             </div>\
-                            <div class="cf_tip" title="' + chrome.i18n.getMessage("failsafeChannelFallbackSettingsAuto") + '">\
-                                <select class="aux-set" id="' + i + '">\
+                            <div class="cf_tip channelsetting" title="' + chrome.i18n.getMessage("failsafeChannelFallbackSettingsAuto") + '">\
+                                <select class="aux_set" id="' + i + '">\
                                     <option value="0">Auto</option>\
                                     <option value="1">Hold</option>\
                                 </select>\
                             </div>\
-                            <div class="aux-value"><input type="number" name="aux_value" min="750" max="2250" id="' + i + '"/></div>\
                         </div>\
                     ');
                 } else {
                     fullChannels_e.append('\
                         <div class="number">\
-                            <div class="channelname">\
-                                <span>' + chrome.i18n.getMessage("controlAxisAux" + (aux_index++)) + '</span>\
+                            <div class="channelauxiliary">\
+                                <span class="channelname">' + chrome.i18n.getMessage("controlAxisAux" + (aux_index++)) + '</span>\
                                 ' + auxAssignment[aux_assignment_index++] + '\
                             </div>\
-                            <div class="cf_tip" title="' + chrome.i18n.getMessage("failsafeChannelFallbackSettingsHold") + '">\
-                                <select class="aux-set" id="' + i + '">\
+                            <div class="cf_tip channelsetting" title="' + chrome.i18n.getMessage("failsafeChannelFallbackSettingsHold") + '">\
+                                <select class="aux_set" id="' + i + '">\
                                     <option value="1">Hold</option>\
                                     <option value="2">Set</option>\
                                 </select>\
                             </div>\
-                            <div class="aux-value"><input type="number" name="aux_value" min="750" max="2250" id="' + i + '"/></div>\
+                            <div class="auxiliary"><input type="number" name="aux_value" min="750" max="2250" id="' + i + '"/></div>\
                         </div>\
                     ');
                 }

@@ -213,23 +213,29 @@
     margin-right: 3px;
 }
 
-.tab-failsafe .channelname {
-    float:left;
-    margin-right: 3px;
+.tab-failsafe .channelprimary {
+    float:left;   
+    width:60%;   
+}
+
+.tab-failsafe .channelauxiliary {
+    float:left;   
     width:60%;
     padding-top: 2px;
 }
 
-.tab-failsafe .aux-value {
-    float:left;    
-    width:15%;
-    padding-top: 2px;
+.tab-failsafe .channelname {
+    margin-right: 3px;
 }
 
-.tab-failsafe .aux-set {
+.tab-failsafe .channelsetting {
     float:left;    
-    width:15%;
-    padding-top: 2px;
+    width:25%;    
+}
+
+.tab-failsafe .auxiliary {
+    float:left;    
+    width:15%;    
 }
 
 .tab-failsafe .note {
