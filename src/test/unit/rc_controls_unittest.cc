@@ -228,12 +228,6 @@ rxConfig_t rxConfig;
 extern uint8_t adjustmentStateMask;
 extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-static const adjustmentConfig_t rateAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_RC_RATE,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
     controlRateConfig_t controlRateConfig = {
@@ -245,6 +239,14 @@ protected:
             .dynThrPID = 0,
             .rcYawExpo8 = 0,
             .tpa_breakpoint = 0
+    };
+
+    adjustmentRange_t adjustmentRange = {
+            .auxChannelIndex = 0,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_NONE,
+            .auxSwitchChannelIndex = 0,
+            .adjustmentIndex = 0
     };
 
     virtual void SetUp() {
@@ -273,7 +275,10 @@ protected:
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 {
     // given
-    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
+    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
+    adjustmentRange.auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
+    adjustmentRange.auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
+    configureAdjustmentState(&adjustmentRange);
 
     // and
     uint8_t index;
@@ -318,7 +323,11 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     // and
     adjustmentStateMask = 0;
     memset(&adjustmentStates, 0, sizeof(adjustmentStates));
-    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
+    
+    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
+    adjustmentRange.auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
+    adjustmentRange.auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
+    configureAdjustmentState(&adjustmentRange);
 
     // and
     uint8_t index;
@@ -456,17 +465,20 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
-static const adjustmentConfig_t rateProfileAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
-    .mode = ADJUSTMENT_MODE_SELECT,
-    .data = { { 3 } }
-};
-
 TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 {
     // given
     int adjustmentIndex = 3;
-    configureAdjustment(adjustmentIndex, AUX4 - NON_AUX_CHANNEL_COUNT, &rateProfileAdjustmentConfig);
+
+    adjustmentRange.adjustmentFunction = ADJUSTMENT_RATE_PROFILE;
+    adjustmentRange.auxChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
+    adjustmentRange.auxSwitchChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
+    adjustmentRange.adjustmentIndex = adjustmentIndex;
+
+    configureAdjustmentState(&adjustmentRange);
+
+    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
+    configureAdjustmentState(&adjustmentRange);
 
     // and
     uint8_t index;
@@ -494,43 +506,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
-static const adjustmentConfig_t pidPitchAndRollPAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-static const adjustmentConfig_t pidPitchAndRollIAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-static const adjustmentConfig_t pidPitchAndRollDAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-static const adjustmentConfig_t pidYawPAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_YAW_P,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-static const adjustmentConfig_t pidYawIAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_YAW_I,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-static const adjustmentConfig_t pidYawDAdjustmentConfig = {
-    .adjustmentFunction = ADJUSTMENT_YAW_D,
-    .mode = ADJUSTMENT_MODE_STEP,
-    .data = { { 1 } }
-};
-
-TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
+TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses integers
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
@@ -556,12 +532,59 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof (controlRateConfig));
 
-    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
-    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
-    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
-    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
-    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
-    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
+    adjustmentRange_t adjustmentRange1 = {
+            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 0
+    };
+    configureAdjustmentState(&adjustmentRange1);
+
+    adjustmentRange_t adjustmentRange2 = {
+            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 1
+    };
+    configureAdjustmentState(&adjustmentRange2);
+
+    adjustmentRange_t adjustmentRange3 = {
+            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 2
+    };
+    configureAdjustmentState(&adjustmentRange3);
+
+    adjustmentRange_t adjustmentRange4 = {
+            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_P,
+            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 3
+    };
+    configureAdjustmentState(&adjustmentRange4);
+
+    adjustmentRange_t adjustmentRange5 = {
+            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_I,
+            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 4
+    };
+    configureAdjustmentState(&adjustmentRange5);
+
+    adjustmentRange_t adjustmentRange6 = {
+            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_D,
+            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 5
+    };
+    configureAdjustmentState(&adjustmentRange6);
 
     // and
     uint8_t index;
@@ -607,7 +630,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     EXPECT_EQ(28, pidProfile.D8[YAW]);
 }
 
-TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
+TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floats
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
@@ -633,12 +656,59 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof (controlRateConfig));
 
-    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
-    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
-    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
-    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
-    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
-    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
+    adjustmentRange_t adjustmentRange1 = {
+            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 0
+    };
+    configureAdjustmentState(&adjustmentRange1);
+
+    adjustmentRange_t adjustmentRange2 = {
+            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 1
+    };
+    configureAdjustmentState(&adjustmentRange2);
+
+    adjustmentRange_t adjustmentRange3 = {
+            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 2
+    };
+    configureAdjustmentState(&adjustmentRange3);
+
+    adjustmentRange_t adjustmentRange4 = {
+            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_P,
+            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 3
+    };
+    configureAdjustmentState(&adjustmentRange4);
+
+    adjustmentRange_t adjustmentRange5 = {
+            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_I,
+            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 4
+    };
+    configureAdjustmentState(&adjustmentRange5);
+
+    adjustmentRange_t adjustmentRange6 = {
+            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .range = { .startStep = 0, .endStep = 48 },
+            .adjustmentFunction = ADJUSTMENT_YAW_D,
+            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
+            .adjustmentIndex = 5
+    };
+    configureAdjustmentState(&adjustmentRange6);
 
     // and
     uint8_t index;

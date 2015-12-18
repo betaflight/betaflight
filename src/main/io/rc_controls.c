@@ -354,215 +354,29 @@ uint8_t adjustmentStateMask = 0;
 
 #define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
-// sync with adjustmentFunction_e
-static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
-    {
-        .adjustmentFunction = ADJUSTMENT_RC_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_RC_EXPO,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_YAW_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_YAW_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_YAW_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_YAW_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
-        .mode = ADJUSTMENT_MODE_SELECT,
-        .data = { .selectConfig = { .switchPositions = 3 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ROLL_RATE,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_PITCH_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ROLL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ROLL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ROLL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ALT_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ALT_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_ALT_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_VEL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_VEL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_VEL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    
-    {
-        .adjustmentFunction = ADJUSTMENT_MAG_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_POS_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_POS_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_POSR_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_POSR_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_POSR_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_NAVR_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_NAVR_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_NAVR_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_LEVEL_P,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_LEVEL_I,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_LEVEL_D,
-        .mode = ADJUSTMENT_MODE_STEP,
-        .data = { .stepConfig = { .step = 1 }}
-    }
-};
-
-#define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
-
 adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
+void configureAdjustmentState(adjustmentRange_t *adjustmentRange) {
+    uint8_t index = adjustmentRange->adjustmentIndex;
+
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
-    if (adjustmentState->config == adjustmentConfig) {
-        // already configured
+    if (adjustmentState->range == adjustmentRange) {
         return;
     }
-    adjustmentState->auxChannelIndex = auxSwitchChannelIndex;
-    adjustmentState->config = adjustmentConfig;
+    adjustmentState->range = adjustmentRange;
+    adjustmentState->auxChannelIndex = adjustmentRange->auxSwitchChannelIndex;
     adjustmentState->timeoutAt = 0;
+
+    adjustmentState->config.adjustmentFunction = adjustmentRange->adjustmentFunction;
+
+    if (adjustmentRange->adjustmentFunction == ADJUSTMENT_RATE_PROFILE) {
+        adjustmentState->config.mode = ADJUSTMENT_MODE_SELECT;
+        adjustmentState->config.data.selectConfig.switchPositions = 3;
+    } else {
+        adjustmentState->config.mode = ADJUSTMENT_MODE_STEP;
+        adjustmentState->config.data.stepConfig.step = 1;
+    }
 
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
@@ -872,10 +686,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
     for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
 
-        if (!adjustmentState->config) {
-            continue;
-        }
-        uint8_t adjustmentFunction = adjustmentState->config->adjustmentFunction;
+        uint8_t adjustmentFunction = adjustmentState->config.adjustmentFunction;
         if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
@@ -894,12 +705,12 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
 
-        if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
+        if (adjustmentState->config.mode == ADJUSTMENT_MODE_STEP) {
             int delta;
             if (rcData[channelIndex] > rxConfig->midrc + 200) {
-                delta = adjustmentState->config->data.stepConfig.step;
+                delta = adjustmentState->config.data.stepConfig.step;
             } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
-                delta = 0 - adjustmentState->config->data.stepConfig.step;
+                delta = 0 - adjustmentState->config.data.stepConfig.step;
             } else {
                 // returning the switch to the middle immediately resets the ready state
                 MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
@@ -911,8 +722,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
             }
 
             applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
-        } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
-            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
+        } else if (adjustmentState->config.mode == ADJUSTMENT_MODE_SELECT) {
+            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config.data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
 
             applySelectAdjustment(adjustmentFunction, position);
@@ -930,9 +741,7 @@ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
 
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
 
-            const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
-
-            configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
+            configureAdjustmentState(adjustmentRange);
         }
     }
 }

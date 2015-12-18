@@ -240,8 +240,9 @@ typedef struct adjustmentRange_s {
 
 typedef struct adjustmentState_s {
     uint8_t auxChannelIndex;
-    const adjustmentConfig_t *config;
+    adjustmentConfig_t config;
     uint32_t timeoutAt;
+    adjustmentRange_t *range;
 } adjustmentState_t;
 
 
@@ -252,7 +253,7 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+void configureAdjustmentState(adjustmentRange_t *adjustmentRange);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
