@@ -870,7 +870,7 @@
 
 
     "servosFirmwareUpgradeRequired": {
-        "message": "Servos requires firmware &gt;= 1.10.0."
+        "message": "Servos requires firmware &gt;= 1.10.0. and target support."
     },
     "servosChangeDirection": {
         "message": "Change Direction in TX To Match"
