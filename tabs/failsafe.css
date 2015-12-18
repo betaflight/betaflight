@@ -216,7 +216,19 @@
 .tab-failsafe .channelname {
     float:left;
     margin-right: 3px;
-    width:60%;
+    width:20%;
+    padding-top: 2px;
+}
+
+.tab-failsafe .aux-value {
+    float:left;    
+    width:15%;
+    padding-top: 2px;
+}
+
+.tab-failsafe .aux-set {
+    float:left;    
+    width:10%;
     padding-top: 2px;
 }
 
