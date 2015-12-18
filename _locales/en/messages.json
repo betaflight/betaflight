@@ -965,7 +965,7 @@
         "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />"
     },
     "motorsEnableControl": {
-        "message": "I understand the risks, propellors are removed - Enable motor control."
+        "message": "I understand the risks, propellers are removed - Enable motor control."
     },
 
     "sensorsInfo": {
@@ -1199,7 +1199,7 @@
         "message": "<strong>Recovery / Lost communication<strong>"
     },
     "firmwareFlasherRecoveryText": {
-        "message": "If you have lost comminication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
+        "message": "If you have lost communication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
