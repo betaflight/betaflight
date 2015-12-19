@@ -135,7 +135,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 108;
+static const uint8_t EEPROM_CONF_VERSION = 109;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -423,6 +423,7 @@ static void resetConf(void)
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
     masterConfig.rxConfig.serialrx_provider = 0;
+    masterConfig.rxConfig.sbus_inversion = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
