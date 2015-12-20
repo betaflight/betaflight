@@ -273,7 +273,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     magHold = CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw);
 
     // Add pitch compensation
-    posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
+    //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
 }
 
 void applyFixedWingPositionController(uint32_t currentTime)
@@ -317,7 +317,6 @@ void applyFixedWingPositionController(uint32_t currentTime)
         }
 
         rcCommand[ROLL] = leanAngleToRcCommand(posControl.rcAdjustment[ROLL]);
-        rcCommand[PITCH] += leanAngleToRcCommand(posControl.rcAdjustment[PITCH]);   // Add in pitch compensation
     }
     else {
         // No valid pos sensor data, don't adjust pitch automatically, rcCommand[ROLL] is passed through to PID controller
