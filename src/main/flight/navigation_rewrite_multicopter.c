@@ -246,7 +246,7 @@ bool adjustMulticopterPositionFromRCInput(void)
     }
 }
 
-static float getVelocityAttenuationFactor(void)
+static float getVelocityHeadingAttenuationFactor(void)
 {
     // In WP mode scale velocity if heading is different from bearing
     if (navGetCurrentStateFlags() & NAV_AUTO_WP) {
@@ -257,6 +257,17 @@ static float getVelocityAttenuationFactor(void)
     } else {
         return 1.0f;
     }
+}
+
+static float getVelocityExpoAttenuationFactor(float velTotal)
+{
+    // Calculate factor of how velocity with applied expo is different from unchanged velocity
+    float velScale = constrainf(velTotal / posControl.navConfig->max_speed, 0.01f, 1.0f);
+
+    // posControl.navConfig->max_speed * ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velTotal;
+    // ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velScale
+    // ((velScale * velScale) * posControl.posResponseExpo + (1 - posControl.posResponseExpo));
+    return 1.0f - posControl.posResponseExpo * (1.0f - (velScale * velScale));  // x^3 expo factor
 }
 
 static void updatePositionVelocityController_MC(void)
@@ -273,12 +284,14 @@ static void updatePositionVelocityController_MC(void)
     if (newVelTotal > posControl.navConfig->max_speed) {
         newVelX = posControl.navConfig->max_speed * (newVelX / newVelTotal);
         newVelY = posControl.navConfig->max_speed * (newVelY / newVelTotal);
+        newVelTotal = posControl.navConfig->max_speed;
     }
 
-    // Apply attenuation if heading in wrong direction - turn first, accelerate later (effective only in WP mode)
-    float velAttFactor = getVelocityAttenuationFactor();
-    posControl.desiredState.vel.V.X = newVelX * velAttFactor;
-    posControl.desiredState.vel.V.Y = newVelY * velAttFactor;
+    // Apply expo & attenuation if heading in wrong direction - turn first, accelerate later (effective only in WP mode)
+    float velHeadFactor = getVelocityHeadingAttenuationFactor();
+    float velExpoFactor = getVelocityExpoAttenuationFactor(newVelTotal);
+    posControl.desiredState.vel.V.X = newVelX * velHeadFactor * velExpoFactor;
+    posControl.desiredState.vel.V.Y = newVelY * velHeadFactor * velExpoFactor;
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[X] = constrain(lrintf(posControl.desiredState.vel.V.X), -32678, 32767);

@@ -172,8 +172,8 @@
 #define GPS
 #define NAV
 
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
 #define BLACKBOX
 #define TELEMETRY

@@ -2100,6 +2100,9 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
     // Brake time parameter
     posControl.posDecelerationTime = (float)posControl.pidProfile->I8[PIDPOS] / 100.0f;
 
+    // Position controller expo (taret vel expo for MC)
+    posControl.posResponseExpo = constrainf((float)posControl.pidProfile->D8[PIDPOS] / 100.0f, 0.0f, 1.0f);
+
     // Initialize position hold P-controller
     for (axis = 0; axis < 2; axis++) {
         navPInit(&posControl.pids.pos[axis], (float)posControl.pidProfile->P8[PIDPOS] / 100.0f);
