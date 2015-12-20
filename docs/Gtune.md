@@ -10,18 +10,18 @@ The G-Tune functionality for Cleanflight is ported from the Harakiri firmware.
 
 ## Safety preamble: _Use at your own risk_
 
-The implementation you have here is quiet different and just for adjusting the P values of ROLL/PITCH/YAW in Acro mode.
+The implementation you have here is quite different and just for adjusting the P values of ROLL/PITCH/YAW in Acro mode.
 When flying in Acro mode (yaw tune in other modes possible as well - see below) you can activate G-Tune with an AUX box (switch) while the copter is armed.
 
-It will start tuning the wanted / possible axes (see below) in a predefined range (see below).
+It will start tuning the wanted / possible axis (see below) in a predefined range (see below).
 
 After activation you will probably notice nothing! That means G-Tune will not start shaking your copter, you will have to do it (or simply fly and let it work).
 
-The G-Tune is based on the gyro error so it is only active when you give no RC input (that would be an additional error). So if you just roll only pitch and yaw are tuned. If you stop rolling G-Tune will wait ca. 450ms to let the axis settle and then start tuning that axis again. All axes are treated independently.
+The G-Tune is based on the gyro error so it is only active when you give no RC input (that would be an additional error). So if you just roll only pitch and yaw are tuned. If you stop rolling G-Tune will wait ca. 450ms to let the axis settle and then start tuning that axis again. All axis are treated independently.
 
-The easiest way to tune all axes at once is to do some air-jumps with the copter in Acro (RC centered and G-Tune activated... of course..).
+The easiest way to tune all axis at once is to do some air-jumps with the copter in Acro (RC centered and G-Tune activated... of course..).
 
-You can set a too high P for the axes as default in the GUI, when the copter starts shaking the wobbles will be detected and P tuned down (be careful with the strength setting though - see below).
+You can set a too high P for the axis as default in the GUI, when the copter starts shaking the wobbles will be detected and P tuned down (be careful with the strength setting though - see below).
 
 Yaw tune is disabled in any copter with less than 4 motors (like tricopters).
 
@@ -30,6 +30,17 @@ G-Tune in Horizon or Level mode will just affect Yaw axis (if more than 3 motors
 You will see the results in the GUI - the tuning results will only be saved if you enable G-Tune mode while the copter is disarmed and G-Tune was used before when armed. You also can save the configuration in an alternative way (like hitting save button in the GUI, casting an eepromwrite with trimming, acc calibration etc.)
 
 TPA and G-Tune: It is not tested and will most likely not result into something good. However G-Tune might be able to replace TPA for you.
+
+A typical use may go in this order:
+
+* 1 -Arm the copter
+* 2 -Enable G-tune
+* 3 -Fly
+* 4 -Do a few (2-4) air jumps (aka punch outs) and fly around a bit. Take note if each punch out seems to become smoother with less oscillation and the overall flight performance.
+* 5 -Land 
+* 6 -Disarm the copter, but don’t power down. Put the transmitter in a safe place where the aircraft will not be armed unintentionally as you are near it. 
+* 7 -Connect cleanflight configurator. Examine the PIDs that have changed and take into consideration how it flew. If these are desired results, save the configuration. If the results are not desired look into changing the parameters as shown below and try again. 
+* 8 -Power down copter. 
 
 ## Parameters and their function:
 
