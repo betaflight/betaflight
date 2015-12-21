@@ -1831,6 +1831,22 @@ bool isApproachingLastWaypoint(void)
     }
 }
 
+float getActiveWaypointSpeed(void)
+{
+    uint16_t waypointSpeed = posControl.navConfig->max_speed;
+
+    if (navGetStateFlags(posControl.navState) & NAV_AUTO_WP) {
+        if (posControl.waypointCount > 0 && posControl.waypointList[posControl.activeWaypointIndex].action == NAV_WP_ACTION_WAYPOINT) {
+            waypointSpeed = posControl.waypointList[posControl.activeWaypointIndex].p1;
+
+            if (waypointSpeed < 50 || waypointSpeed > posControl.navConfig->max_speed) {
+                waypointSpeed = posControl.navConfig->max_speed;
+            }
+        }
+    }
+
+    return waypointSpeed;
+}
 
 /*-----------------------------------------------------------
  * A function to reset navigation PIDs and states

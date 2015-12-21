@@ -259,10 +259,10 @@ static float getVelocityHeadingAttenuationFactor(void)
     }
 }
 
-static float getVelocityExpoAttenuationFactor(float velTotal)
+static float getVelocityExpoAttenuationFactor(float velTotal, float velMax)
 {
     // Calculate factor of how velocity with applied expo is different from unchanged velocity
-    float velScale = constrainf(velTotal / posControl.navConfig->max_speed, 0.01f, 1.0f);
+    float velScale = constrainf(velTotal / velMax, 0.01f, 1.0f);
 
     // posControl.navConfig->max_speed * ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velTotal;
     // ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velScale
@@ -279,17 +279,20 @@ static void updatePositionVelocityController_MC(void)
     float newVelX = posErrorX * posControl.pids.pos[X].param.kP;
     float newVelY = posErrorY * posControl.pids.pos[Y].param.kP;
 
+    // Get max speed from generic NAV (waypoint specific), don't allow to move slower than 0.5 m/s
+    float maxSpeed = getActiveWaypointSpeed();
+
     // Scale velocity to respect max_speed
     float newVelTotal = sqrtf(sq(newVelX) + sq(newVelY));
-    if (newVelTotal > posControl.navConfig->max_speed) {
-        newVelX = posControl.navConfig->max_speed * (newVelX / newVelTotal);
-        newVelY = posControl.navConfig->max_speed * (newVelY / newVelTotal);
-        newVelTotal = posControl.navConfig->max_speed;
+    if (newVelTotal > maxSpeed) {
+        newVelX = maxSpeed * (newVelX / newVelTotal);
+        newVelY = maxSpeed * (newVelY / newVelTotal);
+        newVelTotal = maxSpeed;
     }
 
     // Apply expo & attenuation if heading in wrong direction - turn first, accelerate later (effective only in WP mode)
     float velHeadFactor = getVelocityHeadingAttenuationFactor();
-    float velExpoFactor = getVelocityExpoAttenuationFactor(newVelTotal);
+    float velExpoFactor = getVelocityExpoAttenuationFactor(newVelTotal, maxSpeed);
     posControl.desiredState.vel.V.X = newVelX * velHeadFactor * velExpoFactor;
     posControl.desiredState.vel.V.Y = newVelY * velHeadFactor * velExpoFactor;
 

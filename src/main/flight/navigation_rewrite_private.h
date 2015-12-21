@@ -286,6 +286,7 @@ void setDesiredPositionToFarAwayTarget(int32_t yaw, int32_t distance, navSetWayp
 bool isWaypointReached(navWaypointPosition_t * waypoint);
 bool isWaypointMissed(navWaypointPosition_t * waypoint);
 bool isApproachingLastWaypoint(void);
+float getActiveWaypointSpeed(void);
 
 int16_t rcCommandToLeanAngle(int16_t rcCommand);
 int16_t leanAngleToRcCommand(int16_t leanAngle);
