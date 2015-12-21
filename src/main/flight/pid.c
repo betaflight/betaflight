@@ -193,7 +193,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        if (!pidProfile->gyro_soft_lpf) {
+        if (!pidProfile->dterm_cut_hz) {
             // add moving average here to reduce noise
             deltaSum = (delta1[axis] + delta2[axis] + delta) / 3;
             delta2[axis] = delta1[axis];
@@ -336,7 +336,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        if (!pidProfile->gyro_soft_lpf) {
+        if (!pidProfile->dterm_cut_hz) {
             // add moving average here to reduce noise
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
