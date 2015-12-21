@@ -22,7 +22,7 @@
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR    1.113195f  // MagicEarthNumber from APM
 
 #define LAND_DETECTOR_TRIGGER_TIME_MS       2000        // 2 seconds
-#define NAV_WAIT_FOR_GPS_TIMEOUT_MS         2000        // GPS wait time-out
+#define NAV_WAIT_FOR_GPS_TIMEOUT_MS         5000        // GPS wait time-out 5 sec
 
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 

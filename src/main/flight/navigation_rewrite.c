@@ -1970,7 +1970,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         return NAV_FSM_EVENT_SWITCH_TO_RTH;
     }
     else if (IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
-        if (canActivatePosHold && STATE(GPS_FIX_HOME))
+        if ((FLIGHT_MODE(NAV_RTH_MODE)) || (canActivatePosHold && STATE(GPS_FIX_HOME)))
             return NAV_FSM_EVENT_SWITCH_TO_RTH;
     }
 
@@ -1980,22 +1980,23 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-        if (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0))
+        if ((FLIGHT_MODE(NAV_WP_MODE)) || (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0)))
             return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) && IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
-        if (canActivatePosHold && canActivateAltHold)
+        if ((FLIGHT_MODE(NAV_ALTHOLD_MODE) && FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold && canActivateAltHold))
             return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D;
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD)) {
-        if (canActivatePosHold)
+        if ((FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold))
             return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D;
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXNAVALTHOLD) && canActivateAltHold) {
-        return NAV_FSM_EVENT_SWITCH_TO_ALTHOLD;
+    if (IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
+        if ((FLIGHT_MODE(NAV_ALTHOLD_MODE)) || (canActivateAltHold))
+            return NAV_FSM_EVENT_SWITCH_TO_ALTHOLD;
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
