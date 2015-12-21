@@ -582,14 +582,14 @@ void processRx(void)
         }
 
         // Conditions to reset Error
-        if (!ARMING_FLAG(ARMED) || (feature(FEATURE_MOTOR_STOP) && IS_RC_MODE_ACTIVE(BOXMOTORSTOP)) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled) || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (!ARMING_FLAG(ARMED) || (feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON)) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled) || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             pidResetErrorGyro();
             airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
             airModeErrorResetIsEnabled = true;                                  // Enable Reset again especially after Disarm
             allowITermShrinkOnly = false;                                       // Disable shrink especially after Disarm
         }
     } else {
-        if (!(feature(FEATURE_MOTOR_STOP) && IS_RC_MODE_ACTIVE(BOXMOTORSTOP)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (!(feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (airModeErrorResetIsEnabled) {
                 if (millis() > airModeErrorResetTimeout && calculateRollPitchCenterStatus(&masterConfig.rxConfig) == NOT_CENTERED) {  // Only disable error reset when roll and pitch not centered
                     airModeErrorResetIsEnabled = false;
@@ -607,7 +607,7 @@ void processRx(void)
     // board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
     if (ARMING_FLAG(ARMED)
-        && (feature(FEATURE_MOTOR_STOP) && IS_RC_MODE_ACTIVE(BOXMOTORSTOP))
+        && (feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON))
         && !STATE(FIXED_WING)
     ) {
         if (isUsingSticksForArming()) {

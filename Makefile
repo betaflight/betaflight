@@ -38,7 +38,7 @@ FLASH_SIZE ?=
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME			 = betaflight
+FORKNAME			 = betaflight_motor_stop_mode
 
 CC3D_TARGETS = CC3D CC3D_OPBL CC3D_BP6 CC3D_OPBL_BP6
 

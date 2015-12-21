@@ -357,7 +357,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOXMOTORSTOP, "MOTOR STOP;", 29 },
+    { BOXIDLEON, "IDLE ON;", 29 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -651,7 +651,7 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 	if (feature(FEATURE_MOTOR_STOP)) {
-        activeBoxIds[activeBoxIdCount++] = BOXMOTORSTOP;
+        activeBoxIds[activeBoxIdCount++] = BOXIDLEON;
     }
 
     if (sensors(SENSOR_BARO)) {
@@ -843,7 +843,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
             IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
             IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXMOTORSTOP)) << BOXMOTORSTOP;
+            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXIDLEON)) << BOXIDLEON;
         for (i = 0; i < activeBoxIdCount; i++) {
             int flag = (tmp & (1 << activeBoxIds[i]));
             if (flag)
