@@ -394,7 +394,7 @@ static void resetConf(void)
 
     featureSet(FEATURE_FAILSAFE);
     featureSet(FEATURE_ONESHOT125);
-
+    featureSet(FEATURE_MOTOR_STOP);
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
