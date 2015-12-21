@@ -133,7 +133,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 109;
+static const uint8_t EEPROM_CONF_VERSION = 110;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -244,6 +244,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.baro_epv = 100.0f;
 
     // General navigation parameters
+    navConfig->pos_failure_timeout = 5;    // 5 sec
     navConfig->waypoint_radius = 300;
     navConfig->max_speed = 250;
     navConfig->max_manual_speed = 500;
