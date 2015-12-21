@@ -595,7 +595,8 @@ void processRx(void)
     }
 #endif
 
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+    // Navigation may override PASSTHRU_MODE
+    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode()) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);

@@ -1947,6 +1947,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     bool canActivateAltHold = canActivateAltHoldMode();
     bool canActivatePosHold = canActivatePosHoldMode();
 
+    // RTH/Failsafe_RTH can override PASSTHRU
     if (posControl.flags.forcedRTHActivated) {
         // If we request forced RTH - attempt to activate it no matter what
         // This might switch to emergency landing controller if GPS is unavailable
@@ -1955,6 +1956,11 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     else if (IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
         if (canActivatePosHold && STATE(GPS_FIX_HOME))
             return NAV_FSM_EVENT_SWITCH_TO_RTH;
+    }
+
+    // PASSTHRU mode has priority over WP/PH/AH
+    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+        return NAV_FSM_EVENT_SWITCH_TO_IDLE;
     }
 
     if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
