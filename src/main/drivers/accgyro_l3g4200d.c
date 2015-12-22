@@ -54,7 +54,7 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static void l3g4200dInit(uint16_t lpf);
+static void l3g4200dInit(uint8_t lpf);
 static bool l3g4200dRead(int16_t *gyroADC);
 
 bool l3g4200dDetect(gyro_t *gyro)
@@ -76,24 +76,25 @@ bool l3g4200dDetect(gyro_t *gyro)
     return true;
 }
 
-static void l3g4200dInit(uint16_t lpf)
+static void l3g4200dInit(uint8_t lpf)
 {
     bool ack;
 
     uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
 
+    // Conversion from MPU6XXX LPF values
     switch (lpf) {
         default:
-            case 32:
+        case 3:
             mpuLowPassFilter = L3G4200D_DLPF_32HZ;
             break;
-        case 54:
+        case 4:
             mpuLowPassFilter = L3G4200D_DLPF_54HZ;
             break;
-        case 78:
+        case 5:
             mpuLowPassFilter = L3G4200D_DLPF_78HZ;
             break;
-        case 93:
+        case 6:
             mpuLowPassFilter = L3G4200D_DLPF_93HZ;
             break;
     }
