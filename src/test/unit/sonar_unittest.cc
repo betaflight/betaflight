@@ -103,10 +103,8 @@ TEST(SonarUnittest, TestAltitude)
     EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(224))), 369);
     EXPECT_EQ(sonarGetLatestAltitude(), 369);
     // Check limits at max range max tilt, need to deal with rounding errors in cosf calculation
-    EXPECT_GE(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees - 1))), sonarMaxAltWithTiltCm - 1);
-    EXPECT_LE(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees - 1))), sonarMaxAltWithTiltCm + 1);
-    EXPECT_GE(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm - 1);
-    EXPECT_LE(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm + 1);
+    EXPECT_NEAR(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees - 1))), sonarMaxAltWithTiltCm, 1);
+    EXPECT_NEAR(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm, 1);
 }
 
 // STUBS
