@@ -849,11 +849,11 @@ void mixTable(void)
                 if (isFailsafeActive) {
                     motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
                 } else {
-                    // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
+                    // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled and IDLE ON mode is inactive,
                     // do not spin the motors.
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
                     if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                        if (feature(FEATURE_MOTOR_STOP)) {
+                        if (feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON)) {
                             motor[i] = escAndServoConfig->mincommand;
                         }
                     }
