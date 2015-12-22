@@ -46,6 +46,11 @@
 #if defined(NAV)
 
 /*-----------------------------------------------------------
+ * Backdoor to MW heading controller
+ *-----------------------------------------------------------*/
+extern int16_t magHold;
+
+/*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
 static int16_t altholdInitialRCThrottle;      // Throttle input when althold was activated
@@ -134,7 +139,7 @@ void resetMulticopterAltitudeController()
     posControl.rcAdjustment[THROTTLE] = 0;
 }
 
-void applyMulticopterAltitudeController(uint32_t currentTime)
+static void applyMulticopterAltitudeController(uint32_t currentTime)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
     static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
@@ -359,7 +364,7 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -maxBankAngle, maxBankAngle);
 }
 
-void applyMulticopterPositionController(uint32_t currentTime)
+static void applyMulticopterPositionController(uint32_t currentTime)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
     static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
@@ -455,7 +460,7 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer)
 /*-----------------------------------------------------------
  * Multicopter emergency landing
  *-----------------------------------------------------------*/
-void applyMulticopterEmergencyLandingController(uint32_t currentTime)
+static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
 {
     static uint32_t previousTimeUpdate;
     static uint32_t previousTimePositionUpdate;
@@ -518,4 +523,30 @@ void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
     pos->V.Y = posControl.actualState.pos.V.Y + stoppingDistanceY;
 }
 
+void resetMulticopterHeadingController(void)
+{
+    magHold = CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw);
+}
+
+static void applyMulticopterHeadingController(void)
+{
+    magHold = CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw);
+}
+
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
+{
+    if (navStateFlags & NAV_CTL_EMERG) {
+        applyMulticopterEmergencyLandingController(currentTime);
+    }
+    else {
+        if (navStateFlags & NAV_CTL_ALT)
+            applyMulticopterAltitudeController(currentTime);
+
+        if (navStateFlags & NAV_CTL_POS)
+            applyMulticopterPositionController(currentTime);
+
+        if (navStateFlags & NAV_CTL_YAW)
+            applyMulticopterHeadingController();
+    }
+}
 #endif  // NAV

@@ -300,34 +300,34 @@ bool checkForPositionSensorTimeout(void);
 
 bool isGPSGlitchDetected(void);
 
-/* Autonomous navigation functions */
-void setupAutonomousControllerRTH(void);
-void resetAutonomousControllerForWP(void);
-void resetAutonomousControllerForRTH(void);
-void applyAutonomousController(void);
-
 /* Multicopter-specific functions */
 void setupMulticopterAltitudeController(void);
-void resetMulticopterAltitudeController();
-void applyMulticopterAltitudeController(uint32_t currentTime);
+
+void resetMulticopterAltitudeController(void);
+void resetMulticopterPositionController(void);
+void resetMulticopterHeadingController(void);
+
 bool adjustMulticopterAltitudeFromRCInput(void);
 bool adjustMulticopterHeadingFromRCInput(void);
-void resetMulticopterPositionController(void);
-void applyMulticopterPositionController(uint32_t currentTime);
 bool adjustMulticopterPositionFromRCInput(void);
-void applyMulticopterEmergencyLandingController(uint32_t currentTime);
+
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
+
 bool isMulticopterLandingDetected(uint32_t * landingTimer);
 void calculateMulticopterInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing specific functions */
 void setupFixedWingAltitudeController(void);
-void resetFixedWingAltitudeController();
-void applyFixedWingAltitudeController(uint32_t currentTime);
+
+void resetFixedWingAltitudeController(void);
+void resetFixedWingPositionController(void);
+void resetFixedWingHeadingController(void);
+
 bool adjustFixedWingAltitudeFromRCInput(void);
 bool adjustFixedWingHeadingFromRCInput(void);
-void resetFixedWingPositionController(void);
-void applyFixedWingPositionController(uint32_t currentTime);
 bool adjustFixedWingPositionFromRCInput(void);
-void applyFixedWingEmergencyLandingController(void);
+
+void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
+
 bool isFixedWingLandingDetected(uint32_t * landingTimer);
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
