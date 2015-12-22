@@ -1,8 +1,18 @@
 /*
- * filter.c
+ * This file is part of Cleanflight.
  *
- *  Created on: 24 jun. 2015
- *      Author: borisb
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -10,8 +20,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "common/filter.h"
 #include "common/axis.h"
+#include "common/filter.h"
+#include "common/maths.h"
 
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
@@ -27,23 +38,37 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
-// 7 Tap FIR filter as described here:
-// Thanks to Qcopter
-void filterApplyFIR(int16_t data[]) {
-    int16_t FIRcoeff[7] = { 12, 23, 40, 51, 52, 40, 38 }; // TODO - More coefficients needed. Now fixed to 1khz
-    static int16_t gyro_delay[3][7] = { {0}, {0}, {0} };
+static int8_t gyroFIRCoeff_500[FILTER_TAPS] = { 18, 14, 16, 20, 22, 24, 25, 25, 24, 20, 18, 12, 18 };  // looptime=500;
+static int8_t gyroFIRCoeff_1000[FILTER_TAPS] = { 0, 0, 0, 0, 0, 0, 12, 23, 40, 51, 52, 40, 38 }; // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
+
+int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint32_t targetLooptime)
+{
+    if (filter_level == 0) {
+        return NULL;
+    }
+
+    // filter for 2kHz looptime
+    if (targetLooptime == 500) {
+        return gyroFIRCoeff_500;
+    } else {    // filter for 1kHz looptime
+        return gyroFIRCoeff_1000;
+    }
+}
+
+// Thanks to Qcopter & BorisB & DigitalEntity
+void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff[FILTER_TAPS])
+{
     int32_t FIRsum;
     int axis, i;
 
-    // 7 tap FIR, <-20dB at >170Hz with looptime 1ms, groupdelay = 2.5ms
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         FIRsum = 0;
-        for (i = 0; i <= 5; i++) {
-            gyro_delay[axis][i] = gyro_delay[axis][i + 1];
-            FIRsum += gyro_delay[axis][i] * FIRcoeff[i];
+        for (i = 0; i <= 7; i++) {
+            state[axis][i] = state[axis][i + 1];
+            FIRsum += state[axis][i] * (int16_t)coeff[i];
         }
-        gyro_delay[axis][6] = data[axis];
-        FIRsum += gyro_delay[axis][6] * FIRcoeff[6];
+        state[axis][FILTER_TAPS-1] = data[axis];
+        FIRsum += state[axis][FILTER_TAPS-1] * coeff[FILTER_TAPS-1];
         data[axis] = FIRsum / 256;
     }
 }

@@ -91,7 +91,7 @@ enum {
     ALIGN_MAG = 2
 };
 
-//#define JITTER_DEBUG 0  // Specify debug value for jitter debug
+#define JITTER_DEBUG 0  // Specify debug value for jitter debug
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)

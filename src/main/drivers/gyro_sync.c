@@ -46,10 +46,18 @@ void gyroUpdateSampleRate(uint8_t lpf) {
 
     if (!lpf) {
         gyroSamplePeriod = 125;
-        gyroSyncDenominator = 8; // Sample every 8th gyro measurement
+#ifdef STM32F303xC
+        gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
+#else
+        if (!sensors(SENSOR_ACC) && !sensors(SENSOR_BARO) && !sensors(SENSOR_MAG)) {
+            gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
+        } else {
+            gyroSyncDenominator = 8; // Sample every 8th gyro measurement 1khz
+        }
+#endif
     } else {
         gyroSamplePeriod = 1000;
-        gyroSyncDenominator = 1; // Full Sampling
+        gyroSyncDenominator = 1; // Full Sampling 1khz
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)

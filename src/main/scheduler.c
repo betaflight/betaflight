@@ -27,7 +27,7 @@
 
 #include "drivers/system.h"
 
-//#define SCHEDULER_DEBUG
+#define SCHEDULER_DEBUG
 
 cfTaskId_e currentTaskId = TASK_NONE;
 
