@@ -695,8 +695,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
             return NAV_FSM_EVENT_SWITCH_TO_RTH_2D;
         }
     }
-    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
-    else if (checkForPositionSensorTimeout()) {
+    /* No HOME set or position sensor failure timeout - land */
+    else if (!STATE(GPS_FIX_HOME) || checkForPositionSensorTimeout()) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     /* No valid POS sensor but still within valid timeout - wait */
@@ -755,8 +755,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navi
     if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME)) {
         return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_HEAD_HOME
     }
-    /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
-    else if (checkForPositionSensorTimeout()) {
+    /* No HOME set or position sensor failure timeout - land */
+    else if (!STATE(GPS_FIX_HOME) || checkForPositionSensorTimeout()) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     /* No valid POS sensor but still within valid timeout - wait */
