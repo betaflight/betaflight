@@ -264,7 +264,9 @@ void init(void)
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500 && !masterConfig.use_fast_pwm)
         pwm_params.idlePulse = 0; // brushed motors
-
+#ifdef CC3D
+    pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
+#endif
     pwmRxInit(masterConfig.inputFilteringMode);
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
