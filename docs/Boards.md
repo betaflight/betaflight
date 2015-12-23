@@ -9,6 +9,7 @@ The core set of supported flyable boards are:
 * CJMCU
 * Flip32+
 * Naze32
+* RMDO (RMRC Dodo)
 * Sparky
 * SPRacingF3
 
