@@ -17,21 +17,18 @@
 
 #pragma once
 
-#include "config/runtime_config.h"
-
 #define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR    1.113195f  // MagicEarthNumber from APM
 
+#if defined(NAV)
+
+#include "config/runtime_config.h"
+
 #define LAND_DETECTOR_TRIGGER_TIME_MS       2000        // 2 seconds
-
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
-
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
 #define NAV_ACCEL_CUTOFF_FREQUENCY_HZ       2       // low-pass filter on XY-acceleration target
-
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
-
 #define NAV_DTERM_CUT_HZ                    10
-
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
 #define HZ2US(hz)   (1000000 / (hz))
@@ -331,3 +328,5 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
 
 bool isFixedWingLandingDetected(uint32_t * landingTimer);
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
+
+#endif

@@ -111,10 +111,12 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+#if defined(NAV)
 bool isUsingNavigationModes(void)
 {
     return isUsingNAVModes;
 }
+#endif
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {

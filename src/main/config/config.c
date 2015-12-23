@@ -213,7 +213,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
 #endif
 }
 
-#ifdef GPS
+#ifdef NAV
 void resetNavConfig(navConfig_t * navConfig)
 {
     // Navigation flags
@@ -523,7 +523,7 @@ static void resetConf(void)
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
 
-#ifdef GPS
+#ifdef NAV
     resetNavConfig(&masterConfig.navConfig);
 #endif
 
@@ -796,7 +796,7 @@ void activateConfig(void)
 
     imuConfigure(&imuRuntimeConfig, &currentProfile->pidProfile);
 
-#ifdef GPS
+#ifdef NAV
     navigationUseConfig(&masterConfig.navConfig);
     navigationUsePIDs(&currentProfile->pidProfile);
     navigationUseRcControlsConfig(&currentProfile->rcControlsConfig);

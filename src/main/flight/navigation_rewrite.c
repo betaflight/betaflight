@@ -46,8 +46,14 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-#if defined(NAV)
+/*-----------------------------------------------------------
+ * Compatibility for home position
+ *-----------------------------------------------------------*/
+gpsLocation_t GPS_home;
+uint16_t      GPS_distanceToHome;        // distance to home point in meters
+int16_t       GPS_directionToHome;       // direction to home point in degrees
 
+#if defined(NAV)
 navigationPosControl_t  posControl;
 navSystemStatus_t       NAV_Status;
 
@@ -1376,13 +1382,6 @@ bool isWaypointReached(navWaypointPosition_t * waypoint)
     return (wpDistance <= posControl.navConfig->waypoint_radius);
 }
 
-/*-----------------------------------------------------------
- * Compatibility for home position
- *-----------------------------------------------------------*/
-gpsLocation_t GPS_home;
-uint16_t      GPS_distanceToHome;        // distance to home point in meters
-int16_t       GPS_directionToHome;       // direction to home point in degrees
-
 static void updateHomePositionCompatibility(void)
 {
     geoConvertLocalToGeodetic(&posControl.gpsOrigin, &posControl.homePosition.pos, &GPS_home);
@@ -2223,6 +2222,60 @@ rthState_e getStateOfForcedRTH(void)
     }
     else {
         return RTH_IDLE;
+    }
+}
+
+#else // NAV
+
+/* Fallback if navigation is not compiled in - handle GPS home coordinates */
+static float GPS_scaleLonDown;
+
+static void GPS_distance_cm_bearing(int32_t currentLat1, int32_t currentLon1, int32_t destinationLat2, int32_t destinationLon2, uint32_t *dist, int32_t *bearing)
+{
+    float dLat = destinationLat2 - currentLat1; // difference of latitude in 1/10 000 000 degrees
+    float dLon = (float)(destinationLon2 - currentLon1) * GPS_scaleLonDown;
+
+    *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
+
+    *bearing = 9000.0f + RADIANS_TO_CENTIDEGREES(atan2_approx(-dLat, dLon));      // Convert the output radians to 100xdeg
+
+    if (*bearing < 0)
+        *bearing += 36000;
+}
+
+void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, int16_t velE, int16_t velD, bool velNEValid, bool velDValid, int16_t hdop)
+{
+    UNUSED(velN);
+    UNUSED(velE);
+    UNUSED(velD);
+    UNUSED(velNEValid);
+    UNUSED(velDValid);
+    UNUSED(hdop);
+
+    if (!(sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5))
+        return;
+
+    if (ARMING_FLAG(ARMED)) {
+        if (STATE(GPS_FIX_HOME)) {
+            uint32_t dist;
+            int32_t dir;
+            GPS_distance_cm_bearing(newLat, newLon, GPS_home.lat, GPS_home.lon, &dist, &dir);
+            GPS_distanceToHome = dist / 100;
+            GPS_directionToHome = dir / 100;
+        } else {
+            GPS_distanceToHome = 0;
+            GPS_directionToHome = 0;
+        }
+    }
+    else {
+        // Set home position to current GPS coordinates
+        ENABLE_STATE(GPS_FIX_HOME);
+        GPS_home.lat = newLat;
+        GPS_home.lon = newLon;
+        GPS_home.alt = newAlt;
+        GPS_distanceToHome = 0;
+        GPS_directionToHome = 0;
+        GPS_scaleLonDown = cos_approx((ABS((float)newLat) / 10000000.0f) * 0.0174532925f);
     }
 }
 

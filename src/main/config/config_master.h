@@ -83,6 +83,9 @@ typedef struct master_t {
 
 #ifdef GPS
     gpsConfig_t gpsConfig;
+#endif
+
+#ifdef NAV
     navConfig_t navConfig;
 #endif
 

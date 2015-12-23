@@ -47,6 +47,8 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#if defined(NAV)
+
 /**
  * Model-identification based position estimator
  * Based on INAV position estimator for PX4 by Anton Babushkin <anton.babushkin@me.com>
@@ -692,3 +694,5 @@ void updatePositionEstimator(void)
     /* Publish estimate */
     publishEstimatedTopic(currentTime);
 }
+
+#endif

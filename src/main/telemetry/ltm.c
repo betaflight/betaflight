@@ -122,6 +122,7 @@ static void ltm_finalise(void)
     serialWrite(ltmPort, ltm_crc);
 }
 
+#if defined(GPS)
 /*
  * GPS G-frame 5Hhz at > 2400 baud
  * LAT LON SPD ALT SAT/FIX
@@ -146,7 +147,7 @@ static void ltm_gframe(void)
     ltm_serialise_32(GPS_coord[LON]);
     ltm_serialise_8((uint8_t)(GPS_speed / 100));
 
-#if defined(BARO) || defined(SONAR)
+#if defined(NAV)
     ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedActualPosition(Z) : GPS_altitude * 100;
 #else
     ltm_alt = GPS_altitude * 100;
@@ -155,6 +156,7 @@ static void ltm_gframe(void)
     ltm_serialise_8((GPS_numSat << 2) | gps_fix_type);
     ltm_finalise();
 }
+#endif
 
 /*
  * Sensors S-frame 5Hhz at > 2400 baud
@@ -215,6 +217,7 @@ static void ltm_aframe()
     ltm_finalise();
 }
 
+#if defined(GPS)
 /*
  * OSD additional data frame, 1 Hz rate
  *  This frame will be ignored by Ghettostation, but processed by GhettOSD if it is used as standalone onboard OSD
@@ -230,7 +233,9 @@ static void ltm_oframe()
     ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
     ltm_finalise();
 }
+#endif
 
+#if defined(NAV)
 /** OSD additional data frame, ~4 Hz rate, navigation system status
  */
 static void ltm_nframe(void)
@@ -244,6 +249,7 @@ static void ltm_nframe(void)
     ltm_serialise_8(NAV_Status.flags);
     ltm_finalise();
 }
+#endif
 
 #define LTM_BIT_AFRAME  (1 << 0)
 #define LTM_BIT_GFRAME  (1 << 1)
@@ -272,17 +278,21 @@ static void process_ltm(void)
     if (current_schedule & LTM_BIT_AFRAME)
         ltm_aframe();
 
+#if defined(GPS)
     if (current_schedule & LTM_BIT_GFRAME)
         ltm_gframe();
+
+    if (current_schedule & LTM_BIT_OFRAME)
+        ltm_oframe();
+#endif
 
     if (current_schedule & LTM_BIT_SFRAME)
         ltm_sframe();
 
-    if (current_schedule & LTM_BIT_OFRAME)
-        ltm_oframe();
-
+#if defined(NAV)
     if (current_schedule & LTM_BIT_NFRAME)
         ltm_nframe();
+#endif
 
     ltm_scheduler = (ltm_scheduler + 1) % 10;
 }

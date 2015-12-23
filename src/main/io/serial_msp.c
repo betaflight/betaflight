@@ -720,7 +720,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i, tmp, junk;
 
-#ifdef GPS
+#ifdef NAV
     int8_t msp_wp_no;
     navWaypoint_t msp_wp;
 #endif
@@ -1090,6 +1090,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(GPS_directionToHome);
         serialize8(GPS_update & 1);
         break;
+#ifdef NAV
     case MSP_NAV_STATUS:
         headSerialReply(7);
         serialize8(NAV_Status.mode);
@@ -1114,6 +1115,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(msp_wp.p3);     // P3
         serialize8(msp_wp.flag);    // flags
         break;
+#endif
     case MSP_GPSSVINFO:
         headSerialReply(1 + (GPS_numCh * 4));
         serialize8(GPS_numCh);
@@ -1327,7 +1329,7 @@ static bool processInCommand(void)
     uint16_t tmp;
     uint8_t rate;
 
-#ifdef GPS
+#ifdef NAV
     uint8_t msp_wp_no;
     navWaypoint_t msp_wp;
 #endif
@@ -1614,6 +1616,8 @@ static bool processInCommand(void)
         sensorsSet(SENSOR_GPS);
         onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude, 0, 0, 0, false, false, 9999);
         break;
+#endif
+#ifdef NAV
     case MSP_SET_WP:
         msp_wp_no = read8();     // get the wp number
         msp_wp.action = read8();    // action

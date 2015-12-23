@@ -26,6 +26,22 @@
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 
+/* LLH Location in NEU axis system */
+typedef struct gpsLocation_s {
+    int32_t lat;    // Lattitude * 1e+7
+    int32_t lon;    // Longitude * 1e+7
+    int32_t alt;    // Altitude in centimeters (meters * 100)
+} gpsLocation_t;
+
+/* GPS Home location data */
+extern gpsLocation_t        GPS_home;
+extern uint16_t             GPS_distanceToHome;        // distance to home point in meters
+extern int16_t              GPS_directionToHome;       // direction to home point in degrees
+
+/* Navigation system updates */
+void onNewGPSData(int32_t lat, int32_t lon, int32_t alt, int16_t vel_n, int16_t vel_e, int16_t vel_d, bool vel_ne_valid, bool vel_d_valid, int16_t hdop);
+
+#if defined(NAV)
 #if defined(BLACKBOX)
 #define NAV_BLACKBOX
 #endif
@@ -34,11 +50,8 @@
 //#define INAV_ENABLE_AUTO_MAG_DECLINATION
 #define INAV_ENABLE_GPS_GLITCH_DETECTION
 
-
 // Maximum number of waypoints, special waypoint 0 = home,
 #define NAV_MAX_WAYPOINTS       15
-
-#if defined(NAV)
 
 enum {
     NAV_GPS_ATTI    = 0,                    // Pitch/roll stick controls attitude (pitch/roll lean angles)
@@ -118,13 +131,6 @@ typedef struct navConfig_s {
     uint8_t  fw_max_dive_angle;             // Fixed wing max banking angle (deg)
     uint8_t  fw_pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
 } navConfig_t;
-
-// LLH Location in NEU axis system
-typedef struct gpsLocation_s {
-    int32_t lat;    // Lattitude * 1e+7
-    int32_t lon;    // Longitude * 1e+7
-    int32_t alt;    // Altitude in centimeters (meters * 100)
-} gpsLocation_t;
 
 typedef struct gpsOrigin_s {
     bool    valid;
@@ -223,7 +229,6 @@ void navigationInit(navConfig_t *initialnavConfig,
                     escAndServoConfig_t * initialEscAndServoConfig);
 
 /* Navigation system updates */
-void onNewGPSData(int32_t lat, int32_t lon, int32_t alt, int16_t vel_n, int16_t vel_e, int16_t vel_d, bool vel_ne_valid, bool vel_d_valid, int16_t hdop);
 void updateWaypointsAndNavigationMode(void);
 void updatePositionEstimator(void);
 void applyWaypointNavigationAndAltitudeHold(void);
@@ -259,9 +264,6 @@ void abortForcedRTH(void);
 rthState_e getStateOfForcedRTH(void);
 
 /* Compatibility data */
-extern gpsLocation_t        GPS_home;
-extern uint16_t             GPS_distanceToHome;        // distance to home point in meters
-extern int16_t              GPS_directionToHome;       // direction to home point in degrees
 extern navSystemStatus_t    NAV_Status;
 
 #if defined(BLACKBOX)
@@ -281,6 +283,7 @@ extern uint16_t navFlags;
 
 #define naivationRequiresAngleMode() (0)
 #define naivationGetHeadingControlState() (0)
-#define navigationControlsThrottleAngleCorrection() (0)
+#define navigationRequiresThrottleTiltCompensation() (0)
+#define getEstimatedActualVelocity(axis) (0)
 
 #endif

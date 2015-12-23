@@ -43,7 +43,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-
 #if defined(NAV)
 
 static bool isPitchAndThrottleAdjustmentValid = false;
