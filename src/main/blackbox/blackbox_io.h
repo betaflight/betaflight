@@ -72,7 +72,8 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount);
 void blackboxWriteU32(int32_t value);
 void blackboxWriteFloat(float value);
 
-bool blackboxDeviceFlush(void);
+void blackboxDeviceFlush(void);
+bool blackboxDeviceFlushForce(void);
 bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
 

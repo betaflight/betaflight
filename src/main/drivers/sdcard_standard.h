@@ -193,8 +193,10 @@ typedef struct sdcardCSD_t {
 #define SDCARD_CSD_V2_TRAILER_OFFSET                     127
 #define SDCARD_CSD_V2_TRAILER_LEN                        1
 
-#define SDCARD_SINGLE_BLOCK_READ_START_TOKEN  0xFE
-#define SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN 0xFE
+#define SDCARD_SINGLE_BLOCK_READ_START_TOKEN    0xFE
+#define SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN   0xFE
+#define SDCARD_MULTIPLE_BLOCK_WRITE_START_TOKEN 0xFC
+#define SDCARD_MULTIPLE_BLOCK_WRITE_STOP_TOKEN  0xFD
 
 #define SDCARD_BLOCK_SIZE 512
 
@@ -229,6 +231,7 @@ typedef struct sdcardCSD_t {
 #define SDCARD_COMMAND_READ_OCR                  58
 
 #define SDCARD_ACOMMAND_SEND_OP_COND             41
+#define SDCARD_ACOMMAND_SET_WR_BLOCK_ERASE_COUNT 23
 
 // These are worst-case timeouts defined for High Speed cards
 #define SDCARD_TIMEOUT_READ_MSEC   100
