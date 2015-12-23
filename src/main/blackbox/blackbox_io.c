@@ -507,13 +507,36 @@ void blackboxWriteFloat(float value)
 /**
  * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
  * 
- * Returns true if all data has been flushed to the device.
+ * Intended to be called regularly for the blackbox device to perform housekeeping.
  */
-bool blackboxDeviceFlush(void)
+void blackboxDeviceFlush(void)
+{
+    switch (masterConfig.blackbox_device) {
+#ifdef USE_FLASHFS
+        /*
+         * This is our only output device which requires us to call flush() in order for it to write anything. The other
+         * devices will progressively write in the background without Blackbox calling anything.
+         */
+        case BLACKBOX_DEVICE_FLASH:
+            flashfsFlushAsync();
+        break;
+#endif
+
+        default:
+            ;
+    }
+}
+
+/**
+ * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
+ *
+ * Returns true if all data has been written to the device.
+ */
+bool blackboxDeviceFlushForce(void)
 {
     switch (masterConfig.blackbox_device) {
         case BLACKBOX_DEVICE_SERIAL:
-            //Nothing to speed up flushing on serial, as serial is continuously being drained out of its buffer
+            // Nothing to speed up flushing on serial, as serial is continuously being drained out of its buffer
             return isSerialTransmitBufferEmpty(blackboxPort);
 
 #ifdef USE_FLASHFS
@@ -523,6 +546,9 @@ bool blackboxDeviceFlush(void)
 
 #ifdef USE_SDCARD
         case BLACKBOX_DEVICE_SDCARD:
+            /* SD card will flush itself without us calling it, but we need to call flush manually in order to check
+             * if it's done yet or not!
+             */
             return afatfs_flush();
 #endif
 

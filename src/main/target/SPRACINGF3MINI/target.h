@@ -146,6 +146,9 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
+// Performance logging for SD card operations:
+// #define AFATFS_USE_INTROSPECTIVE_LOGGING
+
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 

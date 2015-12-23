@@ -33,6 +33,10 @@
 
 #ifdef USE_SDCARD
 
+#ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
+    #define SDCARD_PROFILING
+#endif
+
 #define SET_CS_HIGH          GPIO_SetBits(SDCARD_SPI_CS_GPIO,   SDCARD_SPI_CS_PIN)
 #define SET_CS_LOW           GPIO_ResetBits(SDCARD_SPI_CS_GPIO, SDCARD_SPI_CS_PIN)
 
@@ -63,7 +67,9 @@ typedef enum {
     SDCARD_STATE_READY,
     SDCARD_STATE_READING,
     SDCARD_STATE_SENDING_WRITE,
-    SDCARD_STATE_WRITING,
+    SDCARD_STATE_WAITING_FOR_WRITE,
+    SDCARD_STATE_WRITING_MULTIPLE_BLOCKS,
+    SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE,
 } sdcardState_e;
 
 typedef struct sdcard_t {
@@ -74,6 +80,10 @@ typedef struct sdcard_t {
 
         sdcard_operationCompleteCallback_c callback;
         uint32_t callbackData;
+
+#ifdef SDCARD_PROFILING
+        uint32_t profileStartTime;
+#endif
     } pendingOperation;
 
     uint32_t operationStartTime;
@@ -83,10 +93,17 @@ typedef struct sdcard_t {
     uint8_t version;
     bool highCapacity;
 
+    uint32_t multiWriteNextBlock;
+    uint32_t multiWriteBlocksRemain;
+
     sdcardState_e state;
 
     sdcardMetadata_t metadata;
     sdcardCSD_t csd;
+
+#ifdef SDCARD_PROFILING
+    sdcard_profilerCallback_c profiler;
+#endif
 } sdcard_t;
 
 static sdcard_t sdcard;
@@ -216,8 +233,9 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
     for (int i = 0; i < maxDelay + 1; i++) { // + 1 so we can wait for maxDelay '0xFF' bytes before reading a response byte afterwards
         uint8_t response = spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
 
-        if (response != 0xFF)
+        if (response != 0xFF) {
             return response;
+        }
     }
 
     return 0xFF;
@@ -381,9 +399,12 @@ static bool sdcard_sendDataBlockFinish(void)
 /**
  * Begin sending a buffer of SDCARD_BLOCK_SIZE bytes to the SD card.
  */
-static void sdcard_sendDataBlockBegin(uint8_t *buffer)
+static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
 {
-    spiTransferByte(SDCARD_SPI_INSTANCE, SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
+    // Card wants 8 dummy clock cycles between the write command's response and a data block beginning:
+    spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
+
+    spiTransferByte(SDCARD_SPI_INSTANCE, multiBlockWrite ? SDCARD_MULTIPLE_BLOCK_WRITE_START_TOKEN : SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
 
     if (useDMAForTx) {
         // Queue the transmission of the sector payload
@@ -542,6 +563,45 @@ static bool sdcard_setBlockLength(uint32_t blockLen)
     return status == 0;
 }
 
+/*
+ * Returns true if the card is ready to accept read/write commands.
+ */
+static bool sdcard_isReady()
+{
+    return sdcard.state == SDCARD_STATE_READY || sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
+}
+
+/**
+ * Send the stop-transmission token to complete a multi-block write.
+ *
+ * Returns:
+ *     SDCARD_OPERATION_IN_PROGRESS - We're now waiting for that stop to complete, the card will enter
+ *                                    the SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE state.
+ *     SDCARD_OPERATION_SUCCESS     - The multi-block write finished immediately, the card will enter
+ *                                    the SDCARD_READY state.
+ *
+ */
+static sdcardOperationStatus_e sdcard_endWriteBlocks()
+{
+    sdcard.multiWriteBlocksRemain = 0;
+
+    // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
+    spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
+
+    spiTransferByte(SDCARD_SPI_INSTANCE, SDCARD_MULTIPLE_BLOCK_WRITE_STOP_TOKEN);
+
+    // Card may choose to raise a busy (non-0xFF) signal after at most N_BR (1 byte) delay
+    if (sdcard_waitForNonIdleByte(1) == 0xFF) {
+        sdcard.state = SDCARD_STATE_READY;
+        return SDCARD_OPERATION_SUCCESS;
+    } else {
+        sdcard.state = SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE;
+        sdcard.operationStartTime = millis();
+
+        return SDCARD_OPERATION_IN_PROGRESS;
+    }
+}
+
 /**
  * Call periodically for the SD card to perform in-progress transfers.
  *
@@ -551,6 +611,10 @@ bool sdcard_poll(void)
 {
     uint8_t initStatus;
     bool sendComplete;
+
+#ifdef SDCARD_PROFILING
+    bool profilingComplete;
+#endif
 
     doMore:
     switch (sdcard.state) {
@@ -625,6 +689,8 @@ bool sdcard_poll(void)
                 // Now we're done with init and we can switch to the full speed clock (<25MHz)
                 spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER);
 
+                sdcard.multiWriteBlocksRemain = 0;
+
                 sdcard.state = SDCARD_STATE_READY;
                 goto doMore;
             } // else keep waiting for the CID to arrive
@@ -665,10 +731,10 @@ bool sdcard_poll(void)
                 // Finish up by sending the CRC and checking the SD-card's acceptance/rejectance
                 if (sdcard_sendDataBlockFinish()) {
                     // The SD card is now busy committing that write to the card
-                    sdcard.state = SDCARD_STATE_WRITING;
+                    sdcard.state = SDCARD_STATE_WAITING_FOR_WRITE;
                     sdcard.operationStartTime = millis();
 
-                    // Since we've transmitted the buffer we can well go ahead and tell the caller their operation is complete
+                    // Since we've transmitted the buffer we can go ahead and tell the caller their operation is complete
                     if (sdcard.pendingOperation.callback) {
                         sdcard.pendingOperation.callback(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, sdcard.pendingOperation.buffer, sdcard.pendingOperation.callbackData);
                     }
@@ -687,11 +753,39 @@ bool sdcard_poll(void)
                 }
             }
         break;
-        case SDCARD_STATE_WRITING:
+        case SDCARD_STATE_WAITING_FOR_WRITE:
             if (sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY)) {
-                sdcard_deselect();
-                sdcard.state = SDCARD_STATE_READY;
+#ifdef SDCARD_PROFILING
+                profilingComplete = true;
+#endif
+
                 sdcard.failureCount = 0; // Assume the card is good if it can complete a write
+
+                // Still more blocks left to write in a multi-block chain?
+                if (sdcard.multiWriteBlocksRemain > 1) {
+                    sdcard.multiWriteBlocksRemain--;
+                    sdcard.multiWriteNextBlock++;
+                    sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
+                } else if (sdcard.multiWriteBlocksRemain == 1) {
+                    // This function changes the sd card state for us whether immediately succesful or delayed:
+                    if (sdcard_endWriteBlocks() == SDCARD_OPERATION_SUCCESS) {
+                        sdcard_deselect();
+                    } else {
+#ifdef SDCARD_PROFILING
+                        // Wait for the multi-block write to be terminated before finishing timing
+                        profilingComplete = false;
+#endif
+                    }
+                } else {
+                    sdcard.state = SDCARD_STATE_READY;
+                    sdcard_deselect();
+                }
+
+#ifdef SDCARD_PROFILING
+                if (profilingComplete && sdcard.profiler) {
+                    sdcard.profiler(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, micros() - sdcard.pendingOperation.profileStartTime);
+                }
+#endif
             } else if (millis() > sdcard.operationStartTime + SDCARD_TIMEOUT_WRITE_MSEC) {
                 /*
                  * The caller has already been told that their write has completed, so they will have discarded
@@ -708,7 +802,13 @@ bool sdcard_poll(void)
                     sdcard_deselect();
 
                     sdcard.state = SDCARD_STATE_READY;
-                        sdcard.failureCount = 0; // Assume the card is good if it can complete a read
+                    sdcard.failureCount = 0; // Assume the card is good if it can complete a read
+
+#ifdef SDCARD_PROFILING
+                    if (sdcard.profiler) {
+                        sdcard.profiler(SDCARD_BLOCK_OPERATION_READ, sdcard.pendingOperation.blockIndex, micros() - sdcard.pendingOperation.profileStartTime);
+                    }
+#endif
 
                     if (sdcard.pendingOperation.callback) {
                         sdcard.pendingOperation.callback(
@@ -743,6 +843,22 @@ bool sdcard_poll(void)
                 break;
             }
         break;
+        case SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE:
+            if (sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY)) {
+                sdcard_deselect();
+
+                sdcard.state = SDCARD_STATE_READY;
+
+#ifdef SDCARD_PROFILING
+                if (sdcard.profiler) {
+                    sdcard.profiler(SDCARD_BLOCK_OPERATION_WRITE, sdcard.pendingOperation.blockIndex, micros() - sdcard.pendingOperation.profileStartTime);
+                }
+#endif
+            } else if (millis() > sdcard.operationStartTime + SDCARD_TIMEOUT_WRITE_MSEC) {
+                sdcard_reset();
+                goto doMore;
+            }
+        break;
         case SDCARD_STATE_NOT_PRESENT:
         default:
             ;
@@ -754,7 +870,7 @@ bool sdcard_poll(void)
         sdcard_reset();
     }
 
-    return sdcard.state == SDCARD_STATE_READY;
+    return sdcard_isReady();
 }
 
 /**
@@ -773,28 +889,98 @@ bool sdcard_poll(void)
  */
 sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
-    if (sdcard.state != SDCARD_STATE_READY)
-        return SDCARD_OPERATION_BUSY;
+    uint8_t status;
+
+#ifdef SDCARD_PROFILING
+    sdcard.pendingOperation.profileStartTime = micros();
+#endif
+
+    doMore:
+    switch (sdcard.state) {
+        case SDCARD_STATE_WRITING_MULTIPLE_BLOCKS:
+            // Do we need to cancel the previous multi-block write?
+            if (blockIndex != sdcard.multiWriteNextBlock) {
+                if (sdcard_endWriteBlocks() == SDCARD_OPERATION_SUCCESS) {
+                    // Now we've entered the ready state, we can try again
+                    goto doMore;
+                } else {
+                    return SDCARD_OPERATION_BUSY;
+                }
+            }
+
+            // We're continuing a multi-block write
+        break;
+        case SDCARD_STATE_READY:
+            // We're not continuing a multi-block write so we need to send a single-block write command
+            sdcard_select();
+
+            // Standard size cards use byte addressing, high capacity cards use block addressing
+            status = sdcard_sendCommand(SDCARD_COMMAND_WRITE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
+
+            if (status != 0) {
+                sdcard_deselect();
+
+                sdcard_reset();
+
+                return SDCARD_OPERATION_FAILURE;
+            }
+        break;
+        default:
+            return SDCARD_OPERATION_BUSY;
+    }
+
+    sdcard_sendDataBlockBegin(buffer, sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS);
+
+    sdcard.pendingOperation.buffer = buffer;
+    sdcard.pendingOperation.blockIndex = blockIndex;
+    sdcard.pendingOperation.callback = callback;
+    sdcard.pendingOperation.callbackData = callbackData;
+    sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
+    sdcard.state = SDCARD_STATE_SENDING_WRITE;
+
+    return SDCARD_OPERATION_IN_PROGRESS;
+}
+
+/**
+ * Begin writing a series of consecutive blocks beginning at the given block index. This will allow (but not require)
+ * the SD card to pre-erase the number of blocks you specifiy, which can allow the writes to complete faster.
+ *
+ * Afterwards, just call sdcard_writeBlock() as normal to write those blocks consecutively.
+ *
+ * It's okay to abort the multi-block write at any time by writing to a non-consecutive address, or by performing a read.
+ *
+ * Returns:
+ *     SDCARD_OPERATION_SUCCESS     - Multi-block write has been queued
+ *     SDCARD_OPERATION_BUSY        - The card is already busy and cannot accept your write
+ *     SDCARD_OPERATION_FAILURE     - A fatal error occured, card will be reset
+ */
+sdcardOperationStatus_e sdcard_beginWriteBlocks(uint32_t blockIndex, uint32_t blockCount)
+{
+    if (sdcard.state != SDCARD_STATE_READY) {
+        if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+            if (blockIndex == sdcard.multiWriteNextBlock) {
+                // Assume that the caller wants to continue the multi-block write they already have in progress!
+                return SDCARD_OPERATION_SUCCESS;
+            } else if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+                return SDCARD_OPERATION_BUSY;
+            } // Else we've completed the previous multi-block write and can fall through to start the new one
+        } else {
+            return SDCARD_OPERATION_BUSY;
+        }
+    }
 
     sdcard_select();
 
-    // Standard size cards use byte addressing, high capacity cards use block addressing
-    uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_WRITE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
+    if (
+        sdcard_sendAppCommand(SDCARD_ACOMMAND_SET_WR_BLOCK_ERASE_COUNT, blockCount) == 0
+        && sdcard_sendCommand(SDCARD_COMMAND_WRITE_MULTIPLE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE) == 0
+    ) {
+        sdcard.state = SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
+        sdcard.multiWriteBlocksRemain = blockCount;
+        sdcard.multiWriteNextBlock = blockIndex;
 
-    // Card wants 8 dummy clock cycles after the command response to become ready
-    spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
-
-    if (status == 0) {
-        sdcard_sendDataBlockBegin(buffer);
-
-        sdcard.pendingOperation.buffer = buffer;
-        sdcard.pendingOperation.blockIndex = blockIndex;
-        sdcard.pendingOperation.callback = callback;
-        sdcard.pendingOperation.callbackData = callbackData;
-        sdcard.pendingOperation.chunkIndex = 1; // (for non-DMA transfers) we've sent chunk #0 already
-        sdcard.state = SDCARD_STATE_SENDING_WRITE;
-
-        return SDCARD_OPERATION_IN_PROGRESS;
+        // Leave the card selected
+        return SDCARD_OPERATION_SUCCESS;
     } else {
         sdcard_deselect();
 
@@ -818,8 +1004,19 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
  */
 bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
-    if (sdcard.state != SDCARD_STATE_READY)
-        return false;
+    if (sdcard.state != SDCARD_STATE_READY) {
+        if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+            if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+#ifdef SDCARD_PROFILING
+    sdcard.pendingOperation.profileStartTime = micros();
+#endif
 
     sdcard_select();
 
@@ -858,5 +1055,14 @@ const sdcardMetadata_t* sdcard_getMetadata(void)
 {
     return &sdcard.metadata;
 }
+
+#ifdef SDCARD_PROFILING
+
+void sdcard_setProfilerCallback(sdcard_profilerCallback_c callback)
+{
+    sdcard.profiler = callback;
+}
+
+#endif
 
 #endif
