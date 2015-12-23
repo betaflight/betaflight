@@ -92,6 +92,7 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
+extern void resetPidProfile(pidProfile_t *pidProfile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -134,7 +135,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   14 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   15 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -285,6 +286,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
 #define MSP_3D                   124    //out message         Settings needed for reversible ESCs
+#define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
+#define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -302,6 +305,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 #define MSP_SET_3D               217    //in message          Settings needed for reversible ESCs
+#define MSP_SET_RC_DEADBAND      218    //in message          deadbands for yaw alt pitch roll
+#define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
+#define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -392,14 +398,8 @@ typedef enum {
     COMMAND_RECEIVED
 } mspState_e;
 
-typedef enum {
-    UNUSED_PORT = 0,
-    FOR_GENERAL_MSP,
-    FOR_TELEMETRY
-} mspPortUsage_e;
-
 typedef struct mspPort_s {
-    serialPort_t *port;
+    serialPort_t *port; // null when port unused.
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
@@ -407,7 +407,6 @@ typedef struct mspPort_s {
     uint8_t inBuf[INBUF_SIZE];
     mspState_e c_state;
     uint8_t cmdMSP;
-    mspPortUsage_e mspPortUsage;
 } mspPort_t;
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
@@ -588,12 +587,11 @@ static void serializeDataflashReadReply(uint32_t address, uint8_t size)
 }
 #endif
 
-static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, mspPortUsage_e usage)
+static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
 {
     memset(mspPortToReset, 0, sizeof(mspPort_t));
 
     mspPortToReset->port = serialPort;
-    mspPortToReset->mspPortUsage = usage;
 }
 
 void mspAllocateSerialPorts(serialConfig_t *serialConfig)
@@ -608,14 +606,14 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
 
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
-        if (mspPort->mspPortUsage != UNUSED_PORT) {
+        if (mspPort->port) {
             portIndex++;
             continue;
         }
 
         serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
-            resetMspPort(mspPort, serialPort, FOR_GENERAL_MSP);
+            resetMspPort(mspPort, serialPort);
             portIndex++;
         }
 
@@ -1189,10 +1187,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_FAILSAFE_CONFIG:
-        headSerialReply(4);
+        headSerialReply(8);
         serialize8(masterConfig.failsafeConfig.failsafe_delay);
         serialize8(masterConfig.failsafeConfig.failsafe_off_delay);
         serialize16(masterConfig.failsafeConfig.failsafe_throttle);
+        serialize8(masterConfig.failsafeConfig.failsafe_kill_switch);
+        serialize16(masterConfig.failsafeConfig.failsafe_throttle_low_delay);
+        serialize8(masterConfig.failsafeConfig.failsafe_procedure);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -1299,6 +1300,19 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.flight3DConfig.deadband3d_high);
         serialize16(masterConfig.flight3DConfig.neutral3d);
         serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
+        break;
+
+    case MSP_RC_DEADBAND:
+        headSerialReply(3);
+        serialize8(currentProfile->rcControlsConfig.deadband);
+        serialize8(currentProfile->rcControlsConfig.yaw_deadband);
+        serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        break;
+    case MSP_SENSOR_ALIGNMENT:
+        headSerialReply(3);
+        serialize8(masterConfig.sensorAlignmentConfig.gyro_align);
+        serialize8(masterConfig.sensorAlignmentConfig.acc_align);
+        serialize8(masterConfig.sensorAlignmentConfig.mag_align);
         break;
 
     default:
@@ -1538,6 +1552,22 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.neutral3d = read16();
         masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
+
+    case MSP_SET_RC_DEADBAND:
+        currentProfile->rcControlsConfig.deadband = read8();
+        currentProfile->rcControlsConfig.yaw_deadband = read8();
+        currentProfile->rcControlsConfig.alt_hold_deadband = read8();
+        break;
+
+    case MSP_SET_RESET_CURR_PID:
+        resetPidProfile(&currentProfile->pidProfile);
+        break;    
+
+    case MSP_SET_SENSOR_ALIGNMENT:
+        masterConfig.sensorAlignmentConfig.gyro_align = read8();
+        masterConfig.sensorAlignmentConfig.acc_align = read8();
+        masterConfig.sensorAlignmentConfig.mag_align = read8();
+        break;
         
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
@@ -1644,19 +1674,18 @@ static bool processInCommand(void)
         masterConfig.failsafeConfig.failsafe_delay = read8();
         masterConfig.failsafeConfig.failsafe_off_delay = read8();
         masterConfig.failsafeConfig.failsafe_throttle = read16();
+        masterConfig.failsafeConfig.failsafe_kill_switch = read8();
+        masterConfig.failsafeConfig.failsafe_throttle_low_delay = read16();
+        masterConfig.failsafeConfig.failsafe_procedure = read8();
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
-        {
-            uint8_t channelCount = currentPort->dataSize / 3;
-            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-                headSerialError(0);
-            } else {
-                for (i = 0; i < channelCount; i++) {
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
-                }
-            }
+        i = read8();
+        if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+            masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
+            masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+        } else {
+            headSerialError(0);
         }
         break;
 
@@ -1773,13 +1802,19 @@ static bool processInCommand(void)
             // 0xFF -> preinitialize the Passthrough
             // switch all motor lines HI
             usb1WireInitialize();
+            // reply the count of ESC found
+            headSerialReply(1);
+            serialize8(escCount);
+
             // and come back right afterwards
             // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
             // bootloader mode before try to connect any ESC
+
+            return true;
         }
         else {
             // Check for channel number 0..ESC_COUNT-1
-            if (i < ESC_COUNT) {
+            if (i < escCount) {
                 // because we do not come back after calling usb1WirePassthrough
                 // proceed with a success reply first
                 headSerialReply(0);
@@ -1892,7 +1927,7 @@ void mspProcess(void)
 
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         candidatePort = &mspPorts[portIndex];
-        if (candidatePort->mspPortUsage != FOR_GENERAL_MSP) {
+        if (!candidatePort->port) {
             continue;
         }
 
@@ -1919,74 +1954,5 @@ void mspProcess(void)
             handleOneshotFeatureChangeOnRestart();
             systemReset();
         }
-    }
-}
-
-static const uint8_t mspTelemetryCommandSequence[] = {
-    MSP_BOXNAMES,   // repeat boxnames, in case the first transmission was lost or never received.
-    MSP_STATUS,
-    MSP_IDENT,
-    MSP_RAW_IMU,
-    MSP_ALTITUDE,
-    MSP_RAW_GPS,
-    MSP_RC,
-    MSP_MOTOR_PINS,
-    MSP_ATTITUDE,
-    MSP_SERVO
-};
-
-#define TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT (sizeof(mspTelemetryCommandSequence) / sizeof(mspTelemetryCommandSequence[0]))
-
-static mspPort_t *mspTelemetryPort = NULL;
-
-void mspSetTelemetryPort(serialPort_t *serialPort)
-{
-    uint8_t portIndex;
-    mspPort_t *candidatePort = NULL;
-    mspPort_t *matchedPort = NULL;
-
-    // find existing telemetry port
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        candidatePort = &mspPorts[portIndex];
-        if (candidatePort->mspPortUsage == FOR_TELEMETRY) {
-            matchedPort = candidatePort;
-            break;
-        }
-    }
-
-    if (!matchedPort) {
-        // find unused port
-        for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-            candidatePort = &mspPorts[portIndex];
-            if (candidatePort->mspPortUsage == UNUSED_PORT) {
-                matchedPort = candidatePort;
-                break;
-            }
-        }
-    }
-    mspTelemetryPort = matchedPort;
-    if (!mspTelemetryPort) {
-        return;
-    }
-
-    resetMspPort(mspTelemetryPort, serialPort, FOR_TELEMETRY);
-}
-
-void sendMspTelemetry(void)
-{
-    static uint32_t sequenceIndex = 0;
-
-    if (!mspTelemetryPort) {
-        return;
-    }
-
-    setCurrentPort(mspTelemetryPort);
-
-    processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
-    tailSerialReply();
-
-    sequenceIndex++;
-    if (sequenceIndex >= TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT) {
-        sequenceIndex = 0;
     }
 }

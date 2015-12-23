@@ -26,6 +26,7 @@
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -117,8 +118,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #error "Flash page count not defined for target."
 #endif
 
-#if FLASH_SIZE <= 128
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
+#if FLASH_SIZE <= 64
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800
 #else
 #define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
 #endif
@@ -133,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 110;
+static const uint8_t EEPROM_CONF_VERSION = 111;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -146,7 +147,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynam
     accGain->values.yaw = 4096;
 }
 
-static void resetPidProfile(pidProfile_t *pidProfile)
+void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
 
@@ -179,8 +180,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 5;     // NAV_VEL_Z_I * 100
     pidProfile->D8[PIDVEL] = 100;   // NAV_VEL_Z_D * 1000
 
+    pidProfile->acc_soft_lpf = 1;    // LOW filtering by default
+    pidProfile->gyro_soft_lpf = 1;   // LOW filtering by default
+
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->pterm_cut_hz = 0;
+    pidProfile->yaw_pterm_cut_hz = 0;
     pidProfile->dterm_cut_hz = 0;
 
     pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
@@ -253,8 +257,6 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->emerg_descent_rate = 500;    // 5 m/s
     navConfig->min_rth_distance = 500;   // If closer than 5m - land immediately
     navConfig->rth_altitude = 1000;      // 10m
-    navConfig->pos_hold_deadband = 20;
-    navConfig->alt_hold_deadband = 50;
 
     // MC-specific
     navConfig->mc_max_bank_angle = 30;
@@ -376,6 +378,8 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->deadband = 0;
     rcControlsConfig->yaw_deadband = 0;
+    rcControlsConfig->pos_hold_deadband = 20;
+    rcControlsConfig->alt_hold_deadband = 50;
 }
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
@@ -450,7 +454,7 @@ static void resetConf(void)
     masterConfig.dcm_ki_acc = 0;                // 0.00 * 10000
     masterConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
-    masterConfig.gyro_lpf = 42;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 3;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero, &masterConfig.accGain);
 
@@ -528,6 +532,8 @@ static void resetConf(void)
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
     masterConfig.i2c_overclock = 0;
+    masterConfig.gyroSync = 0;
+    masterConfig.gyroSyncDenominator = 1;
 
     resetPidProfile(&currentProfile->pidProfile);
 
@@ -537,8 +543,6 @@ static void resetConf(void)
     //     cfg.activate[i] = 0;
 
     currentProfile->mag_declination = 0;
-    currentProfile->acc_soft_filter = 3;    // heavy filtering by default
-    currentProfile->gyro_soft_filter = 0;   // no filtering by default
 
     resetBarometerConfig(&currentProfile->barometerConfig);
 
@@ -758,7 +762,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->gyro_soft_filter, masterConfig.looptime));
+    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf, masterConfig.looptime));
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -771,7 +775,7 @@ void activateConfig(void)
 
     setAccelerationZero(&masterConfig.accZero);
     setAccelerationGain(&masterConfig.accGain);
-    setAccelerationFilter(filterGetFIRCoefficientsTable(currentProfile->acc_soft_filter, masterConfig.looptime));
+    setAccelerationFilter(filterGetFIRCoefficientsTable(currentProfile->pidProfile.acc_soft_lpf, masterConfig.looptime));
 
     mixerUseConfigs(
 #ifdef USE_SERVOS

@@ -15,21 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * telemetry_MSP.h
- *
- *  Created on: 22 Apr 2014
- *      Author: trey marc
- */
+extern uint32_t targetLooptime;
 
-#ifndef TELEMETRY_MSP_H_
-#define TELEMETRY_MSP_H_
-
-void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig);
-void handleMSPTelemetry(void);
-void checkMSPTelemetryState(void);
-
-void freeMSPTelemetryPort(void);
-void configureMSPTelemetryPort(void);
-
-#endif /* TELEMETRY_MSP_H_ */
+bool gyroSyncCheckUpdate(void);
+uint8_t gyroMPU6xxxCalculateDivider(void);
+void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);

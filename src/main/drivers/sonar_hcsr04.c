@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "build_config.h"
 
 #include "system.h"
 #include "gpio.h"
@@ -27,21 +28,21 @@
 #include "sonar_hcsr04.h"
 #include "sensors/sonar.h"
 
-#ifdef SONAR
-
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
- * When trigged it sends out a series of 40KHz ultrasonic pulses and receives
- * echo froman object. The distance between the unit and the object is calculated
+ * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
+ * echo from an object. The distance between the unit and the object is calculated
  * by measuring the traveling time of sound and output it as the width of a TTL pulse.
  *
  * *** Warning: HC-SR04 operates at +5V ***
  *
  */
 
+#if defined(SONAR)
+STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
-static volatile int32_t measurement = -1;
 static sonarHardware_t const *sonarHardware;
 
+#if !defined(UNIT_TEST)
 static void ECHO_EXTI_IRQHandler(void)
 {
     static uint32_t timing_start;
@@ -73,13 +74,18 @@ void EXTI9_5_IRQHandler(void)
 {
     ECHO_EXTI_IRQHandler();
 }
+#endif
 
-void hcsr04_init(const sonarHardware_t *initialSonarHardware)
+void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sonarRange)
 {
+    sonarHardware = initialSonarHardware;
+    sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
+    sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
+    sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
+
+#if !defined(UNIT_TEST)
     gpio_config_t gpio;
     EXTI_InitTypeDef EXTIInit;
-
-    sonarHardware = initialSonarHardware;
 
 #ifdef STM32F10X
     // enable AFIO for EXTI support
@@ -130,11 +136,15 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware)
     NVIC_Init(&NVIC_InitStructure);
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
+#else
+    lastMeasurementAt = 0; // to avoid "unused" compiler warning
+#endif
 }
 
 // measurement reading is done asynchronously, using interrupt
 void hcsr04_start_reading(void)
 {
+#if !defined(UNIT_TEST)
     uint32_t now = millis();
 
     if (now < (lastMeasurementAt + 60)) {
@@ -149,11 +159,11 @@ void hcsr04_start_reading(void)
     //  The width of trig signal must be greater than 10us
     delayMicroseconds(11);
     digitalLo(GPIOB, sonarHardware->trigger_pin);
+#endif
 }
 
 /**
- * Get the distance that was measured by the last pulse, in centimeters. When the ground is too far away to be
- * reliably read by the sonar, -1 is returned instead.
+ * Get the distance that was measured by the last pulse, in centimeters.
  */
 int32_t hcsr04_get_distance(void)
 {
@@ -165,7 +175,7 @@ int32_t hcsr04_get_distance(void)
     int32_t distance = measurement / 59;
 
     // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-    if (distance > SONAR_MAX_RANGE)
+    if (distance > HCSR04_MAX_RANGE_CM)
         distance = -1;
 
     return distance;

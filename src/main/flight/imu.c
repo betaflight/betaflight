@@ -23,6 +23,7 @@
 
 #include "common/maths.h"
 
+#include "build_config.h"
 #include "platform.h"
 #include "debug.h"
 #include "build_config.h"
@@ -48,7 +49,6 @@
 #include "flight/hil.h"
 
 #include "io/gps.h"
-
 #include "config/runtime_config.h"
 #include "config/config.h"
 

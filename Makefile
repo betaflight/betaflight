@@ -236,6 +236,7 @@ COMMON_SRC = build_config.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
            drivers/gps_i2cnav.c \
+		   drivers/gyro_sync.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
@@ -252,6 +253,7 @@ COMMON_SRC = build_config.c \
 		   rx/sumh.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
+		   rx/ibus.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -276,7 +278,6 @@ HIGHEND_SRC = \
 		   telemetry/telemetry.c \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
-		   telemetry/msp.c \
 		   telemetry/smartport.c \
 		   telemetry/ltm.c \
 		   sensors/sonar.c \

@@ -33,7 +33,7 @@ typedef struct failsafeConfig_s {
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
     uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
     uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
-    uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Return To Home (RTH)
+    uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it, 2: Return To Home (RTH)
 } failsafeConfig_t;
 
 typedef enum {
@@ -55,6 +55,7 @@ typedef enum {
 
 typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
+    FAILSAFE_PROCEDURE_DROP_IT,
     FAILSAFE_PROCEDURE_RTH
 } failsafeProcedure_e;
 

@@ -100,7 +100,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
     int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - altholdInitialRCThrottle;
-    if (ABS(rcThrottleAdjustment) > posControl.navConfig->alt_hold_deadband) {
+    if (ABS(rcThrottleAdjustment) > posControl.rcControlsConfig->alt_hold_deadband) {
         // set velocity proportional to stick movement
         float rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / 500;
         updateAltitudeTargetFromClimbRate(rcClimbRate);
@@ -121,8 +121,8 @@ void setupMulticopterAltitudeController(void)
 {
     // Use midrc as neutral point for throttle if explicitly selected or if not possible to ascend or descend due to deadband
     if (posControl.navConfig->flags.use_midrc_for_althold ||
-        (((int16_t)rcCommand[THROTTLE] - (int16_t)posControl.navConfig->alt_hold_deadband) <= ((int16_t)posControl.rxConfig->mincheck)) ||
-        (((int16_t)rcCommand[THROTTLE] + (int16_t)posControl.navConfig->alt_hold_deadband) >= ((int16_t)posControl.rxConfig->maxcheck)) ||
+        (((int16_t)rcCommand[THROTTLE] - (int16_t)posControl.rcControlsConfig->alt_hold_deadband) <= ((int16_t)posControl.rxConfig->mincheck)) ||
+        (((int16_t)rcCommand[THROTTLE] + (int16_t)posControl.rcControlsConfig->alt_hold_deadband) >= ((int16_t)posControl.rxConfig->maxcheck)) ||
         !ARMING_FLAG(ARMED)) {
         altholdInitialRCThrottle = posControl.rxConfig->midrc;
     }
@@ -187,7 +187,7 @@ static void applyMulticopterAltitudeController(uint32_t currentTime)
  *-----------------------------------------------------------*/
 bool adjustMulticopterHeadingFromRCInput(void)
 {
-    if (ABS(rcCommand[YAW]) > posControl.navConfig->pos_hold_deadband) {
+    if (ABS(rcCommand[YAW]) > posControl.rcControlsConfig->pos_hold_deadband) {
         // Can only allow pilot to set the new heading if doing PH, during RTH copter will target itself to home
         posControl.desiredState.yaw = posControl.actualState.yaw;
 
@@ -219,8 +219,8 @@ void resetMulticopterPositionController(void)
 
 bool adjustMulticopterPositionFromRCInput(void)
 {
-    int16_t rcPitchAdjustment = applyDeadband(rcCommand[PITCH], posControl.navConfig->pos_hold_deadband);
-    int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.navConfig->pos_hold_deadband);
+    int16_t rcPitchAdjustment = applyDeadband(rcCommand[PITCH], posControl.rcControlsConfig->pos_hold_deadband);
+    int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.rcControlsConfig->pos_hold_deadband);
 
     if (rcPitchAdjustment || rcRollAdjustment) {
         // If mode is GPS_CRUISE, move target position, otherwise POS controller will passthru the RC input to ANGLE PID

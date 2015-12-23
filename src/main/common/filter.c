@@ -20,8 +20,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "common/filter.h"
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/maths.h"
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
@@ -57,26 +57,20 @@ static int8_t gyroFIRCoeff_3000[3][9] = { { 0, 0, 0, 0, 4, 36, 88, 88, 44 },    
                                           { 0, 0, 0, 14, 32, 64, 72, 54, 28},      // looptime=3000, group delay 6.5ms; -0.5db = 16Hz ; -1db = 21Hz; -5db = 42Hz; -10db = 57Hz
                                           { 0, 6, 10, 28, 44, 54, 54, 38, 22} };   // looptime=3000, group delay 9ms;   -0.5db = 10Hz ; -1db = 13Hz; -5db = 32Hz; -10db = 45Hz
 
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, int16_t looptime)
+int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint16_t targetLooptime)
 {
     if (filter_level == 0) {
         return NULL;
     }
 
-    /*
-    if (currentProfile->pidProfile.gyro_soft_filter == 0) {
-        return;
-    }
-    */
-
     int firIndex = constrain(filter_level, 1, 3) - 1;
 
     // For looptimes faster than 1499 (and looptime=0) use filter for 1kHz looptime
-    if (looptime < 1500) {
+    if (targetLooptime < 1500) {
         return gyroFIRCoeff_1000[firIndex];
     }
     // 1500 ... 2499
-    else if (looptime < 2500) {
+    else if (targetLooptime < 2500) {
         return gyroFIRCoeff_2000[firIndex];
     }
     // > 2500
@@ -86,7 +80,7 @@ int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, int16_t looptime)
 }
 
 // 9 Tap FIR filter as described here:
-// Thanks to Qcopter & BorisB
+// Thanks to Qcopter & BorisB & DigitalEntity
 void filterApply9TapFIR(int16_t data[3], int16_t state[3][9], int8_t coeff[9])
 {
     int32_t FIRsum;

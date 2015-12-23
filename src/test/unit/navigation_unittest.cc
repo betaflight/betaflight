@@ -71,43 +71,6 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-extern "C" {
-    bool isThrustFacingDownwards(rollAndPitchInclination_t *inclinations);
-}
-
-#define DOWNWARDS_THRUST true
-#define UPWARDS_THRUST false
-typedef struct inclinationExpectation_s {
-    rollAndPitchInclination_t inclination;
-    bool expectDownwardsThrust;
-} inclinationExpectation_t;
-
-TEST(NavigationTest, IsThrustFacingDownwards)
-{
-    // given
-    inclinationExpectation_t inclinationExpectations[] = {
-            { {{    0,    0 }}, DOWNWARDS_THRUST },
-            { {{  799,  799 }}, DOWNWARDS_THRUST },
-            { {{  800,  799 }}, UPWARDS_THRUST },
-            { {{  799,  800 }}, UPWARDS_THRUST },
-            { {{  800,  800 }}, UPWARDS_THRUST },
-            { {{  801,  801 }}, UPWARDS_THRUST },
-            { {{ -799, -799 }}, DOWNWARDS_THRUST },
-            { {{ -800, -799 }}, UPWARDS_THRUST },
-            { {{ -799, -800 }}, UPWARDS_THRUST },
-            { {{ -800, -800 }}, UPWARDS_THRUST },
-            { {{ -801, -801 }}, UPWARDS_THRUST }
-    };
-    uint8_t testIterationCount = sizeof(inclinationExpectations) / sizeof(inclinationExpectation_t);
-
-    // expect
-    for (uint8_t index = 0; index < testIterationCount; index ++) {
-        inclinationExpectation_t *angleInclinationExpectation = &inclinationExpectations[index];
-        bool result = isThrustFacingDownwards(&angleInclinationExpectation->inclination);
-        EXPECT_EQ(angleInclinationExpectation->expectDownwardsThrust, result);
-    }
-}
-
 typedef struct coordConversionExpectation_s {
     gpsLocation_t llh;
     t_fp_vector pos;
@@ -151,8 +114,8 @@ TEST(NavigationTest, CoordinateConversion)
 
 
 // STUBS
-
 extern "C" {
+
 master_t masterConfig;
 
 uint32_t rcModeActivationMask;
@@ -166,6 +129,7 @@ float accVelScale;
 uint16_t acc_1G;
 int16_t heading;
 gyro_t gyro;
+
 int32_t accSum[XYZ_AXIS_COUNT];
 int16_t accADC[XYZ_AXIS_COUNT];
 int16_t gyroADC[XYZ_AXIS_COUNT];

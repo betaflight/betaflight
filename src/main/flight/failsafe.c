@@ -239,6 +239,13 @@ void failsafeUpdateState(void)
                             failsafeActivate();
                             break;
 
+                        case FAILSAFE_PROCEDURE_DROP_IT:
+                            // Drop the craft
+                            failsafeActivate();
+                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
+                            break;
+
 #if defined(NAV)
                         case FAILSAFE_PROCEDURE_RTH:
                             // Proceed to handling & monitoring RTH navigation

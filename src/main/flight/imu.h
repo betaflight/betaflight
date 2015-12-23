@@ -47,7 +47,6 @@ typedef struct imuRuntimeConfig_s {
 
 void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile);
 
-void calculateEstimatedAltitude(uint32_t currentTime);
 void imuUpdate(void);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);
 float calculateCosTiltAngle(void);

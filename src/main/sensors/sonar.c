@@ -30,15 +30,23 @@
 #include "config/config.h"
 
 #include "sensors/sensors.h"
+#include "sensors/battery.h"
 #include "sensors/sonar.h"
 
-// in cm , -1 indicate sonar is not in range - inclination adjusted by imu
+// Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
+// Inclination is adjusted by imu
+    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
+    float baro_cf_alt;                      // apply CF to use ACC for height estimation
 
 #ifdef SONAR
+int16_t sonarMaxRangeCm;
+int16_t sonarMaxAltWithTiltCm;
+STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
+float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig) 
+const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
 {
 #if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R)
     static const sonarHardware_t sonarPWM56 = {
@@ -91,6 +99,9 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
         .exti_irqn = EXTI1_IRQn
     };
     return &sonarHardware;
+#elif defined(UNIT_TEST)
+    UNUSED(batteryConfig);
+    return 0;
 #else
 #error Sonar not defined for target
 #endif
@@ -98,9 +109,15 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 
 void sonarInit(const sonarHardware_t *sonarHardware)
 {
-    hcsr04_init(sonarHardware);
+    sonarRange_t sonarRange;
+
+    hcsr04_init(sonarHardware, &sonarRange);
     sensorsSet(SENSOR_SONAR);
-    calculatedAltitude = -1;
+    sonarMaxRangeCm = sonarRange.maxRangeCm;
+    sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
+    sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
+    sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
+    calculatedAltitude = SONAR_OUT_OF_RANGE;
 }
 
 void sonarUpdate(void)
@@ -111,59 +128,36 @@ void sonarUpdate(void)
 #define SONAR_SAMPLES_MEDIAN 3
 
 /**
- * Get the last distance measured by the sonar in centimeters. When the ground is too far away, -1 is returned instead.
+ * Get the last distance measured by the sonar in centimeters. When the ground is too far away, SONAR_OUT_OF_RANGE is returned.
  */
 int32_t sonarRead(void)
 {
-    static int32_t sonarFilterSamples[SONAR_SAMPLES_MEDIAN];
-    static int currentFilterSampleIndex = 0;
-    static bool medianFilterReady = false;
-
-    int32_t newSonarReading = hcsr04_get_distance();
-    int nextSampleIndex;
-
-    if (newSonarReading > 0) {
-        nextSampleIndex = (currentFilterSampleIndex + 1);
-        if (nextSampleIndex == SONAR_SAMPLES_MEDIAN) {
-            nextSampleIndex = 0;
-            medianFilterReady = true;
-        }
-
-        sonarFilterSamples[currentFilterSampleIndex] = newSonarReading;
-        currentFilterSampleIndex = nextSampleIndex;
-
-        if (medianFilterReady)
-            return quickMedianFilter3(sonarFilterSamples);
-        else
-            return newSonarReading;
-    }
-    else {
-        return -1;
-    }
+    int32_t distance = hcsr04_get_distance();
+    if (distance > HCSR04_MAX_RANGE_CM)
+        distance = SONAR_OUT_OF_RANGE;
+    return distance;
 }
 
 /**
  * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
  * the altitude. Returns the computed altitude in centimeters.
  *
- * When the ground is too far away or the tilt is too strong, -1 is returned instead.
+ * When the ground is too far away or the tilt is too large, SONAR_OUT_OF_RANGE is returned.
  */
-int32_t sonarCalculateAltitude(int32_t sonarAlt, float cosTiltAngle)
+int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle)
 {
-    if (sonarAlt < 0)
-        return sonarAlt;
-
-    // calculate sonar altitude only if the sonar is facing downwards(<30deg)
-    if (cosTiltAngle < 0.866f)
-        calculatedAltitude = -1;
+    // calculate sonar altitude only if the ground is in the sonar cone
+    if (cosTiltAngle <= sonarMaxTiltCos)
+        calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
-        calculatedAltitude = sonarAlt * cosTiltAngle;
+        // altitude = distance * cos(tiltAngle), use approximation
+        calculatedAltitude = sonarDistance * cosTiltAngle;
 
     return calculatedAltitude;
 }
 
 /**
- * Get the latest altitude that was computed by a call to sonarCalculateAltitude(), or -1 if sonarCalculateAltitude
+ * Get the latest altitude that was computed by a call to sonarCalculateAltitude(), or SONAR_OUT_OF_RANGE if sonarCalculateAltitude
  * has never been called.
  */
 int32_t sonarGetLatestAltitude(void)

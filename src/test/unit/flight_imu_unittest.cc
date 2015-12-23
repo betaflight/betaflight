@@ -51,49 +51,76 @@ extern "C" {
 
 extern float q0, q1, q2, q3;
 extern "C" { 
-void imuCompureRotationMatrix(void);
+void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
-void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw);
 }
 
-TEST(FlightImuTest, TestQuaternionAndRPYConversions)
+void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
 {
-    imuComputeQuaternionFromRPY(0, 0, 170);
-    imuUpdateEulerAngles();
-    EXPECT_EQ(attitude.values.roll, 0);
-    EXPECT_EQ(attitude.values.pitch, 0);
-    EXPECT_EQ(attitude.values.yaw, 170);
+    if (initialRoll > 1800) initialRoll -= 3600;
+    if (initialPitch > 1800) initialPitch -= 3600;
+    if (initialYaw > 1800) initialYaw -= 3600;
+
+    float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+
+    float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+
+    float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+
+    q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+    q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
+    q2 = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
+    q3 = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
+
+    imuComputeRotationMatrix();
 }
 
 TEST(FlightImuTest, TestEulerAngleCalculation)
 {
-    q0 = 1; q1 = 0; q2 = 0; q3 = 0;
-    imuCompureRotationMatrix();
+    imuComputeQuaternionFromRPY(0, 0, 0);
     imuUpdateEulerAngles();
-    EXPECT_EQ(attitude.values.roll, 0);
-    EXPECT_EQ(attitude.values.pitch, 0);
-    EXPECT_EQ(attitude.values.yaw, 0);
+    EXPECT_FLOAT_EQ(attitude.values.roll, 0);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = -1; q1 = 0; q2 = 0; q3 = 0;
-    imuCompureRotationMatrix();
+    imuComputeQuaternionFromRPY(450, 450, 0);
     imuUpdateEulerAngles();
-    EXPECT_EQ(attitude.values.roll, 0);
-    EXPECT_EQ(attitude.values.pitch, 0);
-    EXPECT_EQ(attitude.values.yaw, 0);
+    EXPECT_FLOAT_EQ(attitude.values.roll, 450);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 450);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = 0; q1 = 0; q2 = 0; q3 = 1;
-    imuCompureRotationMatrix();
+    imuComputeQuaternionFromRPY(-450, -450, 0);
     imuUpdateEulerAngles();
-    EXPECT_EQ(attitude.values.roll, 0);
-    EXPECT_EQ(attitude.values.pitch, 0);
-    EXPECT_EQ(attitude.values.yaw, 1801);
+    EXPECT_FLOAT_EQ(attitude.values.roll, -450);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, -450);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
 
-    q0 = 0; q1 = 0; q2 = 0; q3 = -1;
-    imuCompureRotationMatrix();
+    imuComputeQuaternionFromRPY(1790, 0, 0);
     imuUpdateEulerAngles();
-    EXPECT_EQ(attitude.values.roll, 0);
-    EXPECT_EQ(attitude.values.pitch, 0);
-    EXPECT_EQ(attitude.values.yaw, 1801);
+    EXPECT_FLOAT_EQ(attitude.values.roll, 1790);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
+
+    imuComputeQuaternionFromRPY(-1790, 0, 0);
+    imuUpdateEulerAngles();
+    EXPECT_FLOAT_EQ(attitude.values.roll, -1790);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 0);
+
+    imuComputeQuaternionFromRPY(0, 0, 900);
+    imuUpdateEulerAngles();
+    EXPECT_FLOAT_EQ(attitude.values.roll, 0);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 900);
+
+    imuComputeQuaternionFromRPY(0, 0, 2700);
+    imuUpdateEulerAngles();
+    EXPECT_FLOAT_EQ(attitude.values.roll, 0);
+    EXPECT_FLOAT_EQ(attitude.values.pitch, 0);
+    EXPECT_FLOAT_EQ(attitude.values.yaw, 2700);
 }
 
 // STUBS
@@ -115,6 +142,8 @@ uint16_t flightModeFlags;
 uint8_t armingFlags;
 
 int32_t sonarAlt;
+int16_t sonarCfAltCm;
+int16_t sonarMaxAltWithTiltCm;
 int16_t accADC[XYZ_AXIS_COUNT];
 int16_t gyroADC[XYZ_AXIS_COUNT];
 

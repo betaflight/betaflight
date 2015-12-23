@@ -17,7 +17,7 @@
 
 #pragma once
 
-// only set_BASEPRI is implemented in device library. It does always create memory barrirer
+// only set_BASEPRI is implemented in device library. It does always create memory barrier
 // missing versions are implemented here
 
 // set BASEPRI and BASEPRI_MAX register, but do not create memory barrier
@@ -68,10 +68,10 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
                                      __ToDo = __basepriSetMemRetVal(prio); __ToDo ; __ToDo = 0 )
 
 // Run block with elevated BASEPRI (using BASEPRI_MAX), but do not create any (explicit) memory barrier.
-// Be carefull when using this, you must use some method to prevent optimizer form breaking things
-// - lto is used for baseflight compillation, so function call is not memory barrier
-// - use ATOMIC_BARRIER or propper volatile to protect used variables
-// - gcc 4.8.4 does write all values in registes to memory before 'asm volatile', so this optimization does not help much
+// Be careful when using this, you must use some method to prevent optimizer form breaking things
+// - lto is used for Cleanflight compilation, so function call is not memory barrier
+// - use ATOMIC_BARRIER or proper volatile to protect used variables
+// - gcc 4.8.4 does write all values in registers to memory before 'asm volatile', so this optimization does not help much
 //    but that can change in future versions
 #define ATOMIC_BLOCK_NB(prio) for ( uint8_t __basepri_save __attribute__((__cleanup__(__basepriRestore))) = __get_BASEPRI(), \
                                     __ToDo = __basepriSetRetVal(prio); __ToDo ; __ToDo = 0 ) \
@@ -80,7 +80,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // Create memory barrier
 // - at the beginning (all data must be reread from memory)
 // - at exit of block (all exit paths) (all data must be written, but may be cached in register for subsequent use)
-// ideally this would only protect memory passed as parameter (any type should work), but gcc is curently creating almost full barrier
+// ideally this would only protect memory passed as parameter (any type should work), but gcc is currently creating almost full barrier
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
 #if (__GNUC__ > 4)
@@ -96,7 +96,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 # define __UNIQL(x) __UNIQL_CONCAT(x,__LINE__)
 #endif
 
-// this macro uses local function for cleanup. CLang block can be substituded
+// this macro uses local function for cleanup. CLang block can be substituted
 #define ATOMIC_BARRIER(data)                                            \
     __extension__ void  __UNIQL(__barrierEnd)(typeof(data) **__d) {     \
         __asm__ volatile ("\t# barier(" #data ")  end\n" : : "m" (**__d));                          \

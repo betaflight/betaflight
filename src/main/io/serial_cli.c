@@ -51,7 +51,6 @@
 #include "io/gimbal.h"
 #include "io/rc_controls.h"
 #include "io/serial.h"
-#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -151,16 +150,12 @@ static void cliFlashRead(char *cmdline);
 #endif
 #endif
 
-#ifdef USE_SERIAL_1WIRE
-static void cliUSB1Wire(char *cmdline);
-#endif
-
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
 #ifndef USE_QUAD_MIXER_ONLY
-// sync this with mixerMode_e
+//  this with mixerMode_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -231,9 +226,6 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-#ifdef USE_SERIAL_1WIRE
-    CLI_COMMAND_DEF("1wire", "1-wire interface to escs", "<esc index>", cliUSB1Wire),
-#endif
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
@@ -354,15 +346,29 @@ static const char * const lookupTableSerialRX[] = {
     "SUMD",
     "SUMH",
     "XB-B",
-    "XB-B-RJ01"
+    "XB-B-RJ01",
+    "IBUS"
+};
+
+static const char * const lookupTableGyroFilter[] = {
+    "OFF", "LOW", "MEDIUM", "HIGH"
+};
+
+static const char * const lookupTableGyroLpf[] = {
+    "256HZ",
+    "188HZ",
+    "98HZ",
+    "42HZ",
+    "20HZ",
+    "10HZ"
 };
 
 static const char * const lookupTableSoftFilter[] = {
-    "NONE", "LOW", "MEDIUM", "HIGH"
+    "OFF", "LOW", "MEDIUM", "HIGH"
 };
 
 static const char * const lookupTableFailsafeProcedure[] = {
-    "SET-THR", "RTH"
+    "SET-THR", "DROP", "RTH"
 };
 
 #ifdef NAV
@@ -396,6 +402,7 @@ typedef enum {
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
     TABLE_SOFT_FILTER,
+    TABLE_GYRO_LPF,
     TABLE_FAILSAFE_PROCEDURE,
 #ifdef NAV
     TABLE_NAV_USER_CTL_MODE,
@@ -419,6 +426,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableSoftFilter, sizeof(lookupTableSoftFilter) / sizeof(char *) },
+    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
 #ifdef NAV
     { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
@@ -480,6 +488,8 @@ const clivalue_t valueTable[] = {
     { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.looptime, .config.minmax = {0, 9000}, 0 },
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.emf_avoidance, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroSync, .config.lookup = { TABLE_OFF_ON } },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroSyncDenominator, .config.minmax = { 1,  32 } },
 
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, .config.minmax = { 1200,  1700 }, 0 },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
@@ -534,9 +544,7 @@ const clivalue_t valueTable[] = {
     { "nav_navr_p",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDNAVR], .config.minmax = { 0,  200 }, 0 },
     { "nav_navr_i",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDNAVR], .config.minmax = { 0,  200 }, 0 },
     { "nav_navr_d",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDNAVR], .config.minmax = { 0,  200 }, 0 },
-#endif
 
-#ifdef NAV
 #if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
     { "inav_auto_mag_decl",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.automatic_mag_declination, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
@@ -567,8 +575,6 @@ const clivalue_t valueTable[] = {
     { "nav_manual_climb_rate",      VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.max_manual_climb_rate, .config.minmax = { 10,  2000 }, 0 },
     { "nav_landing_speed",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.land_descent_rate, .config.minmax = { 100,  2000 }, 0 },
     { "nav_emerg_landing_speed",    VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.emerg_descent_rate, .config.minmax = { 100,  2000 }, 0 },
-    { "nav_pos_hold_deadband",      VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, 0 },
-    { "nav_alt_hold_deadband",      VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, 0 },
     { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
     { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.rth_alt_control_style, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
@@ -619,7 +625,7 @@ const clivalue_t valueTable[] = {
 
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 }, 0 },
 
-    { "gyro_lpf",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_lpf, .config.minmax = { 0,  256 }, 0 },
+    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 }, 0 },
 
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp_acc, .config.minmax = { 0,  65535 }, 0 },
@@ -629,6 +635,8 @@ const clivalue_t valueTable[] = {
 
     { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.deadband, .config.minmax = { 0,  32 }, 0 },
     { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 }, 0 },
+    { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.profile[0].rcControlsConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, 0 },
+    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.profile[0].rcControlsConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, 0 },
 
     { "throttle_tilt_comp_str",     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].throttle_tilt_compensation_strength, .config.minmax = { 0,  100 }, 0 },
 
@@ -671,9 +679,6 @@ const clivalue_t valueTable[] = {
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
-	{ "gyro_soft_filter",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gyro_soft_filter, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
-    { "acc_soft_filter",            VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].acc_soft_filter, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
-
     { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX }, 0 },
     { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].barometerConfig.baro_noise_lpf, .config.minmax = { 0,  1 }, 0 },
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
@@ -703,7 +708,6 @@ const clivalue_t valueTable[] = {
     { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[YAW], .config.minmax = { 0,  100 }, 0 },
     { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[YAW], .config.minmax = { 0,  100 }, 0 },
 
-    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX }, 0 },
     { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.H_level, .config.minmax = { 0,  10 }, 0 },
     { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.A_level, .config.minmax = { 0,  10 }, 0 },
     { "sensitivity_horizon",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.H_sensitivity, .config.minmax = { 0,  250 }, 0 },
@@ -712,8 +716,11 @@ const clivalue_t valueTable[] = {
     { "i_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDLEVEL], .config.minmax = { 0,  200 }, 0 },
     { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDLEVEL], .config.minmax = { 0,  200 }, 0 },
 
-	{ "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 }, 0 },
-	{ "pterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pterm_cut_hz, .config.minmax = {0, 200 }, 0 },
+    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
+	{ "gyro_soft_lpf",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.gyro_soft_lpf, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
+    { "acc_soft_lpf",               VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.acc_soft_lpf, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
+    { "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
+    { "yaw_pterm_cut_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz, .config.minmax = {0, 200 } },
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 }, 0 },
@@ -1182,7 +1189,7 @@ static void cliMotorMix(char *cmdline)
                 cliMotorMix("");
             }
         } else {
-            cliShowArgumentRangeError("index", 1, MAX_SUPPORTED_MOTORS);
+            cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
 #endif
@@ -1690,7 +1697,7 @@ static void cliDump(char *cmdline)
 
         // print custom servo mixer if exists
         printf("smix reset\r\n");
-
+#ifdef USE_SERVOS
         for (i = 0; i < MAX_SERVO_RULES; i++) {
 
             if (masterConfig.customServoMixer[i].rate == 0)
@@ -1708,6 +1715,7 @@ static void cliDump(char *cmdline)
             );
         }
 
+#endif
 #endif
 
         cliPrint("\r\n\r\n# feature\r\n");
@@ -2018,7 +2026,7 @@ static void cliMotor(char *cmdline)
     }
 
     if (motor_index < 0 || motor_index >= MAX_SUPPORTED_MOTORS) {
-        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS);
+        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         return;
     }
 
@@ -2395,28 +2403,6 @@ static void cliStatus(char *cmdline)
 
     printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
-
-#ifdef USE_SERIAL_1WIRE
-static void cliUSB1Wire(char *cmdline)
-{
-    int i;
-
-    if (isEmpty(cmdline)) {
-        cliPrint("Please specify a ouput channel. e.g. `1wire 2` to connect to motor 2\r\n");
-        return;
-    } else {
-        i = atoi(cmdline);
-        if (i >= 0 && i <= ESC_COUNT) {
-            printf("Switching to BlHeli mode on motor port %d\r\n", i);
-        }
-        else {
-            printf("Invalid motor port, valid range: 1 to %d\r\n", ESC_COUNT);
-        }
-    }
-    // motor 1 => index 0
-    usb1WirePassthrough(i-1);
-}
-#endif
 
 static void cliVersion(char *cmdline)
 {

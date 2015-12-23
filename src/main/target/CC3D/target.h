@@ -68,7 +68,7 @@
 
 #define INVERTER
 #define BEEPER
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_VCP
 #define USE_USART1
@@ -121,9 +121,9 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_1WIRE
-// How many escs does this board support?
-#define ESC_COUNT 6
+#define SKIP_CLI_COMMAND_HELP
+
+//#define USE_SERIAL_1WIRE
 
 // FlexPort (pin 21/22, TX/RX respectively):
 // Note, FlexPort has 10k pullups on both TX and RX

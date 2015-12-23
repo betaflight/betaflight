@@ -71,11 +71,11 @@ void resetFixedWingAltitudeController()
 
 bool adjustFixedWingAltitudeFromRCInput(void)
 {
-    int16_t rcAdjustment = applyDeadband(rcCommand[PITCH], posControl.navConfig->alt_hold_deadband);
+    int16_t rcAdjustment = applyDeadband(rcCommand[PITCH], posControl.rcControlsConfig->alt_hold_deadband);
 
     if (rcAdjustment) {
         // set velocity proportional to stick movement
-        float rcClimbRate = -rcAdjustment * posControl.navConfig->max_manual_climb_rate / (500.0f - posControl.navConfig->alt_hold_deadband);
+        float rcClimbRate = -rcAdjustment * posControl.navConfig->max_manual_climb_rate / (500.0f - posControl.rcControlsConfig->alt_hold_deadband);
         updateAltitudeTargetFromClimbRate(rcClimbRate);
         return true;
     }
@@ -223,7 +223,7 @@ static void calculateVirtualPositionTarget_FW(float trackingPeriod)
 
     // Shift position according to pilot's ROLL input (up to max_manual_speed velocity)
     if (posControl.flags.isAdjustingPosition) {
-        int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.navConfig->pos_hold_deadband);
+        int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.rcControlsConfig->pos_hold_deadband);
 
         if (rcRollAdjustment) {
             float rcShiftY = rcRollAdjustment * posControl.navConfig->max_manual_speed / 500.0f * trackingPeriod;
@@ -239,7 +239,7 @@ static void calculateVirtualPositionTarget_FW(float trackingPeriod)
 
 bool adjustFixedWingPositionFromRCInput(void)
 {
-    int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.navConfig->pos_hold_deadband);
+    int16_t rcRollAdjustment = applyDeadband(rcCommand[ROLL], posControl.rcControlsConfig->pos_hold_deadband);
     return (rcRollAdjustment);
 }
 

@@ -368,27 +368,7 @@ int servoDirection(int servoIndex, int inputSource)
 }
 #endif
 
-#ifndef USE_QUAD_MIXER_ONLY
-
-void loadCustomServoMixer(void)
-{
-    uint8_t i;
-
-    // reset settings
-    servoRuleCount = 0;
-    memset(currentServoMixer, 0, sizeof(currentServoMixer));
-
-    // load custom mixer into currentServoMixer
-    for (i = 0; i < MAX_SERVO_RULES; i++) {
-        // check if done
-        if (customServoMixers[i].rate == 0)
-            break;
-            
-        currentServoMixer[i] = customServoMixers[i];
-        servoRuleCount++;
-    }
-}
-
+#ifdef USE_SERVOS
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers)
 {
     currentMixerMode = mixerMode;
@@ -407,7 +387,15 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 }
+#else
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
+{
+    currentMixerMode = mixerMode;
+    customMixers = initialCustomMixers;
+}
+#endif
 
+#ifdef USE_SERVOS
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
 {
     int i;
@@ -472,7 +460,43 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     mixerResetDisarmedMotors();
 }
+#else
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+{
+    UNUSED(pwmOutputConfiguration);
+    motorCount = 4;
+#ifdef USE_SERVOS
+    servoCount = 0;
+#endif
+    uint8_t i;
+    for (i = 0; i < motorCount; i++) {
+        currentMixer[i] = mixerQuadX[i];
+    }
+    mixerResetDisarmedMotors();
+}
+#endif
 
+
+#ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
+void loadCustomServoMixer(void)
+{
+    uint8_t i;
+
+    // reset settings
+    servoRuleCount = 0;
+    memset(currentServoMixer, 0, sizeof(currentServoMixer));
+
+    // load custom mixer into currentServoMixer
+    for (i = 0; i < MAX_SERVO_RULES; i++) {
+        // check if done
+        if (customServoMixers[i].rate == 0)
+            break;
+
+        currentServoMixer[i] = customServoMixers[i];
+        servoRuleCount++;
+    }
+}
 
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
 {
@@ -487,6 +511,8 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
     for (i = 0; i < servoMixers[index].servoRuleCount; i++)
         customServoMixers[i] = servoMixers[index].rule[i];
 }
+#endif
+
 
 void mixerLoadMix(int index, motorMixer_t *customMixers)
 {
@@ -505,30 +531,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
     }
 }
 
-#else
-
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
-{
-    currentMixerMode = mixerMode;
-
-    customMixers = initialCustomMixers;
-}
-
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
-{
-    UNUSED(pwmOutputConfiguration);
-    motorCount = 4;
-#ifdef USE_SERVOS
-    servoCount = 0;
-#endif
-
-    uint8_t i;
-    for (i = 0; i < motorCount; i++) {
-        currentMixer[i] = mixerQuadX[i];
-    }
-
-    mixerResetDisarmedMotors();
-}
 #endif
 
 void mixerResetDisarmedMotors(void)
@@ -659,6 +661,7 @@ void StopPwmAllMotors()
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
 STATIC_UNIT_TESTED void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
@@ -735,7 +738,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
-
+#endif
 #endif
 
 void mixTable(void)
@@ -819,7 +822,7 @@ void mixTable(void)
 
     // motor outputs are used as sources for servo mixing, so motors must be calculated before servos.
 
-#if !defined(USE_QUAD_MIXER_ONLY) || defined(USE_SERVOS)
+#if !defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
 
     // airplane / servo mixes
     switch (currentMixerMode) {
