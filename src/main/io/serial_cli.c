@@ -328,6 +328,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", NULL, cliSerialPassthrough),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
@@ -1089,6 +1090,32 @@ static void cliSerial(char *cmdline)
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
 
+}
+
+static void cliSerialPassthrough(char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        // TODO: is this the correct way to echo usage information? What about
+        // the format?
+        printf("Usage: serialpassthrough <serial port identifier>\r\n");
+        return;
+    } else {
+        val = atoi(cmdline);
+
+        if (i >= 0 && i < SERIAL_PORT_COUNT) {
+            serialPortConfig_t = *passThroughPortConfig;
+
+            passThroughConfig = serialFindPortConfiguration(val);
+            if (!passThroughConfig) {
+                printf("Invalid serial port identifier\r\n");
+                return;
+            }
+
+            serialPort_t *passThroughPort;
+            passThroughPort = openSerialPort(passThroughPortConfig->identifier, FUNCTION_NONE, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
+            serialPassthrough(cliPort, passThroughPort);
+        }
+    }
 }
 
 static void cliAdjustmentRange(char *cmdline)

@@ -37,6 +37,8 @@
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"
 #endif
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5)
 #include "drivers/serial_uart.h"
@@ -423,3 +425,41 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
+/*
+A low-level interface for implementing serial passthrough. This is used for
+example by gps to do serial passthrough while also consuming GPS data and
+updating the display. It is used below by the high-level `serialPassthrough()`
+function to move data between two serial ports.
+
+Read data from `left` and writes it to `right`
+Returns data (if any) to caller for further processing.
+*/
+uint8_t serialPassthroughStep(serialPort_t *left, serialPort_t *right)
+{
+    uint8_t c = 0;
+    if (serialRxBytesWaiting(left)) {
+        c = serialRead(left);
+        serialWrite(right, c);
+    }
+    return c;
+}
+
+/*
+A high-level serial passthrough implementation. Used by cli to start an
+arbitrary serial passthrough "proxy". Manages LEDs while using the low-level
+`serialPassthroughStep()` to shuffle data both ways.
+*/
+void serialPassthrough(serialPort_t *left, serialPort_t *right)
+{
+    LED0_OFF;
+    LED1_OFF;
+
+    while(1) {
+        LED0_ON;
+        serialPassthroughStep(left, right);
+        LED0_OFF;
+        LED1_ON;
+        serialPassthroughStep(right, left);
+        LED1_OFF;
+    }
+}

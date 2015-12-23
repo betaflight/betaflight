@@ -1067,20 +1067,16 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     }
 #endif
     char c;
-    while(1) {
-        if (serialRxBytesWaiting(gpsPort)) {
-            LED0_ON;
-            c = serialRead(gpsPort);
+    while(1)
+    {
+        LED0_ON;
+        c = serialPassthroughStep(gpsPort, gpsPassthroughPort);
+        LED0_OFF;
+        if (c != 0)
             gpsNewData(c);
-            serialWrite(gpsPassthroughPort, c);
-            LED0_OFF;
-        }
-        if (serialRxBytesWaiting(gpsPassthroughPort)) {
-            LED1_ON;
-            c = serialRead(gpsPassthroughPort);
-            serialWrite(gpsPort, c);
-            LED1_OFF;
-        }
+        LED1_ON;
+        serialPassthroughStep(gpsPassthroughPort, gpsPort);
+        LED1_OFF;
 #ifdef DISPLAY
         if (feature(FEATURE_DISPLAY)) {
             updateDisplay();
