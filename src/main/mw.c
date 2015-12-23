@@ -103,6 +103,7 @@ enum {
 // AIR MODE Reset timers
 #define ERROR_RESET_DEACTIVATE_DELAY (1 * 1000)   // 1 sec delay to disable AIR MODE Iterm resetting
 bool allowITermShrinkOnly = false;
+static bool ResetErrorActivated = true;
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
@@ -476,24 +477,25 @@ void processRx(void)
 
         // Conditions to reset Error
         if (!ARMING_FLAG(ARMED) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled) || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            pidResetErrorGyro();
+            ResetErrorActivated = true;                                         // As RX code is not executed each loop a flag has to be set for fast looptimes
             airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
             airModeErrorResetIsEnabled = true;                                  // Enable Reset again especially after Disarm
-            allowITermShrinkOnly = false;                                       // Disable shrink especially after Disarm
+            allowITermShrinkOnly = false;                                       // Reset shrinking
         }
     } else {
         if (!(feature(FEATURE_MOTOR_STOP)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (airModeErrorResetIsEnabled) {
                 if (millis() > airModeErrorResetTimeout && calculateRollPitchCenterStatus(&masterConfig.rxConfig) == NOT_CENTERED) {  // Only disable error reset when roll and pitch not centered
                     airModeErrorResetIsEnabled = false;
-                    allowITermShrinkOnly = false;   // Reset shrinking for Iterm
+                    allowITermShrinkOnly = false;  // Reset shrinking for Iterm
                 }
             } else {
-                allowITermShrinkOnly = false;   // Reset shrinking for Iterm
+                allowITermShrinkOnly = false;      // Reset shrinking for Iterm
             }
         } else {
-            allowITermShrinkOnly = false;   // Reset shrinking. Usefull when flipping between normal and AIR mode
+            allowITermShrinkOnly = false;          // Reset shrinking. Usefull when flipping between normal and AIR mode
         }
+        ResetErrorActivated = false;               // Disable resetting of error
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -714,6 +716,10 @@ void taskMainPidLoop(void)
         }
     }
 #endif
+
+    if (ResetErrorActivated) {
+        pidResetErrorGyro();
+    }
 
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
