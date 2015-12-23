@@ -1402,7 +1402,7 @@ void handleBlackbox(void)
                  * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
                  * could wipe out the end of the header if we weren't careful)
                  */
-                if (blackboxDeviceFlush()) {
+                if (blackboxDeviceFlushForce()) {
                     blackboxSetState(BLACKBOX_STATE_RUNNING);
                 }
             }
@@ -1444,7 +1444,7 @@ void handleBlackbox(void)
              *
              * Don't wait longer than it could possibly take if something funky happens.
              */
-            if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlush())) {
+            if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
                 blackboxDeviceClose();
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
