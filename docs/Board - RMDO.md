@@ -12,7 +12,6 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 * On-board 5V/0.5A BEC directly powered off 2-6S main battery pack. No external BEC/regulator necessary.
 * On-board 3.3V regulator to power peripherials like Spektrum satellite receiver.
 * No compass option available
-* No current sensor support with latest firmware.
 * 36x36mm board with 30.5mm mounting holes pattern (same as CC3D or Naze32, but different pin-out).
 
 
