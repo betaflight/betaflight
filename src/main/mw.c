@@ -91,7 +91,7 @@ enum {
     ALIGN_MAG = 2
 };
 
-#define JITTER_DEBUG 0  // Specify debug value for jitter debug
+//#define JITTER_DEBUG 0  // Specify debug value for jitter debug
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
@@ -644,17 +644,6 @@ void processRx(void)
 static bool haveProcessedAnnexCodeOnce = false;
 #endif
 
-// Function for loop trigger
-bool taskMainPidLoopCheck(uint32_t currentDeltaTime) {
-	bool loopTrigger = false;
-
-    if (gyroSyncCheckUpdate() || (currentDeltaTime >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            loopTrigger = true;
-    }
-
-    return loopTrigger;
-}
-
 void taskMainPidLoop(void)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
@@ -746,6 +735,16 @@ void taskMainPidLoop(void)
         handleBlackbox();
     }
 #endif
+}
+
+// Function for loop trigger
+void taskMainPidLoopCheck(void) {
+    while (1) {
+        if (gyroSyncCheckUpdate() || (getTaskDeltaTime(TASK_SELF) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            taskMainPidLoop();
+            break;
+        }
+    }
 }
 
 void taskUpdateAccelerometer(void)

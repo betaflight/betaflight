@@ -94,7 +94,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
-    static float delta1[3], delta2[3];
+    static float delta1[3], delta2[3], delta3[3], delta4[3], delta5[3];
     float delta, deltaSum;
     int axis;
     float horizonLevelStrength = 1;
@@ -194,8 +194,17 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta *= (1.0f / dT);
 
         if (!pidProfile->dterm_cut_hz) {
-            // add moving average here to reduce noise
-            deltaSum = (delta1[axis] + delta2[axis] + delta) / 3;
+            // add moving average here to reduce noise. More averaging needed for 2khz mode
+            deltaSum = delta1[axis] + delta2[axis] + delta;
+            if (targetLooptime < 1000) {
+                deltaSum += delta3[axis] + delta4[axis] + delta5[axis];
+                delta5[axis] = delta4[axis];
+                delta4[axis] = delta3[axis];
+                delta3[axis] = delta2[axis];
+                deltaSum /= 6;
+            } else {
+                deltaSum /= 3;
+            }
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
         } else {
@@ -234,7 +243,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t errorAngle;
     int axis;
     int32_t delta, deltaSum;
-    static int32_t delta1[3], delta2[3];
+    static int32_t delta1[3], delta2[3], delta3[3], delta4[3], delta5[3];;
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
@@ -337,8 +346,15 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         if (!pidProfile->dterm_cut_hz) {
-            // add moving average here to reduce noise
+            // add moving average here to reduce noise (More moving average required for 2khz mode)
             deltaSum = delta1[axis] + delta2[axis] + delta;
+            if (targetLooptime < 1000) {
+                deltaSum += delta3[axis] + delta4[axis] + delta5[axis];
+                delta5[axis] = delta4[axis];
+                delta4[axis] = delta3[axis];
+                delta3[axis] = delta2[axis];
+                deltaSum /= 2;  // Get same scaling
+            }
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
         } else {

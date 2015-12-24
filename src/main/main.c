@@ -541,7 +541,7 @@ int main(void) {
     init();
 
     /* Setup scheduler */
-    rescheduleTask(TASK_GYROPID, targetLooptime);
+    rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
 
     setTaskEnabled(TASK_GYROPID, true);
     setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));

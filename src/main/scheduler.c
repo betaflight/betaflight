@@ -27,7 +27,7 @@
 
 #include "drivers/system.h"
 
-#define SCHEDULER_DEBUG
+//#define SCHEDULER_DEBUG
 
 cfTaskId_e currentTaskId = TASK_NONE;
 
@@ -62,8 +62,7 @@ typedef struct {
 #endif
 } cfTask_t;
 
-bool taskMainPidLoopCheck(uint32_t currentDeltaTime);
-void taskMainPidLoop(void);
+void taskMainPidLoopCheck(void);
 void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
 void taskUpdateBeeper(void);
@@ -91,8 +90,7 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_GYROPID] = {
         .taskName = "GYRO/PID",
-        .checkFunc = taskMainPidLoopCheck,
-        .taskFunc = taskMainPidLoop,
+        .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
