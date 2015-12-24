@@ -149,6 +149,7 @@ static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
+static void cliSerialPassthrough(char *cmdline);
 
 #ifdef USE_SERVOS
 static void cliServo(char *cmdline);
@@ -1100,21 +1101,24 @@ static void cliSerialPassthrough(char *cmdline)
         printf("Usage: serialpassthrough <serial port identifier>\r\n");
         return;
     } else {
+        int val;
         val = atoi(cmdline);
 
-        if (i >= 0 && i < SERIAL_PORT_COUNT) {
-            serialPortConfig_t = *passThroughPortConfig;
-
-            passThroughConfig = serialFindPortConfiguration(val);
-            if (!passThroughConfig) {
-                printf("Invalid serial port identifier\r\n");
-                return;
-            }
-
-            serialPort_t *passThroughPort;
-            passThroughPort = openSerialPort(passThroughPortConfig->identifier, FUNCTION_NONE, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
-            serialPassthrough(cliPort, passThroughPort);
+        serialPortConfig_t *passThroughPortConfig = NULL;
+        if (val >= 0 && val < SERIAL_PORT_COUNT) {
+            passThroughPortConfig = serialFindPortConfiguration(val);
         }
+
+        if (!passThroughPortConfig) {
+            printf("Invalid serial port identifier\r\n");
+            return;
+        }
+
+        // TODO: determine baud rate
+        int baudRateIndex = 0;
+        serialPort_t *passThroughPort;
+        passThroughPort = openSerialPort(passThroughPortConfig->identifier, FUNCTION_NONE, NULL, baudRateIndex, MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPassthrough(cliPort, passThroughPort);
     }
 }
 
