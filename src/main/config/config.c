@@ -163,9 +163,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDALT] = 50;    // NAV_POS_Z_P * 100
     pidProfile->I8[PIDALT] = 0;     // not used
     pidProfile->D8[PIDALT] = 0;     // not used
-    pidProfile->P8[PIDPOS] = 50;    // NAV_POS_XY_P * 100
-    pidProfile->I8[PIDPOS] = 200;   // posDecelerationTime * 100
-    pidProfile->D8[PIDPOS] = 0;     // not used
+    pidProfile->P8[PIDPOS] = 65;    // NAV_POS_XY_P * 100
+    pidProfile->I8[PIDPOS] = 155;   // posDecelerationTime * 100
+    pidProfile->D8[PIDPOS] = 30;    // posResponseExpo * 100
     pidProfile->P8[PIDPOSR] = 90;   // NAV_VEL_XY_P * 100
     pidProfile->I8[PIDPOSR] = 15;   // NAV_VEL_XY_I * 100
     pidProfile->D8[PIDPOSR] = 1;    // NAV_VEL_XY_D * 1000
@@ -180,24 +180,24 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 5;     // NAV_VEL_Z_I * 100
     pidProfile->D8[PIDVEL] = 100;   // NAV_VEL_Z_D * 1000
 
-    pidProfile->acc_soft_lpf = 1;    // LOW filtering by default
+    pidProfile->acc_soft_lpf = 2;    // MEDIUM filtering by default
     pidProfile->gyro_soft_lpf = 1;   // LOW filtering by default
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_pterm_cut_hz = 0;
-    pidProfile->dterm_cut_hz = 0;
+    pidProfile->dterm_cut_hz = 30;
 
     pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
-    pidProfile->I_f[ROLL] = 0.4f;
-    pidProfile->D_f[ROLL] = 0.03f;
+    pidProfile->I_f[ROLL] = 0.3f;
+    pidProfile->D_f[ROLL] = 0.02f;
     pidProfile->P_f[PITCH] = 1.4f;
-    pidProfile->I_f[PITCH] = 0.4f;
-    pidProfile->D_f[PITCH] = 0.03f;
+    pidProfile->I_f[PITCH] = 0.3f;
+    pidProfile->D_f[PITCH] = 0.02f;
     pidProfile->P_f[YAW] = 3.5f;
     pidProfile->I_f[YAW] = 0.4f;
     pidProfile->D_f[YAW] = 0.01f;
-    pidProfile->A_level = 5.0f;
-    pidProfile->H_level = 3.0f;
+    pidProfile->A_level = 4.0f;
+    pidProfile->H_level = 4.0f;
     pidProfile->H_sensitivity = 75;
 
 #ifdef GTUNE
@@ -248,15 +248,15 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.baro_epv = 100.0f;
 
     // General navigation parameters
-    navConfig->pos_failure_timeout = 5;    // 5 sec
-    navConfig->waypoint_radius = 300;
-    navConfig->max_speed = 250;
+    navConfig->pos_failure_timeout = 5;     // 5 sec
+    navConfig->waypoint_radius = 300;       // 3m
+    navConfig->max_speed = 300;             // 3 m/s = 10.8 km/h
     navConfig->max_manual_speed = 500;
     navConfig->max_manual_climb_rate = 200;
-    navConfig->land_descent_rate = 200;
+    navConfig->land_descent_rate = 200;     // 2 m/s
     navConfig->emerg_descent_rate = 500;    // 5 m/s
-    navConfig->min_rth_distance = 500;   // If closer than 5m - land immediately
-    navConfig->rth_altitude = 1000;      // 10m
+    navConfig->min_rth_distance = 500;      // If closer than 5m - land immediately
+    navConfig->rth_altitude = 1000;         // 10m
 
     // MC-specific
     navConfig->mc_max_bank_angle = 30;
@@ -362,11 +362,11 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 90;
-    controlRateConfig->rcExpo8 = 65;
+    controlRateConfig->rcExpo8 = 70;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
-    controlRateConfig->rcYawExpo8 = 0;
+    controlRateConfig->rcYawExpo8 = 20;
     controlRateConfig->tpa_breakpoint = 1500;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
@@ -376,8 +376,8 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
-    rcControlsConfig->deadband = 0;
-    rcControlsConfig->yaw_deadband = 0;
+    rcControlsConfig->deadband = 5;
+    rcControlsConfig->yaw_deadband = 5;
     rcControlsConfig->pos_hold_deadband = 20;
     rcControlsConfig->alt_hold_deadband = 50;
 }
@@ -454,7 +454,7 @@ static void resetConf(void)
     masterConfig.dcm_ki_acc = 0;                // 0.00 * 10000
     masterConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
-    masterConfig.gyro_lpf = 3;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 3;                  // BITS_DLPF_CFG_42HZ, In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero, &masterConfig.accGain);
 
@@ -464,7 +464,7 @@ static void resetConf(void)
     masterConfig.boardAlignment.pitchDeciDegrees = 0;
     masterConfig.boardAlignment.yawDeciDegrees = 0;
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    masterConfig.max_angle_inclination = 500;    // 50 degrees
+    masterConfig.max_angle_inclination = 300;    // 30 degrees
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
@@ -529,11 +529,11 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 3500;
+    masterConfig.looptime = 2000;
     masterConfig.emf_avoidance = 0;
     masterConfig.i2c_overclock = 0;
     masterConfig.gyroSync = 0;
-    masterConfig.gyroSyncDenominator = 1;
+    masterConfig.gyroSyncDenominator = 2;
 
     resetPidProfile(&currentProfile->pidProfile);
 
