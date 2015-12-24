@@ -221,12 +221,11 @@ static float imuGetPGainScaleFactor(float spin_rate)
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
-                                bool useYaw, float yawError)
+                                bool useCOG, float courseOverGround)
 {
     static float integralAccX = 0.0f,  integralAccY = 0.0f, integralAccZ = 0.0f;    // integral error terms scaled by Ki
     static float integralMagX = 0.0f,  integralMagY = 0.0f, integralMagZ = 0.0f;    // integral error terms scaled by Ki
     float recipNorm;
-    float hx, hy, bx;
     float ex, ey, ez;
     float qa, qb, qc;
 
@@ -235,7 +234,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
     /* Step 1: Yaw correction */
     // Use measured magnetic field vector
-    if (useMag || useYaw) {
+    if (useMag || useCOG) {
         float kpMag = imuRuntimeConfig->dcm_kp_mag * imuGetPGainScaleFactor(spin_rate);
 
         recipNorm = mx * mx + my * my + mz * mz;
@@ -251,9 +250,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
             // (hx; hy; 0) - measured mag field vector in EF (assuming Z-component is zero)
             // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
-            hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
-            hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
-            bx = sqrtf(hx * hx + hy * hy);
+            float hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
+            float hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
+            float bx = sqrtf(hx * hx + hy * hy);
 
             // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
             float ez_ef = -(hy * bx);
@@ -263,12 +262,17 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
             ey = rMat[2][1] * ez_ef;
             ez = rMat[2][2] * ez_ef;
         }
-        else if (useYaw) {
+        else if (useCOG) {
             // Use raw heading error (from GPS or whatever else)
-            while (yawError >  M_PIf) yawError -= (2.0f * M_PIf);
-            while (yawError < -M_PIf) yawError += (2.0f * M_PIf);
+            while (courseOverGround >  M_PIf) courseOverGround -= (2.0f * M_PIf);
+            while (courseOverGround < -M_PIf) courseOverGround += (2.0f * M_PIf);
 
-            float ez_ef = sin_approx(yawError / 2.0f);
+            // William Premerlani and Paul Bizard, Direction Cosine Matrix IMU - Eqn. 22-23
+            // (Rxx; Ryx) - measured (estimated) heading vector (EF)
+            // (cos(COG), sin(COG)) - reference heading vector (EF)
+            // error is cross product between reference heading and estimated heading (calculated in EF)
+            float ez_ef = - sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0];
+
             ex = rMat[2][0] * ez_ef;
             ey = rMat[2][1] * ez_ef;
             ez = rMat[2][2] * ez_ef;
@@ -403,11 +407,11 @@ static bool isMagnetometerHealthy(void)
 static void imuCalculateEstimatedAttitude(float dT)
 {
     static bool isImuInitialized = false;
-    float rawYawError;
+    float courseOverGround = 0;
 
     bool useAcc = false;
     bool useMag = false;
-    bool useYaw = false;
+    bool useCOG = false;
 
     if (!isImuInitialized) {
         /* Initialize initial attitude guess from accelerometer and magnetometer readings */
@@ -459,8 +463,8 @@ static void imuCalculateEstimatedAttitude(float dT)
         else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
             // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
             if (gpsHeadingInitialized) {
-                rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - GPS_ground_course);
-                useYaw = true;
+                courseOverGround = DECIDEGREES_TO_RADIANS(GPS_ground_course);
+                useCOG = true;
             }
             else {
                 // Re-initialize quaternion from known Roll, Pitch and GPS heading
@@ -473,7 +477,7 @@ static void imuCalculateEstimatedAttitude(float dT)
         imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
                             useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
                             useMag, magADC[X], magADC[Y], magADC[Z],
-                            useYaw, rawYawError);
+                            useCOG, courseOverGround);
     }
 
     imuUpdateEulerAngles();
