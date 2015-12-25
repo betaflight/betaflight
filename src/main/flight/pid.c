@@ -94,9 +94,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
-    static float delta1[3], delta2[3], delta3[3], delta4[3], delta5[3];
+    static float deltaOld[3][9];
     float delta, deltaSum;
-    int axis;
+    int axis, deltaCount;
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -194,25 +194,15 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta *= (1.0f / dT);
 
         if (!pidProfile->dterm_cut_hz) {
-            // add moving average here to reduce noise. More averaging needed for 2khz mode
-            deltaSum = delta1[axis] + delta2[axis] + delta;
-            if (targetLooptime < 1000) {
-                deltaSum += delta3[axis] + delta4[axis] + delta5[axis];
-                delta5[axis] = delta4[axis];
-                delta4[axis] = delta3[axis];
-                delta3[axis] = delta2[axis];
-                deltaSum /= 6;
-            } else {
-                deltaSum /= 3;
+            // Apply median filter for averaging
+            for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+                deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
             }
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
+            deltaOld[axis][0] = delta;
+            deltaSum = quickMedianFilter9f(deltaOld[axis]);
         } else {
             deltaSum = delta;
-        }
-
-        // Dterm low pass
-        if (pidProfile->dterm_cut_hz) {
+            // Dterm low pass
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
@@ -241,9 +231,9 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     UNUSED(rxConfig);
 
     int32_t errorAngle;
-    int axis;
+    int axis, deltaCount;
     int32_t delta, deltaSum;
-    static int32_t delta1[3], delta2[3], delta3[3], delta4[3], delta5[3];;
+    static int32_t deltaOld[3][9];
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
@@ -346,23 +336,16 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         if (!pidProfile->dterm_cut_hz) {
-            // add moving average here to reduce noise (More moving average required for 2khz mode)
-            deltaSum = delta1[axis] + delta2[axis] + delta;
-            if (targetLooptime < 1000) {
-                deltaSum += delta3[axis] + delta4[axis] + delta5[axis];
-                delta5[axis] = delta4[axis];
-                delta4[axis] = delta3[axis];
-                delta3[axis] = delta2[axis];
-                deltaSum /= 2;  // Get same scaling
+            // Apply median filter for averaging
+            for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+                deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
             }
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
+            deltaOld[axis][0] = delta;
+            deltaSum = quickMedianFilter9(deltaOld[axis]);
+            deltaSum *= 3;  // Get same scaling
         } else {
             deltaSum = delta * 2;
-        }
-
-        // Dterm delta low pass
-        if (pidProfile->dterm_cut_hz) {
+            // Dterm delta low pass
             deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
 
