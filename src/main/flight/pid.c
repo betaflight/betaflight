@@ -193,15 +193,14 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        if (!pidProfile->dterm_cut_hz) {
-            // Apply median filter for averaging
-            for (deltaCount = 8; deltaCount > 0; deltaCount--) {
-                deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
-            }
-            deltaOld[axis][0] = delta;
-            deltaSum = quickMedianFilter9f(deltaOld[axis]);
-        } else {
-            deltaSum = delta;
+        // Apply median filter for averaging
+        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+            deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
+        }
+        deltaOld[axis][0] = delta;
+        deltaSum = quickMedianFilter9f(deltaOld[axis]);
+
+        if (pidProfile->dterm_cut_hz) {
             // Dterm low pass
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
@@ -335,16 +334,15 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        if (!pidProfile->dterm_cut_hz) {
-            // Apply median filter for averaging
-            for (deltaCount = 8; deltaCount > 0; deltaCount--) {
-                deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
-            }
-            deltaOld[axis][0] = delta;
-            deltaSum = quickMedianFilter9(deltaOld[axis]);
-            deltaSum *= 3;  // Get same scaling
-        } else {
-            deltaSum = delta * 2;
+        // Apply median filter for averaging
+        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+            deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
+        }
+        deltaOld[axis][0] = delta;
+        deltaSum = quickMedianFilter9(deltaOld[axis]);
+        deltaSum *= 3;  // Get same scaling
+
+        if (pidProfile->dterm_cut_hz) {
             // Dterm delta low pass
             deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         }
