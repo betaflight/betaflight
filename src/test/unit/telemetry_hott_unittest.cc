@@ -136,7 +136,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
     stateFlags = GPS_FIX;
     uint16_t altitudeInMeters = 1;
-    GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
+    GPS_altitude = altitudeInMeters;
 
     // when
     hottPrepareGPSResponse(hottGPSMessage);
