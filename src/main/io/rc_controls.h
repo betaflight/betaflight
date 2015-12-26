@@ -153,6 +153,10 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
+#define PID_MIN    0
+#define PID_MAX    200
+#define PID_F_MIN  0
+#define PID_F_MAX  100
 
 typedef enum {
     ADJUSTMENT_NONE = 0,
