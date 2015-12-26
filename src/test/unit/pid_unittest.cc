@@ -346,6 +346,51 @@ TEST(PIDUnittest, TestPidLuxFloatIntegrationForLinearFunction)
     }
 }
 
+TEST(PIDUnittest, TestPidLuxFloatIntegrationForQuadraticFunction)
+{
+    pidProfile_t pidProfile;
+    controlRateConfig_t controlRate;
+    const uint16_t max_angle_inclination = 500; // 50 degrees
+    rollAndPitchTrims_t rollAndPitchTrims;
+    rxConfig_t rxConfig;
+
+    pidControllerInitLuxFloat(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+
+    // Test PID integration for a linear function:
+    //    rateError = k * t * t
+    // Integral:
+    //    IrateError = (1/3) * k * t ^ 3
+    // dT = 0.1s, t ranges from 0.0 to 0.6 in steps of 0.1s
+
+    const float k = 800; // arbitrary value of k
+    float t = 0.0f;
+    // set rateError to k * t * t
+    rcCommand[ROLL] = calcLuxRcCommandRoll(k * t * t, &controlRate);
+    EXPECT_FLOAT_EQ(k * t, calcLuxAngleRateRoll(&controlRate)); // cross check
+    pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    float pidITerm = unittest_pidLuxFloat_ITerm[FD_ROLL]; // integral as estimated by PID
+    float actITerm = (1.0f/3.0f) * k * t * t * t * pidProfile.I_f[ROLL] * 10; // actual value of integral
+    EXPECT_FLOAT_EQ(actITerm, pidITerm); // both are zero at this point
+
+    for (int ii = 0; ii < 6; ++ii) { // rateError grows rapidly with time, so limit number of iterations
+        const float actITermPrev = actITerm;
+        const float pidITermPrev = pidITerm;
+        t += dT;
+        // set rateError to k * t * t
+        rcCommand[ROLL] = calcLuxRcCommandRoll(k * t * t, &controlRate);
+        EXPECT_FLOAT_EQ(k * t * t, calcLuxAngleRateRoll(&controlRate)); // cross check
+        pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+        pidITerm = unittest_pidLuxFloat_ITerm[FD_ROLL];
+        actITerm = (1.0f/3.0f) * k * t * t * t * pidProfile.I_f[ROLL] * 10;
+        const float pidITermDelta = pidITerm - pidITermPrev;
+        const float actITermDelta = actITerm - actITermPrev;
+        const float error = fabs(actITermDelta - pidITermDelta);
+        // error is limited by rectangle of height k * dT and width dT (then multiplied by pidProfile)
+        const float errorLimit = k * dT * dT * pidProfile.I_f[ROLL] * 10;
+        EXPECT_GE(errorLimit, error); // ie expect errorLimit >= error
+    }
+}
+
 TEST(PIDUnittest, TestPidLuxFloatITermConstrain)
 {
     const float PID_LUX_FLOAT_MAX_I = 250.0f; // should be defined in pid.h
