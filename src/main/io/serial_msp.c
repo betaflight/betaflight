@@ -1101,18 +1101,18 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_RAW_GPS:
         headSerialReply(16);
         serialize8(STATE(GPS_FIX));
-        serialize8(GPS_numSat);
-        serialize32(GPS_coord[LAT]);
-        serialize32(GPS_coord[LON]);
-        serialize16(GPS_altitude);
-        serialize16(GPS_speed);
-        serialize16(GPS_ground_course);
+        serialize8(gpsSol.numSat);
+        serialize32(gpsSol.llh.lat);
+        serialize32(gpsSol.llh.lon);
+        serialize16(gpsSol.llh.alt);
+        serialize16(gpsSol.groundSpeed);
+        serialize16(gpsSol.groundCourse);
         break;
     case MSP_COMP_GPS:
         headSerialReply(5);
         serialize16(GPS_distanceToHome);
         serialize16(GPS_directionToHome);
-        serialize8(GPS_update & 1);
+        serialize8(gpsSol.flags.gpsHeartbeat ? 1 : 0);
         break;
 #ifdef NAV
     case MSP_NAV_STATUS:
@@ -1141,13 +1141,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
     case MSP_GPSSVINFO:
-        headSerialReply(1 + (GPS_numCh * 4));
-        serialize8(GPS_numCh);
-           for (i = 0; i < GPS_numCh; i++){
-               serialize8(GPS_svinfo_chn[i]);
-               serialize8(GPS_svinfo_svid[i]);
-               serialize8(GPS_svinfo_quality[i]);
-               serialize8(GPS_svinfo_cno[i]);
+        headSerialReply(1 + (gpsSol.numCh * 4));
+        serialize8(gpsSol.numCh);
+           for (i = 0; i < gpsSol.numCh; i++){
+               serialize8(gpsSol.svInfo[i].chn);
+               serialize8(gpsSol.svInfo[i].svid);
+               serialize8(gpsSol.svInfo[i].quality);
+               serialize8(gpsSol.svInfo[i].cno);
            }
         break;
 #endif
@@ -1631,14 +1631,14 @@ static bool processInCommand(void)
         } else {
             DISABLE_STATE(GPS_FIX);
         }
-        GPS_numSat = read8();
-        GPS_coord[LAT] = read32();
-        GPS_coord[LON] = read32();
-        GPS_altitude = read16();
-        GPS_speed = read16();
+        gpsSol.numSat = read8();
+        gpsSol.llh.lat = read32();
+        gpsSol.llh.lon = read32();
+        gpsSol.llh.alt = read16();
+        gpsSol.groundSpeed = read16();
         // Feed data to navigation
         sensorsSet(SENSOR_GPS);
-        onNewGPSData(GPS_coord[LAT], GPS_coord[LON], GPS_altitude, 0, 0, 0, false, false, 9999);
+        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, 0, 0, 0, false, false, 9999);
         break;
 #endif
 #ifdef NAV

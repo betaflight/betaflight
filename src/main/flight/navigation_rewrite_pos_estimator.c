@@ -244,7 +244,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
     velDValid = false;
 
     if (sensors(SENSOR_GPS)) {
-        if (!(STATE(GPS_FIX) && GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) {
+        if (!(STATE(GPS_FIX) && gpsSol.numSat >= posControl.navConfig->inav.gps_min_sats)) {
             isFirstGPSUpdate = true;
             return;
         }
@@ -264,7 +264,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
 
         /* Process position update if GPS origin is already set, or precision is good enough */
         // FIXME: use HDOP here
-        if ((posControl.gpsOrigin.valid) || (GPS_numSat >= posControl.navConfig->inav.gps_min_sats)) {
+        if ((posControl.gpsOrigin.valid) || (gpsSol.numSat >= posControl.navConfig->inav.gps_min_sats)) {
             /* Convert LLH position to local coordinates */
             t_fp_vector newLocalPos;
             geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, &newLocalPos, GEO_ALT_ABSOLUTE);

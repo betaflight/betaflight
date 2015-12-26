@@ -253,12 +253,12 @@ void beeperConfirmationBeeps(uint8_t beepCount)
 void beeperGpsStatus(void)
 {
     // if GPS fix then beep out number of satellites
-    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
+    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
         uint8_t i = 0;
         do {
             beep_multiBeeps[i++] = 5;
             beep_multiBeeps[i++] = 10;
-        } while (i < MAX_MULTI_BEEPS && GPS_numSat > i / 2);
+        } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
 
         beep_multiBeeps[i-1] = 50; // extend last pause
         beep_multiBeeps[i] = BEEPER_COMMAND_STOP;

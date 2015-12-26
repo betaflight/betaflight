@@ -156,7 +156,12 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
 #define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+
 #define NAV
+
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX

@@ -275,6 +275,9 @@ HIGHEND_SRC = \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \
 		   io/gps.c \
+		   io/gps_ublox.c \
+           io/gps_nmea.c \
+           io/gps_i2cnav.c \
 		   io/ledstrip.c \
 		   io/display.c \
 		   telemetry/telemetry.c \

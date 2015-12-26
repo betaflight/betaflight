@@ -461,15 +461,15 @@ static void imuCalculateEstimatedAttitude(float dT)
             useMag = true;
         }
 #if defined(GPS)
-        else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
+        else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
             // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
             if (gpsHeadingInitialized) {
-                courseOverGround = DECIDEGREES_TO_RADIANS(GPS_ground_course);
+                courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
                 useCOG = true;
             }
             else {
                 // Re-initialize quaternion from known Roll, Pitch and GPS heading
-                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, GPS_ground_course);
+                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
                 gpsHeadingInitialized = true;
             }
         }
@@ -514,9 +514,9 @@ static void imuUpdateMeasuredAcceleration(float dT)
       * assumption: tangential velocity only along body x-axis
       * assumption: GPS velocity equal to body x-axis velocity
       */
-    if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5) {
-        imuMeasuredGravityBF.A[Y] -= GPS_speed * imuMeasuredRotationBF.A[Z];
-        imuMeasuredGravityBF.A[Z] += GPS_speed * imuMeasuredRotationBF.A[Y];
+    if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+        imuMeasuredGravityBF.A[Y] -= gpsSol.groundSpeed * imuMeasuredRotationBF.A[Z];
+        imuMeasuredGravityBF.A[Z] += gpsSol.groundSpeed * imuMeasuredRotationBF.A[Y];
     }
 #endif
 

@@ -99,6 +99,10 @@
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
 #define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+
 #define LED_STRIP
 #if 1
 #define LED_STRIP_TIMER TIM16

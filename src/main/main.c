@@ -114,6 +114,7 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 #endif
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
 void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
+void gpsPreInit(gpsConfig_t *initialGpsConfig);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
@@ -368,6 +369,12 @@ void init(void)
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef GPS
+    if (feature(FEATURE_GPS)) {
+        gpsPreInit(&masterConfig.gpsConfig);
     }
 #endif
 

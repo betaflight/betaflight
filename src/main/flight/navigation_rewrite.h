@@ -22,16 +22,10 @@
 
 #include "io/rc_controls.h"
 #include "io/escservo.h"
+#include "io/gps.h"
 
 #include "flight/pid.h"
 #include "flight/failsafe.h"
-
-/* LLH Location in NEU axis system */
-typedef struct gpsLocation_s {
-    int32_t lat;    // Lattitude * 1e+7
-    int32_t lon;    // Longitude * 1e+7
-    int32_t alt;    // Altitude in centimeters (meters * 100)
-} gpsLocation_t;
 
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;

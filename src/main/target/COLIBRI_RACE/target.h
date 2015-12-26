@@ -143,7 +143,12 @@
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
 #define BLACKBOX
+
 #define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+
 #define GTUNE
 #define LED_STRIP
 
