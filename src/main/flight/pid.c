@@ -28,9 +28,9 @@
 #include "common/filter.h"
 
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
 
+#include "drivers/accgyro.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
@@ -94,7 +94,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
-    static float deltaOld[3][9];
+    static float deltaOld[3][7];
     float delta, deltaSum;
     int axis, deltaCount;
     float horizonLevelStrength = 1;
@@ -194,11 +194,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta *= (1.0f / dT);
 
         // Apply median filter for averaging
-        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+        for (deltaCount = 6; deltaCount > 0; deltaCount--) {
             deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
         }
         deltaOld[axis][0] = delta;
-        deltaSum = quickMedianFilter9f(deltaOld[axis]);
+        deltaSum = quickMedianFilter7f(deltaOld[axis]);
 
         if (pidProfile->dterm_cut_hz) {
             // Dterm low pass
@@ -232,7 +232,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t errorAngle;
     int axis, deltaCount;
     int32_t delta, deltaSum;
-    static int32_t deltaOld[3][9];
+    static int32_t deltaOld[3][7];
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
@@ -335,11 +335,11 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         // Apply median filter for averaging
-        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
+        for (deltaCount = 6; deltaCount > 0; deltaCount--) {
             deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
         }
         deltaOld[axis][0] = delta;
-        deltaSum = quickMedianFilter9(deltaOld[axis]);
+        deltaSum = quickMedianFilter7(deltaOld[axis]);
         deltaSum *= 3;  // Get same scaling
 
         if (pidProfile->dterm_cut_hz) {
