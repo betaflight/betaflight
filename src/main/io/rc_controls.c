@@ -391,8 +391,6 @@ void setAdjustment(uint8_t* ptr, float* ptrFP, uint8_t adjustment, int delta, fl
   }
 }
 
-static uint8_t zero_t = 0;
-
 void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
 
     if (delta > 0) {
