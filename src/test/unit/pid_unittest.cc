@@ -251,8 +251,8 @@ TEST(PIDUnittest, TestPidLuxFloat)
     // run the PID controller. Check expected PID values
     // Note D value is multiplied by 1/3 because it is part of 3 point moving average, first two terms initially zero.
     float ITermRoll = calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll);
-    float ITermPitch = calcLuxITerm(&pidProfile, FD_ROLL, rateErrorPitch);
-    float ITermYaw = calcLuxITerm(&pidProfile, FD_ROLL, rateErrorYaw);
+    float ITermPitch = calcLuxITerm(&pidProfile, FD_PITCH, rateErrorPitch);
+    float ITermYaw = calcLuxITerm(&pidProfile, FD_YAW, rateErrorYaw);
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxPTerm(&pidProfile, FD_ROLL, rateErrorRoll), unittest_pidLuxFloat_PTerm[FD_ROLL]);
     EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloat_ITerm[FD_ROLL]);
@@ -267,7 +267,7 @@ TEST(PIDUnittest, TestPidLuxFloat)
     // run the PID controller a second time.
     // Error rates unchanged, so expect P unchanged, I integrated and D multiplied by 1/3 (2 of 3 terms in moving average are zero)
     ITermRoll += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll);
-    ITermPitch += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorPitch);
+    ITermPitch += calcLuxITerm(&pidProfile, FD_PITCH, rateErrorPitch);
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxPTerm(&pidProfile, FD_ROLL, rateErrorRoll), unittest_pidLuxFloat_PTerm[FD_ROLL]);
     EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloat_ITerm[FD_ROLL]);
@@ -279,7 +279,7 @@ TEST(PIDUnittest, TestPidLuxFloat)
     // run the PID controller a third time. Error rates unchanged, so expect P and D unchanged, I integrated
     // Error rates unchanged, so expect P unchanged, I integrated and D multiplied by 1/3 (2 of 3 terms in moving average are zero)
     ITermRoll += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll);
-    ITermPitch += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorPitch);
+    ITermPitch += calcLuxITerm(&pidProfile, FD_PITCH, rateErrorPitch);
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxPTerm(&pidProfile, FD_ROLL, rateErrorRoll), unittest_pidLuxFloat_PTerm[FD_ROLL]);
     EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloat_ITerm[FD_ROLL]);
@@ -291,7 +291,7 @@ TEST(PIDUnittest, TestPidLuxFloat)
     // run the PID controller a fourth time.
     // Error rates unchanged, so expect P unchanged, I integrated and D zero, since all terms in moving average are now zero
     ITermRoll += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll);
-    ITermPitch += calcLuxITerm(&pidProfile, FD_ROLL, rateErrorPitch);
+    ITermPitch += calcLuxITerm(&pidProfile, FD_PITCH, rateErrorPitch);
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxPTerm(&pidProfile, FD_ROLL, rateErrorRoll), unittest_pidLuxFloat_PTerm[FD_ROLL]);
     EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloat_ITerm[FD_ROLL]);
