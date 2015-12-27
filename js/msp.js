@@ -59,7 +59,7 @@ var MSP_codes = {
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
-    MSP_RC_CONTROLS:        125,
+    MSP_RC_READBAND:        125,
     MSP_SENSOR_ALIGNMENT:   126,
     
     MSP_SET_RAW_RC:         200,
@@ -525,7 +525,7 @@ var MSP = {
                     }
                 }
                 break;
-            case MSP_codes.MSP_RC_CONTROLS:
+            case MSP_codes.MSP_RC_READBAND:
                 var offset = 0;
                 RC_controls.deadband = data.getUint8(offset++, 1);
                 RC_controls.yaw_deadband = data.getUint8(offset++, 1);
