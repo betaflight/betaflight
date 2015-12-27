@@ -671,6 +671,75 @@ TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+
+## Default make goal:
+## hex         : Make filetype hex only
+.DEFAULT_GOAL := hex
+
+## Optional make goals:
+## all         : Make all filetypes, binary and hex
+all: hex bin
+
+## bin         : Make binary filetype
+## binary      : Make binary filtype
+## hex         : Make hex filetype
+bin:    $(TARGET_BIN)
+binary: $(TARGET_BIN)
+hex:    $(TARGET_HEX)
+
+## clean       : clean up all temporary / machine-generated files
+clean:
+	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+	rm -rf $(OBJECT_DIR)/$(TARGET)
+	cd src/test && $(MAKE) clean || true
+
+flash_$(TARGET): $(TARGET_HEX)
+	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	echo -n 'R' >$(SERIAL_DEVICE)
+	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+
+## flash       : flash firmware (.hex) onto flight controller
+flash: flash_$(TARGET)
+
+st-flash_$(TARGET): $(TARGET_BIN)
+	st-flash --reset write $< 0x08000000
+
+## st-flash    : flash firmware (.bin) onto flight controller
+st-flash: st-flash_$(TARGET)
+
+unbrick_$(TARGET): $(TARGET_HEX)
+	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+
+## unbrick     : unbrick flight controller
+unbrick: unbrick_$(TARGET)
+
+## cppcheck    : run static analysis on C source code
+cppcheck: $(CSOURCES)
+	$(CPPCHECK)
+
+cppcheck-result.xml: $(CSOURCES)
+	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+
+## help        : print this help message and exit
+help: Makefile
+	@echo ""
+	@echo "Makefile for the $(FORKNAME) firmware"
+	@echo ""
+	@echo "Usage:"
+	@echo "        make [goal] [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo ""
+	@echo "Valid TARGET values are: $(VALID_TARGETS)"
+	@echo ""
+	@sed -n 's/^## //p' $<
+
+## test        : run the cleanflight test suite
+test:
+	cd src/test && $(MAKE) test || true
+
+# rebuild everything when makefile changes
+$(TARGET_OBJS) : Makefile
+
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
@@ -702,63 +771,6 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all         : default task; compile C code, build firmware
-all: binary
-
-## clean       : clean up all temporary / machine-generated files
-clean:
-	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
-	rm -rf $(OBJECT_DIR)/$(TARGET)
-	cd src/test && $(MAKE) clean || true
-
-flash_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	echo -n 'R' >$(SERIAL_DEVICE)
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
-
-## flash       : flash firmware (.hex) onto flight controller
-flash: flash_$(TARGET)
-
-st-flash_$(TARGET): $(TARGET_BIN)
-	st-flash --reset write $< 0x08000000
-
-## st-flash    : flash firmware (.bin) onto flight controller
-st-flash: st-flash_$(TARGET)
-
-binary: $(TARGET_BIN)
-
-unbrick_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
-
-## unbrick     : unbrick flight controller
-unbrick: unbrick_$(TARGET)
-
-## cppcheck    : run static analysis on C source code
-cppcheck: $(CSOURCES)
-	$(CPPCHECK)
-
-cppcheck-result.xml: $(CSOURCES)
-	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
-
-## help        : print this help message and exit
-help: Makefile
-	@echo ""
-	@echo "Makefile for the $(FORKNAME) firmware"
-	@echo ""
-	@echo "Usage:"
-	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
-	@echo ""
-	@echo "Valid TARGET values are: $(VALID_TARGETS)"
-	@echo ""
-	@sed -n 's/^## //p' $<
-
-## test        : run the cleanflight test suite
-test:
-	cd src/test && $(MAKE) test || true
-
-# rebuild everything when makefile changes
-$(TARGET_OBJS) : Makefile
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
