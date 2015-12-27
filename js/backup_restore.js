@@ -538,7 +538,6 @@ function configuration_restore(callback) {
                     deadband:                0,
                     yaw_deadband:            0,
                     alt_hold_deadband:       40,
-                    alt_hold_fast_change:    1
                     };                
                 }
             }

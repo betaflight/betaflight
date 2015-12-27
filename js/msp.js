@@ -530,7 +530,6 @@ var MSP = {
                 RC_controls.deadband = data.getUint8(offset++, 1);
                 RC_controls.yaw_deadband = data.getUint8(offset++, 1);
                 RC_controls.alt_hold_deadband = data.getUint8(offset++, 1);
-                RC_controls.alt_hold_fast_change = data.getUint8(offset++, 1);
                 break;
             case MSP_codes.MSP_SENSOR_ALIGNMENT:
                 var offset = 0;
@@ -1285,7 +1284,6 @@ MSP.crunch = function (code) {
             buffer.push(RC_controls.deadband);
             buffer.push(RC_controls.yaw_deadband); 
             buffer.push(RC_controls.alt_hold_deadband);
-            buffer.push(RC_controls.alt_hold_fast_change);
             break;
 
         case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
