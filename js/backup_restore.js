@@ -29,7 +29,7 @@ function configuration_backup(callback) {
             profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
         }
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            profileSpecificData.push(MSP_codes.MSP_RC_CONTROLS);
+            profileSpecificData.push(MSP_codes.MSP_RC_READBAND);
         }
     }
     
@@ -72,7 +72,7 @@ function configuration_backup(callback) {
                         });
 
                         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                            configuration.profiles[fetchingProfile].RCcontrols = jQuery.extend(true, {}, RC_controls);
+                            configuration.profiles[fetchingProfile].RCreadband = jQuery.extend(true, {}, RC_readband);
                         }
                         codeKey = 0;
                         fetchingProfile++;
@@ -529,12 +529,12 @@ function configuration_restore(callback) {
         
         
         if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
-            // api 1.15 exposes RCcontrols and sensor alignment
+            // api 1.15 exposes RCreadband and sensor alignment
 
             
             for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
-                 if (configuration.profiles[profileIndex].RCcontrols == undefined) {
-                    configuration.profiles[profileIndex].RCcontrols = {
+                 if (configuration.profiles[profileIndex].RCreadband == undefined) {
+                    configuration.profiles[profileIndex].RCreadband = {
                     deadband:                0,
                     yaw_deadband:            0,
                     alt_hold_deadband:       40,
@@ -613,7 +613,7 @@ function configuration_restore(callback) {
             ];
 
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                profileSpecificData.push(MSP_codes.MSP_SET_RC_CONTROLS);
+                profileSpecificData.push(MSP_codes.MSP_SET_RC_READBAND);
             }
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
@@ -642,7 +642,7 @@ function configuration_restore(callback) {
                     SERVO_RULES = configuration.profiles[profile].ServoRules;
                     MODE_RANGES = configuration.profiles[profile].ModeRanges;
                     ADJUSTMENT_RANGES = configuration.profiles[profile].AdjustmentRanges;
-                    RC_controls = configuration.profiles[profile].RCcontrols;
+                    RC_readband = configuration.profiles[profile].RCreadband;
                 }
 
                 function upload_using_specific_commands() {
