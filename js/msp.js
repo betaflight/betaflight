@@ -77,7 +77,7 @@ var MSP_codes = {
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
-    MSP_SET_RC_CONTROLS:    218,
+    MSP_SET_RC_READBAND:    218,
     MSP_SET_RESET_CURR_PID: 219,
     MSP_SET_SENSOR_ALIGNMENT: 220,
     
@@ -527,10 +527,9 @@ var MSP = {
                 break;
             case MSP_codes.MSP_RC_READBAND:
                 var offset = 0;
-                RC_controls.deadband = data.getUint8(offset++, 1);
-                RC_controls.yaw_deadband = data.getUint8(offset++, 1);
-                RC_controls.alt_hold_deadband = data.getUint8(offset++, 1);
-                RC_controls.alt_hold_fast_change = data.getUint8(offset++, 1);
+                RC_readband.deadband = data.getUint8(offset++, 1);
+                RC_readband.yaw_deadband = data.getUint8(offset++, 1);
+                RC_readband.alt_hold_deadband = data.getUint8(offset++, 1);
                 break;
             case MSP_codes.MSP_SENSOR_ALIGNMENT:
                 var offset = 0;
@@ -933,7 +932,10 @@ var MSP = {
             case MSP_codes.MSP_SET_3D:
                 console.log('3D settings saved');
                 break;
-	    case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+            case MSP_codes.MSP_SET_RC_READBAND:
+                console.log('Rc controls settings saved');
+                break;
+            case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
                 console.log('Sensor alignment saved');
                 break; 
             case MSP_codes.MSP_SET_RX_CONFIG:
@@ -1278,11 +1280,10 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.deadband3d_throttle));
             break;    
 
-        case MSP_codes.MSP_SET_RC_CONTROLS:
-            buffer.push(RC_controls.deadband);
-            buffer.push(RC_controls.yaw_deadband); 
-            buffer.push(RC_controls.alt_hold_deadband);
-            buffer.push(RC_controls.alt_hold_fast_change);
+        case MSP_codes.MSP_SET_RC_READBAND:
+            buffer.push(RC_readband.deadband);
+            buffer.push(RC_readband.yaw_deadband); 
+            buffer.push(RC_readband.alt_hold_deadband);
             break;
 
         case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:

@@ -179,11 +179,10 @@ var DATAFLASH = {
     usedSize: 0
 };
 
-var RC_controls = {
+var RC_readband = {
     deadband:               0,
     yaw_deadband:           0,
-    alt_hold_deadband:      0,
-    alt_hold_fast_change:   0
+    alt_hold_deadband:      0
 };
 
 var SENSOR_ALIGNMENT = {
