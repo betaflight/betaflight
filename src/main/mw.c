@@ -647,7 +647,7 @@ static bool haveProcessedAnnexCodeOnce = false;
 void taskMainPidLoop(void)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
-    dT = (float)cycleTime * 0.000001f;
+    dT = (float)targetLooptime * 0.000001f;
 
     // Calculate average cycle time and average jitter
     filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
