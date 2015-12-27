@@ -413,8 +413,9 @@ TEST(PIDUnittest, TestPidLuxFloatITermConstrain)
     rcCommand[ROLL] = calcLuxRcCommandRoll(100, &controlRate);
     rateErrorRoll = calcLuxAngleRateRoll(&controlRate);
     EXPECT_EQ(100, rateErrorRoll);// cross check
+    const float ITerm = calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll);
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
-    EXPECT_FLOAT_EQ(calcLuxITerm(&pidProfile, FD_ROLL, rateErrorRoll), unittest_pidLuxFloat_ITerm[FD_ROLL]);
+    EXPECT_FLOAT_EQ(ITerm, unittest_pidLuxFloat_ITerm[FD_ROLL]);
 
     // set up a very large rateError to force ITerm to be constrained
     pidControllerInitLuxFloat(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
