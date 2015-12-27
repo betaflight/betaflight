@@ -933,7 +933,10 @@ var MSP = {
             case MSP_codes.MSP_SET_3D:
                 console.log('3D settings saved');
                 break;
-	    case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+            case MSP_codes.MSP_SET_RC_CONTROLS:
+                console.log('Rc controls settings saved');
+                break;
+            case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
                 console.log('Sensor alignment saved');
                 break; 
             case MSP_codes.MSP_SET_RX_CONFIG:
