@@ -70,6 +70,8 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
 
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
+float getCosTiltAngle(void);
+
 void imuResetAccelerationSum(void);
 
 

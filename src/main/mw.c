@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -90,9 +91,10 @@ enum {
 };
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)       
+#define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)       
+#define IBATINTERVAL (6 * 3500)
+#define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
 uint32_t currentTime = 0;
 uint32_t previousTime = 0;
@@ -668,6 +670,21 @@ void processRx(void)
 
 }
 
+// Function for loop trigger
+bool shouldRunLoop(uint32_t loopTime) {
+	bool loopTrigger = false;
+
+    if (masterConfig.gyroSync) {
+        if (gyroSyncCheckUpdate() || (int32_t)(currentTime - (loopTime + GYRO_WATCHDOG_DELAY)) >= 0) {
+            loopTrigger = true;
+        }
+    } else if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0){
+        loopTrigger = true;
+    }
+
+    return loopTrigger;
+}
+
 void filterRc(void){
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
@@ -700,27 +717,6 @@ void filterRc(void){
          }
     } else {
         factor = 0;
-    }
-}
-
-// Gyro Low Pass
-void filterGyro(void) {
-    int axis;
-    static filterStatePt1_t gyroADCState[XYZ_AXIS_COUNT];
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (masterConfig.looptime > 0) {
-            // Static dT calculation based on configured looptime
-            if (!gyroADCState[axis].constdT) {
-                gyroADCState[axis].constdT = (float)masterConfig.looptime * 0.000001f;
-            }
-
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, gyroADCState[axis].constdT);
-        }
-
-        else {
-            gyroADC[axis] = filterApplyPt1(gyroADC[axis], &gyroADCState[axis], currentProfile->pidProfile.gyro_cut_hz, dT);
-        }
     }
 }
 
@@ -770,8 +766,8 @@ void loop(void)
     }
 
     currentTime = micros();
-    if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
-        loopTime = currentTime + masterConfig.looptime;
+    if (shouldRunLoop(loopTime)) {
+        loopTime = currentTime + targetLooptime;
 
         imuUpdate(&currentProfile->accelerometerTrims);
 
@@ -781,10 +777,6 @@ void loop(void)
         previousTime = currentTime;
 
         dT = (float)cycleTime * 0.000001f;
-
-        if (currentProfile->pidProfile.gyro_cut_hz) {
-            filterGyro();
-        }
 
         annexCode();
 
@@ -820,7 +812,9 @@ void loop(void)
         // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
                 && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+#endif
                 && masterConfig.mixerMode != MIXER_AIRPLANE
                 && masterConfig.mixerMode != MIXER_FLYING_WING
 #endif

@@ -150,7 +150,6 @@
 #define USE_CLI
 
 #define USE_SERIAL_1WIRE
-#define USE_SERIAL_1WIRE_CLI
 
 // STM32F3DISCOVERY TX - PD5 connects to UART RX
 #define S1W_TX_GPIO         GPIOD

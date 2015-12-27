@@ -43,6 +43,7 @@ int16_t sonarMaxRangeCm;
 int16_t sonarMaxAltWithTiltCm;
 int16_t sonarCfAltCm; // Complimentary Filter altitude
 STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
+float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
@@ -107,11 +108,6 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 #endif
 }
 
-// (PI/1800)^2/2, coefficient of x^2 in Taylor expansion of cos(x)
-#define coefX2 1.52309E-06f
-#define cosDeciDegrees(x) (1.0f - x * x * coefX2)
-
-
 void sonarInit(const sonarHardware_t *sonarHardware)
 {
     sonarRange_t sonarRange;
@@ -121,7 +117,8 @@ void sonarInit(const sonarHardware_t *sonarHardware)
     sonarMaxRangeCm = sonarRange.maxRangeCm;
     sonarCfAltCm = sonarMaxRangeCm / 2;
     sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
-    sonarMaxAltWithTiltCm = sonarMaxRangeCm * cosDeciDegrees(sonarMaxTiltDeciDegrees);
+    sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
+    sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
     calculatedAltitude = SONAR_OUT_OF_RANGE;
 }
 
@@ -141,31 +138,20 @@ int32_t sonarRead(void)
     return distance;
 }
 
-/*
-* This (poorly named) function merely returns whichever is higher, roll inclination or pitch inclination.
-* //TODO: Fix this up. We could either actually return the angle between 'down' and the normal of the craft
-* (my best interpretation of scalar 'tiltAngle') or rename the function.
-*/
-int16_t sonarCalculateTiltAngle(int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
-{
-    return MAX(ABS(rollDeciDegrees), ABS(pitchDeciDegrees));
-}
-
 /**
  * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
  * the altitude. Returns the computed altitude in centimeters.
  *
  * When the ground is too far away or the tilt is too large, SONAR_OUT_OF_RANGE is returned.
  */
-int32_t sonarCalculateAltitude(int32_t sonarDistance, int16_t rollDeciDegrees, int16_t pitchDeciDegrees)
+int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle)
 {
-    int16_t tiltAngle = sonarCalculateTiltAngle(rollDeciDegrees, pitchDeciDegrees);
     // calculate sonar altitude only if the ground is in the sonar cone
-    if (tiltAngle > sonarMaxTiltDeciDegrees)
+    if (cosTiltAngle <= sonarMaxTiltCos)
         calculatedAltitude = SONAR_OUT_OF_RANGE;
     else
         // altitude = distance * cos(tiltAngle), use approximation
-        calculatedAltitude = sonarDistance * cosDeciDegrees(tiltAngle);
+        calculatedAltitude = sonarDistance * cosTiltAngle;
     return calculatedAltitude;
 }
 

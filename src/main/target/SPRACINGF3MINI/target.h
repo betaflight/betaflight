@@ -208,7 +208,6 @@
 #define BINDPLUG_PIN   BUTTON_B_PIN
 
 #define USE_SERIAL_1WIRE
-#define USE_SERIAL_1WIRE_CLI
 
 #define S1W_TX_GPIO         UART1_GPIO
 #define S1W_TX_PIN          UART1_TX_PIN

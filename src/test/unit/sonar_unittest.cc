@@ -16,6 +16,7 @@
  */
 
 #include <stdint.h>
+#include <math.h>
 
 extern "C" {
     #include "build_config.h"
@@ -28,6 +29,8 @@ extern "C" {
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
+#define DECIDEGREES_TO_RADIANS(angle) (((angle) / 10.0f) * 0.0174532925f)
 
 TEST(SonarUnittest, TestConstants)
 {
@@ -74,73 +77,35 @@ TEST(SonarUnittest, TestAltitude)
 {
     sonarInit(0);
     // Check distance not modified if no tilt
-    EXPECT_EQ(sonarCalculateAltitude(0, 0, 0), 0);
+    EXPECT_EQ(sonarCalculateAltitude(0, cosf(DECIDEGREES_TO_RADIANS(0))), 0);
     EXPECT_EQ(sonarGetLatestAltitude(), 0);
-    EXPECT_EQ(sonarCalculateAltitude(100, 0, 0), 100);
+    EXPECT_EQ(sonarCalculateAltitude(100, cosf(DECIDEGREES_TO_RADIANS(0))), 100);
     EXPECT_EQ(sonarGetLatestAltitude(), 100);
 
     // Check that out of range is returned if tilt is too large
-    EXPECT_EQ(sonarCalculateAltitude(0, sonarMaxTiltDeciDegrees+1, 0), SONAR_OUT_OF_RANGE);
+    EXPECT_EQ(sonarCalculateAltitude(0, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees+1))), SONAR_OUT_OF_RANGE);
     EXPECT_EQ(sonarGetLatestAltitude(), SONAR_OUT_OF_RANGE);
 
     // Check distance at various roll angles
     // distance 400, 5 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 50, 0), 398);
+    EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(50))), 398);
     EXPECT_EQ(sonarGetLatestAltitude(), 398);
     // distance 400, 10 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 100, 0), 393);
+    EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(100))), 393);
     EXPECT_EQ(sonarGetLatestAltitude(), 393);
     // distance 400, 15 degrees of roll, this corresponds to HC-SR04 specified max detection angle
-    EXPECT_EQ(sonarCalculateAltitude(400, 150, 0), 386);
+    EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(150))), 386);
     EXPECT_EQ(sonarGetLatestAltitude(), 386);
     // distance 400, 20 degrees of roll
-    EXPECT_EQ(sonarCalculateAltitude(400, 200, 0), 375);
+    EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(200))), 375);
     EXPECT_EQ(sonarGetLatestAltitude(), 375);
-    // distance 400, 22.5 degrees of roll, this corresponds to HC-SR04 effective max detection angle
-    EXPECT_EQ(sonarCalculateAltitude(400, 225, 0), 369);
+    // distance 400, 22.4 degrees of roll, this corresponds to HC-SR04 effective max detection angle
+    EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(224))), 369);
     EXPECT_EQ(sonarGetLatestAltitude(), 369);
-    // max range, max tilt
-    EXPECT_EQ(sonarCalculateAltitude(sonarMaxRangeCm, sonarMaxTiltDeciDegrees, 0), sonarMaxAltWithTiltCm);
-    EXPECT_EQ(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm);
+    // Check limits at max range max tilt, need to deal with rounding errors in cosf calculation
+    EXPECT_NEAR(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees - 1))), sonarMaxAltWithTiltCm, 1);
+    EXPECT_NEAR(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm, 1);
 }
-
-typedef struct rollAndPitch_s {
-    // absolute angle inclination in multiple of 0.1 degree (deci degrees): 180 degrees = 1800
-    int16_t rollDeciDegrees;
-    int16_t pitchDeciDegrees;
-} rollAndPitch_t;
-
-typedef struct inclinationAngleExpectations_s {
-    rollAndPitch_t inclination;
-    int16_t expected_angle;
-} inclinationAngleExpectations_t;
-
-TEST(SonarUnittest, TestCalculateTiltAngle)
-{
-    const int testCount = 9;
-    inclinationAngleExpectations_t inclinationAngleExpectations[testCount] = {
-        { { 0,  0}, 0},
-        { { 1,  0}, 1},
-        { { 0,  1}, 1},
-        { { 0, -1}, 1},
-        { {-1,  0}, 1},
-        { {-1, -2}, 2},
-        { {-2, -1}, 2},
-        { { 1,  2}, 2},
-        { { 2,  1}, 2}
-    };
-
-    rollAndPitch_t inclination = {0, 0};
-    int tilt_angle = sonarCalculateTiltAngle(inclination.rollDeciDegrees, inclination.pitchDeciDegrees);
-    EXPECT_EQ(tilt_angle, 0);
-
-    for (int i = 0; i < testCount; i++) {
-        inclinationAngleExpectations_t *expectation = &inclinationAngleExpectations[i];
-        int result = sonarCalculateTiltAngle(expectation->inclination.rollDeciDegrees, expectation->inclination.pitchDeciDegrees);
-        EXPECT_EQ(expectation->expected_angle, result);
-    }
-}
-
 
 // STUBS
 extern "C" {

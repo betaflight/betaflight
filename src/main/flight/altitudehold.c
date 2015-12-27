@@ -248,7 +248,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
 #ifdef SONAR
     sonarAlt = sonarRead();
-    sonarAlt = sonarCalculateAltitude(sonarAlt, attitude.values.roll, attitude.values.pitch);
+    sonarAlt = sonarCalculateAltitude(sonarAlt, getCosTiltAngle());
 #endif
 
     if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {

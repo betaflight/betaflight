@@ -53,7 +53,6 @@
 #include "io/gimbal.h"
 #include "io/rc_controls.h"
 #include "io/serial.h"
-#include "io/serial_1wire.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -154,10 +153,6 @@ static void cliFlashRead(char *cmdline);
 #endif
 #endif
 
-#ifdef USE_SERIAL_1WIRE_CLI
-static void cliUSB1Wire(char *cmdline);
-#endif
-
 #ifdef USE_SDCARD
 static void cliSdInfo(char *cmdline);
 #endif
@@ -167,7 +162,7 @@ static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
 #ifndef USE_QUAD_MIXER_ONLY
-// sync this with mixerMode_e
+//  this with mixerMode_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -238,9 +233,6 @@ typedef struct {
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
-#ifdef USE_SERIAL_1WIRE_CLI
-    CLI_COMMAND_DEF("1wire", "1-wire interface to escs", "<esc index>", cliUSB1Wire),
-#endif
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
@@ -363,7 +355,21 @@ static const char * const lookupTableSerialRX[] = {
     "SUMD",
     "SUMH",
     "XB-B",
-    "XB-B-RJ01"
+    "XB-B-RJ01",
+    "IBUS"
+};
+
+static const char * const lookupTableGyroFilter[] = {
+    "OFF", "LOW", "MEDIUM", "HIGH"
+};
+
+static const char * const lookupTableGyroLpf[] = {
+    "256HZ",
+    "188HZ",
+    "98HZ",
+    "42HZ",
+    "20HZ",
+    "10HZ"
 };
 
 
@@ -387,6 +393,8 @@ typedef enum {
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
+    TABLE_GYRO_FILTER,
+    TABLE_GYRO_LPF,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -403,7 +411,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
-    { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) }
+    { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+    { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
+    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -459,6 +469,8 @@ const clivalue_t valueTable[] = {
     { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.looptime, .config.minmax = {0, 9000} },
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.emf_avoidance, .config.lookup = { TABLE_OFF_ON } },
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON } },
+    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroSync, .config.lookup = { TABLE_OFF_ON } },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroSyncDenominator, .config.minmax = { 1,  32 } },
 
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, .config.minmax = { 1200,  1700 } },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -545,7 +557,7 @@ const clivalue_t valueTable[] = {
 
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
 
-    { "gyro_lpf",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_lpf, .config.minmax = { 0,  256 } },
+    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  20000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  20000 } },
@@ -653,9 +665,9 @@ const clivalue_t valueTable[] = {
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
 
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
-	{ "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
-	{ "pterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pterm_cut_hz, .config.minmax = {0, 200 } },
-	{ "gyro_cut_hz",                VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_cut_hz, .config.minmax = {0, 200 } },
+    { "gyro_soft_lpf",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.gyro_soft_lpf, .config.lookup = { TABLE_GYRO_FILTER } },
+    { "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
+    { "yaw_pterm_cut_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz, .config.minmax = {0, 200 } },
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 } },
@@ -1692,6 +1704,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
         }
 
+#ifdef USE_SERVOS
         // print custom servo mixer if exists
         cliPrintf("smix reset\r\n");
 
@@ -1712,6 +1725,7 @@ static void cliDump(char *cmdline)
             );
         }
 
+#endif
 #endif
 
         cliPrint("\r\n\r\n# feature\r\n");
@@ -2416,27 +2430,6 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
-
-#ifdef USE_SERIAL_1WIRE_CLI
-static void cliUSB1Wire(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliShowParseError();
-        return;
-    } else {
-        usb1WireInitialize();
-
-        int i;
-        i = atoi(cmdline);
-        if (i >= 0 && i < escCount) {
-            cliPrintf("Switching to BlHeli mode on motor port %d\r\n", i);
-            usb1WirePassthrough(i);
-        } else {
-            cliShowArgumentRangeError("motor", 0, escCount - 1);
-        }
-    }
-}
-#endif
 
 static void cliVersion(char *cmdline)
 {

@@ -32,7 +32,7 @@ Cleanflight also has additional features not found in baseflight.
 * Simultaneous Bluetooth configuration and OSD.
 * Better PWM and PPM input and failsafe detection than baseflight.
 * Better FrSky Telemetry than baseflight.
-* MSP Telemetry.
+* LTM Telemetry.
 * Smartport Telemetry.
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
 * OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.

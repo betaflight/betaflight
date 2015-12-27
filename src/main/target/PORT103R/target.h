@@ -157,7 +157,6 @@
 #define USE_CLI
 
 #define USE_SERIAL_1WIRE
-#define USE_SERIAL_1WIRE_CLI
 
 #define S1W_TX_GPIO         GPIOA
 #define S1W_TX_PIN          GPIO_Pin_9

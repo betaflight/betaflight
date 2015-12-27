@@ -28,6 +28,7 @@
 #include "system.h"
 #include "exti.h"
 #include "gpio.h"
+#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -56,6 +57,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
+    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -70,11 +72,9 @@ void mpu6500AccInit(void)
     acc_1G = 512 * 8;
 }
 
-void mpu6500GyroInit(uint16_t lpf)
+void mpu6500GyroInit(uint8_t lpf)
 {
     mpuIntExtiInit();
-
-    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
@@ -85,8 +85,8 @@ void mpu6500GyroInit(uint16_t lpf)
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
-    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // 1kHz S/R
+    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG

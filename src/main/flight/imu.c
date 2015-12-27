@@ -378,7 +378,7 @@ static void imuCalculateEstimatedAttitude(void)
 {
     static filterStatePt1_t accLPFState[3];
     static uint32_t previousIMUUpdateTime;
-    float rawYawError;
+    float rawYawError = 0;
     int32_t axis;
     bool useAcc = false;
     bool useMag = false;

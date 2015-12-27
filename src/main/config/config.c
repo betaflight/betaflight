@@ -26,6 +26,7 @@
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -134,7 +135,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 107;
+static const uint8_t EEPROM_CONF_VERSION = 108;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -143,7 +144,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-static void resetPidProfile(pidProfile_t *pidProfile)
+void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
@@ -177,8 +178,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->gyro_cut_hz = 0;
-    pidProfile->pterm_cut_hz = 0;
+    pidProfile->gyro_soft_lpf = 0;   // no filtering by default
+    pidProfile->yaw_pterm_cut_hz = 0;
     pidProfile->dterm_cut_hz = 0;
 
     pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
@@ -404,7 +405,7 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                   // 0.003 * 10000
-    masterConfig.gyro_lpf = 42;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 3;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -481,6 +482,8 @@ static void resetConf(void)
     masterConfig.looptime = 3500;
     masterConfig.emf_avoidance = 0;
     masterConfig.i2c_overclock = 0;
+    masterConfig.gyroSync = 0;
+    masterConfig.gyroSyncDenominator = 1;
 
     resetPidProfile(&currentProfile->pidProfile);
 
@@ -726,7 +729,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig);
+    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf, masterConfig.looptime));
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -1066,4 +1069,3 @@ uint32_t featureMask(void)
 {
     return masterConfig.enabledFeatures;
 }
-

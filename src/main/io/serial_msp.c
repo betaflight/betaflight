@@ -96,6 +96,7 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
+extern void resetPidProfile(pidProfile_t *pidProfile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -290,6 +291,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
 #define MSP_3D                   124    //out message         Settings needed for reversible ESCs
+#define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
+#define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -307,6 +310,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
 #define MSP_SET_3D               217    //in message          Settings needed for reversible ESCs
+#define MSP_SET_RC_DEADBAND      218    //in message          deadbands for yaw alt pitch roll
+#define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
+#define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 
 // #define MSP_BIND                 240    //in message          no param
 
@@ -1380,6 +1386,19 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
 
+    case MSP_RC_DEADBAND:
+        headSerialReply(3);
+        serialize8(currentProfile->rcControlsConfig.deadband);
+        serialize8(currentProfile->rcControlsConfig.yaw_deadband);
+        serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        break;
+    case MSP_SENSOR_ALIGNMENT:
+        headSerialReply(3);
+        serialize8(masterConfig.sensorAlignmentConfig.gyro_align);
+        serialize8(masterConfig.sensorAlignmentConfig.acc_align);
+        serialize8(masterConfig.sensorAlignmentConfig.mag_align);
+        break;
+
     default:
         return false;
     }
@@ -1608,6 +1627,22 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.neutral3d = read16();
         masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
+
+    case MSP_SET_RC_DEADBAND:
+        currentProfile->rcControlsConfig.deadband = read8();
+        currentProfile->rcControlsConfig.yaw_deadband = read8();
+        currentProfile->rcControlsConfig.alt_hold_deadband = read8();
+        break;
+
+    case MSP_SET_RESET_CURR_PID:
+        resetPidProfile(&currentProfile->pidProfile);
+        break;    
+
+    case MSP_SET_SENSOR_ALIGNMENT:
+        masterConfig.sensorAlignmentConfig.gyro_align = read8();
+        masterConfig.sensorAlignmentConfig.acc_align = read8();
+        masterConfig.sensorAlignmentConfig.mag_align = read8();
+        break;
         
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
@@ -1741,16 +1776,12 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
-        {
-            uint8_t channelCount = currentPort->dataSize / 3;
-            if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-                headSerialError(0);
-            } else {
-                for (i = 0; i < channelCount; i++) {
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
-                    masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
-                }
-            }
+        i = read8();
+        if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
+            masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
+            masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+        } else {
+            headSerialError(0);
         }
         break;
 

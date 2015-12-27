@@ -55,6 +55,8 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -157,6 +159,11 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define TELEMETRY
 #define SERIAL_RX
