@@ -63,7 +63,7 @@ void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff
 
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         FIRsum = 0;
-        for (i = 0; i <= 7; i++) {
+        for (i = 0; i <= FILTER_TAPS-2; i++) {
             state[axis][i] = state[axis][i + 1];
             FIRsum += state[axis][i] * (int16_t)coeff[i];
         }
