@@ -25,7 +25,7 @@ function configuration_backup(callback) {
     function update_profile_specific_data_list() {
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
             profileSpecificData.push(MSP_codes.MSP_CHANNEL_FORWARDING);
-//         } else {            
+         } else {            
             profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
         }
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
