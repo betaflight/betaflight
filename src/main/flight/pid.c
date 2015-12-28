@@ -63,6 +63,8 @@ uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 static int32_t errorGyroI[3] = { 0, 0, 0 };
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
+static uint8_t deltaTotalSamples = 0;
+
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
 
@@ -82,6 +84,14 @@ void pidResetErrorGyro(void)
     errorGyroIf[YAW] = 0.0f;
 }
 
+void setPidDeltaSamples(void) {
+    if (targetLooptime < 1000) {
+        deltaTotalSamples = 8;
+    } else {
+        deltaTotalSamples = 4;
+    }
+}
+
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t DTermState[3];
@@ -94,11 +104,13 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
-    static float deltaOld[3][9];
+    static float previousDelta[3][8];
     float delta, deltaSum;
     int axis, deltaCount;
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
+
+    if (!deltaTotalSamples) setPidDeltaSamples();
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
@@ -193,16 +205,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        // Apply median filter for averaging
-        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
-            deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
-        }
-        deltaOld[axis][0] = delta;
-        if (targetLooptime < 1000){
-            deltaSum = quickMedianFilter9f(deltaOld[axis]);
-        } else {
-            deltaSum = quickMedianFilter7f(deltaOld[axis]);
-        }
+        // Apply moving average
+       for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+       previousDelta[axis][0] = delta;
+       for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+       deltaSum = (deltaSum / deltaTotalSamples);
 
         if (pidProfile->dterm_cut_hz) {
             // Dterm low pass
@@ -236,7 +243,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t errorAngle;
     int axis, deltaCount;
     int32_t delta, deltaSum;
-    static int32_t deltaOld[3][9];
+    static int32_t previousDelta[3][8];
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
@@ -244,6 +251,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     int8_t horizonLevelStrength = 100;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
+
+    if (!deltaTotalSamples) setPidDeltaSamples();
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
@@ -338,18 +347,11 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        // Apply median filter for averaging
-        for (deltaCount = 8; deltaCount > 0; deltaCount--) {
-            deltaOld[axis][deltaCount] = deltaOld[axis][deltaCount-1];
-        }
-        deltaOld[axis][0] = delta;
-
-        if (targetLooptime < 1000){
-            deltaSum = quickMedianFilter9(deltaOld[axis]);
-        } else {
-            deltaSum = quickMedianFilter7(deltaOld[axis]);
-        }
-        deltaSum *= 3;  // Get same scaling
+        // Apply moving average
+       for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+       previousDelta[axis][0] = delta;
+       for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+       deltaSum = (deltaSum / deltaTotalSamples) * 3; // get old scaling by multiplying with 3
 
         if (pidProfile->dterm_cut_hz) {
             // Dterm delta low pass
