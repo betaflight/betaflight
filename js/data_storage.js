@@ -179,7 +179,7 @@ var DATAFLASH = {
     usedSize: 0
 };
 
-var RC_readband = {
+var RC_deadband = {
     deadband:               0,
     yaw_deadband:           0,
     alt_hold_deadband:      0

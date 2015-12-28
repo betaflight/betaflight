@@ -32,7 +32,7 @@ TABS.receiver.initialize = function (callback) {
     function load_rc_configs() {
         var next_callback = load_html;
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            MSP.send_message(MSP_codes.MSP_RC_CONTROLS, false, false, next_callback);
+            MSP.send_message(MSP_codes.MSP_RC_DEADBAND, false, false, next_callback);
         } else {
             next_callback();
         }
@@ -71,8 +71,8 @@ TABS.receiver.initialize = function (callback) {
         if (semver.lt(CONFIG.apiVersion, "1.15.0")) {
             $('.deadband').hide();
         } else {
-            $('.deadband input[name="yaw_deadband"]').val(RC_controls.yaw_deadband);
-            $('.deadband input[name="deadband"]').val(RC_controls.deadband);
+            $('.deadband input[name="yaw_deadband"]').val(RC_deadband.yaw_deadband);
+            $('.deadband input[name="deadband"]').val(RC_deadband.deadband);
         }
 
         // generate bars
@@ -309,8 +309,8 @@ TABS.receiver.initialize = function (callback) {
             RC_tuning.RC_YAW_EXPO = parseFloat($('.tunings .yaw_rate input[name="yaw_expo"]').val());
 
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-               RC_controls.yaw_deadband = parseInt($('.deadband input[name="yaw_deadband"]').val());
-               RC_controls.deadband = parseInt($('.deadband input[name="deadband"]').val());
+               RC_deadband.yaw_deadband = parseInt($('.deadband input[name="yaw_deadband"]').val());
+               RC_deadband.deadband = parseInt($('.deadband input[name="deadband"]').val());
             }
    
             // catch rc map
@@ -335,7 +335,7 @@ TABS.receiver.initialize = function (callback) {
             function save_rc_configs() {
                 var next_callback = save_to_eeprom;
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                   MSP.send_message(MSP_codes.MSP_SET_RC_CONTROLS, MSP.crunch(MSP_codes.MSP_SET_RC_CONTROLS), false, next_callback);
+                   MSP.send_message(MSP_codes.MSP_SET_RC_DEADBAND, MSP.crunch(MSP_codes.MSP_SET_RC_DEADBAND), false, next_callback);
                 } else {
                    next_callback();
                 }
