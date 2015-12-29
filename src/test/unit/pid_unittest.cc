@@ -51,10 +51,10 @@ extern "C" {
     extern uint8_t PIDweight[3];
     float dT; // dT for pidLuxFloat
     int32_t cycleTime; // cycleTime for pidMultiWiiRewrite
-    float unittest_pidLuxFloat_lastError[3];
     float unittest_pidLuxFloat_PTerm[3];
     float unittest_pidLuxFloat_ITerm[3];
     float unittest_pidLuxFloat_DTerm[3];
+    float unittest_pidLuxFloat_lastError[3];
     float unittest_pidLuxFloat_delta1[3];
     float unittest_pidLuxFloat_delta2[3];
     int32_t unittest_pidMultiWiiRewrite_lastError[3];
@@ -201,11 +201,11 @@ float calcLuxPTerm(pidProfile_t *pidProfile, flight_dynamics_index_t axis, float
 }
 
 float calcLuxITermDelta(pidProfile_t *pidProfile, flight_dynamics_index_t axis, float rateError) {
-    return  rateError * pidProfile->I_f[axis] * dT * 10;
+    return  rateError * dT * pidProfile->I_f[axis] * 10;
 }
 
 float calcLuxDTerm(pidProfile_t *pidProfile, flight_dynamics_index_t axis, float rateError) {
-    return rateError * pidProfile->D_f[axis] * 1.0f / dT;
+    return rateError * pidProfile->D_f[axis] / dT;
 }
 
 TEST(PIDUnittest, TestPidLuxFloat)
@@ -250,6 +250,7 @@ TEST(PIDUnittest, TestPidLuxFloat)
 
     // run the PID controller. Check expected PID values
     // Note D value is multiplied by 1/3 because it is part of 3 point moving average, first two terms initially zero.
+    pidControllerInitLuxFloat(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     float ITermRoll = calcLuxITermDelta(&pidProfile, FD_ROLL, rateErrorRoll);
     float ITermPitch = calcLuxITermDelta(&pidProfile, FD_PITCH, rateErrorPitch);
     float ITermYaw = calcLuxITermDelta(&pidProfile, FD_YAW, rateErrorYaw);
@@ -326,7 +327,7 @@ TEST(PIDUnittest, TestPidLuxFloatIntegrationForLinearFunction)
     float pidITerm = unittest_pidLuxFloat_ITerm[FD_ROLL]; // integral as estimated by PID
     float actITerm = 0.5 * k * t * t * pidProfile.I_f[ROLL] * 10; // actual value of integral
     EXPECT_FLOAT_EQ(actITerm, pidITerm); // both are zero at this point
-
+    pidControllerInitLuxFloat(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     for (int ii = 0; ii < 10; ++ii) {
         const float actITermPrev = actITerm;
         const float pidITermPrev = pidITerm;
@@ -372,7 +373,9 @@ TEST(PIDUnittest, TestPidLuxFloatIntegrationForQuadraticFunction)
     float actITerm = (1.0f/3.0f) * k * t * t * t * pidProfile.I_f[ROLL] * 10; // actual value of integral
     EXPECT_FLOAT_EQ(actITerm, pidITerm); // both are zero at this point
 
-    for (int ii = 0; ii < 6; ++ii) { // rateError grows rapidly with time, so limit number of iterations
+    pidControllerInitLuxFloat(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    // limit to 6 iterations, since at 7th iteration rateError == 392 and so ITerm is constrained
+    for (int ii = 0; ii < 6; ++ii) {
         const float actITermPrev = actITerm;
         const float pidITermPrev = pidITerm;
         t += dT;
