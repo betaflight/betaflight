@@ -39,7 +39,7 @@ float unittest_pidLuxFloatAxis_DTerm[3];
         unittest_pidLuxFloatAxis_DTerm[axis] = DTerm; \
     }
 
-int32_t unittest_pidRewriteAxks_lastError[3];
+int32_t unittest_pidRewriteAxis_lastError[3];
 int32_t unittest_pidRewriteAxis_PTerm[3];
 int32_t unittest_pidRewriteAxis_ITerm[3];
 int32_t unittest_pidRewriteAxis_DTerm[3];
