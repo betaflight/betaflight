@@ -66,7 +66,7 @@ uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 static int32_t errorGyroI[3] = { 0, 0, 0 };
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
-static uint8_t deltaTotalSamples = 0;
+STATIC_UNIT_TESTED uint8_t deltaTotalSamples = 0;
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -145,7 +145,7 @@ static void pidLuxFloatAxis(int axis, float RateError, pidProfile_t *pidProfile)
     // would be scaled by different dt each time. Division by dT fixes that.
     delta *= (1.0f / dT);
 
-    float deltaSum;
+    float deltaSum = 0;
     if (pidProfile->dterm_cut_hz) {
         // Dterm low pass
         deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
@@ -282,7 +282,7 @@ static void pidRewriteAxis(int axis, int32_t RateError, pidProfile_t *pidProfile
     // would be scaled by different dt each time. Division by dT fixes that.
     delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-    int32_t deltaSum;
+    int32_t deltaSum = 0;
     if (pidProfile->dterm_cut_hz) {
         // Dterm delta low pass
         deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
