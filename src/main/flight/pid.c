@@ -102,7 +102,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastError[3];
     static float previousDelta[3][8];
     float delta, deltaSum;
@@ -113,18 +112,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     if (!deltaTotalSamples) setPidDeltaSamples();
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
-
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
-
-        if(ABS(stickPosAil) > ABS(stickPosEle)){
-            mostDeflectedPos = ABS(stickPosAil);
-        }
-        else {
-            mostDeflectedPos = ABS(stickPosEle);
-        }
-
+        const int32_t stickPosAil = ABS(getRcStickDeflection(FD_ROLL, rxConfig->midrc));
+        const int32_t stickPosEle = ABS(getRcStickDeflection(FD_PITCH, rxConfig->midrc));
+        const int32_t mostDeflectedPos = MAX(stickPosAil, stickPosEle);
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
         if(pidProfile->H_sensitivity == 0){
@@ -249,29 +240,19 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t AngleRateTmp, RateError;
 
     int8_t horizonLevelStrength = 100;
-    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
 
     if (!deltaTotalSamples) setPidDeltaSamples();
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
-
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
-
-        if(ABS(stickPosAil) > ABS(stickPosEle)){
-            mostDeflectedPos = ABS(stickPosAil);
-        }
-        else {
-            mostDeflectedPos = ABS(stickPosEle);
-        }
-
+        const int32_t stickPosAil = ABS(getRcStickDeflection(FD_ROLL, rxConfig->midrc));
+        const int32_t stickPosEle = ABS(getRcStickDeflection(FD_PITCH, rxConfig->midrc));
+        const int32_t mostDeflectedPos = MAX(stickPosAil, stickPosEle);
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (500 - mostDeflectedPos) / 5;  // 100 at centre stick, 0 = max stick deflection
-
         // Using Level D as a Sensitivity for Horizon. 0 more level to 255 more rate. Default value of 100 seems to work fine.
         // For more rate mode increase D and slower flips and rolls will be possible
-       	horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
+        horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
     }
 
     // ----------PID controller----------
