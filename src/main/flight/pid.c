@@ -205,15 +205,15 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        // Apply moving average
-       for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
-       previousDelta[axis][0] = delta;
-       for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-       deltaSum = (deltaSum / deltaTotalSamples);
-
         if (pidProfile->dterm_cut_hz) {
             // Dterm low pass
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        } else {
+            // Apply moving average
+            for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+            previousDelta[axis][0] = delta;
+            for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+            deltaSum = (deltaSum / deltaTotalSamples);
         }
 
         DTerm = constrainf(deltaSum * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
@@ -347,15 +347,15 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        // Apply moving average
-       for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
-       previousDelta[axis][0] = delta;
-       for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-       deltaSum = (deltaSum / deltaTotalSamples) * 3; // get old scaling by multiplying with 3
-
         if (pidProfile->dterm_cut_hz) {
             // Dterm delta low pass
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+        } else {
+            // Apply moving average
+            for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+            previousDelta[axis][0] = delta;
+            for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+            deltaSum = (deltaSum / deltaTotalSamples) * 3; // get old scaling by multiplying with 3
         }
 
         DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
