@@ -143,10 +143,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
-             // ACRO mode, control is GYRO based direct sticks control is applied to rate PID
+             // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
              AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max roll/pitch rate
              if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
-                // calculate error and limit the angle to the max inclination
+                // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
                 const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
@@ -284,8 +284,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[YAW]) >> 5;
         } else {
             AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
-            // calculate error and limit the angle to max configured inclination
             if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+                // calculate error angle and limit the angle to max configured inclination
 #ifdef GPS
                 const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
