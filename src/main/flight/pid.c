@@ -201,6 +201,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         } else {
             // Apply moving average
+            deltaSum = 0;
             for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
@@ -334,6 +335,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
         } else {
             // Apply moving average
+            deltaSum = 0;
             for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
