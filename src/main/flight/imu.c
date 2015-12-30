@@ -339,9 +339,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
     /* Compute pitch/roll angles */
-    attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+    attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2_approx(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
@@ -452,7 +452,7 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     if (rMat[2][2] <= 0.015f) {
         return 0;
     }
-    int angle = lrintf(acosf(rMat[2][2]) * throttleAngleScale);
+    int angle = lrintf(acos_approx(rMat[2][2]) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
     return lrintf(throttle_correction_value * sin_approx(angle / (900.0f * M_PIf / 2.0f)));
