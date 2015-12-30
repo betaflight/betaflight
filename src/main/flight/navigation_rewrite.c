@@ -902,14 +902,14 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
     }
     else {
         // Gradually reduce descent speed depending on actual altitude.
-        if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1000.0f)) {
+        if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
             updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
         }
-        else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 250.0f)) {
+        else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
             updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
         }
         else {
-            updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);
+            updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
         }
 
         return NAV_FSM_EVENT_NONE;
