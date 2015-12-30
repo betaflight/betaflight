@@ -27,7 +27,6 @@
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
 #define INVERTER_USART USART1
 
-//#define BEEPER_PIN6 // Uncomment this line for hexacopter configurations where PIN6 is needed for motor
 
 #define BEEP_GPIO GPIOA
 #define BEEP_PIN Pin_15 // PA15 (Beeper)
