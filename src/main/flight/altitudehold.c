@@ -259,7 +259,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         BaroAlt -= baroAlt_offset;
         if (sonarAlt > 0  && sonarAlt <= sonarMaxAltWithTiltCm) {
             // SONAR in range, so use complementary filter
-            sonarTransition = (sonarMaxAltWithTiltCm - sonarAlt) / 100.0f;
+            sonarTransition = (float)(sonarMaxAltWithTiltCm - sonarAlt) / (sonarMaxAltWithTiltCm - sonarCfAltCm);
             BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
