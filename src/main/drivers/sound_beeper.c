@@ -63,20 +63,12 @@ void systemBeep(bool onoff)
 #endif
 }
 
-#ifdef CC3D
-void beeperInit(beeperConfig_t *config, uint8_t use_buzzer_p6) {
-	if (use_buzzer_p6) {
-        beeperPin = Pin_2;
-	} else {
-        beeperPin = BEEP_PIN;
-	}
-#else
-void beeperInit(beeperConfig_t *config) {
-	beeperPin = BEEP_PIN;
-#endif
+void beeperInit(beeperConfig_t *config)
+{
 #ifndef BEEPER
     UNUSED(config);
 #else
+    beeperPin = config->gpioPin;
     initBeeperHardware(config);
     if (config->isInverted)
         systemBeepPtr = beepInverted;
