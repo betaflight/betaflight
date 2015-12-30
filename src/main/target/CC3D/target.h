@@ -30,11 +30,7 @@
 //#define BEEPER_PIN6 // Uncomment this line for hexacopter configurations where PIN6 is needed for motor
 
 #define BEEP_GPIO GPIOA
-#ifdef BEEPER_PIN6
-#define BEEP_PIN Pin_2 // PA2 (Beeper)
-#else
 #define BEEP_PIN Pin_15 // PA15 (Beeper)
-#endif
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
 
 #define MPU6000_CS_GPIO       GPIOA
