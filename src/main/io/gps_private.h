@@ -53,5 +53,6 @@ extern bool gpsHandleNMEA(void);
 extern bool gpsHandleUBLOX(void);
 extern bool gpsHandleI2CNAV(void);
 extern bool gpsDetectI2CNAV(void);
+extern bool gpsHandleNAZA(void);
 
 #endif

@@ -277,6 +277,7 @@ HIGHEND_SRC = \
 		   io/gps.c \
 		   io/gps_ublox.c \
            io/gps_nmea.c \
+           io/gps_naza.c \
            io/gps_i2cnav.c \
 		   io/ledstrip.c \
 		   io/display.c \

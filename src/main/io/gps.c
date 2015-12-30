@@ -106,6 +106,13 @@ static gpsProviderDescriptor_t  gpsProviders[GPS_PROVIDER_COUNT] = {
 #else
     { GPS_TYPE_NA, 0, false,  NULL, NULL },
 #endif
+
+    /* NAZA GPS module */
+#ifdef GPS_PROTO_NAZA
+    { GPS_TYPE_SERIAL, MODE_RX, false,  NULL, gpsHandleNAZA },
+#else
+    { GPS_TYPE_NA, 0, false,  NULL, NULL },
+#endif
 };
 
 void gpsSetState(gpsState_e state)

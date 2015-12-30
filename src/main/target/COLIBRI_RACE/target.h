@@ -148,6 +148,7 @@
 #define GPS_PROTO_NMEA
 #define GPS_PROTO_UBLOX
 #define GPS_PROTO_I2C_NAV
+#define GPS_PROTO_NAZA
 
 #define GTUNE
 #define LED_STRIP
