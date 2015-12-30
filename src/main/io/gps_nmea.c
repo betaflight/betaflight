@@ -32,24 +32,12 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
-
-#include "drivers/gps.h"
-#include "drivers/gps_i2cnav.h"
-
-#include "sensors/sensors.h"
 
 #include "io/serial.h"
-#include "io/display.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
 #include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/hil.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
@@ -281,13 +269,6 @@ static bool gpsInitialize(void)
     return false;
 }
 
-static bool gpsConfigure(void)
-{
-    // No autoconfig, switch straight to receiving data 
-    gpsSetState(GPS_RECEIVING_DATA);
-    return false;
-}
-
 static bool gpsReceiveData(void)
 {
     bool hasNewData = false;
@@ -320,8 +301,11 @@ bool gpsHandleNMEA(void)
     case GPS_INITIALIZING:
         return gpsInitialize();
 
+    case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        return gpsConfigure();
+        // No autoconfig, switch straight to receiving data 
+        gpsSetState(GPS_RECEIVING_DATA);
+        return false;
 
     case GPS_RECEIVING_DATA:
         return hasNewData;

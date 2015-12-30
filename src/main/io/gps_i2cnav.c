@@ -18,8 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
-#include <string.h>
-#include <math.h>
 
 #include "platform.h"
 #include "build_config.h"
@@ -31,18 +29,9 @@
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
-
-#include "drivers/gps.h"
 #include "drivers/gps_i2cnav.h"
 
-#include "sensors/sensors.h"
-
 #include "io/serial.h"
-#include "io/display.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
@@ -65,7 +54,7 @@ bool gpsDetectI2CNAV(void)
 
 bool gpsPollI2CNAV(void)
 {
-    gpsDataGeneric_t gpsMsg;
+    gpsDataI2CNAV_t gpsMsg;
 
     // Check for poll rate timeout
     if ((millis() - gpsState.lastMessageMs) < (1000 / GPS_I2C_POLL_RATE_HZ)) 
@@ -113,6 +102,7 @@ bool gpsHandleI2CNAV(void)
     default:
         return false;
 
+    case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
         gpsSetState(GPS_RECEIVING_DATA);
         return false;

@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
-#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -37,9 +36,6 @@
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 
-#include "drivers/gps.h"
-#include "drivers/gps_i2cnav.h"
-
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
@@ -48,9 +44,6 @@
 #include "io/gps.h"
 #include "io/gps_private.h"
 
-#include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/hil.h"
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
@@ -258,13 +251,15 @@ void gpsThread(void)
             if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
                 // Switch to required serial port baud
                 serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.baudrateIndex]]);
+                gpsState.hwVersion = 0;
                 gpsState.autoConfigStep = 0;
                 gpsState.autoConfigPosition = 0;
                 gpsState.lastMessageMs = millis();
-                gpsSetState(GPS_CONFIGURE);
+                gpsSetState(GPS_CHECK_VERSION);
             }
             break;
 
+        case GPS_CHECK_VERSION:
         case GPS_CONFIGURE:
         case GPS_RECEIVING_DATA:
             gpsHandleProtocol();
@@ -298,11 +293,12 @@ void gpsThread(void)
                 gpsResetSolution();
 
                 if (gpsProviders[gpsState.gpsConfig->provider].detect && gpsProviders[gpsState.gpsConfig->provider].detect()) {
+                    gpsState.hwVersion = 0;
                     gpsState.autoConfigStep = 0;
                     gpsState.autoConfigPosition = 0;
                     gpsState.lastMessageMs = millis();
                     sensorsSet(SENSOR_GPS);
-                    gpsSetState(GPS_CONFIGURE);
+                    gpsSetState(GPS_CHECK_VERSION);
                 }
                 else {
                     sensorsClear(SENSOR_GPS);
@@ -310,6 +306,7 @@ void gpsThread(void)
             }
             break;
 
+        case GPS_CHECK_VERSION:
         case GPS_CONFIGURE:
         case GPS_RECEIVING_DATA:
             gpsHandleProtocol();

@@ -32,24 +32,12 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
-
-#include "drivers/gps.h"
-#include "drivers/gps_i2cnav.h"
-
-#include "sensors/sensors.h"
 
 #include "io/serial.h"
-#include "io/display.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
 #include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/hil.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
@@ -263,9 +251,13 @@ static bool gpsNewFrameNAZA(uint8_t data)
             _ck_b += (_ck_a += data);       // checksum byte
             _payload_length = data; // payload length low byte
             if (_payload_length > NAZA_MAX_PAYLOAD_SIZE) {
-                _skip_packet = true;
+                // we can't receive the whole packet, just log the error and start searching for the next packet.
+                gpsStats.errors++;
+                _step = 0;
+                break;
             }
-            _payload_counter = 0;   // prepare to receive payload
+            // prepare to receive payload
+            _payload_counter = 0;
             if (_payload_length == 0) {
                 _step = 6;
             }
@@ -288,7 +280,6 @@ static bool gpsNewFrameNAZA(uint8_t data)
             break;
         case 6:
             _step = 0;
-
             if (_ck_b != data) {
                 gpsStats.errors++;
                 break;              // bad checksum
@@ -311,13 +302,6 @@ static bool gpsInitialize(void)
 {
     // NMEA is receive-only, we can only cycle thru baud rates and check if we are receiving anything
     gpsState.baudrateIndex = gpsState.autoBaudrateIndex;
-    return false;
-}
-
-static bool gpsConfigure(void)
-{
-    // No autoconfig, switch straight to receiving data 
-    gpsSetState(GPS_RECEIVING_DATA);
     return false;
 }
 
@@ -353,8 +337,11 @@ bool gpsHandleNAZA(void)
     case GPS_INITIALIZING:
         return gpsInitialize();
 
+    case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        return gpsConfigure();
+        // No autoconfig, switch straight to receiving data 
+        gpsSetState(GPS_RECEIVING_DATA);
+        return false;
 
     case GPS_RECEIVING_DATA:
         return hasNewData;

@@ -23,15 +23,18 @@ typedef enum {
     GPS_UNKNOWN,                // 0
     GPS_INITIALIZING,           // 1
     GPS_CHANGE_BAUD,            // 2
-    GPS_CONFIGURE,              // 3
-    GPS_RECEIVING_DATA,         // 4
-    GPS_LOST_COMMUNICATION,     // 5
+    GPS_CHECK_VERSION,          // 3
+    GPS_CONFIGURE,              // 4
+    GPS_RECEIVING_DATA,         // 5
+    GPS_LOST_COMMUNICATION,     // 6
 } gpsState_e;
 
 typedef struct {
     gpsConfig_t *   gpsConfig;
     serialConfig_t * serialConfig;
     serialPort_t *  gpsPort;                // Serial GPS only
+
+    uint32_t        hwVersion;
 
     gpsState_e      state;
     gpsBaudRate_e   baudrateIndex;

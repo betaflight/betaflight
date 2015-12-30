@@ -16,6 +16,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -32,29 +33,19 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
-
-#include "drivers/gps.h"
-#include "drivers/gps_i2cnav.h"
-
-#include "sensors/sensors.h"
 
 #include "io/serial.h"
-#include "io/display.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
 #include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/hil.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
 
 #if defined(GPS) && defined(GPS_PROTO_UBLOX)
+
+#define GPS_PROTO_UBLOX_NEO7PLUS
 
 static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,115200,0*1E\r\n",     // GPS_BAUDRATE_115200
@@ -63,6 +54,12 @@ static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,19200,0*23\r\n",      // GPS_BAUDRATE_19200
     "$PUBX,41,1,0003,0001,9600,0*16\r\n"        // GPS_BAUDRATE_9600
 };
+
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+static const uint8_t ubloxVerPoll[] = {
+    0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34,          // MON-VER - Poll version info
+};
+#endif
 
 static const uint8_t ubloxInit6[] = {
 
@@ -87,12 +84,38 @@ static const uint8_t ubloxInit6[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x02, 0x01, 0x0E, 0x47,           // set POSLLH MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x03, 0x01, 0x0F, 0x49,           // set STATUS MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x06, 0x01, 0x12, 0x4F,           // set SOL MSG rate
-    //0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x01, 0x3C, 0xA3,           // set SVINFO MSG rate (every cycle - high bandwidth)
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x05, 0x40, 0xA7,           // set SVINFO MSG rate (evey 5 cycles - low bandwidth)
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67,           // set VELNED MSG rate
 
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
 };
+
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+static const uint8_t ubloxInit[] = {
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Airborne <1G
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 0xE8,
+
+    // DISABLE NMEA messages
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x00, 0x00, 0xFA, 0x0F,           // GGA: Global positioning system fix data
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x01, 0x00, 0xFB, 0x11,           // GLL: Latitude and longitude, with time of position fix and status
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x02, 0x00, 0xFC, 0x13,           // GSA: GNSS DOP and Active Satellites
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15,           // GSV: GNSS Satellites in View
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x04, 0x00, 0xFE, 0x17,           // RMC: Recommended Minimum data
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
+
+    // Enable UBLOX messages
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xB9, // disable POSLLH
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xC0, // disable STATUS
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0xD5, // disable SOL
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x30, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x4A, 0x2D, // enable SVINFO 10 cycle
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x29, // disable VELNED
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x18, 0xE1, // enable PVT 1 cycle
+
+    0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0x01, 0x00, 0x01, 0x00, 0x7A, 0x12,	// set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle)
+};
+#endif
 
 // UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
 // SBAS Configuration Settings Desciption, Page 4/210
@@ -123,6 +146,11 @@ typedef struct {
     uint8_t msg_id;
     uint16_t length;
 } ubx_header;
+
+typedef struct {
+    char swVersion[30];      // Zero-terminated Software Version String
+    char hwVersion[10];      // Zero-terminated Hardware Version String
+} ubx_mon_ver;
 
 typedef struct {
     uint32_t time;              // GPS msToW
@@ -195,17 +223,53 @@ typedef struct {
     ubx_nav_svinfo_channel channel[16];         // 16 satellites * 12 byte
 } ubx_nav_svinfo;
 
+typedef struct {
+    uint32_t time; // GPS msToW
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t min;
+    uint8_t sec;
+    uint8_t valid;
+    uint32_t tAcc;
+    int32_t nano;
+    uint8_t fix_type;
+    uint8_t fix_status;
+    uint8_t reserved1;
+    uint8_t satellites;
+    int32_t longitude;
+    int32_t latitude;
+    int32_t altitude_ellipsoid;
+    int32_t altitude_msl;
+    uint32_t horizontal_accuracy;
+    uint32_t vertical_accuracy;
+    int32_t ned_north;
+    int32_t ned_east;
+    int32_t ned_down;
+    int32_t speed_2d;
+    int32_t heading_2d;
+    uint32_t speed_accuracy;
+    uint32_t heading_accuracy;
+    uint16_t position_DOP;
+    uint16_t reserved2;
+    uint16_t reserved3;
+} ubx_nav_pvt;
+
 enum {
     PREAMBLE1 = 0xb5,
     PREAMBLE2 = 0x62,
     CLASS_NAV = 0x01,
     CLASS_ACK = 0x05,
     CLASS_CFG = 0x06,
+    CLASS_MON = 0x0A,
+    MSG_VER = 0x04,
     MSG_ACK_NACK = 0x00,
     MSG_ACK_ACK = 0x01,
     MSG_POSLLH = 0x2,
     MSG_STATUS = 0x3,
     MSG_SOL = 0x6,
+    MSG_PVT = 0x7,
     MSG_VELNED = 0x12,
     MSG_SVINFO = 0x30,
     MSG_CFG_PRT = 0x00,
@@ -264,14 +328,15 @@ static bool _new_speed;
 #define MAX_UBLOX_PAYLOAD_SIZE 344
 #define UBLOX_BUFFER_SIZE MAX_UBLOX_PAYLOAD_SIZE
 
-
 // Receive buffer
 static union {
     ubx_nav_posllh posllh;
     ubx_nav_status status;
     ubx_nav_solution solution;
     ubx_nav_velned velned;
+    ubx_nav_pvt pvt;
     ubx_nav_svinfo svinfo;
+    ubx_mon_ver ver;
     uint8_t bytes[UBLOX_BUFFER_SIZE];
 } _buffer;
 
@@ -320,6 +385,32 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.flags.validVelD = 1;
         _new_speed = true;
         break;
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+    case MSG_PVT:
+        next_fix = (_buffer.pvt.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fix_type == FIX_3D);
+        gpsSol.flags.fix3D = next_fix ? 1 : 0;
+        gpsSol.llh.lon = _buffer.pvt.longitude;
+        gpsSol.llh.lat = _buffer.pvt.latitude;
+        gpsSol.llh.alt = _buffer.pvt.altitude_msl / 10;  //alt in cm
+        gpsSol.velNED[X]=_buffer.pvt.ned_north / 10;  // to cm/s
+        gpsSol.velNED[Y]=_buffer.pvt.ned_east / 10;   // to cm/s
+        gpsSol.velNED[Z]=_buffer.pvt.ned_down / 10;   // to cm/s
+        gpsSol.groundSpeed = _buffer.pvt.speed_2d / 10;    // to cm/s
+        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.numSat = _buffer.pvt.satellites;
+        gpsSol.hdop = _buffer.pvt.position_DOP;
+        gpsSol.flags.validVelNE = 1;
+        gpsSol.flags.validVelD = 1;
+        _new_position = true;
+        _new_speed = true;
+        break;
+    case MSG_VER:
+        if(_class == CLASS_MON) {
+            //uint32_t swver = _buffer.ver.swVersion;
+            gpsState.hwVersion = atoi(_buffer.ver.hwVersion);
+        }
+        break;
+#endif
     case MSG_SVINFO:
         gpsSol.numCh = _buffer.svinfo.numCh;
         if (gpsSol.numCh > 16)
@@ -342,6 +433,7 @@ static bool gpsParceFrameUBLOX(void)
         _new_speed = _new_position = false;
         return true;
     }
+
     return false;
 }
 
@@ -350,89 +442,85 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     bool parsed = false;
 
     switch (_step) {
-    case 0: // Sync char 1 (0xB5)
-        if (PREAMBLE1 == data) {
-            _skip_packet = false;
+        case 0: // Sync char 1 (0xB5)
+            if (PREAMBLE1 == data) {
+                _skip_packet = false;
+                _step++;
+            }
+            break;
+        case 1: // Sync char 2 (0x62)
+            if (PREAMBLE2 != data) {
+                _step = 0;
+                break;
+            }
             _step++;
-        }
-        break;
-    case 1: // Sync char 2 (0x62)
-        if (PREAMBLE2 != data) {
-            _step = 0;
             break;
-        }
-        _step++;
-        break;
-    case 2: // Class
-        _step++;
-        _class = data;
-        _ck_b = _ck_a = data;   // reset the checksum accumulators
-        break;
-    case 3: // Id
-        _step++;
-        _ck_b += (_ck_a += data);       // checksum byte
-        _msg_id = data;
-        break;
-    case 4: // Payload length (part 1)
-        _step++;
-        _ck_b += (_ck_a += data);       // checksum byte
-        _payload_length = data; // payload length low byte
-        break;
-    case 5: // Payload length (part 2)
-        _step++;
-        _ck_b += (_ck_a += data);       // checksum byte
-        _payload_length |= (uint16_t)(data << 8);
-        if (_payload_length > MAX_UBLOX_PAYLOAD_SIZE ) {
-            // we can't receive the whole packet, just log the error and start searching for the next packet.
-            gpsStats.errors++;
-            _step = 0;
-            break;
-        }
-        if (_payload_length > UBLOX_BUFFER_SIZE) {
-            _skip_packet = true;
-        }
-
-        // prepare to receive payload
-        _payload_counter = 0;
-        if (_payload_length == 0) {
-            _step = 7;
-        }
-        break;
-    case 6:
-        _ck_b += (_ck_a += data);       // checksum byte
-        if (_payload_counter < UBLOX_BUFFER_SIZE) {
-            _buffer.bytes[_payload_counter] = data;
-        }
-        // NOTE: check counter BEFORE increasing so that a payload_size of 65535 is correctly handled.  This can happen if garbage data is received.
-        if (_payload_counter ==  _payload_length - 1) {
+        case 2: // Class
             _step++;
-        }
-        _payload_counter++;
-        break;
-    case 7:
-        _step++;
-        if (_ck_a != data) {
-            _skip_packet = true;          // bad checksum
-            gpsStats.errors++;
-        }
-        break;
-    case 8:
-        _step = 0;
-
-        if (_ck_b != data) {
-            gpsStats.errors++;
-            break;              // bad checksum
-        }
-
-        gpsStats.packetCount++;
-
-        if (_skip_packet) {
+            _class = data;
+            _ck_b = _ck_a = data;   // reset the checksum accumulators
             break;
-        }
+        case 3: // Id
+            _step++;
+            _ck_b += (_ck_a += data);       // checksum byte
+            _msg_id = data;
+            break;
+        case 4: // Payload length (part 1)
+            _step++;
+            _ck_b += (_ck_a += data);       // checksum byte
+            _payload_length = data; // payload length low byte
+            break;
+        case 5: // Payload length (part 2)
+            _step++;
+            _ck_b += (_ck_a += data);       // checksum byte
+            _payload_length |= (uint16_t)(data << 8);
+            if (_payload_length > MAX_UBLOX_PAYLOAD_SIZE ) {
+                // we can't receive the whole packet, just log the error and start searching for the next packet.
+                gpsStats.errors++;
+                _step = 0;
+                break;
+            }
+            // prepare to receive payload
+            _payload_counter = 0;
+            if (_payload_length == 0) {
+                _step = 7;
+            }
+            break;
+        case 6:
+            _ck_b += (_ck_a += data);       // checksum byte
+            if (_payload_counter < MAX_UBLOX_PAYLOAD_SIZE) {
+                _buffer.bytes[_payload_counter] = data;
+            }
+            // NOTE: check counter BEFORE increasing so that a payload_size of 65535 is correctly handled.  This can happen if garbage data is received.
+            if (_payload_counter ==  _payload_length - 1) {
+                _step++;
+            }
+            _payload_counter++;
+            break;
+        case 7:
+            _step++;
+            if (_ck_a != data) {
+                _skip_packet = true;          // bad checksum
+                gpsStats.errors++;
+            }
+            break;
+        case 8:
+            _step = 0;
 
-        if (gpsParceFrameUBLOX()) {
-            parsed = true;
-        }
+            if (_ck_b != data) {
+                gpsStats.errors++;
+                break;              // bad checksum
+            }
+
+            gpsStats.packetCount++;
+
+            if (_skip_packet) {
+                break;
+            }
+
+            if (gpsParceFrameUBLOX()) {
+                parsed = true;
+            }
     }
 
     return parsed;
@@ -453,14 +541,30 @@ static bool gpsConfigure(void)
 {
     switch (gpsState.autoConfigStep) {
     case 0: // Config
-        if (gpsState.autoConfigPosition < sizeof(ubloxInit6)) {
-            serialWrite(gpsState.gpsPort, ubloxInit6[gpsState.autoConfigPosition]);
-            gpsState.autoConfigPosition++;
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+        if (gpsState.hwVersion < 70000) {
+#endif
+            if (gpsState.autoConfigPosition < sizeof(ubloxInit6)) {
+                serialWrite(gpsState.gpsPort, ubloxInit6[gpsState.autoConfigPosition]);
+                gpsState.autoConfigPosition++;
+            }
+            else {
+                gpsState.autoConfigPosition = 0;
+                gpsState.autoConfigStep++;
+            }
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
         }
         else {
-            gpsState.autoConfigPosition = 0;
-            gpsState.autoConfigStep++;
+            if (gpsState.autoConfigPosition < sizeof(ubloxInit)) {
+                serialWrite(gpsState.gpsPort, ubloxInit[gpsState.autoConfigPosition]);
+                gpsState.autoConfigPosition++;
+            }
+            else {
+                gpsState.autoConfigPosition = 0;
+                gpsState.autoConfigStep++;
+            }
         }
+#endif
         break;
 
     case 1: // SBAS
@@ -480,6 +584,32 @@ static bool gpsConfigure(void)
         break;
     }
 
+    return false;
+}
+
+static bool gpsCheckVersion(void)
+{
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+    if (gpsState.autoConfigStep == 0) {
+        if (gpsState.autoConfigPosition < sizeof(ubloxVerPoll)) {
+            serialWrite(gpsState.gpsPort, ubloxVerPoll[gpsState.autoConfigPosition]);
+            gpsState.autoConfigPosition++;
+        }
+        else {
+            gpsState.autoConfigStep++;
+        }
+    }
+    else {
+        // Wait until version found
+        if (gpsState.hwVersion != 0) {
+            gpsState.autoConfigStep = 0;
+            gpsState.autoConfigPosition = 0;
+            gpsSetState(GPS_CONFIGURE);
+        }
+    }
+#else
+    gpsSetState(GPS_CONFIGURE);
+#endif
     return false;
 }
 
@@ -511,6 +641,9 @@ bool gpsHandleUBLOX(void)
 
     case GPS_INITIALIZING:
         return gpsInitialize();
+
+    case GPS_CHECK_VERSION:
+        return gpsCheckVersion();
 
     case GPS_CONFIGURE:
         return gpsConfigure();
