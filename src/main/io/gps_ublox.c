@@ -261,7 +261,8 @@ static bool _new_speed;
 
 // from the UBlox6 document, the largest payout we receive i the NAV-SVINFO and the payload size
 // is calculated as 8 + 12*numCh.  numCh in the case of a Glonass receiver is 28.
-#define UBLOX_PAYLOAD_SIZE 344
+#define MAX_UBLOX_PAYLOAD_SIZE 344
+#define UBLOX_BUFFER_SIZE MAX_UBLOX_PAYLOAD_SIZE
 
 
 // Receive buffer
@@ -271,7 +272,7 @@ static union {
     ubx_nav_solution solution;
     ubx_nav_velned velned;
     ubx_nav_svinfo svinfo;
-    uint8_t bytes[UBLOX_PAYLOAD_SIZE];
+    uint8_t bytes[UBLOX_BUFFER_SIZE];
 } _buffer;
 
 void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
@@ -380,23 +381,33 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     case 5: // Payload length (part 2)
         _step++;
         _ck_b += (_ck_a += data);       // checksum byte
-        _payload_length += (uint16_t)(data << 8);
-        if (_payload_length > UBLOX_PAYLOAD_SIZE) {
+        _payload_length |= (uint16_t)(data << 8);
+        if (_payload_length > MAX_UBLOX_PAYLOAD_SIZE ) {
+            // we can't receive the whole packet, just log the error and start searching for the next packet.
+            gpsStats.errors++;
+            _step = 0;
+            break;
+        }
+        if (_payload_length > UBLOX_BUFFER_SIZE) {
             _skip_packet = true;
         }
-        _payload_counter = 0;   // prepare to receive payload
+
+        // prepare to receive payload
+        _payload_counter = 0;
         if (_payload_length == 0) {
             _step = 7;
         }
         break;
     case 6:
         _ck_b += (_ck_a += data);       // checksum byte
-        if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
+        if (_payload_counter < UBLOX_BUFFER_SIZE) {
             _buffer.bytes[_payload_counter] = data;
         }
-        if (++_payload_counter >= _payload_length) {
+        // NOTE: check counter BEFORE increasing so that a payload_size of 65535 is correctly handled.  This can happen if garbage data is received.
+        if (_payload_counter ==  _payload_length - 1) {
             _step++;
         }
+        _payload_counter++;
         break;
     case 7:
         _step++;
