@@ -36,6 +36,10 @@ typedef struct beeperConfig_s {
 } beeperConfig_t;
 
 void systemBeep(bool onoff);
+#ifdef CC3D
+void beeperInit(beeperConfig_t *beeperConfig, uint8_t use_buzzer_p6);
+#else
 void beeperInit(beeperConfig_t *beeperConfig);
+#endif
 
 void initBeeperHardware(beeperConfig_t *config);
