@@ -48,13 +48,13 @@ void filterResetPt1(filterStatePt1_t *filter, float input)
  *  250-sized, 2300kv, 5x4.5 props, 4S : 14139rpm = 235Hz
  */
 static int8_t gyroFIRCoeff_1000[3][9] = { { 0, 0, 12, 23, 40, 51, 52, 40, 38 },    // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
-                                          { 18, 30, 42, 46, 40, 34, 22, 8, 8},     // looptime=1000; group delay 3ms;   -0.5db = 18Hz ; -1db = 33Hz; -5db = 81Hz; -10db = 113Hz
+                                          { 19, 31, 43, 48, 41, 35, 23, 8, 8},     // looptime=1000; group delay 3ms;   -0.5db = 18Hz ; -1db = 33Hz; -5db = 81Hz; -10db = 113Hz
                                           { 18, 12, 28, 40, 44, 40, 32, 22, 20} }; // looptime=1000; group delay 4ms;   -0.5db = 23Hz ; -1db = 35Hz; -5db = 75Hz; -10db = 103Hz
-static int8_t gyroFIRCoeff_2000[3][9] = { { 0, 0, 0, 6, 24, 58, 82, 64, 20 },      // looptime=2000, group delay 4ms;   -0.5db = 21Hz ; -1db = 31Hz; -5db = 71Hz; -10db = 99Hz
-                                          { 0, 0, 14, 22, 46, 60, 56, 40, 24},     // looptime=2000, group delay 5ms;   -0.5db = 20Hz ; -1db = 26Hz; -5db = 52Hz; -10db = 71Hz
-                                          { 14, 12, 26, 38, 44, 42, 34, 24, 20} }; // looptime=2000, group delay 7ms;   -0.5db = 11Hz ; -1db = 18Hz; -5db = 38Hz; -10db = 52Hz
-static int8_t gyroFIRCoeff_3000[3][9] = { { 0, 0, 0, 0, 4, 36, 88, 88, 44 },       // looptime=3000, group delay 4.5ms; -0.5db = 18Hz ; -1db = 26Hz; -5db = 57Hz; -10db = 78Hz
-                                          { 0, 0, 0, 14, 32, 64, 72, 54, 28},      // looptime=3000, group delay 6.5ms; -0.5db = 16Hz ; -1db = 21Hz; -5db = 42Hz; -10db = 57Hz
+static int8_t gyroFIRCoeff_2000[3][9] = { { 0, 0, 0, 6, 24, 58, 83, 65, 20 },      // looptime=2000, group delay 4ms;   -0.5db = 21Hz ; -1db = 31Hz; -5db = 71Hz; -10db = 99Hz
+                                          { 0, 0, 14, 21, 45, 59, 55, 39, 23},     // looptime=2000, group delay 5ms;   -0.5db = 20Hz ; -1db = 26Hz; -5db = 52Hz; -10db = 71Hz
+                                          { 14, 12, 26, 38, 45, 43, 34, 24, 20} }; // looptime=2000, group delay 7ms;   -0.5db = 11Hz ; -1db = 18Hz; -5db = 38Hz; -10db = 52Hz
+static int8_t gyroFIRCoeff_3000[3][9] = { { 0, 0, 0, 0, 4, 35, 87, 87, 43 },       // looptime=3000, group delay 4.5ms; -0.5db = 18Hz ; -1db = 26Hz; -5db = 57Hz; -10db = 78Hz
+                                          { 0, 0, 0, 14, 31, 62, 70, 52, 27},      // looptime=3000, group delay 6.5ms; -0.5db = 16Hz ; -1db = 21Hz; -5db = 42Hz; -10db = 57Hz
                                           { 0, 6, 10, 28, 44, 54, 54, 38, 22} };   // looptime=3000, group delay 9ms;   -0.5db = 10Hz ; -1db = 13Hz; -5db = 32Hz; -10db = 45Hz
 
 int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint16_t targetLooptime)

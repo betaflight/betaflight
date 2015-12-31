@@ -543,7 +543,6 @@ int main(void) {
     }
 
     setTaskEnabled(TASK_GYROPID, true);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
     setTaskEnabled(TASK_BEEPER, true);
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));

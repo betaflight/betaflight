@@ -23,7 +23,6 @@
 #include "scheduler.h"
 
 void taskMainPidLoopChecker(void);
-void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
 void taskUpdateBeeper(void);
 void taskUpdateBattery(void);
@@ -52,13 +51,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskMainPidLoopChecker,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
-    },
-
-    [TASK_ACCEL] = {
-        .taskName = "ACCEL",
-        .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_SERIAL] = {
