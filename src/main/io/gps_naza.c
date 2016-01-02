@@ -191,7 +191,7 @@ static bool NAZA_parse_gps(void)
         gpsSol.groundSpeed = sqrtf(powf(gpsSol.velNED[0], 2)+powf(gpsSol.velNED[1], 2)); //cm/s
 
         // calculate gps heading from VELNE
-        gpsSol.groundCourse = (uint16_t) (fmodf(RADIANS_TO_DECIDEGREES(atan2_approx(gpsSol.velNED[1]*1.0f, gpsSol.velNED[0]*1.0f))*10.0f+3600.0f,3600.0f));
+        gpsSol.groundCourse = (uint16_t) (fmodf(RADIANS_TO_DECIDEGREES(atan2_approx(gpsSol.velNED[1], gpsSol.velNED[0]))+3600.0f,3600.0f));
 
         gpsSol.flags.validVelNE = 1;
         gpsSol.flags.validVelD = 1;
@@ -314,8 +314,6 @@ static bool gpsReceiveData(void)
             uint8_t newChar = serialRead(gpsState.gpsPort);
             if (gpsNewFrameNAZA(newChar)) {
                 gpsSol.flags.gpsHeartbeat = !gpsSol.flags.gpsHeartbeat;
-                gpsSol.flags.validVelNE = 0;
-                gpsSol.flags.validVelD = 0;
                 hasNewData = true;
             }
         }
