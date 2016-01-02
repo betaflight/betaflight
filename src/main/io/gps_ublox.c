@@ -646,7 +646,14 @@ bool gpsHandleUBLOX(void)
         return gpsCheckVersion();
 
     case GPS_CONFIGURE:
-        return gpsConfigure();
+        // Either use specific config file for GPS or let dynamically upload config
+        if (gpsState.gpsConfig->autoConfig == GPS_AUTOCONFIG_OFF) {
+            gpsSetState(GPS_RECEIVING_DATA);
+            return false;
+        }
+        else {
+            return gpsConfigure();
+        }
 
     case GPS_RECEIVING_DATA:
         return hasNewData;
