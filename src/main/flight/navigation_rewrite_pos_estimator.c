@@ -239,10 +239,6 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
     newLLH.lon = newLon;
     newLLH.alt = newAlt;
 
-    /* FIXME: Force GPS vel invalid */
-    velNEValid = false;
-    velDValid = false;
-
     if (sensors(SENSOR_GPS)) {
         if (!(STATE(GPS_FIX) && gpsSol.numSat >= posControl.navConfig->inav.gps_min_sats)) {
             isFirstGPSUpdate = true;

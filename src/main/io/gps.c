@@ -131,20 +131,9 @@ static void gpsHandleProtocol(void)
         else
             DISABLE_STATE(GPS_FIX);
 
-        // Emulate velNE if not available (don't set validVelNE flag to avoid confusion)
-        bool validVelNE = gpsSol.flags.validVelNE;
-        if (!validVelNE) {
-            float gpsHeadingRad = gpsSol.groundCourse * M_PIf / 1800.0f;
-
-            gpsSol.velNED[0] = gpsSol.groundSpeed * cos_approx(gpsHeadingRad);
-            gpsSol.velNED[1] = gpsSol.groundSpeed * sin_approx(gpsHeadingRad);
-            gpsSol.velNED[2] = 0;
-            validVelNE = true;
-        }
-
         // Update GPS coordinates etc
         sensorsSet(SENSOR_GPS);
-        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, gpsSol.velNED[0], gpsSol.velNED[1], gpsSol.velNED[2], validVelNE, gpsSol.flags.validVelD, gpsSol.hdop);
+        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, gpsSol.velNED[0], gpsSol.velNED[1], gpsSol.velNED[2], gpsSol.flags.validVelNE, gpsSol.flags.validVelD, gpsSol.hdop);
 
         // Update timeout
         gpsState.lastLastMessageMs = gpsState.lastMessageMs;
