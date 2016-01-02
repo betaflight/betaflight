@@ -48,17 +48,9 @@
     vertical-align: top;
 }
 
-.tab-auxiliary .mode:nth-child(odd) {
-    
-}
-
 .tab-auxiliary .mode .name {
     min-height: 50px;
     padding: 13px 0px;
-}
-
-.tab-auxiliary .mode.off .info, .tab-auxiliary .mode.on .info {
-    
 }
 
 .tab-auxiliary .mode .info {
@@ -122,12 +114,7 @@
     padding: 2px;
 }
 
-.tab-auxiliary .range:nth-child(odd) {
-    
-}
-
 .tab-auxiliary .mode .range .channelInfo {
-    display: inline-block;
     float: left;
     min-width: 90px;
     text-align: center;
@@ -152,15 +139,10 @@
 }
 
 .tab-auxiliary .range .channel-slider {
-    display: inline-block;
     float: left;
     width: 80%;
     margin-left: 20px;
     margin-top: 1px;
-}
-
-.tab-auxiliary .channel-slider {
-    
 }
 
 .tab-auxiliary>.buttons {

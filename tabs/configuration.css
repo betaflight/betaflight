@@ -56,7 +56,7 @@
     margin: 0 0 10px 20px;
 }
 
-.tab-configuration select.mixerList {
+.tab-configuration .mixerList {
     width: 100%;
     height: 20px;
     margin-top: 5px;
@@ -94,7 +94,7 @@
     font-weight: normal;
 }
 
-.tab-configuration .number input.disabled {
+.tab-configuration .number .disabled {
     width: 43px;
     padding: 0px 5px;
     background-color: #ececec;

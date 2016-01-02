@@ -31,9 +31,7 @@
     font-weight: normal;
 }
 
-.tab-failsafe .number input.disabled {
-    width: 43px;
-    padding: 0 5px;
+.tab-failsafe .number input:disabled {
     background-color: #ececec;
 }
 
