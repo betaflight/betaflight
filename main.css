@@ -1527,7 +1527,7 @@ dialog {
     #tabs li a {
         font-family: 'open_sansregular', Arial;
         font-size: 12px;
-        padding-left: 53px;
+        padding-left: 60px;
         padding-top: 6px;
         padding-bottom: 2px;
         content: "" !important;
@@ -1539,7 +1539,7 @@ dialog {
         overflow: hidden;
     }
     .tab_container {
-        width: 40px;
+        width: 60px;
     }
     .gui_box_titlebar {
         font-size: 12px;
