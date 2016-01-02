@@ -585,12 +585,20 @@ input[type="number"]::-webkit-inner-spin-button {
     background-image: url(images/icons/cf_icon_setup_grey.svg);
 }
 
+.ic_setup:hover {
+    background-image: url(images/icons/cf_icon_setup_white.svg);
+}
+
 li.active .ic_setup {
     background-image: url(images/icons/cf_icon_setup_white.svg);
 }
 
 .ic_ports {
     background-image: url(images/icons/cf_icon_ports_grey.svg);
+}
+
+.ic_ports:hover {
+    background-image: url(images/icons/cf_icon_ports_white.svg);
 }
 
 li.active .ic_ports {
@@ -601,12 +609,20 @@ li.active .ic_ports {
     background-image: url(images/icons/cf_icon_config_grey.svg);
 }
 
+.ic_config:hover {
+    background-image: url(images/icons/cf_icon_config_white.svg);
+}
+
 li.active .ic_config {
     background-image: url(images/icons/cf_icon_config_white.svg);
 }
 
 .ic_pid {
     background-image: url(images/icons/cf_icon_pid_grey.svg);
+}
+
+.ic_pid:hover {
+    background-image: url(images/icons/cf_icon_pid_white.svg);
 }
 
 li.active .ic_pid {
@@ -617,12 +633,20 @@ li.active .ic_pid {
     background-image: url(images/icons/cf_icon_rx_grey.svg);
 }
 
+.ic_rx:hover {
+    background-image: url(images/icons/cf_icon_rx_white.svg);
+}
+
 li.active .ic_rx {
     background-image: url(images/icons/cf_icon_rx_white.svg);
 }
 
 .ic_modes {
     background-image: url(images/icons/cf_icon_modes_grey.svg);
+}
+
+.ic_modes:hover {
+    background-image: url(images/icons/cf_icon_modes_white.svg);
 }
 
 li.active .ic_modes {
@@ -633,12 +657,20 @@ li.active .ic_modes {
     background-image: url(images/icons/cf_icon_adjust_grey.svg);
 }
 
+.ic_adjust:hover {
+    background-image: url(images/icons/cf_icon_adjust_white.svg);
+}
+
 li.active .ic_adjust {
     background-image: url(images/icons/cf_icon_adjust_white.svg);
 }
 
 .ic_servo {
     background-image: url(images/icons/cf_icon_servo_grey.svg);
+}
+
+.ic_servo:hover {
+    background-image: url(images/icons/cf_icon_servo_white.svg);
 }
 
 li.active .ic_servo {
@@ -649,12 +681,20 @@ li.active .ic_servo {
     background-image: url(images/icons/cf_icon_gps_grey.svg);
 }
 
+.ic_gps:hover {
+    background-image: url(images/icons/cf_icon_gps_white.svg);
+}
+
 li.active .ic_gps {
     background-image: url(images/icons/cf_icon_gps_white.svg);
 }
 
 .ic_led {
     background-image: url(images/icons/cf_icon_led_grey.svg);
+}
+
+.ic_led:hover {
+    background-image: url(images/icons/cf_icon_led_white.svg);
 }
 
 li.active .ic_led {
@@ -665,12 +705,20 @@ li.active .ic_led {
     background-image: url(images/icons/cf_icon_sensors_grey.svg);
 }
 
+.ic_sensors:hover {
+    background-image: url(images/icons/cf_icon_sensors_white.svg);
+}
+
 li.active .ic_sensors {
     background-image: url(images/icons/cf_icon_sensors_white.svg);
 }
 
 .ic_log {
     background-image: url(images/icons/cf_icon_log_grey.svg);
+}
+
+.ic_log:hover {
+    background-image: url(images/icons/cf_icon_log_white.svg);
 }
 
 li.active .ic_log {
@@ -681,12 +729,20 @@ li.active .ic_log {
     background-image: url(images/icons/cf_icon_data_grey.svg);
 }
 
+.ic_data:hover {
+    background-image: url(images/icons/cf_icon_data_white.svg);
+}
+
 li.active .ic_data {
     background-image: url(images/icons/cf_icon_data_white.svg);
 }
 
 .ic_cli {
     background-image: url(images/icons/cf_icon_cli_grey.svg);
+}
+
+.ic_cli:hover {
+    background-image: url(images/icons/cf_icon_cli_white.svg);
 }
 
 li.active .ic_cli {
@@ -697,12 +753,20 @@ li.active .ic_cli {
     background-image: url(images/icons/cf_icon_motor_grey.svg);
 }
 
+.ic_motor:hover {
+    background-image: url(images/icons/cf_icon_motor_white.svg);
+}
+
 li.active .ic_motor {
     background-image: url(images/icons/cf_icon_motor_white.svg);
 }
 
 .ic_welcome {
     background-image: url(images/icons/cf_icon_welcome_grey.svg);
+}
+
+.ic_welcome:hover {
+    background-image: url(images/icons/cf_icon_welcome_white.svg);
 }
 
 li.active .ic_welcome {
@@ -713,12 +777,20 @@ li.active .ic_welcome {
     background-image: url(images/icons/cf_icon_help_grey.svg);
 }
 
+.ic_help:hover {
+    background-image: url(images/icons/cf_icon_help_white.svg);
+}
+
 li.active .ic_help {
     background-image: url(images/icons/cf_icon_help_white.svg);
 }
 
 .ic_flasher {
     background-image: url(images/icons/cf_icon_flasher_grey.svg);
+}
+
+.ic_flasher:hover {
+    background-image: url(images/icons/cf_icon_flasher_white.svg);
 }
 
 li.active .ic_flasher {
@@ -730,11 +802,18 @@ li.active .ic_flasher {
     background-image: url(images/icons/cf_icon_failsafe_grey.svg);
 }
 
+.ic_failsafe:hover {
+    background-image: url(images/icons/cf_icon_failsafe_white.svg);
+}
+
 li.active .ic_failsafe {
     background-image: url(images/icons/cf_icon_failsafe_white.svg);
 }
 .ic_backup {
     background-image: url(images/icons/cf_icon_backup_grey.svg);
+}
+.ic_backup:hover {
+    background-image: url(images/icons/cf_icon_backup_white.svg);
 }
 
 li.active .ic_backup {
@@ -744,6 +823,9 @@ li.active .ic_backup {
 .ic_wizzard {
     background-image: url(images/icons/cf_icon_wizard_grey.svg);
 }
+.ic_wizzard:hover {
+    background-image: url(images/icons/cf_icon_wizard_white.svg);
+}
 
 li.active .ic_wizard {
     background-image: url(images/icons/cf_icon_wizard_white.svg);
@@ -752,6 +834,9 @@ li.active .ic_wizard {
 .ic_advanced {
     background-image: url(images/icons/cf_icon_advanced_grey.svg);
 }
+.ic_advanced:hover {
+    background-image: url(images/icons/cf_icon_advanced_white.svg);
+}
 
 li.active .ic_advanced {
     background-image: url(images/icons/cf_icon_advanced_white.svg);
@@ -759,6 +844,9 @@ li.active .ic_advanced {
 
 .ic_mission {
     background-image: url(images/icons/cf_icon_mission_grey.svg);
+}
+.ic_mission:hover {
+    background-image: url(images/icons/cf_icon_mission_white.svg);
 }
 
 li.active .ic_mission {
