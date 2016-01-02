@@ -225,7 +225,6 @@ input[type="number"]::-webkit-inner-spin-button {
     background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.45));
     padding-left: 5px;
     padding-right: 5px;
-    text-align: center;
     text-shadow: 0px 1px rgba(0, 0, 0, 1.0);
 }
 
@@ -282,7 +281,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .magicon.active {
     background-image: url(images/icons/sensor_mag_on.png);
-    color: #61d514;
     color: #818181;
 }
 
@@ -301,7 +299,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .gpsicon.active {
     background-image: url(images/icons/sensor_sat_on.png);
-    color: #61d514;
     color: #818181;
 }
 
@@ -320,7 +317,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .baroicon.active {
     background-image: url(images/icons/sensor_baro_on.png);
-    color: #61d514;
     color: #818181;
 }
 
@@ -339,7 +335,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .sonaricon.active {
     background-image: url(images/icons/sensor_sonar_on.png);
-    color: #61d514;
     color: #818181;
 }
 
@@ -408,6 +403,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-bottom: 0px;
     border: 0px solid silver; /* was 1px*/
     background-color: #242424;
+    color: #ccc;
     color: rgba(255, 255, 255, 0.60);
     line-height: 21px;
     height: 27px; /* was 65*/
@@ -433,7 +429,6 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 20px;
     width: 110px;
     opacity: 0.15;
-    background-image: url(images/icons/scroll.svg);
     background-size: 80%;
     box-shadow: inset 0 0 5px #000000;
     transition: all ease 0.3s;
@@ -501,18 +496,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 }
 
-
 #tabs {
     font-size: 13px;
-}
-
-#tabs ul {
-    /* overflow-y: auto;  do not force scrollbars as it renders blank stripe on some user agents */
-
-}
-
-#tabs.logopen ul {
-    /* Cause the height to shrink to contain its floated contents while log is open */
 }
 
 .header-wrapper .mode-connected {
@@ -556,6 +541,8 @@ input[type="number"]::-webkit-inner-spin-button {
 #tabs li a:hover {
     text-decoration: none;
     background-color: rgba(0, 0, 0, 0.20);
+    color: #fff;
+
 }
 
 #tabs li.active {
@@ -854,26 +841,26 @@ li.active .ic_mission {
 }
 
 #content {
-    margin-top: 0px; /* 31 */
-    padding: 0px; /* 10 */
+    margin-top: 0px; 
+    padding: 0px; 
     height: calc(100% - 150px);
     /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
     background-color: white;
     overflow-x: hidden;
     overflow-y: auto;
-    border: 0px solid #848484; /* 1px solid #848484; */
+    border: 0px solid #848484; 
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
     transition: all 0.3s;
 }
 
 #content.logopen {
-    margin-top: 0px; /* 31 */
-    padding: 0px; /* 10 */
+    margin-top: 0px;
+    padding: 0px;
     height: calc(100% - 234px); /*  (port picker, log OPEN, status bar: 20px + padding) - was: calc(100% - 171px)*/
     background-color: white;
     overflow-x: hidden;
     overflow-y: auto;
-    border: 0px solid #848484; /* 1px solid #848484; */
+    border: 0px solid #848484;
     -webkit-transform: rotateX(0deg); /* DO NOT REMOVE! this fixes the UI freezing bug on MAC OS X */
     transition: all 0.5s;
     /* Cause the height to shrink to contain its floated contents while log is open */
@@ -962,10 +949,8 @@ dialog {
 }
 
 .tab_wrapper {
-    padding-left: 20px;
-    padding-right: 15px;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding: 20px 15px 15px 15px;
+
 }
 
 .content_wrapper {
@@ -1449,7 +1434,7 @@ dialog {
 
 .properties dd {
     width: 400px;
-    height: auto !important;
+    height: auto;
 }
 
 /* GPS Fix styling*/
@@ -1462,7 +1447,6 @@ dialog {
     color: #fff;
     font-size: 10px;
 }
-
 
 .fixfalse {
     background-color: #e60000;
@@ -1540,11 +1524,10 @@ dialog {
     position: absolute;
     top: -18px;
     margin-top: 0px;
-    text-align: center;
     left: 0;
     right: 0;
     width:120px;
-    text-align:left;
+    text-align: left;
     color:silver;
 }
 
@@ -1571,112 +1554,109 @@ dialog {
 
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
-    .content_wrapper {
-        padding: 15px;
+
+.content_wrapper {
+    padding: 15px;
 }
-    .tab_title {
-        font-size: 16px;
-        line-height: 18px;
-        font-family: 'open_sanslight', Arial;
-        margin-bottom: 10px;
-        height: 22px;
+
+.tab_title {
+    font-size: 16px;
+    line-height: 18px;
+    font-family: 'open_sanslight', Arial;
+    margin-bottom: 10px;
+    height: 22px;
 }
-    .cf_doc_version_bt a {
-        padding: 1px 5px 1px 5px;
-        margin-top: -35px;
-        font-size: 9px;
-        line-height: 15px;
-    }
-    #content {
-        height: calc(100% - 151px);
-        /*  (port picker 105px, log CLOSED 25px, status bar: 20px + padding) - was: calc(100% - 171px)*/
-    }
-    body {
-        /*font-size: 11px;*/
-        /* lets see if we really need this? */
 
-    }
-    .tab-setup, .tab-landing, .tab-adjustments, .tab-auxiliary, .tab-cli, .tab-configuration, .tab-failsafe, .tab-dataflash,
-        .tab-firmware_flasher, .tab-gps, .tab-help, .tab-led-strip, .tab-logging, .tab-modes, .tab-motors,
-        .tab-pid_tuning, .tab-ports, .tab-receiver, .tab-sensors, .tab-servos {
+.cf_doc_version_bt a {
+    padding: 1px 5px 1px 5px;
+    margin-top: -35px;
+    font-size: 9px;
+    line-height: 15px;
+}
 
-    }
-    .cf_table td {
-        padding-top: 2px;
-        padding-bottom: 2px;
-    }
-    .default_btn {
-        margin-bottom: 10px;
-    }
-    .default_btn a {
-        /*font-size:11px;*/
+#content {
+    height: calc(100% - 151px);
+}
 
-    }
-    #tabs li a {
-        font-family: 'open_sansregular', Arial;
-        font-size: 12px;
-        padding-left: 60px;
-        padding-top: 6px;
-        padding-bottom: 2px;
-        content: "" !important;
-        text-shadow: none;
-        transition: none;
-        /* following is just for a graceful degradation */
-        text-overflow: clip;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-    .tab_container {
-        width: 60px;
-    }
-    .gui_box_titlebar {
-        font-size: 12px;
-        height: 24px;
-        padding-bottom: 0px;
-        margin-bottom: 5px;
-        float: left;
-    }
-    .spacer_box_title {
-        padding-left: 10px;
-        padding-right: 10px;
-        padding-top: 3px;
-        margin-bottom: 0px;
-        float: left;
-    }
-    input {
-        font-size: 11px !important;
-    }
-    .helpicon {
-        float: right;
-        margin-top: 5px;
-        margin-right: 7px;
-        height: 14px;
-        width: 14px;
-        transition: none;
+.cf_table td {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
 
+.default_btn {
+    margin-bottom: 10px;
+}
+
+#tabs li a {
+    font-family: 'open_sansregular', Arial;
+    font-size: 12px;
+    padding-left: 60px;
+    padding-top: 6px;
+    padding-bottom: 2px;
+    content: "";
+    text-shadow: none;
+    transition: none;
+    /* following is just for a graceful degradation */
+    text-overflow: clip;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tab_container {
+    width: 60px;
+}
+
+.gui_box_titlebar {
+    font-size: 12px;
+    height: 24px;
+    padding-bottom: 0px;
+    margin-bottom: 5px;
+    float: left;
+}
+
+.spacer_box_title {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 3px;
+    margin-bottom: 0px;
+    float: left;
+}
+
+input {
+    font-size: 11px !important;
+}
+
+.helpicon {
+    float: right;
+    margin-top: 5px;
+    margin-right: 7px;
+    height: 14px;
+    width: 14px;
+    transition: none;
     }
-    
-    #tooltiptext {
-    }
-    
-    .gps_false {
-        padding: 0px 3px 0px 3px;
-        font-size: 10px;
-    }
-    .gps_true {
-        padding: 0px 3px 0px 3px;
-        font-size: 10px;
-    }
-    .content_toolbar .btn a {
-        margin-right: 15px;
-    }
-    .toolbar_fixed_bottom .content_wrapper {
-        /*  content wrapper in view with toolbar fixed over bottom edge
-      leave 50px space for the toolbar
-      */
-        height: calc(100% - 81px);
-        overflow-y: auto;
-    }
+
+.gps_false {
+    padding: 0px 3px 0px 3px;
+    font-size: 10px;
+}
+
+.gps_true {
+    padding: 0px 3px 0px 3px;
+    font-size: 10px;
+}
+
+.content_toolbar .btn a {
+    margin-right: 15px;
+}
+
+.toolbar_fixed_bottom .content_wrapper {
+    /*  content wrapper in view with toolbar fixed over bottom edge
+    leave 50px space for the toolbar
+    */
+    height: calc(100% - 81px);
+    overflow-y: auto;
+}
+
 }
 
 @media only screen and (max-height: 700px) , only screen and (max-device-height: 700px) {
