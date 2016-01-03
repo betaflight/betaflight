@@ -1,9 +1,4 @@
-.tab-pid_tuning {
-    
-}
-
 .tab-pid_tuning .rate-tpa th {
-    font-weight: normal;
     background-color: #828885;
     padding: 4px;
     border-left: 0px solid #ccc;
@@ -78,7 +73,7 @@
 }
 
 .tab-pid_tuning .gui_box {
-    margin-bottom: 0px !important;
+    margin-bottom: 0px;
 }
 
 .tab-pid_tuning table, .tab-pid_tuning table td {
@@ -128,10 +123,6 @@
     padding-left: 0px;
 }
 
-.tab-pid_tuning table tr:nth-child(odd) {
-    
-}
-
 .tab-pid_tuning table input {
     display: block;
     width: calc(100% - 0px);
@@ -155,8 +146,6 @@
     display: block;
     text-align: left;
     line-height: 20px;
-    font-weight: bold;
-    padding-left: 5px;
     border-bottom: 1px solid #ccc;
     background-color: #828885;
     color: white;
@@ -183,8 +172,6 @@
     display: block;
     text-align: left;
     line-height: 20px;
-    font-weight: bold;
-    padding-left: 5px;
     border-bottom: 1px solid #ccc;
     background-color: #828885;
     color: white;

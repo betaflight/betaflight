@@ -118,3 +118,7 @@
 .tab-adjustments .adjustment .functionSwitchChannel {
     width: 5%;
 }
+
+.tab-adjustments .spacebottom {
+    margin-bottom: 15px;
+}

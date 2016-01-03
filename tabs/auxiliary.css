@@ -46,6 +46,7 @@
 .tab-auxiliary .mode {
     background-color: #f9f9f9;
     vertical-align: top;
+    border-bottom: 1px solid #000000;
 }
 
 .tab-auxiliary .mode .name {
@@ -201,6 +202,11 @@
 .tab-auxiliary .save_btn a {
     line-height: 28px;
 }
+
+.tab-auxiliary .spacebottom {
+    margin-bottom: 15px;
+}
+
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .tab-auxiliary .fixed_band {

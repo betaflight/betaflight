@@ -278,10 +278,6 @@
     border-right: 1px solid silver;
 }
 
-.tab-receiver .rcmap_wrapper .head span {
-    
-}
-
 .tab-receiver .hybrid_element {
     border-right: 1px solid silver;
 }
@@ -300,7 +296,6 @@
 }
 
 .tab-receiver .hybrid_element select {
-    width: 100%;
     height: 22px;
     z-index: 1;
     border: 1px solid silver;

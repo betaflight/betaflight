@@ -24,7 +24,6 @@
     font-style: normal;
 }
 
-
 @font-face {
     font-family: 'open_sanslight';
     src: url('opensans-light-webfont.eot');
@@ -36,7 +35,6 @@
     font-weight: normal;
     font-style: normal;
 }
-
 
 @font-face {
     font-family: 'open_sansitalic';
@@ -50,7 +48,6 @@
     font-style: normal;
 }
 
-
 @font-face {
     font-family: 'open_sansbold_italic';
     src: url('opensans-bolditalic-webfont.eot');
@@ -62,7 +59,6 @@
     font-weight: normal;
     font-style: normal;
 }
-
 
 @font-face {
     font-family: 'open_sansbold';
@@ -76,45 +72,42 @@
     font-style: normal;
 }
 
-
 /* Fonts shouldn't be transformed by browser. 
 Using specific fonts for bold, italic and bold_italic instead.*/
 
-i {	
-	font-family: 'open_sansitalic';
+i {
+    font-family: 'open_sansitalic';
     font-weight: normal;
     font-style: normal;
 }
 
 em {    
-	font-family: 'open_sansitalic';
-	font-style:normal;
-	font-weight: normal;
+    font-family: 'open_sansitalic';
+    font-style:normal;
+    font-weight: normal;
 }
 
 
 em strong {    
-	font-family: 'open_sansbold_italic';
-	font-style:normal;
-	font-weight: normal;
+    font-family: 'open_sansbold_italic';
+    font-style:normal;
+    font-weight: normal;
 }
 
  strong em {    
-	font-family: 'open_sansbold_italic';
-	font-style:normal;
-	font-weight: normal;
+    font-family: 'open_sansbold_italic';
+    font-style:normal;
+    font-weight: normal;
 }
 
-
 strong {
-	font-family: 'open_sansbold';
-	font-weight: normal;
+    font-family: 'open_sansbold';
+    font-weight: normal;
     font-style: normal;
 }
 
-
-b {	
-	font-family: 'open_sansbold';
-	font-weight: normal;
-	font-style: normal;
+b {
+    font-family: 'open_sansbold';
+    font-weight: normal;
+    font-style: normal;
 }
