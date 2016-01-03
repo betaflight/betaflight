@@ -153,6 +153,8 @@
     font-weight: normal;
     padding: 2px;
     padding-left: 6px;
+    border-top-left-radius: 3px; 
+    border-top-right-radius: 3px;
 }
 
 .tab-pid_tuning .controller select {
@@ -190,7 +192,19 @@
 }
 
 .tab-pid_tuning .pid_tuning .name {
-    width: 30%;
+    width: 25%;
+}
+
+.tab-pid_tuning .proportional {
+    width: 25%;
+}
+
+.tab-pid_tuning .integral {
+    width: 25%;
+}
+
+.tab-pid_tuning .derivative {
+    width: 25%;
 }
 
 .tab-pid_tuning .rate-tpa {
@@ -243,6 +257,12 @@
     text-align: left;
 }
 
+.show {
+    width:110px; 
+    float:right; 
+    margin-right:3px;
+}
+    
 .show a {
     margin-left: 10px;
     width: calc(100% - 10px);
@@ -321,4 +341,49 @@
     background-size: 430px;
     height: 174px;
     opacity: 0.15;
+}
+
+.tab-pid_tuning .resetbt {
+    width: 140px; 
+    float: right;
+}
+
+.tab-pid_tuning .right {
+    float: right;
+}
+
+.tab-pid_tuning .pids {
+    float: left;
+    width: 25%;
+}
+
+.tab-pid_tuning .leftzero {
+    padding-left: 0px;
+}
+
+.tab-pid_tuning .tpa-breakpoint {
+    border-top-left-radius: 0px;
+}
+
+.tab-pid_tuning .roll {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-pid_tuning .pidTuningLevel {
+    float: left;
+}
+
+.tab-pid_tuning .borderleft {
+    border-top-left-radius: 3px; 
+    border-top-right-radius: 3px;
+}
+
+.tab-pid_tuning .textleft {
+    width: 25%; 
+    float: left; 
+    text-align: left;
+}
+
+.tab-pid_tuning .topspacer {
+    margin-top:15px;
 }
