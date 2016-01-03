@@ -165,6 +165,32 @@
     margin-bottom: 10px;
 }
 
+.initialstyle {
+    position: initial;
+}
+
+.buttonarea {
+    min-height: 100px; 
+    width: 20%;
+}
+
+.halfbuttons {
+    width: calc(100% - 10px);
+}
+
+.setupinfo {
+    width: 80%;
+}
+
+.modelwrapper {
+    clear: both; 
+    margin-bottom: 5px;
+}
+
+.instrumentsbox {
+    margin-bottom: 0px;
+}
+
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .block.instrument .attitude {
         width: 50px !important;
