@@ -14,7 +14,6 @@ Tested with revision 1 & 2 boards.
 
 ## TODO
 
-* Sonar
 * Display (via Flex port)
 * SoftSerial - though having 3 hardware serial ports makes it a little redundant.
 * Airplane PWM mappings.
@@ -176,6 +175,14 @@ USB VCP *can* be used at the same time as other serial ports (unlike Naze32).
 
 All USART ports all support automatic hardware inversion which allows direct connection of serial rx receivers like the FrSky X4RSB - no external inverter needed.
 
+# Sonar Connections
+
+| Pin  | Signal | Function        | Resistor    |
+| ---- | ------ | --------------- | ----------- |
+| PWM6 | PA2    | Trigger pin     | 1K Ohm      |
+| PWM7 | PB1    | Echo pin        | 1K Ohm      |
+
+WARNING: Both PWM6 and PWM7 pins are NOT 5 volt tolerant, so a 1K Ohm resistor is required between the sensor and the FC pins.
 
 # Battery Monitoring Connections
 
