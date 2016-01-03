@@ -181,7 +181,7 @@ static void sendBaro(void)
 #ifdef GPS
 static void sendGpsAltitude(void)
 {
-    uint16_t altitude = gpsSol.llh.alt;
+    uint16_t altitude = gpsSol.llh.alt / 100; // meters
     //Send real GPS altitude only if it's reliable (there's a GPS fix)
     if (!STATE(GPS_FIX)) {
         altitude = 0;

@@ -1104,7 +1104,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(gpsSol.numSat);
         serialize32(gpsSol.llh.lat);
         serialize32(gpsSol.llh.lon);
-        serialize16(gpsSol.llh.alt);
+        serialize16(gpsSol.llh.alt/100); // meters
         serialize16(gpsSol.groundSpeed);
         serialize16(gpsSol.groundCourse);
         break;

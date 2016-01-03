@@ -148,9 +148,9 @@ static void ltm_gframe(void)
     ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
 
 #if defined(NAV)
-    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedActualPosition(Z) : gpsSol.llh.alt * 100;
+    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedActualPosition(Z) : gpsSol.llh.alt; // cm
 #else
-    ltm_alt = gpsSol.llh.alt * 100;
+    ltm_alt = gpsSol.llh.alt; // cm
 #endif
     ltm_serialise_32(ltm_alt);
     ltm_serialise_8((gpsSol.numSat << 2) | gps_fix_type);
