@@ -537,6 +537,7 @@ SPARKY_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/sonar_hcsr04.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)
