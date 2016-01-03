@@ -195,7 +195,7 @@ void init(void)
     }
 #endif
 
-    delay(100);
+    delay(500);
 
     timerInit();  // timer must be initialized before any channel is allocated
 
