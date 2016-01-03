@@ -72,6 +72,9 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#else
+#define SKIP_TASK_STATISTICS
+#define SKIP_CLI_COMMAND_HELP
 #endif
 
 //#undef USE_CLI

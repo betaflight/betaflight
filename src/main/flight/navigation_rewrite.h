@@ -230,6 +230,8 @@ void navigationInit(navConfig_t *initialnavConfig,
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);
+void updatePositionEstimator_BaroTopic(uint32_t currentTime);
+void updatePositionEstimator_SonarTopic(uint32_t currentTime);
 void updatePositionEstimator(void);
 void applyWaypointNavigationAndAltitudeHold(void);
 

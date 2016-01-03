@@ -41,7 +41,7 @@ extern int32_t baroTemperature;             // Use temperature for telemetry
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void baroUpdate(uint32_t currentTime);
+uint32_t baroUpdate(void);
 bool isBaroReady(void);
 int32_t baroCalculateAltitude(void);
 #endif
