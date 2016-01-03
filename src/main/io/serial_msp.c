@@ -405,9 +405,9 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
-static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
-static mspPort_t *currentPort;
+STATIC_UNIT_TESTED mspPort_t *currentPort;
 
 static void serialize8(uint8_t a)
 {
@@ -1308,7 +1308,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     return true;
 }
 
-static bool processInCommand(void)
+STATIC_UNIT_TESTED bool processInCommand(void)
 {
     uint32_t i;
     uint16_t tmp;
@@ -1853,7 +1853,7 @@ static bool processInCommand(void)
     return true;
 }
 
-static void mspProcessReceivedCommand() {
+STATIC_UNIT_TESTED void mspProcessReceivedCommand() {
     if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
         headSerialError(0);
     }
