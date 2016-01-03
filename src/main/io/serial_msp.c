@@ -1308,7 +1308,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     return true;
 }
 
-STATIC_UNIT_TESTED bool processInCommand(void)
+static bool processInCommand(void)
 {
     uint32_t i;
     uint16_t tmp;

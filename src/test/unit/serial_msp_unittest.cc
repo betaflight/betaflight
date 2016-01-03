@@ -118,7 +118,6 @@ typedef struct mspPort_s {
 
 extern "C" {
     void setCurrentPort(mspPort_t *port);
-    bool processInCommand(void);
     void mspProcessReceivedCommand();
     extern mspPort_t *currentPort;
     extern mspPort_t mspPorts[];
@@ -292,7 +291,7 @@ TEST(SerialMspUnittest, Test_PID_CONTROLLER)
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
-    processInCommand();
+    mspProcessReceivedCommand();
 
     // check the pidController value has been read correctly
     EXPECT_EQ(PID_CONTROLLER_MWREWRITE, currentProfile->pidProfile.pidController);
@@ -393,7 +392,7 @@ TEST(SerialMspUnittest, Test_PIDValuesInt)
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
-    processInCommand();
+    mspProcessReceivedCommand();
 
     // check the values are as expected
     EXPECT_EQ(P8_ROLL, currentProfile->pidProfile.P8[PIDROLL]);
@@ -489,7 +488,7 @@ TEST(SerialMspUnittest, Test_PIDValuesFloat)
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
-    processInCommand();
+    mspProcessReceivedCommand();
 
     // check the values are as expected
     EXPECT_FLOAT_EQ(Pf_ROLL, currentProfile->pidProfile.P_f[PIDROLL]);
