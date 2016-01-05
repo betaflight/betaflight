@@ -577,9 +577,15 @@ int main(void) {
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
+#ifdef USE_BST
+    setTaskEnabled(TASK_BST_PROCESS, true);
+#endif
 
     while (1) {
         scheduler();
+#ifdef USE_BST
+	   bstMasterWriteLoop();
+#endif
         processLoopback();
     }
 }

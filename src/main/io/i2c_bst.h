@@ -19,7 +19,7 @@
 
 #include "drivers/bus_bst.h"
 
-void bstProcess(void);
+void taskBstProcess(void);
 
 //void writeGpsPositionPrameToBST(void);
 //void writeGPSTimeFrameToBST(void);

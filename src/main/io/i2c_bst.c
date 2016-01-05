@@ -1532,7 +1532,7 @@ static uint32_t next02hzUpdateAt_1 = 0;
 static uint32_t next10hzUpdateAt_1 = 0;
 static uint32_t next10hzUpdateAt_2 = 0;
 
-void bstProcess(void)
+void taskBstProcess(void)
 {
 	if(coreProReady) {
 		uint32_t now = micros();
@@ -1548,6 +1548,7 @@ void bstProcess(void)
 			writeRollPitchYawToBST();
 			next10hzUpdateAt_2 = now + UPDATE_AT_10HZ;
 		}
+
 		if(sensors(SENSOR_GPS) && !bstWriteBusy())
 			writeGpsPositionPrameToBST();
 	}
