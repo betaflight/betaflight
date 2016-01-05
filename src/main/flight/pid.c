@@ -84,24 +84,29 @@ void pidResetErrorGyro(void)
     errorGyroIf[YAW] = 0.0f;
 }
 
-void setPidDeltaSamples(void) {
-    if (targetLooptime < 1000) {
-        deltaTotalSamples = 8;
+void setPidDeltaSamples(uint8_t filter) {
+    if (!filter) {
+        if (targetLooptime < 1000) {
+            deltaTotalSamples = 8;
+        } else {
+           deltaTotalSamples = 4;
+        }
     } else {
-        deltaTotalSamples = 4;
+        deltaTotalSamples = 1;
     }
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static filterStatePt1_t DTermState[3];
-static filterStatePt1_t yawPTermState;
+//static filterStatePt1_t yawPTermState;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
+    static float lastGyroRate[3];
     static float lastError[3];
     static float previousDelta[3][8];
     float delta, deltaSum;
@@ -109,7 +114,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
-    if (!deltaTotalSamples) setPidDeltaSamples();
+    if (!deltaTotalSamples) setPidDeltaSamples(pidProfile->dterm_cut_hz);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -167,10 +172,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
-        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
-            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
-        }
-
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + 0.5f * (lastError[axis] + RateError) * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
@@ -189,19 +190,26 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        delta = RateError - lastError[axis];
-        lastError[axis] = RateError;
+        if (!pidProfile->delta_from_gyro_error) {
+            delta = RateError - lastError[axis];
+            lastError[axis] = RateError;
+        } else {
+            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastGyroRate[axis] = gyroRate;
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
+        deltaSum = 0;
         if (pidProfile->dterm_cut_hz) {
             // Dterm low pass
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
-        } else {
-            // Apply moving average
-            deltaSum = 0;
+        }
+
+        // Apply moving average
+        if (deltaTotalSamples > 1) {
             for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
@@ -237,12 +245,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     static int32_t previousDelta[3][8];
     int32_t PTerm, ITerm, DTerm;
     static int32_t lastError[3] = { 0, 0, 0 };
+    static int32_t lastGyroRate[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
-    int32_t AngleRateTmp, RateError;
+    int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
 
-    if (!deltaTotalSamples) setPidDeltaSamples();
+    if (!deltaTotalSamples) setPidDeltaSamples(pidProfile->dterm_cut_hz);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -290,14 +299,11 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = AngleRateTmp - (gyroADC[axis] / 4);
+        gyroRate = gyroADC[axis] / 4;
+        RateError = AngleRateTmp - gyroRate;
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
-
-        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
-            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
-        }
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
@@ -323,24 +329,30 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         }
 
         //-----calculate D-term
-        delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastError[axis] = RateError;
+        if (!pidProfile->delta_from_gyro_error) {   // quick and dirty solution for testing
+            delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastError[axis] = RateError;
+        } else {
+            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastGyroRate[axis] = gyroRate;
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
+        // Apply moving average
+        deltaSum = 0;
         if (pidProfile->dterm_cut_hz) {
-            // Dterm delta low pass
+            // Dterm low pass
             deltaSum = filterApplyPt1(delta, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
-        } else {
-            // Apply moving average
-            deltaSum = 0;
+        }
+        if (deltaTotalSamples > 1) {
             for (deltaCount = deltaTotalSamples-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < deltaTotalSamples; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-            deltaSum = (deltaSum / deltaTotalSamples) * 3; // get old scaling by multiplying with 3
         }
+        deltaSum = (deltaSum / deltaTotalSamples) * 3; // get old scaling by multiplying with 3
 
         DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 

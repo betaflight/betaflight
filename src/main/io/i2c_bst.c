@@ -996,7 +996,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite16(masterConfig.gyro_lpf);
 			bstWrite8(0);//masterConfig.profile[0].pidProfile.gyro_cut_hz);
 			bstWrite8(masterConfig.profile[0].pidProfile.dterm_cut_hz);
-			bstWrite8(masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz);
+			bstWrite8(masterConfig.profile[0].pidProfile.delta_from_gyro_error);
 			break;
 		default:
 			// we do not know how to handle the (valid) message, indicate error BST
@@ -1461,7 +1461,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			masterConfig.gyro_lpf = bstRead16();
 			bstRead8();//masterConfig.profile[0].pidProfile.gyro_cut_hz = bstRead8();
 			masterConfig.profile[0].pidProfile.dterm_cut_hz = bstRead8();
-			masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz = bstRead8();
+			masterConfig.profile[0].pidProfile.delta_from_gyro_error = bstRead8();
 			break;
 
 	    default:
