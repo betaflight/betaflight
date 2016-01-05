@@ -79,6 +79,7 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
+void taskBstProcess(void);
 
 static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -201,6 +202,15 @@ static cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
         .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_BST
+    [TASK_BST_PROCESS] = {
+        .taskName = "BST_PROCESS",
+        .taskFunc = taskBstProcess,
+        .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

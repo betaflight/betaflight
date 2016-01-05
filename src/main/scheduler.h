@@ -70,6 +70,9 @@ typedef enum {
 #ifdef LED_STRIP
     TASK_LEDSTRIP,
 #endif
+#ifdef USE_BST
+    TASK_BST_PROCESS,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
