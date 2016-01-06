@@ -1,3 +1,4 @@
+
 /*
  * This file is part of Cleanflight.
  *
@@ -220,3 +221,7 @@
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_5
 #endif
+// IO - assuming all IOs on 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))

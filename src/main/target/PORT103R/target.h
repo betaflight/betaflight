@@ -177,3 +177,9 @@
 #define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - stm32f103RCT6 in 64pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))

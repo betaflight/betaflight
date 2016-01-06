@@ -136,3 +136,7 @@
 
 
 
+// IO - from schematics
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(14))

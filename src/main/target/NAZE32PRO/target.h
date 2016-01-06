@@ -68,3 +68,12 @@
 // UART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
+
+#define TARGET_IO_PORTC 0xffff
+
+// IO - assuming 303 in 64pin package, TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
