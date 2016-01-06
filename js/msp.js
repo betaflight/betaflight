@@ -59,6 +59,8 @@ var MSP_codes = {
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
+    MSP_RC_DEADBAND:        125,
+    MSP_SENSOR_ALIGNMENT:   126,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -75,6 +77,9 @@ var MSP_codes = {
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
+    MSP_SET_RC_DEADBAND:    218,
+    MSP_SET_RESET_CURR_PID: 219,
+    MSP_SET_SENSOR_ALIGNMENT: 220,
     
     // MSP_BIND:               240,
     
@@ -520,6 +525,18 @@ var MSP = {
                     }
                 }
                 break;
+            case MSP_codes.MSP_RC_DEADBAND:
+                var offset = 0;
+                RC_deadband.deadband = data.getUint8(offset++, 1);
+                RC_deadband.yaw_deadband = data.getUint8(offset++, 1);
+                RC_deadband.alt_hold_deadband = data.getUint8(offset++, 1);
+                break;
+            case MSP_codes.MSP_SENSOR_ALIGNMENT:
+                var offset = 0;
+                SENSOR_ALIGNMENT.align_gyro = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_acc = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_mag = data.getUint8(offset++, 1);
+                break;
             case MSP_codes.MSP_SET_RAW_RC:
                 break;
             case MSP_codes.MSP_SET_RAW_GPS:
@@ -909,6 +926,18 @@ var MSP = {
             case MSP_codes.MSP_SET_ARMING_CONFIG:
                 console.log('Arming config saved');
                 break;
+            case MSP_codes.MSP_SET_RESET_CURR_PID:
+                console.log('Current PID profile reset');
+                break;
+            case MSP_codes.MSP_SET_3D:
+                console.log('3D settings saved');
+                break;
+            case MSP_codes.MSP_SET_RC_DEADBAND:
+                console.log('Rc controls settings saved');
+                break;
+            case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+                console.log('Sensor alignment saved');
+                break; 
             case MSP_codes.MSP_SET_RX_CONFIG:
                 console.log('Rx config saved');
                 break;
@@ -1103,7 +1132,7 @@ MSP.crunch = function (code) {
                 buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
                 buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
             }
-			if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
+            if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
                 buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
             }
             break;
@@ -1249,8 +1278,20 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.neutral3d));
             buffer.push(lowByte(_3D.deadband3d_throttle));
             buffer.push(highByte(_3D.deadband3d_throttle));
+            break;    
+
+        case MSP_codes.MSP_SET_RC_DEADBAND:
+            buffer.push(RC_deadband.deadband);
+            buffer.push(RC_deadband.yaw_deadband); 
+            buffer.push(RC_deadband.alt_hold_deadband);
             break;
-            
+
+        case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+            buffer.push(SENSOR_ALIGNMENT.align_gyro);
+            buffer.push(SENSOR_ALIGNMENT.align_acc);
+            buffer.push(SENSOR_ALIGNMENT.align_mag);
+            break
+
         default:
             return false;
     }
@@ -1311,6 +1352,7 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
     } else {
         nextFunction();
     }
+
 
     function send_next_servo_configuration() {
         
@@ -1433,6 +1475,7 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
     } else {
         send_next_adjustment_range();
     }
+
 
     function send_next_adjustment_range() {
         

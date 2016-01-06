@@ -31,9 +31,7 @@
     font-weight: normal;
 }
 
-.tab-failsafe .number input.disabled {
-    width: 43px;
-    padding: 0 5px;
+.tab-failsafe .number input:disabled {
     background-color: #ececec;
 }
 
@@ -184,7 +182,7 @@
     font-style: normal;
     font-family: 'open_sansregular', sans-serif;
     line-height: 19px;
-    color: #7d7d7d;
+    color: #4F4F4F;
     font-size: 11px;
 }
 

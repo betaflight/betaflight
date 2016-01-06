@@ -215,6 +215,10 @@
     display: none;
 }
 
+.tab-dataflash .spacebottom {
+    margin-bottom: 20px;
+}
+
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .tab-dataflash table thead tr:first-child {
         font-size: 12px;

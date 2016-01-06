@@ -46,19 +46,12 @@
 .tab-auxiliary .mode {
     background-color: #f9f9f9;
     vertical-align: top;
-}
-
-.tab-auxiliary .mode:nth-child(odd) {
-    
+    border-bottom: 1px solid #000000;
 }
 
 .tab-auxiliary .mode .name {
     min-height: 50px;
     padding: 13px 0px;
-}
-
-.tab-auxiliary .mode.off .info, .tab-auxiliary .mode.on .info {
-    
 }
 
 .tab-auxiliary .mode .info {
@@ -122,12 +115,7 @@
     padding: 2px;
 }
 
-.tab-auxiliary .range:nth-child(odd) {
-    
-}
-
 .tab-auxiliary .mode .range .channelInfo {
-    display: inline-block;
     float: left;
     min-width: 90px;
     text-align: center;
@@ -152,15 +140,10 @@
 }
 
 .tab-auxiliary .range .channel-slider {
-    display: inline-block;
     float: left;
     width: 80%;
     margin-left: 20px;
     margin-top: 1px;
-}
-
-.tab-auxiliary .channel-slider {
-    
 }
 
 .tab-auxiliary>.buttons {
@@ -219,6 +202,11 @@
 .tab-auxiliary .save_btn a {
     line-height: 28px;
 }
+
+.tab-auxiliary .spacebottom {
+    margin-bottom: 15px;
+}
+
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
     .tab-auxiliary .fixed_band {

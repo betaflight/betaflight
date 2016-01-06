@@ -467,16 +467,25 @@
         "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) and choose a Serial Receiver Provider when using RX_SERIAL feature."
     },
     "configurationBoardAlignment": {
-        "message": "Board Alignment"
+        "message": "Board and Sensor Alignment"
     },
     "configurationBoardAlignmentRoll": {
-        "message": "Roll Adjustment [deg]"
+        "message": "Roll Degrees"
     },
     "configurationBoardAlignmentPitch": {
-        "message": "Pitch Adjustment [deg]"
+        "message": "Pitch Degrees"
     },
     "configurationBoardAlignmentYaw": {
-        "message": "Yaw Adjustment [deg]"
+        "message": "Yaw Degrees"
+    },
+    "configurationSensorAlignmentGyro": {
+        "message": "Gyroscope Alignment"
+    },
+    "configurationSensorAlignmentAcc": {
+        "message": "Accelerometer Alignment"
+    },
+    "configurationSensorAlignmentMag": {
+        "message": "Compass/Magnetometer Alignment"
     },
     "configurationAccelTrims": {
         "message": "Accelerometer Trim"
@@ -697,6 +706,18 @@
     "receiverRcRate": {
         "message": "RC Rate"
     },
+    "receiverDeadband": {
+        "message": "RC Deadband"
+    },
+    "receiverHelpDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle."
+    },
+    "receiverHelpYawDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle. <strong>This setting is for Yaw only.</strong>"
+    },    
+    "receiverYawDeadband": {
+        "message": "Yaw Deadband"
+    },
     "receiverRcExpo": {
         "message": "RC Expo"
     },
@@ -860,6 +881,60 @@
     },
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
+    },
+    "adjustmentsFunction21": {
+        "message": "Alt P Adjustment"
+    },
+    "adjustmentsFunction22": {
+        "message": "Alt I Adjustment"
+    },
+    "adjustmentsFunction23": {
+        "message": "Alt D Adjustment"
+    },
+    "adjustmentsFunction24": {
+        "message": "Vel P Adjustment"
+    },
+    "adjustmentsFunction25": {
+        "message": "Vel I Adjustment"
+    },
+    "adjustmentsFunction26": {
+        "message": "Vel D Adjustment"
+    },
+    "adjustmentsFunction27": {
+        "message": "MAG P Adjustment"
+    },
+    "adjustmentsFunction28": {
+        "message": "Pos P Adjustment"
+    },
+    "adjustmentsFunction29": {
+        "message": "Pos I Adjustment"
+    },
+    "adjustmentsFunction30": {
+        "message": "PosR P Adjustment"
+    },
+    "adjustmentsFunction31": {
+        "message": "PosR I Adjustment"
+    },
+    "adjustmentsFunction32": {
+        "message": "PosR D Adjustment"
+    },
+    "adjustmentsFunction33": {
+        "message": "NavR P Adjustment"
+    },
+    "adjustmentsFunction34": {
+        "message": "NavR I Adjustment"
+    },
+    "adjustmentsFunction35": {
+        "message": "NavR D Adjustment"
+    },
+    "adjustmentsFunction36": {
+        "message": "Level P Adjustment"
+    },
+    "adjustmentsFunction37": {
+        "message": "Level I Adjustment"
+    },
+    "adjustmentsFunction38": {
+        "message": "Level D Adjustment"
     },
     "adjustmentsSave": {
         "message": "Save"
@@ -1315,7 +1390,9 @@
     "pidTuningLevelHelp": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },
-    
+    "configHelp2": {
+        "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
+    },
     "failsafeFeaturesHelpOld": {
         "message": "Failsafe configuration has changed considerably. Use Cleanflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
     },

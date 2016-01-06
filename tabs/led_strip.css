@@ -154,11 +154,11 @@
 }
 
 
-.tab-led-strip button.w100 {
+.tab-led-strip .w100 {
     width: 100%;
 }
 
-.tab-led-strip button.w50 {
+.tab-led-strip .w50 {
     width: 49%;
 }
 
@@ -172,7 +172,6 @@
     background: linear-gradient( to bottom right, rgba(255, 0, 0, .5) 0%, rgba(255, 255, 0, 0.5) 15%, rgba(0, 255, 0, .5) 30%, rgba(0, 255, 255, .5) 50%, rgba(0, 0, 255, .5) 65%, rgba(255, 0, 255, .5) 80%, rgba(255, 0, 0, .5) 100%);
 }
 
-.tab-led-strip .color-0 {}
 .tab-led-strip .color-1 {background: white;}
 .tab-led-strip .color-2 {background: red;}
 .tab-led-strip .color-3 {background: orange;}
@@ -186,8 +185,7 @@
 .tab-led-strip .color-11 {background: darkviolet;}
 .tab-led-strip .color-12 {background: magenta;}
 .tab-led-strip .color-13 {background: deeppink;}
-.tab-led-strip .color-14 {}
-.tab-led-strip .color-15 {}
+
 
 .tab-led-strip .directions button.btnOn,
 .tab-led-strip .functions button.btnOn,
@@ -353,4 +351,8 @@
     position: absolute;
     z-index: 100;
     border: 1px dotted white;
+}
+
+.tab-led-strip .spacebottom {
+    margin-bottom: 20px;
 }

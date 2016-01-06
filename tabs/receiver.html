@@ -21,7 +21,8 @@
                     <span i18n="receiverChannelMap" i18n_title="receiverChannelMapTitle"></span>
                 </div>
                 <div class="hybrid_element">
-                    <input type="text" name="rcmap" spellcheck="false" /> <select class="hybrid_helper"
+                    <input type="text" name="rcmap" spellcheck="false" /> 
+                    <select class="hybrid_helper"
                         name="rcmap_helper">
                         <option value="AETR1234">Default</option>
                         <option value="AETR1234">Futaba / Hitec</option>
@@ -47,6 +48,26 @@
                             <tr>
                                 <td><input type="number" name="mid" step="0.01" min="0" max="1" /></td>
                                 <td><input type="number" name="expo" step="0.01" min="0" max="1" /></td>
+                            </tr>
+                        </table>
+                        <table class="deadband">
+                            <tr>
+                                <th i18n="receiverDeadband"></th>
+                                <th i18n="receiverYawDeadband"></th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="cf_tip">
+                                        <input type="number" name="deadband" step="1" min="0" max="32" />
+                                        <div class="cf_tooltiptext" style="display:none;" i18n="receiverHelpDeadband"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="cf_tip">
+                                        <input type="number" name="yaw_deadband" step="1" min="0" max="100" />
+                                        <div class="cf_tooltiptext" style="display:none;" i18n="receiverHelpYawDeadband"></div>
+                                    </div>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -98,12 +119,12 @@
                 </select>
                 <div class="clear-both"></div>
                 <svg id="RX_plot">
-               <g class="grid x" transform="translate(40, 180)"></g>
-               <g class="grid y" transform="translate(40, 10)"></g>
-               <g class="data" transform="translate(41, 1)"></g>
-               <g class="axis x" transform="translate(40, 180)"></g>
-               <g class="axis y" transform="translate(40, 10)"></g>
-            </svg>
+                    <g class="grid x" transform="translate(40, 180)"></g>
+                    <g class="grid y" transform="translate(40, 10)"></g>
+                    <g class="data" transform="translate(41, 1)"></g>
+                    <g class="axis x" transform="translate(40, 180)"></g>
+                    <g class="axis y" transform="translate(40, 10)"></g>
+                </svg>
             </div>
         </div>
     </div>

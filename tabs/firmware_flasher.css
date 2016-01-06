@@ -243,12 +243,12 @@
     background-color: #b8b8b8;
 }
 
-.tab-firmware_flasher .buttons a.back {
+.tab-firmware_flasher .buttons .back {
     float: right;
     margin: 0;
 }
 
-.btn a.disabled {
+.btn .disabled {
     cursor: default;
     color: #fff;
     background-color: #AFAFAF;
