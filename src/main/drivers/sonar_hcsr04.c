@@ -136,7 +136,8 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
 #else
-    lastMeasurementAt = 0; // to avoid "unused" compiler warning
+    UNUSED(lastMeasurementAt); // to avoid "unused" compiler warning
+    UNUSED(echoIO);
 #endif
 }
 
