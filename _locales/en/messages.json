@@ -470,13 +470,22 @@
         "message": "Board and Sensor Alignment"
     },
     "configurationBoardAlignmentRoll": {
-        "message": "Roll Adjustment [deg]"
+        "message": "Roll Degrees"
     },
     "configurationBoardAlignmentPitch": {
-        "message": "Pitch Adjustment [deg]"
+        "message": "Pitch Degrees"
     },
     "configurationBoardAlignmentYaw": {
-        "message": "Yaw Adjustment [deg]"
+        "message": "Yaw Degrees"
+    },
+    "configurationSensorAlignmentGyro": {
+        "message": "Gyroscope Alignment"
+    },
+    "configurationSensorAlignmentAcc": {
+        "message": "Accelerometer Alignment"
+    },
+    "configurationSensorAlignmentMag": {
+        "message": "Compass/Magnetometer Alignment"
     },
     "configurationAccelTrims": {
         "message": "Accelerometer Trim"
