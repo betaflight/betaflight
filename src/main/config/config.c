@@ -179,6 +179,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->gyro_soft_lpf = 1;   // filtering ON by default
     pidProfile->dterm_cut_hz = 0;
     pidProfile->delta_from_gyro_error = 0;
+    pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.3f;

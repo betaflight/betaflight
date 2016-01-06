@@ -658,6 +658,7 @@ const clivalue_t valueTable[] = {
     { "gyro_soft_lpf",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.gyro_soft_lpf, .config.lookup = { TABLE_OFF_ON } },
     { "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
     { "delta_from_gyro_error",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.delta_from_gyro_error, .config.minmax = {0, 1} },
+    { "insane_acrobility_factor",   VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.airModeInsaneAcrobilityFactor, .config.minmax = {0, 30 } },
 
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },
