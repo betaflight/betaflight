@@ -168,7 +168,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 }
 
 #ifdef USE_FAKE_GYRO
-static void fakeGyroInit(uint16_t lpf)
+static void fakeGyroInit(uint8_t lpf)
 {
     UNUSED(lpf);
 }

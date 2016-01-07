@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include <limits.h>
 
@@ -61,14 +62,14 @@ void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int1
     if (initialPitch > 1800) initialPitch -= 3600;
     if (initialYaw > 1800) initialYaw -= 3600;
 
-    float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
-    float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    float cosRoll = cosf(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    float sinRoll = sinf(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
 
-    float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
-    float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    float cosPitch = cosf(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    float sinPitch = sinf(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
 
-    float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
-    float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    float cosYaw = cosf(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    float sinYaw = sinf(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
 
     q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
     q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
