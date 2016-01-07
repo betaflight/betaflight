@@ -194,6 +194,11 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
 #define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
 
+#define USB_CABLE_DETECTION
+#define USB_DETECT_PIN                   GPIO_Pin_5
+#define USB_DETECT_GPIO_PORT             GPIOB
+#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
