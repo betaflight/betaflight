@@ -138,6 +138,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             );
         }
 
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            features.push(
+                {bit: 21, group: 'other', name: 'TRANSPONDER', description: 'Transponder'}
+            );
+        }
+
         function isFeatureEnabled(featureName) {
             for (var i = 0; i < features.length; i++) {
                 if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {
