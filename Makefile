@@ -298,7 +298,8 @@ VCP_SRC = \
 		   vcp/usb_istr.c \
 		   vcp/usb_prop.c \
 		   vcp/usb_pwr.c \
-		   drivers/serial_usb_vcp.c
+		   drivers/serial_usb_vcp.c \
+		   drivers/usb_io.c 
 
 NAZE_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/accgyro_adxl345.c \
@@ -617,7 +618,6 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/sdcard_standard.c \
 		   drivers/transponder_ir.c \
 		   drivers/transponder_ir_stm32f30x.c \
-		   drivers/usb_detection.c \
 		   io/asyncfatfs/asyncfatfs.c \
 		   io/asyncfatfs/fat_standard.c \
 		   io/transponder_ir.c \

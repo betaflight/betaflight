@@ -67,6 +67,13 @@
 #define BEEPER
 #define LED0
 
+#define USB_IO
+#define USB_CABLE_DETECTION
+
+#define USB_DETECT_PIN                   GPIO_Pin_5
+#define USB_DETECT_GPIO_PORT             GPIOB
+#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+
 #define USE_VCP
 #define USE_USART1
 #define USE_USART2
@@ -194,11 +201,6 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
 #define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
 
-#define USB_CABLE_DETECTION
-#define USB_DETECT_PIN                   GPIO_Pin_5
-#define USB_DETECT_GPIO_PORT             GPIOB
-#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
-
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -210,6 +212,7 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define BUTTONS
 #define BUTTON_A_PORT  GPIOB
 #define BUTTON_A_PIN   Pin_1
 #define BUTTON_B_PORT  GPIOB

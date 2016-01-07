@@ -70,6 +70,8 @@
 #define BEEPER
 #define DISPLAY
 
+#define USB_IO
+
 #define USE_VCP
 #define USE_USART1
 #define USE_USART3

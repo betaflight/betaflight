@@ -49,6 +49,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
+#include "drivers/usb_io.h"
 
 #include "rx/rx.h"
 
@@ -126,7 +127,6 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 void transponderInit(uint8_t* transponderCode);
-void usbCableDetectInit(void);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -147,9 +147,82 @@ typedef enum {
 
 static uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
+void flashLedsAndBeep(void)
+{
+    LED1_ON;
+    LED0_OFF;
+    for (uint8_t i = 0; i < 10; i++) {
+        LED1_TOGGLE;
+        LED0_TOGGLE;
+        delay(25);
+        BEEP_ON;
+        delay(25);
+        BEEP_OFF;
+    }
+    LED0_OFF;
+    LED1_OFF;
+}
+
+#ifdef BUTTONS
+void buttonsInit(void)
+{
+
+    gpio_config_t buttonAGpioConfig = {
+        BUTTON_A_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+
+    gpio_config_t buttonBGpioConfig = {
+        BUTTON_B_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+
+    delayMicroseconds(10);  // allow GPIO configuration to settle
+}
+
+void buttonsHandleColdBootButtonPresses(void)
+{
+    uint8_t secondsRemaining = 10;
+    bool bothButtonsHeld;
+    do {
+        bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+        if (bothButtonsHeld) {
+            if (--secondsRemaining == 0) {
+                resetEEPROM();
+                systemReset();
+            }
+
+            if (secondsRemaining > 5) {
+                delay(1000);
+            } else {
+                // flash quicker after a few seconds
+                delay(500);
+                LED0_TOGGLE;
+                delay(500);
+            }
+            LED0_TOGGLE;
+        }
+    } while (bothButtonsHeld);
+
+    // buttons released between 5 and 10 seconds
+    if (secondsRemaining < 5) {
+
+        usbGenerateDisconnectPulse();
+
+        flashLedsAndBeep();
+
+        systemResetToBootloader();
+    }
+}
+
+#endif
+
 void init(void)
 {
-    uint8_t i;
     drv_pwm_config_t pwm_params;
 
     printfSupportInit();
@@ -187,38 +260,35 @@ void init(void)
 
     ledInit();
 
-#ifdef SPRACINGF3MINI
-    gpio_config_t buttonAGpioConfig = {
-        BUTTON_A_PIN,
-        Mode_IPU,
-        Speed_2MHz
+#ifdef BEEPER
+    beeperConfig_t beeperConfig = {
+        .gpioPeripheral = BEEP_PERIPHERAL,
+        .gpioPin = BEEP_PIN,
+        .gpioPort = BEEP_GPIO,
+#ifdef BEEPER_INVERTED
+        .gpioMode = Mode_Out_PP,
+        .isInverted = true
+#else
+        .gpioMode = Mode_Out_OD,
+        .isInverted = false
+#endif
     };
-    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+#ifdef NAZE
+    if (hardwareRevision >= NAZE32_REV5) {
+        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
+        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isInverted = true;
+    }
+#endif
 
-    gpio_config_t buttonBGpioConfig = {
-        BUTTON_B_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+    beeperInit(&beeperConfig);
+#endif
 
-    // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow GPIO configuration to settle
+#ifdef BUTTONS
+    buttonsInit();
 
     if (!isMPUSoftReset()) {
-        uint8_t secondsRemaining = 5;
-        bool bothButtonsHeld;
-        do {
-            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
-            if (bothButtonsHeld) {
-                if (--secondsRemaining == 0) {
-                    resetEEPROM();
-                    systemReset();
-                }
-                delay(1000);
-                LED0_TOGGLE;
-            }
-        } while (bothButtonsHeld);
+        buttonsHandleColdBootButtonPresses();
     }
 #endif
 
@@ -314,30 +384,6 @@ void init(void)
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
-#ifdef BEEPER
-    beeperConfig_t beeperConfig = {
-        .gpioPeripheral = BEEP_PERIPHERAL,
-        .gpioPin = BEEP_PIN,
-        .gpioPort = BEEP_GPIO,
-#ifdef BEEPER_INVERTED
-        .gpioMode = Mode_Out_PP,
-        .isInverted = true
-#else
-        .gpioMode = Mode_Out_OD,
-        .isInverted = false
-#endif
-    };
-#ifdef NAZE
-    if (hardwareRevision >= NAZE32_REV5) {
-        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.gpioMode = Mode_Out_PP;
-        beeperConfig.isInverted = true;
-    }
-#endif
-
-    beeperInit(&beeperConfig);
-#endif
-
 #ifdef INVERTER
     initInverter();
 #endif
@@ -428,18 +474,7 @@ void init(void)
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
-    LED1_ON;
-    LED0_OFF;
-    for (i = 0; i < 10; i++) {
-        LED1_TOGGLE;
-        LED0_TOGGLE;
-        delay(25);
-        BEEP_ON;
-        delay(25);
-        BEEP_OFF;
-    }
-    LED0_OFF;
-    LED1_OFF;
+    flashLedsAndBeep();
 
 #ifdef MAG
     if (sensors(SENSOR_MAG))

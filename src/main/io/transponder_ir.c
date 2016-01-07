@@ -28,7 +28,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
 
-#include "drivers/usb_detection.h"
+#include "drivers/usb_io.h"
 
 #include "io/transponder_ir.h"
 #include "config/config.h"

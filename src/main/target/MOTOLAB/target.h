@@ -58,6 +58,8 @@
 
 #define LED0
 
+#define USB_IO
+
 #define USE_VCP
 #define USE_USART1
 #define USE_USART2
