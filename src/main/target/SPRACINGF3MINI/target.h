@@ -169,24 +169,36 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM1
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM1
+//
+//#define USE_LED_STRIP_ON_DMA1_CHANNEL2
+//#define WS2811_GPIO                     GPIOA
+//#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+//#define WS2811_GPIO_AF                  GPIO_AF_6
+//#define WS2811_PIN                      GPIO_Pin_8
+//#define WS2811_PIN_SOURCE               GPIO_PinSource8
+//#define WS2811_TIMER                    TIM1
+//#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+//#define WS2811_DMA_CHANNEL              DMA1_Channel2
+//#define WS2811_IRQ                      DMA1_Channel2_IRQn
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_6
-#define WS2811_PIN                      GPIO_Pin_8
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
-#define WS2811_TIMER                    TIM1
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define USE_TRANSPONDER_ON_DMA1_CHANNEL2
+#define TRANSPONDER_GPIO                     GPIOA
+#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
+#define TRANSPONDER_PIN                      GPIO_Pin_8
+#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
+#define TRANSPONDER_TIMER                    TIM1
+#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
+#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
 
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
+#define TRANSPONDER
 #define SERIAL_RX
 #define AUTOTUNE
 #define DISPLAY
