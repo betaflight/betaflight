@@ -78,7 +78,9 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
+#ifdef USE_BST
 void taskBstProcess(void);
+#endif
 
 static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
