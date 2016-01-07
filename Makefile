@@ -741,6 +741,7 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/sdcard_standard.c \
 		   drivers/transponder_ir.c \
 		   drivers/transponder_ir_stm32f30x.c \
+		   drivers/usb_detection.c \
 		   io/asyncfatfs/asyncfatfs.c \
 		   io/asyncfatfs/fat_standard.c \
 		   io/transponder_ir.c \
