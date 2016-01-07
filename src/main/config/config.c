@@ -553,6 +553,11 @@ static void resetConf(void)
 #ifdef SPRACINGF3
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
+#ifdef TRANSPONDER
+    static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
+
+    memcpy(masterConfig.transponderData, &defaultTransponderData, sizeof(defaultTransponderData));
+#endif
 
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);

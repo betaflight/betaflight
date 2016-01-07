@@ -64,6 +64,8 @@
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
+
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -753,6 +755,10 @@ void taskMainPidLoop(void)
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
         handleBlackbox();
     }
+#endif
+
+#ifdef TRANSPONDER
+    updateTransponder();
 #endif
 }
 
