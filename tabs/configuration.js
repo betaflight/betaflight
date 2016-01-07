@@ -231,9 +231,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('.tab-configuration .sensoralignment').hide();
         } else {
             for (var i = 0; i < alignments.length; i++) {
-                orientation_gyro_e.append('<option value="' + (i+1) + '">GYRO align: '+ alignments[i] + '</option>');
-                orientation_acc_e.append('<option value="' + (i+1) + '">ACC align: '+ alignments[i] + '</option>');
-                orientation_mag_e.append('<option value="' + (i+1) + '">MAG align: '+ alignments[i] + '</option>');
+                orientation_gyro_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
+                orientation_acc_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
+                orientation_mag_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
             }
             orientation_gyro_e.val(SENSOR_ALIGNMENT.align_gyro);
             orientation_acc_e.val(SENSOR_ALIGNMENT.align_acc);

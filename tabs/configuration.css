@@ -202,7 +202,9 @@
     border-bottom: 1px solid #ddd;
 }
 
-.tab-configuration .number {
+.tab-configuration .number,
+.tab-configuration .select
+ {
     margin-bottom: 5px;
     clear: left;
     padding-bottom: 5px;
@@ -211,7 +213,8 @@
     float: left;
 }
 
-.tab-configuration .number:last-child {
+.tab-configuration .number:last-child,
+.tab-configuration .select:last-child {
     border-bottom: none;
     padding-bottom: 0px;
     margin-bottom: 0px;
@@ -361,12 +364,12 @@
 }
 
 .tab-configuration .board select {
-    float: left;
-    width: 100%;
+    /*float: left;*/
+    width: 50%;
     height: 20px;
     margin: 0 0px 2px 0;
     border: 1px solid silver;
-    brder-radius:3px;
+    border-radius:3px;
 }
 
 
@@ -385,7 +388,7 @@
     height: 20px;
     margin: 0 0px 2px 0;
     border: 1px solid silver;
-    brder-radius:3px;
+    border-radius:3px;
     margin-bottom: 20px;
     margin-top:3px;
 
@@ -441,12 +444,17 @@
 }
 
 .tab-configuration .sensoralignment {
-    width: 40%; 
+    width: 60%; 
     float: left;
 }
 
 .tab-configuration .board_align_content {
-    width: 60%;
+    width: 40%;
+    float: left;
+}
+
+.tab-configuration .sensoralignment span {
+    width: 50%;
     float: left;
 }
 
