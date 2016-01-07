@@ -1,9 +1,4 @@
-.tab-pid_tuning {
-    
-}
-
 .tab-pid_tuning .rate-tpa th {
-    font-weight: normal;
     background-color: #828885;
     padding: 4px;
     border-left: 0px solid #ccc;
@@ -62,7 +57,7 @@
 }
 
 .tab-pid_tuning .rate-tpa {
-    border: 0px solid #ccc;
+    /*border: 0px solid #ccc; */
     margin-bottom: 10px;
 }
 
@@ -78,7 +73,7 @@
 }
 
 .tab-pid_tuning .gui_box {
-    margin-bottom: 0px !important;
+    margin-bottom: 0px;
 }
 
 .tab-pid_tuning table, .tab-pid_tuning table td {
@@ -128,10 +123,6 @@
     padding-left: 0px;
 }
 
-.tab-pid_tuning table tr:nth-child(odd) {
-    
-}
-
 .tab-pid_tuning table input {
     display: block;
     width: calc(100% - 0px);
@@ -144,10 +135,10 @@
 
 .tab-pid_tuning .controller {
     float: left;
-    width: calc(50% - 2px);
+    width: calc(35% - 2px);
     margin-left: 0px;
     margin-bottom: 10px;
-    border-radius: 3px;
+    border-radius: 4px;
     border: 1px solid #ccc;
 }
 
@@ -155,8 +146,6 @@
     display: block;
     text-align: left;
     line-height: 20px;
-    font-weight: bold;
-    padding-left: 5px;
     border-bottom: 1px solid #ccc;
     background-color: #828885;
     color: white;
@@ -164,6 +153,8 @@
     font-weight: normal;
     padding: 2px;
     padding-left: 6px;
+    border-top-left-radius: 3px; 
+    border-top-right-radius: 3px;
 }
 
 .tab-pid_tuning .controller select {
@@ -183,8 +174,6 @@
     display: block;
     text-align: left;
     line-height: 20px;
-    font-weight: bold;
-    padding-left: 5px;
     border-bottom: 1px solid #ccc;
     background-color: #828885;
     color: white;
@@ -203,12 +192,24 @@
 }
 
 .tab-pid_tuning .pid_tuning .name {
-    width: 30%;
+    width: 25%;
+}
+
+.tab-pid_tuning .proportional {
+    width: 25%;
+}
+
+.tab-pid_tuning .integral {
+    width: 25%;
+}
+
+.tab-pid_tuning .derivative {
+    width: 25%;
 }
 
 .tab-pid_tuning .rate-tpa {
     float: right;
-    width: calc(100% - 0px); /* - ( "virtual" margin) */
+    width: calc(100% - 2px); /* - ( "virtual" margin) */
 }
 
 .tab-pid_tuning .top-buttons {
@@ -256,6 +257,12 @@
     text-align: left;
 }
 
+.show {
+    width:110px; 
+    float:right; 
+    margin-right:3px;
+}
+    
 .show a {
     margin-left: 10px;
     width: calc(100% - 10px);
@@ -265,6 +272,62 @@
     margin-top: -1px;
 }
 
+.tab-pid_tuning .number .helpicon {
+    margin-top: 3px;
+    margin-right: 0px;
+}
+
+.tab-pid_tuning .gui_box_titlebar .helpicon {
+    margin-top: 5px;
+    margin-right: 5px;
+}
+
+.tab-pid_tuning .spacer_left {    
+    padding-left: 15px;
+    float: right;
+    width: calc(100% - 20px)
+}
+
+.tab-pid_tuning .numberspacer {
+    float: left;
+    width: 65px;
+    height: 21px;
+}
+
+.tab-pid_tuning .number {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-pid_tuning .number:last-child {
+    padding-bottom: 5px;
+    border-bottom: 0px;
+}
+
+.tab-pid_tuning .number input {
+    width: 50px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-weight: normal;
+}
+
+.tab-pid_tuning .gui_box span {
+    font-style: normal;
+    font-family: 'open_sansregular', Arial;
+    line-height: 19px;
+    color: #7d7d7d;
+    font-size: 11px;
+}
+    
 #content-watermark {
     position: absolute;
     bottom: 40px;
@@ -278,4 +341,49 @@
     background-size: 430px;
     height: 174px;
     opacity: 0.15;
+}
+
+.tab-pid_tuning .resetbt {
+    width: 140px; 
+    float: right;
+}
+
+.tab-pid_tuning .right {
+    float: right;
+}
+
+.tab-pid_tuning .pids {
+    float: left;
+    width: 25%;
+}
+
+.tab-pid_tuning .leftzero {
+    padding-left: 0px;
+}
+
+.tab-pid_tuning .tpa-breakpoint {
+    border-top-left-radius: 0px;
+}
+
+.tab-pid_tuning .roll {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-pid_tuning .pidTuningLevel {
+    float: left;
+}
+
+.tab-pid_tuning .borderleft {
+    border-top-left-radius: 3px; 
+    border-top-right-radius: 3px;
+}
+
+.tab-pid_tuning .textleft {
+    width: 25%; 
+    float: left; 
+    text-align: left;
+}
+
+.tab-pid_tuning .topspacer {
+    margin-top:15px;
 }

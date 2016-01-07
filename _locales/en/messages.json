@@ -467,16 +467,25 @@
         "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) and choose a Serial Receiver Provider when using RX_SERIAL feature."
     },
     "configurationBoardAlignment": {
-        "message": "Board Alignment"
+        "message": "Board and Sensor Alignment"
     },
     "configurationBoardAlignmentRoll": {
-        "message": "Roll Adjustment [deg]"
+        "message": "Roll Degrees"
     },
     "configurationBoardAlignmentPitch": {
-        "message": "Pitch Adjustment [deg]"
+        "message": "Pitch Degrees"
     },
     "configurationBoardAlignmentYaw": {
-        "message": "Yaw Adjustment [deg]"
+        "message": "Yaw Degrees"
+    },
+    "configurationSensorAlignmentGyro": {
+        "message": "GYRO Alignment"
+    },
+    "configurationSensorAlignmentAcc": {
+        "message": "ACCEL Alignment"
+    },
+    "configurationSensorAlignmentMag": {
+        "message": "MAG Alignment"
     },
     "configurationAccelTrims": {
         "message": "Accelerometer Trim"
@@ -697,6 +706,18 @@
     "receiverRcRate": {
         "message": "RC Rate"
     },
+    "receiverDeadband": {
+        "message": "RC Deadband"
+    },
+    "receiverHelpDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle."
+    },
+    "receiverHelpYawDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle. <strong>This setting is for Yaw only.</strong>"
+    },    
+    "receiverYawDeadband": {
+        "message": "Yaw Deadband"
+    },
     "receiverRcExpo": {
         "message": "RC Expo"
     },
@@ -861,6 +882,60 @@
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
     },
+    "adjustmentsFunction21": {
+        "message": "Alt P Adjustment"
+    },
+    "adjustmentsFunction22": {
+        "message": "Alt I Adjustment"
+    },
+    "adjustmentsFunction23": {
+        "message": "Alt D Adjustment"
+    },
+    "adjustmentsFunction24": {
+        "message": "Vel P Adjustment"
+    },
+    "adjustmentsFunction25": {
+        "message": "Vel I Adjustment"
+    },
+    "adjustmentsFunction26": {
+        "message": "Vel D Adjustment"
+    },
+    "adjustmentsFunction27": {
+        "message": "MAG P Adjustment"
+    },
+    "adjustmentsFunction28": {
+        "message": "Pos P Adjustment"
+    },
+    "adjustmentsFunction29": {
+        "message": "Pos I Adjustment"
+    },
+    "adjustmentsFunction30": {
+        "message": "PosR P Adjustment"
+    },
+    "adjustmentsFunction31": {
+        "message": "PosR I Adjustment"
+    },
+    "adjustmentsFunction32": {
+        "message": "PosR D Adjustment"
+    },
+    "adjustmentsFunction33": {
+        "message": "NavR P Adjustment"
+    },
+    "adjustmentsFunction34": {
+        "message": "NavR I Adjustment"
+    },
+    "adjustmentsFunction35": {
+        "message": "NavR D Adjustment"
+    },
+    "adjustmentsFunction36": {
+        "message": "Level P Adjustment"
+    },
+    "adjustmentsFunction37": {
+        "message": "Level I Adjustment"
+    },
+    "adjustmentsFunction38": {
+        "message": "Level D Adjustment"
+    },
     "adjustmentsSave": {
         "message": "Save"
     },
@@ -870,7 +945,7 @@
 
 
     "servosFirmwareUpgradeRequired": {
-        "message": "Servos requires firmware &gt;= 1.10.0."
+        "message": "Servos requires firmware &gt;= 1.10.0. and target support."
     },
     "servosChangeDirection": {
         "message": "Change Direction in TX To Match"
@@ -965,7 +1040,7 @@
         "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />"
     },
     "motorsEnableControl": {
-        "message": "I understand the risks, propellors are removed - Enable motor control."
+        "message": "I understand the risks, propellers are removed - Enable motor control."
     },
 
     "sensorsInfo": {
@@ -1219,7 +1294,7 @@
         "message": "<strong>Recovery / Lost communication<strong>"
     },
     "firmwareFlasherRecoveryText": {
-        "message": "If you have lost comminication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
+        "message": "If you have lost communication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
@@ -1335,7 +1410,9 @@
     "pidTuningLevelHelp": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },
-    
+    "configHelp2": {
+        "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
+    },
     "failsafeFeaturesHelpOld": {
         "message": "Failsafe configuration has changed considerably. Use Cleanflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
     },
@@ -1368,6 +1445,12 @@
     },
     "failsafeChannelFallbackSettingsHelp": {
         "message": "These settings are applied to invalid individual AUX channels or to all channels when entering stage 1. <strong>Note:</strong> values are saved in steps of 25usec, so small changes disappear"
+    },
+    "failsafeChannelFallbackSettingsAuto": {
+        "message": "<strong>Auto</strong> means Roll, Pitch and Yaw to center and Throttle low. <strong>Hold</strong> means maintain the last good value received"
+    },
+    "failsafeChannelFallbackSettingsHold": {
+        "message": "<strong>Hold</strong> means maintain the last good value received. <strong>Set</strong> means the value given here will be used"
     },
     "failsafeStageTwoSettingsTitle": {
         "message": "Stage 2 - Settings"

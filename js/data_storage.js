@@ -195,6 +195,18 @@ var BLACKBOX = {
     blackboxRateDenom: 1
 };
 
+var RC_deadband = {
+    deadband:               0,
+    yaw_deadband:           0,
+    alt_hold_deadband:      0
+};
+
+var SENSOR_ALIGNMENT = {
+    align_gyro:             0,
+    align_acc:              0,
+    align_mag:              0
+};
+
 var RX_CONFIG = {
     serialrx_provider:      0,
     maxcheck:               0,

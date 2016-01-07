@@ -45,10 +45,8 @@
     display: block;
     top: 10px;
     right: 10px;
-    z-index: 10;
     border-radius: 3px;
     bottom: 10px;
-    right: 10px;
     height: 28px;
     line-height: 28px;
     padding: 0 15px 0 15px;
@@ -56,7 +54,6 @@
     font-weight: bold;
     border: 1px solid silver;
     background-color: #ececec;
-    border-radius: 3px;
     z-index: 100;
 }
 
@@ -158,6 +155,40 @@
     border-bottom: solid 1px #ddd;
     padding-bottom: 8px;
     padding-top: 7px;
+}
+
+.tab_setup .content_wrapper {
+    position: initial;
+}
+
+.spacerbottom {
+    margin-bottom: 10px;
+}
+
+.initialstyle {
+    position: initial;
+}
+
+.buttonarea {
+    min-height: 100px; 
+    width: 20%;
+}
+
+.halfbuttons {
+    width: calc(100% - 10px);
+}
+
+.setupinfo {
+    width: 80%;
+}
+
+.modelwrapper {
+    clear: both; 
+    margin-bottom: 5px;
+}
+
+.instrumentsbox {
+    margin-bottom: 0px;
 }
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {

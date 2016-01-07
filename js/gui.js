@@ -287,8 +287,7 @@ GUI_control.prototype.content_ready = function (callback) {
     });
 
     $('.cf_tip').each(function() {
-        $(this).jBox('Tooltip', {
-            content: $(this).children('.cf_tooltiptext'),
+        $(this).jBox('Tooltip', {            
             delayOpen: 100,
             delayClose: 100,
             position: {

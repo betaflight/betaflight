@@ -110,13 +110,15 @@
     padding-top: 10px;
 }
 
-.tab-landing .content_mid h2, .tab-landing .content_mid h3 {
+.tab-landing .content_mid h2 {
     margin-bottom: 5px;
     font-size: 13px;
 }
 
 .tab-landing .content_mid h3 {
     font-size: 12px;
+    margin-bottom: 5px;
+
 }
 
 .tab-landing .content_mid .text1 .wrap {

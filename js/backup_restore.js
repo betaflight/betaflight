@@ -11,20 +11,7 @@ function configuration_backup(callback) {
         'apiVersion': CONFIG.apiVersion,
         'profiles': [],
     };
-
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
-        activeProfile = CONFIG.profile;
-        select_profile();
-    });
-
-    function select_profile() {
-        if (activeProfile > 0) {
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
-        } else {
-            fetch_specific_data();
-        }
-    }
-
+    
     var profileSpecificData = [
         MSP_codes.MSP_PID_CONTROLLER,
         MSP_codes.MSP_PID,
@@ -38,12 +25,28 @@ function configuration_backup(callback) {
     function update_profile_specific_data_list() {
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
             profileSpecificData.push(MSP_codes.MSP_CHANNEL_FORWARDING);
-        } else {            
+         } else {            
             profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
+        }
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            profileSpecificData.push(MSP_codes.MSP_RC_DEADBAND);
         }
     }
     
     update_profile_specific_data_list();
+
+    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+        activeProfile = CONFIG.profile;
+        select_profile();
+    });
+
+    function select_profile() {
+        if (activeProfile > 0) {
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
+        } else {
+            fetch_specific_data();
+        }
+    }
 
     function fetch_specific_data() {
         var fetchingProfile = 0,
@@ -68,6 +71,9 @@ function configuration_backup(callback) {
                             'AdjustmentRanges': jQuery.extend(true, [], ADJUSTMENT_RANGES)
                         });
 
+                        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                            configuration.profiles[fetchingProfile].RCdeadband = jQuery.extend(true, {}, RC_deadband);
+                        }
                         codeKey = 0;
                         fetchingProfile++;
 
@@ -100,6 +106,7 @@ function configuration_backup(callback) {
             uniqueData.push(MSP_codes.MSP_3D);
         }
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            uniqueData.push(MSP_codes.MSP_SENSOR_ALIGNMENT);
             uniqueData.push(MSP_codes.MSP_RX_CONFIG);
             uniqueData.push(MSP_codes.MSP_FAILSAFE_CONFIG);
             uniqueData.push(MSP_codes.MSP_RXFAIL_CONFIG);
@@ -132,6 +139,7 @@ function configuration_backup(callback) {
                     configuration._3D = jQuery.extend(true, {}, _3D);
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    configuration.SENSOR_ALIGNMENT = jQuery.extend(true, {}, SENSOR_ALIGNMENT);
                     configuration.RX_CONFIG = jQuery.extend(true, {}, RX_CONFIG);
                     configuration.FAILSAFE_CONFIG = jQuery.extend(true, {}, FAILSAFE_CONFIG);
                     configuration.RXFAIL_CONFIG = jQuery.extend(true, [], RXFAIL_CONFIG);
@@ -217,8 +225,9 @@ function configuration_backup(callback) {
             });
         });
     }
-}
 
+}
+    
 function configuration_restore(callback) {
     var chosenFileEntry = null;
 
@@ -298,6 +307,7 @@ function configuration_restore(callback) {
         }
         return semver.gte(generated, required);
     }
+    
 
     function migrate(configuration) {
         var appliedMigrationsCount = 0;
@@ -517,7 +527,28 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
         
+        
         if (compareVersions(migratedVersion, '0.66.0') && !compareVersions(configuration.apiVersion, '1.15.0')) {
+            // api 1.15 exposes RCdeadband and sensor alignment
+
+            
+            for (var profileIndex = 0; profileIndex < configuration.profiles.length; profileIndex++) {
+                 if (configuration.profiles[profileIndex].RCdeadband == undefined) {
+                    configuration.profiles[profileIndex].RCdeadband = {
+                    deadband:                0,
+                    yaw_deadband:            0,
+                    alt_hold_deadband:       40,
+                    };                
+                }
+            }
+            if (configuration.SENSOR_ALIGNMENT == undefined) {
+                    configuration.SENSOR_ALIGNMENT = {
+                    align_gyro:              0,
+                    align_acc:               0,
+                    align_mag:               0
+                    };                
+            }
+        
             // api 1.15 exposes RX_CONFIG, FAILSAFE_CONFIG and RXFAIL_CONFIG configuration
 
             if (configuration.RX_CONFIG == undefined) {
@@ -565,8 +596,7 @@ function configuration_restore(callback) {
 
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
-        }
-                
+        }        
         return true;
     }
     
@@ -581,6 +611,10 @@ function configuration_restore(callback) {
                 MSP_codes.MSP_SET_RC_TUNING,
                 MSP_codes.MSP_SET_ACC_TRIM
             ];
+
+            if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                profileSpecificData.push(MSP_codes.MSP_SET_RC_DEADBAND);
+            }
 
             MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
                 activeProfile = CONFIG.profile;
@@ -608,6 +642,7 @@ function configuration_restore(callback) {
                     SERVO_RULES = configuration.profiles[profile].ServoRules;
                     MODE_RANGES = configuration.profiles[profile].ModeRanges;
                     ADJUSTMENT_RANGES = configuration.profiles[profile].AdjustmentRanges;
+                    RC_deadband = configuration.profiles[profile].RCdeadband;
                 }
 
                 function upload_using_specific_commands() {
@@ -674,6 +709,7 @@ function configuration_restore(callback) {
                         uniqueData.push(MSP_codes.MSP_SET_3D);
                     }
                     if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                        uniqueData.push(MSP_codes.MSP_SET_SENSOR_ALIGNMENT);
                         uniqueData.push(MSP_codes.MSP_SET_RX_CONFIG);
                         uniqueData.push(MSP_codes.MSP_SET_FAILSAFE_CONFIG);
                     }
@@ -688,6 +724,7 @@ function configuration_restore(callback) {
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
+                    SENSOR_ALIGNMENT = configuration.SENSOR_ALIGNMENT;
                     RX_CONFIG = configuration.RX_CONFIG;
                     FAILSAFE_CONFIG = configuration.FAILSAFE_CONFIG;
                     RXFAIL_CONFIG = configuration.RXFAIL_CONFIG;
