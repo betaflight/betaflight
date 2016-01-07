@@ -128,6 +128,7 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 void transponderInit(uint8_t* transponderCode);
+void usbCableDetectInit(void);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -520,6 +521,10 @@ void init(void)
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
+#endif
+
+#ifdef USB_CABLE_DETECTION
+    usbCableDetectInit();
 #endif
 
 #ifdef TRANSPONDER
