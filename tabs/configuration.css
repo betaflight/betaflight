@@ -365,7 +365,7 @@
 
 .tab-configuration .board select {
     /*float: left;*/
-    width: 50%;
+    width: 45%;
     height: 20px;
     margin: 0 0px 2px 0;
     border: 1px solid silver;
@@ -444,17 +444,17 @@
 }
 
 .tab-configuration .sensoralignment {
-    width: 60%; 
+    width: 50%; 
     float: left;
 }
 
 .tab-configuration .board_align_content {
-    width: 40%;
+    width: 50%;
     float: left;
 }
 
 .tab-configuration .sensoralignment span {
-    width: 50%;
+    width: 55%;
     float: left;
 }
 
