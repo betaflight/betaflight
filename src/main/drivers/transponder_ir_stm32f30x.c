@@ -34,6 +34,8 @@
 #define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
 #define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
+#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 #endif
 
 void transponderIrHardwareInit(void)
@@ -115,39 +117,6 @@ void transponderIrHardwareInit(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
-
-#ifdef USE_TRANSPONDER_ON_DMA1_CHANNEL3
-void DMA1_Channel3_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC3)) {
-        transponderIrDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel3, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC3);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
-
-#ifdef USE_TRANSPONDER_ON_DMA1_CHANNEL2
-void DMA1_Channel2_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC2)) {
-        transponderIrDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel2, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC2);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
-
-#ifdef USE_TRANSPONDER_ON_DMA1_CHANNEL7
-void DMA1_Channel7_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC7)) {
-        transponderIrDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel7, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC7);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
 
 void transponderIrDMAEnable(void)
 {

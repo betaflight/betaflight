@@ -31,6 +31,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/system.h"
+#include "drivers/dma.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -310,6 +311,9 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+    dmaInit();
+
+
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
 
 #ifdef USE_SERVOS
@@ -531,9 +535,11 @@ void init(void)
 #endif
 
 #ifdef TRANSPONDER
-    transponderInit(masterConfig.transponderData);
-    transponderEnable();
-    transponderStartRepeating();
+    if (feature(FEATURE_TRANSPONDER)) {
+        transponderInit(masterConfig.transponderData);
+        transponderEnable();
+        transponderStartRepeating();
+    }
 #endif
 
 #ifdef USE_FLASHFS

@@ -881,6 +881,8 @@ void loop(void)
 #endif
 
 #ifdef TRANSPONDER
-    updateTransponder();
+    if (feature(FEATURE_TRANSPONDER)) {
+        updateTransponder();
+    }
 #endif
 }

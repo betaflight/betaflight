@@ -852,13 +852,13 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(OLIMEXINO) && defined(SONAR)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+    if (featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
 #endif
 
 #if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && featureConfigured(FEATURE_DISPLAY)) {
         featureClear(FEATURE_DISPLAY);
     }
 #endif
@@ -876,8 +876,15 @@ void validateAndFixConfig(void)
         masterConfig.mixerConfig.pid_at_min_throttle = 0;
     }
 
+#if defined(LED_STRIP) && defined(TRANSPONDER)
+    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
+        featureClear(FEATURE_LED_STRIP);
+    }
+#endif
+
+
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+    if (featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_SOFTSERIAL)) {
         featureClear(FEATURE_SONAR);
     }
 #endif
