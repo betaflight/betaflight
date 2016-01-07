@@ -479,13 +479,13 @@
         "message": "Yaw Degrees"
     },
     "configurationSensorAlignmentGyro": {
-        "message": "Gyroscope Alignment"
+        "message": "GYRO Alignment"
     },
     "configurationSensorAlignmentAcc": {
-        "message": "Accelerometer Alignment"
+        "message": "ACCEL Alignment"
     },
     "configurationSensorAlignmentMag": {
-        "message": "Compass/Magnetometer Alignment"
+        "message": "MAG Alignment"
     },
     "configurationAccelTrims": {
         "message": "Accelerometer Trim"
