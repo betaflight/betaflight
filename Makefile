@@ -615,8 +615,11 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/sonar_hcsr04.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
+		   drivers/transponder_ir.c \
+		   drivers/transponder_ir_stm32f30x.c \
 		   io/asyncfatfs/asyncfatfs.c \
 		   io/asyncfatfs/fat_standard.c \
+		   io/transponder_ir.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)

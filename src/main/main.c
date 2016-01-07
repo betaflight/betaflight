@@ -61,6 +61,7 @@
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -124,6 +125,7 @@ void loop(void);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
+void transponderInit(uint8_t* transponderCode);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -486,6 +488,12 @@ void init(void)
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }
+#endif
+
+#ifdef TRANSPONDER
+    transponderInit(masterConfig.transponderData);
+    transponderEnable();
+    transponderStartRepeating();
 #endif
 
 #ifdef USE_FLASHFS

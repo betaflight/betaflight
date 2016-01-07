@@ -62,6 +62,8 @@
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
+
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -876,5 +878,9 @@ void loop(void)
     if (feature(FEATURE_LED_STRIP)) {
         updateLedStrip();
     }
+#endif
+
+#ifdef TRANSPONDER
+    updateTransponder();
 #endif
 }
