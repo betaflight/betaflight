@@ -74,47 +74,6 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define MSP_PROTOCOL_VERSION                0
-
-#define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   15 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
-
-#define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
-#define FLIGHT_CONTROLLER_VERSION_LENGTH    3
-
-#define MSP_API_VERSION                 1    //out message
-#define MSP_FC_VARIANT                  2    //out message
-#define MSP_FC_VERSION                  3    //out message
-
-#define MSP_PID_CONTROLLER              59
-#define MSP_SET_PID_CONTROLLER          60
-
-#define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
-#define MSP_PIDNAMES             117    //out message         the PID names
-#define MSP_SET_PID              202    //in message          P I D coeff (9 are used currently)
-
-#define INBUF_SIZE 64
-
-typedef enum {
-    IDLE,
-    HEADER_START,
-    HEADER_M,
-    HEADER_ARROW,
-    HEADER_SIZE,
-    HEADER_CMD,
-    COMMAND_RECEIVED
-} mspState_e;
-
-typedef struct mspPort_s {
-    serialPort_t *port; // null when port unused.
-    uint8_t offset;
-    uint8_t dataSize;
-    uint8_t checksum;
-    uint8_t indRX;
-    uint8_t inBuf[INBUF_SIZE];
-    mspState_e c_state;
-    uint8_t cmdMSP;
-} mspPort_t;
 
 extern "C" {
     void setCurrentPort(mspPort_t *port);
@@ -172,7 +131,7 @@ uint8_t serialRead(serialPort_t *instance)
     UNUSED(instance);
     const uint8_t ch = serialBuffer.buf[serialReadPos];
     ++serialReadPos;
-    if (currentPort->indRX == INBUF_SIZE) {
+    if (currentPort->indRX == MSP_PORT_INBUF_SIZE) {
         currentPort->indRX = 0;
     }
     currentPort->inBuf[currentPort->indRX] = ch;
@@ -287,7 +246,7 @@ TEST(SerialMspUnittest, Test_PID_CONTROLLER)
     serialBuffer.mspResponse.payload[1] ^= MSP_PID_CONTROLLER;
     serialBuffer.mspResponse.payload[1] ^= MSP_SET_PID_CONTROLLER;
     // copy the command data into the current port inBuf so it can be processed
-    memcpy(currentPort->inBuf, serialBuffer.buf, INBUF_SIZE);
+    memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
@@ -303,7 +262,7 @@ TEST(SerialMspUnittest, Test_PIDValuesInt)
     setCurrentPort(&mspPorts[0]);
 
     // check the buffer is big enough for the data to read in
-    EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, INBUF_SIZE); // +1 for checksum
+    EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, MSP_PORT_INBUF_SIZE); // +1 for checksum
     // set up some test data
     const int P8_ROLL = 40;
     const int I8_ROLL = 30;
@@ -388,7 +347,7 @@ TEST(SerialMspUnittest, Test_PIDValuesInt)
     serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_PID;
     serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_SET_PID;
     // copy the command data into the current port inBuf so it can be processed
-    memcpy(currentPort->inBuf, serialBuffer.buf, INBUF_SIZE);
+    memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
@@ -431,7 +390,7 @@ TEST(SerialMspUnittest, Test_PIDValuesFloat)
     setCurrentPort(&mspPorts[0]);
 
     // check the buffer is big enough for the data to read in
-    EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, INBUF_SIZE); // +1 for checksum
+    EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, MSP_PORT_INBUF_SIZE); // +1 for checksum
 
     // set up some test data
     // use test values close to default, but make sure they are all different
@@ -481,7 +440,7 @@ TEST(SerialMspUnittest, Test_PIDValuesFloat)
     serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_PID;
     serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_SET_PID;
     // copy the command data into the current port inBuf so it can be processed
-    memcpy(currentPort->inBuf, serialBuffer.buf, INBUF_SIZE);
+    memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
 
     // need to reset the controller for values to be read back correctly
     currentProfile->pidProfile.pidController = PID_CONTROLLER_LUX_FLOAT;
