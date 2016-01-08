@@ -126,7 +126,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
  * that the newer API version may cause problems before using API commands that change FC state.
  *
  * It is for this reason that each MSP command should be specific as possible, such that changes
- * to commands break as little functionality as possible.
+ * to commands break as little client functionality as possible.
  *
  * API client authors MAY use a compatibility matrix/table when determining if they can support
  * a given command from a given flight controller at a given api version level.
