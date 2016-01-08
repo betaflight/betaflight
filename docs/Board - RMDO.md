@@ -1,19 +1,22 @@
-# Board - RMDO
+# Board - RMRC Dodo
 
-The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU pin mapping it is a clone of the SPRacingF3 board (also see the SPRacingF3 documentation). Currently there are three version with slightly different hardware available: Rev. 1, 2, and 3.
+The RMRC Dodo board is made and sold by Ready Made RC. In terms of CPU pin mapping it is a clone of the SPRacingF3 board (also see the SPRacingF3 documentation). Currently there are three versions with slightly different hardware available: Rev. 1, 2, and 3.
+
+The revision 3 board changed the CPU from one with 128KB to one with 256KB however, for compatibility reasons, Cleanflight only supports and uses 128KB of it.  The same binary can be used on all DODO boards.
 
 ## Hardware Features
 
-* STM32 F3 ARM Cortex-M processor with 256KB flash program memory (Rev. 1 and 2: 128KB flash)
-* 2MB external flash memory for storage
+* STM32 F3 ARM Cortex-M processor with 128KB or 256KB flash program memory (Rev. 1 and 2: 128KB flash, Rev 3 256K).
+* 2MB external flash memory for storage.
 * MPU6050 accelerometer/gyro (Rev. 2: MPU6000)
 * BMP280 Barometer
+* No compass sensor.
 * 3 hardware UARTs (+ 2 software) for GPS, telemetry, OSD, etc., 5V compatible
 * On-board 5V/0.5A BEC directly powered off 2-6S main battery pack. No external BEC/regulator necessary.
 * On-board 3.3V regulator to power peripherials like Spektrum satellite receiver.
-* No compass option available
 * 36x36mm board with 30.5mm mounting holes pattern (same as CC3D or Naze32, but different pin-out).
 
+Note: Earlier revisions had issues with the buzzer circuit. 
 
 ## Serial Ports
 
@@ -26,6 +29,7 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 ## Pinouts
 
 ### Starboard (Front to back)
+
 | Label                  | Notes                                   |
 |:----------------------:|:---------------------------------------:|
 | RC_IN_8/SOFTSERIAL2_TX | RC8 ppm input or soft-serial 2 transmit |
@@ -39,7 +43,8 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 | 5V                     | 5V bus                                  |
 | GND                    | Ground                                  |
 
-### Back (Port to starboard)
+### Back (Left to right)
+
 | Label              | Notes                                |
 |:------------------:|:------------------------------------:|
 | SPEKTRUM_VCC/3V3   | 3.3V output                          |
@@ -49,7 +54,8 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 | BAT+               | Main battery (2S - 6S) positive lead |
 | GND/BAT-           | Main battery negative lead           |
 
-### Front (Port to starboard)
+### Front (Left to right)
+
 | Label       | Notes                                                             |
 |:-----------:|:-----------------------------------------------------------------:|
 | BZ_5V/BZ+   | 5V, connect to positive (+) terminal of buzzer                    |
@@ -66,6 +72,7 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 | LED_GND/GND | Ground                                                            |
 
 ### Starboard (Front to back)
+
 | Label      | Column  | Notes                                                   |
 |:----------:|:-------:|:-------------------------------------------------------:|
 | GND        | Outside | Ground                                                  |
@@ -87,6 +94,7 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 2. Can be used to power external low-power devices like Spektrum satellite receiver.
 
 ### Top pads
+
 | Label | Notes                                                        |
 |:-----:|:------------------------------------------------------------:|
 | CURR  | Current sensor ADC input, unbuffered                         |
@@ -94,6 +102,7 @@ The RMRC Seriously Dodo board is made and sold by Ready Made RC. In terms of CPU
 | BOOT  | BOOT jumper for recovering a bricked boot loader             |
 
 ### Bottom pads
+
 | Label | Notes                                                                   |
 |:-----:|:------------------------------------------------------------------------|
 | TRIG  | Trigger for sonar (on-board 1kOhm series resistor for 5V compatibility) |
