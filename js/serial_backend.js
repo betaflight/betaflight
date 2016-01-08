@@ -178,6 +178,7 @@ function onOpen(openInfo) {
             }
         }, 10000);
 
+        FC.resetState();
 
         // request configuration data
         MSP.send_message(MSP_codes.MSP_API_VERSION, false, false, function () {
@@ -285,7 +286,6 @@ function onClosed(result) {
     
     var dataflash = $('#dataflash_wrapper_global');
     dataflash.hide();
-
 }
 
 function read_serial(info) {
