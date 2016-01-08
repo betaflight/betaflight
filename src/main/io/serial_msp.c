@@ -53,6 +53,7 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
+#include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 
 #include "telemetry/telemetry.h"
@@ -139,7 +140,7 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   15 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   16 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -243,6 +244,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
 #define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
+
+#define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
+#define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
 
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
@@ -1370,6 +1374,21 @@ static bool processOutCommand(uint8_t cmdMSP)
         serializeSDCardSummaryReply();
         break;
 
+    case MSP_TRANSPONDER_CONFIG:
+#ifdef TRANSPONDER
+        headSerialReply(1 + sizeof(masterConfig.transponderData));
+
+        serialize8(1); //Transponder supported
+
+        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
+            serialize8(masterConfig.transponderData[i]);
+        }
+#else
+        headSerialReply(1);
+        serialize8(0); // Transponder not supported
+#endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1675,6 +1694,21 @@ static bool processInCommand(void)
             masterConfig.blackbox_rate_num = read8();
             masterConfig.blackbox_rate_denom = read8();
         }
+        break;
+#endif
+
+#ifdef TRANSPONDER
+    case MSP_SET_TRANSPONDER_CONFIG:
+        if (currentPort->dataSize != sizeof(masterConfig.transponderData)) {
+            headSerialError(0);
+            break;
+        }
+
+        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
+            masterConfig.transponderData[i] = read8();
+        }
+
+        transponderUpdateData(masterConfig.transponderData);
         break;
 #endif
 
