@@ -21,17 +21,14 @@ PPM is sometimes known as PPM SUM or CPPM.
 
 These receivers are reported working:
 
-FrSky D4R-II
-http://www.frsky-rc.com/product/pro.php?pro_id=24
+* [FrSky D4R-II](http://www.frsky-rc.com/product/pro.php?pro_id=24)
+* [Graupner GR24](http://www.graupner.de/en/products/33512/product.aspx)
+* [R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM](http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/)
+* [FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver](http://www.frsky-rc.com/product/pro.php?pro_id=21)
+* [FrSky X4R and FrSky X4RSB](http://www.frsky-rc.com/download/view.php?sort=&down=158&file=X4R-X4RSB) when flashed with CPPM firmware and binded with jumper between signal pins 2 and 3
+* All FrSky S.Bus enabled devices when connected with [S.Bus CPPM converter cable](http://www.frsky-rc.com/product/pro.php?pro_id=112). Without jumper this converter cable uses 21ms frame size (Channels 1-8). When jumper is in place, it uses 28ms frame and channels 1-12 are available
+* FlySky/Turnigy FS-iA6B receiver for FS-i6 and FS-i10 transmitters
 
-Graupner GR24
-http://www.graupner.de/en/products/33512/product.aspx
-
-R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM
-http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/
-
-FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver
-http://www.frsky-rc.com/product/pro.php?pro_id=21
 
 ## Serial Receivers
 
