@@ -784,6 +784,19 @@ li.active .ic_flasher {
     background-image: url(images/icons/cf_icon_flasher_white.svg);
 }
 
+.ic_transponder {
+    background-image: url(images/icons/cf_icon_transponder_grey.svg);
+}
+
+.ic_transponder:hover {
+    background-image: url(images/icons/cf_icon_transponder_white.svg);
+}
+
+li.active .ic_transponder {
+    background-image: url(images/icons/cf_icon_transponder_white.svg);
+}
+
+
 /* SPARE Tab-Icons */
 .ic_failsafe {
     background-image: url(images/icons/cf_icon_failsafe_grey.svg);

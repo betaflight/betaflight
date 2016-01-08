@@ -87,6 +87,12 @@
     "tabServos": {
         "message": "Servos"
     },
+    "tabFailsafe": {
+        "message": "Failsafe"
+    },
+    "tabTransponder": {
+        "message": "Race Transponder"
+    },
     "tabGPS": {
         "message": "GPS"
     },
@@ -433,6 +439,88 @@
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
+    "featureRX_PPM": {
+        "message": "PPM RX input"
+    },
+    "featureVBAT": {
+        "message": "Battery voltage monitoring"
+    },
+    "featureINFLIGHT_ACC_CAL": {
+        "message": "In-flight level calibration"
+    },
+    "featureRX_SERIAL": {
+        "message": "Serial-based receiver (SPEKSAT, SBUS, SUMD)"
+    },
+    "featureMOTOR_STOP": {
+        "message": "Don't spin the motors when armed"
+    },
+    "featureSERVO_TILT": {
+        "message": "Servo gimbal"
+    },
+    "featureSOFTSERIAL": {
+        "message": "Enable CPU based serial ports"
+    },
+    "featureSOFTSERIALTip": {
+        "message": "Configure ports on the Ports tab after enabling."
+    },
+    "featureGPS": {
+        "message": "GPS for navigation and telemetry"
+    },
+    "featureGPSTip": {
+        "message": "Configure port scenario first"
+    },
+    "featureFAILSAFE": {
+        "message": "Apply failsafe settings on RX signal loss"
+    },
+    "featureSONAR": {
+        "message": "Sonar"
+    },
+    "featureTELEMETRY": {
+        "message": "Telemetry output"
+    },
+    "featureCURRENT_METER": {
+        "message": "Battery current monitoring"
+    },
+    "feature3D": {
+        "message": "3D mode (for use with reversible ESCs)"
+    },
+    "featureRX_PARALLEL_PWM": {
+        "message": "PWM RX input (one wire per channel)"
+    },
+    "featureRX_MSP": {
+        "message": "MSP RX input (control via MSP port)"
+    },
+    "featureRSSI_ADC": {
+        "message": "Analog RSSI input"
+    },
+    "featureLED_STRIP": {
+        "message": "Multi-color RGB LED strip support"
+    },
+    "featureDISPLAY": {
+        "message": "OLED Screen Display"
+    },
+    "featureONESHOT125": {
+        "message": "ONESHOT ESC support"
+    },
+    "featureONESHOT125Tip": {
+        "message": "Disconnect flight battery and remove props before enabling."
+    },
+    "featureBLACKBOX": {
+        "message": "Blackbox flight data recorder"
+    },
+    "featureBLACKBOXTip": {
+        "message": "Configure via the BlackBox tab after enabling."
+    },
+    "featureCHANNEL_FORWARDING": {
+        "message": "Forward aux channels to servo outputs"
+    },
+    "featureTRANSPONDER": {
+        "message": "Race Transponder"
+    },
+    "featureTRANSPONDERTip": {
+        "message": "Configure via the Race Transponder tab after enabling."
+    },
+    
     "configurationFeatureEnabled": {
         "message": "Enabled"
     },
@@ -943,6 +1031,33 @@
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
+    "transponderNotSupported": {
+        "message": "Your flight controller's firmware does not support transponder functionality."
+    },
+    "transponderHelp": {
+        "message": "Configure your transponder code here.  Note: Only valid codes will be recognised by race timing systems.  Valid transponder codes can be obtained from <a href=\"http://seriouslypro.com/transponder-codes\" target=\"_blank\">Seriously Pro</a>."
+    },
+    "transponderInformation": {
+        "message": "Transponders systems allow race organizers to time your laps.  The transponder is fitted to your aircraft and when your aircraft passes the timing gate the track-side receiver registers your code and records your laptime.  When fitting an IR based transponder your should ensure that it points outward from your aircraft towards the track-side receivers and that the light beam is not obstructed by your airframe, battery-straps, cables, propellers, etc."
+    },
+    "transponderConfiguration": {
+        "message": "Configuration"
+    },
+    "transponderData": {
+        "message": "Data"
+    },
+    "transponderDataHelp": {
+        "message": "Hexadecimal digits only, 0-9, A-F"
+    },
+    "transponderButtonSave": {
+        "message": "Save"
+    },
+    "transponderDataInvalid": {
+        "message": "Transponder data is <span style=\"color: red\">invalid</span>"
+    },    
+    "transponderEepromSaved": {
+        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+    },
 
     "servosFirmwareUpgradeRequired": {
         "message": "Servos requires firmware &gt;= 1.10.0. and target support."

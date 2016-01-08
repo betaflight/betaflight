@@ -38,6 +38,8 @@ var MSP_codes = {
     MSP_SDCARD_SUMMARY:         79,
     MSP_BLACKBOX_CONFIG:        80,
     MSP_SET_BLACKBOX_CONFIG:    81,
+    MSP_TRANSPONDER_CONFIG:     82,
+    MSP_SET_TRANSPONDER_CONFIG: 83,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -932,6 +934,18 @@ var MSP = {
             case MSP_codes.MSP_SET_BLACKBOX_CONFIG:
                 console.log("Blackbox config saved");
                 break;
+            case MSP_codes.MSP_TRANSPONDER_CONFIG:
+                var offset = 0;
+                TRANSPONDER.supported = (data.getUint8(offset++) & 1) != 0;
+                TRANSPONDER.data = [];
+                var bytesRemaining = data.byteLength - offset; 
+                for (var i = 0; i < bytesRemaining; i++) {
+                    TRANSPONDER.data.push(data.getUint8(offset++));
+                }
+                break;
+            case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+                console.log("Transponder config saved");
+                break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
                 break;
@@ -1239,6 +1253,12 @@ MSP.crunch = function (code) {
                 buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
                 buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
                 buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+            }
+            break;
+
+        case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+            for (var i = 0; i < TRANSPONDER.data.length; i++) {
+                buffer.push(TRANSPONDER.data[i]);
             }
             break;
 
