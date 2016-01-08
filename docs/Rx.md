@@ -243,6 +243,15 @@ Do __NOT USE__ the mode indicated with FAILSAFE instead, as this combination is 
 
 ## Receiver Channel Range Configuration.
 
+The channels defined in CleanFlight are as follows:
+
+| Channel number | Channel name |
+| ----- | --------- |
+| 0     | Roll |
+| 1     | Pitch |
+| 2     | Yaw |
+| 3     | Throttle |
+
 If you have a transmitter/receiver, that output a non-standard pulse range (i.e. 1070-1930 as some Spektrum receivers)
 you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.
 
