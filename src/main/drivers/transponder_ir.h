@@ -30,6 +30,7 @@
 #define BIT_TOGGLE_0 0
 
 void transponderIrInit(void);
+void transponderIrDisable(void);
 
 void transponderIrHardwareInit(void);
 void transponderIrDMAEnable(void);

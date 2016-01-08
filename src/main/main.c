@@ -51,6 +51,7 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
+#include "drivers/transponder_ir.h"
 
 #include "rx/rx.h"
 
@@ -139,11 +140,12 @@ void SetSysClock(bool overclock);
 #endif
 
 typedef enum {
-    SYSTEM_STATE_INITIALISING   = 0,
-    SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
-    SYSTEM_STATE_SENSORS_READY  = (1 << 1),
-    SYSTEM_STATE_MOTORS_READY   = (1 << 2),
-    SYSTEM_STATE_READY          = (1 << 7)
+    SYSTEM_STATE_INITIALISING        = 0,
+    SYSTEM_STATE_CONFIG_LOADED       = (1 << 0),
+    SYSTEM_STATE_SENSORS_READY       = (1 << 1),
+    SYSTEM_STATE_MOTORS_READY        = (1 << 2),
+    SYSTEM_STATE_TRANSPONDER_ENABLED = (1 << 3),
+    SYSTEM_STATE_READY               = (1 << 7)
 } systemState_e;
 
 static uint8_t systemState = SYSTEM_STATE_INITIALISING;
@@ -540,6 +542,7 @@ void init(void)
         transponderInit(masterConfig.transponderData);
         transponderEnable();
         transponderStartRepeating();
+        systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
     }
 #endif
 
@@ -659,9 +662,17 @@ int main(void) {
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    uint8_t requiredState = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
-    if ((systemState & requiredState) == requiredState) {
+    uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
+    if ((systemState & requiredStateForMotors) == requiredStateForMotors) {
         stopMotors();
     }
+#ifdef TRANSPONDER
+    // prevent IR LEDs from burning out.
+    uint8_t requiredStateForTransponder = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_TRANSPONDER_ENABLED;
+    if ((systemState & requiredStateForTransponder) == requiredStateForTransponder) {
+        transponderIrDisable();
+    }
+#endif
+
     while (1);
 }

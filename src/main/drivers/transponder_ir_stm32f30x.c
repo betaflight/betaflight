@@ -20,8 +20,9 @@
 
 #include "platform.h"
 
+#include "drivers/gpio.h"
 #include "drivers/transponder_ir.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 
 #ifndef TRANSPONDER_GPIO
 #define USE_TRANSPONDER_ON_DMA1_CHANNEL3
@@ -126,4 +127,24 @@ void transponderIrDMAEnable(void)
     DMA_Cmd(TRANSPONDER_DMA_CHANNEL, ENABLE);
 }
 
+void transponderIrDisable(void)
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    DMA_Cmd(TRANSPONDER_DMA_CHANNEL, DISABLE);
+    TIM_Cmd(TRANSPONDER_TIMER, DISABLE);
+
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = TRANSPONDER_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(TRANSPONDER_GPIO, &GPIO_InitStructure);
+#ifdef TRANSPONDER_INVERTED
+    digitalHi(TRANSPONDER_GPIO, TRANSPONDER_PIN);
+#else
+    digitalLo(TRANSPONDER_GPIO, TRANSPONDER_PIN);
+#endif
+}
 
