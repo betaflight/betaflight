@@ -50,6 +50,7 @@ http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 16 channels via serial currently supported.  See below how to set up your transmitter.
 
 * You probably need an inverter between the receiver output and the flight controller. However, some flight controllers have this built in (the main port on CC3D, for example), and doesn't need one.
+* Some OpenLRS receivers produce a non-inverted SBUS signal. It is possible to switch SBUS inversion off using CLI command `set sbus_inversion = OFF` when using an F3 based flight controller.
 * Softserial ports cannot be used with SBUS because it runs at too high of a bitrate (1Mbps).  Refer to the chapter specific to your board to determine which port(s) may be used.
 * You will need to configure the channel mapping in the GUI (Receiver tab) or CLI (`map` command). Note that channels above 8 are mapped "straight", with no remapping.
 
@@ -241,6 +242,15 @@ One or more control channels may be set to OFF to signal a failsafe condition to
 Do __NOT USE__ the mode indicated with FAILSAFE instead, as this combination is NOT handled correctly by the FC.
 
 ## Receiver Channel Range Configuration.
+
+The channels defined in CleanFlight are as follows:
+
+| Channel number | Channel name |
+| ----- | --------- |
+| 0     | Roll |
+| 1     | Pitch |
+| 2     | Yaw |
+| 3     | Throttle |
 
 If you have a transmitter/receiver, that output a non-standard pulse range (i.e. 1070-1930 as some Spektrum receivers)
 you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.

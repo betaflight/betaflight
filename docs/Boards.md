@@ -2,21 +2,29 @@
 
 The current focus is geared towards flight controller hardware that use the STM32F303 and legacy STM32F103 series processors.  The core logic is separated from the hardware drivers, porting to other processors is possible.
 
-The core set of supported flyable boards are:
+If you want a fully featured version of Cleanflight then the recommendation for new purchases is an STM32 F3 based board with 256KB of flash memory.  The F3 processor is faster, has built in USB support and supports more hardware without the need for additional adaptors and cables.
+
+The core set of recommended boards are:
+
+* Seriously Pro SPRacingF3
+* TBS Colibri Race
+* AlienWiiF3
+* TauLabs Sparky
+
+The core set of legacy boards are:
 
 * AlienWii32
-* CC3D
+* OpenPilot CC3D
 * CJMCU
 * Flip32+
-* Naze32
-* Sparky
-* SPRacingF3
+* AbuseMark Naze32
+* RMRC Dodo
 
 Cleanflight also runs on the following developer boards:
 
-* STM32F3Discovery
-* Port103R
-* EUSTM32F103RB
+* STM32F3Discovery - Recommended for developers.
+* Port103R - Recommended for F1 developers.
+* EUSTM32F103RB - Legacy.
 
 There is also limited support for the following boards which may be removed due to lack of users or commercial availability.
  
