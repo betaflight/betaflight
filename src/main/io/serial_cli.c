@@ -330,7 +330,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port",
-                    "<id> [baud] : passthrough to serial", cliSerialPassthrough),
+                    "<id> [baud] [mode] : passthrough to serial",
+                    cliSerialPassthrough),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
@@ -1102,7 +1103,9 @@ static void cliSerialPassthrough(char *cmdline)
     }
 
     int id = -1;
-    unsigned baud = 0;
+    uint32_t baud = 0;
+    baudRate_e baudIdx = BAUD_AUTO;
+    unsigned mode = 0;
     char* tok = strtok(cmdline, " ");
     int index = 0;
 
@@ -1113,6 +1116,17 @@ static void cliSerialPassthrough(char *cmdline)
                 break;
             case 1:
                 baud = atoi(tok);
+                baudIdx = lookupBaudRateIndex(baud);
+                if (baudIdx == BAUD_AUTO) {
+                    printf("Parse error: invalid baud rate %d\r\n", baud);
+                    return;
+                }
+                break;
+            case 2:
+                if (strcasestr(tok, "rx"))
+                    mode |= MODE_RX;
+                if (strcasestr(tok, "tx"))
+                    mode |= MODE_TX;
                 break;
         }
         index++;
@@ -1122,31 +1136,39 @@ static void cliSerialPassthrough(char *cmdline)
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
-        if (!baud)
-        {
+        if (!baud) {
             printf("Port %d is not open, you must specify baud\r\n", id);
             return;
         }
+        if (!mode)
+            mode = MODE_RXTX;
 
         passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
-                                         baudRates[baud], MODE_RXTX,
+                                         baudIdx, MODE_RXTX,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
             printf("Port %d could not be opened\r\n", id);
             return;
         }
-        printf("Port %d opened, baud=%d\r\n", id, baudRates[baud]);
+        printf("Port %d opened, baud=%d\r\n", id, baud);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
-        if (!(passThroughPort->mode & MODE_RXTX))
-            serialSetMode(passThroughPort, passThroughPort->mode | MODE_RXTX);
+        // If the user supplied a mode, override the port's mode, otherwise
+        // leave the mode unchanged. serialPassthrough() handles one-way ports.
         printf("Port %d already open\r\n", id);
+        if (mode && !(passThroughPort->mode & mode)) {
+            printf("Adjusting mode from configured value %d to %d\r\n",
+                   passThroughPort->mode, mode);
+            serialSetMode(passThroughPort, passThroughPort->mode | mode);
+        }
     }
 
-    printf("Leaving CLI mode, unsaved changes lost.\r\n");
-    printf("Relaying data to device on port %d, power cycle your FC to stop.\r\n", id);
+    printf("********************************************************************************\r\n");
+    printf("* Relaying data to device on port %d, You must disconnect or close Cleanflight *\r\n", id);
+    printf("* Configurator. Power cycle your board to exit serial passthrough mode.        *\r\n");
+    printf("********************************************************************************\r\n");
 
-    serialPassthrough(cliPort, passThroughPort);
+    serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
 
 static void cliAdjustmentRange(char *cmdline)

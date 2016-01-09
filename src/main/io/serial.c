@@ -425,6 +425,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
+<<<<<<< 131f90e36dbcbbca5c16b409e113c866d58947ed
 /*
 A low-level interface for implementing serial passthrough. This is used for
 example by gps to do serial passthrough while also consuming GPS data and
@@ -435,34 +436,70 @@ Read data from `left` and writes it to `right`
 Returns data (if any) to caller for further processing.
 */
 uint8_t serialPassthroughStep(serialPort_t *left, serialPort_t *right)
+=======
+void cliEnter(serialPort_t *serialPort);
+
+void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
 {
-    uint8_t c = 0;
-    if (serialRxBytesWaiting(left)) {
-        c = serialRead(left);
-        serialWrite(right, c);
+#ifndef USE_CLI
+    UNUSED(serialPort);
+#else
+    if (receivedChar == '#') {
+        cliEnter(serialPort);
     }
-    return c;
+#endif
+    if (receivedChar == serialConfig->reboot_character) {
+        systemResetToBootloader();
+    }
+}
+
+// Default data consumer for serialPassThrough.
+static void nopConsumer(uint8_t data)
+>>>>>>> Modified to allow user to specify the mode and baud rate (as a speed i.e. 115200)
+{
+    UNUSED(data);
 }
 
 /*
 A high-level serial passthrough implementation. Used by cli to start an
-arbitrary serial passthrough "proxy". Manages LEDs while using the low-level
-`serialPassthroughStep()` to shuffle data both ways.
+arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
+for specialized data processing.
 */
-void serialPassthrough(serialPort_t *left, serialPort_t *right)
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+                       *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);
     waitForSerialPortToFinishTransmitting(right);
 
+    if (!leftC)
+        leftC = &nopConsumer;
+    if (!rightC)
+        rightC = &nopConsumer;
+
     LED0_OFF;
     LED1_OFF;
 
+    // Either port might be open in a mode other than MODE_RXTX. We rely on
+    // serialRxBytesWaiting() to do the right thing for a TX only port. No
+    // special handling is necessary OR performed.
     while(1) {
-        LED0_ON;
-        serialPassthroughStep(left, right);
-        LED0_OFF;
-        LED1_ON;
-        serialPassthroughStep(right, left);
-        LED1_OFF;
+        // TODO: maintain a timestamp of last data received. Use this to
+        // implement a guard interval and check for `+++` as an escape sequence
+        // to return to CLI command mode.
+        // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
+        if (serialRxBytesWaiting(left)) {
+            LED0_ON;
+            uint8_t c = serialRead(left);
+            serialWrite(right, c);
+            leftC(c);
+            LED0_OFF;
+        }
+        if (serialRxBytesWaiting(right)) {
+            LED0_ON;
+            uint8_t c = serialRead(right);
+            serialWrite(left, c);
+            rightC(c);
+            LED0_OFF;
+        }
     }
 }
