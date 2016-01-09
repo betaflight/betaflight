@@ -93,6 +93,7 @@ typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
 } serialConfig_t;
 
+typedef void serialConsumer(uint8_t);
 
 //
 // configuration
@@ -135,5 +136,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
 void handleSerial(void);
 
-uint8_t serialPassthroughStep(serialPort_t *left, serialPort_t *right);
-void serialPassthrough(serialPort_t *left, serialPort_t *right);
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+                       *leftC, serialConsumer *rightC);

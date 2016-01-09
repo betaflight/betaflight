@@ -1038,6 +1038,16 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
+void gpsHandlePassthrough(uint8_t data)
+{
+    gpsNewData(data);
+#ifdef DISPLAY
+    if (feature(FEATURE_DISPLAY)) {
+        updateDisplay();
+    }
+#endif
+}
+
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
     waitForSerialPortToFinishTransmitting(gpsPort);
@@ -1054,23 +1064,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
         displayShowFixedPage(PAGE_GPS);
     }
 #endif
-    char c;
-    while(1)
-    {
-        LED0_ON;
-        c = serialPassthroughStep(gpsPort, gpsPassthroughPort);
-        LED0_OFF;
-        if (c != 0)
-            gpsNewData(c);
-        LED1_ON;
-        serialPassthroughStep(gpsPassthroughPort, gpsPort);
-        LED1_OFF;
-#ifdef DISPLAY
-        if (feature(FEATURE_DISPLAY)) {
-            updateDisplay();
-        }
-#endif
-    }
+    serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 
 void updateGpsIndicator(uint32_t currentTime)
