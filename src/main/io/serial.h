@@ -33,9 +33,13 @@ typedef enum {
     FUNCTION_TELEMETRY_SMARTPORT = (1 << 5), // 32
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
+<<<<<<< f0a4c693477cd5d85fa96163047b3892d7c93faa
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 8), // 256
     FUNCTION_MSP_CLIENT          = (1 << 9), // 512
     FUNCTION_TELEMETRY_IBUS      = (1 << 10) // 1024
+=======
+    FUNCTION_PASSTHROUGH         = (1 << 8), // 256
+>>>>>>> Tested on Naze32 with MinimOSD on UART2, could configure via MWOSD
 } serialPortFunction_e;
 
 typedef enum {
@@ -117,6 +121,7 @@ portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFun
 bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 bool isSerialPortOpen(serialPortConfig_t *portConfig);
 
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 
 //
 // runtime

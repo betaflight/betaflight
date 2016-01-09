@@ -107,7 +107,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
     return BAUD_AUTO;
 }
 
-static serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
@@ -451,6 +451,9 @@ arbitrary serial passthrough "proxy". Manages LEDs while using the low-level
 */
 void serialPassthrough(serialPort_t *left, serialPort_t *right)
 {
+    waitForSerialPortToFinishTransmitting(left);
+    waitForSerialPortToFinishTransmitting(right);
+
     LED0_OFF;
     LED1_OFF;
 

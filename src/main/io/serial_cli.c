@@ -329,7 +329,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", NULL, cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port",
+                    "<id> [baud] : passthrough to serial", cliSerialPassthrough),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
@@ -1096,30 +1097,52 @@ static void cliSerial(char *cmdline)
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        // TODO: is this the correct way to echo usage information? What about
-        // the format?
-        printf("Usage: serialpassthrough <serial port identifier>\r\n");
+        cliShowParseError();
         return;
-    } else {
-        int val;
-        val = atoi(cmdline);
+    }
 
-        serialPortConfig_t *passThroughPortConfig = NULL;
-        if (val >= 0 && val < SERIAL_PORT_COUNT) {
-            passThroughPortConfig = serialFindPortConfiguration(val);
+    int id = -1;
+    unsigned baud = 0;
+    char* tok = strtok(cmdline, " ");
+    int index = 0;
+
+    while (tok != NULL) {
+        switch(index) {
+            case 0:
+                id = atoi(tok);
+                break;
+            case 1:
+                baud = atoi(tok);
+                break;
         }
+        index++;
+        tok = strtok(NULL, " ");
+    }
 
-        if (!passThroughPortConfig) {
-            printf("Invalid serial port identifier\r\n");
+    serialPort_t *passThroughPort;
+    serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
+    if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
+        if (!baud)
+        {
+            printf("Port %d is not open, you must specify baud\r\n", id);
             return;
         }
 
-        // TODO: determine baud rate
-        int baudRateIndex = 0;
-        serialPort_t *passThroughPort;
-        passThroughPort = openSerialPort(passThroughPortConfig->identifier, FUNCTION_NONE, NULL, baudRateIndex, MODE_RXTX, SERIAL_NOT_INVERTED);
-        serialPassthrough(cliPort, passThroughPort);
+        passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
+                                         baudRates[baud], MODE_RXTX,
+                                         SERIAL_NOT_INVERTED);
+        if (!passThroughPort) {
+            printf("Port %d could not be opened\r\n", id);
+            return;
+        }
+        printf("Port %d opened, baud=%d\r\n", id, baudRates[baud]);
+    } else {
+        passThroughPort = passThroughPortUsage->serialPort;
+        printf("Port %d already open\r\n", id);
     }
+
+    printf("Relaying data to device on port %d, power cycle your FC to abort.\r\n", id);
+    serialPassthrough(cliPort, passThroughPort);
 }
 
 static void cliAdjustmentRange(char *cmdline)
