@@ -1138,6 +1138,10 @@ static void cliSerialPassthrough(char *cmdline)
         printf("Port %d opened, baud=%d\r\n", id, baudRates[baud]);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
+        if (!(passThroughPort->mode & MODE_TX))
+            serialSetMode(passThroughPort, passThroughPort->mode | MODE_TX);
+        if (!(passThroughPort->mode & MODE_RX))
+            serialSetMode(passThroughPort, passThroughPort->mode | MODE_RX);
         printf("Port %d already open\r\n", id);
     }
 
