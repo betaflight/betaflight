@@ -15,27 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-initLeds(void)
-{
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup[] = {
-#ifdef LED0
-        {
-            .gpio = LED0_GPIO,
-            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
-#ifdef LED1
+extern uint32_t targetLooptime;
 
-        {
-            .gpio = LED1_GPIO,
-            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
-    }
-
-    uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
-
-}
+bool gyroSyncCheckUpdate(void);
+uint8_t gyroMPU6xxxCalculateDivider(void);
+void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);

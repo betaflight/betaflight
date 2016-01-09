@@ -17,6 +17,10 @@
 
 #pragma once
 
+#define PID_LUX_FLOAT_MAX_I 250.0f
+#define PID_LUX_FLOAT_MAX_D 300.0f
+#define PID_LUX_FLOAT_MAX_PID 1000
+
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
@@ -42,7 +46,7 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 
-#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
+#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
 
 typedef struct pidProfile_s {
     uint8_t pidController;                  // 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Luggi09s new baseflight pid

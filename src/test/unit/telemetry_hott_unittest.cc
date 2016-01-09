@@ -136,7 +136,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
     stateFlags = GPS_FIX;
     uint16_t altitudeInMeters = 1;
-    GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
+    GPS_altitude = altitudeInMeters;
 
     // when
     hottPrepareGPSResponse(hottGPSMessage);
@@ -162,7 +162,7 @@ uint8_t GPS_numSat;
 int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in 0.1m
+uint16_t GPS_altitude;              // altitude in m
 uint16_t vbat;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 

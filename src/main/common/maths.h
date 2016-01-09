@@ -88,12 +88,18 @@ int32_t quickMedianFilter5(int32_t * v);
 int32_t quickMedianFilter7(int32_t * v);
 int32_t quickMedianFilter9(int32_t * v);
 
-#if defined(FAST_TRIGONOMETRY) || defined(EVEN_FASTER_TRIGONOMETRY)
+#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
+float atan2_approx(float y, float x);
+float acos_approx(float x);
+#define tan_approx(x)       (sin_approx(x) / cos_approx(x))
 #else
 #define sin_approx(x)   sinf(x)
 #define cos_approx(x)   cosf(x)
+#define atan2_approx(y,x)   atan2f(y,x)
+#define acos_approx(x)      acosf(x)
+#define tan_approx(x)       tanf(x)
 #endif
 
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);

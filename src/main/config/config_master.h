@@ -28,6 +28,8 @@ typedef struct master_t {
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
+    uint8_t gyroSync;                       // Enable interrupt based loop
+    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
 
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
 #ifdef USE_SERVOS
@@ -47,9 +49,10 @@ typedef struct master_t {
 
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
 
     gyroConfig_t gyroConfig;
 

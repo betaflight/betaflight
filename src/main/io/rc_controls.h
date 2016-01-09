@@ -153,6 +153,14 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
+#define PID_MIN      0
+#define PID_MAX      200
+#define PID_F_MIN    0
+#define PID_F_MAX    100
+#define RC_RATE_MIN  0
+#define RC_RATE_MAX  250
+#define EXPO_MIN     0
+#define EXPO_MAX     100
 
 typedef enum {
     ADJUSTMENT_NONE = 0,
@@ -176,10 +184,28 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+    ADJUSTMENT_ALT_P,
+    ADJUSTMENT_ALT_I,
+    ADJUSTMENT_ALT_D,
+    ADJUSTMENT_VEL_P,
+    ADJUSTMENT_VEL_I,
+    ADJUSTMENT_VEL_D,
+    ADJUSTMENT_MAG_P,
+    ADJUSTMENT_POS_P,
+    ADJUSTMENT_POS_I,
+    ADJUSTMENT_POSR_P,
+    ADJUSTMENT_POSR_I,
+    ADJUSTMENT_POSR_D,
+    ADJUSTMENT_NAVR_P,
+    ADJUSTMENT_NAVR_I,
+    ADJUSTMENT_NAVR_D,
+    ADJUSTMENT_LEVEL_P,
+    ADJUSTMENT_LEVEL_I,
+    ADJUSTMENT_LEVEL_D,
 
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 21
+#define ADJUSTMENT_FUNCTION_COUNT 39
 
 typedef enum {
     ADJUSTMENT_MODE_STEP,
@@ -222,8 +248,9 @@ typedef struct adjustmentRange_s {
 
 typedef struct adjustmentState_s {
     uint8_t auxChannelIndex;
-    const adjustmentConfig_t *config;
+    adjustmentConfig_t config;
     uint32_t timeoutAt;
+    adjustmentRange_t *range;
 } adjustmentState_t;
 
 
@@ -234,7 +261,7 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+void configureAdjustmentState(adjustmentRange_t *adjustmentRange);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 

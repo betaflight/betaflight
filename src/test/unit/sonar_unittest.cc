@@ -30,7 +30,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
+#define DECIDEGREES_TO_RADIANS(angle) (((angle) / 10.0f) * 0.0174532925f)
 
 TEST(SonarUnittest, TestConstants)
 {
@@ -102,9 +102,9 @@ TEST(SonarUnittest, TestAltitude)
     // distance 400, 22.4 degrees of roll, this corresponds to HC-SR04 effective max detection angle
     EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(224))), 369);
     EXPECT_EQ(sonarGetLatestAltitude(), 369);
-    // max range, max tilt
-    EXPECT_EQ(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees))), sonarMaxAltWithTiltCm);
-    EXPECT_EQ(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm);
+    // Check limits at max range max tilt, need to deal with rounding errors in cosf calculation
+    EXPECT_NEAR(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees - 1))), sonarMaxAltWithTiltCm, 1);
+    EXPECT_NEAR(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm, 1);
 }
 
 // STUBS

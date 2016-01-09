@@ -152,6 +152,7 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
 #define GPS
+#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX

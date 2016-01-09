@@ -115,6 +115,7 @@
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
+#define SONAR
 
 #define LED_STRIP
 #if 1

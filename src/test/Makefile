@@ -360,6 +360,7 @@ $(OBJECT_DIR)/lowpass_unittest.o : \
 $(OBJECT_DIR)/lowpass_unittest : \
 	$(OBJECT_DIR)/flight/lowpass.o \
 	$(OBJECT_DIR)/lowpass_unittest.o \
+    $(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -573,6 +574,31 @@ $(OBJECT_DIR)/sonar_unittest : \
 	$(OBJECT_DIR)/drivers/sonar_hcsr04.o \
 	$(OBJECT_DIR)/sensors/sonar.o \
 	$(OBJECT_DIR)/sonar_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/pid.o : \
+	$(USER_DIR)/flight/pid.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid.c -o $@
+
+$(OBJECT_DIR)/pid_unittest.o : \
+	$(TEST_DIR)/pid_unittest.cc \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/pid_unittest.cc -o $@
+
+$(OBJECT_DIR)/pid_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/flight/pid.o \
+	$(OBJECT_DIR)/pid_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
