@@ -25,8 +25,7 @@ For the connections step check the Board documentation for pins and port numbers
 
 ### GPS Provider
 
-Set the `gps_provider` appropriately.
-`set gps_provider=UBLOX`
+Set the `gps_provider` appropriately, for example `set gps_provider=UBLOX`
 
 | Value | Meaning  |
 | ----- | -------- |
