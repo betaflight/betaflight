@@ -1138,14 +1138,14 @@ static void cliSerialPassthrough(char *cmdline)
         printf("Port %d opened, baud=%d\r\n", id, baudRates[baud]);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
-        if (!(passThroughPort->mode & MODE_TX))
-            serialSetMode(passThroughPort, passThroughPort->mode | MODE_TX);
-        if (!(passThroughPort->mode & MODE_RX))
-            serialSetMode(passThroughPort, passThroughPort->mode | MODE_RX);
+        if (!(passThroughPort->mode & MODE_RXTX))
+            serialSetMode(passThroughPort, passThroughPort->mode | MODE_RXTX);
         printf("Port %d already open\r\n", id);
     }
 
-    printf("Relaying data to device on port %d, power cycle your FC to abort.\r\n", id);
+    printf("Leaving CLI mode, unsaved changes lost.\r\n");
+    printf("Relaying data to device on port %d, power cycle your FC to stop.\r\n", id);
+
     serialPassthrough(cliPort, passThroughPort);
 }
 
