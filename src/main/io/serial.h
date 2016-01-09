@@ -33,6 +33,7 @@ typedef enum {
     FUNCTION_TELEMETRY_SMARTPORT = (1 << 5), // 32
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
+    FUNCTION_PASSTHROUGH         = (1 << 8), // 256
 } serialPortFunction_e;
 
 typedef enum {
@@ -108,7 +109,7 @@ serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
-
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 
 //
 // runtime
