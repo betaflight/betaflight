@@ -38,37 +38,50 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
-static int8_t gyroFIRCoeff_500[FILTER_TAPS] = { 18, 14, 16, 20, 22, 24, 25, 25, 24, 20, 18, 12, 18 };  // looptime=500;
-static int8_t gyroFIRCoeff_1000[FILTER_TAPS] = { 0, 0, 0, 0, 0, 0, 12, 23, 40, 51, 52, 40, 38 }; // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
+static int8_t gyroFIRCoeff_500[FILTER_TAPS] = { 0, 18, 14, 16, 20, 22, 24, 25, 25, 24, 20, 18, 12, 18 };  // looptime=500;
+static int8_t gyroFIRCoeff_1000[FILTER_TAPS] = { 0, 0, 0, 0, 0, 0, 0, 12, 23, 40, 51, 52, 40, 38 }; // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
 
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint32_t targetLooptime)
+
+static int8_t deltaFIRCoeff_500[FILTER_TAPS] = {0, 0, 0, 0, 0, 18, 12, 28, 40, 44, 40, 32, 22, 20};
+static int8_t deltaFIRCoeff_1000[FILTER_TAPS] = {36, 12, 14, 14, 16, 16, 18, 18, 18, 16, 16, 14, 12, 36};
+
+int8_t * filterGetFIRCoefficientsTable(uint8_t filter_type, uint32_t targetLooptime)
 {
-    if (filter_level == 0) {
-        return NULL;
-    }
+	int8_t *filterCoeff;
 
-    // filter for 2kHz looptime
-    if (targetLooptime == 500) {
-        return gyroFIRCoeff_500;
-    } else {    // filter for 1kHz looptime
-        return gyroFIRCoeff_1000;
+    switch(filter_type){
+        case(0):
+		    filterCoeff = NULL;
+            break;
+        case(1):
+            if (targetLooptime == 500) {
+                filterCoeff = gyroFIRCoeff_500;
+            } else {    // filter for 1kHz looptime
+                filterCoeff = gyroFIRCoeff_1000;
+            }
+            break;
+        case(2):
+            if (targetLooptime == 500) {
+                filterCoeff = deltaFIRCoeff_500;
+            } else {    // filter for 1kHz looptime
+                filterCoeff = deltaFIRCoeff_1000;
+            }
     }
+    return filterCoeff;
 }
 
 // Thanks to Qcopter & BorisB & DigitalEntity
-void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff[FILTER_TAPS])
+void filterApplyFIR(int16_t *data, int16_t state[FILTER_TAPS], int8_t coeff[FILTER_TAPS])
 {
     int32_t FIRsum;
-    int axis, i;
+    FIRsum = 0;
+    int i;
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        FIRsum = 0;
-        for (i = 0; i <= FILTER_TAPS-2; i++) {
-            state[axis][i] = state[axis][i + 1];
-            FIRsum += state[axis][i] * (int16_t)coeff[i];
-        }
-        state[axis][FILTER_TAPS-1] = data[axis];
-        FIRsum += state[axis][FILTER_TAPS-1] * coeff[FILTER_TAPS-1];
-        data[axis] = FIRsum / 256;
+    for (i = 0; i <= FILTER_TAPS-2; i++) {
+        state[i] = state[i + 1];
+        FIRsum += state[i] * (int16_t)coeff[i];
     }
+    state[FILTER_TAPS-1] = *data;
+    FIRsum += state[FILTER_TAPS-1] * coeff[FILTER_TAPS-1];
+    *data = FIRsum / 256;
 }

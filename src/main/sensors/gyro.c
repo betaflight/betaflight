@@ -127,7 +127,8 @@ void gyroUpdate(void)
     }
 
     if (gyroFIRTable) {
-        filterApplyFIR(gyroADC, gyroFIRState, gyroFIRTable);
+        int axis;
+        for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) filterApplyFIR(&gyroADC[axis], gyroFIRState[axis], gyroFIRTable);
     }
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
