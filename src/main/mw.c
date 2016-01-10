@@ -207,6 +207,13 @@ void filterRc(void){
     }
 }
 
+void scaleRcCommandToFpvCamAngle(void) {
+    int16_t roll = rcCommand[ROLL];
+    int16_t yaw = rcCommand[YAW];
+    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees) * roll + sin(masterConfig.rxConfig.fpvCamAngleDegrees) * yaw, -500, 500);
+    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees) * roll, -500, 500);
+}
+
 void annexCode(void)
 {
     int32_t tmp, tmp2;
@@ -283,6 +290,11 @@ void annexCode(void)
 
     if (masterConfig.rxConfig.rcSmoothing) {
         filterRc();
+    }
+
+    // experimental scaling of RC command to FPV cam angle
+    if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
+        scaleRcCommandToFpvCamAngle();
     }
 
     if (ARMING_FLAG(ARMED)) {
