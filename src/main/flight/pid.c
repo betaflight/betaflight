@@ -364,7 +364,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         filterApplyFIR(&delta, deltaFIRState[axis], deltaFIRTable);
 
-        DTerm = (delta * 2 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+        DTerm = (delta * 3 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;

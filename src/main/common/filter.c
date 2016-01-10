@@ -41,9 +41,8 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
 static int8_t gyroFIRCoeff_500[FILTER_TAPS] = { 0, 18, 14, 16, 20, 22, 24, 25, 25, 24, 20, 18, 12, 18 };  // looptime=500;
 static int8_t gyroFIRCoeff_1000[FILTER_TAPS] = { 0, 0, 0, 0, 0, 0, 0, 12, 23, 40, 51, 52, 40, 38 }; // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
 
-
-static int8_t deltaFIRCoeff_500[FILTER_TAPS] = {0, 0, 0, 0, 0, 18, 12, 28, 40, 44, 40, 32, 22, 20};
-static int8_t deltaFIRCoeff_1000[FILTER_TAPS] = {36, 12, 14, 14, 16, 16, 18, 18, 18, 16, 16, 14, 12, 36};
+static int8_t deltaFIRCoeff_500[FILTER_TAPS] = {36, 12, 14, 14, 16, 16, 18, 18, 18, 16, 16, 14, 12, 36};
+static int8_t deltaFIRCoeff_1000[FILTER_TAPS] = {0, 0, 0, 0, 0, 18, 12, 28, 40, 44, 40, 32, 22, 20};
 
 int8_t * filterGetFIRCoefficientsTable(uint8_t filter_type, uint32_t targetLooptime)
 {
