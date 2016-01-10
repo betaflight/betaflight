@@ -318,6 +318,11 @@ TABS.motors.initialize = function (callback) {
         $('div.values li:not(:last)').text(MISC.mincommand);
         
         if(self.feature3DEnabled && self.feature3DSupported) {
+            //Arbitrary sanity checks
+            //Note: values may need to be revisited
+            if(_3D.neutral3d > 1575 || _3D.neutral3d < 1425)
+                _3D.neutral3d = 1500;
+                
             $('div.sliders input').val(_3D.neutral3d);
         } else {
             $('div.sliders input').val(MISC.mincommand); 
