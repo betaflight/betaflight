@@ -59,8 +59,6 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
-    uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-    uint8_t delta_from_gyro_error;          // Used for filering Pterm noise on noisy frames
     uint8_t gyro_soft_lpf;                  // Gyro FIR filter
 
 #ifdef GTUNE

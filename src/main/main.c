@@ -548,7 +548,17 @@ int main(void) {
     rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
 
     setTaskEnabled(TASK_GYROPID, true);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+    if(sensors(SENSOR_ACC)) {
+        setTaskEnabled(TASK_ACCEL, true);
+        switch(targetLooptime) {
+            case(500):
+                rescheduleTask(TASK_ACCEL, 10000);
+                break;
+            default:
+            case(1000):
+                rescheduleTask(TASK_ACCEL, 1000);
+        }
+    }
     setTaskEnabled(TASK_SERIAL, true);
     setTaskEnabled(TASK_BEEPER, true);
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));

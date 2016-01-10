@@ -177,8 +177,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->gyro_soft_lpf = 1;   // filtering ON by default
-    pidProfile->dterm_cut_hz = 0;
-    pidProfile->delta_from_gyro_error = 0;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
@@ -569,10 +567,6 @@ static void resetConf(void)
     masterConfig.rxConfig.rcmap[5] = 5;
     masterConfig.rxConfig.rcmap[6] = 6;
     masterConfig.rxConfig.rcmap[7] = 7;
-
-    //masterConfig.gyro_lpf = 188;
-    //masterConfig.profile[0].pidProfile.pterm_cut_hz = 50;
-    //masterConfig.profile[0].pidProfile.dterm_cut_hz = 17;
 
     masterConfig.rxConfig.rcSmoothing = 0;
     currentProfile->pidProfile.pidController = 2;
