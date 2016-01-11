@@ -37,7 +37,6 @@ typedef enum {
     FUNCTION_MSP_CLIENT          = (1 << 9), // 512
     FUNCTION_TELEMETRY_IBUS      = (1 << 10), // 1024
     FUNCTION_PASSTHROUGH         = (1 << 11), // 2048
->>>>>>> Tested on Naze32 with MinimOSD on UART2, could configure via MWOSD
 } serialPortFunction_e;
 
 typedef enum {

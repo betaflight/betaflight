@@ -101,4 +101,11 @@ serialPort_t *usbVcpOpen(void) { return NULL; }
 serialPort_t *uartOpen(USART_TypeDef *, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) { return NULL; }
 serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portOptions_t) { return NULL; }
 void serialSetMode(serialPort_t *, portMode_t) {}
+void serialWrite(serialPort_t *, uint8_t) {}
+uint8_t serialRxBytesWaiting(serialPort_t *) {
+    return 0;
+}
+uint8_t serialRead(serialPort_t *) {
+    return 0;
+}
 }
