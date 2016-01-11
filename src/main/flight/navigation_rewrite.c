@@ -2209,15 +2209,13 @@ void abortForcedRTH(void)
 
 rthState_e getStateOfForcedRTH(void)
 {
-    if (navGetStateFlags(posControl.navState) & NAV_AUTO_RTH) {
-        if (posControl.navState == NAV_STATE_RTH_2D_FINISHED || posControl.navState == NAV_STATE_RTH_3D_FINISHED) {
+    /* If forced RTH activated and in AUTO_RTH or EMERG state */
+    if (posControl.flags.forcedRTHActivated && (navGetStateFlags(posControl.navState) & (NAV_AUTO_RTH | NAV_CTL_EMERG))) {
+        if (posControl.navState == NAV_STATE_RTH_2D_FINISHED || posControl.navState == NAV_STATE_RTH_3D_FINISHED || posControl.navState == NAV_STATE_EMERGENCY_LANDING_FINISHED) {
             return RTH_HAS_LANDED;
         }
-        else if (posControl.flags.hasValidPositionSensor) {
-            return RTH_IN_PROGRESS_OK;
-        }
         else {
-            return RTH_IN_PROGRESS_LOST_GPS;
+            return RTH_IN_PROGRESS;
         }
     }
     else {

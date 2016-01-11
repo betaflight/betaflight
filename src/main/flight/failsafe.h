@@ -62,8 +62,7 @@ typedef enum {
 // FIXME ProDrone: The next enum must be deleted from here and defined in RTH.H file, which has to be included in failsafe.c
 typedef enum {
     RTH_IDLE = 0,               // RTH is waiting
-    RTH_IN_PROGRESS_OK,         // RTH is active
-    RTH_IN_PROGRESS_LOST_GPS,   // RTH is active but has lost GPS lock
+    RTH_IN_PROGRESS,            // RTH is active
     RTH_HAS_LANDED              // RTH is active and has landed.
 } rthState_e;
 

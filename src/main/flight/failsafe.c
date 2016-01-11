@@ -271,8 +271,7 @@ void failsafeUpdateState(void)
                         beeperMode = BEEPER_RX_LOST_LANDING;
                     }
                     switch (getStateOfForcedRTH()) {
-                        case RTH_IN_PROGRESS_OK:
-                        case RTH_IN_PROGRESS_LOST_GPS:
+                        case RTH_IN_PROGRESS:
                             rthIdleOrLanded = false;
                             break;
 
