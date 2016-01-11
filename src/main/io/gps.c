@@ -1056,9 +1056,6 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
-    LED0_OFF;
-    LED1_OFF;
-
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayShowFixedPage(PAGE_GPS);
