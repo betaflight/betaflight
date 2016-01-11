@@ -373,6 +373,10 @@ bool gpsMagDetect(mag_t *mag)
     if (!(feature(FEATURE_GPS) && gpsProviders[gpsState.gpsConfig->provider].hasCompass))
         return false;
 
+    if (gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL && (!findSerialPortConfig(FUNCTION_GPS))) {
+        return false;
+    }
+
     mag->init = gpsMagInit;
     mag->read = gpsMagRead;
     return true;
