@@ -71,10 +71,7 @@ void mspProcess(void) {}
 void systemResetToBootloader(void) {}
 
 void serialWrite(serialPort_t *, uint8_t) {}
-uint8_t serialRxBytesWaiting(serialPort_t *) {
-    return 0;
-}
-uint8_t serialRead(serialPort_t *) {
-    return 0;
-}
+uint8_t serialRxBytesWaiting(serialPort_t *) { return 0; }
+uint8_t serialRead(serialPort_t *) { return 0; }
+
 }
