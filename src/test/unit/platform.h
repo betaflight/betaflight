@@ -24,6 +24,7 @@
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
+#define TRANSPONDER
 
 #define SERIAL_PORT_COUNT 4
 
@@ -45,6 +46,18 @@ typedef struct
     void* test;
 } TIM_TypeDef;
 
+typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
+
+typedef struct {
+    void* test;
+} DMA_Channel_TypeDef;
+
+uint8_t DMA_GetFlagStatus(void *);
+void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
+void DMA_ClearFlag(uint32_t);
+
+#define WS2811_DMA_TC_FLAG 1
+#define WS2811_DMA_HANDLER_IDENTIFER 0
