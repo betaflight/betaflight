@@ -85,6 +85,7 @@ Re-apply any new defaults as desired.
 | `feature`        | list or -val or val                            |
 | `get`            | get variable value                             |
 | `gpspassthrough` | passthrough gps to serial                      |
+| `serialpassthrough` | serial passthrough mode, reset board to exit |
 | `help`           |                                                |
 | `led`            | configure leds                                 |
 | `map`            | mapping of rc channel order                    |
