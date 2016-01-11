@@ -29,6 +29,12 @@
 
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
+#define TARGET_BOARD_IDENTIFIER "TEST"
+
+#define U_ID_0 0
+#define U_ID_1 1
+#define U_ID_2 2
+
 typedef enum
 {
     Mode_TEST = 0x0,
