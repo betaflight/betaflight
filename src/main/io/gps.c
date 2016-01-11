@@ -1050,7 +1050,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
-void gpsHandlePassthrough(uint8_t data)
+static void gpsHandlePassthrough(uint8_t data)
 {
     gpsNewData(data);
 #ifdef DISPLAY
