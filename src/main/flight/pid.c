@@ -83,42 +83,28 @@ void pidResetErrorGyro(void)
     errorGyroIf[YAW] = 0.0f;
 }
 
-void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile, float referenceTerm) {
-    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
+static float minItermScaler = 1;
+
+void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
+    float rcCommandReflection = ABS((float)rcCommand[axis] / 500.0f);
     axisState->wowFactor = 1;
     axisState->factor = 0;
-    axisState->iTermScaler = 1;
 
     if (rcCommandReflection > 0.7f) {
         //Ki scaler
-        axisState->iTermScaler = constrainf(1.0f - (1.5f * ABS(rcCommandReflection)), 0.0f, 1.0f);
-
-        //dynamic Ki handler
-        if (axisState->isCurrentlyAtZero) {
-            if (axisState->previousReferenceIsPositive ^ IS_POSITIVE(referenceTerm)) {
-                axisState->isCurrentlyAtZero = false;
-            } else {
-                axisState->iTermScaler = 0;
-                errorGyroIf[axis] = 0;
-                errorGyroI[axis] = 0;
-            }
-        }
-
-        if (!axisState->iTermScaler) {
-            if (!axisState->isCurrentlyAtZero) {
-                if (IS_POSITIVE(referenceTerm)) {
-                    axisState->previousReferenceIsPositive = true;
-                } else {
-                    axisState->previousReferenceIsPositive = false;
-                }
-            } else {
-                axisState->isCurrentlyAtZero = true;
-            }
-        }
+        axisState->iTermScaler = constrainf(1.0f - (1.5f * rcCommandReflection), 0.0f, minItermScaler);
+        if (minItermScaler > axisState->iTermScaler) minItermScaler = axisState->iTermScaler;
 
         if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor) {
-            axisState->wowFactor = 1.0f - (ABS(rcCommandReflection) * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f)); //0-1f
+            axisState->wowFactor = 1.0f - (rcCommandReflection * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f)); //0-1f
             axisState->factor = (axisState->wowFactor * rcCommandReflection) * 1000;
+        }
+    } else {
+        // Prevent rapid windup
+        if (minItermScaler < 1) {
+            minItermScaler = constrainf(minItermScaler + 0.001f, 0.0f, 1.0f);
+        } else {
+            minItermScaler = 1;
         }
     }
 }
@@ -202,8 +188,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            airModePlus(&airModePlusAxisState[axis], axis, pidProfile, PTerm);
-            errorGyroIf[axis] *= airModePlusAxisState[axis].iTermScaler;
+            airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
+            errorGyroIf[axis] *= minItermScaler;
         }
 
         if (allowITermShrinkOnly || motorLimitReached) {
@@ -336,13 +322,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
+        ITerm = errorGyroI[axis] >> 13;
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            airModePlus(&airModePlusAxisState[axis], axis, pidProfile, (float) PTerm);
-            errorGyroI[axis] *= airModePlusAxisState[axis].iTermScaler;
+            airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
+            errorGyroI[axis] *= minItermScaler;
         }
-
-        ITerm = errorGyroI[axis] >> 13;
 
         if (allowITermShrinkOnly || motorLimitReached) {
             if (ABS(errorGyroI[axis]) < ABS(previousErrorGyroI[axis])) {

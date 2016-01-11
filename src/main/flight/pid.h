@@ -74,8 +74,6 @@ typedef struct airModePlus {
     float factor;
     float wowFactor;
     float iTermScaler;
-    bool isCurrentlyAtZero;
-    bool previousReferenceIsPositive;
 } airModePlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
