@@ -212,9 +212,12 @@ bool fakeAccDetect(acc_t *acc)
 
 bool detectGyro(void)
 {
-    gyroSensor_e gyroHardware = GYRO_DEFAULT;
+    bool sensorDetected;
+    UNUSED(sensorDetected); // avoid unused-variable warning on some targets.
 
+    gyroSensor_e gyroHardware = GYRO_DEFAULT;
     gyroAlign = ALIGN_DEFAULT;
+
 
     switch(gyroHardware) {
         case GYRO_DEFAULT:
@@ -281,11 +284,11 @@ bool detectGyro(void)
         case GYRO_MPU6500:
 #ifdef USE_GYRO_MPU6500
 #ifdef USE_GYRO_SPI_MPU6500
-            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro))
+            sensorDetected = mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro);
 #else
-            if (mpu6500GyroDetect(&gyro))
+            sensorDetected = mpu6500GyroDetect(&gyro);
 #endif
-            {
+            if (sensorDetected) {
                 gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
                 gyroAlign = GYRO_MPU6500_ALIGN;
@@ -320,6 +323,9 @@ bool detectGyro(void)
 
 static void detectAcc(accelerationSensor_e accHardwareToUse)
 {
+    bool sensorDetected;
+    UNUSED(sensorDetected); // avoid unused-variable warning on some targets.
+
     accelerationSensor_e accHardware;
 
 #ifdef USE_ACC_ADXL345
@@ -337,10 +343,11 @@ retry:
             acc_params.useFifo = false;
             acc_params.dataRate = 800; // unused currently
 #ifdef NAZE
-            if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, &acc)) {
+            sensorDetected = (hardwareRevision < NAZE32_REV5) && adxl345Detect(&acc_params, &acc);
 #else
-            if (adxl345Detect(&acc_params, &acc)) {
+            sensorDetected = adxl345Detect(&acc_params, &acc);
 #endif
+            if (sensorDetected) {
 #ifdef ACC_ADXL345_ALIGN
                 accAlign = ACC_ADXL345_ALIGN;
 #endif
@@ -374,11 +381,11 @@ retry:
         case ACC_MMA8452: // MMA8452
 #ifdef USE_ACC_MMA8452
 #ifdef NAZE
-            // Not supported with this frequency
-            if (hardwareRevision < NAZE32_REV5 && mma8452Detect(&acc)) {
+            sensorDetected = (hardwareRevision < NAZE32_REV5) && mma8452Detect(&acc);
 #else
-            if (mma8452Detect(&acc)) {
+            sensorDetected = mma8452Detect(&acc);
 #endif
+            if (sensorDetected) {
 #ifdef ACC_MMA8452_ALIGN
                 accAlign = ACC_MMA8452_ALIGN;
 #endif
@@ -412,11 +419,11 @@ retry:
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
 #ifdef USE_ACC_SPI_MPU6500
-            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc))
+            sensorDetected = mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc);
 #else
-            if (mpu6500AccDetect(&acc))
+            sensorDetected = mpu6500AccDetect(&acc);
 #endif
-            {
+            if (sensorDetected) {
 #ifdef ACC_MPU6500_ALIGN
                 accAlign = ACC_MPU6500_ALIGN;
 #endif
