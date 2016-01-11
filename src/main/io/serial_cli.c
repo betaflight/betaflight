@@ -1104,7 +1104,6 @@ static void cliSerialPassthrough(char *cmdline)
 
     int id = -1;
     uint32_t baud = 0;
-    baudRate_e baudIdx = BAUD_AUTO;
     unsigned mode = 0;
     char* tok = strtok(cmdline, " ");
     int index = 0;
@@ -1116,11 +1115,6 @@ static void cliSerialPassthrough(char *cmdline)
                 break;
             case 1:
                 baud = atoi(tok);
-                baudIdx = lookupBaudRateIndex(baud);
-                if (baudIdx == BAUD_AUTO) {
-                    printf("Parse error: invalid baud rate %d\r\n", baud);
-                    return;
-                }
                 break;
             case 2:
                 if (strcasestr(tok, "rx"))
@@ -1144,7 +1138,7 @@ static void cliSerialPassthrough(char *cmdline)
             mode = MODE_RXTX;
 
         passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
-                                         baudIdx, MODE_RXTX,
+                                         baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
             printf("Port %d could not be opened\r\n", id);
@@ -1156,17 +1150,15 @@ static void cliSerialPassthrough(char *cmdline)
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
         printf("Port %d already open\r\n", id);
-        if (mode && !(passThroughPort->mode & mode)) {
+        if (passThroughPort->mode != mode) {
             printf("Adjusting mode from configured value %d to %d\r\n",
                    passThroughPort->mode, mode);
-            serialSetMode(passThroughPort, passThroughPort->mode | mode);
+            serialSetMode(passThroughPort, mode);
         }
     }
 
-    printf("********************************************************************************\r\n");
-    printf("* Relaying data to device on port %d, You must disconnect or close Cleanflight *\r\n", id);
-    printf("* Configurator. Power cycle your board to exit serial passthrough mode.        *\r\n");
-    printf("********************************************************************************\r\n");
+    printf("Relaying data to device on port %d, Reset your board to exit "
+           "serial passthrough mode.\r\n");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
