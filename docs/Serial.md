@@ -91,12 +91,12 @@ To initiate passthrough mode, use the CLI command `serialpassthrough` This comma
 
     serialpassthrough <id> [baud] [mode]
 
-ID is the index of the serial port to pass through communication to. This index is 0-based and matches the ports on the Cleanflight Configurator ports page (see above). Baud is the desired baud rate, and mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
+ID is the internal identifier of the serial port from [Cleanflight source code](https://github.com/cleanflight/cleanflight/blob/f17ef30bb8b9e0156b6bb72b766d4e5acc1b4add/src/main/io/serial.h#L54-L60). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. Baud is the desired baud rate, and mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
 
 For example. If you have your MWOSD connected to UART 2, you could enable communicaton to this device using the following command. This command does not specify the baud rate or mode, using the one configured for the port (see above).
 
     serialpassthrough 1
 
-*To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator.*
+_To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator._
 
 **To exit serial passthrough mode, power cycle your flight control board.**
