@@ -135,7 +135,7 @@ void updateGtuneState(void)
 {
     static bool GTuneWasUsed = false;
 
-    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
+    if (rcModeIsActive(BOXGTUNE)) {
         if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             ENABLE_FLIGHT_MODE(GTUNE_MODE);
             init_Gtune(&currentProfile->pidProfile);
@@ -243,7 +243,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (rcModeIsActive(BOXARM) == 0) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -301,7 +301,7 @@ void mwArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        if (rcModeIsActive(BOXFAILSAFE)) {
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
@@ -363,11 +363,11 @@ void handleInflightCalibrationStickPosition(void)
 
 void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !rcModeIsActive(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
-    if (IS_RC_MODE_ACTIVE(BOXCALIB)) {      // Use the Calib Option to activate : Calib = TRUE measurement started, Land and Calib = 0 measurement stored
+    if (rcModeIsActive(BOXCALIB)) {      // Use the Calib Option to activate : Calib = TRUE measurement started, Land and Calib = 0 measurement stored
         if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
             InflightcalibratingA = 50;
         AccInflightCalibrationActive = true;
@@ -400,7 +400,7 @@ void processRx(void)
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
-        if (!IS_RC_MODE_ACTIVE(BOXARM))
+        if (!rcModeIsActive(BOXARM))
             mwDisarm();
     }
 
@@ -472,7 +472,7 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(currentProfile->modeActivationConditions);
+    rcModeUpdateActivated(currentProfile->modeActivationConditions);
 
     if (!cliMode) {
         updateAdjustmentStates(currentProfile->adjustmentRanges);
@@ -481,7 +481,7 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
+    if ((rcModeIsActive(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
@@ -493,7 +493,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode) {
+    if (rcModeIsActive(BOXHORIZON) && canUseHorizonMode) {
 
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
@@ -513,7 +513,7 @@ void processRx(void)
 
 #ifdef  MAG
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
+        if (rcModeIsActive(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
                 magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
@@ -521,14 +521,14 @@ void processRx(void)
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
+        if (rcModeIsActive(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
             }
         } else {
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
+        if (rcModeIsActive(BOXHEADADJ)) {
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
         }
     }
@@ -540,7 +540,7 @@ void processRx(void)
     }
 #endif
 
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+    if (rcModeIsActive(BOXPASSTHRU)) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
@@ -553,7 +553,7 @@ void processRx(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+                (masterConfig.telemetryConfig.telemetry_switch && rcModeIsActive(BOXTELEMETRY))) {
 
             releaseSharedTelemetryPorts();
         } else {

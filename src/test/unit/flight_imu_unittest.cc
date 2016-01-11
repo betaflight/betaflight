@@ -42,6 +42,8 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    #include "io/rc_controls.h"
+
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -51,7 +53,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern float q0, q1, q2, q3;
-extern "C" { 
+extern "C" {
 void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
 }
@@ -153,6 +155,7 @@ int16_t GPS_ground_course;
 int16_t GPS_numSat;
 int16_t cycleTime = 2000;
 
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

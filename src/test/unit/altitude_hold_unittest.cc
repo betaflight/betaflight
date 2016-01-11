@@ -103,6 +103,7 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
 
 extern "C" {
 uint32_t rcModeActivationMask;
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 

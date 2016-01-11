@@ -169,7 +169,7 @@ void failsafeUpdateState(void)
 
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
-    bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    bool failsafeSwitchIsOn = rcModeIsActive(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     if (!receivingRxData) {
@@ -269,7 +269,7 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
-                        if (!(!isUsingSticksForArming() && IS_RC_MODE_ACTIVE(BOXARM))) {
+                        if (!(!isUsingSticksForArming() && rcModeIsActive(BOXARM))) {
                             DISABLE_ARMING_FLAG(PREVENT_ARMING);
                             failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                             reprocessState = true;

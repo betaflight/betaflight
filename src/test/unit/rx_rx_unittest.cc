@@ -159,6 +159,8 @@ TEST(RxTest, TestInvalidFlightChannels)
 // STUBS
 
 extern "C" {
+    bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
+
     void failsafeOnValidDataFailed() {}
     void failsafeOnValidDataReceived() {}
 

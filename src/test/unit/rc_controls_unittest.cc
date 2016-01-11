@@ -46,6 +46,7 @@ extern "C" {
 
 extern "C" {
 extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
+extern uint32_t rcModeActivationMask;
 }
 
 class RcControlsModesTest : public ::testing::Test {
@@ -73,14 +74,14 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 
     // when
-    updateActivatedModes(modeActivationConditions);
+    rcModeUpdateActivated(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
 #ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
+        EXPECT_EQ(false, rcModeIsActive((boxId_e)index));
     }
 }
 
@@ -163,7 +164,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     expectedMask |= (0 << 6);
 
     // when
-    updateActivatedModes(modeActivationConditions);
+    rcModeUpdateActivated(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {

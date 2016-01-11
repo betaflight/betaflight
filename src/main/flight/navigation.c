@@ -674,7 +674,7 @@ void updateGpsWaypointsAndMode(void)
         //
         // HOME mode takes priority over HOLD mode.
 
-        if (IS_RC_MODE_ACTIVE(BOXGPSHOME)) {
+        if (rcModeIsActive(BOXGPSHOME)) {
             if (!FLIGHT_MODE(GPS_HOME_MODE)) {
 
                 // Transition to HOME mode
@@ -697,7 +697,7 @@ void updateGpsWaypointsAndMode(void)
             // process HOLD mode
             //
 
-            if (IS_RC_MODE_ACTIVE(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile->ap_mode)) {
+            if (rcModeIsActive(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile->ap_mode)) {
                 if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
 
                     // Transition to HOLD mode

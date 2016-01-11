@@ -51,11 +51,6 @@ typedef enum {
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
-extern uint32_t rcModeActivationMask;
-
-#define IS_RC_MODE_ACTIVE(modeId) ((1 << (modeId)) & rcModeActivationMask)
-#define ACTIVATE_RC_MODE(modeId) (rcModeActivationMask |= (1 << modeId))
-
 typedef enum rc_alias {
     ROLL = 0,
     PITCH,
@@ -151,7 +146,9 @@ bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
+bool rcModeIsActive(boxId_e modeId);
+void rcModeUpdateActivated(modeActivationCondition_t *modeActivationConditions);
+bool rcModeIsActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 
 #define PID_MIN      0
 #define PID_MAX      200
@@ -268,4 +265,3 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);

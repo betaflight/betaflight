@@ -536,6 +536,8 @@ void GPS_set_next_wp(int32_t *lat, int32_t *lon) {UNUSED(lat);UNUSED(lon);}
 void pidSetController(pidControllerType_e type) {UNUSED(type);}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
+bool rcModeIsActive(boxId_e modeId)  { return rcModeActivationMask & (1 << modeId); }
+
 void useRcControlsConfig(void *modeActivationConditions, void *escAndServoConfigToUse, void *pidProfileToUse) {
     UNUSED(modeActivationConditions);UNUSED(escAndServoConfigToUse);UNUSED(pidProfileToUse);}
 // from runtime_config.c
