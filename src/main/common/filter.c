@@ -83,7 +83,6 @@ int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint16_t targetLoop
     }
 }
 
-// 9 Tap FIR filter as described here:
 // Thanks to Qcopter & BorisB & DigitalEntity
 void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff[FILTER_TAPS])
 {
