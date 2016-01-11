@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -48,6 +49,7 @@
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
 
@@ -91,7 +93,6 @@
 #include "build_config.h"
 #include "debug.h"
 
-extern uint32_t previousTime;
 extern uint8_t motorControlEnable;
 
 #ifdef SOFTSERIAL_LOOPBACK
@@ -118,7 +119,6 @@ void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
-void loop(void);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
@@ -462,8 +462,6 @@ void init(void)
     initBlackbox();
 #endif
 
-    previousTime = micros();
-
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
@@ -532,8 +530,47 @@ void processLoopback(void) {
 int main(void) {
     init();
 
+    /* Setup scheduler */
+    if (masterConfig.gyroSync) {
+        rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
+    }
+    else {
+        rescheduleTask(TASK_GYROPID, targetLooptime);
+    }
+
+    setTaskEnabled(TASK_GYROPID, true);
+    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+    setTaskEnabled(TASK_SERIAL, true);
+    setTaskEnabled(TASK_BEEPER, true);
+    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+    setTaskEnabled(TASK_RX, true);
+#ifdef GPS
+    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
+#endif
+#ifdef MAG
+    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#endif
+#ifdef BARO
+    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
+#endif
+#ifdef SONAR
+    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#endif
+#if defined(BARO) || defined(SONAR)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
+#endif
+#ifdef DISPLAY
+    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#endif
+#ifdef TELEMETRY
+    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
+#endif
+#ifdef LED_STRIP
+    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+#endif
+
     while (1) {
-        loop();
+        scheduler();
         processLoopback();
     }
 }

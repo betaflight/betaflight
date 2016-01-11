@@ -302,16 +302,18 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
+#ifdef GPS
 static void sendFakeLatLong(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
-    
+
     coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
     coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
 
     sendLatLong(coord);
 }
+#endif
 
 static void sendFakeLatLongThatAllowsHeadingDisplay(void)
 {

@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define INTERRUPT_WAIT_TIME 10
+
 extern uint32_t targetLooptime;
 
 bool gyroSyncCheckUpdate(void);
