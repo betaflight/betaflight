@@ -45,11 +45,8 @@
 
 #if defined(GPS) && defined(GPS_PROTO_UBLOX)
 
-// Bytes to batch up in each init 'time slice'
-# define GPS_INIT_BATCH 50 // for new scheduler
-
-// May not work on all Neo6M
-//#define GPS_PROTO_UBLOX_NEO7PLUS
+#define GPS_PROTO_UBLOX_NEO7PLUS
+#define GPS_VERSION_DETECTION_TIMEOUT_MS    (250)
 
 static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,115200,0*1E\r\n",     // GPS_BAUDRATE_115200
@@ -554,7 +551,7 @@ static bool gpsConfigure(void)
 {
     switch (gpsState.autoConfigStep) {
     case 0: // Config
-        for(int i = 0; i < GPS_INIT_BATCH; i++) {
+        while (serialTxBytesFree(gpsState.gpsPort) > 0) {
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
             if (gpsState.hwVersion < 70000) {
 #endif
@@ -585,7 +582,7 @@ static bool gpsConfigure(void)
         break;
 
     case 1: // SBAS
-        for(int i = 0; i < GPS_INIT_BATCH; i++) {
+        while (serialTxBytesFree(gpsState.gpsPort) > 0) {
             if (gpsState.autoConfigPosition < UBLOX_SBAS_MESSAGE_LENGTH) {
                 serialWrite(gpsState.gpsPort, ubloxSbas[gpsState.gpsConfig->sbasMode].message[gpsState.autoConfigPosition]);
                 gpsState.autoConfigPosition++;
@@ -610,27 +607,28 @@ static bool gpsConfigure(void)
 static bool gpsCheckVersion(void)
 {
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
-    for(int i = 0; i < GPS_INIT_BATCH; i++) {
-        if (gpsState.autoConfigStep == 0) {
-            if (gpsState.autoConfigPosition < sizeof(ubloxVerPoll)) {
-                serialWrite(gpsState.gpsPort, ubloxVerPoll[gpsState.autoConfigPosition]);
-                gpsState.autoConfigPosition++;
-            }
-            else {
-                gpsState.autoConfigStep++;
-                break;
-            }
+    if (gpsState.autoConfigStep == 0) {
+        for(uint16_t i = 0; i < sizeof(ubloxVerPoll); i++) {
+            serialWrite(gpsState.gpsPort, ubloxVerPoll[i]);
         }
-        else {
-                // Wait until version found
-            if (gpsState.hwVersion != 0) {
-                gpsState.autoConfigStep = 0;
-                gpsState.autoConfigPosition = 0;
-                gpsSetState(GPS_CONFIGURE);
-            }
+        gpsState.autoConfigStep++;
+    }
+    else {
+        // Wait until version found
+        if (gpsState.hwVersion != 0) {
+            gpsState.autoConfigStep = 0;
+            gpsState.autoConfigPosition = 0;
+            gpsSetState(GPS_CONFIGURE);
+        }
+        else if ((millis() - gpsState.lastStateSwitchMs) >= GPS_VERSION_DETECTION_TIMEOUT_MS) {
+            gpsState.hwVersion = 0;
+            gpsState.autoConfigStep = 0;
+            gpsState.autoConfigPosition = 0;
+            gpsSetState(GPS_CONFIGURE);
         }
     }
 #else
+    gpsState.hwVersion = 0;
     gpsSetState(GPS_CONFIGURE);
 #endif
     return false;
@@ -656,7 +654,7 @@ bool gpsHandleUBLOX(void)
 {
     // Receive data
     bool hasNewData = gpsReceiveData();
-
+    
     // Process state
     switch(gpsState.state) {
     default:
