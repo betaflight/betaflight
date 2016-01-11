@@ -426,7 +426,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 }
 
 
-#ifndef SKIP_SERIAL_PASSTHROUGH
+#if defined(GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
 // Default data consumer for serialPassThrough.
 static void nopConsumer(uint8_t data)
 {
