@@ -627,6 +627,48 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/version.o : \
+	$(USER_DIR)/version.c \
+	$(USER_DIR)/version.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/version.c -o $@
+
+$(OBJECT_DIR)/drivers/buf_writer.o : \
+	$(USER_DIR)/drivers/buf_writer.c \
+	$(USER_DIR)/drivers/buf_writer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/drivers/buf_writer.c -o $@
+
+$(OBJECT_DIR)/io/serial_msp.o : \
+	$(USER_DIR)/io/serial_msp.c \
+	$(USER_DIR)/io/serial_msp.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/serial_msp.c -o $@
+
+$(OBJECT_DIR)/serial_msp_unittest.o : \
+	$(TEST_DIR)/serial_msp_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/serial_msp_unittest.cc -o $@
+
+$(OBJECT_DIR)/serial_msp_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/io/serial.o \
+	$(OBJECT_DIR)/io/serial_msp.o \
+	$(OBJECT_DIR)/drivers/buf_writer.o \
+	$(OBJECT_DIR)/serial_msp_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 test: $(TESTS:%=test-%)
 
 test-%: $(OBJECT_DIR)/%
