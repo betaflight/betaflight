@@ -12,7 +12,7 @@ Two GPS protocols are supported. NMEA text and UBLOX binary.
 
 Enable the GPS from the CLI as follows:
 
-1. configure a serial port to use for GPS.
+1. [configure a serial port to use for GPS.](Serial.md) 
 1. set your GPS baud rate
 1. enable the `feature GPS`
 1. set the `gps_provider`
@@ -25,7 +25,7 @@ For the connections step check the Board documentation for pins and port numbers
 
 ### GPS Provider
 
-Set the `gps_provider` appropriately.
+Set the `gps_provider` appropriately, for example `set gps_provider=UBLOX`
 
 | Value | Meaning  |
 | ----- | -------- |
@@ -171,3 +171,4 @@ Ublox NEO-6M GPS with Compass | [eBay](http://www.ebay.com/itm/111585855757)
 Module | Comments
 -------|--------
 MTK 3329 | Tested on hardware serial at 115200 baud (default) and on softserial at 19200 baud. The baudrate and refresh rate can be adjusted using the MiniGPS software (recommended if you lower the baudrate). The software will estimate the percentage of UART bandwidth used for your chosen baudrate and update rate.
+
