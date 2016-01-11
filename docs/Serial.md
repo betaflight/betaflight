@@ -58,8 +58,8 @@ You can use the CLI for configuration but the commands are reserved for develope
 
 The `serial` CLI command takes 6 arguments.
 
-1. Identifier
-1. Function bitmask (see serialPortFunction_e in the source) 
+1. Identifier (see serialPortIdentifier_e in the source)
+1. Function bitmask (see serialPortFunction_e in the source)
 1. MSP baud rate
 1. GPS baud rate
 1. Telemetry baud rate (auto baud allowed)
@@ -91,7 +91,7 @@ To initiate passthrough mode, use the CLI command `serialpassthrough` This comma
 
     serialpassthrough <id> [baud] [mode]
 
-ID is the internal identifier of the serial port from [Cleanflight source code](https://github.com/cleanflight/cleanflight/blob/f17ef30bb8b9e0156b6bb72b766d4e5acc1b4add/src/main/io/serial.h#L54-L60). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. Baud is the desired baud rate, and mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
+ID is the internal identifier of the serial port from Cleanflight source code (see serialPortIdentifier_e in the source). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. Baud is the desired baud rate, and mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
 
 For example. If you have your MWOSD connected to UART 2, you could enable communicaton to this device using the following command. This command does not specify the baud rate or mode, using the one configured for the port (see above).
 
