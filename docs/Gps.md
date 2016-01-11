@@ -27,16 +27,16 @@ For the connections step check the Board documentation for pins and port numbers
 
 Set the `gps_provider` appropriately, for example `set gps_provider=UBLOX`
 
-| Value | Meaning  |
-| ----- | -------- |
-| 0     | NMEA     |
-| 1     | UBLOX    |
+| Meaning  |
+| -------- |
+| NMEA     |
+| UBLOX    |
 
 ### GPS Auto configuration
 
 When using UBLOX it is a good idea to use GPS auto configuration so your FC gets the GPS messages it needs.
 
-Enable GPS auto configuration as follows `set gps_auto_config=1`.
+Enable GPS auto configuration as follows `set gps_auto_config=ON`.
 
 If you are not using GPS auto configuration then ensure your GPS receiver sends out the correct messages at the right frequency.  See below for manual UBlox settings.
 
@@ -56,7 +56,7 @@ The default is AUTO.
 
 If you use a regional specific setting you may achieve a faster GPS lock than using AUTO.
 
-This setting only works when `gps_auto_config=1`
+This setting only works when `gps_auto_config=ON`
 
 ## GPS Receiver Configuration
 
