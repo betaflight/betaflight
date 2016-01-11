@@ -424,6 +424,7 @@ void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
     }
 }
 
+#ifndef SKIP_SERIAL_PASSTHROUGH
 // Default data consumer for serialPassThrough.
 static void nopConsumer(uint8_t data)
 {
@@ -473,3 +474,4 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
         }
     }
 }
+#endif

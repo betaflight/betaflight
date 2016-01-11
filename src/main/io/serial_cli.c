@@ -111,7 +111,9 @@ static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
+#ifndef SKIP_SERIAL_PASSTHROUGH
 static void cliSerialPassthrough(char *cmdline);
+#endif
 
 #ifdef USE_SERVOS
 static void cliServo(char *cmdline);
@@ -274,9 +276,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
+#ifndef SKIP_SERIAL_PASSTHROUGH
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port",
                     "<id> [baud] [mode] : passthrough to serial",
                     cliSerialPassthrough),
+#endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
@@ -974,6 +978,7 @@ static void cliSerial(char *cmdline)
 
 }
 
+#ifndef SKIP_SERIAL_PASSTHROUGH
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -1041,6 +1046,7 @@ static void cliSerialPassthrough(char *cmdline)
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
+#endif
 
 static void cliAdjustmentRange(char *cmdline)
 {

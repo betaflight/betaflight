@@ -72,6 +72,8 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#else
+#define SKIP_SERIAL_PASSTHROUGH
 #endif
 
 //#undef USE_CLI
