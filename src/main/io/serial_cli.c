@@ -1150,7 +1150,7 @@ static void cliSerialPassthrough(char *cmdline)
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
         printf("Port %d already open\r\n", id);
-        if (passThroughPort->mode != mode) {
+        if (mode && passThroughPort->mode != mode) {
             printf("Adjusting mode from configured value %d to %d\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
