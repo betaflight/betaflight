@@ -1117,9 +1117,9 @@ static void cliSerialPassthrough(char *cmdline)
                 baud = atoi(tok);
                 break;
             case 2:
-                if (strcasestr(tok, "rx"))
+                if (strstr(tok, "rx") || strstr(tok, "RX"))
                     mode |= MODE_RX;
-                if (strcasestr(tok, "tx"))
+                if (strstr(tok, "tx") || strstr(tok, "TX"))
                     mode |= MODE_TX;
                 break;
         }
