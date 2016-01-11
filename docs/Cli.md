@@ -100,13 +100,13 @@ Click on a command to jump to the relevant documentation page.
 | [`rxfail`](Rx.md)                       | show/set rx failsafe settings                  |
 | `save`                                  | save and reboot                                |
 | `set`                                   | name=value or blank or * for list              |
+| `serialpassthrough`                     | serial passthrough mode, reset board to exit   |
 | `status`                                | show system status                             |
 | `version`                               | show version                                   |
 | [`serial`](Serial.md)                   | configure serial ports                         |
 | [`servo`](Mixer.md)                     | configure servos                               |
 | `sd_info`                               | sdcard info                                    |
 | `tasks`                                 | show task stats                                |
-
 
 
 ## CLI Variable Reference
