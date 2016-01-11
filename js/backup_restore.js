@@ -478,8 +478,8 @@ function configuration_restore(callback) {
                 for (var i = 0; i < configuration.profiles[profileIndex].ServoConfig.length; i++) {
                     var servoConfig = profiles[profileIndex].ServoConfig;
                     
-                    servoConfig[i].angleAtMin = 90;
-                    servoConfig[i].angleAtMax = 90;
+                    servoConfig[i].angleAtMin = 45;
+                    servoConfig[i].angleAtMax = 45;
                     servoConfig[i].reversedInputSources = 0;
                     
                     // set the rate to 0 if an invalid value is detected.
