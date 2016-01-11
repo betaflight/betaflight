@@ -425,37 +425,10 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
-<<<<<<< 131f90e36dbcbbca5c16b409e113c866d58947ed
-/*
-A low-level interface for implementing serial passthrough. This is used for
-example by gps to do serial passthrough while also consuming GPS data and
-updating the display. It is used below by the high-level `serialPassthrough()`
-function to move data between two serial ports.
 
-Read data from `left` and writes it to `right`
-Returns data (if any) to caller for further processing.
-*/
-uint8_t serialPassthroughStep(serialPort_t *left, serialPort_t *right)
-=======
-void cliEnter(serialPort_t *serialPort);
-
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
-{
-#ifndef USE_CLI
-    UNUSED(serialPort);
-#else
-    if (receivedChar == '#') {
-        cliEnter(serialPort);
-    }
-#endif
-    if (receivedChar == serialConfig->reboot_character) {
-        systemResetToBootloader();
-    }
-}
-
+#ifndef SKIP_SERIAL_PASSTHROUGH
 // Default data consumer for serialPassThrough.
 static void nopConsumer(uint8_t data)
->>>>>>> Modified to allow user to specify the mode and baud rate (as a speed i.e. 115200)
 {
     UNUSED(data);
 }
@@ -503,3 +476,4 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
         }
     }
 }
+#endif
