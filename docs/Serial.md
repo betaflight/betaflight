@@ -81,3 +81,22 @@ The allowable baud rates are as follows:
 | 6          | 230400    |
 | 7          | 250000    |
 
+
+
+### Passthrough
+
+Cleanflight can enter a special passthrough mode whereby it passes serial data through to a device connected to a UART/SoftSerial port. This is useful to change the configuration of a Cleanflight peripheral such as an OSD, bluetooth dongle, serial RX etc.
+
+To initiate passthrough mode, use the CLI command `serialpassthrough` This command takes three arguments.
+
+    serialpassthrough <id> [baud] [mode]
+
+ID is the index of the serial port to pass through communication to. This index is 0-based and matches the ports on the Cleanflight Configurator ports page (see above). Baud is the desired baud rate, and mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
+
+For example. If you have your MWOSD connected to UART 2, you could enable communicaton to this device using the following command. This command does not specify the baud rate or mode, using the one configured for the port (see above).
+
+    serialpassthrough 1
+
+*To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator.*
+
+**To exit serial passthrough mode, power cycle your flight control board.**
