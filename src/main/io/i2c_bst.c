@@ -1485,9 +1485,11 @@ static bool bstSlaveUSBCommandFeedback(/*uint8_t bstFeedback*/)
 }
 
 /*************************************************************************************************/
+bool slaveModeOn = false;
 static void bstSlaveProcessInCommand(void)
 {
 	if(bstSlaveRead(readData)) {
+		slaveModeOn = true;
 		readBufferPointer = 1;
 		//Check if the CRC match
 		if(bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
@@ -1515,6 +1517,8 @@ static void bstSlaveProcessInCommand(void)
 					break;
 			}
 		}
+	} else {
+		slaveModeOn = false;
 	}
 }
 
@@ -1522,11 +1526,12 @@ static void bstSlaveProcessInCommand(void)
 #define UPDATE_AT_02HZ ((1000 * 1000) / 2)
 static uint32_t next02hzUpdateAt_1 = 0;
 
-#define UPDATE_AT_10HZ ((1000 * 1000) / 10)
-static uint32_t next10hzUpdateAt_1 = 0;
-static uint32_t next10hzUpdateAt_2 = 0;
+#define UPDATE_AT_20HZ ((1000 * 1000) / 20)
+static uint32_t next20hzUpdateAt_1 = 0;
 
-void taskBstProcess(void)
+static uint8_t sendCounter = 0;
+
+void taskBstMasterProcess(void)
 {
 	if(coreProReady) {
 		uint32_t now = micros();
@@ -1534,26 +1539,40 @@ void taskBstProcess(void)
 			writeFCModeToBST();
 			next02hzUpdateAt_1 = now + UPDATE_AT_02HZ;
 		}
-		if(now >= next10hzUpdateAt_1 && !bstWriteBusy()) {
-			writeRCChannelToBST();
-			next10hzUpdateAt_1 = now + UPDATE_AT_10HZ;
-		}
-		if(now >= next10hzUpdateAt_2 && !bstWriteBusy()) {
-			writeRollPitchYawToBST();
-			next10hzUpdateAt_2 = now + UPDATE_AT_10HZ;
+		if(now >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+			if(sendCounter == 0)
+				writeRCChannelToBST();
+			else if(sendCounter == 1)
+				writeRollPitchYawToBST();
+			sendCounter++;
+			if(sendCounter > 1)
+				sendCounter = 0;
+			next20hzUpdateAt_1 = now + UPDATE_AT_20HZ;
 		}
 
 		if(sensors(SENSOR_GPS) && !bstWriteBusy())
 			writeGpsPositionPrameToBST();
 	}
+}
+
+void taskBstCheckCommand(void) 
+{
 	//Check if the BST input command available to out address
 	bstSlaveProcessInCommand();
-	
+
 	if (isRebootScheduled) {
 		stopMotors();
 		handleOneshotFeatureChangeOnRestart();
 		systemReset();
 	}
+}
+
+void bstMasterWriteLoop(void);
+void taskBstReadWrite(void)
+{
+	taskBstCheckCommand();
+	if(!slaveModeOn)
+		bstMasterWriteLoop();
 }
 
 /*************************************************************************************************/
