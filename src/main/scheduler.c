@@ -79,7 +79,8 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
-void taskBstProcess(void);
+void taskBstReadWrite(void);
+void taskBstMasterProcess(void);
 
 static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -207,9 +208,16 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_BST
-    [TASK_BST_PROCESS] = {
-        .taskName = "BST_PROCESS",
-        .taskFunc = taskBstProcess,
+    [TASK_BST_READ_WRITE] = {
+        .taskName = "BST_MASTER_WRITE",
+        .taskFunc = taskBstReadWrite,
+        .desiredPeriod = 1000000 / 300,         // 300 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
+    [TASK_BST_MASTER_PROCESS] = {
+        .taskName = "BST_MASTER_PROCESS",
+        .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },

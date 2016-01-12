@@ -574,14 +574,12 @@ int main(void) {
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
 #ifdef USE_BST
-    setTaskEnabled(TASK_BST_PROCESS, true);
+    setTaskEnabled(TASK_BST_READ_WRITE, true);
+    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 
     while (1) {
         scheduler();
-#ifdef USE_BST
-	   bstMasterWriteLoop();
-#endif
         processLoopback();
     }
 }
