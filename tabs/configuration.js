@@ -266,7 +266,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         ];
 
         var gpsSbas = [
-            'Disabled',
             'Auto-detect',
             'European EGNOS',
             'North American WAAS',
@@ -305,7 +304,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
         for (var i = 0; i < gpsSbas.length; i++) {
-            gps_ubx_sbas_e.append('<option value="' + (i - 1) + '">' + gpsSbas[i] + '</option>');
+            gps_ubx_sbas_e.append('<option value="' + i + '">' + gpsSbas[i] + '</option>');
         }
 
         gps_ubx_sbas_e.change(function () {
