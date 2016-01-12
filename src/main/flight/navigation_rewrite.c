@@ -901,15 +901,22 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
         return NAV_FSM_EVENT_SUCCESS;
     }
     else {
-        // Gradually reduce descent speed depending on actual altitude.
-        if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
-            updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
-        }
-        else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
-            updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
+        // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
+        if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
+            // Gradually reduce descent speed depending on actual altitude.
+            if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
+            }
+            else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
+                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
+            }
+            else {
+                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
+            }
         }
         else {
-            updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
+            // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
+            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate);
         }
 
         return NAV_FSM_EVENT_NONE;
