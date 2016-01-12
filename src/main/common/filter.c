@@ -51,33 +51,53 @@ void setBiQuadCoefficients(int type, biquad_t *state) {
 	/* set coefficients */
 	switch(type) {
 	    case(GYRO_FILTER):
-            if (targetLooptime == 500) {
-                state->a0= 0.007820199;
-                state->a1= 0.015640399;
-                state->a2= 0.007820199;
-                state->a3= -1.73472382;
-                state->a4= 0.766004619;
-            } else {
-                state->a0= 0.027859711;
-                state->a1= 0.055719422;
-                state->a2= 0.027859711;
-                state->a3= -1.47547752;
-                state->a4= 0.586916365;
+            switch (targetLooptime) {
+                case(SAMPLE_RATE_2KHZ):
+                    state->a0= 0.007820199;
+                    state->a1= 0.015640399;
+                    state->a2= 0.007820199;
+                    state->a3= -1.73472382;
+                    state->a4= 0.766004619;
+                    break;
+                case(SAMPLE_RATE_2K6HZ):
+                    state->a0= 0.004538377;
+                    state->a1= 0.009076754;
+                    state->a2= 0.004538377;
+                    state->a3= -1.80059391;
+                    state->a4= 0.818747415;
+                    break;
+                default:
+                case(SAMPLE_RATE_1KHZ):
+                    state->a0= 0.027859711;
+                    state->a1= 0.055719422;
+                    state->a2= 0.027859711;
+                    state->a3= -1.47547752;
+                    state->a4= 0.586916365;
 	        }
             break;
 	    case(DELTA_FILTER):
-            if (targetLooptime == 500) {
-                state->a0= 0.003621679;
-                state->a1= 0.007243357;
-                state->a2= 0.003621679;
-                state->a3= -1.82269350;
-                state->a4= 0.837180216;
-            } else {
-                state->a0= 0.013359181;
-                state->a1= 0.026718362;
-                state->a2= 0.013359181;
-                state->a3= -1.64745762;
-                state->a4= 0.700894342;
+            switch (targetLooptime) {
+	            case(SAMPLE_RATE_2KHZ):
+                    state->a0= 0.003621679;
+                    state->a1= 0.007243357;
+                    state->a2= 0.003621679;
+                    state->a3= -1.82269350;
+                    state->a4= 0.837180216;
+                    break;
+	            case(SAMPLE_RATE_2K6HZ):
+                    state->a0= 0.002081573;
+                    state->a1= 0.004163147;
+                    state->a2= 0.002081573;
+                    state->a3= -1.86685796;
+                    state->a4= 0.875184256;
+                    break;
+	            default:
+	            case(SAMPLE_RATE_1KHZ):
+                    state->a0= 0.013359181;
+                    state->a1= 0.026718362;
+                    state->a2= 0.013359181;
+                    state->a3= -1.64745762;
+                    state->a4= 0.700894342;
             }
 	}
 }

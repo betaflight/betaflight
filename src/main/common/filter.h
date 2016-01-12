@@ -35,6 +35,13 @@ typedef enum {
     DELTA_FILTER
 } filterType_e;
 
+typedef enum {
+    SAMPLE_RATE_1KHZ = 1000,
+	SAMPLE_RATE_2KHZ = 500,
+	SAMPLE_RATE_2K6HZ = 375,
+	SAMPLE_RATE_4KHZ = 250
+} sampleRates_e;
+
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
 float applyBiQuadFilter(float sample, biquad_t * b);
 void setBiQuadCoefficients(int type, biquad_t *state);

@@ -47,7 +47,11 @@ void gyroUpdateSampleRate(uint8_t lpf) {
     if (!lpf) {
         gyroSamplePeriod = 125;
 #ifdef STM32F303xC
+#ifdef COLIBRI_RACE
+        gyroSyncDenominator = 3; // Sample every 3d gyro measurement 2,6khz
+#else
         gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
+#endif
 #else
         if (!sensors(SENSOR_ACC) && !sensors(SENSOR_BARO) && !sensors(SENSOR_MAG)) {
             gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
