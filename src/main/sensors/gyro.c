@@ -38,17 +38,20 @@ int16_t gyroADC[XYZ_AXIS_COUNT];
 int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
-static int8_t * gyroFIRTable = 0L;
-static int16_t gyroFIRState[3][FILTER_TAPS];
-
+static biquad_t gyroBiQuadState[3];
+static bool useSoftFilter;
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t * filterTableToUse)
+void useGyroConfig(gyroConfig_t *gyroConfigToUse, uint8_t useFilter)
 {
+    int axis;
     gyroConfig = gyroConfigToUse;
-    gyroFIRTable = filterTableToUse;
+    if (useFilter) {
+        useSoftFilter = true;
+        for (axis = 0; axis < 3; axis++) setBiQuadCoefficients(GYRO_FILTER, &gyroBiQuadState[axis]);
+    }
 }
 
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -126,9 +129,10 @@ void gyroUpdate(void)
         return;
     }
 
-    if (gyroFIRTable) {
+    if (useSoftFilter) {
         int axis;
-        for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) filterApplyFIR(&gyroADC[axis], gyroFIRState[axis], gyroFIRTable);
+        //for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) filterApplyFIR(&gyroADC[axis], gyroFIRState[axis], gyroFIRTable);
+        for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = applyBiQuadFilter((float) gyroADC[axis], &gyroBiQuadState[axis]);
     }
 
     alignSensors(gyroADC, gyroADC, gyroAlign);

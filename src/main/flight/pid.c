@@ -112,8 +112,10 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static airModePlus_t airModePlusAxisState[3];
-static int8_t * deltaFIRTable = 0L;
-static int16_t deltaFIRState[3][FILTER_TAPS];
+//static int8_t * deltaFIRTable = 0L;
+//static int16_t deltaFIRState[3][FILTER_TAPS];
+static bool deltaStateIsSet = false;
+static biquad_t deltaBiQuadState[3];
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -126,7 +128,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
-    if (!deltaFIRTable) deltaFIRTable = filterGetFIRCoefficientsTable(2, targetLooptime);
+    if (!deltaStateIsSet) {
+        for (axis = 0; axis < 3; axis++) setBiQuadCoefficients(DELTA_FILTER, &deltaBiQuadState[axis]);
+        deltaStateIsSet = true;
+    }
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -210,15 +215,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta = RateError - lastError[axis];
         lastError[axis] = RateError;
 
+        delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
-
-        /* Delta filtering is in integers, which should be fine */
-        int16_t deltaTemp = (int16_t) delta;
-        filterApplyFIR(&deltaTemp, deltaFIRState[axis], deltaFIRTable);
-        delta = (float) deltaTemp;
 
         DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
@@ -249,15 +250,17 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     UNUSED(rxConfig);
 
     int axis;
-    int16_t delta;
-    int32_t PTerm, ITerm, DTerm;
+    int32_t PTerm, ITerm, DTerm, delta;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
 
-    if (!deltaFIRTable) deltaFIRTable = filterGetFIRCoefficientsTable(2, targetLooptime);
+    if (!deltaStateIsSet) {
+        for (axis = 0; axis < 3; axis++) setBiQuadCoefficients(DELTA_FILTER, &deltaBiQuadState[axis]);
+        deltaStateIsSet = true;
+    }
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -340,14 +343,14 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         }
 
         //-----calculate D-term
-        delta = (int16_t) RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+        delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastError[axis] = RateError;
+
+        delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis]));
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
-
-        filterApplyFIR(&delta, deltaFIRState[axis], deltaFIRTable);
 
         DTerm = (delta * 3 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 

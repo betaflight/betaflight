@@ -23,6 +23,18 @@ typedef struct filterStatePt1_s {
 	float constdT;
 } filterStatePt1_t;
 
+/* this holds the data required to update samples thru a filter */
+typedef struct biquad_s {
+    float a0, a1, a2, a3, a4;
+    float x1, x2, y1, y2;
+} biquad_t;
+
+typedef enum {
+    GYRO_FILTER,
+    ACCELEROMETER_FILTER,
+    DELTA_FILTER
+} filterType_e;
+
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint32_t targetLooptime);
-void filterApplyFIR(int16_t *data, int16_t state[FILTER_TAPS], int8_t coeff[FILTER_TAPS]);
+float applyBiQuadFilter(float sample, biquad_t * b);
+void setBiQuadCoefficients(int type, biquad_t *state);
