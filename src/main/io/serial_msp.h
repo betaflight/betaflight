@@ -230,6 +230,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 
 // #define MSP_BIND                 240    //in message          no param
+// #define MSP_ALARMS               242
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
 
