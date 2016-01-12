@@ -1,8 +1,18 @@
 /*
- * filter.c
+ * This file is part of Cleanflight.
  *
- *  Created on: 24 jun. 2015
- *      Author: borisb
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -10,8 +20,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "common/filter.h"
 #include "common/axis.h"
+#include "common/filter.h"
+#include "common/maths.h"
+
+#include "drivers/gyro_sync.h"
 
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
@@ -27,23 +40,64 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
-// 7 Tap FIR filter as described here:
-// Thanks to Qcopter
-void filterApplyFIR(int16_t data[]) {
-    int16_t FIRcoeff[7] = { 12, 23, 40, 51, 52, 40, 38 }; // TODO - More coefficients needed. Now fixed to 1khz
-    static int16_t gyro_delay[3][7] = { {0}, {0}, {0} };
-    int32_t FIRsum;
-    int axis, i;
+void setBiQuadCoefficients(int type, biquad_t *state) {
 
-    // 7 tap FIR, <-20dB at >170Hz with looptime 1ms, groupdelay = 2.5ms
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        FIRsum = 0;
-        for (i = 0; i <= 5; i++) {
-            gyro_delay[axis][i] = gyro_delay[axis][i + 1];
-            FIRsum += gyro_delay[axis][i] * FIRcoeff[i];
-        }
-        gyro_delay[axis][6] = data[axis];
-        FIRsum += gyro_delay[axis][6] * FIRcoeff[6];
-        data[axis] = FIRsum / 256;
-    }
+    /* zero initial samples */
+    state->x1=0;
+    state->x2=0;
+    state->y1=0;
+    state->y2=0;
+
+	/* set coefficients */
+	switch(type) {
+	    case(GYRO_FILTER):
+            if (targetLooptime == 500) {
+                state->a0= 0.007820199;
+                state->a1= 0.015640399;
+                state->a2= 0.007820199;
+                state->a3= -1.73472382;
+                state->a4= 0.766004619;
+            } else {
+                state->a0= 0.027859711;
+                state->a1= 0.055719422;
+                state->a2= 0.027859711;
+                state->a3= -1.47547752;
+                state->a4= 0.586916365;
+	        }
+            break;
+	    case(DELTA_FILTER):
+            if (targetLooptime == 500) {
+                state->a0= 0.003621679;
+                state->a1= 0.007243357;
+                state->a2= 0.003621679;
+                state->a3= -1.82269350;
+                state->a4= 0.837180216;
+            } else {
+                state->a0= 0.013359181;
+                state->a1= 0.026718362;
+                state->a2= 0.013359181;
+                state->a3= -1.64745762;
+                state->a4= 0.700894342;
+            }
+	}
+}
+
+/* Computes a BiQuad filter on a sample */
+float applyBiQuadFilter(float sample, biquad_t *state)
+{
+    float result;
+
+    /* compute result */
+    result = state->a0 * sample + state->a1 * state->x1 + state->a2 * state->x2 -
+        state->a3 * state->y1 - state->a4 * state->y2;
+
+    /* shift x1 to x2, sample to x1 */
+    state->x2 = state->x1;
+    state->x1 = sample;
+
+    /* shift y1 to y2, result to y1 */
+    state->y2 = state->y1;
+    state->y1 = result;
+
+    return result;
 }

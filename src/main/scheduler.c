@@ -62,8 +62,7 @@ typedef struct {
 #endif
 } cfTask_t;
 
-bool taskMainPidLoopCheck(uint32_t currentDeltaTime);
-void taskMainPidLoop(void);
+void taskMainPidLoopCheck(void);
 void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
 void taskUpdateBeeper(void);
@@ -79,8 +78,10 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
+#ifdef USE_BST
 void taskBstReadWrite(void);
 void taskBstMasterProcess(void);
+#endif
 
 static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -93,8 +94,7 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_GYROPID] = {
         .taskName = "GYRO/PID",
-        .checkFunc = taskMainPidLoopCheck,
-        .taskFunc = taskMainPidLoop,
+        .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
@@ -226,7 +226,6 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
-#define REALTIME_GUARD_INTERVAL_MARGIN  25
 
 void taskSystem(void)
 {
@@ -247,7 +246,7 @@ void taskSystem(void)
         }
     }
 
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX) + REALTIME_GUARD_INTERVAL_MARGIN;
+    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX);
 #if defined SCHEDULER_DEBUG
     debug[2] = realtimeGuardInterval;
 #endif

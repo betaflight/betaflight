@@ -118,6 +118,7 @@ typedef struct rxConfig_s {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t rcSmoothing;
+    uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;

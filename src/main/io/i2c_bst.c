@@ -994,9 +994,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			break;
 	    case BST_FC_FILTERS:
 			bstWrite16(masterConfig.gyro_lpf);
-			bstWrite8(0);//masterConfig.profile[0].pidProfile.gyro_cut_hz);
-			bstWrite8(masterConfig.profile[0].pidProfile.dterm_cut_hz);
-			bstWrite8(masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz);
 			break;
 		default:
 			// we do not know how to handle the (valid) message, indicate error BST
@@ -1459,9 +1456,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			break;
 	    case BST_SET_FC_FILTERS:
 			masterConfig.gyro_lpf = bstRead16();
-			bstRead8();//masterConfig.profile[0].pidProfile.gyro_cut_hz = bstRead8();
-			masterConfig.profile[0].pidProfile.dterm_cut_hz = bstRead8();
-			masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz = bstRead8();
 			break;
 
 	    default:

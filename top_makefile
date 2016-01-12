@@ -1,32 +1,27 @@
-ALL_TARGETS :=  naze \
-                cc3d \
-                cc3d_opbl \
-                cc3d_bp6 \
-                cc3d_opbl_bp6 \
-                nazepro \
-                olimexino \
-                stm32f3discovery \
-                chebuzzf3 \
-                cjmcu \
-                eustm32f103rc \
-                spracingf3 \
-                port103r \
-                sparky \
-                alienwiif1 \
-                alienwiif3 \
-                colibri_race \
-                motolab \
-                rmdo \
-                ircfusionf3 \
-
+ALL_TARGETS := naze
+ALL_TARGETS += cc3d
+ALL_TARGETS += cc3d_opbl
+ALL_TARGETS += nazepro
+ALL_TARGETS += olimexino
+ALL_TARGETS += stm32f3discovery
+ALL_TARGETS += chebuzzf3
+#ALL_TARGETS += cjmcu
+ALL_TARGETS += eustm32f103rc
+ALL_TARGETS += spracingf3
+ALL_TARGETS += port103r
+ALL_TARGETS += sparky
+ALL_TARGETS += alienwiif1
+ALL_TARGETS += alienwiif3
+ALL_TARGETS += colibri_race
+ALL_TARGETS += motolab
+ALL_TARGETS += rmdo
+ALL_TARGETS += ircfusionf3
 
 CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
 
 clean_naze naze :                         opts := TARGET=NAZE
 clean_cc3d cc3d:                          opts := TARGET=CC3D
 clean_cc3d_opbl cc3d_opbl :               opts := TARGET=CC3D_OPBL
-clean_cc3d_bp6 cc3d_bp6 :                 opts := TARGET=CC3D_BP6
-clean_cc3d_opbl_bp6 cc3d_opbl_bp6 :       opts := TARGET=CC3D_OPBL_BP6
 clean_nazepro nazepro :                   opts := TARGET=NAZE32PRO
 clean_olimexino olimexino :               opts := TARGET=OLIMEXINO
 clean_stm32f3discovery stm32f3discovery : opts := TARGET=STM32F3DISCOVERY

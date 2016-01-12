@@ -36,6 +36,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -133,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 116;
+static const uint8_t EEPROM_CONF_VERSION = 117;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -148,13 +149,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
-    pidProfile->D8[ROLL] = 23;
+    pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 40;
     pidProfile->I8[PITCH] = 30;
-    pidProfile->D8[PITCH] = 23;
+    pidProfile->D8[PITCH] = 20;
     pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
-    pidProfile->D8[YAW] = 10;
+    pidProfile->D8[YAW] = 8;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -176,15 +177,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->gyro_soft_lpf = 1;   // filtering ON by default
-    pidProfile->dterm_cut_hz = 40;
-    pidProfile->yaw_pterm_cut_hz = 0;
+    pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.3f;
-    pidProfile->D_f[ROLL] = 0.02f;
+    pidProfile->D_f[ROLL] = 0.01f;
     pidProfile->P_f[PITCH] = 1.5f;
     pidProfile->I_f[PITCH] = 0.3f;
-    pidProfile->D_f[PITCH] = 0.02f;
+    pidProfile->D_f[PITCH] = 0.01f;
     pidProfile->P_f[YAW] = 4.0f;
     pidProfile->I_f[YAW] = 0.4f;
     pidProfile->D_f[YAW] = 0.01f;
@@ -440,6 +440,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
     masterConfig.rxConfig.rcSmoothing = 0;
+    masterConfig.rxConfig.fpvCamAngleDegrees = 0;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
@@ -566,10 +567,6 @@ static void resetConf(void)
     masterConfig.rxConfig.rcmap[5] = 5;
     masterConfig.rxConfig.rcmap[6] = 6;
     masterConfig.rxConfig.rcmap[7] = 7;
-
-    //masterConfig.gyro_lpf = 188;
-    //masterConfig.profile[0].pidProfile.pterm_cut_hz = 50;
-    //masterConfig.profile[0].pidProfile.dterm_cut_hz = 17;
 
     masterConfig.rxConfig.rcSmoothing = 0;
     currentProfile->pidProfile.pidController = 2;
@@ -750,8 +747,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-
-    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_soft_lpf); // Leave this for more coefficients in the future
+    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_soft_lpf);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

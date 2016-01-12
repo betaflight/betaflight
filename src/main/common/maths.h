@@ -88,6 +88,11 @@ int32_t quickMedianFilter5(int32_t * v);
 int32_t quickMedianFilter7(int32_t * v);
 int32_t quickMedianFilter9(int32_t * v);
 
+float quickMedianFilter3f(float * v);
+float quickMedianFilter5f(float * v);
+float quickMedianFilter7f(float * v);
+float quickMedianFilter9f(float * v);
+
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
