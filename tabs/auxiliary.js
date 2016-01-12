@@ -80,6 +80,7 @@ TABS.auxiliary.initialize = function (callback) {
         $(rangeElement).find('.channel-slider').noUiSlider({
             start: rangeValues,
             behaviour: 'snap-drag',
+            margin: 50,
             step: 25,
             connect: true,
             range: channel_range,
