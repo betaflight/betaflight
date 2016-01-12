@@ -47,10 +47,31 @@
 #define RADIANS_TO_CENTIDEGREES(angle) (((angle) * 100.0f) / RAD)
 #define CENTIDEGREES_TO_RADIANS(angle) (((angle) / 100.0f) * RAD)
 
+// copied from https://code.google.com/p/cxutil/source/browse/include/cxutil/utility.h#70
+#define _CHOOSE2(binoper, lexpr, lvar, rexpr, rvar)         \
+    ( __extension__ ({                                      \
+            __typeof__(lexpr) lvar = (lexpr);               \
+            __typeof__(rexpr) rvar = (rexpr);               \
+            lvar binoper rvar ? lvar : rvar;                \
+        }))
+#define _CHOOSE_VAR2(prefix, unique) prefix##unique
+#define _CHOOSE_VAR(prefix, unique) _CHOOSE_VAR2(prefix, unique)
+#define _CHOOSE(binoper, lexpr, rexpr)                   \
+    _CHOOSE2(                                            \
+        binoper,                                         \
+        lexpr, _CHOOSE_VAR(_left, __COUNTER__),          \
+        rexpr, _CHOOSE_VAR(_right, __COUNTER__)          \
+        )
+#define MIN(a, b) _CHOOSE(<, a, b)
+#define MAX(a, b) _CHOOSE(>, a, b)
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define ABS(x) ((x) > 0 ? (x) : -(x))
+#define _ABS_II(x, var)                           \
+    ( __extension__ ({                            \
+        __typeof__(x) var = (x);                  \
+        var < 0 ? -var : var;                     \
+    }))
+#define _ABS_I(x, var) _ABS_II(x, var)
+#define ABS(x) _ABS_I(x, _CHOOSE_VAR(_abs, __COUNTER__))
 
 typedef struct stdev_s
 {
