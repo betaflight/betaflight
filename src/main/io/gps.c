@@ -221,8 +221,40 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     }
 }
 
+#ifdef USE_FAKE_GPS
+static void gpsFakeGPSUpdate(void)
+{
+    if (millis() - gpsState.lastMessageMs > 100) {
+        gpsSol.numSat = 6;
+        gpsSol.llh.lat = 509102311;
+        gpsSol.llh.lon = -15349744;
+        gpsSol.llh.alt = 0;
+        gpsSol.groundSpeed = 0;
+        gpsSol.groundCourse = 0;
+        gpsSol.velNED[X] = 0;
+        gpsSol.velNED[Y] = 0;
+        gpsSol.velNED[Z] = 0;
+        gpsSol.flags.validVelNE = 1;
+        gpsSol.flags.validVelD = 1;
+        gpsSol.hdop = 9999;
+
+        ENABLE_STATE(GPS_FIX);
+        sensorsSet(SENSOR_GPS);
+        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, gpsSol.velNED[0], gpsSol.velNED[1], gpsSol.velNED[2], gpsSol.flags.validVelNE, gpsSol.flags.validVelD, gpsSol.hdop);
+
+        gpsState.lastLastMessageMs = gpsState.lastMessageMs;
+        gpsState.lastMessageMs = millis();
+
+        gpsSetState(GPS_RECEIVING_DATA);
+    }
+}
+#endif
+
 void gpsThread(void)
 {
+#ifdef USE_FAKE_GPS
+    gpsFakeGPSUpdate();
+#else
     // Serial-based GPS
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
         switch (gpsState.state) {
@@ -316,6 +348,7 @@ void gpsThread(void)
     else {
         // GPS_TYPE_NA
     }
+#endif
 }
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
