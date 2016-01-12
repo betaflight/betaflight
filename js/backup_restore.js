@@ -594,6 +594,16 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
 
+        if (compareVersions(migratedVersion, '1.2.0')) {
+            // old version of the configurator incorrectly had a 'disabled' option for GPS SBAS mode.
+            if (MISC.gps_ubx_sbas < 0) {
+                MISC.gps_ubx_sbas = 0;
+            }
+            migratedVersion = '1.2.0';
+
+            appliedMigrationsCount++;
+        }
+
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }        
