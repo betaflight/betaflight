@@ -682,6 +682,10 @@ void taskMainPidLoop(void)
         }
 #endif
 
+#ifdef GTUNE
+        updateGtuneState();
+#endif
+
 #if defined(BARO) || defined(SONAR)
         if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
             if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
