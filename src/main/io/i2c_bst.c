@@ -993,7 +993,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(masterConfig.profile[0].rcControlsConfig.yaw_deadband);
 			break;
 	    case BST_FC_FILTERS:
-			bstWrite16(masterConfig.gyro_lpf);
+			bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
 			break;
 		default:
 			// we do not know how to handle the (valid) message, indicate error BST
