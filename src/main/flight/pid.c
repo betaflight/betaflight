@@ -94,11 +94,6 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
         //Ki scaler
         axisState->iTermScaler = constrainf(1.0f - (1.5f * rcCommandReflection), 0.0f, minItermScaler);
         if (minItermScaler > axisState->iTermScaler) minItermScaler = axisState->iTermScaler;
-
-        if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor) {
-            axisState->wowFactor = 1.0f - (rcCommandReflection * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f)); //0-1f
-            axisState->factor = (axisState->wowFactor * rcCommandReflection) * 1000;
-        }
     } else {
         // Prevent rapid windup
         if (minItermScaler < 1) {
@@ -107,13 +102,17 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
             minItermScaler = 1;
         }
     }
+
+    if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor) {
+        axisState->wowFactor = rcCommandReflection * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f); //0-1f
+        axisState->factor = axisState->wowFactor * rcCommandReflection * 1000;
+        axisState->wowFactor = 1.0f - axisState->wowFactor;
+    }
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static airModePlus_t airModePlusAxisState[3];
-//static int8_t * deltaFIRTable = 0L;
-//static int16_t deltaFIRState[3][FILTER_TAPS];
 static bool deltaStateIsSet = false;
 static biquad_t deltaBiQuadState[3];
 
