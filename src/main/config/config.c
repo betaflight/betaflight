@@ -149,13 +149,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 30;
-    pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 40;
+    pidProfile->D8[ROLL] = 13;
+    pidProfile->P8[PITCH] = 50;
     pidProfile->I8[PITCH] = 30;
     pidProfile->D8[PITCH] = 20;
     pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
-    pidProfile->D8[YAW] = 8;
+    pidProfile->D8[YAW] = 5;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
