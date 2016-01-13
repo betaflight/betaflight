@@ -206,6 +206,13 @@ static const motorMixer_t mixerSingleProp[] = {
     { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
+static const motorMixer_t mixerQuadX1234[] = {
+    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+};
+
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
@@ -235,6 +242,7 @@ const mixer_t mixers[] = {
     { 0, false, NULL },                // MIXER_CUSTOM
     { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
+    { 4, false, mixerQuadX1234 },
 };
 #endif
 
@@ -318,6 +326,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
     { 0, NULL },                // MULTITYPE_CUSTOM_TRI
+    { 0, NULL },
 };
 
 static servoMixer_t *customServoMixers;
