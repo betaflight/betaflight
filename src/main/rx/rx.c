@@ -237,6 +237,7 @@ void serialRxInit(rxConfig_t *rxConfig)
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
         case SERIALRX_IBUS:
+            rxRefreshRate = 20000; // TODO - Verify speed
             enabled = ibusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
     }
