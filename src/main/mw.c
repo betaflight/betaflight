@@ -118,7 +118,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern uint8_t PIDweight[3];
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
@@ -257,10 +257,6 @@ void annexCode(void)
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
-        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
