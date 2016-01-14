@@ -53,12 +53,12 @@ biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
 	float samplingRate;
     samplingRate = 1 / (targetLooptime * 0.000001f);
 
-    biquad_t *b;
+    biquad_t *newState;
     float omega, sn, cs, alpha;
     float a0, a1, a2, b0, b1, b2;
 
-    b = malloc(sizeof(biquad_t));
-    if (b == NULL)
+    newState = malloc(sizeof(biquad_t));
+    if (newState == NULL)
         return NULL;
 
     /* setup variables */
@@ -75,17 +75,17 @@ biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
     a2 = 1 - alpha;
 
     /* precompute the coefficients */
-    b->a0 = b0 /a0;
-    b->a1 = b1 /a0;
-    b->a2 = b2 /a0;
-    b->a3 = a1 /a0;
-    b->a4 = a2 /a0;
+    newState->a0 = b0 /a0;
+    newState->a1 = b1 /a0;
+    newState->a2 = b2 /a0;
+    newState->a3 = a1 /a0;
+    newState->a4 = a2 /a0;
 
     /* zero initial samples */
-    b->x1 = b->x2 = 0;
-    b->y1 = b->y2 = 0;
+    newState->x1 = newState->x2 = 0;
+    newState->y1 = newState->y2 = 0;
 
-    return b;
+    return newState;
 }
 
 /* Computes a biquad_t filter on a sample */
