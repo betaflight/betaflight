@@ -203,10 +203,10 @@ void systemInit(void)
     gpioInit(UART1_GPIO, &gpio);
 #endif
 
-#ifdef USE_USART2
-    gpio.pin = UART2_TX_PIN;
-    gpioInit(UART2_GPIO, &gpio);
-#endif
+//#ifdef USE_USART2
+//    gpio.pin = UART2_TX_PIN;
+//    gpioInit(UART2_GPIO, &gpio);
+//#endif
 
 #ifdef USE_USART3
     gpio.pin = UART3_TX_PIN;
