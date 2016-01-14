@@ -134,12 +134,13 @@
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
 
-#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef DISPLAY
 #undef SONAR
+#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef BARO
-#define SKIP_CLI_COMMAND_HELP
+#undef BLACKBOX
 #endif
+#define SKIP_CLI_COMMAND_HELP
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
