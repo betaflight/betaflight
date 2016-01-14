@@ -118,7 +118,7 @@ More information about the implementation can be found here: https://github.com/
 
 In time this documentation will be updated with further details.
 
-Smartport devices can be connected directly to STM32F3 boards such as the SPRacingF3 and Sparky, with a single straight through cable without the need for any hardware modifications on the FC or the receiver.
+Smartport devices can be connected directly to STM32F3 boards such as the SPRacingF3 and Sparky, with a single straight through cable without the need for any hardware modifications on the FC or the receiver. Connect the TX PIN of the UART to the Smartport signal pin.
 
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
