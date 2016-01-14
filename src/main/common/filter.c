@@ -27,6 +27,13 @@
 #include "drivers/gyro_sync.h"
 
 
+#define M_LN2_FLOAT	0.69314718055994530942f
+#define M_PI_FLOAT	3.14159265358979323846f
+
+
+#define BIQUAD_GAIN 6.0f          /* gain in db */
+#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dT) {
 
@@ -40,69 +47,48 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
-void setBiQuadCoefficients(int type, biquad_t *state) {
+/* sets up a biquad Filter */
+biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
+{
+	float samplingRate;
+    samplingRate = 1 / (targetLooptime * 0.000001f);
+
+    biquad_t *b;
+    float omega, sn, cs, alpha;
+    float a0, a1, a2, b0, b1, b2;
+
+    b = malloc(sizeof(biquad_t));
+    if (b == NULL)
+        return NULL;
+
+    /* setup variables */
+    omega = 2 * M_PI_FLOAT * (float) filterCutFreq / samplingRate;
+    sn = sinf(omega);
+    cs = cosf(omega);
+    alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+
+    b0 = (1 - cs) /2;
+    b1 = 1 - cs;
+    b2 = (1 - cs) /2;
+    a0 = 1 + alpha;
+    a1 = -2 * cs;
+    a2 = 1 - alpha;
+
+    /* precompute the coefficients */
+    b->a0 = b0 /a0;
+    b->a1 = b1 /a0;
+    b->a2 = b2 /a0;
+    b->a3 = a1 /a0;
+    b->a4 = a2 /a0;
 
     /* zero initial samples */
-    state->x1=0;
-    state->x2=0;
-    state->y1=0;
-    state->y2=0;
+    b->x1 = b->x2 = 0;
+    b->y1 = b->y2 = 0;
 
-	/* set coefficients */
-	switch(type) {
-	    case(GYRO_FILTER):
-            switch (targetLooptime) {
-                case(SAMPLE_RATE_2KHZ):
-                    state->a0= 0.007820199;
-                    state->a1= 0.015640399;
-                    state->a2= 0.007820199;
-                    state->a3= -1.73472382;
-                    state->a4= 0.766004619;
-                    break;
-                case(SAMPLE_RATE_2K6HZ):
-                    state->a0= 0.004538377;
-                    state->a1= 0.009076754;
-                    state->a2= 0.004538377;
-                    state->a3= -1.80059391;
-                    state->a4= 0.818747415;
-                    break;
-                default:
-                case(SAMPLE_RATE_1KHZ):
-                    state->a0= 0.027859711;
-                    state->a1= 0.055719422;
-                    state->a2= 0.027859711;
-                    state->a3= -1.47547752;
-                    state->a4= 0.586916365;
-	        }
-            break;
-	    case(DELTA_FILTER):
-            switch (targetLooptime) {
-	            case(SAMPLE_RATE_2KHZ):
-                    state->a0= 0.003621679;
-                    state->a1= 0.007243357;
-                    state->a2= 0.003621679;
-                    state->a3= -1.82269350;
-                    state->a4= 0.837180216;
-                    break;
-	            case(SAMPLE_RATE_2K6HZ):
-                    state->a0= 0.002081573;
-                    state->a1= 0.004163147;
-                    state->a2= 0.002081573;
-                    state->a3= -1.86685796;
-                    state->a4= 0.875184256;
-                    break;
-	            default:
-	            case(SAMPLE_RATE_1KHZ):
-                    state->a0= 0.013359181;
-                    state->a1= 0.026718362;
-                    state->a2= 0.013359181;
-                    state->a3= -1.64745762;
-                    state->a4= 0.700894342;
-            }
-	}
+    return b;
 }
 
-/* Computes a BiQuad filter on a sample */
+/* Computes a biquad_t filter on a sample */
 float applyBiQuadFilter(float sample, biquad_t *state)
 {
     float result;

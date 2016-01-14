@@ -113,8 +113,8 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static airModePlus_t airModePlusAxisState[3];
-static bool deltaStateIsSet = false;
 static biquad_t deltaBiQuadState[3];
+static bool deltaStateIsSet;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -127,8 +127,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
-    if (!deltaStateIsSet) {
-        for (axis = 0; axis < 3; axis++) setBiQuadCoefficients(DELTA_FILTER, &deltaBiQuadState[axis]);
+    if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
+        for (axis = 0; axis < 3; axis++) deltaBiQuadState[axis] = *(biquad_t *)BiQuadNewLpf(pidProfile->dterm_lpf_hz);
         deltaStateIsSet = true;
     }
 
@@ -214,7 +214,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         delta = RateError - lastError[axis];
         lastError[axis] = RateError;
 
-        delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
+        if (deltaStateIsSet) {
+            delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
@@ -256,8 +258,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     int8_t horizonLevelStrength = 100;
 
-    if (!deltaStateIsSet) {
-        for (axis = 0; axis < 3; axis++) setBiQuadCoefficients(DELTA_FILTER, &deltaBiQuadState[axis]);
+    if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
+        for (axis = 0; axis < 3; axis++) deltaBiQuadState[axis] = *(biquad_t *)BiQuadNewLpf(pidProfile->dterm_lpf_hz);
         deltaStateIsSet = true;
     }
 
@@ -345,7 +347,9 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastError[axis] = RateError;
 
-        delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis]));
+        if (deltaStateIsSet) {
+            delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis]));
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
