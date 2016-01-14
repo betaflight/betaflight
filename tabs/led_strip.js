@@ -46,7 +46,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         // Build Grid
         var theHTML = [];
         var theHTMLlength = 0;
-        for (i=0; i<256; i++) {
+        for (var i = 0; i < 256; i++) {
             theHTML[theHTMLlength++] = ('<div class="gPoint"><div class="indicators"><span class="north"></span><span class="south"></span><span class="west"></span><span class="east"></span><span class="up">U</span><span class="down">D</span></div><span class="wire"></span></div>');
         }
         $('.mainGrid').html(theHTML.join(''));
