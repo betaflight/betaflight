@@ -210,8 +210,8 @@ void filterRc(void){
 void scaleRcCommandToFpvCamAngle(void) {
     int16_t roll = rcCommand[ROLL];
     int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees) * roll + sin(masterConfig.rxConfig.fpvCamAngleDegrees) * yaw, -500, 500);
-    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees) * roll, -500, 500);
+    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
+    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
 }
 
 void annexCode(void)
