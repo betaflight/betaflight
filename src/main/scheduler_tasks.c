@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 
 void taskMainPidLoopChecker(void);

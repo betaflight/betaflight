@@ -15,17 +15,20 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define SRC_MAIN_SCHEDULER_C_
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
 
 #include "drivers/system.h"
+#include "config/config_unittest.h"
 
 cfTaskId_e currentTaskId = TASK_NONE;
 
@@ -119,6 +122,7 @@ void scheduler(void)
     uint16_t waitingTasks = 0;
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
 
+    SET_SCHEDULER_LOCALS();
     /* Cache currentTime */
     currentTime = micros();
 
@@ -223,4 +227,5 @@ void scheduler(void)
         debug[3] = (micros() - currentTime);
 #endif
     }
+    GET_SCHEDULER_LOCALS();
 }
