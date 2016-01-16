@@ -1,6 +1,8 @@
 # Board - Seriously Pro SP Racing F3 Mini
 
-The Seriously Pro Racing F3 Mini board (SPRacingF3Mini) is the second board designed specifically for Cleanflight.  It is the only board that supports all the latest Cleanflight features and the ONLY mini board with a full feature set that can also be mounted mini frmaes as well as in standard 36x36mm mounting holes.  With the new transponder feature it is the only truly race ready board available.
+The Seriously Pro Racing F3 Mini board (SPRacingF3Mini) is the second board designed specifically for Cleanflight.  It is the only board that supports all the latest Cleanflight features and the ONLY mini board with a full feature set that can also be mounted in mini frames as well as in standard 36x36mm mounting holes.  With the new transponder feature it is the only truly race ready board available.
+
+It's full feature set, size and weight makes it perfect for incorporating in sub-250g drones to comply with USA drone regulations.
 
 Purchasing boards directly from SeriouslyPro / SP Racing and official retailers helps fund Cleanflight development, it's the reason the Seriously Pro boards exist!  Official retailers are always listed on the SeriouslyPro.com website.
 
@@ -15,13 +17,13 @@ http://seriouslypro.com/spracingf3mini
 * Race transponder built in - just turn up at a race and have your lap times recorded.
 * Onboard regulator (BEC) for powering the FC, receiver and small servos.
 * Features the latest Accelerometer, Gyro and Mag/Compass and Baro/Altitude sensor technology.
-* 2 Buttons for binding Spektrum Satellite receivers, activing USB bootloader mode or resetting the configuration.  More future uses coming!
+* 2 Buttons for binding Spektrum Satellite receivers, activating USB bootloader mode or resetting the configuration.  More future uses coming!
 * Wire up using using pin headers for all major connections for excellent crash-durability.  Use either right-angled or straight pin-headers.
 * No compromise I/O. Use all the features all the time; e.g. Connect your USB + OSD + SmartPort + SBus + GPS + LED Strip + Battery Monitoring + Sonar + 8 motors - all at the same time!
 * 8 PWM output lines for ESCs and Servos. Arranged for easy wiring on standard pin headers.
 * Supports direct connection of SBus, SumH, SumD, Spektrum1024/2048, XBus receivers. No external inverters required (built-in).
-* Supports direct connection of 3.3v Spektrum Satellite Receivers via 3 pin through-hole JST-ZH connector.
-* Dedicated PPM recevier input.
+* Supports direct connection of 3.3v Spektrum Satellite receivers via 3 pin through-hole JST-ZH connector.
+* Dedicated PPM receiver input.
 * 3 Serial Ports - NOT shared with the USB socket.
 * Telemetry port (via pin header or USART2 JST-SH socket).
 * Micro USB socket. 
@@ -37,7 +39,7 @@ http://seriouslypro.com/spracingf3mini
 * Flashing via USB or serial port.
 * Stackable design - perfect for integrating with OSDs and power distribution boards.
 * Modular design - the core of the board measures 36x22mm but has the ability to be mounted using standard 30.5mm mounting holes.
-* LEDs for 3v, 5v and Status for easy diagnoistics.
+* LEDs for 3v, 5v and Status for easy diagnostics.
 * Copper-etched Cleanflight and #RB logos.
 
 ## Pinouts
