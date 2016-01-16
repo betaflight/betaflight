@@ -23,7 +23,23 @@ extern "C" {
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
+enum {
+    pidLoopCheckerTime = 650,
+    updateAccelerometerTime = 192,
+    handleSerialTime = 30,
+    updateBeeperTime = 1,
+    updateBatteryTime = 1,
+    updateRxCheckTime = 34,
+    updateRxMainTime = 10,
+    processGPSTime = 10,
+    updateCompassTime = 195,
+    updateBaroTime = 201,
+    updateSonarTime = 10,
+    calculateAltitudeTime = 154,
+    updateDisplayTime = 10,
+    telemetryTime = 10,
+    ledStripTime = 10
+};
 
 extern "C" {
     uint8_t unittest_scheduler_taskId;
@@ -37,21 +53,21 @@ extern "C" {
     uint32_t micros(void) {return simulatedTime;}
 // set up all tasks to take a 10 microseconds to execute
 // !!TODO set these to use realistic times
-    void taskMainPidLoopChecker(void) {simulatedTime+=10;}
-    void taskUpdateAccelerometer(void) {simulatedTime+=10;}
-    void taskHandleSerial(void) {simulatedTime+=10;}
-    void taskUpdateBeeper(void) {simulatedTime+=10;}
-    void taskUpdateBattery(void) {simulatedTime+=10;}
-    bool taskUpdateRxCheck(uint32_t currentDeltaTime) {UNUSED(currentDeltaTime);simulatedTime+=10;return false;}
-    void taskUpdateRxMain(void) {simulatedTime+=10;}
-    void taskProcessGPS(void) {simulatedTime+=10;}
-    void taskUpdateCompass(void) {simulatedTime+=10;}
-    void taskUpdateBaro(void) {simulatedTime+=10;}
-    void taskUpdateSonar(void) {simulatedTime+=10;}
-    void taskCalculateAltitude(void) {simulatedTime+=10;}
-    void taskUpdateDisplay(void) {simulatedTime+=10;}
-    void taskTelemetry(void) {simulatedTime+=10;}
-    void taskLedStrip(void) {simulatedTime+=10;}
+    void taskMainPidLoopChecker(void) {simulatedTime+=pidLoopCheckerTime;}
+    void taskUpdateAccelerometer(void) {simulatedTime+=updateAccelerometerTime;}
+    void taskHandleSerial(void) {simulatedTime+=handleSerialTime;}
+    void taskUpdateBeeper(void) {simulatedTime+=updateBeeperTime;}
+    void taskUpdateBattery(void) {simulatedTime+=updateBatteryTime;}
+    bool taskUpdateRxCheck(uint32_t currentDeltaTime) {UNUSED(currentDeltaTime);simulatedTime+=updateRxCheckTime;return false;}
+    void taskUpdateRxMain(void) {simulatedTime+=updateRxMainTime;}
+    void taskProcessGPS(void) {simulatedTime+=processGPSTime;}
+    void taskUpdateCompass(void) {simulatedTime+=updateCompassTime;}
+    void taskUpdateBaro(void) {simulatedTime+=updateBaroTime;}
+    void taskUpdateSonar(void) {simulatedTime+=updateSonarTime;}
+    void taskCalculateAltitude(void) {simulatedTime+=calculateAltitudeTime;}
+    void taskUpdateDisplay(void) {simulatedTime+=updateDisplayTime;}
+    void taskTelemetry(void) {simulatedTime+=telemetryTime;}
+    void taskLedStrip(void) {simulatedTime+=ledStripTime;}
 }
 
 TEST(SchedulerUnittest, TestSingleTask)
@@ -69,7 +85,7 @@ TEST(SchedulerUnittest, TestSingleTask)
     EXPECT_EQ(TASK_GYROPID, unittest_scheduler_selectedTaskId);
     EXPECT_EQ(3000, cfTasks[TASK_GYROPID].taskLatestDeltaTime);
     EXPECT_EQ(4000, cfTasks[TASK_GYROPID].lastExecutedAt);
-    EXPECT_EQ(10, cfTasks[TASK_GYROPID].totalExecutionTime);
+    EXPECT_EQ(pidLoopCheckerTime, cfTasks[TASK_GYROPID].totalExecutionTime);
     // task has run, so its dynamic priority should have been set to zero
     EXPECT_EQ(0, cfTasks[TASK_GYROPID].dynamicPriority);
 }
