@@ -249,16 +249,16 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_1}, // PWM10 - PA1  - *TIM2_CH2, TIM15_CH1N
 
     //
-    // PPM PORT - Also USART2 RX (AF5)
+    // PPM PORT - Also UART2 RX (AF5)
     //
 
     { TIM2, GPIOA, Pin_3,  TIM_Channel_4, TIM2_IRQn,                0, Mode_AF_PP_PD, GPIO_PinSource3, GPIO_AF_1} // PPM   - PA3  - TIM2_CH4, TIM15_CH2 - PWM13
     //{ TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     0, Mode_AF_PP_PD, GPIO_PinSource3, GPIO_AF_9} // PPM   - PA3  - TIM2_CH4, TIM15_CH2 - PWM13
 
-    // USART3 RX/TX
+    // UART3 RX/TX
     // RX conflicts with PPM port
-    //{ TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource11,  GPIO_AF_1} // RX    - PB11 - *TIM2_CH4, USART3_RX (AF7) - PWM11
-    //{ TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource10,  GPIO_AF_1} // TX    - PB10 - *TIM2_CH3, USART3_TX (AF7) - PWM12
+    //{ TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource11,  GPIO_AF_1} // RX    - PB11 - *TIM2_CH4, UART3_RX (AF7) - PWM11
+    //{ TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource10,  GPIO_AF_1} // TX    - PB10 - *TIM2_CH3, UART3_TX (AF7) - PWM12
 
 };
 
@@ -275,8 +275,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_1}, // RC_CH1 - PA0  - *TIM2_CH1
     { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_1}, // RC_CH2 - PA1  - *TIM2_CH2, TIM15_CH1N
     // Production boards swapped RC_CH3/4 swapped to make it easier to use SerialRX using supplied cables - compared to first prototype.
-    { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1}, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
-    { TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
+    { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1}, // RC_CH3 - PB11 - *TIM2_CH4, UART3_RX (AF7)
+    { TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}, // RC_CH4 - PB10 - *TIM2_CH3, UART3_TX (AF7)
     { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource4,  GPIO_AF_2}, // RC_CH5 - PB4  - *TIM3_CH1
     { TIM3,  GPIOB, Pin_5,  TIM_Channel_2, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource5,  GPIO_AF_2}, // RC_CH6 - PB5  - *TIM3_CH2
     { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               0, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_2}, // RC_CH7 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N

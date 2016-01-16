@@ -29,6 +29,13 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
+#ifdef STM32F10X
+#include "serial_uart_stm32f10x.h"
+#endif
+#ifdef STM32F303xC
+#include "serial_uart_stm32f30x.h"
+#endif
+
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex);
@@ -602,36 +609,35 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X
         // skip UART ports
-        if (init->useUART2 && (timerIndex == PWM3 || timerIndex == PWM4))
-            continue;
-
-#ifdef USE_USART3
-        if (init->useUART3 && timerHardwarePtr->gpio == USART3_GPIO && (timerHardwarePtr->pin == USART3_TX_PIN || timerHardwarePtr->pin == USART3_RX_PIN))
+#ifdef USE_UART2
+        if (init->useUART2 && timerHardwarePtr->gpio == UART2_GPIO && (timerHardwarePtr->pin == UART2_TX_PIN || timerHardwarePtr->pin == UART2_RX_PIN))
             continue;
 #endif
 
-#ifdef USE_USART4
-        if (init->useUART4 && timerHardwarePtr->gpio == USART4_GPIO && (timerHardwarePtr->pin == USART4_TX_PIN || timerHardwarePtr->pin == USART4_RX_PIN))
+#ifdef USE_UART3
+        if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
             continue;
 #endif
 
-#ifdef USE_USART5
-        if (init->useUART5 && ((timerHardwarePtr->gpio == USART5_GPIO_TX && timerHardwarePtr->pin == USART5_TX_PIN) || (timerHardwarePtr->gpio == USART5_GPIO_RX && timerHardwarePtr->pin == USART5_RX_PIN)))
+#ifdef USE_UART4
+        if (init->useUART4 && timerHardwarePtr->gpio == UART4_GPIO && (timerHardwarePtr->pin == UART4_TX_PIN || timerHardwarePtr->pin == UART4_RX_PIN))
             continue;
 #endif
+
+#ifdef USE_UART5
+        if (init->useUART5 &&
+            (
+                (timerHardwarePtr->gpio == UART5_GPIO_TX && timerHardwarePtr->pin == UART5_TX_PIN)
+                || (timerHardwarePtr->gpio == UART5_GPIO_RX && timerHardwarePtr->pin == UART5_RX_PIN)
+            )
+        )
+            continue;
 #endif
 
 #if defined(STM32F10X) && I2C_DEVICE == I2CDEV_1
         // skip I2C ports if device 1 is selected
         if (timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
-        	continue;
-#endif
-
-#if defined(STM32F303xC) && defined(USE_USART3)
-        // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
             continue;
 #endif
 

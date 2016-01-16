@@ -112,8 +112,8 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define SERIAL_PORT_COUNT 3
 
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9

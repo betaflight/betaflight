@@ -54,6 +54,8 @@ typedef struct {
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
+void usartInitAllIOSignals(void);
+
 // serialPort API
 void uartWrite(serialPort_t *instance, uint8_t ch);
 uint8_t uartTotalRxBytesWaiting(serialPort_t *instance);

@@ -32,7 +32,7 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#if defined(USE_USART1) || defined(USE_USART2) || defined(USE_USART3) || defined(USE_USART4) || defined(USE_USART5)
+#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5)
 #include "drivers/serial_uart.h"
 #endif
 
@@ -57,20 +57,20 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     SERIAL_PORT_USB_VCP,
 #endif
-#ifdef USE_USART1
-    SERIAL_PORT_USART1,
+#ifdef USE_UART1
+    SERIAL_PORT_UART1,
 #endif
-#ifdef USE_USART2
-    SERIAL_PORT_USART2,
+#ifdef USE_UART2
+    SERIAL_PORT_UART2,
 #endif
-#ifdef USE_USART3
-    SERIAL_PORT_USART3,
+#ifdef USE_UART3
+    SERIAL_PORT_UART3,
 #endif
-#ifdef USE_USART4
-    SERIAL_PORT_USART4,
+#ifdef USE_UART4
+    SERIAL_PORT_UART4,
 #endif
-#ifdef USE_USART5
-    SERIAL_PORT_USART5,
+#ifdef USE_UART5
+    SERIAL_PORT_UART5,
 #endif
 #ifdef USE_SOFTSERIAL1
     SERIAL_PORT_SOFTSERIAL1,
@@ -260,7 +260,7 @@ serialPort_t *openSerialPort(
     portMode_t mode,
     portOptions_t options)
 {
-#if (!defined(USE_VCP) && !defined(USE_USART1) && !defined(USE_USART2) && !defined(USE_USART3) && !defined(USE_USART4) && !defined(USE_USART5) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL1))
+#if (!defined(USE_VCP) && !defined(USE_UART1) && !defined(USE_UART2) && !defined(USE_UART3) && !defined(USE_UART4) && !defined(USE_UART5) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL1))
     UNUSED(callback);
     UNUSED(baudRate);
     UNUSED(mode);
@@ -281,28 +281,28 @@ serialPort_t *openSerialPort(
             serialPort = usbVcpOpen();
             break;
 #endif
-#ifdef USE_USART1
-        case SERIAL_PORT_USART1:
+#ifdef USE_UART1
+        case SERIAL_PORT_UART1:
             serialPort = uartOpen(USART1, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART2
-        case SERIAL_PORT_USART2:
+#ifdef USE_UART2
+        case SERIAL_PORT_UART2:
             serialPort = uartOpen(USART2, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART3
-        case SERIAL_PORT_USART3:
+#ifdef USE_UART3
+        case SERIAL_PORT_UART3:
             serialPort = uartOpen(USART3, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART4
-        case SERIAL_PORT_USART4:
+#ifdef USE_UART4
+        case SERIAL_PORT_UART4:
             serialPort = uartOpen(UART4, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART5
-        case SERIAL_PORT_USART5:
+#ifdef USE_UART5
+        case SERIAL_PORT_UART5:
             serialPort = uartOpen(UART5, callback, baudRate, mode, options);
             break;
 #endif

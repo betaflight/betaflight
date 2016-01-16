@@ -433,7 +433,7 @@ static void hottSendTelemetryData(void) {
     if (!hottIsSending) {
         hottIsSending = true;
         // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3))
+        if ((portConfig->identifier == SERIAL_PORT_UART1) || (portConfig->identifier == SERIAL_PORT_UART2) || (portConfig->identifier == SERIAL_PORT_UART3))
         	workAroundForHottTelemetryOnUsart(hottPort, MODE_TX);
         else
         	serialSetMode(hottPort, MODE_TX);
@@ -445,7 +445,7 @@ static void hottSendTelemetryData(void) {
         hottMsg = NULL;
         hottIsSending = false;
         // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3))
+        if ((portConfig->identifier == SERIAL_PORT_UART1) || (portConfig->identifier == SERIAL_PORT_UART2) || (portConfig->identifier == SERIAL_PORT_UART3))
         	workAroundForHottTelemetryOnUsart(hottPort, MODE_RX);
         else
         	serialSetMode(hottPort, MODE_RX);

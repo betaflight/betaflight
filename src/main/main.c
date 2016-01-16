@@ -345,11 +345,17 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_USART2) && defined(STM32F10X)
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#if defined(USE_UART2)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_UART2);
 #endif
-#ifdef STM32F303xC
-    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
+#if defined(USE_UART3)
+    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_UART3);
+#endif
+#if defined(USE_UART4)
+    pwm_params.useUART4 = doesConfigurationUsePort(SERIAL_PORT_UART4);
+#endif
+#if defined(USE_UART5)
+    pwm_params.useUART5 = doesConfigurationUsePort(SERIAL_PORT_UART5);
 #endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
@@ -412,7 +418,7 @@ void init(void)
     if (hardwareRevision == NAZE32_SP) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
+        serialRemovePort(SERIAL_PORT_UART3);
     }
 #endif
 
@@ -434,12 +440,12 @@ void init(void)
     if (hardwareRevision != NAZE32_SP) {
         i2cInit(I2C_DEVICE);
     } else {
-        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+        if (!doesConfigurationUsePort(SERIAL_PORT_UART3)) {
             i2cInit(I2C_DEVICE);
         }
     }
 #elif defined(CC3D)
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+    if (!doesConfigurationUsePort(SERIAL_PORT_UART3)) {
         i2cInit(I2C_DEVICE);
     }
 #else
