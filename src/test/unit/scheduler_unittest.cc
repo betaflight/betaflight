@@ -51,8 +51,7 @@ extern "C" {
 // set up micros() to simulate time
     uint32_t simulatedTime = 0;
     uint32_t micros(void) {return simulatedTime;}
-// set up all tasks to take a 10 microseconds to execute
-// !!TODO set these to use realistic times
+// set up tasks to take a simulated representative time to execute
     void taskMainPidLoopChecker(void) {simulatedTime+=pidLoopCheckerTime;}
     void taskUpdateAccelerometer(void) {simulatedTime+=updateAccelerometerTime;}
     void taskHandleSerial(void) {simulatedTime+=handleSerialTime;}
