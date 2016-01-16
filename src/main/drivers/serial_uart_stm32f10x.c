@@ -64,7 +64,7 @@ static uartPort_t uartPort5;
 #undef USE_UART1_RX_DMA
 #endif
 
-void usartIrqCallback(uartPort_t *s)
+void usartIrqHandler(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
@@ -187,7 +187,7 @@ void DMA1_Channel4_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 
 #endif
@@ -261,7 +261,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 
 #endif
@@ -331,7 +331,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 #endif
 
@@ -400,7 +400,7 @@ uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t option
 void UART4_IRQHandler(void)
 {
     uartPort_t *s = &uartPort4;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 #endif
 
@@ -472,6 +472,6 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
 void UART5_IRQHandler(void)
 {
     uartPort_t *s = &uartPort5;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 #endif
