@@ -264,7 +264,7 @@ TABS.motors.initialize = function (callback) {
                 ];
 
                 updateGraphHelperSize(accelHelpers);
-                samples_accel_i = addSampleToData(accel_data, samples_accel_i, accel_with_offset,rms);
+                samples_accel_i = addSampleToData(accel_data, samples_accel_i, accel_with_offset);
                 drawGraph(accelHelpers, accel_data, samples_accel_i);
 
                 // Compute RMS of acceleration in displayed period of time
