@@ -37,7 +37,7 @@ uint32_t targetLooptime;
 uint8_t mpuDividerDrops;
 
 bool gyroSyncCheckUpdate(void) {
-    return gyro.intStatus && gyro.intStatus();
+    return gyro.isDataReady && gyro.isDataReady();
 }
 
 void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
