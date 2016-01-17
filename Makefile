@@ -871,8 +871,9 @@ help: Makefile
 	@sed -n 's/^## //p' $<
 
 ## test        : run the cleanflight test suite
-test:
-	cd src/test && $(MAKE) test || true
+## junittest   : run the cleanflight test suite, producing Junit XML result files.
+test junittest:
+	cd src/test && $(MAKE) $@ || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
