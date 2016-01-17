@@ -484,8 +484,6 @@ STM32F30x_COMMON_SRC = \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led_stm32f30x.c \
-		   drivers/light_ws2811strip.c \
-		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
@@ -504,6 +502,8 @@ NAZE32PRO_SRC = \
 
 STM32F3DISCOVERY_COMMON_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
@@ -535,7 +535,6 @@ CHEBUZZF3_SRC = \
 
 COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
@@ -543,6 +542,9 @@ COLIBRI_RACE_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
@@ -555,6 +557,8 @@ SPARKY_SRC = \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sonar_hcsr04.c \
 		   $(HIGHEND_SRC) \
@@ -562,7 +566,17 @@ SPARKY_SRC = \
 		   $(VCP_SRC)
 
 ALIENWIIF3_SRC = \
-		   $(SPARKY_SRC)
+		   $(STM32F30x_COMMON_SRC) \
+		   drivers/display_ug2864hsweg01.c \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_ak8975.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/sonar_hcsr04.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
 
 RMDO_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
@@ -571,6 +585,8 @@ RMDO_SRC = \
 		   drivers/barometer_bmp280.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/sonar_hcsr04.c \
 		   io/flashfs.c \
@@ -586,6 +602,8 @@ SPRACINGF3_SRC = \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/sonar_hcsr04.c \
 		   io/flashfs.c \
@@ -599,6 +617,8 @@ MOTOLAB_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/flash_m25p16.c \
 		   io/flashfs.c \
@@ -615,6 +635,8 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sonar_hcsr04.c \
