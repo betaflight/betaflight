@@ -161,6 +161,7 @@
 #define LED_STRIP
 #if 1
 #define LED_STRIP_TIMER TIM16
+
 #else
 // alternative LED strip configuration, tested working.
 #define LED_STRIP_TIMER TIM1
@@ -179,6 +180,8 @@
 #endif
 
 #define BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define DISPLAY
 #define GTUNE
 #define TELEMETRY
 #define SERIAL_RX
