@@ -108,6 +108,18 @@ http://www.graupner.de/en/products/870ade17-ace8-427f-943b-657040579906/33565/pr
 
 SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for many recivers that lets them use SUMD instead.
 
+
+### i-BUS
+
+8 channels via serial currently supported. See notes below.
+* Cleanflight Firmware 1.12 or higher required
+* Cleanflight Configurator 1.20 or higher required
+
+These receivers are reported working:
+
+FlySky/Turnigy FS-iA6B 6-Channel Receiver
+http://www.flysky-cn.com/products_detail/&productId=51.html
+
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
@@ -211,6 +223,7 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
 | XBUS_MODE_B_RJ01   | 6     |
+| IBUS               | 7     |
 
 ### PPM/PWM input filtering.
 
