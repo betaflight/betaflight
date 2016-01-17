@@ -46,7 +46,7 @@
 #if defined(GPS) && defined(GPS_PROTO_UBLOX)
 
 #define GPS_PROTO_UBLOX_NEO7PLUS
-#define GPS_VERSION_DETECTION_TIMEOUT_MS    (250)
+#define GPS_VERSION_DETECTION_TIMEOUT_MS    (300)
 
 static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,115200,0*1E\r\n",     // GPS_BAUDRATE_115200

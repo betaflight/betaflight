@@ -54,16 +54,16 @@ bool gpsDetectI2CNAV(void)
 
 bool gpsPollI2CNAV(void)
 {
+    static uint32_t lastPollTime = 0;
     gpsDataI2CNAV_t gpsMsg;
 
     // Check for poll rate timeout
-    if ((millis() - gpsState.lastMessageMs) < (1000 / GPS_I2C_POLL_RATE_HZ)) 
+    if ((millis() - lastPollTime) < (1000 / GPS_I2C_POLL_RATE_HZ))
         return false;
 
+    lastPollTime = millis();
+
     i2cnavGPSModuleRead(&gpsMsg);
-    
-    debug[2] = gpsMsg.flags.gpsOk;
-    debug[3] = gpsMsg.flags.newData;
 
     if (gpsMsg.flags.gpsOk) {
         gpsSol.flags.fix3D = gpsMsg.flags.fix3D;

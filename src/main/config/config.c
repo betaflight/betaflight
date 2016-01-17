@@ -517,10 +517,10 @@ static void resetConf(void)
 
 #ifdef GPS
     // gps/nav stuff
-    masterConfig.gpsConfig.provider = GPS_NMEA;
+    masterConfig.gpsConfig.provider = GPS_UBLOX;
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
-    masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
+    masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
 #endif
 
 #ifdef NAV
