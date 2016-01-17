@@ -66,6 +66,7 @@ TABS.motors.initialize = function (callback) {
         }
         return data;
     }
+
     function addSampleToData(data, sampleNumber, sensorData) {
         for (var i = 0; i < data.length; i++) {
             var dataPoint = sensorData[i];
@@ -77,7 +78,6 @@ TABS.motors.initialize = function (callback) {
                 data[i].max = dataPoint;
             }
         }
-
         while (data[0].length > 300) {
             for (i = 0; i < data.length; i++) {
                 data[i].shift();
