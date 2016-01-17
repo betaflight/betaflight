@@ -30,36 +30,21 @@
 #define M_LN2_FLOAT	0.69314718055994530942f
 #define M_PI_FLOAT	3.14159265358979323846f
 
-
-#define BIQUAD_GAIN 6.0f          /* gain in db */
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
-// PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
-float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dT) {
-
-	// Pre calculate and store RC
-	if (!filter->RC) {
-		filter->RC = 1.0f / ( 2.0f * (float)M_PI * f_cut );
-	}
-
-    filter->state = filter->state + dT / (filter->RC + dT) * (input - filter->state);
-
-    return filter->state;
-}
-
 /* sets up a biquad Filter */
-biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
+void BiQuadNewLpf(uint8_t filterCutFreq, biquad_t *newState, float refreshRate)
 {
 	float samplingRate;
-    samplingRate = 1 / (targetLooptime * 0.000001f);
 
-    biquad_t *newState;
+    if (!refreshRate) {
+        samplingRate = 1 / (targetLooptime * 0.000001f);
+    } else {
+        samplingRate = refreshRate;
+    }
+
     float omega, sn, cs, alpha;
     float a0, a1, a2, b0, b1, b2;
-
-    newState = malloc(sizeof(biquad_t));
-    if (newState == NULL)
-        return NULL;
 
     /* setup variables */
     omega = 2 * M_PI_FLOAT * (float) filterCutFreq / samplingRate;
@@ -84,8 +69,6 @@ biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
     /* zero initial samples */
     newState->x1 = newState->x2 = 0;
     newState->y1 = newState->y2 = 0;
-
-    return newState;
 }
 
 /* Computes a biquad_t filter on a sample */

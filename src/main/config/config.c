@@ -493,7 +493,7 @@ static void resetConf(void)
     resetRollAndPitchTrims(&currentProfile->accelerometerTrims);
 
     currentProfile->mag_declination = 0;
-    currentProfile->acc_cut_hz = 15;
+    currentProfile->acc_lpf_hz = 20;
     currentProfile->accz_lpf_cutoff = 5.0f;
     currentProfile->accDeadband.xy = 40;
     currentProfile->accDeadband.z = 40;
@@ -748,7 +748,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, &currentProfile->pidProfile.gyro_lpf_hz);
+    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -778,7 +778,7 @@ void activateConfig(void)
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = currentProfile->acc_cut_hz;
+    imuRuntimeConfig.acc_cut_hz = currentProfile->acc_lpf_hz;
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 

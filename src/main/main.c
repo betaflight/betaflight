@@ -549,15 +549,21 @@ int main(void) {
 
     setTaskEnabled(TASK_GYROPID, true);
     if(sensors(SENSOR_ACC)) {
+        uint32_t accTargetLooptime = 0;
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {
             case(500):
-                rescheduleTask(TASK_ACCEL, 10000);
+                accTargetLooptime = 10000;
                 break;
             default:
             case(1000):
-                rescheduleTask(TASK_ACCEL, 1000);
+#ifdef STM32F10X
+                accTargetLooptime = 3000;
+#else
+                accTargetLooptime = 1000;
+#endif
         }
+        rescheduleTask(TASK_ACCEL, accTargetLooptime);
     }
     setTaskEnabled(TASK_SERIAL, true);
     setTaskEnabled(TASK_BEEPER, true);

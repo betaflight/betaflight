@@ -377,7 +377,8 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(void)
 {
-    static filterStatePt1_t accLPFState[3];
+    static biquad_t accLPFState[3];
+    static bool accStateIsSet;
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
     int32_t axis;
@@ -391,8 +392,13 @@ static void imuCalculateEstimatedAttitude(void)
 
     // Smooth and use only valid accelerometer readings
     for (axis = 0; axis < 3; axis++) {
-        if (imuRuntimeConfig->acc_cut_hz > 0) {
-            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
+        if (imuRuntimeConfig->acc_cut_hz) {
+            if (accStateIsSet) {
+                accSmooth[axis] = lrintf(applyBiQuadFilter((float) accADC[axis], &accLPFState[axis]));
+            } else {
+                for (axis = 0; axis < 3; axis++) BiQuadNewLpf(imuRuntimeConfig->acc_cut_hz, &accLPFState[axis], 1000);
+                accStateIsSet = true;
+            }
         } else {
             accSmooth[axis] = accADC[axis];
         }

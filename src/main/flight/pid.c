@@ -113,7 +113,7 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static airModePlus_t airModePlusAxisState[3];
-static biquad_t *deltaBiQuadState[3];
+static biquad_t deltaBiQuadState[3];
 static bool deltaStateIsSet;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
@@ -128,7 +128,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) deltaBiQuadState[axis] = (biquad_t *)BiQuadNewLpf(pidProfile->dterm_lpf_hz);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
         deltaStateIsSet = true;
     }
 
@@ -215,7 +215,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         lastError[axis] = RateError;
 
         if (deltaStateIsSet) {
-            delta = applyBiQuadFilter(delta, deltaBiQuadState[axis]);
+            delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
@@ -259,7 +259,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int8_t horizonLevelStrength = 100;
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) deltaBiQuadState[axis] = (biquad_t *)BiQuadNewLpf(pidProfile->dterm_lpf_hz);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
         deltaStateIsSet = true;
     }
 
@@ -348,7 +348,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         lastError[axis] = RateError;
 
         if (deltaStateIsSet) {
-            delta = lrintf(applyBiQuadFilter((float) delta, deltaBiQuadState[axis]));
+            delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis]));
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
