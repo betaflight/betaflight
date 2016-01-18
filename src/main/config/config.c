@@ -147,12 +147,12 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
-    pidProfile->P8[ROLL] = 40;
-    pidProfile->I8[ROLL] = 30;
+    pidProfile->P8[ROLL] = 42;
+    pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 13;
-    pidProfile->P8[PITCH] = 50;
-    pidProfile->I8[PITCH] = 30;
-    pidProfile->D8[PITCH] = 20;
+    pidProfile->P8[PITCH] = 54;
+    pidProfile->I8[PITCH] = 40;
+    pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 100;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 5;
@@ -180,11 +180,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_lpf_hz = 50;   // filtering ON by default
     pidProfile->airModeInsaneAcrobilityFactor = 0;
 
-    pidProfile->P_f[ROLL] = 1.5f;     // new PID with preliminary defaults test carefully
-    pidProfile->I_f[ROLL] = 0.3f;
+    pidProfile->P_f[ROLL] = 1.1f;
+    pidProfile->I_f[ROLL] = 0.4f;
     pidProfile->D_f[ROLL] = 0.01f;
     pidProfile->P_f[PITCH] = 1.5f;
-    pidProfile->I_f[PITCH] = 0.3f;
+    pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.01f;
     pidProfile->P_f[YAW] = 4.0f;
     pidProfile->I_f[YAW] = 0.4f;
