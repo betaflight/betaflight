@@ -700,6 +700,7 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
+    schedulerInit();
     while (1) {
         scheduler();
         processLoopback();
