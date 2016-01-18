@@ -199,7 +199,7 @@ static void sendThrottleOrBatterySizeAsRpm(rxConfig_t *rxConfig, uint16_t deadba
     sendDataHead(ID_RPM);
     if (ARMING_FLAG(ARMED)) {
         throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
-        if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
+        if (throttleStatus == THROTTLE_LOW && (feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON)))
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
     } else {

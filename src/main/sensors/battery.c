@@ -192,7 +192,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             amperage = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
-                if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
+                if (throttleStatus == THROTTLE_LOW && (feature(FEATURE_MOTOR_STOP) && !IS_RC_MODE_ACTIVE(BOXIDLEON)))
                     throttleOffset = 0;
                 throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
                 amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
