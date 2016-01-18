@@ -148,8 +148,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
+        uint8_t rate = 0;
         // -----Get the desired angle rate depending on flight mode
-        uint8_t rate = controlRateConfig->rates[axis];
+        if (axis == YAW && !pidProfile->airModeInsaneAcrobilityFactor) {
+            rate = controlRateConfig->rates[axis];
+        }
 
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
@@ -277,7 +280,11 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = controlRateConfig->rates[axis];
+        uint8_t rate = 0;
+        // -----Get the desired angle rate depending on flight mode
+        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor) {
+            rate = controlRateConfig->rates[axis];
+        }
 
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
