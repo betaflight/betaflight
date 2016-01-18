@@ -102,6 +102,7 @@ bool gpsHandleI2CNAV(void)
     default:
         return false;
 
+    case GPS_CHANGE_BAUD:
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
         gpsSetState(GPS_RECEIVING_DATA);

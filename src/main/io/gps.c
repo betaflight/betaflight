@@ -247,18 +247,17 @@ static void gpsFakeGPSUpdate(void)
 }
 #endif
 
+// Finish baud rate change sequence - wait for TX buffer to empty and switch to the desired port speed
 void gpsFinalizeChangeBaud(void)
 {
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
         // Wait for GPS_INIT_DELAY before switching to required baud rate
-        if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
+        if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY && isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
             // Switch to required serial port baud
             serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.baudrateIndex]]);
             gpsState.lastMessageMs = millis();
             gpsSetState(GPS_CHECK_VERSION);
         }
-    }
-    else if (gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_BUS) {
     }
 }
 
@@ -267,8 +266,6 @@ void gpsThread(void)
 #ifdef USE_FAKE_GPS
     gpsFakeGPSUpdate();
 #else
-
-    debug[0] = gpsState.state;
 
     // Serial-based GPS
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
@@ -285,12 +282,13 @@ void gpsThread(void)
             // Reset solution
             gpsResetSolution();
 
-            // Switch to next state is done by protocol handler
+            // Call protocol handler - switch to next state is done there
             gpsHandleProtocol();
             break;
 
         case GPS_CHANGE_BAUD:
-            gpsHandleProtocol();    // Switch to next state is done by protocol handler
+            // Call protocol handler - switch to next state is done there
+            gpsHandleProtocol();
             break;
 
         case GPS_CHECK_VERSION:
@@ -298,7 +296,7 @@ void gpsThread(void)
         case GPS_RECEIVING_DATA:
             gpsHandleProtocol();
             if ((millis() - gpsState.lastMessageMs) > GPS_TIMEOUT) {
-                // remove GPS from capability
+                // Check for GPS timeout
                 sensorsClear(SENSOR_GPS);
                 DISABLE_STATE(GPS_FIX);
                 gpsSetState(GPS_LOST_COMMUNICATION);
@@ -321,7 +319,6 @@ void gpsThread(void)
         switch (gpsState.state) {
         default:
         case GPS_INITIALIZING:
-        case GPS_CHANGE_BAUD:
             // Detect GPS unit
             if ((millis() - gpsState.lastStateSwitchMs) >= GPS_BUS_INIT_DELAY) {
                 gpsResetSolution();
@@ -332,7 +329,7 @@ void gpsThread(void)
                     gpsState.autoConfigPosition = 0;
                     gpsState.lastMessageMs = millis();
                     sensorsSet(SENSOR_GPS);
-                    gpsSetState(GPS_CHECK_VERSION);
+                    gpsSetState(GPS_CHANGE_BAUD);
                 }
                 else {
                     sensorsClear(SENSOR_GPS);
@@ -340,6 +337,7 @@ void gpsThread(void)
             }
             break;
 
+        case GPS_CHANGE_BAUD:
         case GPS_CHECK_VERSION:
         case GPS_CONFIGURE:
         case GPS_RECEIVING_DATA:
