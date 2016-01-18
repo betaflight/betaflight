@@ -811,18 +811,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(NAZE) && defined(SONAR)
-    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
-        featureClear(FEATURE_CURRENT_METER);
-    }
-#endif
-
-#if defined(OLIMEXINO) && defined(SONAR)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
-        featureClear(FEATURE_CURRENT_METER);
-    }
-#endif
-
 #if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
         featureClear(FEATURE_DISPLAY);
@@ -851,7 +839,7 @@ void validateAndFixConfig(void)
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
     if(featureConfigured(FEATURE_RX_SERIAL)) {
-	    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
 

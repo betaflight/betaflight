@@ -62,12 +62,12 @@ void usb1WireInitialize()
 {
     escCount = 0;
     memset(&escHardware,0,sizeof(escHardware));
-    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
-    for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
-        if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
-            if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
-                escHardware[escCount].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
-                escHardware[escCount].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
+    pwmIOConfiguration_t *pwmIOConfiguration = pwmGetOutputConfiguration();
+    for (volatile uint8_t i = 0; i < pwmIOConfiguration->ioCount; i++) {
+        if ((pwmIOConfiguration->ioConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
+            if(motor[pwmIOConfiguration->ioConfigurations[i].index] > 0) {
+                escHardware[escCount].gpio = pwmIOConfiguration->ioConfigurations[i].timerHardware->gpio;
+                escHardware[escCount].pin = pwmIOConfiguration->ioConfigurations[i].timerHardware->pin;
                 escHardware[escCount].pinpos = GetPinPos(escHardware[escCount].pin);
                 gpio_set_mode(escHardware[escCount].gpio,escHardware[escCount].pin, Mode_IPU); //GPIO_Mode_IPU
                 escCount++;

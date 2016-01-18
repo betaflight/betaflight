@@ -398,12 +398,12 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 #endif
 
 #ifdef USE_SERVOS
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
 {
     int i;
 
     motorCount = 0;
-    servoCount = pwmOutputConfiguration->servoCount;
+    servoCount = pwmIOConfiguration->servoCount;
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
@@ -463,9 +463,9 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
     mixerResetDisarmedMotors();
 }
 #else
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
 {
-    UNUSED(pwmOutputConfiguration);
+    UNUSED(pwmIOConfiguration);
     motorCount = 4;
 #ifdef USE_SERVOS
     servoCount = 0;

@@ -85,7 +85,9 @@ typedef enum {
     PWM_PF_SERVO = (1 << 1),
     PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
     PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
-    PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
+    PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4),
+    PWM_PF_PPM = (1 << 5),
+    PWM_PF_PWM = (1 << 6)
 } pwmPortFlags_e;
 
 
@@ -95,12 +97,14 @@ typedef struct pwmPortConfiguration_s {
     const timerHardware_t *timerHardware;
 } pwmPortConfiguration_t;
 
-typedef struct pwmOutputConfiguration_s {
+typedef struct pwmIOConfiguration_s {
     uint8_t servoCount;
     uint8_t motorCount;
-    uint8_t outputCount;
-    pwmPortConfiguration_t portConfigurations[MAX_PWM_OUTPUT_PORTS];
-} pwmOutputConfiguration_t;
+    uint8_t ioCount;
+    uint8_t pwmInputCount;
+    uint8_t ppmInputCount;
+    pwmPortConfiguration_t ioConfigurations[USABLE_TIMER_CHANNEL_COUNT];
+} pwmIOConfiguration_t;
 
 // This indexes into the read-only hardware definition structure, timerHardware_t
 enum {
@@ -122,4 +126,4 @@ enum {
     PWM16
 };
 
-pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);
+pwmIOConfiguration_t *pwmGetOutputConfiguration(void);
