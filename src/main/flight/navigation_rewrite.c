@@ -2258,15 +2258,8 @@ static void GPS_distance_cm_bearing(int32_t currentLat1, int32_t currentLon1, in
         *bearing += 36000;
 }
 
-void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, int16_t velE, int16_t velD, bool velNEValid, bool velDValid, int16_t hdop)
+void onNewGPSData()
 {
-    UNUSED(velN);
-    UNUSED(velE);
-    UNUSED(velD);
-    UNUSED(velNEValid);
-    UNUSED(velDValid);
-    UNUSED(hdop);
-
     if (!(sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5))
         return;
 
@@ -2274,7 +2267,7 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
         if (STATE(GPS_FIX_HOME)) {
             uint32_t dist;
             int32_t dir;
-            GPS_distance_cm_bearing(newLat, newLon, GPS_home.lat, GPS_home.lon, &dist, &dir);
+            GPS_distance_cm_bearing(gpsSol.llh.lat, gpsSol.llh.lon, GPS_home.lat, GPS_home.lon, &dist, &dir);
             GPS_distanceToHome = dist / 100;
             GPS_directionToHome = dir / 100;
         } else {
@@ -2285,12 +2278,12 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
     else {
         // Set home position to current GPS coordinates
         ENABLE_STATE(GPS_FIX_HOME);
-        GPS_home.lat = newLat;
-        GPS_home.lon = newLon;
-        GPS_home.alt = newAlt;
+        GPS_home.lat = gpsSol.llh.lat;
+        GPS_home.lon = gpsSol.llh.lon;
+        GPS_home.alt = gpsSol.llh.alt;
         GPS_distanceToHome = 0;
         GPS_directionToHome = 0;
-        GPS_scaleLonDown = cos_approx((ABS((float)newLat) / 10000000.0f) * 0.0174532925f);
+        GPS_scaleLonDown = cos_approx((ABS((float)gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f);
     }
 }
 #endif

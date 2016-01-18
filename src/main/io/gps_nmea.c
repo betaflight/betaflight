@@ -93,6 +93,7 @@ typedef struct gpsDataNmea_s {
     uint16_t altitude;
     uint16_t speed;
     uint16_t ground_course;
+    uint16_t hdop;
 } gpsDataNmea_t;
 
 static bool gpsNewFrameNMEA(char c)
@@ -154,8 +155,11 @@ static bool gpsNewFrameNMEA(char c)
                         case 7:
                             gps_Msg.numSat = grab_fields(string, 0);
                             break;
+                        case 8:
+                            gps_Msg.hdop = grab_fields(string, 1) * 10;         // hdop (assume GPS is reporting it in meters)
+                            break;
                         case 9:
-                            gps_Msg.altitude = grab_fields(string, 1) * 10;     // altitude in meters added by Mis (cm)
+                            gps_Msg.altitude = grab_fields(string, 1) * 10;     // altitude in cm
                             break;
                     }
                     break;
@@ -235,6 +239,10 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.llh.alt = gps_Msg.altitude;
+                            // EPH/EPV are unreliable for NMEA as they are not real accuracy
+                            gpsSol.eph = gpsConstrainEPE(gps_Msg.hdop);
+                            gpsSol.epv = gpsConstrainEPE(gps_Msg.hdop);
+                            gpsSol.flags.validEPE = 0;
                         }
 
                         // NMEA does not report VELNED

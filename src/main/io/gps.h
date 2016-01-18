@@ -99,6 +99,7 @@ typedef struct gpsSolutionData_s {
         unsigned validVelNE     : 1;
         unsigned validVelD      : 1;
         unsigned validMag       : 1;
+        unsigned validEPE       : 1;    // EPH/EPV values are valid - actual accuracy
     } flags;
 
     uint8_t numSat;
@@ -113,8 +114,8 @@ typedef struct gpsSolutionData_s {
     int16_t groundSpeed;
     int16_t groundCourse;
 
-    uint16_t hdop;
-    uint16_t vdop;
+    uint16_t eph;   // horizontal accuracy (cm)
+    uint16_t epv;   // vertical accuracy (cm)
 } gpsSolutionData_t;
 
 typedef struct {

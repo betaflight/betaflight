@@ -1631,14 +1631,22 @@ static bool processInCommand(void)
         } else {
             DISABLE_STATE(GPS_FIX);
         }
+        gpsSol.flags.validVelNE = 0;
+        gpsSol.flags.validVelD = 0;
+        gpsSol.flags.validEPE = 0;
         gpsSol.numSat = read8();
         gpsSol.llh.lat = read32();
         gpsSol.llh.lon = read32();
         gpsSol.llh.alt = read16();
         gpsSol.groundSpeed = read16();
+        gpsSol.velNED[X] = 0;
+        gpsSol.velNED[Y] = 0;
+        gpsSol.velNED[Z] = 0;
+        gpsSol.eph = 100;
+        gpsSol.epv = 100;
         // Feed data to navigation
         sensorsSet(SENSOR_GPS);
-        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, 0, 0, 0, false, false, 9999);
+        onNewGPSData();
         break;
 #endif
 #ifdef NAV

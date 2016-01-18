@@ -133,7 +133,7 @@ static void gpsHandleProtocol(void)
 
         // Update GPS coordinates etc
         sensorsSet(SENSOR_GPS);
-        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, gpsSol.velNED[0], gpsSol.velNED[1], gpsSol.velNED[2], gpsSol.flags.validVelNE, gpsSol.flags.validVelD, gpsSol.hdop);
+        onNewGPSData();
 
         // Update timeout
         gpsState.lastLastMessageMs = gpsState.lastMessageMs;
@@ -154,6 +154,9 @@ static void gpsResetSolution(void)
         gpsSol.svInfo[i].quality = 0;
         gpsSol.svInfo[i].cno = 0;
     }
+
+    gpsSol.eph = 9999;
+    gpsSol.epv = 9999;
 
     gpsSol.flags.fix3D = 0;
     gpsSol.flags.validVelNE = 0;
@@ -233,11 +236,13 @@ static void gpsFakeGPSUpdate(void)
         gpsSol.velNED[Z] = 0;
         gpsSol.flags.validVelNE = 1;
         gpsSol.flags.validVelD = 1;
-        gpsSol.hdop = 9999;
+        gpsSol.flags.validEPE = 1;
+        gpsSol.eph = 100;
+        gpsSol.epv = 100;
 
         ENABLE_STATE(GPS_FIX);
         sensorsSet(SENSOR_GPS);
-        onNewGPSData(gpsSol.llh.lat, gpsSol.llh.lon, gpsSol.llh.alt, gpsSol.velNED[0], gpsSol.velNED[1], gpsSol.velNED[2], gpsSol.flags.validVelNE, gpsSol.flags.validVelD, gpsSol.hdop);
+        onNewGPSData();
 
         gpsState.lastLastMessageMs = gpsState.lastMessageMs;
         gpsState.lastMessageMs = millis();
@@ -259,6 +264,11 @@ void gpsFinalizeChangeBaud(void)
             gpsSetState(GPS_CHECK_VERSION);
         }
     }
+}
+
+uint16_t gpsConstrainEPE(uint32_t epe)
+{
+    return (epe > 9999) ? 9999 : epe;
 }
 
 void gpsThread(void)

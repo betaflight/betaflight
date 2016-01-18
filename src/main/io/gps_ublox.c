@@ -370,6 +370,8 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
+        gpsSol.eph = gpsConstrainEPE(_buffer.posllh.horizontal_accuracy);
+        gpsSol.epv = gpsConstrainEPE(_buffer.posllh.vertical_accuracy);
         gpsSol.flags.fix3D = next_fix ? 1 : 0;
         _new_position = true;
         break;
@@ -383,7 +385,6 @@ static bool gpsParceFrameUBLOX(void)
         if (!next_fix)
             gpsSol.flags.fix3D = 0;
         gpsSol.numSat = _buffer.solution.satellites;
-        gpsSol.hdop = _buffer.solution.position_DOP;
         break;
     case MSG_VELNED:
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
@@ -408,9 +409,11 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.groundSpeed = _buffer.pvt.speed_2d / 10;    // to cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         gpsSol.numSat = _buffer.pvt.satellites;
-        gpsSol.hdop = _buffer.pvt.position_DOP;
+        gpsSol.eph = gpsConstrainEPE(_buffer.pvt.horizontal_accuracy);
+        gpsSol.epv = gpsConstrainEPE(_buffer.pvt.vertical_accuracy);
         gpsSol.flags.validVelNE = 1;
         gpsSol.flags.validVelD = 1;
+        gpsSol.flags.validEPE = 1;
         _new_position = true;
         _new_speed = true;
         break;

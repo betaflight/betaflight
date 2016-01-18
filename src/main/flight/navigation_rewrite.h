@@ -33,7 +33,7 @@ extern uint16_t             GPS_distanceToHome;        // distance to home point
 extern int16_t              GPS_directionToHome;       // direction to home point in degrees
 
 /* Navigation system updates */
-void onNewGPSData(int32_t lat, int32_t lon, int32_t alt, int16_t vel_n, int16_t vel_e, int16_t vel_d, bool vel_ne_valid, bool vel_d_valid, int16_t hdop);
+void onNewGPSData(void);
 
 #if defined(NAV)
 #if defined(BLACKBOX)

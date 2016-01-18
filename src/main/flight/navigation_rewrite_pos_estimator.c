@@ -224,7 +224,7 @@ static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
  * Update GPS topic
  *  Function is called on each GPS update
  */
-void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, int16_t velE, int16_t velD, bool velNEValid, bool velDValid, int16_t hdop)
+void onNewGPSData(void)
 {
     static uint32_t lastGPSNewDataTime;
     static int32_t previousLat;
@@ -235,9 +235,9 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
     gpsLocation_t newLLH;
     uint32_t currentTime = micros();
 
-    newLLH.lat = newLat;
-    newLLH.lon = newLon;
-    newLLH.alt = newAlt;
+    newLLH.lat = gpsSol.llh.lat;
+    newLLH.lon = gpsSol.llh.lon;
+    newLLH.alt = gpsSol.llh.alt;
 
     if (sensors(SENSOR_GPS)) {
         if (!(STATE(GPS_FIX) && gpsSol.numSat >= posControl.navConfig->inav.gps_min_sats)) {
@@ -286,21 +286,21 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
                 posEstimator.gps.pos = newLocalPos;
 
                 /* Use VELNED provided by GPS if available, calculate from coordinates otherwise */
-                float gpsScaleLonDown = constrainf(cos_approx((ABS(newLat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
-                if (velNEValid) {
-                    posEstimator.gps.vel.V.X = velN;
-                    posEstimator.gps.vel.V.Y = velE;
+                float gpsScaleLonDown = constrainf(cos_approx((ABS(gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
+                if (gpsSol.flags.validVelNE) {
+                    posEstimator.gps.vel.V.X = gpsSol.velNED[0];
+                    posEstimator.gps.vel.V.Y = gpsSol.velNED[1];
                 }
                 else {
-                    posEstimator.gps.vel.V.X = (posEstimator.gps.vel.V.X + (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLat - previousLat) / dT)) / 2.0f;
-                    posEstimator.gps.vel.V.Y = (posEstimator.gps.vel.V.Y + (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (newLon - previousLon) / dT)) / 2.0f;
+                    posEstimator.gps.vel.V.X = (posEstimator.gps.vel.V.X + (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (gpsSol.llh.lat - previousLat) / dT)) / 2.0f;
+                    posEstimator.gps.vel.V.Y = (posEstimator.gps.vel.V.Y + (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (gpsSol.llh.lon - previousLon) / dT)) / 2.0f;
                 }
 
-                if (velDValid) {
-                    posEstimator.gps.vel.V.Z = -velD;   // NEU
+                if (gpsSol.flags.validVelD) {
+                    posEstimator.gps.vel.V.Z = - gpsSol.velNED[2];   // NEU
                 }
                 else {
-                    posEstimator.gps.vel.V.Z = (posEstimator.gps.vel.V.Z + (newAlt - previousAlt) / dT) / 2.0f;
+                    posEstimator.gps.vel.V.Z = (posEstimator.gps.vel.V.Z + (gpsSol.llh.alt - previousAlt) / dT) / 2.0f;
                 }
 
                 /* FIXME: use HDOP/VDOP */
@@ -311,9 +311,9 @@ void onNewGPSData(int32_t newLat, int32_t newLon, int32_t newAlt, int16_t velN, 
                 posEstimator.gps.lastUpdateTime = currentTime;
             }
 
-            previousLat = newLat;
-            previousLon = newLon;
-            previousAlt = newAlt;
+            previousLat = gpsSol.llh.lat;
+            previousLon = gpsSol.llh.lon;
+            previousAlt = gpsSol.llh.alt;
             isFirstGPSUpdate = false;
 
             lastGPSNewDataTime = currentTime;
