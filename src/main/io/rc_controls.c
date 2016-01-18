@@ -122,10 +122,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
 
 rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
 {
-    if (feature(FEATURE_3D)) // TODO
-        return CENTERED;
-    else if (!feature(FEATURE_3D)
-            && ((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
+    if (((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
             && ((rcData[ROLL] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODEDEADBAND))))
         return CENTERED;
 
