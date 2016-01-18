@@ -83,7 +83,6 @@ static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 #endif
 
 typedef enum {
-    THROTTLE_REVERSED,
     THROTTLE_LOW_NEUTRAL,
     THROTTLE_HIGH_NEUTRAL,
     THROTTLE_NORMAL
@@ -808,7 +807,7 @@ void mixTable(void)
             if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
                 throttleMax = rxConfig->midrc - flight3DConfig->deadband3d_high;
                 throttleMin = escAndServoConfig->minthrottle;
-                throttleStatus3d = THROTTLE_REVERSED;
+                throttleStatus3d = THROTTLE_NORMAL;
             } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
                 throttleMin = rxConfig->midrc + flight3DConfig->deadband3d_high;
                 throttleMax = escAndServoConfig->maxthrottle;
@@ -840,37 +839,34 @@ void mixTable(void)
         // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
         for (i = 0; i < motorCount; i++) {
             motor[i] = rollPitchYawMix[i] + constrainf(rcCommand[THROTTLE] * currentMixer[i].throttle, throttleMin, throttleMax);
-        }
 
-        // Correct motor output for 3D based on the current throttle state
-        if (feature(FEATURE_3D)) {
-            switch(throttleStatus3d) {
-                case(THROTTLE_REVERSED):
-                    motor[i] = rxConfig->midrc - motor[i];
-                    break;
-                case(THROTTLE_LOW_NEUTRAL):
-		            motor[i] = rxConfig->midrc - flight3DConfig->deadband3d_throttle;
-                    break;
-                case(THROTTLE_HIGH_NEUTRAL):
-		            motor[i] = rxConfig->midrc + flight3DConfig->deadband3d_throttle;
-                    break;
-                case(THROTTLE_NORMAL):
-                    break;
+            // Correct motor output for 3D based on the current throttle state
+            if (feature(FEATURE_3D)) {
+                switch(throttleStatus3d) {
+                    case(THROTTLE_LOW_NEUTRAL):
+		                motor[i] = rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+                        break;
+                    case(THROTTLE_HIGH_NEUTRAL):
+		                motor[i] = rxConfig->midrc + flight3DConfig->deadband3d_throttle;
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
 
-        /* Double code. Preparations for full mixer replacement to airMode mixer */
+            /* Double code. Preparations for full mixer replacement to airMode mixer */
 
-        // Motor stop handling
-        if (feature(FEATURE_MOTOR_STOP)) {
-            if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                motor[i] = escAndServoConfig->mincommand;
+            // Motor stop handling
+            if (feature(FEATURE_MOTOR_STOP)) {
+                if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+                    motor[i] = escAndServoConfig->mincommand;
+                }
             }
-        }
 
-        // TODO - Should probably not be needed, but keep it till it is investigated.
-        if (isFailsafeActive) {
-            motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            // TODO - Should probably not be needed, but keep it till it is investigated.
+            if (isFailsafeActive) {
+                motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            }
         }
     }
 
