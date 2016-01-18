@@ -298,13 +298,6 @@ static bool gpsNewFrameNAZA(uint8_t data)
     return parsed;
 }
 
-static bool gpsInitialize(void)
-{
-    // NMEA is receive-only, we can only cycle thru baud rates and check if we are receiving anything
-    gpsState.baudrateIndex = gpsState.autoBaudrateIndex;
-    return false;
-}
-
 static bool gpsReceiveData(void)
 {
     bool hasNewData = false;
@@ -322,6 +315,18 @@ static bool gpsReceiveData(void)
     return hasNewData;
 }
 
+static bool gpsInitialize(void)
+{
+    gpsSetState(GPS_CHANGE_BAUD);
+    return false;
+}
+
+static bool gpsChangeBaud(void)
+{
+    gpsFinalizeChangeBaud();
+    return false;
+}
+
 bool gpsHandleNAZA(void)
 {
     // Receive data
@@ -334,6 +339,9 @@ bool gpsHandleNAZA(void)
 
     case GPS_INITIALIZING:
         return gpsInitialize();
+
+    case GPS_CHANGE_BAUD:
+        return gpsChangeBaud();
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:

@@ -202,9 +202,6 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
                 }
             }
 
-            // Start autoBaud tests at desired baud rate
-            gpsState.autoBaudrateIndex = gpsState.baudrateIndex;
-
             portMode_t mode = gpsProviders[gpsState.gpsConfig->provider].portMode;
 
             // no callback - buffer will be consumed in gpsThread()
@@ -250,34 +247,50 @@ static void gpsFakeGPSUpdate(void)
 }
 #endif
 
+void gpsFinalizeChangeBaud(void)
+{
+    if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
+        // Wait for GPS_INIT_DELAY before switching to required baud rate
+        if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
+            // Switch to required serial port baud
+            serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.baudrateIndex]]);
+            gpsState.lastMessageMs = millis();
+            gpsSetState(GPS_CHECK_VERSION);
+        }
+    }
+    else if (gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_BUS) {
+    }
+}
+
 void gpsThread(void)
 {
 #ifdef USE_FAKE_GPS
     gpsFakeGPSUpdate();
 #else
+
+    debug[0] = gpsState.state;
+
     // Serial-based GPS
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
         switch (gpsState.state) {
         default:
         case GPS_INITIALIZING:
-            // Handle protocol - if autobaud will switch to autoBaudrateIndex, send init string and switch to desired baud
-            gpsResetSolution();
-            gpsHandleProtocol();
+            // Reset internals
             DISABLE_STATE(GPS_FIX);
-            gpsSetState(GPS_CHANGE_BAUD);
+            gpsState.hwVersion = 0;
+            gpsState.autoConfigStep = 0;
+            gpsState.autoConfigPosition = 0;
+            gpsState.autoBaudrateIndex = 0;
+
+            // Reset solution
+            gpsResetSolution();
+
+            // Switch to next state is done by protocol handler
+            gpsHandleProtocol();
             break;
 
         case GPS_CHANGE_BAUD:
-            // Wait for GPS_INIT_DELAY before switching to required baud rate
-            if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
-                // Switch to required serial port baud
-                serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.baudrateIndex]]);
-                gpsState.hwVersion = 0;
-                gpsState.autoConfigStep = 0;
-                gpsState.autoConfigPosition = 0;
-                gpsState.lastMessageMs = millis();
-                gpsSetState(GPS_CHECK_VERSION);
-            }
+            gpsHandleProtocol();    // Switch to next state is done by protocol handler
             break;
 
         case GPS_CHECK_VERSION:
@@ -294,10 +307,10 @@ void gpsThread(void)
 
         case GPS_LOST_COMMUNICATION:
             gpsStats.timeouts++;
-            // Handle autobaud
+            // Handle autobaud - switch to next port baud rate
             if (gpsState.gpsConfig->autoBaud != GPS_AUTOBAUD_OFF) {
-                gpsState.autoBaudrateIndex++;
-                gpsState.autoBaudrateIndex %= GPS_BAUDRATE_COUNT;
+                gpsState.baudrateIndex++;
+                gpsState.baudrateIndex %= GPS_BAUDRATE_COUNT;
             }
             gpsSetState(GPS_INITIALIZING);
             break;

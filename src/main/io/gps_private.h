@@ -52,6 +52,7 @@ extern gpsReceiverData_t gpsState;
 extern baudRate_e gpsToSerialBaudRate[GPS_BAUDRATE_COUNT];
 
 extern void gpsSetState(gpsState_e state);
+extern void gpsFinalizeChangeBaud(void);
 extern bool gpsHandleNMEA(void);
 extern bool gpsHandleUBLOX(void);
 extern bool gpsHandleI2CNAV(void);

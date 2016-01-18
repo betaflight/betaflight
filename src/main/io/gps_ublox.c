@@ -536,17 +536,6 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
-static bool gpsInitialize(void)
-{
-    // UBLOX will be forced to the baud selected for the serial port. Autobaud will cycle thru autoBaudrateIndex, baudrateIndex is never changed
-    serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.autoBaudrateIndex]]);
-
-    // print our FIXED init string for the baudrate we want to be at
-    serialPrint(gpsState.gpsPort, baudInitData[gpsState.baudrateIndex]);
-
-    return false;
-}
-
 static bool gpsConfigure(void)
 {
     switch (gpsState.autoConfigStep) {
@@ -650,6 +639,30 @@ static bool gpsReceiveData(void)
     return hasNewData;
 }
 
+static bool gpsInitialize(void)
+{
+    gpsSetState(GPS_CHANGE_BAUD);
+    return false;
+}
+
+static bool gpsChangeBaud(void)
+{
+    if (gpsState.autoBaudrateIndex < GPS_BAUDRATE_COUNT) {
+        // Do the switch only if TX buffer is empty - make sure all init string was sent at the same baud
+        if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
+            serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.autoBaudrateIndex]]);
+            serialPrint(gpsState.gpsPort, baudInitData[gpsState.baudrateIndex]);
+            gpsState.autoBaudrateIndex++;
+            gpsSetState(GPS_CHANGE_BAUD);   // switch to the same state to reset state transition time
+        }
+    }
+    else {
+        gpsFinalizeChangeBaud();
+    }
+
+    return false;
+}
+
 bool gpsHandleUBLOX(void)
 {
     // Receive data
@@ -662,6 +675,9 @@ bool gpsHandleUBLOX(void)
 
     case GPS_INITIALIZING:
         return gpsInitialize();
+
+    case GPS_CHANGE_BAUD:
+        return gpsChangeBaud();
 
     case GPS_CHECK_VERSION:
         return gpsCheckVersion();
