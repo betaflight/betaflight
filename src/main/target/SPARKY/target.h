@@ -109,6 +109,7 @@
 
 #define BLACKBOX
 #define GPS
+#define NAV
 #define GTUNE
 #define DISPLAY
 #define SERIAL_RX

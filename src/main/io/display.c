@@ -225,9 +225,11 @@ void updateFailsafeStatus(void)
         case FAILSAFE_RX_LOSS_DETECTED:
             failsafeIndicator = 'R';
             break;
+#ifdef NAV
         case FAILSAFE_RETURN_TO_HOME:
             failsafeIndicator = 'H';
             break;
+#endif
         case FAILSAFE_LANDING:
             failsafeIndicator = 'l';
             break;
