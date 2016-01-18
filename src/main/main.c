@@ -576,6 +576,7 @@ int main(void) {
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
 
+    schedulerInit();
     while (1) {
         scheduler();
         processLoopback();
