@@ -527,7 +527,7 @@ static void imuUpdateMeasuredAcceleration(float dT)
 }
 
 #ifdef HIL
-void imuHILUpdate(float dT)
+void imuHILUpdate(void)
 {
     /* Set attitude */
     attitude.values.roll = hilToFC.rollAngle;
