@@ -804,15 +804,15 @@ void mixTable(void)
 
         // Find min and max throttle based on condition
         if (feature(FEATURE_3D)) {
-            if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
-                throttleMax = rxConfig->midrc - flight3DConfig->deadband3d_high;
+            if (rcData[THROTTLE] <= (flight3DConfig->neutral3d - flight3DConfig->deadband3d_throttle)) {
+                throttleMax = flight3DConfig->deadband3d_low;
                 throttleMin = escAndServoConfig->minthrottle;
                 throttleStatus3d = THROTTLE_NORMAL;
-            } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
-                throttleMin = rxConfig->midrc + flight3DConfig->deadband3d_high;
+            } else if (rcData[THROTTLE] >= (flight3DConfig->neutral3d + flight3DConfig->deadband3d_throttle)) {
                 throttleMax = escAndServoConfig->maxthrottle;
+                throttleMin = flight3DConfig->deadband3d_high;
                 throttleStatus3d = THROTTLE_NORMAL;
-            } else if ((rcData[THROTTLE] >= rxConfig->midrc) && (rcData[THROTTLE] < flight3DConfig->deadband3d_throttle)) {
+            } else if ((rcData[THROTTLE] >= flight3DConfig->neutral3d) && (rcData[THROTTLE] < (flight3DConfig->neutral3d + flight3DConfig->deadband3d_throttle))) {
                 throttleStatus3d = THROTTLE_HIGH_NEUTRAL;
             } else {
                 throttleStatus3d = THROTTLE_LOW_NEUTRAL;
@@ -844,10 +844,10 @@ void mixTable(void)
             if (feature(FEATURE_3D)) {
                 switch(throttleStatus3d) {
                     case(THROTTLE_LOW_NEUTRAL):
-		                motor[i] = rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+		                motor[i] = flight3DConfig->deadband3d_low;
                         break;
                     case(THROTTLE_HIGH_NEUTRAL):
-		                motor[i] = rxConfig->midrc + flight3DConfig->deadband3d_throttle;
+		                motor[i] = flight3DConfig->deadband3d_high;
                         break;
                     default:
                         break;
