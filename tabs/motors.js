@@ -271,18 +271,9 @@ TABS.motors.initialize = function (callback) {
                 // This is particularly useful for motor balancing as it 
                 // eliminates the need for external tools
                 var sum = 0.0;
-                for (var k = 0; k < accel_data[0].length; k++)
-                {
-                    sum += accel_data[0][k][1]*accel_data[0][k][1];
-                }
-                for (var k = 0; k < accel_data[1].length; k++)
-                {
-                    sum += accel_data[1][k][1]*accel_data[1][k][1];
-                }
-                for (var k = 0; k < accel_data[2].length; k++)
-                {
-                    sum += accel_data[2][k][1]*accel_data[2][k][1];
-                }
+                for (var j = 0; j < accel_data.length; j++)
+                    for (var k = 0; k < accel_data[0].length; k++)
+                       sum += accel_data[j][k][1]*accel_data[j][k][1];
                 var rms = Math.sqrt(sum/(accel_data[0].length+accel_data[1].length+accel_data[2].length));
 
                 raw_data_text_ements.x[0].text(accel_with_offset[0].toFixed(2) + ' (' + accel_max_read[0].toFixed(2) + ')');
