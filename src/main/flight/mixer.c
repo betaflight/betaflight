@@ -460,7 +460,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
     }
     
     // in 3D mode, mixer gain has to be halved
-    if (feature(FEATURE_3D)) {
+    if (feature(FEATURE_3D) && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) {
         if (motorCount > 1) {
             for (i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
@@ -790,7 +790,7 @@ void mixTable(void)
                 axisPID[ROLL] * currentMixer[i].roll +
                 -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-            if (feature(FEATURE_3D)) rollPitchYawMix[i] /= 2;  // 3D feature will get throttle scaling at the end
+            if (feature(FEATURE_3D)) rollPitchYawMix[i] /= 2;  // 3D feature uses half of the resolution
 
             if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
             if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
@@ -854,18 +854,18 @@ void mixTable(void)
                 }
             }
 
-            /* Double code. Preparations for full mixer replacement to airMode mixer */
+            /* Double code. Preparations for full mixer replacement to airMode mixer. Copy from old mixer*/
 
-            // Motor stop handling
-            if (feature(FEATURE_MOTOR_STOP)) {
-                if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                    motor[i] = escAndServoConfig->mincommand;
-                }
-            }
-
-            // TODO - Should probably not be needed, but keep it till it is investigated.
+            // TODO - Should probably not be needed for constraining failsafe, but keep it till it is investigated.
             if (isFailsafeActive) {
                 motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            } else {
+                // Motor stop handling
+                if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D)) {
+                    if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+                        motor[i] = escAndServoConfig->mincommand;
+                    }
+                }
             }
         }
     }
