@@ -272,7 +272,7 @@ TABS.motors.initialize = function (callback) {
                 // eliminates the need for external tools
                 var sum = 0.0;
                 for (var j = 0; j < accel_data.length; j++)
-                    for (var k = 0; k < accel_data[0].length; k++)
+                    for (var k = 0; k < accel_data[j].length; k++)
                        sum += accel_data[j][k][1]*accel_data[j][k][1];
                 var rms = Math.sqrt(sum/(accel_data[0].length+accel_data[1].length+accel_data[2].length));
 
