@@ -42,7 +42,6 @@ void taskSystem(void);
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
-        .isEnabled = true,
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
         .desiredPeriod = 1000000 / 10,              // run every 100 ms
