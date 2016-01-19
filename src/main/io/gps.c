@@ -277,6 +277,9 @@ void gpsThread(void)
     gpsFakeGPSUpdate();
 #else
 
+    debug[0] = gpsSol.eph;
+    debug[1] = gpsSol.epv;
+
     // Serial-based GPS
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
         switch (gpsState.state) {
