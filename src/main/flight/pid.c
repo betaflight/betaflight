@@ -83,29 +83,27 @@ void pidResetErrorGyro(void)
     errorGyroIf[YAW] = 0.0f;
 }
 
-static float minItermScaler = 1;
-
 void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
-    float rcCommandReflection = ABS((float)rcCommand[axis] / 500.0f);
+    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
     axisState->wowFactor = 1;
     axisState->factor = 0;
 
-    if (rcCommandReflection > 0.7f) {
-        //Ki scaler
-        axisState->iTermScaler = constrainf(1.0f - (1.5f * rcCommandReflection), 0.0f, minItermScaler);
-        if (minItermScaler > axisState->iTermScaler) minItermScaler = axisState->iTermScaler;
+    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
+        /* Ki scaler axis*/
+        axisState->iTermScaler = 0.0f;
     } else {
-        // Prevent rapid windup
-        if (minItermScaler < 1) {
-            minItermScaler = constrainf(minItermScaler + 0.001f, 0.0f, 1.0f);
+        /* Prevent rapid windup during acro recoveries */
+        if (axisState->iTermScaler < 1) {
+            axisState->iTermScaler = constrainf(axisState->iTermScaler + 0.001f, 0.0f, 1.0f);
         } else {
-            minItermScaler = 1;
+            axisState->iTermScaler = 1;
         }
     }
 
-    if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor) {
+    /* acro plus factor handling */
+    if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor && (!flightModeFlags)) {
         axisState->wowFactor = rcCommandReflection * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f); //0-1f
-        axisState->factor = axisState->wowFactor * (rcCommand[axis] / 500.0f) * 1000;
+        axisState->factor = axisState->wowFactor * rcCommandReflection * 1000;
         axisState->wowFactor = 1.0f - axisState->wowFactor;
     }
 }
@@ -196,7 +194,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
-            errorGyroIf[axis] *= minItermScaler;
+            errorGyroIf[axis] *= airModePlusAxisState[axis].iTermScaler;
         }
 
         if (allowITermShrinkOnly || motorLimitReached) {
@@ -337,7 +335,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
-            errorGyroI[axis] *= minItermScaler;
+            errorGyroI[axis] *= airModePlusAxisState[axis].iTermScaler;
         }
 
         if (allowITermShrinkOnly || motorLimitReached) {
