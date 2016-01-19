@@ -656,16 +656,10 @@ void processLoopback(void) {
 int main(void) {
     init();
 
-    /* Setup scheduler */
+    // Setup scheduler
     schedulerInit();
-    if (imuConfig()->gyroSync) {
-        rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
-    }
-    else {
-        rescheduleTask(TASK_GYROPID, targetLooptime);
-    }
-
     setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
     setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
@@ -701,7 +695,7 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
-    while (1) {
+    while (true) {
         scheduler();
         processLoopback();
     }
