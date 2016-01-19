@@ -69,9 +69,6 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
-#ifdef CC3D
-    bool useBuzzerP6;
-#endif
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif

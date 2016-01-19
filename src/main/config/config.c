@@ -467,9 +467,6 @@ static void resetConf(void)
 #endif
     masterConfig.servo_pwm_rate = 50;
     masterConfig.use_fast_pwm = 0;
-#ifdef CC3D
-    masterConfig.use_buzzer_p6 = 0;
-#endif
 
 #ifdef GPS
     // gps/nav stuff
