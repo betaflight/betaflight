@@ -234,15 +234,20 @@ static bool gpsNewFrameNMEA(char c)
                     switch (gps_frame) {
                     case FRAME_GGA:
                         frameOK = 1;
-                        if (STATE(GPS_FIX)) {
-                            gpsSol.numSat = gps_Msg.numSat;
+                        gpsSol.numSat = gps_Msg.numSat;
+                        if (gps_Msg.fix) {
+                            gpsSol.flags.fix3D = 1;
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.llh.alt = gps_Msg.altitude;
+
                             // EPH/EPV are unreliable for NMEA as they are not real accuracy
                             gpsSol.eph = gpsConstrainEPE(gps_Msg.hdop);
                             gpsSol.epv = gpsConstrainEPE(gps_Msg.hdop);
                             gpsSol.flags.validEPE = 0;
+                        }
+                        else {
+                            gpsSol.flags.fix3D = 0;
                         }
 
                         // NMEA does not report VELNED
