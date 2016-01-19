@@ -183,7 +183,8 @@ TABS.motors.initialize = function (callback) {
             self.allowTestMode = false;
         }
         
-        $('#motorsEnableTestMode').prop('disabled', 'true');
+        $('#motorsEnableTestMode').prop('checked', false);
+        $('#motorsEnableTestMode').prop('disabled', true);
         
         update_model(CONFIG.multiType);
         
@@ -317,42 +318,49 @@ TABS.motors.initialize = function (callback) {
         $('div.values li:not(:last)').text(MISC.mincommand);
         
         if(self.feature3DEnabled && self.feature3DSupported) {
+            //Arbitrary sanity checks
+            //Note: values may need to be revisited
+            if(_3D.neutral3d > 1575 || _3D.neutral3d < 1425)
+                _3D.neutral3d = 1500;
+                
             $('div.sliders input').val(_3D.neutral3d);
         } else {
             $('div.sliders input').val(MISC.mincommand); 
         }
 
-        // UI hooks
-        var buffering_set_motor = [],
-            buffer_delay = false;
-        $('div.sliders input:not(.master)').on('input', function () {
+        if(self.allowTestMode){ 
+           // UI hooks
+           var buffering_set_motor = [],
+           buffer_delay = false;
+           $('div.sliders input:not(.master)').on('input', function () {
             
-            var index = $(this).index(),
-                buffer = [],
-                i;
+               var index = $(this).index(),
+               buffer = [],
+               i;
 
-            $('div.values li').eq(index).text($(this).val());
+               $('div.values li').eq(index).text($(this).val());
 
-            for (i = 0; i < 8; i++) {
-                var val = parseInt($('div.sliders input').eq(i).val());
+               for (i = 0; i < 8; i++) {
+               var val = parseInt($('div.sliders input').eq(i).val());
 
-                buffer.push(lowByte(val));
-                buffer.push(highByte(val));
-            }
+               buffer.push(lowByte(val));
+               buffer.push(highByte(val));
+               }
+             
+               buffering_set_motor.push(buffer);
 
-            buffering_set_motor.push(buffer);
+               if (!buffer_delay) {
+                   buffer_delay = setTimeout(function () {
+                       buffer = buffering_set_motor.pop();
+                    
+                       MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer);
 
-            if (!buffer_delay) {
-                buffer_delay = setTimeout(function () {
-                    buffer = buffering_set_motor.pop();
-
-                    MSP.send_message(MSP_codes.MSP_SET_MOTOR, buffer);
-
-                    buffering_set_motor = [];
-                    buffer_delay = false;
-                }, 10);
-            }
-        });
+                       buffering_set_motor = [];
+                       buffer_delay = false;
+                   }, 10);
+               }
+           });  
+        }
 
         $('div.sliders input.master').on('input', function () {
             var val = $(this).val();
@@ -379,8 +387,7 @@ TABS.motors.initialize = function (callback) {
                     $('div.sliders input').val(MISC.mincommand);
                 }
 
-                // trigger change event so values are sent to mcu
-                $('div.sliders input').trigger('input');
+                $('div.sliders input').trigger('input');             
             }
         });
 
@@ -388,7 +395,7 @@ TABS.motors.initialize = function (callback) {
         var motors_running = false;
 
         for (var i = 0; i < number_of_valid_outputs; i++) {
-            if( ! bit_check(BF_CONFIG.features,12) ){
+            if( !self.feature3DEnabled ){
                 if (MOTOR_DATA[i] > MISC.mincommand) {
                     motors_running = true;
                     break;
@@ -402,7 +409,7 @@ TABS.motors.initialize = function (callback) {
         }
 
         if (motors_running) {
-            if (!self.armed) {
+            if (!self.armed && self.allowTestMode) {
                 $('#motorsEnableTestMode').prop('checked', true);
             }
             // motors are running adjust sliders to current values
@@ -448,26 +455,9 @@ TABS.motors.initialize = function (callback) {
         }
 
         var full_block_scale = MISC.maxthrottle - MISC.mincommand;
-        function update_ui() {
-            
-            var previousArmState = self.armed;
-            
-            update_arm_status();
-
-            if (self.armed) {
-                $('#motorsEnableTestMode').prop('disabled', true);
-                $('#motorsEnableTestMode').prop('checked', false);
-            } else {
-                if (self.allowTestMode) {
-                    $('#motorsEnableTestMode').prop('disabled', false);
-                }
-            }
-
-            if (previousArmState != self.armed) {
-                console.log('arm state change detected');
-                $('#motorsEnableTestMode').change(); 
-            }
-            
+        
+        function update_ui() {            
+            var previousArmState = self.armed;                                   
             var block_height = $('div.m-block:first').height();
 
             for (var i = 0; i < MOTOR_DATA.length; i++) {
@@ -489,6 +479,23 @@ TABS.motors.initialize = function (callback) {
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
                 $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1'+ color +')'});
+            }
+            //keep the following here so at least we get a visual cue of our motor setup
+            update_arm_status();                        
+            if (!self.allowTestMode) return;
+            
+            if (self.armed) {
+                $('#motorsEnableTestMode').prop('disabled', true);
+                $('#motorsEnableTestMode').prop('checked', false);
+            } else {
+                if (self.allowTestMode) {
+                    $('#motorsEnableTestMode').prop('disabled', false);                    
+                }
+            }
+
+            if (previousArmState != self.armed) {
+                console.log('arm state change detected');
+                $('#motorsEnableTestMode').change(); 
             }
         }
 
