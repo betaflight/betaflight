@@ -18,6 +18,6 @@
 #pragma once
 
 typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype
+typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read prototype
 typedef void (*sensorGyroInitFuncPtr)(uint8_t lpf);         // gyro sensor init prototype
-typedef void (*sensorInterruptFuncPtr)(bool *data);         // sensor read and align prototype
+typedef bool (*sensorIsDataReadyFuncPtr)(void);             // sensor data ready prototype

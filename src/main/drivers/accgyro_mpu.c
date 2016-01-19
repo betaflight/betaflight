@@ -337,11 +337,12 @@ bool mpuGyroRead(int16_t *gyroADC)
     return true;
 }
 
-void checkMPUDataReady(bool *mpuDataReadyPtr) {
+bool mpuIsDataReady(void)
+{
     if (mpuDataReady) {
-        *mpuDataReadyPtr = true;
-        mpuDataReady= false;
-    } else {
-        *mpuDataReadyPtr = false;
+        mpuDataReady = false;
+        return true;
     }
+
+    return false;
 }

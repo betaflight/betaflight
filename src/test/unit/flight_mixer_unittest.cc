@@ -49,7 +49,7 @@ extern "C" {
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
     void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
-    void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
+    void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 }
 
 #include "unittest_macros.h"
@@ -222,12 +222,16 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     mixerInit(MIXER_TRI, customMotorMixer, customServoMixer);
 
     // and
-    pwmOutputConfiguration_t pwmOutputConfiguration = {
+    pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 1,
-            .motorCount = 3
+            .motorCount = 3,
+            .ioCount = 4,
+            .pwmInputCount = 0,
+            .ppmInputCount = 0,
+            .ioConfigurations = {}
     };
 
-    mixerUsePWMOutputConfiguration(&pwmOutputConfiguration);
+    mixerUsePWMIOConfiguration(&pwmIOConfiguration);
 
     // and
     axisPID[YAW] = 0;
@@ -251,12 +255,16 @@ TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
     mixerInit(MIXER_QUADX, customMotorMixer, customServoMixer);
 
     // and
-    pwmOutputConfiguration_t pwmOutputConfiguration = {
+    pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 0,
-            .motorCount = 4
+            .motorCount = 4,
+            .ioCount = 4,
+            .pwmInputCount = 0,
+            .ppmInputCount = 0,
+            .ioConfigurations = {}
     };
 
-    mixerUsePWMOutputConfiguration(&pwmOutputConfiguration);
+    mixerUsePWMIOConfiguration(&pwmIOConfiguration);
 
     // and
     memset(rcCommand, 0, sizeof(rcCommand));
@@ -333,12 +341,16 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     mixerInit(MIXER_CUSTOM_AIRPLANE, customMotorMixer, customServoMixer);
 
-    pwmOutputConfiguration_t pwmOutputConfiguration = {
+    pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 6,
-            .motorCount = 2
+            .motorCount = 2,
+            .ioCount = 8,
+            .pwmInputCount = 0,
+            .ppmInputCount = 0,
+            .ioConfigurations = {}
     };
 
-    mixerUsePWMOutputConfiguration(&pwmOutputConfiguration);
+    mixerUsePWMIOConfiguration(&pwmIOConfiguration);
 
     // and
     rcCommand[THROTTLE] = 1000;

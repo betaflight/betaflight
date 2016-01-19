@@ -36,18 +36,8 @@ extern gyro_t gyro;
 uint32_t targetLooptime;
 uint8_t mpuDividerDrops;
 
-bool getMpuDataStatus(gyro_t *gyro)
-{
-    bool mpuDataStatus = false;
-
-    if (gyro->intStatus) {
-        gyro->intStatus(&mpuDataStatus);
-    }
-    return mpuDataStatus;
-}
-
 bool gyroSyncCheckUpdate(void) {
-    return getMpuDataStatus(&gyro);
+    return gyro.isDataReady && gyro.isDataReady();
 }
 
 void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
