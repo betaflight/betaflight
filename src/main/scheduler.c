@@ -260,7 +260,7 @@ void scheduler(void)
         }
     }
 
-    totalWaitingTasksSamples += 1;
+    totalWaitingTasksSamples++;
     totalWaitingTasks += waitingTasks;
 
     /* Found a task that should be run */
@@ -271,12 +271,12 @@ void scheduler(void)
 
         currentTask = selectedTask;
 
-        uint32_t currentTimeBeforeTaskCall = micros();
+        const uint32_t currentTimeBeforeTaskCall = micros();
 
         /* Execute task */
         selectedTask->taskFunc();
 
-        uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
+        const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
         selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
