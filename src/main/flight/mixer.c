@@ -53,8 +53,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-//#define MIXER_DEBUG
-
 uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
@@ -794,6 +792,7 @@ void mixTable(void)
         int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
         int16_t throttleRange, throttle;
         int16_t throttleMin, throttleMax;
+        static bool flightDirection3dReversed;
 
         throttle = rcData[THROTTLE];
 
@@ -803,9 +802,11 @@ void mixTable(void)
             if (rcData[THROTTLE] <= (flight3DConfig->neutral3d - flight3DConfig->deadband3d_throttle)) {
                 throttleMax = flight3DConfig->deadband3d_low;
                 throttleMin = escAndServoConfig->minthrottle;
+                flightDirection3dReversed = true;
             } else if (rcData[THROTTLE] >= (flight3DConfig->neutral3d + flight3DConfig->deadband3d_throttle)) {
                 throttleMax = escAndServoConfig->maxthrottle;
                 throttleMin = flight3DConfig->deadband3d_high;
+                flightDirection3dReversed = false;
             } else {
                 if (!throttleMin) {       /* when starting in neutral */
                     throttleMax = escAndServoConfig->maxthrottle;
@@ -832,6 +833,7 @@ void mixTable(void)
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
             }
+            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         } else {
             motorLimitReached = false;
             throttleMin = throttleMin + (rollPitchYawMixRange / 2);
@@ -848,12 +850,20 @@ void mixTable(void)
             // TODO - Should probably not be needed for constraining failsafe, but keep it till it is investigated.
             if (isFailsafeActive) {
                 motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            } else if (feature(FEATURE_3D)) {
+                if (flightDirection3dReversed) {
+                    motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
+                } else {
+                    motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+                }
             } else {
-                // Motor stop handling
-                if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D)) {
-                    if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                        motor[i] = escAndServoConfig->mincommand;
-                    }
+                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+            }
+
+            // Motor stop handling
+            if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D)) {
+                if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+                    motor[i] = escAndServoConfig->mincommand;
                 }
             }
         }
