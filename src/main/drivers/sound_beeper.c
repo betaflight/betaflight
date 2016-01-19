@@ -33,23 +33,21 @@
 
 void (*systemBeepPtr)(bool onoff) = NULL;
 
-static uint16_t beeperPin;
-
 static void beepNormal(bool onoff)
 {
     if (onoff) {
-        digitalLo(BEEP_GPIO, beeperPin);
+        digitalLo(BEEP_GPIO, BEEP_PIN);
     } else {
-        digitalHi(BEEP_GPIO, beeperPin);
+        digitalHi(BEEP_GPIO, BEEP_PIN);
     }
 }
 
 static void beepInverted(bool onoff)
 {
     if (onoff) {
-        digitalHi(BEEP_GPIO, beeperPin);
+        digitalHi(BEEP_GPIO, BEEP_PIN);
     } else {
-        digitalLo(BEEP_GPIO, beeperPin);
+        digitalLo(BEEP_GPIO, BEEP_PIN);
     }
 }
 #endif
@@ -63,17 +61,8 @@ void systemBeep(bool onoff)
 #endif
 }
 
-#ifdef CC3D
-void beeperInit(beeperConfig_t *config, uint8_t use_buzzer_p6) {
-	if (use_buzzer_p6) {
-        beeperPin = Pin_2;
-	} else {
-        beeperPin = BEEP_PIN;
-	}
-#else
-void beeperInit(beeperConfig_t *config) {
-	beeperPin = BEEP_PIN;
-#endif
+void beeperInit(beeperConfig_t *config)
+{
 #ifndef BEEPER
     UNUSED(config);
 #else
