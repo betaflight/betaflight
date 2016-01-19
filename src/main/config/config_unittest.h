@@ -50,6 +50,35 @@ bool unittest_outsideRealtimeGuardInterval;
 #endif
 
 
+#ifdef SRC_MAIN_SCHEDULER_C_
+#ifdef UNIT_TEST
+
+cfTask_t *unittest_scheduler_selectedTask;
+uint8_t unittest_scheduler_selectedTaskDynPrio;
+uint16_t unittest_scheduler_waitingTasks;
+uint32_t unittest_scheduler_timeToNextRealtimeTask;
+
+#define SET_SCHEDULER_LOCALS() \
+    { \
+    }
+
+#define GET_SCHEDULER_LOCALS() \
+    { \
+    unittest_scheduler_selectedTask = selectedTask; \
+    unittest_scheduler_selectedTaskDynPrio = selectedTaskDynPrio; \
+    unittest_scheduler_waitingTasks = waitingTasks; \
+    unittest_scheduler_timeToNextRealtimeTask = timeToNextRealtimeTask; \
+    }
+
+#else
+
+#define SET_SCHEDULER_LOCALS() {}
+#define GET_SCHEDULER_LOCALS() {}
+
+#endif
+#endif
+
+
 #ifdef SRC_MAIN_FLIGHT_PID_C_
 #ifdef UNIT_TEST
 

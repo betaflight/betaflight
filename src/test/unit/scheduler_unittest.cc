@@ -25,6 +25,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 enum {
+    systemTime = 10,
     pidLoopCheckerTime = 650,
     updateAccelerometerTime = 192,
     handleSerialTime = 30,
@@ -44,8 +45,7 @@ enum {
 };
 
 extern "C" {
-    uint8_t unittest_scheduler_taskId;
-    uint8_t unittest_scheduler_selectedTaskId;
+    cfTask_t * unittest_scheduler_selectedTask;
     uint8_t unittest_scheduler_selectedTaskDynPrio;
     uint16_t unittest_scheduler_waitingTasks;
     uint32_t unittest_scheduler_timeToNextRealtimeTask;
@@ -71,17 +71,111 @@ extern "C" {
     void taskTelemetry(void) {simulatedTime+=telemetryTime;}
     void taskLedStrip(void) {simulatedTime+=ledStripTime;}
     void taskTransponder(void) {simulatedTime+=transponderTime;}
+
+    extern cfTask_t* taskQueueArray[];
+
+    extern void queueClear(void);
+    extern int queueSize();
+    extern bool queueContains(cfTask_t *task);
+    extern void queueAdd(cfTask_t *task);
+    extern void queueRemove(cfTask_t *task);
+    extern cfTask_t *queueFirst(void);
+    extern cfTask_t *queueNext(void);
 }
 
 TEST(SchedulerUnittest, TestPriorites)
+    {
+        // check that the #defines used by scheduler.c and scheduler_unittest.cc are in sync
+        EXPECT_EQ(14, TASK_COUNT);
+        EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
+        EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
+        EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
+        EXPECT_EQ(TASK_PRIORITY_LOW, cfTasks[TASK_SERIAL].staticPriority);
+        EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY].staticPriority);
+}
+
+TEST(SchedulerUnittest, TestQueue)
 {
-    // check that the #defines used by scheduler.c and scheduler_unittest.cc are in sync
-    EXPECT_EQ(14, TASK_COUNT);
-    EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_LOW, cfTasks[TASK_SERIAL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY].staticPriority);
+    queueClear();
+    EXPECT_EQ(0, queueSize());
+
+    queueAdd(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
+    EXPECT_EQ(1, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
+
+    queueAdd(&cfTasks[TASK_GYROPID]); // TASK_PRIORITY_REALTIME
+    EXPECT_EQ(2, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
+
+    queueAdd(&cfTasks[TASK_SERIAL]); // TASK_PRIORITY_LOW
+    EXPECT_EQ(3, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+
+    queueAdd(&cfTasks[TASK_BEEPER]); // TASK_PRIORITY_MEDIUM
+    EXPECT_EQ(4, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+
+    queueAdd(&cfTasks[TASK_RX]); // TASK_PRIORITY_HIGH
+    EXPECT_EQ(5, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+
+    queueRemove(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
+    EXPECT_EQ(4, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+}
+
+TEST(SchedulerUnittest, TestQueueArray)
+{
+    // test there are no "out by one" errors or buffer overruns when items are added and removed
+    queueClear();
+    for (int taskId=0; taskId < TASK_COUNT - 1; ++taskId) {
+        setTaskEnabled(static_cast<cfTaskId_e>(taskId), true);
+    }
+    EXPECT_EQ(TASK_COUNT - 1, queueSize());
+    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 2]);
+    cfTask_t *lastTaskPrev = taskQueueArray[TASK_COUNT - 2];
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+
+    setTaskEnabled(TASK_SYSTEM, false);
+    EXPECT_EQ(TASK_COUNT - 2, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 3]);
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 2]); // this won't have been moved
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+
+    taskQueueArray[TASK_COUNT - 2] = 0;
+    setTaskEnabled(TASK_SYSTEM, true);
+    EXPECT_EQ(TASK_COUNT - 1, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 2]);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+
+    // now there are TASK_COUNT items in the array
+    setTaskEnabled(static_cast<cfTaskId_e>(TASK_COUNT - 1), true);
+    EXPECT_EQ(TASK_COUNT, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]); // check no buffer overrun
+}
+
+TEST(SchedulerUnittest, TestInit)
+{
+    schedulerInit();
+    EXPECT_EQ(1, queueSize());
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
 }
 
 TEST(SchedulerUnittest, TestSingleTask)
@@ -95,8 +189,8 @@ TEST(SchedulerUnittest, TestSingleTask)
     simulatedTime = 4000;
     // run the scheduler and check the task has executed
     scheduler();
-    EXPECT_NE(TASK_NONE, unittest_scheduler_selectedTaskId);
-    EXPECT_EQ(TASK_GYROPID, unittest_scheduler_selectedTaskId);
+    EXPECT_NE(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
     EXPECT_EQ(3000, cfTasks[TASK_GYROPID].taskLatestDeltaTime);
     EXPECT_EQ(4000, cfTasks[TASK_GYROPID].lastExecutedAt);
     EXPECT_EQ(pidLoopCheckerTime, cfTasks[TASK_GYROPID].totalExecutionTime);
@@ -159,6 +253,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     scheduler();
     EXPECT_EQ(TASK_ACCEL, unittest_scheduler_selectedTaskId);
 }
+
 TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
 {
     // disable all tasks except TASK_GYROPID and TASK_SYSTEM
