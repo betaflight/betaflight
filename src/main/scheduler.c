@@ -46,22 +46,29 @@ uint32_t currentTime = 0;
 uint16_t averageSystemLoadPercent = 0;
 
 
-static int queuePos = 0;
-static int queueSize = 0;
+static int taskQueuePos = 0;
+static int taskQueueSize = 0;
 // No need for a linked list for the queue, since items are only inserted at startup
-static cfTask_t* queueArray[TASK_COUNT];
+STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 1]; // 1 extra space so test code can check for buffer overruns
 
 STATIC_UNIT_TESTED void queueClear(void)
 {
-    memset(queueArray, 0, sizeof(queueArray));
-    queuePos = 0;
-    queueSize = 0;
+    memset(taskQueueArray, 0, (int)(sizeof(taskQueueArray)));
+    taskQueuePos = 0;
+    taskQueueSize = 0;
 }
+
+#ifdef UNIT_TEST
+STATIC_UNIT_TESTED int queueSize(void)
+{
+    return taskQueueSize;
+}
+#endif
 
 STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 {
-    for (int ii = 0; ii < queueSize; ++ii) {
-        if (queueArray[ii] == task) {
+    for (int ii = 0; ii < taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == task) {
             return true;
         }
     }
@@ -70,14 +77,17 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
+    if (taskQueueSize >= TASK_COUNT -1) {
+        return;
+    }
     if (queueContains(task)) {
         return;
     }
-    ++queueSize;
-    for (int ii = 0; ii < queueSize; ++ii) {
-        if (queueArray[ii] == NULL || queueArray[ii]->staticPriority < task->staticPriority) {
-            memmove(&queueArray[ii+1], &queueArray[ii], sizeof(task) * (queueSize - ii - 1));
-            queueArray[ii] = task;
+    ++taskQueueSize;
+    for (int ii = 0; ii < taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
+            memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii - 1));
+            taskQueueArray[ii] = task;
             return;
         }
     }
@@ -85,9 +95,10 @@ STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
 {
-    for (int ii = 0; ii < queueSize; ++ii) {
-        if (queueArray[ii] == task) {
-            memmove(&queueArray[ii], &queueArray[ii+1], sizeof(task) * (queueSize - ii - 1));
+    for (int ii = 0; ii < taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == task) {
+            --taskQueueSize;
+            memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
             return;
         }
     }
@@ -95,13 +106,14 @@ STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
 
 STATIC_UNIT_TESTED cfTask_t *queueFirst(void)
 {
-    queuePos = 0;
-    return queueSize > 0 ? queueArray[0] : NULL;
+    taskQueuePos = 0;
+    return taskQueueSize > 0 ? taskQueueArray[0] : NULL;
 }
 
-STATIC_UNIT_TESTED cfTask_t *queueNext(void) {
-    ++queuePos;
-    return queuePos < queueSize ? queueArray[queuePos] : NULL;
+STATIC_UNIT_TESTED cfTask_t *queueNext(void)
+{
+    ++taskQueuePos;
+    return taskQueuePos < taskQueueSize ? taskQueueArray[taskQueuePos] : NULL;
 }
 
 void taskSystem(void)
@@ -178,6 +190,7 @@ void schedulerInit(void)
 
 void scheduler(void)
 {
+    SET_SCHEDULER_LOCALS();
     /* Cache currentTime */
     currentTime = micros();
 
