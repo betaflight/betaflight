@@ -58,14 +58,25 @@ STATIC_UNIT_TESTED void queueClear(void)
     queueSize = 0;
 }
 
+STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
+{
+    for (int ii = 0; ii < queueSize; ++ii) {
+        if (queueArray[ii] == task) {
+            return true;
+        }
+    }
+    return false;
+}
+
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
-    for (int ii = 0; ii < TASK_COUNT; ++ii) {
-        if (queueArray[ii] == task) {
-            return;
-        }
+    if (queueContains(task)) {
+        return;
+    }
+    ++queueSize;
+    for (int ii = 0; ii < queueSize; ++ii) {
         if (queueArray[ii] == NULL || queueArray[ii]->staticPriority < task->staticPriority) {
-            memmove(&queueArray[ii+1], &queueArray[ii], sizeof(task) * (TASK_COUNT - ii - 1));
+            memmove(&queueArray[ii+1], &queueArray[ii], sizeof(task) * (queueSize - ii - 1));
             queueArray[ii] = task;
             return;
         }
@@ -74,22 +85,12 @@ STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
 {
-    for (int ii = 0; ii < TASK_COUNT; ++ii) {
+    for (int ii = 0; ii < queueSize; ++ii) {
         if (queueArray[ii] == task) {
-            memmove(&queueArray[ii], &queueArray[ii+1], sizeof(task) * (TASK_COUNT - ii - 1));
+            memmove(&queueArray[ii], &queueArray[ii+1], sizeof(task) * (queueSize - ii - 1));
             return;
         }
     }
-}
-
-STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
-{
-    for (int ii = 0; ii < TASK_COUNT; ++ii) {
-        if (queueArray[ii] == task) {
-            return true;
-        }
-    }
-    return false;
 }
 
 STATIC_UNIT_TESTED cfTask_t *queueFirst(void)
