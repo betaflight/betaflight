@@ -20,11 +20,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
 #include "scheduler.h"
 #include "debug.h"
+#include "build_config.h"
 
 #include "common/maths.h"
 
@@ -46,34 +48,57 @@ uint16_t averageSystemLoadPercent = 0;
 
 static int queuePos = 0;
 static int queueSize = 0;
+// No need for a linked list for the queue, since items are only inserted at startup
 static cfTask_t* queueArray[TASK_COUNT];
 
-static void queueInit(void)
+STATIC_UNIT_TESTED void queueClear(void)
 {
+    memset(queueArray, 0, sizeof(queueArray));
     queuePos = 0;
     queueSize = 0;
-    // put the enabled tasks in the queue in priority order
-    const cfTaskPriority_e priorities[] =
-        {TASK_PRIORITY_MAX, TASK_PRIORITY_REALTIME, TASK_PRIORITY_HIGH, TASK_PRIORITY_MEDIUM, TASK_PRIORITY_LOW, TASK_PRIORITY_IDLE};
-    for (unsigned int ii = 0; ii < sizeof(priorities); ++ii) {
-        const cfTaskPriority_e priority = priorities[ii];
-        for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
-            cfTask_t *task = &cfTasks[taskId];
-            if (task->staticPriority == priority && task->isEnabled == true) {
-                queueArray[queuePos] = task;
-                ++queuePos;
-                ++queueSize;
-            }
+}
+
+STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
+{
+    for (int ii = 0; ii < TASK_COUNT; ++ii) {
+        if (queueArray[ii] == task) {
+            return;
+        }
+        if (queueArray[ii] == NULL || queueArray[ii]->staticPriority < task->staticPriority) {
+            memmove(&queueArray[ii+1], &queueArray[ii], sizeof(task) * (TASK_COUNT - ii - 1));
+            queueArray[ii] = task;
+            return;
         }
     }
 }
-static cfTask_t *queueFirst(void)
+
+STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
+{
+    for (int ii = 0; ii < TASK_COUNT; ++ii) {
+        if (queueArray[ii] == task) {
+            memmove(&queueArray[ii], &queueArray[ii+1], sizeof(task) * (TASK_COUNT - ii - 1));
+            return;
+        }
+    }
+}
+
+STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
+{
+    for (int ii = 0; ii < TASK_COUNT; ++ii) {
+        if (queueArray[ii] == task) {
+            return true;
+        }
+    }
+    return false;
+}
+
+STATIC_UNIT_TESTED cfTask_t *queueFirst(void)
 {
     queuePos = 0;
     return queueSize > 0 ? queueArray[0] : NULL;
 }
 
-static cfTask_t *queueNext(void) {
+STATIC_UNIT_TESTED cfTask_t *queueNext(void) {
     ++queuePos;
     return queuePos < queueSize ? queueArray[queuePos] : NULL;
 }
@@ -105,7 +130,7 @@ void taskSystem(void)
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
-    taskInfo->isEnabled= cfTasks[taskId].isEnabled;
+    taskInfo->isEnabled = queueContains(&cfTasks[taskId]);
     taskInfo->desiredPeriod = cfTasks[taskId].desiredPeriod;
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
@@ -122,11 +147,15 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
     }
 }
 
-void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState)
+void setTaskEnabled(cfTaskId_e taskId, bool enabled)
 {
     if (taskId == TASK_SELF || taskId < TASK_COUNT) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
-        task->isEnabled = newEnabledState;
+        if (enabled && task->taskFunc) {
+            queueAdd(task);
+        } else {
+            queueRemove(task);
+        }
     }
 }
 
@@ -142,7 +171,8 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 
 void schedulerInit(void)
 {
-    queueInit();
+    queueClear();
+    queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
 void scheduler(void)

@@ -90,7 +90,6 @@ typedef struct {
     const char * taskName;
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
-    bool isEnabled;
     uint32_t desiredPeriod;     // target period of execution
     uint8_t staticPriority;     // dynamicPriority grows in steps of this size, shouldn't be zero
 
