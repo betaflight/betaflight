@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 111;
+static const uint8_t EEPROM_CONF_VERSION = 112;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -521,6 +521,7 @@ static void resetConf(void)
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
+    masterConfig.gpsConfig.navModel = GPS_MODEL_LOW_G;
 #endif
 
 #ifdef NAV
