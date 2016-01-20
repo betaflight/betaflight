@@ -102,7 +102,7 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
 
     /* acro plus factor handling */
     if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor && (!flightModeFlags)) {
-        axisState->wowFactor = rcCommandReflection * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f); //0-1f
+        axisState->wowFactor = ABS(rcCommandReflection) * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f); //0-1f
         axisState->factor = axisState->wowFactor * rcCommandReflection * 1000;
         axisState->wowFactor = 1.0f - axisState->wowFactor;
     }
