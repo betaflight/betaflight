@@ -50,8 +50,11 @@ uint16_t averageSystemLoadPercent = 0;
 static int taskQueuePos = 0;
 static int taskQueueSize = 0;
 // No need for a linked list for the queue, since items are only inserted at startup
+#ifdef UNIT_TEST
 STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 1]; // 1 extra space so test code can check for buffer overruns
-
+#else
+static cfTask_t* taskQueueArray[TASK_COUNT];
+#endif
 STATIC_UNIT_TESTED void queueClear(void)
 {
     memset(taskQueueArray, 0, (int)(sizeof(taskQueueArray)));
@@ -66,6 +69,7 @@ STATIC_UNIT_TESTED int queueSize(void)
 }
 #endif
 
+#if !defined(SKIP_TASK_STATISTICS) || defined(UNIT_TEST)
 STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
@@ -75,6 +79,7 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
     }
     return false;
 }
+#endif
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
