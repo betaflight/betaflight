@@ -22,9 +22,11 @@
 
 #ifdef UNIT_TEST
 #define STATIC_UNIT_TESTED // make visible to unit test
+#define INLINE_UNIT_TESTED // make visible to unit test
 #define UNIT_TESTED
 #else
 #define STATIC_UNIT_TESTED static
+#define INLINE_UNIT_TESTED inline
 #define UNIT_TESTED
 #endif
 
