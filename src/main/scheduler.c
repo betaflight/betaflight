@@ -50,9 +50,9 @@ static int taskQueuePos = 0;
 static int taskQueueSize = 0;
 // No need for a linked list for the queue, since items are only inserted at startup
 #ifdef UNIT_TEST
-STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 1]; // 1 extra space so test code can check for buffer overruns
+STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 2]; // 1 extra space so test code can check for buffer overruns
 #else
-static cfTask_t* taskQueueArray[TASK_COUNT];
+static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
 #endif
 STATIC_UNIT_TESTED void queueClear(void)
 {
@@ -102,23 +102,31 @@ STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
-            --taskQueueSize;
             memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
+            --taskQueueSize;
+            if (taskQueueSize == 0) {
+                taskQueueArray[0] = NULL; // ensure item zero is null when queue is empty
+            }
             return;
         }
     }
 }
 
-STATIC_UNIT_TESTED cfTask_t *queueFirst(void)
+/*
+ * Returns first item queue or NULL if queue empty
+ */
+INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
 {
     taskQueuePos = 0;
-    return taskQueueSize > 0 ? taskQueueArray[0] : NULL;
+    return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
 }
 
-STATIC_UNIT_TESTED cfTask_t *queueNext(void)
+/*
+ * Returns next item in queue or NULL if at end of queue
+ */
+INLINE_UNIT_TESTED cfTask_t *queueNext(void)
 {
-    ++taskQueuePos;
-    return taskQueuePos < taskQueueSize ? taskQueueArray[taskQueuePos] : NULL;
+    return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
 
 void taskSystem(void)
@@ -195,7 +203,6 @@ void schedulerInit(void)
 
 void scheduler(void)
 {
-    SET_SCHEDULER_LOCALS();
     /* Cache currentTime */
     currentTime = micros();
 

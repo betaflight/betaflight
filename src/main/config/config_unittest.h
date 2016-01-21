@@ -43,7 +43,6 @@ bool unittest_outsideRealtimeGuardInterval;
 
 #else
 
-#define SET_SCHEDULER_LOCALS() {}
 #define GET_SCHEDULER_LOCALS() {}
 
 #endif
@@ -57,10 +56,6 @@ cfTask_t *unittest_scheduler_selectedTask;
 uint8_t unittest_scheduler_selectedTaskDynPrio;
 uint16_t unittest_scheduler_waitingTasks;
 uint32_t unittest_scheduler_timeToNextRealtimeTask;
-
-#define SET_SCHEDULER_LOCALS() \
-    { \
-    }
 
 #define GET_SCHEDULER_LOCALS() \
     { \
