@@ -82,7 +82,7 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
-    if ((taskQueueSize >= TASK_COUNT -1) || queueContains(task)) {
+    if ((taskQueueSize >= TASK_COUNT - 1) || queueContains(task)) {
         return;
     }
     for (int ii = 0; ii <= taskQueueSize; ++ii) {
