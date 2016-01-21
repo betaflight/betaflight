@@ -83,17 +83,14 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
-    if (taskQueueSize >= TASK_COUNT -1) {
+    if ((taskQueueSize >= TASK_COUNT -1) || queueContains(task)) {
         return;
     }
-    if (queueContains(task)) {
-        return;
-    }
-    ++taskQueueSize;
-    for (int ii = 0; ii < taskQueueSize; ++ii) {
+    for (int ii = 0; ii <= taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
-            memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii - 1));
+            memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
             taskQueueArray[ii] = task;
+            ++taskQueueSize;
             return;
         }
     }
@@ -105,9 +102,6 @@ STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
         if (taskQueueArray[ii] == task) {
             memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
             --taskQueueSize;
-            if (taskQueueSize == 0) {
-                taskQueueArray[0] = NULL; // ensure item zero is null when queue is empty
-            }
             return;
         }
     }
