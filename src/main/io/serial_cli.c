@@ -328,6 +328,10 @@ static const char * const lookupTableGPSProvider[] = {
 static const char * const lookupTableGPSSBASMode[] = {
     "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN"
 };
+
+static const char * const lookupTableGpsModel[] = {
+    "LOW_G", "HIGH_G"
+};
 #endif
 
 static const char * const lookupTableCurrentSensor[] = {
@@ -385,10 +389,6 @@ static const char * const lookupTableNavControlMode[] = {
 
 static const char * const lookupTableNavRthAltMode[] = {
     "CURRENT", "EXTRA", "FIXED", "MAX", "AT_LEAST"
-};
-
-static const char * const lookupTableGpsModel[] = {
-    "LOW_G", "HIGH_G"
 };
 #endif
 
