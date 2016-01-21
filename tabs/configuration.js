@@ -578,7 +578,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
-        GUI.interval_add('load_analog', update_bat_data, 250, true); // 4 fps
+        GUI.interval_add('config_load_analog', load_analog, 250, true); // 4 fps
         GUI.content_ready(callback);
     }
 };
