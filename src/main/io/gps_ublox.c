@@ -45,7 +45,7 @@
 
 #if defined(GPS) && defined(GPS_PROTO_UBLOX)
 
-#define GPS_PROTO_UBLOX_NEO7PLUS
+//#define GPS_PROTO_UBLOX_NEO7PLUS
 #define GPS_VERSION_DETECTION_TIMEOUT_MS    300
 
 static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
@@ -587,7 +587,16 @@ static bool gpsConfigure(void)
         break;
 
     case 4: // Configure RATE
-        ubxTransmitAutoConfigCommands(ubloxInit_RATE_5Hz, sizeof(ubloxInit_RATE_5Hz));
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+        if (gpsState.hwVersion < 70000) {
+#endif
+            ubxTransmitAutoConfigCommands(ubloxInit_RATE_5Hz, sizeof(ubloxInit_RATE_5Hz));
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+        }
+        else {
+            ubxTransmitAutoConfigCommands(ubloxInit_RATE_10Hz, sizeof(ubloxInit_RATE_10Hz));
+        }
+#endif
         break;
 
     case 5: // SBAS

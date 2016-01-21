@@ -564,6 +564,7 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.accz_unarmed_cal, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.use_gps_velned, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.inav.gps_delay_ms, .config.minmax = { 0,  500 }, 0 },
     { "inav_gps_min_sats",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.inav.gps_min_sats, .config.minmax = { 5,  10}, 0 },
 

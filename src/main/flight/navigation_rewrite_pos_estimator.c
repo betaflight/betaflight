@@ -287,7 +287,7 @@ void onNewGPSData(void)
 
                 /* Use VELNED provided by GPS if available, calculate from coordinates otherwise */
                 float gpsScaleLonDown = constrainf(cos_approx((ABS(gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
-                if (gpsSol.flags.validVelNE) {
+                if (posControl.navConfig->inav.use_gps_velned && gpsSol.flags.validVelNE) {
                     posEstimator.gps.vel.V.X = gpsSol.velNED[0];
                     posEstimator.gps.vel.V.Y = gpsSol.velNED[1];
                 }
@@ -296,7 +296,7 @@ void onNewGPSData(void)
                     posEstimator.gps.vel.V.Y = (posEstimator.gps.vel.V.Y + (gpsScaleLonDown * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * (gpsSol.llh.lon - previousLon) / dT)) / 2.0f;
                 }
 
-                if (gpsSol.flags.validVelD) {
+                if (posControl.navConfig->inav.use_gps_velned && gpsSol.flags.validVelD) {
                     posEstimator.gps.vel.V.Z = - gpsSol.velNED[2];   // NEU
                 }
                 else {

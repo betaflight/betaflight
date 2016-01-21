@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 112;
+static const uint8_t EEPROM_CONF_VERSION = 113;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -230,6 +230,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.gps_min_sats = 5;
     navConfig->inav.gps_delay_ms = 200;
     navConfig->inav.accz_unarmed_cal = 1;
+    navConfig->inav.use_gps_velned = 1;         // "Disabled" is mandatory with gps_nav_model = LOW_G
 
     navConfig->inav.w_z_baro_p = 1.0f;
 
@@ -521,7 +522,7 @@ static void resetConf(void)
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
-    masterConfig.gpsConfig.navModel = GPS_MODEL_LOW_G;
+    masterConfig.gpsConfig.navModel = GPS_MODEL_HIGH_G;
 #endif
 
 #ifdef NAV

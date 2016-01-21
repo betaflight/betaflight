@@ -81,6 +81,7 @@ typedef struct navConfig_s {
 #endif
         uint8_t gps_min_sats;
         uint8_t accz_unarmed_cal;
+        uint8_t use_gps_velned;
         uint16_t gps_delay_ms;
 
         float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
