@@ -190,7 +190,7 @@ void filterRc(void){
         BiQuadNewLpf(1, &filteredCycleTimeState, 0);
         filterIsSet = true;
 
-        if ((rxRefreshRate >= 20000) && (targetLoopTime < 1000)) {
+        if ((rxRefreshRate >= 20000) && (targetLooptime < 1000)) {
             multiplier = (1000 / targetLooptime);
         }
     }
