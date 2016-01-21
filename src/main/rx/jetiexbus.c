@@ -78,8 +78,8 @@
 #define JETIEXBUS_START_CHANNEL_FRAME        (0x3E)
 #define JETIEXBUS_START_REQUEST_FRAME        (0x3D)
 
-#define EXBUS_CHANNELDATA (0x3E03)                          // Frame contains channeldata
-#define EXBUS_CHANNELDATA_TELEMETRY_REQUEST (0x3E01)        // Frame contains channeldata, but with a request for data
+#define EXBUS_CHANNELDATA (0x3E03)                          // Frame contains Channel Data
+#define EXBUS_CHANNELDATA_TELEMETRY_REQUEST (0x3E01)        // Frame contains Channel Data, but with a request for data
 
 
 enum {
@@ -140,13 +140,13 @@ typedef struct exBusSensor_s{
 } exBusSensor_t;
 
 
-#define SETMASK(decimals, bytes) (decimals<<((bytes*8)-3))
+#define SETMASK(decimals, bytes) (decimals << ((bytes*8)-3))
 #define RESETMASK(bytes) (~(3 << ((bytes*8)-3)))
 
 const uint32_t resetMask[]={ RESETMASK(1), RESETMASK(2), RESETMASK(3), RESETMASK(4) };
 
 // list of telemetry messages
-// after 15 sensors must be a new Header : "CF-Dev 1.12 S2"
+// after every 15 sensors a new header has to be inserted (e.g. "CF-Dev 1.12 S2")
 
 exBusSensor_t jetiExSensors[] = {
     { "CF-Dev 1.12 S1", "",     0,      0,              0 },
@@ -156,7 +156,6 @@ exBusSensor_t jetiExSensors[] = {
     { "Capacity",       "mAh",  0,      EX_TYPE_14b,    SETMASK(0,2) }
 };
 
-// after 15 sensors a new enum value to be set: EX_NEW_SENSOR = 17
 enum exSensors_e {
     EX_VOLTAGE = 1,
     EX_CURRENT,
@@ -202,8 +201,6 @@ uint16_t updateCRC16( uint16_t crc, uint8_t data );
 uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen);
 
 
-
-
 bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     UNUSED(rxConfig);
@@ -228,7 +225,7 @@ bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcR
 }
 
 
-// Jeti Ex Bus crc calculations for single byte
+// Jeti Ex Bus CRC calculations for single byte
 uint16_t updateCRC16( uint16_t crc, uint8_t data )
 {
     uint16_t ret_val;
@@ -240,12 +237,12 @@ uint16_t updateCRC16( uint16_t crc, uint8_t data )
     return ret_val;
 } 
 
-// Jeti Ex Bus crc calculations for a frame
+// Jeti Ex Bus CRC calculations for a frame
 uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen)
 {
-    uint16_t crc16_data=0;
-    uint8_t mlen=0;
-    while(mlen<msgLen) {
+    uint16_t crc16_data = 0;
+    uint8_t mlen = 0;
+    while(mlen < msgLen) {
         crc16_data = updateCRC16(crc16_data, pt[mlen]);
         mlen++;
     }
@@ -254,7 +251,7 @@ uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen)
 
 #ifdef TELEMETRY
 
-// Jeti Ex Telemetry crc calculations for single byte
+// Jeti Ex Telemetry CRC calculations for single byte
 uint8_t updateCRC8( uint8_t crc, uint8_t data )
 {
     uint8_t crc_u;
@@ -267,12 +264,12 @@ uint8_t updateCRC8( uint8_t crc, uint8_t data )
     return crc_u;
 } 
 
-// Jeti Ex Telemetry crc calculations for a frame
+// Jeti Ex Telemetry CRC calculations for a frame
 uint8_t calcCRC8(uint8_t *pt, uint8_t msgLen)
 {
-    uint8_t crc8_data=0;
-    uint8_t mlen=0;
-    for (mlen=0;mlen < msgLen; mlen++) {
+    uint8_t crc8_data = 0;
+    uint8_t mlen = 0;
+    for (mlen = 0; mlen < msgLen; mlen++) {
         crc8_data = updateCRC8(crc8_data, pt[mlen]);
     }
     return(crc8_data);
@@ -289,14 +286,14 @@ void jetiExBusDecodeFrame(uint8_t *pFrame)
     // Decode header
     switch (((uint16_t)jetiExBusFrame[EXBUS_HEADER_SYNC] << 8) + ((uint16_t)jetiExBusFrame[EXBUS_HEADER_REQ])){
 
-    case EXBUS_CHANNELDATA_TELEMETRY_REQUEST:                   // not specified yet
+    case EXBUS_CHANNELDATA_TELEMETRY_REQUEST:                   // not yet specified
     case EXBUS_CHANNELDATA:
         for (uint8_t i = 0; i < JETIEXBUS_CHANNEL_COUNT; i++) {
             frameAddr = JETIEXBUS_HEADER_LEN + i * 2;
-            value = ((uint16_t)pFrame[frameAddr+1]) << 8;
+            value = ((uint16_t)pFrame[frameAddr + 1]) << 8;
             value += (uint16_t)pFrame[frameAddr];
             // Convert to internal format
-            jetiExBusChannelData[i] = value>>3;
+            jetiExBusChannelData[i] = value >> 3;
         }
         break;
     }
@@ -311,12 +308,12 @@ void jetiExBusFrameReset(void)
 
 /*
   supported:
-  0x3E 0x01 LEN Packet_ID 0x31 SUB_LEN Data_array CRC16      // Channeldata with telemetrie request (second byte 0x01)
-  0x3E 0x03 LEN Packet_ID 0x31 SUB_LEN Data_array CRC16      // Channeldata forbids answering (second byte 0x03)
-  0x3D 0x01 0x08 Packet_ID 0x3A 0x00 CRC16                   // Telemetrierequest EX telemetry (fifth byte 0x3A)
+  0x3E 0x01 LEN Packet_ID 0x31 SUB_LEN Data_array CRC16      // Channel Data with telemetry request (2nd byte 0x01)
+  0x3E 0x03 LEN Packet_ID 0x31 SUB_LEN Data_array CRC16      // Channel Data forbids answering (2nd byte 0x03)
+  0x3D 0x01 0x08 Packet_ID 0x3A 0x00 CRC16                   // Telemetry Request EX telemetry (5th byte 0x3A)
   
   other messages - not supported:
-  0x3D 0x01 0x09 Packet_ID 0x3B 0x01 0xF0 CRC16              // Jetibox request (fifth byte 0x3B)
+  0x3D 0x01 0x09 Packet_ID 0x3B 0x01 0xF0 CRC16              // Jetibox request (5th byte 0x3B)
   ...
   
 */
@@ -364,7 +361,7 @@ static void jetiExBusDataReceive(uint16_t c)
     crc = updateCRC16(crc, (uint8_t)c);
     jetiExBusFramePosition++;
     
-    // Check the header for the messagelength
+    // Check the header for the message length
     if (jetiExBusFramePosition==JETIEXBUS_HEADER_LEN) {
         if ((jetiExBusFrame[EXBUS_HEADER_MSG_LEN]<=JETIEXBUS_MAX_FRAME_SIZE) && (jetiExBusFrame[EXBUS_HEADER_MSG_LEN]>=JETIEXBUS_MIN_FRAME_SIZE)) {
             jetiExBusFrameLength = jetiExBusFrame[EXBUS_HEADER_MSG_LEN];
@@ -386,7 +383,7 @@ static void jetiExBusDataReceive(uint16_t c)
     }
 }
 
-// Indicate time to read a frame from the data...
+// Check if it is time to read a frame from the data...
 uint8_t jetiExBusFrameStatus(void)
 {
     if (jetiExBusFrameState == EXBUS_STATE_RECEIVED) {
@@ -401,7 +398,8 @@ uint8_t jetiExBusFrameStatus(void)
 
 static uint16_t jetiExBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    if (chan >= rxRuntimeConfig->channelCount) return 0;
+    if (chan >= rxRuntimeConfig->channelCount)
+        return 0;
 
     return (jetiExBusChannelData[chan]);
 }
@@ -431,18 +429,27 @@ void createExTelemetrieTextMessage(uint8_t *exMessage, uint8_t messageID, const 
 
 uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
 {
-    if ((itemStart % 16) == 0) itemStart++;
+    uint8_t lastItem;
+    uint8_t byteCount = 0;
+    uint8_t valueByteCount = 0;
+    uint8_t iCount = 0;
+    uint32_t sensorValue;
 
-    uint8_t lastItem=itemStart + 5;
 
-    if (lastItem > JETI_EX_SENSOR_COUNT) lastItem = JETI_EX_SENSOR_COUNT;
+    if ((itemStart % 16) == 0)
+        itemStart++;
+
+    lastItem = itemStart + 5;
+
+    if (lastItem > JETI_EX_SENSOR_COUNT)
+        lastItem = JETI_EX_SENSOR_COUNT;
 
     jetiExTelemetry[EXTEL_HEADER_LSN_LB] = itemStart & 0xF0;
 
-    if (itemStart>JETI_EX_SENSOR_COUNT) return 0;
+    if (itemStart>JETI_EX_SENSOR_COUNT)
+        return 0;
 
-    uint8_t byteCount = 0;
-    uint8_t valueByteCount = 0;
+
 
     for (uint8_t item=itemStart; item < lastItem; item++){
 
@@ -467,14 +474,16 @@ uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
         exMessage[EXTEL_HEADER_ID + valueByteCount] = ((item & 0xF) << 4) + jetiExSensors[item].exDataType;
 
 
-        uint32_t value = jetiExSensors[item].value;
-        if (jetiExSensors[item].value < 0) value &= resetMask[byteCount - 1];
-        value |= jetiExSensors[item].decimals;
+        sensorValue = jetiExSensors[item].value;
+        if (jetiExSensors[item].value < 0)
+            sensorValue &= resetMask[byteCount - 1];
 
-        uint8_t iCount = 0;
+        sensorValue |= jetiExSensors[item].decimals;
+
+        iCount = 0;
         do {
-            exMessage[EXTEL_HEADER_DATA + valueByteCount + iCount] = value;
-            value = value>>8;
+            exMessage[EXTEL_HEADER_DATA + valueByteCount + iCount] = sensorValue;
+            sensorValue = sensorValue>>8;
             iCount++;
         } while(iCount < byteCount);
 
@@ -491,11 +500,13 @@ uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
 
 void createExBusMessage(uint8_t *exBusMessage, uint8_t *exMessage, uint8_t exBusID)
 {
+    uint16_t crc16;
+
     exBusMessage[EXBUS_HEADER_PACKET_ID] = exBusID;
     exBusMessage[EXBUS_HEADER_SUBLEN] = (exMessage[EXTEL_HEADER_TYPE_LEN] & 0x3F) + 2;    // +2: startbyte & CRC8
     exBusMessage[EXBUS_HEADER_MSG_LEN] = 8 + exBusMessage[EXBUS_HEADER_SUBLEN];
 
-    uint16_t crc16 = calcCRC16(exBusMessage,exBusMessage[EXBUS_HEADER_MSG_LEN] - JETIEXBUS_CRC_LEN);
+    crc16 = calcCRC16(exBusMessage,exBusMessage[EXBUS_HEADER_MSG_LEN] - JETIEXBUS_CRC_LEN);
     exBusMessage[exBusMessage[EXBUS_HEADER_MSG_LEN] - 2] = crc16;
     exBusMessage[exBusMessage[EXBUS_HEADER_MSG_LEN] - 1] = crc16>>8;
 }
@@ -518,7 +529,7 @@ void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
     jetiExTelemetry[EXTEL_HEADER_USN_HB] = 0xA4;
     jetiExTelemetry[EXTEL_HEADER_LSN_LB] = 0x00;            // increment by telemetry count (%16) > only 15 values per device possible
     jetiExTelemetry[EXTEL_HEADER_LSN_HB] = 0x00;
-    jetiExTelemetry[EXTEL_HEADER_RES] = 0x00;               // Reserved by default 0x00
+    jetiExTelemetry[EXTEL_HEADER_RES] = 0x00;               // reserved, by default 0x00
 
     return;
 }
@@ -548,13 +559,12 @@ void handleJetiExBusTelemetry(void)
     // check the state if transmit is ready
     if (jetiExBusTransceiveState == EXBUS_TRANS_TX_READY) {
         uartPort_t *s = (uartPort_t*)jetiExBusPort;
-        if (uartTotalTxBytesFree(jetiExBusPort) == (s->port.txBufferSize - 1)) {     // workaround for isUartTransmitBufferEmpty()
+        if (uartTotalTxBytesFree(jetiExBusPort) == (s->port.txBufferSize - 1)) {     // workaround for 'isUartTransmitBufferEmpty()'
             serialSetMode(jetiExBusPort, MODE_RX);
             jetiExBusTransceiveState = EXBUS_TRANS_RX;
             jetiExBusRequestState = EXBUS_STATE_ZERO;
         }
     }
-    return;
 }
 
 
@@ -566,8 +576,9 @@ void sendJetiExBusTelemetry(uint8_t packetID)
     static uint8_t requestLoop = 0;
 
 
-    if (requestLoop == 100){              //every n request send a name of a value
-        if (sensorDescriptionCounter == JETI_EX_SENSOR_COUNT ) sensorDescriptionCounter = 0;
+    if (requestLoop == 100){              //every nth request send the name of a value
+        if (sensorDescriptionCounter == JETI_EX_SENSOR_COUNT )
+            sensorDescriptionCounter = 0;
 
         createExTelemetrieTextMessage(jetiExTelemetry, sensorDescriptionCounter, &jetiExSensors[sensorDescriptionCounter]);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetry, packetID);
@@ -575,7 +586,8 @@ void sendJetiExBusTelemetry(uint8_t packetID)
         sensorDescriptionCounter++;
 
     } else {
-        if (sensorValueCounter >= JETI_EX_SENSOR_COUNT) sensorValueCounter = 1;
+        if (sensorValueCounter >= JETI_EX_SENSOR_COUNT)
+            sensorValueCounter = 1;
 
         sensorValueCounter = createExTelemetrieValueMessage(jetiExTelemetry, sensorValueCounter);
         createExBusMessage(jetiExBusTelemetryFrame, jetiExTelemetry, packetID);
