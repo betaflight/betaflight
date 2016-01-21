@@ -115,7 +115,7 @@ STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
+STATIC_INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -124,7 +124,7 @@ INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-INLINE_UNIT_TESTED cfTask_t *queueNext(void)
+STATIC_INLINE_UNIT_TESTED cfTask_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
@@ -259,7 +259,7 @@ void scheduler(void)
 
         if (task->dynamicPriority > selectedTaskDynPrio) {
             const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
-            bool taskCanBeChosenForScheduling =
+            const bool taskCanBeChosenForScheduling =
                 (outsideRealtimeGuardInterval) ||
                 (task->taskAgeCycles > 1) ||
                 (task->staticPriority == TASK_PRIORITY_REALTIME);
@@ -273,19 +273,17 @@ void scheduler(void)
     totalWaitingTasksSamples++;
     totalWaitingTasks += waitingTasks;
 
+    currentTask = selectedTask;
+
     /* Found a task that should be run */
     if (selectedTask != NULL) {
         selectedTask->taskLatestDeltaTime = currentTime - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTime;
         selectedTask->dynamicPriority = 0;
 
-        currentTask = selectedTask;
-
-        const uint32_t currentTimeBeforeTaskCall = micros();
-
         /* Execute task */
+        const uint32_t currentTimeBeforeTaskCall = micros();
         selectedTask->taskFunc();
-
         const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
         selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
@@ -295,11 +293,7 @@ void scheduler(void)
 #endif
 #if defined SCHEDULER_DEBUG
         debug[3] = (micros() - currentTime) - taskExecutionTime;
-#endif
-    }
-    else {
-        currentTask = NULL;
-#if defined SCHEDULER_DEBUG
+    } else {
         debug[3] = (micros() - currentTime);
 #endif
     }
