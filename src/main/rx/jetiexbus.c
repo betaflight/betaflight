@@ -121,7 +121,6 @@ enum exTelHeader_e {
     EXTEL_HEADER_DATA
 };
 
-
 enum exDataType_e {
     EX_TYPE_6b   = 0, // int6_t  Data type 6b (-31 ¸31)
     EX_TYPE_14b  = 1, // int14_t Data type 14b (-8191 ¸8191)
@@ -237,6 +236,7 @@ uint16_t updateCRC16( uint16_t crc, uint8_t data )
     return ret_val;
 } 
 
+
 // Jeti Ex Bus CRC calculations for a frame
 uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen)
 {
@@ -254,14 +254,8 @@ uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen)
 // Jeti Ex Telemetry CRC calculations for single byte
 uint8_t updateCRC8( uint8_t crc, uint8_t data )
 {
-    uint8_t crc_u;
-
-    crc_u = crc;
-    crc_u ^= data;
-    for (uint8_t i = 0; i < 8; i++) {
-        crc_u = ( crc_u & 0x80 ) ? 0x07 ^ ( crc_u << 1 ) : ( crc_u << 1 );
-    }
-    return crc_u;
+    crc ^= data;
+    return (crc ^ (crc << 1) ^ (crc << 2) ^ (0x0e090700 >> ((crc >> 3) & 0x18)));
 } 
 
 // Jeti Ex Telemetry CRC calculations for a frame
@@ -383,6 +377,7 @@ static void jetiExBusDataReceive(uint16_t c)
     }
 }
 
+
 // Check if it is time to read a frame from the data...
 uint8_t jetiExBusFrameStatus(void)
 {
@@ -427,6 +422,7 @@ void createExTelemetrieTextMessage(uint8_t *exMessage, uint8_t messageID, const 
     exMessage[exMessage[EXTEL_HEADER_TYPE_LEN] + 1] = calcCRC8(&exMessage[EXTEL_HEADER_TYPE_LEN], exMessage[EXTEL_HEADER_TYPE_LEN]);
 }
 
+
 uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
 {
     uint8_t lastItem;
@@ -448,8 +444,6 @@ uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
 
     if (itemStart>JETI_EX_SENSOR_COUNT)
         return 0;
-
-
 
     for (uint8_t item=itemStart; item < lastItem; item++){
 
@@ -497,7 +491,6 @@ uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
 }
 
 
-
 void createExBusMessage(uint8_t *exBusMessage, uint8_t *exMessage, uint8_t exBusID)
 {
     uint16_t crc16;
@@ -510,7 +503,6 @@ void createExBusMessage(uint8_t *exBusMessage, uint8_t *exMessage, uint8_t exBus
     exBusMessage[exBusMessage[EXBUS_HEADER_MSG_LEN] - 2] = crc16;
     exBusMessage[exBusMessage[EXBUS_HEADER_MSG_LEN] - 1] = crc16>>8;
 }
-
 
 
 void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
@@ -540,6 +532,7 @@ void checkJetiExBusTelemetryState(void)
     return;
 }
 
+
 void handleJetiExBusTelemetry(void)
 {
     if (jetiExBusRequestState == EXBUS_STATE_RECEIVED) {
@@ -566,7 +559,6 @@ void handleJetiExBusTelemetry(void)
         }
     }
 }
-
 
 
 void sendJetiExBusTelemetry(uint8_t packetID)
