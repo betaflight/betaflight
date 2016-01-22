@@ -1575,6 +1575,10 @@ void updateAltitudeTargetFromClimbRate(float climbRate)
     }
 
     posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (climbRate / posControl.pids.pos[Z].param.kP);
+
+#if defined(NAV_BLACKBOX)
+    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+#endif
 }
 
 static void resetAltitudeController(void)
@@ -1651,6 +1655,11 @@ static bool adjustPositionFromRCInput(void)
     else {
         return adjustMulticopterPositionFromRCInput();
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
+    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
+#endif
 }
 
 /*-----------------------------------------------------------
