@@ -52,9 +52,10 @@
 #ifdef GPS
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2000 ms)
-#define GPS_TIMEOUT         (2000)
-#define GPS_INIT_DELAY      (200)
-#define GPS_BUS_INIT_DELAY  (500)
+#define GPS_TIMEOUT             (2000)
+#define GPS_BAUD_CHANGE_DELAY   (200)
+#define GPS_INIT_DELAY          (500)
+#define GPS_BUS_INIT_DELAY      (500)
 
 typedef enum {
     GPS_TYPE_NA,        // Not available
@@ -257,7 +258,7 @@ void gpsFinalizeChangeBaud(void)
 {
     if ((gpsProviders[gpsState.gpsConfig->provider].type == GPS_TYPE_SERIAL) && (gpsState.gpsPort != NULL)) {
         // Wait for GPS_INIT_DELAY before switching to required baud rate
-        if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY && isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
+        if ((millis() - gpsState.lastStateSwitchMs) >= GPS_BAUD_CHANGE_DELAY && isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
             // Switch to required serial port baud
             serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.baudrateIndex]]);
             gpsState.lastMessageMs = millis();
@@ -285,18 +286,20 @@ void gpsThread(void)
         switch (gpsState.state) {
         default:
         case GPS_INITIALIZING:
-            // Reset internals
-            DISABLE_STATE(GPS_FIX);
-            gpsState.hwVersion = 0;
-            gpsState.autoConfigStep = 0;
-            gpsState.autoConfigPosition = 0;
-            gpsState.autoBaudrateIndex = 0;
+            if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
+                // Reset internals
+                DISABLE_STATE(GPS_FIX);
+                gpsState.hwVersion = 0;
+                gpsState.autoConfigStep = 0;
+                gpsState.autoConfigPosition = 0;
+                gpsState.autoBaudrateIndex = 0;
 
-            // Reset solution
-            gpsResetSolution();
+                // Reset solution
+                gpsResetSolution();
 
-            // Call protocol handler - switch to next state is done there
-            gpsHandleProtocol();
+                // Call protocol handler - switch to next state is done there
+                gpsHandleProtocol();
+            }
             break;
 
         case GPS_CHANGE_BAUD:
