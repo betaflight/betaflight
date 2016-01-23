@@ -663,7 +663,7 @@ static bool gpsInitialize(void)
 
 static bool gpsChangeBaud(void)
 {
-    if (gpsState.autoBaudrateIndex < GPS_BAUDRATE_COUNT) {
+    if ((gpsState.gpsConfig->autoBaud != GPS_AUTOBAUD_OFF) && (gpsState.autoBaudrateIndex < GPS_BAUDRATE_COUNT)) {
         // Do the switch only if TX buffer is empty - make sure all init string was sent at the same baud
         if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
             // Cycle through all possible bauds and send init string
