@@ -72,6 +72,10 @@
 #include "hardware_revision.h"
 #endif
 
+#ifdef GPS
+extern bool gpsMagDetect(mag_t *mag);
+#endif
+
 extern float magneticDeclination;
 
 extern gyro_t gyro;
@@ -669,6 +673,18 @@ retry:
                 magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
+                break;
+            }
+#endif
+            ; // fallthrough
+
+        case MAG_GPS:
+#ifdef GPS
+            if (gpsMagDetect(&mag)) {
+#ifdef MAG_GPS_ALIGN
+                magAlign = MAG_GPS_ALIGN;
+#endif
+                magHardware = MAG_GPS;
                 break;
             }
 #endif

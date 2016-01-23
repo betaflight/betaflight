@@ -17,7 +17,20 @@
 
 #pragma once
 
-#include "gps.h"
+typedef struct {
+    struct {
+        unsigned gpsOk : 1;     // gps read successful
+        unsigned newData : 1;   // new gps data available (lat/lon/alt)
+        unsigned fix3D : 1;     // gps fix status
+    } flags;
+    int32_t latitude;
+    int32_t longitude;
+    uint8_t numSat;
+    uint16_t altitude;
+    uint16_t speed;
+    uint16_t ground_course;
+    uint16_t hdop;
+} gpsDataI2CNAV_t;
 
 bool i2cnavGPSModuleDetect(void);
-void i2cnavGPSModuleRead(gpsDataGeneric_t * gpsMsg);
+void i2cnavGPSModuleRead(gpsDataI2CNAV_t * gpsMsg);

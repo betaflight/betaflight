@@ -149,7 +149,13 @@
 #define LED_STRIP_TIMER TIM3
 
 #define BLACKBOX
+
 #define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+#define GPS_PROTO_NAZA
+
 #define GTUNE
 #define SERIAL_RX
 #define TELEMETRY

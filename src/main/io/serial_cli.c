@@ -322,11 +322,15 @@ static const char * const lookupTableAlignment[] = {
 
 #ifdef GPS
 static const char * const lookupTableGPSProvider[] = {
-    "NMEA", "UBLOX", "I2C"
+    "NMEA", "UBLOX", "I2C-NAV", "NAZA"
 };
 
 static const char * const lookupTableGPSSBASMode[] = {
     "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN"
+};
+
+static const char * const lookupTableGpsModel[] = {
+    "LOW_G", "HIGH_G"
 };
 #endif
 
@@ -400,6 +404,7 @@ typedef enum {
 #ifdef GPS
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
+    TABLE_GPS_NAV_MODEL,
 #endif
 #ifdef BLACKBOX
     TABLE_BLACKBOX_DEVICE,
@@ -424,6 +429,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef GPS
     { lookupTableGPSProvider, sizeof(lookupTableGPSProvider) / sizeof(char *) },
     { lookupTableGPSSBASMode, sizeof(lookupTableGPSSBASMode) / sizeof(char *) },
+    { lookupTableGpsModel, sizeof(lookupTableGpsModel) / sizeof(char *) },
 #endif
 #ifdef BLACKBOX
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
@@ -529,6 +535,7 @@ const clivalue_t valueTable[] = {
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.provider, .config.lookup = { TABLE_GPS_PROVIDER }, 0 },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE }, 0 },
+    { "gps_nav_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.navModel, .config.lookup = { TABLE_GPS_NAV_MODEL }, 0 },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoConfig, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoBaud, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
@@ -557,6 +564,7 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.accz_unarmed_cal, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.inav.use_gps_velned, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.inav.gps_delay_ms, .config.minmax = { 0,  500 }, 0 },
     { "inav_gps_min_sats",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.inav.gps_min_sats, .config.minmax = { 5,  10}, 0 },
 

@@ -225,7 +225,7 @@ void updateFailsafeStatus(void)
         case FAILSAFE_RX_LOSS_DETECTED:
             failsafeIndicator = 'R';
             break;
-#ifdef NAV
+#if defined(NAV)
         case FAILSAFE_RETURN_TO_HOME:
             failsafeIndicator = 'H';
             break;
@@ -338,7 +338,7 @@ void showProfilePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 }
-#define SATELLITE_COUNT (sizeof(GPS_svinfo_cno) / sizeof(GPS_svinfo_cno[0]))
+#define SATELLITE_COUNT (sizeof(gpsSol.svInfo) / sizeof(gpsSol.svInfo[0]))
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef GPS
@@ -346,9 +346,9 @@ void showGpsPage() {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     static uint8_t gpsTicker = 0;
-    static uint32_t lastGPSSvInfoReceivedCount = 0;
-    if (GPS_svInfoReceivedCount != lastGPSSvInfoReceivedCount) {
-        lastGPSSvInfoReceivedCount = GPS_svInfoReceivedCount;
+    static uint8_t lastGPSHeartbeat = 0;
+    if (gpsSol.flags.gpsHeartbeat != lastGPSHeartbeat) {
+        lastGPSHeartbeat = gpsSol.flags.gpsHeartbeat;
         gpsTicker++;
         gpsTicker = gpsTicker % TICKER_CHARACTER_COUNT;
     }
@@ -360,56 +360,51 @@ void showGpsPage() {
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
-        uint8_t bargraphOffset = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
+        uint8_t bargraphOffset = ((uint16_t) gpsSol.svInfo[index].cno * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
         bargraphOffset = MIN(bargraphOffset, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
         i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphOffset);
     }
 
 
     char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
-    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", GPS_numSat, fixChar);
+    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", gpsSol.numSat, fixChar);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "La/Lo: %d/%d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
+    tfp_sprintf(lineBuffer, "La/Lo: %d/%d", gpsSol.llh.lat / GPS_DEGREES_DIVIDER, gpsSol.llh.lon / GPS_DEGREES_DIVIDER);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Spd: %d", GPS_speed);
+    tfp_sprintf(lineBuffer, "Spd: %d", gpsSol.groundSpeed);
     padHalfLineBuffer();
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "GC: %d", GPS_ground_course);
+    tfp_sprintf(lineBuffer, "GC: %d", gpsSol.groundCourse);
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RX: %d", GPS_packetCount);
+    tfp_sprintf(lineBuffer, "RX: %d", gpsStats.packetCount);
     padHalfLineBuffer();
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors, gpsData.timeouts);
+    tfp_sprintf(lineBuffer, "ERRs: %d", gpsStats.errors);
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Dt: %d", gpsData.lastMessage - gpsData.lastLastMessage);
+    tfp_sprintf(lineBuffer, "Dt: %d", gpsStats.lastMessageDt);
     padHalfLineBuffer();
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "TOs: %d", gpsData.timeouts);
+    tfp_sprintf(lineBuffer, "TOs: %d", gpsStats.timeouts);
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
-    strncpy(lineBuffer, gpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
-    padHalfLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
 #ifdef GPS_PH_DEBUG

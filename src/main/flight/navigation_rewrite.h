@@ -22,16 +22,10 @@
 
 #include "io/rc_controls.h"
 #include "io/escservo.h"
+#include "io/gps.h"
 
 #include "flight/pid.h"
 #include "flight/failsafe.h"
-
-/* LLH Location in NEU axis system */
-typedef struct gpsLocation_s {
-    int32_t lat;    // Lattitude * 1e+7
-    int32_t lon;    // Longitude * 1e+7
-    int32_t alt;    // Altitude in centimeters (meters * 100)
-} gpsLocation_t;
 
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;
@@ -39,7 +33,7 @@ extern uint16_t             GPS_distanceToHome;        // distance to home point
 extern int16_t              GPS_directionToHome;       // direction to home point in degrees
 
 /* Navigation system updates */
-void onNewGPSData(int32_t lat, int32_t lon, int32_t alt, int16_t vel_n, int16_t vel_e, int16_t vel_d, bool vel_ne_valid, bool vel_d_valid, int16_t hdop);
+void onNewGPSData(void);
 
 #if defined(NAV)
 #if defined(BLACKBOX)
@@ -87,6 +81,7 @@ typedef struct navConfig_s {
 #endif
         uint8_t gps_min_sats;
         uint8_t accz_unarmed_cal;
+        uint8_t use_gps_velned;
         uint16_t gps_delay_ms;
 
         float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements

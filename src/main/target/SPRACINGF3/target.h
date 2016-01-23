@@ -160,8 +160,15 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DISPLAY
+
 #define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+#define GPS_PROTO_NAZA
+
 #define NAV
+
 #define GTUNE
 #define SERIAL_RX
 #define TELEMETRY

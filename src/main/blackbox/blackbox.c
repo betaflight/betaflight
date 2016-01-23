@@ -254,7 +254,9 @@ static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"GPS_coord",          1, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_altitude",      -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_speed",         -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
-    {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
+    {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_eph",           -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_epv",           -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
 };
 
 // GPS home frame
@@ -968,16 +970,18 @@ static void writeGPSFrame()
         blackboxWriteUnsignedVB(currentTime - blackboxHistory[1]->time);
     }
 
-    blackboxWriteUnsignedVB(GPS_numSat);
-    blackboxWriteSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
-    blackboxWriteSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
-    blackboxWriteUnsignedVB(GPS_altitude);
-    blackboxWriteUnsignedVB(GPS_speed);
-    blackboxWriteUnsignedVB(GPS_ground_course);
+    blackboxWriteUnsignedVB(gpsSol.numSat);
+    blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[0]);
+    blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[1]);
+    blackboxWriteUnsignedVB(gpsSol.llh.alt / 100); // meters
+    blackboxWriteUnsignedVB(gpsSol.groundSpeed);
+    blackboxWriteUnsignedVB(gpsSol.groundCourse);
+    blackboxWriteUnsignedVB(gpsSol.eph);
+    blackboxWriteUnsignedVB(gpsSol.epv);
 
-    gpsHistory.GPS_numSat = GPS_numSat;
-    gpsHistory.GPS_coord[0] = GPS_coord[0];
-    gpsHistory.GPS_coord[1] = GPS_coord[1];
+    gpsHistory.GPS_numSat = gpsSol.numSat;
+    gpsHistory.GPS_coord[0] = gpsSol.llh.lat;
+    gpsHistory.GPS_coord[1] = gpsSol.llh.lon;
 }
 #endif
 
@@ -1371,8 +1375,8 @@ static void blackboxLogIteration()
 
                 writeGPSHomeFrame();
                 writeGPSFrame();
-            } else if (GPS_numSat != gpsHistory.GPS_numSat || GPS_coord[0] != gpsHistory.GPS_coord[0]
-                    || GPS_coord[1] != gpsHistory.GPS_coord[1]) {
+            } else if (gpsSol.numSat != gpsHistory.GPS_numSat || gpsSol.llh.lat != gpsHistory.GPS_coord[0]
+                    || gpsSol.llh.lon != gpsHistory.GPS_coord[1]) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 writeGPSFrame();
             }

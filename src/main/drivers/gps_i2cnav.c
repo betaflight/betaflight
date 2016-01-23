@@ -22,7 +22,6 @@
 
 #include "build_config.h"
 
-#include "gps.h"
 #include "gps_i2cnav.h"
 
 #include "gpio.h"
@@ -56,7 +55,7 @@ bool i2cnavGPSModuleDetect(void)
     return false;
 }
 
-void i2cnavGPSModuleRead(gpsDataGeneric_t * gpsMsg)
+void i2cnavGPSModuleRead(gpsDataI2CNAV_t * gpsMsg)
 {
     bool ack;
     uint8_t i2cGpsStatus;
