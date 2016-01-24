@@ -17,7 +17,7 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
 
 - [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
  - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the project path
-- [ ] Build the code by going to *Project menu -> Build All*
+- [ ] Build the code by going to *Project menu -> Build All* [read more](#build)
 
 ## Extended Notes
 
@@ -100,3 +100,9 @@ Edit the path variable in *C/C++ Build -> Environment*
 Append the full path to the relevant bin dir
 
 ![append bin dir](assets/building-in-eclipse/checkout-cleanflight-011.PNG)
+
+### Build
+
+Choose project -> build all
+
+![build all](assets/building-in-eclipse/checkout-cleanflight-013.PNG)
