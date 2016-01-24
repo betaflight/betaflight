@@ -230,7 +230,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.gps_min_sats = 5;
     navConfig->inav.gps_delay_ms = 200;
     navConfig->inav.accz_unarmed_cal = 1;
-    navConfig->inav.use_gps_velned = 1;         // "Disabled" is mandatory with gps_nav_model = LOW_G
+    navConfig->inav.use_gps_velned = 0;         // "Disabled" is mandatory with gps_nav_model = LOW_G
 
     navConfig->inav.w_z_baro_p = 1.0f;
 
@@ -522,7 +522,7 @@ static void resetConf(void)
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
-    masterConfig.gpsConfig.navModel = GPS_MODEL_HIGH_G;
+    masterConfig.gpsConfig.navModel = GPS_MODEL_LOW_G;
 #endif
 
 #ifdef NAV
