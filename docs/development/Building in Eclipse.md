@@ -15,6 +15,10 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
 - [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/qemu/releases) the latest GNU ARM Eclipse QEMU [read more](#install-qemu)
 - [ ] Add a new update site to Eclipse named "GNU ARM Eclipse Plugins" with the URL "http://gnuarmeclipse.sourceforge.net/updates" and install all the features offered
 
+- [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
+ - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the end of the *project properties -> C/C++ build -> Environment -> PATH variable*
+- [ ] Build the code by going to *Project menu -> Build All*
+
 ### Install the JDK
 
 The [minimum JDK version](http://gnuarmeclipse.github.io/plugins/install/#java) supported by GNU Arm Eclipse is 1.7 but the current latest, 1.8, is recommended instead. While Oracle JDK is the recommended version, [they do also support](http://gnuarmeclipse.github.io/plugins/install/#java) the OpenJDK.
@@ -42,3 +46,14 @@ You should install OpenOCD If you will be debugging on real hardware, such as th
 ### Install QEMU
 
 No tests currently run on the QEMU emulator therefore this install is entirely optional. It is useful to test your installation, since you can compile and run a blinky demo.
+
+### Checkout Cleanflight
+
+If you'll be submitting changes to cleanflight, [fork the repository](https://help.github.com/articles/fork-a-repo/) on GitHub and checkout your copy.
+
+In Eclipse go to *File -> Import* choose *Git -> Projects from Git*
+![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.png)
+
+and on the next screen choose *Clone URI*. Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details. On the branch selection dialog, de-select all branches and select only *master*.
+
+When the download completes, choose *Use the New Project wizard* and click Finish. Expand *C/C++ -> Makefile Project with Existing Code* and click next. Enter cleanflight as the project name and browse to your home directory -> git -> cleanflight for the existing code location. Ensure the C (cleanflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
