@@ -5,7 +5,7 @@ How to build, test & debug Cleanflight in Eclipse on Linux, Windows & MacOS.
 Use this checklist to make sure you didn't miss a step. If you need more help, use the *read more* links.
 
 - [ ] [Download and Install](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) the latest (currently 1.8) 64bit Oracle JDK [read more](#install-the-jdk)
-- [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition [read more](#install-eclipse) **NOT** Mars or Neon since they are not tested by the *GNU ARM Eclipse* *(as of January 2016)* [read more](#install-the-jdk)
+- [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition, **NB:** not Mars or Neon [read more](#install-eclipse)
 
 ### Install the JDK
 
@@ -13,8 +13,8 @@ The [minimum JDK version](http://gnuarmeclipse.github.io/plugins/install/#java) 
 
 ### Install Eclipse
 
-The minimum Eclipse version is Kepler 4.3, the maximum is Mars 4.5 although some things are [known to be broken](http://gnuarmeclipse.github.io/plugins/install/#eclipse--cdt) in 4.5 with GNU Arm Tools.
+Eclipse Luna v4.4 is the preferred version for GNU Arm Tools currently. The minimum Eclipse version is Kepler 4.3. The maximum is Mars 4.5 although it is not tested by GNU Arm Eclipse and some things are [known to be broken](http://gnuarmeclipse.github.io/plugins/install/#eclipse--cdt). Eclipse Neon is currently not released.
 
-CDT v8.6.0 as shipped in the Eclipse Luna CDT download is recommended. The minimum CDT version is 8.3.
+CDT v8.6.0, as shipped in the Eclipse Luna CDT download, is recommended. The minimum CDT version is 8.3.
 
 The 64bit Eclipse is preferred but a 32bit Eclipse can be used; ensure you run it on a 32bit JDK.
