@@ -52,7 +52,7 @@ No tests currently run on the QEMU emulator therefore this install is entirely o
 If you'll be submitting changes to cleanflight, [fork the repository](https://help.github.com/articles/fork-a-repo/) on GitHub and checkout your copy.
 
 In Eclipse go to *File -> Import* choose *Git -> Projects from Git*
-![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.png)
+![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.PNG)
 
 and on the next screen choose *Clone URI*. Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details. On the branch selection dialog, de-select all branches and select only *master*.
 
