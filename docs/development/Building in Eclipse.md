@@ -12,6 +12,7 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
 - [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/openocd/releases) the latest GNU ARM Eclipse OpenOCD [read more](#install-openocd)
  - [ ] *Linux platform only:* [Configure UDEV](http://gnuarmeclipse.github.io/openocd/install/#udev) to recognise USB JTAG probes
  - [ ] *Windows platform only:* [Download and Install](http://www.st.com/web/en/catalog/tools/FM147/SC1887/PF260219) the ST-Link / ST-LinkV2 drivers. These drivers do work on Windows 10 even if not yet mentioned by ST.
+- [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/qemu/releases) the latest GNU ARM Eclipse QEMU [read more](#install-qemu)
 
 ### Install the JDK
 
@@ -36,3 +37,7 @@ Retain the default installation directories so that the GNU ARM Plugins can loca
 ### Install OpenOCD
 
 You should install OpenOCD If you will be debugging on real hardware, such as the STM32F3DISCOVERY dev board. It is not required to simply build Cleanflight or run the tests.
+
+### Install QEMU
+
+No tests currently run on the QEMU emulator therefore this install is entirely optional. It is useful to test your installation, since you can compile and run a blinky demo.
