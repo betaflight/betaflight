@@ -4,7 +4,7 @@ How to build, test & debug Cleanflight in Eclipse on Linux, Windows & MacOS.
 
 Use this checklist to make sure you didn't miss a step. If you need more help, use the *read more* links.
 
-- [ ] [Download and Install](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) the latest Oracle JDK [read more](#install-the-jdk)
+- [ ] [Download and Install](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) the latest (currently 1.8) Oracle JDK [read more](#install-the-jdk)
 
 ### Install the JDK
 
