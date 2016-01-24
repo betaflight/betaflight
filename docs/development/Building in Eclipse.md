@@ -2,13 +2,15 @@ How to build, test & debug Cleanflight in Eclipse on Linux, Windows & MacOS.
 
 ## Checklist
 
-Use this checklist to make sure you didn't miss a step. If you need more help, use the *read more* links. Versions mandated below are current and correct as of January 2016.
+Use this checklist to make sure you didn't miss a step. Versions mandated below are current and correct as of January 2016.
 
 - [ ] [Download and Install](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) the latest (currently 1.8) 64bit Oracle JDK [read more](#install-the-jdk)
 - [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition, **NB:** not Mars or Neon [read more](#install-eclipse)
 - [ ] [Download and Install](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update) the GCC ARM Embedded toolchain 4.9-2015-q3-update [read more](#install-arm-toolchain)
  - [ ] *Windows platform only:* [Download and Install](https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
  - [ ] *Windows platform only:* Download and Install either [Cygwin](http://cygwin.com/install.html) or [MinGW MSYS](http://sourceforge.net/projects/mingw/files/latest/download)
+- [ ] [Download and Install](https://github.com/gnuarmeclipse/openocd/releases) the latest GNU ARM Eclipse OpenOCD
+ - [ ] *Windows platform only:* [Download and Install](http://www.st.com/web/en/catalog/tools/FM147/SC1887/PF260219) the ST-Link / ST-LinkV2 drivers if you will be using an ST Discovery dev board such as the STM32-F3DISCOVERY supported by Cleanflight. These drivers do work on Windows 10 even if not yet mentioned by ST.
 
 ### Install the JDK
 
