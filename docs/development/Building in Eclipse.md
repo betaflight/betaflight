@@ -16,8 +16,10 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
 - [ ] Add a new update site to Eclipse named "GNU ARM Eclipse Plugins" with the URL "http://gnuarmeclipse.sourceforge.net/updates" and install all the features offered
 
 - [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
- - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the end of the *project properties -> C/C++ build -> Environment -> PATH variable*
+ - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the project path
 - [ ] Build the code by going to *Project menu -> Build All*
+
+## Extended Notes
 
 ### Install the JDK
 
@@ -54,6 +56,35 @@ If you'll be submitting changes to cleanflight, [fork the repository](https://he
 In Eclipse go to *File -> Import* choose *Git -> Projects from Git*
 ![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.PNG)
 
-and on the next screen choose *Clone URI*. Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details. On the branch selection dialog, de-select all branches and select only *master*.
+Choose *Clone URI*
+![clone uri](assets/building-in-eclipse/checkout-cleanflight-002.PNG)
 
-When the download completes, choose *Use the New Project wizard* and click Finish. Expand *C/C++ -> Makefile Project with Existing Code* and click next. Enter cleanflight as the project name and browse to your home directory -> git -> cleanflight for the existing code location. Ensure the C (cleanflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
+Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details
+![enter uri](assets/building-in-eclipse/checkout-cleanflight-003.PNG)
+
+On the branch selection dialog, de-select all branches and select only *master*
+![choose branches to clone](assets/building-in-eclipse/checkout-cleanflight-004.PNG)
+
+Select the default destination directory
+![destination](assets/building-in-eclipse/checkout-cleanflight-005.PNG)
+
+When the download completes, choose *Use the New Project wizard* and click Finish
+![finish](assets/building-in-eclipse/checkout-cleanflight-006.PNG)
+
+Choose *C/C++ -> Makefile Project with Existing Code*
+![makefile project](assets/building-in-eclipse/checkout-cleanflight-007.PNG)
+
+Enter cleanflight as the project name and browse to your home directory -> git -> cleanflight for the existing code location. Ensure the C (cleanflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
+![finish checkout](assets/building-in-eclipse/checkout-cleanflight-008.PNG)
+
+Set your build and debug targets by going to project properties -> C/C++ Build and choose the Behaviour tab. Replace "all" in the build box with "TARGET=xxx DEBUG=GDB" where xxx is your platform such as NAZE
+![build](assets/building-in-eclipse/checkout-cleanflight-012.PNG)
+
+On Windows only, add msys or cygwin bin directory to the project's path by right clicking the project and choosing properties
+![properties](assets/building-in-eclipse/checkout-cleanflight-009.PNG)
+
+Edit the path variable in *C/C++ Build -> Environment*
+![edit path](assets/building-in-eclipse/checkout-cleanflight-010.PNG)
+
+Append the full path to the relevant bin dir
+![append bin dir](assets/building-in-eclipse/checkout-cleanflight-011.PNG)
