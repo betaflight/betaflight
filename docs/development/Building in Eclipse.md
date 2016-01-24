@@ -14,7 +14,7 @@ Use this checklist to make sure you didn't miss a step. Versions mandated below 
  - [ ] *Windows platform only:* [Download and Install](http://www.st.com/web/en/catalog/tools/FM147/SC1887/PF260219) the ST-Link / ST-LinkV2 drivers. These drivers do work on Windows 10 even if not yet mentioned by ST.
 - [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/qemu/releases) the latest GNU ARM Eclipse QEMU [read more](#install-qemu)
 - [ ] Add a new update site to Eclipse named "GNU ARM Eclipse Plugins" with the URL "http://gnuarmeclipse.sourceforge.net/updates" and install all the features offered
-
+- [ ] Configure [the recommended workspace settings](http://gnuarmeclipse.github.io/eclipse/workspace/preferences/)
 - [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
  - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the project path
 - [ ] Build the code by going to *Project menu -> Build All* [read more](#build)
