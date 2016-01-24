@@ -8,6 +8,7 @@ Use this checklist to make sure you didn't miss a step. If you need more help, u
 - [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition, **NB:** not Mars or Neon [read more](#install-eclipse)
 - [ ] [Download and Install](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update) the GCC ARM Embedded toolchain 4.9-2015-q3-update [read more](#install-arm-toolchain)
  - [ ] *Windows platform only:* [Download and Install](https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
+ - [ ] *Windows platform only:* Download and Install either [Cygwin](http://cygwin.com/install.html) or [MinGW MSYS]()(https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
 
 ### Install the JDK
 
@@ -26,3 +27,5 @@ The 64bit Eclipse is preferred but a 32bit Eclipse can be used; ensure you run i
 The minimum version is 4.8-2014-q2. The maximum, and currently recommended version, is 4_9-2015q3.
 
 GNU ARM Tools recommends that you don't add the toolchain to your path environment variable. This means you can install multiple versions of the toolchain without conflict. If you'll install only one version, it can make life easier when working outside Eclipse to add it to your path.
+
+Retain the default installation directories so that the GNU ARM Plugins can locate the toolchain.
