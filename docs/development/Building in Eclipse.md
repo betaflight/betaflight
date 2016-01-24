@@ -8,7 +8,7 @@ Use this checklist to make sure you didn't miss a step. If you need more help, u
 - [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition, **NB:** not Mars or Neon [read more](#install-eclipse)
 - [ ] [Download and Install](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update) the GCC ARM Embedded toolchain 4.9-2015-q3-update [read more](#install-arm-toolchain)
  - [ ] *Windows platform only:* [Download and Install](https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
- - [ ] *Windows platform only:* Download and Install either [Cygwin](http://cygwin.com/install.html) or [MinGW MSYS]()(https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
+ - [ ] *Windows platform only:* Download and Install either [Cygwin](http://cygwin.com/install.html) or [MinGW MSYS](http://sourceforge.net/projects/mingw/files/latest/download)
 
 ### Install the JDK
 
