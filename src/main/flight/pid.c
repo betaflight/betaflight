@@ -58,6 +58,8 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
+#define DELTA_TOTAL_SAMPLES 3
+
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
 
@@ -120,8 +122,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
     static float lastError[3];
-    float delta;
-    int axis;
+    static float previousDelta[3][DELTA_TOTAL_SAMPLES];
+    float delta, deltaSum;
+    int axis, deltaCount;
     float horizonLevelStrength = 1;
     static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -215,6 +218,13 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (deltaStateIsSet) {
             delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
+        } else {
+            // Apply moving average
+            deltaSum = 0;
+            for (deltaCount = DELTA_TOTAL_SAMPLES-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+            previousDelta[axis][0] = delta;
+            for (deltaCount = 0; deltaCount < DELTA_TOTAL_SAMPLES; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+            delta = (deltaSum / DELTA_TOTAL_SAMPLES);
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
@@ -249,9 +259,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 {
     UNUSED(rxConfig);
 
-    int axis;
-    int32_t PTerm, ITerm, DTerm, delta;
+    int axis, deltaCount;
+    int32_t PTerm, ITerm, DTerm, delta, deltaSum;
     static int32_t lastError[3] = { 0, 0, 0 };
+    static int32_t previousDelta[3][DELTA_TOTAL_SAMPLES];
     static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
     int32_t AngleRateTmp, RateError, gyroRate;
 
@@ -349,14 +360,21 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         lastError[axis] = RateError;
 
         if (deltaStateIsSet) {
-            delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis]));
+            delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
+        } else {
+            // Apply moving average
+            deltaSum = 0;
+            for (deltaCount = DELTA_TOTAL_SAMPLES -1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
+            previousDelta[axis][0] = delta;
+            for (deltaCount = 0; deltaCount < DELTA_TOTAL_SAMPLES; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
+            delta = deltaSum;
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        DTerm = (delta * 3 * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
