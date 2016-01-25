@@ -50,7 +50,7 @@
 
 extern float dT;
 extern bool motorLimitReached;
-extern bool allowITermShrinkOnly;
+extern bool preventItermWindup;
 
 int16_t axisPID[3];
 
@@ -197,11 +197,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             errorGyroIf[axis] *= airModePlusAxisState[axis].iTermScaler;
         }
 
-        if (allowITermShrinkOnly || motorLimitReached) {
-            if (ABS(errorGyroIf[axis]) < ABS(previousErrorGyroIf[axis])) {
-                previousErrorGyroIf[axis] = errorGyroIf[axis];
-            } else {
-                errorGyroIf[axis] = constrain(errorGyroIf[axis], -ABS(previousErrorGyroIf[axis]), ABS(previousErrorGyroIf[axis]));
+        if (preventItermWindup || motorLimitReached) {
+            if (ABS(errorGyroIf[axis]) > ABS(previousErrorGyroIf[axis])) {
+                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ABS(previousErrorGyroIf[axis]), ABS(previousErrorGyroIf[axis]));
             }
         } else {
             previousErrorGyroIf[axis] = errorGyroIf[axis];
@@ -338,10 +336,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             errorGyroI[axis] *= airModePlusAxisState[axis].iTermScaler;
         }
 
-        if (allowITermShrinkOnly || motorLimitReached) {
-            if (ABS(errorGyroI[axis]) < ABS(previousErrorGyroI[axis])) {
-                previousErrorGyroI[axis] = errorGyroI[axis];
-            } else {
+        if (preventItermWindup || motorLimitReached) {
+            if (ABS(errorGyroI[axis]) > ABS(previousErrorGyroI[axis])) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -ABS(previousErrorGyroI[axis]), ABS(previousErrorGyroI[axis]));
             }
         } else {

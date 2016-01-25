@@ -102,7 +102,7 @@ enum {
 
 // AIR MODE Reset timers
 #define ERROR_RESET_DEACTIVATE_DELAY (1 * 1000)   // 1 sec delay to disable AIR MODE Iterm resetting
-bool allowITermShrinkOnly = false;
+bool preventItermWindup = false;
 static bool ResetErrorActivated = true;
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -486,9 +486,9 @@ void processRx(void)
         // When in AIR Mode LOW Throttle and reset was already disabled we will only prevent further growing
         if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled)  {
             if (calculateRollPitchCenterStatus(&masterConfig.rxConfig) == CENTERED) {
-                allowITermShrinkOnly = true;   // Iterm is now only allowed to shrink
+                preventItermWindup = true;    // Iterm is now limited to the last value
             } else {
-                allowITermShrinkOnly = false;   // Iterm should considered safe to increase
+                preventItermWindup = false;   // Iterm should considered safe to increase
             }
         }
 
@@ -497,22 +497,22 @@ void processRx(void)
             ResetErrorActivated = true;                                         // As RX code is not executed each loop a flag has to be set for fast looptimes
             airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
             airModeErrorResetIsEnabled = true;                                  // Enable Reset again especially after Disarm
-            allowITermShrinkOnly = false;                                       // Reset shrinking
+            preventItermWindup = false;                                         // Reset limiting
         }
     } else {
         if (!(feature(FEATURE_MOTOR_STOP)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (airModeErrorResetIsEnabled) {
                 if (millis() > airModeErrorResetTimeout && calculateRollPitchCenterStatus(&masterConfig.rxConfig) == NOT_CENTERED) {  // Only disable error reset when roll and pitch not centered
                     airModeErrorResetIsEnabled = false;
-                    allowITermShrinkOnly = false;  // Reset shrinking for Iterm
+                    preventItermWindup = false;  // Reset limiting for Iterm
                 }
             } else {
-                allowITermShrinkOnly = false;      // Reset shrinking for Iterm
+                preventItermWindup = false;      // Reset limiting for Iterm
             }
         } else {
-            allowITermShrinkOnly = false;          // Reset shrinking. Usefull when flipping between normal and AIR mode
+            preventItermWindup = false;          // Reset limiting. Usefull when flipping between normal and AIR mode
         }
-        ResetErrorActivated = false;               // Disable resetting of error
+        ResetErrorActivated = false;             // Disable resetting of error
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm

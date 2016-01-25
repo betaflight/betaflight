@@ -452,7 +452,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
     }
     
     // in 3D mode, mixer gain has to be halved
-    if (feature(FEATURE_3D) && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) {
+    if (feature(FEATURE_3D)) {
         if (motorCount > 1) {
             for (i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
@@ -781,8 +781,6 @@ void mixTable(void)
                 axisPID[PITCH] * currentMixer[i].pitch +
                 axisPID[ROLL] * currentMixer[i].roll +
                 -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
-
-            if (feature(FEATURE_3D)) rollPitchYawMix[i] /= 2;  // 3D feature uses half of the resolution
 
             if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
             if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
