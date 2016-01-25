@@ -728,7 +728,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			break;
 	    case BST_MODE_RANGES:
 			for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-				modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+				modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
 				const box_t *box = &boxes[mac->modeId];
 				bstWrite8(box->permanentId);
 				bstWrite8(mac->auxChannelIndex);
@@ -738,7 +738,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			break;
 	    case BST_ADJUSTMENT_RANGES:
 			for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-				adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+				adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
 				bstWrite8(adjRange->adjustmentIndex);
 				bstWrite8(adjRange->auxChannelIndex);
 				bstWrite8(adjRange->range.startStep);
@@ -1089,7 +1089,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 	    case BST_SET_MODE_RANGE:
 	        i = bstRead8();
 	        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-	            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+	            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
 	            i = bstRead8();
 	            const box_t *box = findBoxByPermenantId(i);
 	            if (box) {
@@ -1109,7 +1109,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 	    case BST_SET_ADJUSTMENT_RANGE:
 	        i = bstRead8();
 	        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-	            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+	            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
 	            i = bstRead8();
 	            if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
 	                adjRange->adjustmentIndex = i;

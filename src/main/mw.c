@@ -565,10 +565,10 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(currentProfile->modeActivationConditions);
+    updateActivatedModes(masterConfig.modeActivationConditions);
 
     if (!cliMode) {
-        updateAdjustmentStates(currentProfile->adjustmentRanges);
+        updateAdjustmentStates(masterConfig.adjustmentRanges);
         processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
     }
 
