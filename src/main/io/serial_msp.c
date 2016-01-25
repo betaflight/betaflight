@@ -837,7 +837,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             serialize8(box->permanentId);
             serialize8(mac->auxChannelIndex);
@@ -855,7 +855,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 1   // aux switch channel index
         ));
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             serialize8(adjRange->adjustmentIndex);
             serialize8(adjRange->auxChannelIndex);
             serialize8(adjRange->range.startStep);
@@ -1310,7 +1310,7 @@ static bool processInCommand(void)
     case MSP_SET_MODE_RANGE:
         i = read8();
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             i = read8();
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1319,7 +1319,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1330,7 +1330,7 @@ static bool processInCommand(void)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = read8();
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             i = read8();
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;

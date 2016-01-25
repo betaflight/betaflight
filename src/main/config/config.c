@@ -765,7 +765,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        currentProfile->modeActivationConditions,
+        masterConfig.modeActivationConditions,
         &masterConfig.escAndServoConfig,
         &currentProfile->pidProfile
     );

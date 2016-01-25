@@ -36,9 +36,9 @@ typedef struct profile_s {
 
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+    
 
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
+    
 
     // Radio/ESC-related configuration
 

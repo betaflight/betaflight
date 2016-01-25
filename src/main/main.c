@@ -490,7 +490,7 @@ void init(void)
 
     failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    rxInit(&masterConfig.rxConfig, currentProfile->modeActivationConditions);
+    rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
