@@ -121,7 +121,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastError[3];
+    static float lastError[3], lastGyroRate[3];
     static float previousDelta[3][DELTA_TOTAL_SAMPLES];
     float delta, deltaSum;
     int axis, deltaCount;
@@ -213,8 +213,13 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        delta = RateError - lastError[axis];
-        lastError[axis] = RateError;
+        if (!pidProfile->deltaFromGyro) {
+            delta = RateError - lastError[axis];
+            lastError[axis] = RateError;
+        } else {
+            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastGyroRate[axis] = gyroRate;
+        }
 
         if (deltaStateIsSet) {
             delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
@@ -263,7 +268,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t PTerm, ITerm, DTerm, delta, deltaSum;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousDelta[3][DELTA_TOTAL_SAMPLES];
-    static int32_t previousErrorGyroI[3] = { 0, 0, 0 };
+    static int32_t previousErrorGyroI[3], lastGyroRate[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
@@ -356,8 +361,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         }
 
         //-----calculate D-term
-        delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastError[axis] = RateError;
+        if (!pidProfile->deltaFromGyro) {   // quick and dirty solution for testing
+            delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastError[axis] = RateError;
+        } else {
+            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastGyroRate[axis] = gyroRate;
+        }
 
         if (deltaStateIsSet) {
             delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta

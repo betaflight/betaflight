@@ -61,6 +61,7 @@ typedef struct pidProfile_s {
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
     uint8_t gyro_lpf_hz;                    // Gyro Soft filter in hz
     uint8_t dterm_lpf_hz;                   // Delta Filter in hz
+    uint8_t deltaFromGyro;                  // Alternative delta Calculation
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
