@@ -247,7 +247,7 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
 
 static void dispatchMeasurementRequest(ibusAddress_t address) {
     if (1 == address) {
-        sendIbusMeasurement(address, vbat);
+        sendIbusMeasurement(address, vbat * 10);
     } else if (2 == address) {
         sendIbusMeasurement(address, (uint16_t) telemTemperature1 + IBUS_TEMPERATURE_OFFSET);
     } else if (3 == address) {
