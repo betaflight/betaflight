@@ -95,7 +95,7 @@ Configure the current meter type using the `current_meter_type` settings here:
 
 Configure capacity using the `battery_capacity` setting, in mAh units.
 
-If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `1` (this multiplies amperage sent to MSP by 10).
+If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `1` (this multiplies amperage sent to MSP by 10 and truncates negative values)).
 
 ### ADC Sensor
 
@@ -105,6 +105,8 @@ Use the following settings to adjust calibration:
 
 `current_meter_scale`
 `current_meter_offset`
+
+It is recommended to set `multiwii_current_meter_output` to `0` when calibrating ADC current sensor.
 
 ### Virtual Sensor
 
