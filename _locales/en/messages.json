@@ -212,6 +212,12 @@
     "dfu_erased_kilobytes": {
         "message": "Erased $1 kB of flash <span style=\"color: #57a929\">successfully</span>"
     },
+    "dfu_device_flash_info": {
+        "message": "Detected device with $1*$2 kiB pages, total size $3 kiB"
+    },
+    "dfu_error_image_size": {
+        "message": "<span style=\"color: red; font-weight: bold\">Error</span>: Supplied image is larger then flash available on the chip! Image: $1 kiB, limit = $2 kiB"
+    },
 
     "eeprom_saved_ok": {
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
