@@ -903,6 +903,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
     else {
         // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
         if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
+            // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
+            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate);
+        }
+        else {
             // Gradually reduce descent speed depending on actual altitude.
             if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
                 updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
@@ -913,10 +917,6 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
             else {
                 updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
             }
-        }
-        else {
-            // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
-            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate);
         }
 
         return NAV_FSM_EVENT_NONE;
@@ -1571,7 +1571,7 @@ void updateAltitudeTargetFromClimbRate(float climbRate)
 
     /* Move surface tracking setpoint if it is set */
     if (posControl.desiredState.surface > 0.0f && posControl.actualState.surface > 0.0f && posControl.flags.hasValidSurfaceSensor) {
-        posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 10.0f, 200.0f);
+        posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, 200.0f);
     }
 
     posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (climbRate / posControl.pids.pos[Z].param.kP);
