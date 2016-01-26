@@ -293,7 +293,7 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    if (masterConfig.rxConfig.rcSmoothing) {
+    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
         filterRc();
     }
 
