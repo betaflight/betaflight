@@ -180,6 +180,7 @@ void filterRc(void){
     static biquad_t filteredCycleTimeState;
     static bool filterIsSet;
     uint16_t filteredCycleTime;
+    static int16_t multiplier = 1;
 
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
@@ -188,11 +189,15 @@ void filterRc(void){
     if (!filterIsSet) {
         BiQuadNewLpf(1, &filteredCycleTimeState, 0);
         filterIsSet = true;
+
+        if ((rxRefreshRate >= 20000) && (targetLooptime < 1000)) {
+            multiplier = (1000 / targetLooptime);
+        }
     }
 
     filteredCycleTime = applyBiQuadFilter((float) cycleTime, &filteredCycleTimeState);
 
-    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+    rcInterpolationFactor =  multiplier * (rxRefreshRate / filteredCycleTime) + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
