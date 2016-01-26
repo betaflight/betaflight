@@ -129,8 +129,8 @@ extern pidControllerFuncPtr pid_controller;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    currentProfile->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    currentProfile->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    masterConfig.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    masterConfig.accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -242,9 +242,9 @@ void annexCode(void)
     for (axis = 0; axis < 3; axis++) {
         tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
-            if (currentProfile->rcControlsConfig.deadband) {
-                if (tmp > currentProfile->rcControlsConfig.deadband) {
-                    tmp -= currentProfile->rcControlsConfig.deadband;
+            if (masterConfig.rcControlsConfig.deadband) {
+                if (tmp > masterConfig.rcControlsConfig.deadband) {
+                    tmp -= masterConfig.rcControlsConfig.deadband;
                 } else {
                     tmp = 0;
                 }
@@ -255,9 +255,9 @@ void annexCode(void)
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
-            if (currentProfile->rcControlsConfig.yaw_deadband) {
-                if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
-                    tmp -= currentProfile->rcControlsConfig.yaw_deadband;
+            if (masterConfig.rcControlsConfig.yaw_deadband) {
+                if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
+                    tmp -= masterConfig.rcControlsConfig.yaw_deadband;
                 } else {
                     tmp = 0;
                 }
@@ -708,8 +708,8 @@ void taskMainPidLoop(void)
         rcCommand[YAW] = 0;
     }
 
-    if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
+    if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
     }
 
 #ifdef GPS
@@ -729,7 +729,7 @@ void taskMainPidLoop(void)
         &currentProfile->pidProfile,
         currentControlRateProfile,
         masterConfig.max_angle_inclination,
-        &currentProfile->accelerometerTrims,
+        &masterConfig.accelerometerTrims,
         &masterConfig.rxConfig
     );
 
@@ -768,7 +768,7 @@ void taskMainPidLoopCheck(void) {
 
 void taskUpdateAccelerometer(void)
 {
-    imuUpdateAccelerometer(&currentProfile->accelerometerTrims);
+    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
 }
 
 void taskHandleSerial(void)
