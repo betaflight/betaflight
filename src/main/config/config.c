@@ -384,7 +384,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(LUX_RACE)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -888,7 +888,7 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
     if(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
 	    featureClear(FEATURE_RX_PARALLEL_PWM);
