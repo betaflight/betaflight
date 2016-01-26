@@ -713,14 +713,14 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO_CONFIGURATIONS:
         headSerialReply(MAX_SUPPORTED_SERVOS * sizeof(servoParam_t));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize16(currentProfile->servoConf[i].min);
-            serialize16(currentProfile->servoConf[i].max);
-            serialize16(currentProfile->servoConf[i].middle);
-            serialize8(currentProfile->servoConf[i].rate);
-            serialize8(currentProfile->servoConf[i].angleAtMin);
-            serialize8(currentProfile->servoConf[i].angleAtMax);
-            serialize8(currentProfile->servoConf[i].forwardFromChannel);
-            serialize32(currentProfile->servoConf[i].reversedSources);
+            serialize16(masterConfig.servoConf[i].min);
+            serialize16(masterConfig.servoConf[i].max);
+            serialize16(masterConfig.servoConf[i].middle);
+            serialize8(masterConfig.servoConf[i].rate);
+            serialize8(masterConfig.servoConf[i].angleAtMin);
+            serialize8(masterConfig.servoConf[i].angleAtMax);
+            serialize8(masterConfig.servoConf[i].forwardFromChannel);
+            serialize32(masterConfig.servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -900,7 +900,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.rssi_channel);
         serialize8(0);
 
-        serialize16(currentProfile->mag_declination / 10);
+        serialize16(masterConfig.mag_declination / 10);
 
         serialize8(masterConfig.batteryConfig.vbatscale);
         serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -973,8 +973,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile->accelerometerTrims.values.pitch);
-        serialize16(currentProfile->accelerometerTrims.values.roll);
+        serialize16(masterConfig.accelerometerTrims.values.pitch);
+        serialize16(masterConfig.accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1240,8 +1240,8 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile->accelerometerTrims.values.pitch = read16();
-        currentProfile->accelerometerTrims.values.roll  = read16();
+        masterConfig.accelerometerTrims.values.pitch = read16();
+        masterConfig.accelerometerTrims.values.roll  = read16();
         break;
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
@@ -1391,7 +1391,7 @@ static bool processInCommand(void)
         masterConfig.rxConfig.rssi_channel = read8();
         read8();
 
-        currentProfile->mag_declination = read16() * 10;
+        masterConfig.mag_declination = read16() * 10;
 
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1412,14 +1412,14 @@ static bool processInCommand(void)
         if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
         } else {
-            currentProfile->servoConf[i].min = read16();
-            currentProfile->servoConf[i].max = read16();
-            currentProfile->servoConf[i].middle = read16();
-            currentProfile->servoConf[i].rate = read8();
-            currentProfile->servoConf[i].angleAtMin = read8();
-            currentProfile->servoConf[i].angleAtMax = read8();
-            currentProfile->servoConf[i].forwardFromChannel = read8();
-            currentProfile->servoConf[i].reversedSources = read32();
+            masterConfig.servoConf[i].min = read16();
+            masterConfig.servoConf[i].max = read16();
+            masterConfig.servoConf[i].middle = read16();
+            masterConfig.servoConf[i].rate = read8();
+            masterConfig.servoConf[i].angleAtMin = read8();
+            masterConfig.servoConf[i].angleAtMax = read8();
+            masterConfig.servoConf[i].forwardFromChannel = read8();
+            masterConfig.servoConf[i].reversedSources = read32();
         }
 #endif
         break;

@@ -492,27 +492,24 @@ static void resetConf(void)
 
     resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
 
-    // for (i = 0; i < CHECKBOXITEMS; i++)
-    //     cfg.activate[i] = 0;
+    resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
-    resetRollAndPitchTrims(&currentProfile->accelerometerTrims);
+    masterConfig.mag_declination = 0;
+    masterConfig.acc_lpf_hz = 20;
+    masterConfig.accz_lpf_cutoff = 5.0f;
+    masterConfig.accDeadband.xy = 40;
+    masterConfig.accDeadband.z = 40;
+    masterConfig.acc_unarmedcal = 1;
 
-    currentProfile->mag_declination = 0;
-    currentProfile->acc_lpf_hz = 20;
-    currentProfile->accz_lpf_cutoff = 5.0f;
-    currentProfile->accDeadband.xy = 40;
-    currentProfile->accDeadband.z = 40;
-    currentProfile->acc_unarmedcal = 1;
-
-    resetBarometerConfig(&currentProfile->barometerConfig);
+    resetBarometerConfig(&masterConfig.barometerConfig);
 
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
 
-    resetRcControlsConfig(&currentProfile->rcControlsConfig);
+    resetRcControlsConfig(&masterConfig.rcControlsConfig);
 
-    currentProfile->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+    masterConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    masterConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
     masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
@@ -524,21 +521,21 @@ static void resetConf(void)
 #ifdef USE_SERVOS
     // servos
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        currentProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
-        currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
-        currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        currentProfile->servoConf[i].rate = 100;
-        currentProfile->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        currentProfile->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        masterConfig.servoConf[i].min = DEFAULT_SERVO_MIN;
+        masterConfig.servoConf[i].max = DEFAULT_SERVO_MAX;
+        masterConfig.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
+        masterConfig.servoConf[i].rate = 100;
+        masterConfig.servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
+        masterConfig.servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
+        masterConfig.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
     // gimbal
-    currentProfile->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+    masterConfig.gimbalConfig.mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS
-    resetGpsProfile(&currentProfile->gpsProfile);
+    resetGpsProfile(&masterConfig.gpsProfile);
 #endif
 
     // custom mixer. clear by defaults.
@@ -779,7 +776,7 @@ void activateConfig(void)
     pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
-    gpsUseProfile(&currentProfile->gpsProfile);
+    gpsUseProfile(&masterConfig.gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
@@ -788,8 +785,8 @@ void activateConfig(void)
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
-        currentProfile->servoConf,
-        &currentProfile->gimbalConfig,
+        masterConfig.servoConf,
+        &masterConfig.gimbalConfig,
 #endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
@@ -800,27 +797,27 @@ void activateConfig(void)
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = currentProfile->acc_lpf_hz;
-    imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;
+    imuRuntimeConfig.acc_cut_hz = masterConfig.acc_lpf_hz;
+    imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
-        &currentProfile->accDeadband,
-        currentProfile->accz_lpf_cutoff,
-        currentProfile->throttle_correction_angle
+        &masterConfig.accDeadband,
+        masterConfig.accz_lpf_cutoff,
+        masterConfig.throttle_correction_angle
     );
 
     configureAltitudeHold(
         &currentProfile->pidProfile,
-        &currentProfile->barometerConfig,
-        &currentProfile->rcControlsConfig,
+        &masterConfig.barometerConfig,
+        &masterConfig.rcControlsConfig,
         &masterConfig.escAndServoConfig
     );
 
 #ifdef BARO
-    useBarometerConfig(&currentProfile->barometerConfig);
+    useBarometerConfig(&masterConfig.barometerConfig);
 #endif
 }
 
