@@ -237,7 +237,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
-#ifndef COLIBRI_RACE
+#if !defined(COLIBRI_RACE) || !defined(LUX_RACE)
     if (gpsConfig->provider == GPS_NMEA)
 	    mode &= ~MODE_TX;
 #endif
@@ -255,12 +255,12 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
 void gpsInitNmea(void)
 {
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 	uint32_t now;
 #endif
     switch(gpsData.state) {
         case GPS_INITIALIZING:
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 		   now = millis();
 		   if (now - gpsData.state_ts < 1000)
 			   return;
@@ -279,7 +279,7 @@ void gpsInitNmea(void)
 		   break;
 #endif
         case GPS_CHANGE_BAUD:
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 		   now = millis();
 		   if (now - gpsData.state_ts < 1000)
 			   return;
@@ -295,7 +295,7 @@ void gpsInitNmea(void)
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
 #endif
             gpsSetState(GPS_RECEIVING_DATA);
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 		   }
 #endif
             break;

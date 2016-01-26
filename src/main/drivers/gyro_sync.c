@@ -47,7 +47,7 @@ void gyroUpdateSampleRate(uint8_t lpf) {
     if (!lpf) {
         gyroSamplePeriod = 125;
 #ifdef STM32F303xC
-#ifdef COLIBRI_RACE
+#ifdef COLIBRI_RACE // Leave out LUX target for now.  Need to test 2.6Khz
         gyroSyncDenominator = 3; // Sample every 3d gyro measurement 2,6khz
 #else
         gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
