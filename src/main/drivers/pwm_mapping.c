@@ -302,7 +302,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 static const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -658,7 +658,7 @@ if (init->useBuzzerP6) {
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
                 type = MAP_TO_SERVO_OUTPUT;
