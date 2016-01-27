@@ -616,14 +616,14 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			break;
 	    case BST_SERVO_CONFIGURATIONS:
 			for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-				bstWrite16(currentProfile->servoConf[i].min);
-				bstWrite16(currentProfile->servoConf[i].max);
-				bstWrite16(currentProfile->servoConf[i].middle);
-				bstWrite8(currentProfile->servoConf[i].rate);
-				bstWrite8(currentProfile->servoConf[i].angleAtMin);
-				bstWrite8(currentProfile->servoConf[i].angleAtMax);
-				bstWrite8(currentProfile->servoConf[i].forwardFromChannel);
-				bstWrite32(currentProfile->servoConf[i].reversedSources);
+				bstWrite16(masterConfig.servoConf[i].min);
+				bstWrite16(masterConfig.servoConf[i].max);
+				bstWrite16(masterConfig.servoConf[i].middle);
+				bstWrite8(masterConfig.servoConf[i].rate);
+				bstWrite8(masterConfig.servoConf[i].angleAtMin);
+				bstWrite8(masterConfig.servoConf[i].angleAtMax);
+				bstWrite8(masterConfig.servoConf[i].forwardFromChannel);
+				bstWrite32(masterConfig.servoConf[i].reversedSources);
 			}
 			break;
 	    case BST_SERVO_MIX_RULES:
@@ -781,7 +781,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(masterConfig.rxConfig.rssi_channel);
 			bstWrite8(0);
 
-			bstWrite16(currentProfile->mag_declination / 10);
+			bstWrite16(masterConfig.mag_declination / 10);
 
 			bstWrite8(masterConfig.batteryConfig.vbatscale);
 			bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -845,8 +845,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
 	    // Additional commands that are not compatible with MultiWii
 	    case BST_ACC_TRIM:
-			bstWrite16(currentProfile->accelerometerTrims.values.pitch);
-			bstWrite16(currentProfile->accelerometerTrims.values.roll);
+			bstWrite16(masterConfig.accelerometerTrims.values.pitch);
+			bstWrite16(masterConfig.accelerometerTrims.values.roll);
 			break;
 
 	    case BST_UID:
@@ -987,10 +987,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite32(0); // future exp
 			break;
 	    case BST_DEADBAND:
-			bstWrite8(currentProfile->rcControlsConfig.alt_hold_deadband);
-			bstWrite8(currentProfile->rcControlsConfig.alt_hold_fast_change);
-			bstWrite8(currentProfile->rcControlsConfig.deadband);
-			bstWrite8(currentProfile->rcControlsConfig.yaw_deadband);
+			bstWrite8(masterConfig.rcControlsConfig.alt_hold_deadband);
+			bstWrite8(masterConfig.rcControlsConfig.alt_hold_fast_change);
+			bstWrite8(masterConfig.rcControlsConfig.deadband);
+			bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
 			break;
 	    case BST_FC_FILTERS:
 			bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
@@ -1045,8 +1045,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 				}
 			}
 		case BST_SET_ACC_TRIM:
-			currentProfile->accelerometerTrims.values.pitch = bstRead16();
-			currentProfile->accelerometerTrims.values.roll  = bstRead16();
+			masterConfig.accelerometerTrims.values.pitch = bstRead16();
+			masterConfig.accelerometerTrims.values.roll  = bstRead16();
 			break;
 		case BST_SET_ARMING_CONFIG:
 			masterConfig.auto_disarm_delay = bstRead8();
@@ -1098,7 +1098,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 	                mac->range.startStep = bstRead8();
 	                mac->range.endStep = bstRead8();
 
-	                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+	                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
 	            } else {
 	            	ret = BST_FAILED;
 	            }
@@ -1169,7 +1169,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 	        masterConfig.rxConfig.rssi_channel = bstRead8();
 	        bstRead8();
 
-	        currentProfile->mag_declination = bstRead16() * 10;
+	        masterConfig.mag_declination = bstRead16() * 10;
 
 	        masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
 	        masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1190,14 +1190,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 		   if (i >= MAX_SUPPORTED_SERVOS) {
 			   ret = BST_FAILED;
 		   } else {
-			   currentProfile->servoConf[i].min = bstRead16();
-			   currentProfile->servoConf[i].max = bstRead16();
-			   currentProfile->servoConf[i].middle = bstRead16();
-			   currentProfile->servoConf[i].rate = bstRead8();
-			   currentProfile->servoConf[i].angleAtMin = bstRead8();
-			   currentProfile->servoConf[i].angleAtMax = bstRead8();
-			   currentProfile->servoConf[i].forwardFromChannel = bstRead8();
-			   currentProfile->servoConf[i].reversedSources = bstRead32();
+			   masterConfig.servoConf[i].min = bstRead16();
+			   masterConfig.servoConf[i].max = bstRead16();
+			   masterConfig.servoConf[i].middle = bstRead16();
+			   masterConfig.servoConf[i].rate = bstRead8();
+			   masterConfig.servoConf[i].angleAtMin = bstRead8();
+			   masterConfig.servoConf[i].angleAtMax = bstRead8();
+			   masterConfig.servoConf[i].forwardFromChannel = bstRead8();
+			   masterConfig.servoConf[i].reversedSources = bstRead32();
 		   }
 #endif
 		   break;
@@ -1451,10 +1451,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     			DISABLE_ARMING_FLAG(PREVENT_ARMING);
 			break;
 	    case BST_SET_DEADBAND:
-			currentProfile->rcControlsConfig.alt_hold_deadband = bstRead8();
-			currentProfile->rcControlsConfig.alt_hold_fast_change = bstRead8();
-			currentProfile->rcControlsConfig.deadband = bstRead8();
-			currentProfile->rcControlsConfig.yaw_deadband = bstRead8();
+			masterConfig.rcControlsConfig.alt_hold_deadband = bstRead8();
+			masterConfig.rcControlsConfig.alt_hold_fast_change = bstRead8();
+			masterConfig.rcControlsConfig.deadband = bstRead8();
+			masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
 			break;
 	    case BST_SET_FC_FILTERS:
 			masterConfig.gyro_lpf = bstRead16();
