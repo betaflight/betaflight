@@ -590,7 +590,7 @@ static void resetConf(void)
     masterConfig.controlRateProfiles[0].rates[FD_YAW] = 90;
     masterConfig.controlRateProfiles[0].dynThrPID = 30;
     masterConfig.controlRateProfiles[0].tpa_breakpoint = 1500;
-    masterConfig.profile[0].rcControlsConfig.deadband = 10;
+    masterConfig.rcControlsConfig.deadband = 10;
 
     masterConfig.escAndServoConfig.minthrottle = 1025;
     masterConfig.escAndServoConfig.maxthrottle = 1980;
