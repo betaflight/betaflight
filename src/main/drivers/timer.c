@@ -201,7 +201,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #endif
 
-#if defined(SPARKY) || defined(ALIENWIIF3)
+#if defined(SPARKY) || defined(ALIENFLIGHTF3)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     //
     // 6 x 3 pin headers

@@ -15,25 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum awf3HardwareRevision_t {
+    UNKNOWN = 0,
+    AFF3_REV_1, // MPU6050 / MPU9150 (I2C)
+    AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
+} awf3HardwareRevision_e;
 
-// Type of magnetometer used/detected
-typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_AK8963 = 4
-} magSensor_e;
+extern uint8_t hardwareRevision;
 
-#define MAG_MAX  MAG_AK8963
-
-#ifdef MAG
-void compassInit(void);
-void updateCompass(flightDynamicsTrims_t *magZero);
-#endif
-
-extern int16_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern mag_t mag;
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

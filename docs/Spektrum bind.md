@@ -20,7 +20,7 @@ This is to activate the hardware bind plug feature
 
 ## Hardware
 
-The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is built. The hardware bind plug is expected between the defined bind pin and ground. 
+The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienFlight firmware is built. The hardware bind plug is expected between the defined bind pin and ground. 
 
 ## Function
 
@@ -34,12 +34,12 @@ Please refer to the satellite receiver documentation for more details of the spe
 
 ## Table with spektrum_sat_bind parameter value
 
-| Value | Receiver mode     | Notes              |
-| ----- | ------------------| -------------------|
-| 3     | DSM2 1024bit/22ms |                    |
-| 5     | DSM2 2048bit/11ms | default AlienWii32 |
-| 7     | DSMX 1024bit/22ms |                    |
-| 9     | DSMX 2048bit/11ms |                    |
+| Value | Receiver mode     | Notes               |
+| ----- | ------------------| --------------------|
+| 3     | DSM2 1024bit/22ms |                     |
+| 5     | DSM2 2048bit/11ms | default AlienFlight |
+| 7     | DSMX 1024bit/22ms |                     |
+| 9     | DSMX 2048bit/11ms |                     |
 
 More detailed information regarding the satellite binding process can be found here:
 http://wiki.openpilot.org/display/Doc/Spektrum+Satellite
