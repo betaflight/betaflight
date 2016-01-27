@@ -181,6 +181,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->gyro_soft_lpf = 0;   // no filtering by default
     pidProfile->yaw_pterm_cut_hz = 0;
     pidProfile->dterm_cut_hz = 0;
+    pidProfile->deltaMethod = 1;
 
     pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.4f;
@@ -444,7 +445,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = 1;
+    masterConfig.rxConfig.rcSmoothing = 0;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 

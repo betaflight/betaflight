@@ -105,7 +105,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float RateError, errorAngle, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
-    static float lastError[3];
+    static float lastErrorForDelta[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
     int axis;
@@ -188,9 +188,14 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         ITerm = errorGyroIf[axis];
 
-        //-----calculate D-term
-        delta = RateError - lastError[axis];
-        lastError[axis] = RateError;
+        //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
+        } else {                                         /* Delta from measurement */
+            delta = -(gyroRate - lastErrorForDelta[axis]);
+            lastErrorForDelta[axis] = gyroRate;
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
@@ -238,11 +243,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     UNUSED(rxConfig);
 
     int axis, prop = 0;
-    int32_t rc, error, errorAngle;
+    int32_t rc, error, errorAngle, delta, gyroError;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
-    static int16_t lastGyro[2] = { 0, 0 };
-    static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
-    int32_t delta;
+    static int16_t lastErrorForDelta[2];
+    static int32_t delta1[2], delta2[2];
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
@@ -253,7 +257,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         rc = rcCommand[axis] << 1;
 
-        error = rc - (gyroADC[axis] / 4);
+        gyroError = gyroADC[axis] / 4;
+
+        error = rc - gyroError;
         errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
 
         if (ABS(gyroADC[axis]) > (640 * 4)) {
@@ -287,15 +293,21 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             PTerm = PTermACC + ((PTerm - PTermACC) * prop >> 9);
         }
 
-        PTerm -= ((int32_t)(gyroADC[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
+        PTerm -= ((int32_t)gyroError * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
 
         // Yaw Pterm low pass
         if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
             PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
         }
 
-        delta = (gyroADC[axis] - lastGyro[axis]) / 4;   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastGyro[axis] = gyroADC[axis];
+        //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = error - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = error;
+        } else {                                       /* Delta from measurement */
+            delta = -(gyroError - lastErrorForDelta[axis]);
+            lastErrorForDelta[axis] = gyroError;
+        }
 
         // In case of soft gyro lpf combined with dterm_cut_hz we don't need the old 3 point averaging
         if (pidProfile->gyro_soft_lpf && pidProfile->dterm_cut_hz) {
@@ -313,7 +325,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
-        axisPID[axis] = PTerm + ITerm - DTerm;
+        axisPID[axis] = PTerm + ITerm + DTerm;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -324,7 +336,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = -DTerm;
+        axisPID_D[axis] = DTerm;
 #endif
     }
 
@@ -373,8 +385,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     int32_t delta, deltaSum;
     static int32_t delta1[3], delta2[3];
     int32_t PTerm, ITerm, DTerm;
-    static int32_t lastError[3] = { 0, 0, 0 };
-    int32_t AngleRateTmp, RateError;
+    static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
+    int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
@@ -433,7 +445,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = AngleRateTmp - (gyroADC[axis] / 4);
+        gyroRate = gyroADC[axis] / 4;
+        RateError = AngleRateTmp - gyroRate;
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -455,9 +468,14 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
         ITerm = errorGyroI[axis] >> 13;
 
-        //-----calculate D-term
-        delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastError[axis] = RateError;
+        //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
+        } else {                                         /* Delta from measurement */
+            delta = -(gyroRate - lastErrorForDelta[axis]);
+            lastErrorForDelta[axis] = gyroRate;
+        }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
