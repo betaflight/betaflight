@@ -606,11 +606,12 @@ static void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 #endif
 
-    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
-#ifdef ALIENWII32
+    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
+#ifdef ALIENFLIGHT
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-#ifdef ALIENWIIF3
+    featureClear(FEATURE_ONESHOT125);
+#ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
 #else
@@ -621,15 +622,13 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    currentProfile->pidProfile.pidController = 3;
-    currentProfile->pidProfile.P8[ROLL] = 36;
-    currentProfile->pidProfile.P8[PITCH] = 36;
+    currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
+    currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
-    currentControlRateProfile->rates[FD_YAW] = 100;
+    currentControlRateProfile->rates[FD_YAW] = 20;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R

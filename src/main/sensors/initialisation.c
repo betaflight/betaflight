@@ -55,6 +55,7 @@
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
+#include "drivers/compass_ak8963.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -68,7 +69,7 @@
 #include "sensors/sonar.h"
 #include "sensors/initialisation.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
@@ -166,6 +167,34 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_irqn = EXTI15_10_IRQn
     };
     return &MotolabF3MPU6050Config;
+#endif
+
+#ifdef ALIENFLIGHTF3
+    // MPU_INT output on V1 PA15
+    static const extiConfig_t alienWiiF3V1MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_15,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource15,
+            .exti_line = EXTI_Line15,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    // MPU_INT output on V2 PB13
+    static const extiConfig_t alienWiiF3V2MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
+            .gpioPort = GPIOB,
+            .gpioPin = Pin_13,
+            .exti_port_source = EXTI_PortSourceGPIOB,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_line = EXTI_Line13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    if (hardwareRevision == AFF3_REV_1) {
+        return &alienWiiF3V1MPUIntExtiConfig;
+    } else {
+        return &alienWiiF3V2MPUIntExtiConfig;
+    }
 #endif
 
     return NULL;
@@ -611,6 +640,18 @@ retry:
                 magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
+                break;
+            }
+#endif
+            ; // fallthrough
+
+        case MAG_AK8963:
+#ifdef USE_MAG_AK8963
+            if (ak8963Detect(&mag)) {
+#ifdef MAG_AK8963_ALIGN
+                magAlign = MAG_AK8963_ALIGN;
+#endif
+                magHardware = MAG_AK8963;
                 break;
             }
 #endif
