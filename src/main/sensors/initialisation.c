@@ -142,8 +142,8 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &cc3dMPUIntExtiConfig;
 #endif
 
-#if defined(COLIBRI_RACE)
-    static const extiConfig_t colibriRaceMPUIntExtiConfig = {
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+    static const extiConfig_t RaceMPUIntExtiConfig = {
          .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
          .gpioPort = GPIOA,
          .gpioPin = Pin_5,
@@ -152,7 +152,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
          .exti_line = EXTI_Line5,
          .exti_irqn = EXTI9_5_IRQn
     };
-    return &colibriRaceMPUIntExtiConfig;
+    return &RaceMPUIntExtiConfig;
 #endif
 
 #if defined(MOTOLAB) || defined(SPARKY)
