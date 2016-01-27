@@ -550,11 +550,11 @@ const clivalue_t valueTable[] = {
     { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDNAVR], .config.minmax = { 0,  200 } },
     { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDNAVR], .config.minmax = { 0,  200 } },
     { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDNAVR], .config.minmax = { 0,  200 } },
-    { "gps_wp_radius",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.gpsProfile.gps_wp_radius, .config.minmax = { 0,  2000 } },
-    { "nav_controls_heading",       VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.gpsProfile.nav_controls_heading, .config.lookup = { TABLE_OFF_ON } },
-    { "nav_speed_min",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.gpsProfile.nav_speed_min, .config.minmax = { 10,  2000 } },
-    { "nav_speed_max",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.gpsProfile.nav_speed_max, .config.minmax = { 10,  2000 } },
-    { "nav_slew_rate",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.gpsProfile.nav_slew_rate, .config.minmax = { 0,  100 } },
+    { "gps_wp_radius",              VAR_UINT16 | MASTER_VALUE, &masterConfig.gpsProfile.gps_wp_radius, .config.minmax = { 0,  2000 } },
+    { "nav_controls_heading",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gpsProfile.nav_controls_heading, .config.lookup = { TABLE_OFF_ON } },
+    { "nav_speed_min",              VAR_UINT16 | MASTER_VALUE, &masterConfig.gpsProfile.nav_speed_min, .config.minmax = { 10,  2000 } },
+    { "nav_speed_max",              VAR_UINT16 | MASTER_VALUE, &masterConfig.gpsProfile.nav_speed_max, .config.minmax = { 10,  2000 } },
+    { "nav_slew_rate",              VAR_UINT8  | MASTER_VALUE, &masterConfig.gpsProfile.nav_slew_rate, .config.minmax = { 0,  100 } },
 #endif
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 } },
@@ -606,13 +606,13 @@ const clivalue_t valueTable[] = {
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
 
-    { "alt_hold_deadband",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.rcControlsConfig.alt_hold_deadband, .config.minmax = { 1,  250 } },
-    { "alt_hold_fast_change",       VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.rcControlsConfig.alt_hold_fast_change, .config.lookup = { TABLE_OFF_ON } },
-    { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.rcControlsConfig.deadband, .config.minmax = { 0,  32 } },
-    { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 } },
+    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.alt_hold_deadband, .config.minmax = { 1,  250 } },
+    { "alt_hold_fast_change",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.rcControlsConfig.alt_hold_fast_change, .config.lookup = { TABLE_OFF_ON } },
+    { "deadband",                   VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.deadband, .config.minmax = { 0,  32 } },
+    { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 } },
 
-    { "throttle_correction_value",  VAR_UINT8  | PROFILE_VALUE, &masterConfig.throttle_correction_value, .config.minmax = { 0,  150 } },
-    { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, &masterConfig.throttle_correction_angle, .config.minmax = { 1,  900 } },
+    { "throttle_correction_value",  VAR_UINT8  | MASTER_VALUE, &masterConfig.throttle_correction_value, .config.minmax = { 0,  150 } },
+    { "throttle_correction_angle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.throttle_correction_angle, .config.minmax = { 1,  900 } },
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
 
@@ -646,26 +646,26 @@ const clivalue_t valueTable[] = {
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
 #ifdef USE_SERVOS
-    { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
+    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
 #endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.acc_hardware, .config.lookup = { TABLE_ACC_HARDWARE } },
-    { "acc_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.acc_lpf_hz, .config.minmax = { 0,  200 } },
-    { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, &masterConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
-    { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.accDeadband.z, .config.minmax = { 0,  100 } },
-    { "accz_lpf_cutoff",            VAR_FLOAT  | PROFILE_VALUE, &masterConfig.accz_lpf_cutoff, .config.minmax = { 1,  20 } },
-    { "acc_unarmedcal",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
-    { "acc_trim_pitch",             VAR_INT16  | PROFILE_VALUE, &masterConfig.accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
-    { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, &masterConfig.accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
+    { "acc_lpf_hz",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.acc_lpf_hz, .config.minmax = { 0,  200 } },
+    { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
+    { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.z, .config.minmax = { 0,  100 } },
+    { "accz_lpf_cutoff",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.accz_lpf_cutoff, .config.minmax = { 1,  20 } },
+    { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
+    { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
+    { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
 
-    { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.barometerConfig.baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } },
-    { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.barometerConfig.baro_noise_lpf, .config.minmax = { 0 , 1 } },
-    { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.barometerConfig.baro_cf_vel, .config.minmax = { 0 , 1 } },
-    { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.barometerConfig.baro_cf_alt, .config.minmax = { 0 , 1 } },
+    { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, &masterConfig.barometerConfig.baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } },
+    { "baro_noise_lpf",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_noise_lpf, .config.minmax = { 0 , 1 } },
+    { "baro_cf_vel",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_cf_vel, .config.minmax = { 0 , 1 } },
+    { "baro_cf_alt",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_cf_alt, .config.minmax = { 0 , 1 } },
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.baro_hardware, .config.lookup = { TABLE_BARO_HARDWARE } },
 
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
-    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
+    { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "delta_from_gyro",            VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaFromGyro, .config.lookup = { TABLE_OFF_ON } },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
