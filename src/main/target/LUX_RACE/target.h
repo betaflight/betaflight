@@ -175,12 +175,12 @@
 #define USE_CLI
 
 #define SPEKTRUM_BIND
-// USART2, PA15
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_15
+// USART1
+#define BIND_PORT  GPIOC
+#define BIND_PIN   Pin_5
 
 #define USE_SERIAL_1WIRE
-// Untested
+// Untested and will probably not work with RX_Serial on USART1
 #define S1W_TX_GPIO         GPIOC
 #define S1W_TX_PIN          GPIO_Pin_4
 #define S1W_RX_GPIO         GPIOC
