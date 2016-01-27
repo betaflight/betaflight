@@ -63,9 +63,7 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
-    uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-    uint8_t yaw_pterm_cut_hz;               // Used for filering Pterm noise on noisy frames
-    uint8_t gyro_soft_lpf;
+    float dterm_cut_hz;                     // dterm filtering
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

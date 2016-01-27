@@ -53,6 +53,7 @@ typedef struct master_t {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    float soft_gyro_lpf_hz;                 // Software based gyro filter in hz
 
     gyroConfig_t gyroConfig;
 

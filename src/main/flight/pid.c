@@ -31,6 +31,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -49,7 +50,6 @@
 #include "config/runtime_config.h"
 #include "config/config_unittest.h"
 
-extern uint16_t cycleTime;
 extern uint8_t motorCount;
 extern float dT;
 
@@ -97,7 +97,16 @@ void pidResetErrorGyro(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static filterStatePt1_t yawPTermState, DTermState[3];
+static biquad_t deltaFilterState[3];
+
+void filterIsSetCheck(pidProfile_t *pidProfile) {
+	static bool deltaStateIsSet;
+    if (!deltaStateIsSet && pidProfile->dterm_cut_hz) {
+        int axis;
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_cut_hz, &deltaFilterState[axis], targetLooptime);
+        deltaStateIsSet = true;
+    }
+}
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -110,6 +119,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float delta, deltaSum;
     int axis;
     float horizonLevelStrength = 1;
+
+    filterIsSetCheck(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
@@ -176,11 +187,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
-        // Yaw Pterm low pass
-        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
-            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
-        }
-
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
 
@@ -196,23 +202,20 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        // In case of soft gyro lpf combined with dterm_cut_hz we don't need the old 3 point averaging
-        if (pidProfile->gyro_soft_lpf && pidProfile->dterm_cut_hz) {
-            deltaSum = delta;
-        } else {
-            // add moving average here to reduce noise
+        // When dterm filter disabled apply moving average to reduce noise
+        if (!pidProfile->dterm_cut_hz) {
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
-            deltaSum /= 3.0f;
+            delta = deltaSum / 3.0f;
         }
 
         // Dterm low pass
         if (pidProfile->dterm_cut_hz) {
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         }
 
-        DTerm = constrainf(deltaSum * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
+        DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
@@ -243,6 +246,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     static int16_t lastGyro[2] = { 0, 0 };
     static int32_t delta1[2] = { 0, 0 }, delta2[2] = { 0, 0 };
     int32_t delta;
+
+    filterIsSetCheck(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
@@ -289,26 +294,21 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         PTerm -= ((int32_t)(gyroADC[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
 
-        // Yaw Pterm low pass
-        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
-            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
-        }
-
         delta = (gyroADC[axis] - lastGyro[axis]) / 4;   // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
         lastGyro[axis] = gyroADC[axis];
 
-        // In case of soft gyro lpf combined with dterm_cut_hz we don't need the old 3 point averaging
-        if (pidProfile->gyro_soft_lpf && pidProfile->dterm_cut_hz) {
-            DTerm = delta * 3; // Scaling to match the old pid values
-        } else {
-            DTerm = delta1[axis] + delta2[axis] + delta;
+        // When dterm filter disabled apply moving average to reduce noise
+        if (!pidProfile->dterm_cut_hz) {
+            DTerm  = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
+        } else {
+            DTerm = delta;
         }
 
-        // Dterm low pass
+        // Dterm delta low pass
         if (pidProfile->dterm_cut_hz) {
-            DTerm = filterApplyPt1(DTerm, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            DTerm = lrintf(applyBiQuadFilter((float) DTerm, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered DTerm
         }
 
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
@@ -379,6 +379,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     int8_t horizonLevelStrength = 100;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
 
+    filterIsSetCheck(pidProfile);
+
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
@@ -438,17 +440,12 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
 
-        // Yaw Pterm low pass
-        if (axis == YAW && pidProfile->yaw_pterm_cut_hz) {
-            PTerm = filterApplyPt1(PTerm, &yawPTermState, pidProfile->yaw_pterm_cut_hz, dT);
-        }
-
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * pidProfile->I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * targetLooptime) >> 11) * pidProfile->I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -461,21 +458,20 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / (cycleTime >> 4))) >> 6;
+        delta = (delta * ((uint16_t) 0xFFFF / (targetLooptime >> 4))) >> 6;
 
-        // In case of soft gyro lpf combined with dterm_cut_hz we don't need the old 3 point averaging
-        if (pidProfile->gyro_soft_lpf && pidProfile->dterm_cut_hz) {
-            deltaSum = delta * 3;  // Scaling to approximately match the old D values
-        } else {
-            // add moving average here to reduce noise
+        // When dterm filter disabled apply moving average to reduce noise
+        if (!pidProfile->dterm_cut_hz) {
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
+        } else {
+           deltaSum = delta;
         }
 
         // Dterm delta low pass
         if (pidProfile->dterm_cut_hz) {
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz, dT);
+            deltaSum = lrintf(applyBiQuadFilter((float) deltaSum, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
         }
 
         DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;

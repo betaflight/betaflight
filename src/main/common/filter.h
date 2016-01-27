@@ -15,14 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define FILTER_TAPS 14
-
 typedef struct filterStatePt1_s {
 	float state;
 	float RC;
 	float constdT;
 } filterStatePt1_t;
 
+/* this holds the data required to update samples thru a filter */
+typedef struct biquad_s {
+    float b0, b1, b2, a1, a2;
+    float x1, x2, y1, y2;
+} biquad_t;
+
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint16_t targetLooptime);
-void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff[FILTER_TAPS]);
+float applyBiQuadFilter(float sample, biquad_t *state);
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate);
