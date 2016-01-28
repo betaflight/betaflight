@@ -48,7 +48,7 @@ For a list of features, changes and some discussion please [review the thread on
 
 ## Installation
 
-See: [Installation.md](Installation.md)
+See: [Installation.md](docs/Installation.md)
 
 ## Documentation
 
