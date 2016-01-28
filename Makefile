@@ -691,6 +691,18 @@ bin:    $(TARGET_BIN)
 binary: $(TARGET_BIN)
 hex:    $(TARGET_HEX)
 
+## rule to reinvoke make with TARGET= parameter
+# rules that should be handled in toplevel Makefile, not dependent on TARGET
+GLOBAL_GOALS	= all_targets cppcheck test
+
+.PHONY: $(VALID_TARGETS)
+$(VALID_TARGETS):
+	$(MAKE) TARGET=$@ $(filter-out $(VALID_TARGETS) $(GLOBAL_GOALS), $(MAKECMDGOALS))
+
+## rule to build all targets
+.PHONY: all_targets
+all_targets : $(VALID_TARGETS)
+
 ## clean       : clean up all temporary / machine-generated files
 clean:
 	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
