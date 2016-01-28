@@ -4,7 +4,7 @@ The current focus is geared towards flight controller hardware that use the STM3
 
 The core set of supported flyable boards are:
 
-* AlienWii32
+* AlienFlight
 * CC3D
 * CJMCU
 * Flip32+

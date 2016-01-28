@@ -44,6 +44,10 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
+#define SPI1_NSS_GPIO           GPIOA
+#define SPI1_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
+#define SPI1_NSS_PIN            GPIO_Pin_4
+#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_SCK_PIN            GPIO_Pin_3
