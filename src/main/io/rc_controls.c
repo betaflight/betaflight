@@ -651,8 +651,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     };
 }
 
-void changeControlRateProfile(uint8_t profileIndex);
-
+/* Is this needed ?  
 void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
@@ -660,7 +659,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
-                changeControlRateProfile(position);
+				changeProfile(position); // Is this safe to change profile "in flight" ? 
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
                 applied = true;
             }
@@ -671,7 +670,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
         beeperConfirmationBeeps(position + 1);
     }
 }
-
+*/
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
@@ -728,7 +727,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
 
-            applySelectAdjustment(adjustmentFunction, position);
+          //  applySelectAdjustment(adjustmentFunction, position);
         }
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
