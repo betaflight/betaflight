@@ -18,7 +18,6 @@
 #pragma once
 
 #define MAX_PROFILE_COUNT 2
-#define MAX_CONTROL_RATE_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 
 typedef enum {
@@ -68,7 +67,6 @@ uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);
-void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 

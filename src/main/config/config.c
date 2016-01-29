@@ -348,6 +348,7 @@ uint8_t getCurrentProfile(void)
 static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
+    currentControlRateProfile = &currentProfile->controlRateProfile;
 }
 
 uint8_t getCurrentControlRateProfile(void)
@@ -356,13 +357,7 @@ uint8_t getCurrentControlRateProfile(void)
 }
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.controlRateProfiles[profileIndex];
-}
-
-static void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
+    return &masterConfig.profile[profileIndex].controlRateProfile;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -378,7 +373,6 @@ static void resetConf(void)
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
-    setControlRateProfile(0);
 
     masterConfig.beeper_off.flags = BEEPER_OFF_FLAGS_MIN;
     masterConfig.version = EEPROM_CONF_VERSION;
@@ -486,7 +480,7 @@ static void resetConf(void)
 
     resetPidProfile(&currentProfile->pidProfile);
 
-    resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
+    resetControlRateConfig(&masterConfig.profile[0].controlRateProfile);
 
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
@@ -580,16 +574,16 @@ static void resetConf(void)
     currentProfile->pidProfile.I_f[YAW] = 0.9f;
     currentProfile->pidProfile.D_f[YAW] = 0.01f;
 
-    masterConfig.controlRateProfiles[0].rcRate8 = 100;
-    masterConfig.controlRateProfiles[0].rcExpo8 = 70;
-    masterConfig.controlRateProfiles[0].rcYawExpo8 = 70;
-    masterConfig.controlRateProfiles[0].thrMid8 = 50;
-    masterConfig.controlRateProfiles[0].thrExpo8 = 0;
-    masterConfig.controlRateProfiles[0].rates[FD_ROLL] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_PITCH] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_YAW] = 90;
-    masterConfig.controlRateProfiles[0].dynThrPID = 30;
-    masterConfig.controlRateProfiles[0].tpa_breakpoint = 1500;
+    masterConfig.profile[0].controlRateProfile.rcRate8 = 100;
+    masterConfig.profile[0].controlRateProfile.rcExpo8 = 70;
+    masterConfig.profile[0].controlRateProfile.rcYawExpo8 = 70;
+    masterConfig.profile[0].controlRateProfile.thrMid8 = 50;
+    masterConfig.profile[0].controlRateProfile.thrExpo8 = 0;
+    masterConfig.profile[0].controlRateProfile.rates[FD_ROLL] = 90;
+    masterConfig.profile[0].controlRateProfile.rates[FD_PITCH] = 90;
+    masterConfig.profile[0].controlRateProfile.rates[FD_YAW] = 90;
+    masterConfig.profile[0].controlRateProfile.dynThrPID = 30;
+    masterConfig.profile[0].controlRateProfile.tpa_breakpoint = 1500;
     masterConfig.rcControlsConfig.deadband = 10;
 
     masterConfig.escAndServoConfig.minthrottle = 1025;
@@ -682,14 +676,6 @@ static void resetConf(void)
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
     }
 
-    // copy first control rate config into remaining profile
-    for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        memcpy(&masterConfig.controlRateProfiles[i], currentControlRateProfile, sizeof(controlRateConfig_t));
-    }
-
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        masterConfig.profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
-    }
 }
 
 static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
@@ -926,11 +912,6 @@ void readEEPROM(void)
 
     setProfile(masterConfig.current_profile_index);
 
-    if (currentProfile->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        currentProfile->defaultRateProfileIndex = 0;
-
-    setControlRateProfile(currentProfile->defaultRateProfileIndex);
-
     validateAndFixConfig();
     activateConfig();
 
@@ -1027,15 +1008,6 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
-}
-
-void changeControlRateProfile(uint8_t profileIndex)
-{
-    if (profileIndex > MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
-    }
-    setControlRateProfile(profileIndex);
-    activateControlRateConfig();
 }
 
 void handleOneshotFeatureChangeOnRestart(void)

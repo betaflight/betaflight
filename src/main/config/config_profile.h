@@ -19,5 +19,5 @@
 
 typedef struct profile_s {
     pidProfile_t pidProfile;
-    uint8_t defaultRateProfileIndex;
+    controlRateConfig_t controlRateProfile;
 } profile_t;
