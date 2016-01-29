@@ -173,16 +173,24 @@ void init(void)
 #endif
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
+    systemInit();
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
 
-    systemInit();
-
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-    ledInit();
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_1) {
+        ledInit(false);
+    } else {
+        ledInit(true);
+    }
+#else
+    ledInit(false);
+#endif
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
@@ -324,6 +332,15 @@ void init(void)
 #ifdef USE_SPI
     spiInit(SPI1);
     spiInit(SPI2);
+#ifdef STM32F303xC
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_2) {
+        spiInit(SPI3);
+    }
+#else
+    spiInit(SPI3);
+#endif
+#endif
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

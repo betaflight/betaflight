@@ -32,8 +32,8 @@ clean_eustm32f103rc eustm32f103rc :       opts := TARGET=EUSTM32F103RC
 clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3
 clean_port103r port103r  :                opts := TARGET=PORT103R
 clean_sparky sparky :                     opts := TARGET=SPARKY
-clean_alienwiif1 alienwiif1 :             opts := TARGET=ALIENWIIF1
-clean_alienwiif3 alienwiif3  :            opts := TARGET=ALIENWIIF3
+clean_alienwiif1 alienwiif1 :             opts := TARGET=ALIENFLIGHTF1
+clean_alienwiif3 alienwiif3  :            opts := TARGET=ALIENFLIGHTF3
 clean_colibri_race colibri_race :         opts := TARGET=COLIBRI_RACE
 clean_lux_race lux_race :                 opts := TARGET=LUX_RACE
 clean_motolab motolab :                   opts := TARGET=MOTOLAB
