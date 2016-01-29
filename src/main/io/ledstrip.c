@@ -786,6 +786,7 @@ void applyLedThrustRingLayer(void)
 {
     uint8_t ledIndex;
     static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+    static uint8_t rotationSeqLedCount = 255;
     bool nextLedOn = false;
     hsvColor_t ringColor;
     const ledConfig_t *ledConfig;
@@ -801,7 +802,7 @@ void applyLedThrustRingLayer(void)
 
         bool applyColor = false;
         if (ARMING_FLAG(ARMED)) {
-            if ((ledRingIndex + rotationPhase) % ROTATION_SEQUENCE_LED_COUNT < ROTATION_SEQUENCE_LED_WIDTH) {
+            if ((ledRingIndex + rotationPhase) % rotationSeqLedCount < ROTATION_SEQUENCE_LED_WIDTH) {
                 applyColor = true;
             }
         } else {
@@ -822,9 +823,28 @@ void applyLedThrustRingLayer(void)
         ledRingIndex++;
     }
 
+    // if not done yet, update ring pattern according to total number of ring leds found
+    if (rotationSeqLedCount == 255) {
+
+        rotationSeqLedCount = ledRingIndex;
+
+        // try to split in segments/rings of exactly ROTATION_SEQUENCE_LED_COUNT leds
+        if ((ledRingIndex % ROTATION_SEQUENCE_LED_COUNT) == 0) {
+            rotationSeqLedCount = ROTATION_SEQUENCE_LED_COUNT;
+        } else {
+            // else split up in equal segments/rings of at most ROTATION_SEQUENCE_LED_COUNT leds
+            while ((rotationSeqLedCount > ROTATION_SEQUENCE_LED_COUNT) && ((rotationSeqLedCount % 2) == 0)) {
+                rotationSeqLedCount >>= 1;
+            }
+        }
+
+        // trigger start over
+        rotationPhase = 1;
+    }
+
     rotationPhase--;
     if (rotationPhase == 0) {
-        rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+        rotationPhase = rotationSeqLedCount;
     }
 }
 
