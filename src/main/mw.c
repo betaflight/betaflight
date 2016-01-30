@@ -113,8 +113,6 @@ extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
 static bool isRXDataNew;
-static filterStatePt1_t filteredCycleTimeState;
-uint16_t filteredCycleTime;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -538,14 +536,26 @@ void processRx(void)
 
 }
 
-void filterRc(bool isRXDataNew){
+void filterRc(bool isRXDataNew)
+{
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
+    static biquad_t filteredCycleTimeState;
+    static bool filterInitialised;
+    uint16_t filteredCycleTime;
     uint16_t rxRefreshRate;
 
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
+
+    // Calculate average cycle time (1Hz LPF on cycle time)
+    if (!filterInitialised) {
+        filterInitBiQuad(1, &filteredCycleTimeState, 0);
+        filterInitialised = true;
+    }
+
+    filteredCycleTime = filterApplyBiQuad((float) cycleTime, &filteredCycleTimeState);
 
     rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
@@ -575,9 +585,6 @@ void taskMainPidLoop(void)
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
-    // Calculate average cycle time and average jitter
-    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
-    
     imuUpdateAccelerometer();
     imuUpdateGyroAndAttitude();
 

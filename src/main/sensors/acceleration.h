@@ -44,4 +44,4 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(void);
 void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse);
 void setAccelerationGain(flightDynamicsTrims_t * accGainToUse);
-void setAccelerationFilter(int8_t * filterTableToUse);
+void setAccelerationFilter(int8_t initialAccLpfCutHz);

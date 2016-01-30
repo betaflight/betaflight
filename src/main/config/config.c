@@ -180,12 +180,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 5;     // NAV_VEL_Z_I * 100
     pidProfile->D8[PIDVEL] = 100;   // NAV_VEL_Z_D * 1000
 
-    pidProfile->acc_soft_lpf = 2;    // MEDIUM filtering by default
-    pidProfile->gyro_soft_lpf = 1;   // LOW filtering by default
+    pidProfile->acc_soft_lpf_hz = 15;
+    pidProfile->gyro_soft_lpf_hz = 60;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_pterm_cut_hz = 0;
-    pidProfile->dterm_cut_hz = 30;
+    pidProfile->dterm_lpf_hz = 30;
 
     pidProfile->P_f[ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
     pidProfile->I_f[ROLL] = 0.3f;
@@ -764,7 +763,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf, masterConfig.looptime));
+    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -777,7 +776,7 @@ void activateConfig(void)
 
     setAccelerationZero(&masterConfig.accZero);
     setAccelerationGain(&masterConfig.accGain);
-    setAccelerationFilter(filterGetFIRCoefficientsTable(currentProfile->pidProfile.acc_soft_lpf, masterConfig.looptime));
+    setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
