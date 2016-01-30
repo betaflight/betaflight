@@ -211,6 +211,11 @@ tools on the card either.
 You can delete the FREESPAC.E file if you want to free up space on the card to fit non-Blackbox files (Cleanflight will 
 recreate the FREESPAC.E file next time it starts, using whatever free space was left over).
 
+The maximum size of the FREESPAC.E file is currently 4GB. Once 4GB worth of logs have been recorded, the FREESPAC.E
+file will be nearly empty and no more logs will be able to be recorded. At this point you should either delete the 
+FREESPAC.E file (and any logs left on the card to free up space), or just reformat the card. A new FREESPAC.E file 
+will be created by Cleanflight on its next boot.
+
 #### Enable recording to SD card
 On the Configurator's CLI tab, you must enter `set blackbox_device=SDCARD` to switch to logging to an onboard SD card,
 then save.
