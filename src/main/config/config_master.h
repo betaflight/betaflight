@@ -86,7 +86,9 @@ typedef struct master_t {
 
     serialConfig_t serialConfig;
 
+#ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
+#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];

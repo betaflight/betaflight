@@ -51,6 +51,7 @@
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
 
+#ifdef BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -379,3 +380,17 @@ int beeperTableEntryCount(void)
 {
     return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
+}
+#else
+void beeper(beeperMode_e mode)
+{
+    UNUSED(mode);
+}
+void beeperSilence(void)
+{
+}
+void beeperConfirmationBeeps(uint8_t beepCount)
+{
+    UNUSED(beepCount);
+}
+#endif
