@@ -20,10 +20,13 @@
 #include <limits.h>
 
 extern "C" {
+    #include "platform.h"
+
     #include "build_config.h"
 
     #include "common/color.h"
 
+    #include "drivers/dma.h"
     #include "drivers/light_ws2811strip.h"
 }
 
@@ -98,4 +101,11 @@ rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c) {
 
 void ws2811LedStripHardwareInit(void) {}
 void ws2811LedStripDMAEnable(void) {}
+
+void dmaSetHandler(dmaHandlerIdentifier_e, dmaCallbackHandlerFuncPtr ) {}
+
+uint8_t DMA_GetFlagStatus(void *) { return 0; }
+void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState ) {}
+void DMA_ClearFlag(uint32_t) {}
+
 }

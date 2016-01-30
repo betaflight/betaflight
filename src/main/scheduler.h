@@ -71,6 +71,9 @@ typedef enum {
 #ifdef LED_STRIP
     TASK_LEDSTRIP,
 #endif
+#ifdef TRANSPONDER
+    TASK_TRANSPONDER,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

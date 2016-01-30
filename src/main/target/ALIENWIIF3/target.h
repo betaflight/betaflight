@@ -56,6 +56,8 @@
 #define LED0
 #define LED1
 
+#define USB_IO
+
 #define USE_VCP
 #define USE_USART1 // Not connected - TX (PB6) RX PB7 (AF7)
 #define USE_USART2 // Receiver - RX (PA3)

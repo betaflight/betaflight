@@ -37,6 +37,7 @@ extern "C" {
     #include "drivers/gpio.h"
     #include "drivers/timer.h"
     #include "drivers/pwm_rx.h"
+    #include "drivers/buf_writer.h"
 
     #include "rx/rx.h"
 
@@ -79,6 +80,7 @@ extern "C" {
     void setCurrentPort(mspPort_t *port);
     void mspProcessReceivedCommand();
     extern mspPort_t *currentPort;
+    extern bufWriter_t *writer;
     extern mspPort_t mspPorts[];
     profile_t *currentProfile;
 }
@@ -109,11 +111,30 @@ static mspBuffer_t serialBuffer;
 static int serialWritePos = 0;
 static int serialReadPos = 0;
 
+uint8_t buf[sizeof(bufWriter_t) + SERIAL_BUFFER_SIZE];
+
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     UNUSED(instance);
     serialBuffer.buf[serialWritePos] = ch;
     ++serialWritePos;
+}
+
+void serialWriteBufShim(void *instance, uint8_t *data, int count)
+{
+    for (uint8_t *p = data; count > 0; count--, p++) {
+        serialWrite((serialPort_t *)instance, *p);
+    }
+}
+
+void serialBeginWrite(serialPort_t *instance)
+{
+    UNUSED(instance);
+}
+
+void serialEndWrite(serialPort_t *instance)
+{
+    UNUSED(instance);
 }
 
 uint8_t serialRxBytesWaiting(serialPort_t *instance)
@@ -145,17 +166,24 @@ bool isSerialTransmitBufferEmpty(serialPort_t *instance)
     return true;
 }
 
+class SerialMspUnitTest : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        memset(serialBuffer.buf, 0, sizeof(serialBuffer));
+        setCurrentPort(&mspPorts[0]);
+        writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, &mspPorts[0]);
+    }
+};
 
-TEST(SerialMspUnittest, TestMspProcessReceivedCommand)
+
+TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
 {
-    memset(serialBuffer.buf, 0, sizeof(serialBuffer));
-    setCurrentPort(&mspPorts[0]);
-
     // check the MSP_API_VERSION is written out correctly
     serialWritePos = 0;
     serialReadPos = 0;
     currentPort->cmdMSP = MSP_API_VERSION;
     mspProcessReceivedCommand();
+
     EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
     EXPECT_EQ('M', serialBuffer.mspResponse.header.m);
     EXPECT_EQ('>', serialBuffer.mspResponse.header.direction);
@@ -173,6 +201,7 @@ TEST(SerialMspUnittest, TestMspProcessReceivedCommand)
     serialReadPos = 0;
     currentPort->cmdMSP = MSP_FC_VARIANT;
     mspProcessReceivedCommand();
+
     EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
     EXPECT_EQ('M', serialBuffer.mspResponse.header.m);
     EXPECT_EQ('>', serialBuffer.mspResponse.header.direction);
@@ -220,11 +249,8 @@ TEST(SerialMspUnittest, TestMspProcessReceivedCommand)
     EXPECT_EQ(checksum, serialBuffer.mspResponse.payload[1]);
 }
 
-TEST(SerialMspUnittest, Test_PID_CONTROLLER)
+TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
 {
-    memset(serialBuffer.buf, 0, sizeof(serialBuffer));
-    setCurrentPort(&mspPorts[0]);
-
     // Use the MSP to write out the PID values
     currentProfile = &profile;
     currentProfile->pidProfile.pidController = PID_CONTROLLER_MWREWRITE;
@@ -256,11 +282,8 @@ TEST(SerialMspUnittest, Test_PID_CONTROLLER)
     EXPECT_EQ(PID_CONTROLLER_MWREWRITE, currentProfile->pidProfile.pidController);
 }
 
-TEST(SerialMspUnittest, Test_PIDValuesInt)
+TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
 {
-    memset(serialBuffer.buf, 0, sizeof(serialBuffer));
-    setCurrentPort(&mspPorts[0]);
-
     // check the buffer is big enough for the data to read in
     EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, MSP_PORT_INBUF_SIZE); // +1 for checksum
     // set up some test data
@@ -384,11 +407,8 @@ TEST(SerialMspUnittest, Test_PIDValuesInt)
     EXPECT_EQ(D8_PIDVEL, currentProfile->pidProfile.D8[PIDVEL]);
 }
 
-TEST(SerialMspUnittest, Test_PIDValuesFloat)
+TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
 {
-    memset(serialBuffer.buf, 0, sizeof(serialBuffer));
-    setCurrentPort(&mspPorts[0]);
-
     // check the buffer is big enough for the data to read in
     EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, MSP_PORT_INBUF_SIZE); // +1 for checksum
 
@@ -555,5 +575,7 @@ void systemReset(void) {}
 void systemResetToBootloader(void) {}
 // from scheduler.c
 uint16_t averageSystemLoadPercent = 0;
+// from transponder_ir.c
+void transponderUpdateData(uint8_t*) {}
 }
 

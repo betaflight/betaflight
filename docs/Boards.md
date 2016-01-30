@@ -6,6 +6,7 @@ If you want a fully featured version of Cleanflight then the recommendation for 
 
 The core set of recommended boards are:
 
+* Seriously Pro SPRacingF3Mini
 * Seriously Pro SPRacingF3
 * TBS Colibri Race
 * AlienWiiF3

@@ -70,6 +70,8 @@
 #define BEEPER
 #define DISPLAY
 
+#define USB_IO
+
 #define USE_VCP
 #define USE_USART1
 #define USE_USART3
@@ -107,10 +109,12 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
-#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
+#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
+#define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

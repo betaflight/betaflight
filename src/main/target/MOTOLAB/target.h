@@ -58,6 +58,8 @@
 
 #define LED0
 
+#define USB_IO
+
 #define USE_VCP
 #define USE_USART1
 #define USE_USART2
@@ -141,7 +143,6 @@
 #if 1
 #define LED_STRIP_TIMER TIM16
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOB
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -151,6 +152,10 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+
 #endif
 
 #if 0
@@ -158,7 +163,6 @@
 // FIXME DMA IRQ Transfer Complete is never called because the  TIM17_DMA_RMP needs to be set in SYSCFG_CFGR1
 #define LED_STRIP_TIMER TIM17
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL7
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -168,6 +172,9 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
 #define WS2811_DMA_CHANNEL              DMA1_Channel7
 #define WS2811_IRQ                      DMA1_Channel7_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC7
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH7_HANDLER
+
 #endif
 
 

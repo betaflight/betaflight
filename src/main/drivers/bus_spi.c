@@ -26,12 +26,6 @@
 
 #include "bus_spi.h"
 
-static volatile uint16_t spi1ErrorCount = 0;
-static volatile uint16_t spi2ErrorCount = 0;
-#ifdef STM32F303xC
-static volatile uint16_t spi3ErrorCount = 0;
-#endif
-
 #ifdef USE_SPI_DEVICE_1
 
 #ifndef SPI1_GPIO
@@ -75,12 +69,33 @@ void initSpi1(void)
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
     // Init pins
-    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+#ifdef USE_SDCARD_SPI1
+    // Configure pins and pullups for SD-card use
+
+    // No pull-up needed since we drive this pin as an output
+    GPIO_InitStructure.GPIO_Pin = SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+
+    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
+    GPIO_InitStructure.GPIO_Pin = SPI1_MISO_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+
+    // In clock-low mode, STM32 manual says we should enable a pulldown to match
+    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+#else
+    // General-purpose pin config
+    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+#endif
 
 #ifdef SPI1_NSS_PIN
     GPIO_InitStructure.GPIO_Pin = SPI1_NSS_PIN;
@@ -122,9 +137,15 @@ void initSpi1(void)
     spi.SPI_NSS = SPI_NSS_Soft;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    
+#ifdef USE_SDCARD_SPI1
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
     spi.SPI_CPOL = SPI_CPOL_High;
     spi.SPI_CPHA = SPI_CPHA_2Edge;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
@@ -179,12 +200,33 @@ void initSpi2(void)
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
 
-    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+#ifdef USE_SDCARD_SPI2
+    // Configure pins and pullups for SD-card use
+
+    // No pull-up needed since we drive this pin as an output
+    GPIO_InitStructure.GPIO_Pin = SPI2_MOSI_PIN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+
+    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
+    GPIO_InitStructure.GPIO_Pin = SPI2_MISO_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+
+    // In clock-low mode, STM32 manual says we should enable a pulldown to match
+    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+#else
+    // General-purpose pin config
+    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+#endif
 
 #ifdef SPI2_NSS_PIN
     GPIO_InitStructure.GPIO_Pin = SPI2_NSS_PIN;
@@ -225,12 +267,18 @@ void initSpi2(void)
     spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spi.SPI_Mode = SPI_Mode_Master;
     spi.SPI_DataSize = SPI_DataSize_8b;
-    spi.SPI_CPOL = SPI_CPOL_High;
-    spi.SPI_CPHA = SPI_CPHA_2Edge;
     spi.SPI_NSS = SPI_NSS_Soft;
     spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+
+#ifdef USE_SDCARD_SPI2
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
+    spi.SPI_CPOL = SPI_CPOL_High;
+    spi.SPI_CPHA = SPI_CPHA_2Edge;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
@@ -267,30 +315,10 @@ bool spiInit(SPI_TypeDef *instance)
     return false;
 }
 
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        spi1ErrorCount++;
-    } else if (instance == SPI2) {
-        spi2ErrorCount++;
-    }
-#ifdef STM32F303xC
-    else {
-        spi3ErrorCount++;
-        return spi3ErrorCount;
-    }
-#endif
-    return -1;
-}
-
-// return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 {
-    uint16_t spiTimeout = 1000;
-
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
+    }
 
 #ifdef STM32F303xC
     SPI_SendData8(instance, data);
@@ -298,10 +326,8 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #ifdef STM32F10X
     SPI_I2S_SendData(instance, data);
 #endif
-    spiTimeout = 1000;
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET){
+    }
 
 #ifdef STM32F303xC
     return ((uint8_t)SPI_ReceiveData8(instance));
@@ -311,17 +337,27 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 #endif
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+/**
+ * Return true if the bus is currently in the middle of a transmission.
+ */
+bool spiIsBusBusy(SPI_TypeDef *instance)
 {
-    uint16_t spiTimeout = 1000;
+#ifdef STM32F303xC
+    return SPI_GetTransmissionFIFOStatus(instance) != SPI_TransmissionFIFOStatus_Empty || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
+#endif
+#ifdef STM32F10X
+    return SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
+#endif
 
+}
+
+void spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+{
     uint8_t b;
     instance->DR;
     while (len--) {
         b = in ? *(in++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
-            if ((spiTimeout--) == 0)
-                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         SPI_SendData8(instance, b);
@@ -331,8 +367,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         SPI_I2S_SendData(instance, b);
 #endif
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
-            if ((spiTimeout--) == 0)
-                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         b = SPI_ReceiveData8(instance);
@@ -344,8 +378,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         if (out)
             *(out++) = b;
     }
-
-    return true;
 }
 
 
@@ -405,23 +437,3 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 
     SPI_Cmd(instance, ENABLE);
 }
-
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        return spi1ErrorCount;
-    } else if (instance == SPI2) {
-        return spi2ErrorCount;
-    }
-    return 0;
-}
-
-void spiResetErrorCounter(SPI_TypeDef *instance)
-{
-    if (instance == SPI1) {
-        spi1ErrorCount = 0;
-    } else if (instance == SPI2) {
-        spi2ErrorCount = 0;
-    }
-}
-

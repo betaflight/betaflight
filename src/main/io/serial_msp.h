@@ -45,7 +45,7 @@
  * that the newer API version may cause problems before using API commands that change FC state.
  *
  * It is for this reason that each MSP command should be specific as possible, such that changes
- * to commands break as little functionality as possible.
+ * to commands break as little client functionality as possible.
  *
  * API client authors MAY use a compatibility matrix/table when determining if they can support
  * a given command from a given flight controller at a given api version level.
@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   15 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   16 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -158,6 +158,14 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
 #define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
+
+#define MSP_SDCARD_SUMMARY              79 //out message         Get the state of the SD card
+
+#define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
+#define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
+
+#define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
+#define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
 
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
@@ -275,7 +283,5 @@ typedef struct mspPort_s {
 
 void mspInit(serialConfig_t *serialConfig);
 void mspProcess(void);
-void sendMspTelemetry(void);
-void mspSetTelemetryPort(serialPort_t *mspTelemetryPort);
 void mspAllocateSerialPorts(serialConfig_t *serialConfig);
 void mspReleasePortIfAllocated(serialPort_t *serialPort);
