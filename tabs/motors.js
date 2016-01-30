@@ -202,17 +202,20 @@ TABS.motors.initialize = function (callback) {
         var raw_data_text_ements = {
             x: [],
             y: [],
-            z: []
+            z: [],
+            rms: []
         };
 
-        $('.plot_control .x, .plot_control .y, .plot_control .z').each(function () {
+        $('.plot_control .x, .plot_control .y, .plot_control .z, .plot_control .rms').each(function () {
             var el = $(this);
             if (el.hasClass('x')) {
                 raw_data_text_ements.x.push(el);
             } else if (el.hasClass('y')) {
                 raw_data_text_ements.y.push(el);
-            } else {
+            } else if (el.hasClass('z')) {
                 raw_data_text_ements.z.push(el);
+            } else if (el.hasClass('rms')) {
+                raw_data_text_ements.rms.push(el);
             }
         });
 
@@ -265,9 +268,19 @@ TABS.motors.initialize = function (callback) {
                 samples_accel_i = addSampleToData(accel_data, samples_accel_i, accel_with_offset);
                 drawGraph(accelHelpers, accel_data, samples_accel_i);
 
+                // Compute RMS of acceleration in displayed period of time
+                // This is particularly useful for motor balancing as it 
+                // eliminates the need for external tools
+                var sum = 0.0;
+                for (var j = 0; j < accel_data.length; j++)
+                    for (var k = 0; k < accel_data[j].length; k++)
+                       sum += accel_data[j][k][1]*accel_data[j][k][1];
+                var rms = Math.sqrt(sum/(accel_data[0].length+accel_data[1].length+accel_data[2].length));
+
                 raw_data_text_ements.x[0].text(accel_with_offset[0].toFixed(2) + ' (' + accel_max_read[0].toFixed(2) + ')');
                 raw_data_text_ements.y[0].text(accel_with_offset[1].toFixed(2) + ' (' + accel_max_read[1].toFixed(2) + ')');
                 raw_data_text_ements.z[0].text(accel_with_offset[2].toFixed(2) + ' (' + accel_max_read[2].toFixed(2) + ')');
+                raw_data_text_ements.rms[0].text(rms.toFixed(4));
 
                 for (var i = 0; i < 3; i++) {
                     if (Math.abs(accel_with_offset[i]) > Math.abs(accel_max_read[i])) accel_max_read[i] = accel_with_offset[i];
