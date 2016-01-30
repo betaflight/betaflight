@@ -49,6 +49,10 @@ var BOARD_DEFINITIONS = [
         identifier: "SRF3",
         vcp: false
     }, {
+        name: "SP Racing F3 Mini",
+        identifier: "SRFM",
+        vcp: true
+    }, {
         name: "MotoLab",
         identifier: "MOTO",
         vcp: true

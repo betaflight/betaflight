@@ -35,6 +35,11 @@ var MSP_codes = {
     MSP_SET_FAILSAFE_CONFIG:    76,
     MSP_RXFAIL_CONFIG:          77,
     MSP_SET_RXFAIL_CONFIG:      78,
+    MSP_SDCARD_SUMMARY:         79,
+    MSP_BLACKBOX_CONFIG:        80,
+    MSP_SET_BLACKBOX_CONFIG:    81,
+    MSP_TRANSPONDER_CONFIG:     82,
+    MSP_SET_TRANSPONDER_CONFIG: 83,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -888,13 +893,17 @@ var MSP = {
                 break;
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
                 if (data.byteLength >= 13) {
-                    DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                    var
+                        flags = data.getUint8(0);
+                    DATAFLASH.ready = (flags & 1) != 0;
+                    DATAFLASH.supported = (flags & 2) != 0 || DATAFLASH.ready;
                     DATAFLASH.sectors = data.getUint32(1, 1);
                     DATAFLASH.totalSize = data.getUint32(5, 1);
                     DATAFLASH.usedSize = data.getUint32(9, 1);
                 } else {
                     // Firmware version too old to support MSP_DATAFLASH_SUMMARY
                     DATAFLASH.ready = false;
+                    DATAFLASH.supported = false;
                     DATAFLASH.sectors = 0;
                     DATAFLASH.totalSize = 0;
                     DATAFLASH.usedSize = 0;
@@ -906,6 +915,36 @@ var MSP = {
                 break;
             case MSP_codes.MSP_DATAFLASH_ERASE:
                 console.log("Data flash erase begun...");
+                break;
+            case MSP_codes.MSP_SDCARD_SUMMARY:
+                var flags = data.getUint8(0); 
+                
+                SDCARD.supported = (flags & 0x01) != 0;
+                SDCARD.state = data.getUint8(1);
+                SDCARD.filesystemLastError = data.getUint8(2);
+                SDCARD.freeSizeKB = data.getUint32(3, 1);
+                SDCARD.totalSizeKB = data.getUint32(7, 1);
+                break;
+            case MSP_codes.MSP_BLACKBOX_CONFIG:
+                BLACKBOX.supported = (data.getUint8(0) & 1) != 0;
+                BLACKBOX.blackboxDevice = data.getUint8(1);
+                BLACKBOX.blackboxRateNum = data.getUint8(2);
+                BLACKBOX.blackboxRateDenom = data.getUint8(3);
+                break;
+            case MSP_codes.MSP_SET_BLACKBOX_CONFIG:
+                console.log("Blackbox config saved");
+                break;
+            case MSP_codes.MSP_TRANSPONDER_CONFIG:
+                var offset = 0;
+                TRANSPONDER.supported = (data.getUint8(offset++) & 1) != 0;
+                TRANSPONDER.data = [];
+                var bytesRemaining = data.byteLength - offset; 
+                for (var i = 0; i < bytesRemaining; i++) {
+                    TRANSPONDER.data.push(data.getUint8(offset++));
+                }
+                break;
+            case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+                console.log("Transponder config saved");
                 break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
@@ -1217,6 +1256,12 @@ MSP.crunch = function (code) {
             }
             break;
 
+        case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+            for (var i = 0; i < TRANSPONDER.data.length; i++) {
+                buffer.push(TRANSPONDER.data[i]);
+            }
+            break;
+
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
                 var out = SERVO_CONFIG[i].indexOfChannelToForward;
@@ -1313,6 +1358,19 @@ MSP.setRawRx = function(channels) {
     }
     
     MSP.send_message(MSP_codes.MSP_SET_RAW_RC, buffer, false);
+}
+
+MSP.sendBlackboxConfiguration = function(onDataCallback) {
+    var 
+        message = [
+            BLACKBOX.blackboxDevice & 0xFF, 
+            BLACKBOX.blackboxRateNum & 0xFF, 
+            BLACKBOX.blackboxRateDenom & 0xFF
+        ];
+    
+    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, message, false, function(response) {
+        onDataCallback();
+    });
 }
 
 /**
@@ -1608,3 +1666,11 @@ MSP.sendRxFailConfig = function(onCompleteCallback) {
         MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, buffer, false, nextFunction);
     }
 };
+
+MSP.SDCARD_STATE_NOT_PRESENT = 0;
+MSP.SDCARD_STATE_FATAL       = 1;
+MSP.SDCARD_STATE_CARD_INIT   = 2;
+MSP.SDCARD_STATE_FS_INIT     = 3;
+MSP.SDCARD_STATE_READY       = 4;
+
+

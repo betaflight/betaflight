@@ -1,0 +1,75 @@
+.tab-transponder .spacer_box {
+    padding-bottom: 10px;
+    float: left;
+    width: calc(100% - 20px);
+}
+
+.tab-transponder .text input {
+    width: 100px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.tab-transponder .text .disabled {
+    width: 43px;
+    padding: 0px 5px;
+    background-color: #ececec;
+}
+
+.tab-transponder .text span {
+    margin-left: 0px;
+}
+
+.tab-transponder input {
+    float: left;
+}
+
+.tab-transponder span {
+    margin: 0px;
+}
+
+.tab-transponder .text
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-transponder .text:last-child {
+    border-bottom: none;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.tab-transponder .textspacer {
+    float: left;
+    width: 115px;
+    height: 21px;
+}
+
+.tab-transponder .gui_box span {
+    font-style: normal;
+    font-family: 'open_sansregular', Arial;
+    line-height: 19px;
+    color: #4F4F4F;
+    font-size: 11px;
+}
+
+.require-transponder-supported,
+.tab-transponder.transponder-supported .require-transponder-unsupported {
+    display: none;
+}
+
+.tab-transponder.transponder-supported .require-transponder-supported {
+    display: block;
+}

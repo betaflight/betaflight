@@ -1,0 +1,298 @@
+.tab-onboard_logging .info {
+    margin: 0 0 10px 0;
+    position: relative;
+}
+
+.tab-onboard_logging .info .progressLabel {
+    position: absolute;
+    width: 100%;
+    height: 26px;
+    top: 0;
+    left: 0;
+    text-align: center;
+    line-height: 24px;
+    color: white;
+    font-weight: bold;
+    /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
+}
+
+.tab-onboard_logging .properties {
+    margin-top: 10px;
+}
+
+.tab-onboard_logging .dataflash-info {
+    overflow: hidden;
+}
+
+.tab-onboard_logging .dataflash-info dt {
+    float: left;
+    width: 12em;
+    height: 20px;
+    line-height: 20px;
+    font-weight: bold;
+}
+
+.tab-onboard_logging .dataflash-info dd {
+    display: block;
+    height: 20px;
+    line-height: 20px;
+}
+
+.tab-onboard_logging .speed {
+    margin-top: 5px;
+    width: 80px;
+    border: 1px solid silver;
+}
+
+.tab-onboard_logging .info {
+    margin-top: 10px;
+}
+
+.tab-onboard_logging .info dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
+    font-weight: bold;
+}
+
+.tab-onboard_logging .info dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.tab-onboard_logging .buttons {
+    width: calc(100% - 20px);
+    position: absolute;
+    bottom: 10px;
+}
+
+.tab-onboard_logging .dataflash-progress {
+    display: none;
+}
+
+.tab-onboard_logging .dataflash-contents,
+.tab-onboard_logging .sdcard-contents {
+    margin-top: 15px;
+    margin-bottom:26px;
+    border: 1px solid silver;
+    background-color: #eee;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    border-radius: 6px;
+}
+
+.tab-onboard_logging .dataflash-contents li,
+.tab-onboard_logging .sdcard-contents li {
+    height: 26px;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.20);
+    border-radius: 4px;
+}
+
+.tab-onboard_logging .dataflash-contents li div,
+.tab-onboard_logging .sdcard-contents li div {
+    position: absolute;
+    top: 26px;
+    margin-top: 4px;
+    text-align: center;
+    left: 0;
+    right: 0;
+    white-space: nowrap;
+}
+
+.tab-onboard_logging .dataflash-used,
+.tab-onboard_logging .sdcard-other {
+    background-color: #59AA29;
+    border-radius: 4px;
+}
+
+.tab-onboard_logging progress::-webkit-progress-bar {
+    height: 24px;
+    background-color: #eee;
+}
+
+.tab-onboard_logging progress::-webkit-progress-value {
+    background-color: #bcf;
+}
+
+.tab-onboard_logging dialog {
+    width: 40em;
+    border-radius: 5px;
+}
+
+.tab-onboard_logging dialog .buttons {
+    position: static;
+    margin-top: 2em;
+}
+
+.tab-onboard_logging dialog h3 {
+    margin-bottom: 0.5em;
+}
+
+.dataflash-confirm-erase .dataflash-erase-progress {
+    height: 125px;
+    display: none;
+    border-radius: 5px;
+}
+
+.dataflash-confirm-erase.erasing .dataflash-erase-progress {
+    display: block;
+}
+
+.dataflash-confirm-erase.erasing h3, .dataflash-confirm-erase.erasing .erase-flash-confirm, .dataflash-confirm-erase.erasing .dataflash-confirm-erase-note
+    {
+    display: none;
+}
+
+.tab-onboard_logging progress {
+    display: block;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.dataflash-saving .dataflash-saving-after {
+    display: none;
+}
+
+.dataflash-saving.done .dataflash-saving-before {
+    display: none;
+}
+
+.dataflash-saving.done .dataflash-saving-after {
+    display: block;
+}
+
+.require-dataflash-present,
+.require-dataflash-supported,
+.require-sdcard-ready,
+.require-sdcard-supported,
+.require-blackbox-supported,
+.require-blackbox-maybe-supported,
+.require-blackbox-unsupported,
+.require-blackbox-config-supported,
+.tab-onboard_logging.dataflash-present .require-dataflash-not-present,
+.tab-onboard_logging.dataflash-supported .require-dataflash-unsupported,
+.tab-onboard_logging.sdcard-supported .require-sdcard-unsupported,
+.tab-onboard_logging.blackbox-config-supported .require-blackbox-config-unsupported {
+    display: none;
+}
+
+.tab-onboard_logging.dataflash-present .require-dataflash-present,
+.tab-onboard_logging.dataflash-supported .require-dataflash-supported,
+.tab-onboard_logging.sdcard-ready .require-sdcard-ready,
+.tab-onboard_logging.sdcard-supported .require-sdcard-supported,
+.tab-onboard_logging.blackbox-supported .require-blackbox-supported,
+.tab-onboard_logging.blackbox-maybe-supported .require-blackbox-maybe-supported,
+.tab-onboard_logging.blackbox-unsupported .require-blackbox-unsupported,
+.tab-onboard_logging.blackbox-config-supported .require-blackbox-config-supported {
+    display: block;
+}
+
+.require-no-dataflash {
+    display: block;
+}
+
+.tab-onboard_logging.supported .require-no-dataflash {
+    display: none;
+}
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-onboard_logging table thead tr:first-child {
+        font-size: 12px;
+        height: 22px;
+    }
+}
+
+.tab-onboard_logging .line {
+    clear: left;
+}
+.tab-onboard_logging .blackboxRate select,
+.tab-onboard_logging .blackboxDevice select {
+    float: left;
+    width: 180px;
+    height: 20px;
+    margin: 0 10px 5px 0;
+    border: 1px solid silver;
+}
+.tab-onboard_logging .blackboxRate span,
+.tab-onboard_logging .blackboxDevice span {
+    line-height: 20px;
+}
+
+.tab-onboard_logging .sdcard {
+	padding:10px;
+	float:left;
+}
+.tab-onboard_logging .sdcard-status {
+    padding-top: 4px;
+    text-align: center;
+}
+.tab-onboard_logging.sdcard-error .sdcard-icon {
+    background-color: #e60000;
+    border: 1px solid #fe0000;
+}
+.tab-onboard_logging.sdcard-initializing .sdcard-icon {
+    background-color: #64a5f6;
+    border: 1px solid #68a7ff;
+} 
+.tab-onboard_logging.sdcard-ready .sdcard-icon {
+    background-color: #56ac1d;
+    border: 1px solid #5bbb1b;
+} 
+.tab-onboard_logging .sdcard-icon {
+	box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.35);
+	width: 90px;
+    height: 90px;
+    background-image: url(/images/icons/cf_icon_sdcard.svg);
+    background-position: 21px 20px;
+    background-size: 50px 50px;
+    background-repeat: no-repeat;
+    
+    background-color: #808080;
+    border: 1px solid #888888;
+    
+    border-radius: 45px;
+}
+
+.tab-onboard_logging .regular-button {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-right: 10px;
+    background-color: #59aa29;
+    border-radius: 3px;
+    border: 1px solid #4c8829;
+    color: #fff;
+    font-family: 'open_sansbold', Arial;
+    font-size: 12px;
+    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    display: inline-block;
+    cursor: pointer;
+    transition: all ease 0.2s;
+    padding: 0px;
+    padding-left: 9px;
+    padding-right: 9px;
+    line-height: 28px;
+}
+.tab-onboard_logging .regular-button:hover {
+    background-color: #6ac435;
+    transition: all ease 0.2s;
+}
+.tab-onboard_logging .regular-button:active {
+    background-color: #4d9324;
+    transition: all ease 0.0s;
+    box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
+}
+.tab-onboard_logging .regular-button.disabled {
+    cursor: default;
+    color: #fff;
+    background-color: #AFAFAF;
+    border: 1px solid #AFAFAF;
+    pointer-events: none;
+    text-shadow: none;
+    opacity: 0.5;
+}
