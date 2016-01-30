@@ -62,10 +62,7 @@ var STM32DFU_protocol = function () {
         dfuERROR:               10 // An error has occurred. Awaiting the DFU_CLRSTATUS request.
     };
 
-    // Assume 2 kB page size (STM32F303)
-    // Cannot read chip ID using DFU protocol and Chrome doesn't provide the interface
-    // description string with flash page size information (at least on Linux anyway)
-    this.page_size = 2048;
+    this.flash_layout = { 'start_address': 0, 'total_size': 0, 'sectors': []};
 };
 
 STM32DFU_protocol.prototype.connect = function (device, hex, options, callback) {
@@ -179,6 +176,150 @@ STM32DFU_protocol.prototype.resetDevice = function (callback) {
         if (callback) callback();
     });
 };
+
+STM32DFU_protocol.prototype.getString = function (index, callback) {
+    var self = this;
+
+    chrome.usb.controlTransfer(self.handle, {
+        'direction':    'in',
+        'recipient':    'device',
+        'requestType':  'standard',
+        'request':      6,
+        'value':        0x300 | index,
+        'index':        0,  // specifies language
+        'length':       255 // max length to retreive
+    }, function (result) {
+        if(self.checkChromeError()) {
+            console.log('USB transfer failed! ' + result.resultCode);
+            callback("", result.resultCode);
+            return;
+        }
+        var view = new DataView(result.data);
+        var length = view.getUint8(0);
+        var descriptor = "";
+        for (var i = 2; i < length; i += 2) {
+            var charCode = view.getUint16(i, true);
+            descriptor += String.fromCharCode(charCode);
+        }
+        callback(descriptor, result.resultCode);
+    });
+}
+
+STM32DFU_protocol.prototype.getInterfaceDescriptor = function (_interface, callback) {
+    var self = this;
+
+    chrome.usb.controlTransfer(this.handle, {
+        'direction':    'in',
+        'recipient':    'device',
+        'requestType':  'standard',
+        'request':      6,
+        'value':        0x200,
+        'index':        0,
+        'length':       18 + _interface * 9
+    }, function (result) {
+        if(self.checkChromeError()) {
+            console.log('USB transfer failed! ' + result.resultCode);
+            callback({}, result.resultCode);
+            return;
+        }
+
+        var buf = new Uint8Array(result.data, 9 + _interface * 9);
+        var descriptor = {
+            'bLength':            buf[0],
+            'bDescriptorType':    buf[1],
+            'bInterfaceNumber':   buf[2],
+            'bAlternateSetting':  buf[3],
+            'bNumEndpoints':      buf[4],
+            'bInterfaceClass':    buf[5],
+            'bInterfaceSubclass': buf[6],
+            'bInterfaceProtocol': buf[7],
+            'iInterface':         buf[8]
+        };
+
+        callback(descriptor, result.resultCode);
+    });
+}
+
+STM32DFU_protocol.prototype.getFlashInfo = function (_interface, callback) {
+    var self = this;
+
+    self.getInterfaceDescriptor(0, function (descriptor, resultCode) {
+        if (resultCode) {
+            callback({}, resultCode);
+            return;
+        }
+
+        self.getString(descriptor.iInterface, function (str, resultCode) {
+            if (resultCode) {
+                callback({}, resultCode);
+                return;
+            }
+
+            // F303: "@Internal Flash  /0x08000000/128*0002Kg"
+            // F407: "@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg"
+            // split main into [location, start_addr, sectors]
+            var tmp1 = str.split('/');
+            if (tmp1.length != 3 || !tmp1[0].startsWith("@Internal Flash")) {
+                callback({}, -1);
+                return;
+            }
+            var type = tmp1[0].trim().replace('@', '');
+            var start_address = parseInt(tmp1[1]);
+
+            // split sectors into array
+            var sectors = [];
+            var total_size = 0;
+            var tmp2 = tmp1[2].split(',');
+            if (tmp2.length < 1) {
+                callback({}, -2);
+                return;
+            }
+            for (var i = 0; i < tmp2.length; i++) {
+                // split into [num_pages, page_size]
+                var tmp3 = tmp2[i].split('*');
+                if (tmp3.length != 2) {
+                    callback({}, -3);
+                    return;
+                }
+                var num_pages = parseInt(tmp3[0]);
+                var page_size = parseInt(tmp3[1]);
+                if (!page_size) {
+                    callback({}, -4);
+                    return;
+                }
+                var unit = tmp3[1].slice(-2, -1);
+                switch (unit) {
+                    case 'M':
+                        page_size *= 1024; //  fall through to K as well
+                    case 'K':
+                        page_size *= 1024;
+                        break;
+                    default:
+                        callback({}, -4);
+                        return;
+                }
+
+                sectors.push({
+                    'num_pages'    : num_pages,
+                    'start_address': start_address + total_size,
+                    'page_size'    : page_size,
+                    'total_size'   : num_pages * page_size
+                });
+
+                total_size += num_pages * page_size;
+            }
+
+            var flash = {
+                'type'         : type,
+                'start_address': start_address,
+                'sectors'      : sectors,
+                'total_size'   : total_size
+            }
+
+            callback(flash, resultCode);
+        });
+    });
+}
 
 STM32DFU_protocol.prototype.controlTransfer = function (direction, request, value, _interface, length, data, callback) {
     var self = this;
@@ -301,8 +442,27 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
 
     switch (step) {
         case 1:
-            self.clearStatus(function () {
-                self.upload_procedure(2);
+            self.getFlashInfo(0, function (flash, resultCode) {
+                if (resultCode != 0) {
+                    console.log('Failed to detect chip flash info, resultCode: ' + resultCode);
+                    self.upload_procedure(99);
+                } else {
+                    self.flash_layout = flash;
+                    self.available_flash_size = flash.total_size - (self.hex.start_linear_address - flash.start_address);
+
+                    GUI.log(chrome.i18n.getMessage('dfu_device_flash_info', (flash.total_size / 1024).toString()));
+
+                    if (self.hex.bytes_total > self.available_flash_size) {
+                        GUI.log(chrome.i18n.getMessage('dfu_error_image_size', 
+                            [(self.hex.bytes_total / 1024.0).toFixed(1), 
+                            (self.available_flash_size / 1024.0).toFixed(1)]));
+                        self.upload_procedure(99);
+                    } else {
+                        self.clearStatus(function () {
+                            self.upload_procedure(2);
+                        });
+                    }
+                }
             });
             break;
         case 2:
@@ -336,17 +496,41 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
             } else {
                 // local erase
 
-                var max_address = self.hex.data[self.hex.data.length - 1].address + self.hex.data[self.hex.data.length - 1].bytes - 0x8000000,
-                                erase_pages_n = Math.ceil(max_address / self.page_size),
-                                page = 0;
+                // find out which pages to erase
+                var erase_pages = [];
+                for (var i = 0; i < self.flash_layout.sectors.length; i++) {
+                    for (var j = 0; j < self.flash_layout.sectors[i].num_pages; j++) {
+                        var page_start = self.flash_layout.sectors[i].start_address + j * self.flash_layout.sectors[i].page_size;
+                        var page_end = page_start + self.flash_layout.sectors[i].page_size - 1;
+                        for (var k = 0; k < self.hex.data.length; k++) {
+                            var starts_in_page = self.hex.data[k].address >= page_start && self.hex.data[k].address <= page_end;
+                            var end_address = self.hex.data[k].address + self.hex.data[k].bytes - 1;
+                            var ends_in_page = end_address >= page_start && end_address <= page_end;
+                            var spans_page = self.hex.data[k].address < page_start && end_address > page_end;
+                            if (starts_in_page || ends_in_page || spans_page) {
+                                var idx = erase_pages.findIndex(function (element, index, array) {
+                                    return element.sector == i && element.page == j;
+                                });
+                                if (idx == -1)
+                                    erase_pages.push({'sector': i, 'page': j});
+                            }
+                        }
+                    }
+                }
 
                 $('span.progressLabel').text('Erasing ...');
-                console.log('Executing local chip erase');
-                console.log('Erasing. page: 0x00 - 0x' + erase_pages_n.toString(16)); 
+                console.log('Executing local chip erase'); 
+
+                var page = 0;
+                var total_erased = 0; // bytes
 
                 var erase_page = function() {
-                    var page_addr = page * self.page_size + 0x8000000;
+                    var page_addr = erase_pages[page].page * self.flash_layout.sectors[erase_pages[page].sector].page_size + 
+                            self.flash_layout.sectors[erase_pages[page].sector].start_address;
                     var cmd = [0x41, page_addr & 0xff, (page_addr >> 8) & 0xff, (page_addr >> 16) & 0xff, (page_addr >> 24) & 0xff];
+                    total_erased += self.flash_layout.sectors[erase_pages[page].sector].page_size;
+                    console.log('Erasing. sector ' + erase_pages[page].sector + 
+                                ', page ' + erase_pages[page].page + ' @ 0x' + page_addr.toString(16));
 
                     self.controlTransfer('out', self.request.DNLOAD, 0, 0, 0, cmd, function () {
                         self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
@@ -357,24 +541,24 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                                     self.controlTransfer('in', self.request.GETSTATUS, 0, 0, 6, 0, function (data) {
                                         if (data[4] == self.state.dfuDNLOAD_IDLE) {
                                             // update progress bar
-                                            self.progress_bar_e.val((page + 1) / erase_pages_n * 100);
+                                            self.progress_bar_e.val((page + 1) / erase_pages.length * 100);
                                             page++;
 
-                                            if(page == erase_pages_n) {
+                                            if(page == erase_pages.length) {
                                                 console.log("Erase: complete");
-                                                GUI.log(chrome.i18n.getMessage('dfu_erased_kilobytes', (erase_pages_n * self.page_size / 1024).toString()));
+                                                GUI.log(chrome.i18n.getMessage('dfu_erased_kilobytes', (total_erased / 1024).toString()));
                                                 self.upload_procedure(4);
                                             }
                                             else
                                                 erase_page();
                                         } else {
-                                            console.log('Failed to erase page 0x' + self.current_page.toString(16));
+                                            console.log('Failed to erase page 0x' + page_addr.toString(16));
                                             self.upload_procedure(99);
                                         }
                                     });
                                 }, delay);
                             } else {
-                                console.log('Failed to initiate page erase, page 0x' + self.current_page.toString(16));
+                                console.log('Failed to initiate page erase, page 0x' + page_addr.toString(16));
                                 self.upload_procedure(99);
                             }
                         });
