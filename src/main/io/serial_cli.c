@@ -364,7 +364,7 @@ static const char * const lookupTableGyroLpf[] = {
 
 static const char * const lookupTableAccHardware[] = {
 	"AUTO", 
-	"OFF", 
+	"NONE", 
 	"ADXL345",
 	"MPU6050",
 	"MMA8452",
@@ -377,7 +377,7 @@ static const char * const lookupTableAccHardware[] = {
 
 static const char * const lookupTableBaroHardware[] = {
 	"AUTO",
-    "OFF",
+    "NONE",
     "BMP085",
     "MS5611",
     "BMP280"
@@ -385,7 +385,7 @@ static const char * const lookupTableBaroHardware[] = {
 
 static const char * const lookupTableMagHardware[] = {
     "AUTO",
-    "OFF",
+    "NONE",
     "HMC5883",
     "AK8975",
     "AK8963"
