@@ -380,8 +380,9 @@ int beeperTableEntryCount(void)
 {
     return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
-}
+
 #else
+
 void beeper(beeperMode_e mode)
 {
     UNUSED(mode);
@@ -393,4 +394,5 @@ void beeperConfirmationBeeps(uint8_t beepCount)
 {
     UNUSED(beepCount);
 }
+
 #endif

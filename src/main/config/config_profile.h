@@ -32,7 +32,9 @@ typedef struct profile_s {
     float accz_lpf_cutoff;                  // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     accDeadband_t accDeadband;
 
+#ifdef BARO
     barometerConfig_t barometerConfig;
+#endif
 
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
