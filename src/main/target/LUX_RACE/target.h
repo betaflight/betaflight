@@ -184,8 +184,8 @@
 #define BIND_PIN   Pin_5
 
 #define USE_SERIAL_1WIRE
-// Untested and will probably not work with RX_Serial on USART1
-#define S1W_TX_GPIO         GPIOC
-#define S1W_TX_PIN          GPIO_Pin_4
-#define S1W_RX_GPIO         GPIOC
-#define S1W_RX_PIN          GPIO_Pin_5
+// USART2, RX is on USART1
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_10
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_11
