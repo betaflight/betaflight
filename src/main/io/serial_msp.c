@@ -243,12 +243,14 @@ static void tailSerialReply(void)
     serialEndWrite(mspSerialPort);
 }
 
+#ifdef USE_SERVOS
 static void s_struct(uint8_t *cb, uint8_t siz)
 {
     headSerialReply(siz);
     while (siz--)
         serialize8(*cb++);
 }
+#endif
 
 static void serializeNames(const char *s)
 {
