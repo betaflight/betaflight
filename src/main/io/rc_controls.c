@@ -724,10 +724,12 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
             applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
+			/*
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
 
           //  applySelectAdjustment(adjustmentFunction, position);
+          */
         }
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }

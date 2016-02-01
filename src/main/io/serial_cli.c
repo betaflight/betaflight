@@ -359,6 +359,35 @@ static const char * const lookupTableGyroLpf[] = {
     "42HZ"
 };
 
+static const char * const lookupTableAccHardware[] = {
+	"AUTO", 
+	"NONE", 
+	"ADXL345",
+	"MPU6050",
+	"MMA8452",
+	"BMA280",
+	"LSM303DLHC",
+	"MPU6000",
+	"MPU6500",
+	"FAKE"
+};
+
+static const char * const lookupTableBaroHardware[] = {
+	"AUTO",
+    "NONE",
+    "BMP085",
+    "MS5611",
+    "BMP280"
+};
+
+static const char * const lookupTableMagHardware[] = {
+    "AUTO",
+    "NONE",
+    "HMC5883",
+    "AK8975",
+    "AK8963"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -380,6 +409,9 @@ typedef enum {
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
     TABLE_GYRO_LPF,
+    TABLE_ACC_HARDWARE,
+    TABLE_BARO_HARDWARE,
+    TABLE_MAG_HARDWARE,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -395,7 +427,10 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
-    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) }
+    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
+    { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
+    { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
+    { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -596,7 +631,7 @@ const clivalue_t valueTable[] = {
     { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
 #endif
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX } },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.acc_hardware, .config.lookup = { TABLE_ACC_HARDWARE } },
     { "acc_lpf_hz",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.acc_lpf_hz, .config.minmax = { 0,  200 } },
     { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
     { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.z, .config.minmax = { 0,  100 } },
@@ -609,9 +644,9 @@ const clivalue_t valueTable[] = {
     { "baro_noise_lpf",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_noise_lpf, .config.minmax = { 0 , 1 } },
     { "baro_cf_vel",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_cf_vel, .config.minmax = { 0 , 1 } },
     { "baro_cf_alt",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.barometerConfig.baro_cf_alt, .config.minmax = { 0 , 1 } },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX } },
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.baro_hardware, .config.lookup = { TABLE_BARO_HARDWARE } },
 
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX } },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "delta_from_gyro",            VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaFromGyro, .config.lookup = { TABLE_OFF_ON } },
 

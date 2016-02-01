@@ -221,6 +221,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             lastGyroRate[axis] = gyroRate;
         }
 
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta *= (1.0f / dT);
+
         if (deltaStateIsSet) {
             delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
         } else {
@@ -231,10 +235,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             for (deltaCount = 0; deltaCount < DELTA_TOTAL_SAMPLES; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
             delta = (deltaSum / DELTA_TOTAL_SAMPLES);
         }
-
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta *= (1.0f / dT);
 
         DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
@@ -368,6 +368,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
             lastGyroRate[axis] = gyroRate;
         }
+        
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         if (deltaStateIsSet) {
             delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
@@ -379,10 +383,6 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             for (deltaCount = 0; deltaCount < DELTA_TOTAL_SAMPLES; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
             delta = deltaSum;
         }
-
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
