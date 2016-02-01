@@ -731,7 +731,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
     case MSP_MOTOR:
-        s_struct((uint8_t *)motor, 16);
+        headSerialReply(16);
+        for (i = 0; i < 8; i++) {
+            serialize16(i < MAX_SUPPORTED_MOTORS ? motor[i] : 0);
+        }
         break;
     case MSP_RC:
         headSerialReply(2 * rxRuntimeConfig.channelCount);
