@@ -1,4 +1,4 @@
-# BEtaflight
+# Betaflight
 
 ![Betaflight](https://dl.dropboxusercontent.com/u/31537757/betaflight%20logo.jpg)
 
