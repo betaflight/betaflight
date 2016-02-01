@@ -30,7 +30,6 @@
 #define MAX_MOTORS  12
 #define MAX_SERVOS  8
 #endif
-
 #define MAX_PWM_OUTPUT_PORTS MAX_PWM_MOTORS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
 
 #if MAX_PWM_OUTPUT_PORTS < MAX_MOTORS || MAX_PWM_OUTPUT_PORTS < MAX_SERVOS
