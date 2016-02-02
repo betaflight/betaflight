@@ -577,17 +577,37 @@ static void resetConf(void)
 #if defined(COLIBRI_RACE)
     currentProfile->pidProfile.pidController = 1;
 
-    masterConfig.rxConfig.rcmap[0] = 1;
-    masterConfig.rxConfig.rcmap[1] = 2;
-    masterConfig.rxConfig.rcmap[2] = 3;
-    masterConfig.rxConfig.rcmap[3] = 0;
-    masterConfig.rxConfig.rcmap[4] = 4;
-    masterConfig.rxConfig.rcmap[5] = 5;
-    masterConfig.rxConfig.rcmap[6] = 6;
-    masterConfig.rxConfig.rcmap[7] = 7;
-
     masterConfig.rxConfig.rcSmoothing = 0;
-    currentProfile->pidProfile.pidController = 2;
+
+    currentControlRateProfile->rcRate8 = 100;
+    currentControlRateProfile->rcExpo8 = 70;
+    currentControlRateProfile->rcYawExpo8 = 70;
+    currentControlRateProfile->thrMid8 = 50;
+    currentControlRateProfile->thrExpo8 = 0;
+    currentControlRateProfile->rates[FD_ROLL] = 90;
+    currentControlRateProfile->rates[FD_PITCH] = 90;
+    currentControlRateProfile->rates[FD_YAW] = 90;
+    currentControlRateProfile->dynThrPID = 30;
+    currentControlRateProfile->tpa_breakpoint = 1500;
+    currentProfile->rcControlsConfig.deadband = 10;
+
+    masterConfig.escAndServoConfig.minthrottle = 1025;
+    masterConfig.escAndServoConfig.maxthrottle = 1980;
+    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
+    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+
+    currentProfile->pidProfile.P8[ROLL] = 31;     // new PID with preliminary defaults test carefully
+    currentProfile->pidProfile.I8[ROLL] = 42;
+    currentProfile->pidProfile.D8[ROLL] = 21;
+    currentProfile->pidProfile.P8[PITCH] = 62;
+    currentProfile->pidProfile.I8[PITCH] = 74;
+    currentProfile->pidProfile.D8[PITCH] = 23;
+    currentProfile->pidProfile.P8[YAW] = 100;
+    currentProfile->pidProfile.I8[YAW] = 45;
+    currentProfile->pidProfile.D8[YAW] = 15;
+    currentProfile->pidProfile.P8[PIDLEVEL] = 60;
+    currentProfile->pidProfile.I8[PIDLEVEL] = 60;
+    currentProfile->pidProfile.D8[PIDLEVEL] = 100;
 
     currentProfile->pidProfile.P_f[ROLL] = 0.7f;     // new PID with preliminary defaults test carefully
     currentProfile->pidProfile.I_f[ROLL] = 0.4f;
@@ -599,22 +619,8 @@ static void resetConf(void)
     currentProfile->pidProfile.I_f[YAW] = 0.9f;
     currentProfile->pidProfile.D_f[YAW] = 0.01f;
 
-    masterConfig.controlRateProfiles[0].rcRate8 = 100;
-    masterConfig.controlRateProfiles[0].rcExpo8 = 70;
-    masterConfig.controlRateProfiles[0].rcYawExpo8 = 70;
-    masterConfig.controlRateProfiles[0].thrMid8 = 50;
-    masterConfig.controlRateProfiles[0].thrExpo8 = 0;
-    masterConfig.controlRateProfiles[0].rates[FD_ROLL] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_PITCH] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_YAW] = 90;
-    masterConfig.controlRateProfiles[0].dynThrPID = 30;
-    masterConfig.controlRateProfiles[0].tpa_breakpoint = 1500;
-    masterConfig.profile[0].rcControlsConfig.deadband = 10;
-
-    masterConfig.escAndServoConfig.minthrottle = 1025;
-    masterConfig.escAndServoConfig.maxthrottle = 1980;
-    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
-    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+    masterConfig.failsafeConfig.failsafe_delay = 10;
+    masterConfig.failsafeConfig.failsafe_off_delay = 20;
 
     featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_VBAT);
