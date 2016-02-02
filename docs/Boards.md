@@ -6,20 +6,20 @@ If you want a fully featured version of Cleanflight then the recommendation for 
 
 The core set of recommended boards are:
 
-* Seriously Pro SPRacingF3Mini
-* Seriously Pro SPRacingF3
-* TBS Colibri Race
-* AlienWiiF3
-* TauLabs Sparky
+* [Seriously Pro SPRacingF3Mini](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20SPRacingF3Mini.md)
+* [Seriously Pro SPRacingF3](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20SPRacingF3.md)
+* [TBS Colibri Race](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20ColibriRace.md)
+* [AlienWiiF3](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20AlienWii32.md)
+* [TauLabs Sparky](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20Sparky.md)
 
 The core set of legacy boards are:
 
-* AlienWii32
-* OpenPilot CC3D
-* CJMCU
+* [AlienWii32](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20AlienWii32.md)
+* [OpenPilot CC3D](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20CC3D.md)
+* [CJMCU](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20CJMCU.md)
 * Flip32+
-* AbuseMark Naze32
-* RMRC Dodo
+* [AbuseMark Naze32](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20Naze32.md)
+* [RMRC Dodo](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20RMDO.md)
 
 Cleanflight also runs on the following developer boards:
 
@@ -29,7 +29,7 @@ Cleanflight also runs on the following developer boards:
 
 There is also limited support for the following boards which may be removed due to lack of users or commercial availability.
  
-* Olimexino
+* [Olimexino](https://github.com/cleanflight/cleanflight/blob/master/docs/Board%20-%20Olimexino.md)
 * Naze32Pro
 * STM32F3Discovery with Chebuzz F3 shield.
 
