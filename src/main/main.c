@@ -51,6 +51,8 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/usb_io.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/sdcard.h"
 
 #include "rx/rx.h"
@@ -523,15 +525,20 @@ void init(void)
     }
 #endif
 
+/*
 #ifdef USB_CABLE_DETECTION
     usbCableDetectInit();
 #endif
 
 #ifdef TRANSPONDER
-    transponderInit(masterConfig.transponderData);
-    transponderEnable();
-    transponderStartRepeating();
+    if (feature(FEATURE_TRANSPONDER)) {
+        transponderInit(masterConfig.transponderData);
+        transponderEnable();
+        transponderStartRepeating();
+        systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
+    }
 #endif
+*/
 
 #ifdef USE_FLASHFS
 #ifdef NAZE

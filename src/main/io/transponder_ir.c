@@ -28,7 +28,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
 
-#include "drivers/usb_detection.h"
+#include "drivers/usb_io.h"
 
 #include "io/transponder_ir.h"
 #include "config/config.h"
@@ -65,7 +65,7 @@ void updateTransponder(void)
 
     nextUpdateAt = now + 4500 + jitter;
 
-#ifdef SPRACINGF3MINI
+#ifdef REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
     // reduce current draw when USB cable is plugged in by decreasing the transponder transmit rate.
     if (usbCableIsInserted()) {
         nextUpdateAt = now + (1000 * 1000) / 10; // 10 hz.
