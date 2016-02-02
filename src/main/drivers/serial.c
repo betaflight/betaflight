@@ -40,12 +40,17 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     instance->vTable->serialWrite(instance, ch);
 }
 
+
 void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
 {
     if (instance->vTable->writeBuf) {
         instance->vTable->writeBuf(instance, data, count);
     } else {
         for (uint8_t *p = data; count > 0; count--, p++) {
+
+            while (!serialTxBytesFree(instance)) {
+            };
+
             serialWrite(instance, *p);
         }
     }
