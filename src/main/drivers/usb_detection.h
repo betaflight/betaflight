@@ -17,13 +17,6 @@
 
 #pragma once
 
-#include "blackbox/blackbox_fielddefs.h"
-
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
-
-void initBlackbox(void);
-void handleBlackbox(void);
-void startBlackbox(void);
-void finishBlackbox(void);
-
-bool blackboxMayEditConfig();
+void usbCableDetectDeinit(void);
+void usbCableDetectInit(void);
+bool usbCableIsInserted(void);

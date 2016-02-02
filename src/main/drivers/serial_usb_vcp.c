@@ -23,11 +23,11 @@
 #include "platform.h"
 
 #include "build_config.h"
+#include "common/utils.h"
 
 #include "usb_core.h"
 #include "usb_init.h"
 #include "hw_config.h"
-#include "common/utils.h"
 
 #include "drivers/system.h"
 
@@ -83,6 +83,27 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return buf[0];
 }
 
+static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
+{
+    UNUSED(instance);
+
+
+    if (!(usbIsConnected() && usbIsConfigured())) {
+        return;
+    }
+
+    uint32_t start = millis();
+    for (uint8_t *p = data; count > 0; ) {
+        uint32_t txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
+
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+}
+
 static bool usbVcpFlush(vcpPort_t *port)
 {
     uint8_t count = port->txAt;
@@ -121,6 +142,11 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
+uint8_t usbTxBytesFree() {
+    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
+    return 255;
+}
+
 static void usbVcpEndWrite(serialPort_t *instance)
 {
     vcpPort_t *port = container_of(instance, vcpPort_t, port);
@@ -128,12 +154,20 @@ static void usbVcpEndWrite(serialPort_t *instance)
     usbVcpFlush(port);
 }
 
-uint8_t usbTxBytesFree() {
-    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
-    return 255;
-}
-
-const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbTxBytesFree, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
+static const struct serialPortVTable usbVTable[] = {
+    {
+        .serialWrite = usbVcpWrite,
+        .serialTotalRxWaiting = usbVcpAvailable,
+        .serialTotalTxFree = usbTxBytesFree,
+        .serialRead = usbVcpRead,
+        .serialSetBaudRate = usbVcpSetBaudRate,
+        .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
+        .setMode = usbVcpSetMode,
+        .beginWrite = usbVcpBeginWrite,
+        .endWrite = usbVcpEndWrite,
+        .writeBuf = usbVcpWriteBuf
+    }
+};
 
 serialPort_t *usbVcpOpen(void)
 {

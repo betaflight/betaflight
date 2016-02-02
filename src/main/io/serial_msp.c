@@ -42,7 +42,8 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
-
+#include "drivers/sdcard.h"
+#include "drivers/buf_writer.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -54,6 +55,7 @@
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "telemetry/telemetry.h"
 
@@ -72,6 +74,8 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
+
+#include "blackbox/blackbox.h"
 
 #include "mw.h"
 
@@ -237,6 +241,11 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
 #define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
 
+#define MSP_SDCARD_SUMMARY              79 //out message         Get the state of the SD card
+
+#define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
+#define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -393,6 +402,14 @@ typedef enum {
 } mspState_e;
 
 typedef enum {
+    MSP_SDCARD_STATE_NOT_PRESENT = 0,
+    MSP_SDCARD_STATE_FATAL       = 1,
+    MSP_SDCARD_STATE_CARD_INIT   = 2,
+    MSP_SDCARD_STATE_FS_INIT     = 3,
+    MSP_SDCARD_STATE_READY       = 4
+} mspSDCardState_e;
+
+typedef enum {
     UNUSED_PORT = 0,
     FOR_GENERAL_MSP,
     FOR_TELEMETRY
@@ -413,10 +430,11 @@ typedef struct mspPort_s {
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
+static bufWriter_t *writer;
 
 static void serialize8(uint8_t a)
 {
-    serialWrite(mspSerialPort, a);
+    bufWriterAppend(writer, a);
     currentPort->checksum ^= a;
 }
 
@@ -453,6 +471,8 @@ static uint32_t read32(void)
 
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
+    serialBeginWrite(mspSerialPort);
+    
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -474,6 +494,7 @@ static void headSerialError(uint8_t responseBodySize)
 static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
+    serialEndWrite(mspSerialPort);
 }
 
 static void s_struct(uint8_t *cb, uint8_t siz)
@@ -548,17 +569,67 @@ reset:
     }
 }
 
+static void serializeSDCardSummaryReply(void)
+{
+    headSerialReply(3 + 4 + 4);
+
+#ifdef USE_SDCARD
+    uint8_t flags = 1 /* SD card supported */ ;
+    uint8_t state;
+
+    serialize8(flags);
+
+    // Merge the card and filesystem states together
+    if (!sdcard_isInserted()) {
+        state = MSP_SDCARD_STATE_NOT_PRESENT;
+    } else if (!sdcard_isFunctional()) {
+        state = MSP_SDCARD_STATE_FATAL;
+    } else {
+        switch (afatfs_getFilesystemState()) {
+            case AFATFS_FILESYSTEM_STATE_READY:
+                state = MSP_SDCARD_STATE_READY;
+            break;
+            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+                if (sdcard_isInitialized()) {
+                    state = MSP_SDCARD_STATE_FS_INIT;
+                } else {
+                    state = MSP_SDCARD_STATE_CARD_INIT;
+                }
+            break;
+            case AFATFS_FILESYSTEM_STATE_FATAL:
+            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+                state = MSP_SDCARD_STATE_FATAL;
+            break;
+        }
+    }
+
+    serialize8(state);
+    serialize8(afatfs_getLastError());
+    // Write free space and total space in kilobytes
+    serialize32(afatfs_getContiguousFreeSpace() / 1024);
+    serialize32(sdcard_getMetadata()->numBlocks / 2); // Block size is half a kilobyte
+#else
+    serialize8(0);
+    serialize8(0);
+    serialize8(0);
+    serialize32(0);
+    serialize32(0);
+#endif
+}
+
 static void serializeDataflashSummaryReply(void)
 {
     headSerialReply(1 + 3 * 4);
 #ifdef USE_FLASHFS
     const flashGeometry_t *geometry = flashfsGetGeometry();
-    serialize8(flashfsIsReady() ? 1 : 0);
+    uint8_t flags = (flashfsIsReady() ? 1 : 0) | 2 /* FlashFS is supported */;
+
+    serialize8(flags);
     serialize32(geometry->sectors);
     serialize32(geometry->totalSize);
     serialize32(flashfsGetOffset()); // Effectively the current number of bytes stored on the volume
 #else
-    serialize8(0);
+    serialize8(0); // FlashFS is neither ready nor supported
     serialize32(0);
     serialize32(0);
     serialize32(0);
@@ -1299,6 +1370,26 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
 
+    case MSP_BLACKBOX_CONFIG:
+        headSerialReply(4);
+
+#ifdef BLACKBOX
+        serialize8(1); //Blackbox supported
+        serialize8(masterConfig.blackbox_device);
+        serialize8(masterConfig.blackbox_rate_num);
+        serialize8(masterConfig.blackbox_rate_denom);
+#else
+        serialize8(0); // Blackbox not supported
+        serialize8(0);
+        serialize8(0);
+        serialize8(0);
+#endif
+        break;
+
+    case MSP_SDCARD_SUMMARY:
+        serializeSDCardSummaryReply();
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1569,6 +1660,17 @@ static bool processInCommand(void)
         writeEEPROM();
         readEEPROM();
         break;
+
+#ifdef BLACKBOX
+    case MSP_SET_BLACKBOX_CONFIG:
+        // Don't allow config to be updated while Blackbox is logging
+        if (blackboxMayEditConfig()) {
+            masterConfig.blackbox_device = read8();
+            masterConfig.blackbox_rate_num = read8();
+            masterConfig.blackbox_rate_denom = read8();
+        }
+        break;
+#endif
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
@@ -1903,7 +2005,7 @@ static bool mspProcessReceivedData(uint8_t c)
     return true;
 }
 
-void setCurrentPort(mspPort_t *port)
+static void setCurrentPort(mspPort_t *port)
 {
     currentPort = port;
     mspSerialPort = currentPort->port;
@@ -1921,6 +2023,10 @@ void mspProcess(void)
         }
 
         setCurrentPort(candidatePort);
+        // Big enough to fit a MSP_STATUS in one write.
+        uint8_t buf[sizeof(bufWriter_t) + 20];
+        writer = bufWriterInit(buf, sizeof(buf),
+                               serialWriteBufShim, currentPort->port);
 
         while (serialRxBytesWaiting(mspSerialPort)) {
 
@@ -1936,6 +2042,8 @@ void mspProcess(void)
                 break; // process one command at a time so as not to block.
             }
         }
+
+        bufWriterFlush(writer);
 
         if (isRebootScheduled) {
             waitForSerialPortToFinishTransmitting(candidatePort->port);
@@ -2005,9 +2113,14 @@ void sendMspTelemetry(void)
     }
 
     setCurrentPort(mspTelemetryPort);
+    uint8_t buf[sizeof(bufWriter_t) + 16];
+    writer = bufWriterInit(buf, sizeof(buf),
+                           serialWriteBufShim, currentPort->port);
 
     processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
     tailSerialReply();
+
+    bufWriterFlush(writer);
 
     sequenceIndex++;
     if (sequenceIndex >= TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT) {

@@ -17,13 +17,11 @@
 
 #pragma once
 
-#include "blackbox/blackbox_fielddefs.h"
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
-
-void initBlackbox(void);
-void handleBlackbox(void);
-void startBlackbox(void);
-void finishBlackbox(void);
-
-bool blackboxMayEditConfig();
+void transponderEnable(void);
+void transponderDisable(void);
+void updateTransponder(void);
+void transponderUpdateData(uint8_t* transponderData);
+void transponderTransmitOnce(void);
+void transponderStartRepeating(void);
+void transponderStopRepeating(void);

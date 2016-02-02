@@ -63,6 +63,9 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
+
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -744,10 +747,18 @@ void taskMainPidLoop(void)
         writeMotors();
     }
 
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
         handleBlackbox();
     }
+#endif
+
+#ifdef TRANSPONDER
+    updateTransponder();
 #endif
 }
 
