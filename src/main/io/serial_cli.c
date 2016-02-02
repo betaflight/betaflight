@@ -2450,11 +2450,11 @@ static void cliTasks(char *cmdline)
     cfTaskId_e taskId;
     cfTaskInfo_t taskInfo;
 
-    printf("Task list:\r\n");
+    cliPrintf("Task list:\r\n");
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            printf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
+            cliPrintf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
         }
     }
 }
