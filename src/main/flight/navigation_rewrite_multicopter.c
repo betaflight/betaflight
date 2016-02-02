@@ -440,8 +440,8 @@ static void applyMulticopterPositionController(uint32_t currentTime)
     }
 
     if (!bypassPositionController) {
-        rcCommand[PITCH] = leanAngleToRcCommand(posControl.rcAdjustment[PITCH]);
-        rcCommand[ROLL] = leanAngleToRcCommand(posControl.rcAdjustment[ROLL]);
+        rcCommand[PITCH] = pidAngleToRcCommand(posControl.rcAdjustment[PITCH]);
+        rcCommand[ROLL] = pidAngleToRcCommand(posControl.rcAdjustment[ROLL]);
     }
 }
 

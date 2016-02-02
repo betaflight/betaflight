@@ -17,9 +17,16 @@
 
 #pragma once
 
-#define GYRO_I_MAX 256                      // Gyro I limiter
+#include "rx/rx.h"
+
+#include "io/rc_controls.h"
+
+#include "config/runtime_config.h"
+
+#define GYRO_SATURATION_LIMIT   1800        // 1800dps
+#define PID_MAX_OUTPUT          1000
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX 300                 // Maximum value for yaw P limiter
 
 typedef enum {
     PIDROLL,
@@ -35,46 +42,27 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
-typedef enum {
-    PID_CONTROLLER_MWREWRITE = 1,
-    PID_CONTROLLER_LUX_FLOAT,
-    PID_COUNT
-} pidControllerType_e;
-
-#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
-
 typedef struct pidProfile_s {
-    uint8_t pidController;                  // 1 = rewrite, 2 = luxfloat
-
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for lux float pid controller
-    float I_f[3];
-    float D_f[3];
-    float A_level;
-    float H_level;
-    uint8_t H_sensitivity;
-
-    uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     uint8_t dterm_lpf_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-
+    uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
     uint8_t gyro_soft_lpf_hz;               // Gyro FIR filtering
     uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 
-#ifdef GTUNE
-    uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
-    uint8_t  gtune_hilimP[3];               // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
-    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
-    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
+    uint16_t yaw_p_limit;
+
+    int16_t max_angle_inclination;          // Max possible inclination
 } pidProfile_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
-void pidSetController(pidControllerType_e type);
 void pidResetErrorGyro(void);
 
+float pidRcCommandToAngle(int16_t stick);
+int16_t pidAngleToRcCommand(float angleDeciDegrees);
+
+void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);

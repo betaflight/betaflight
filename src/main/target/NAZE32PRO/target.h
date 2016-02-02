@@ -48,7 +48,6 @@
 #define GPS_PROTO_I2C_NAV
 #define GPS_PROTO_NAZA
 
-#define GTUNE
 #define SERIAL_RX
 #define TELEMETRY
 #define TELEMETRY_FRSKY

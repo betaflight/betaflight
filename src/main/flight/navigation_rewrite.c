@@ -2241,33 +2241,6 @@ float getEstimatedActualPosition(int axis)
 }
 
 /*-----------------------------------------------------------
- * Interface with PIDs: Angle-Command transformation
- *-----------------------------------------------------------*/
-int16_t rcCommandToLeanAngle(int16_t rcCommand)
-{
-    if (posControl.pidProfile->pidController == PID_CONTROLLER_LUX_FLOAT) {
-        // LuxFloat is the only PID controller that uses raw rcCommand as target angle
-        return rcCommand;
-    }
-    else {
-        // Most PID controllers use 2 * rcCommand as target angle for ANGLE mode
-        return rcCommand * 2;
-    }
-}
-
-int16_t leanAngleToRcCommand(int16_t leanAngle)
-{
-    if (posControl.pidProfile->pidController == PID_CONTROLLER_LUX_FLOAT) {
-        // LuxFloat is the only PID controller that uses raw rcCommand as target angle
-        return leanAngle;
-    }
-    else {
-        // Most PID controllers use 2 * rcCommand as target angle for ANGLE mode
-        return leanAngle / 2;
-    }
-}
-
-/*-----------------------------------------------------------
  * Ability to execute RTH on external event
  *-----------------------------------------------------------*/
 void activateForcedRTH(void)

@@ -29,7 +29,7 @@ typedef struct biquad_s {
     float x1, x2, y1, y2;
 } biquad_t;
 
-float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
+float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dt);
 void filterResetPt1(filterStatePt1_t *filter, float input);
 
 void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplingRate);

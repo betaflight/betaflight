@@ -39,7 +39,7 @@ typedef enum {
     BOXGOV,
     BOXOSD,
     BOXTELEMETRY,
-    BOXGTUNE,
+    //BOXGTUNE,
     BOXSERVO1,
     BOXSERVO2,
     BOXSERVO3,
@@ -76,6 +76,11 @@ typedef enum {
     THROTTLE_LOW = 0,
     THROTTLE_HIGH
 } throttleStatus_e;
+
+typedef enum {
+    NOT_CENTERED = 0,
+    CENTERED
+} rollPitchStatus_e;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -126,8 +131,6 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-#define SHOULD_RESET_ERRORS ((throttleStatus == THROTTLE_LOW && !(IS_RC_MODE_ACTIVE(BOXAIRMODE))) || !(ARMING_FLAG(ARMED)) || ((throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))))
-
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
     uint8_t rcExpo8;
@@ -152,6 +155,7 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);

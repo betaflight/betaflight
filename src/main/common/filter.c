@@ -85,7 +85,7 @@ float filterApplyBiQuad(float sample, biquad_t *state)
 }
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
-float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dT)
+float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dT)
 {
 	// Pre calculate and store RC
 	if (!filter->RC) {

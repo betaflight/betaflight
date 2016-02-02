@@ -76,7 +76,6 @@
 #include "flight/imu.h"
 #include "flight/hil.h"
 #include "flight/failsafe.h"
-#include "flight/gtune.h"
 #include "flight/navigation_rewrite.h"
 
 #include "config/runtime_config.h"
@@ -114,35 +113,6 @@ extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
 static bool isRXDataNew;
-
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rxConfig_t *rxConfig);            // pid controller function prototype
-
-extern pidControllerFuncPtr pid_controller;
-
-#ifdef GTUNE
-
-void updateGtuneState(void)
-{
-    static bool GTuneWasUsed = false;
-
-    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
-        if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            ENABLE_FLIGHT_MODE(GTUNE_MODE);
-            init_Gtune(&currentProfile->pidProfile);
-            GTuneWasUsed = true;
-        }
-        if (!FLIGHT_MODE(GTUNE_MODE) && !ARMING_FLAG(ARMED) && GTuneWasUsed) {
-            saveConfigAndNotify();
-            GTuneWasUsed = false;
-        }
-    } else {
-        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            DISABLE_FLIGHT_MODE(GTUNE_MODE);
-        }
-    }
-}
-#endif
 
 bool isCalibrating()
 {
@@ -401,8 +371,26 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    if (SHOULD_RESET_ERRORS) {
-        pidResetErrorGyro();
+    /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
+       This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
+       Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
+    if (throttleStatus == THROTTLE_LOW) {
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
+            rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+
+            if (rollPitchStatus == CENTERED) {
+                ENABLE_STATE(ANTI_WINDUP);
+            }
+            else {
+                DISABLE_STATE(ANTI_WINDUP);
+            }
+        }
+        else {
+            pidResetErrorGyro();
+        }
+    }
+    else {
+        DISABLE_STATE(ANTI_WINDUP);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -604,10 +592,6 @@ void taskMainPidLoop(void)
 
     isRXDataNew = false;
 
-#ifdef GTUNE
-    updateGtuneState();
-#endif
-
 #if defined(NAV)
     updatePositionEstimator();
     applyWaypointNavigationAndAltitudeHold();
@@ -655,13 +639,7 @@ void taskMainPidLoop(void)
         }
     }
 
-    // PID - note this is function pointer set by setPIDController()
-    pid_controller(
-        &currentProfile->pidProfile,
-        currentControlRateProfile,
-        masterConfig.max_angle_inclination,
-        &masterConfig.rxConfig
-    );
+    pidController(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
 
 #ifdef HIL
     if (hilActive) {
