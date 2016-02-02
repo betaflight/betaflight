@@ -844,7 +844,9 @@ void validateAndFixConfig(void)
 
 #ifdef STM32F303xC
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+#ifdef TELEMETRY
     masterConfig.telemetryConfig.telemetry_inversion = 1;
+#endif
 #endif
 
     /*

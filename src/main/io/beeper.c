@@ -383,16 +383,14 @@ int beeperTableEntryCount(void)
 
 #else
 
-void beeper(beeperMode_e mode)
-{
-    UNUSED(mode);
-}
-void beeperSilence(void)
-{
-}
-void beeperConfirmationBeeps(uint8_t beepCount)
-{
-    UNUSED(beepCount);
-}
+// Stub out beeper functions if #BEEPER not defined
+void beeper(beeperMode_e mode) {UNUSED(mode);}
+void beeperSilence(void) {}
+void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
+void beeperUpdate(void) {}
+uint32_t getArmingBeepTimeMicros(void) {return 0;}
+beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
+const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
+int beeperTableEntryCount(void) {return 0;}
 
 #endif
