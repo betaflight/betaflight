@@ -68,7 +68,6 @@ STATIC_UNIT_TESTED int queueSize(void)
 }
 #endif
 
-#if !defined(SKIP_TASK_STATISTICS) || defined(UNIT_TEST)
 STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
@@ -78,7 +77,6 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
     }
     return false;
 }
-#endif
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
