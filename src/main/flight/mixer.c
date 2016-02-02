@@ -789,10 +789,10 @@ void mixTable(void)
         // Scale roll/pitch/yaw uniformly to fit within throttle range
         int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
         int16_t throttleRange, throttle;
-        int16_t throttleMin, throttleMax;
+        int16_t throttleMin, throttleMax = 0;
         static bool flightDirection3dReversed;
 
-        throttle = rcData[THROTTLE];
+        throttle = rcCommand[THROTTLE];
 
         // Find min and max throttle based on condition
         if (feature(FEATURE_3D)) {
@@ -831,7 +831,6 @@ void mixTable(void)
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
             }
-            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         } else {
             motorLimitReached = false;
             throttleMin = throttleMin + (rollPitchYawMixRange / 2);
