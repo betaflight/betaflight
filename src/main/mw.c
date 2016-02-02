@@ -114,6 +114,7 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern bool antiWindupProtection;
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
@@ -419,10 +420,23 @@ void processRx(void)
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
 
+    /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered. */
+    /* This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttl in air */
     if (throttleStatus == THROTTLE_LOW) {
-        pidResetErrorAngle();
-        pidResetErrorGyro();
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            if (rollPitchStatus == CENTERED) {
+                antiWindupProtection = true;
+            } else {
+                antiWindupProtection = false;
+            }
+        } else {
+            pidResetErrorAngle();
+            pidResetErrorGyro();
+        }
+    } else {
+        antiWindupProtection = false;
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
