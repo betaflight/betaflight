@@ -987,10 +987,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite32(0); // future exp
 			break;
 	    case BST_DEADBAND:
-			bstWrite8(masterConfig.profile[0].rcControlsConfig.alt_hold_deadband);
-			bstWrite8(masterConfig.profile[0].rcControlsConfig.alt_hold_fast_change);
-			bstWrite8(masterConfig.profile[0].rcControlsConfig.deadband);
-			bstWrite8(masterConfig.profile[0].rcControlsConfig.yaw_deadband);
+			bstWrite8(currentProfile->rcControlsConfig.alt_hold_deadband);
+			bstWrite8(currentProfile->rcControlsConfig.alt_hold_fast_change);
+			bstWrite8(currentProfile->rcControlsConfig.deadband);
+			bstWrite8(currentProfile->rcControlsConfig.yaw_deadband);
 			break;
 	    case BST_FC_FILTERS:
 			bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
@@ -1401,7 +1401,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 		   break;
 #ifdef LED_STRIP
 	    case BST_SET_LED_COLORS:
-		   for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+		   //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+		   {
+			   i = bstRead8();
 			   hsvColor_t *color = &masterConfig.colors[i];
 			   color->h = bstRead16();
 			   color->s = bstRead8();
@@ -1449,10 +1451,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     			DISABLE_ARMING_FLAG(PREVENT_ARMING);
 			break;
 	    case BST_SET_DEADBAND:
-			masterConfig.profile[0].rcControlsConfig.alt_hold_deadband = bstRead8();
-			masterConfig.profile[0].rcControlsConfig.alt_hold_fast_change = bstRead8();
-			masterConfig.profile[0].rcControlsConfig.deadband = bstRead8();
-			masterConfig.profile[0].rcControlsConfig.yaw_deadband = bstRead8();
+			currentProfile->rcControlsConfig.alt_hold_deadband = bstRead8();
+			currentProfile->rcControlsConfig.alt_hold_fast_change = bstRead8();
+			currentProfile->rcControlsConfig.deadband = bstRead8();
+			currentProfile->rcControlsConfig.yaw_deadband = bstRead8();
 			break;
 	    case BST_SET_FC_FILTERS:
 			masterConfig.gyro_lpf = bstRead16();
