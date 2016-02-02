@@ -57,7 +57,7 @@
 #define USE_BARO_BMP280
 
 #define MAG
-//#define USE_MPU9250_MAG // Enables bypass configuration
+#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
@@ -66,6 +66,13 @@
 #define SONAR
 #define BEEPER
 #define LED0
+
+#define USB_IO
+#define USB_CABLE_DETECTION
+
+#define USB_DETECT_PIN                   GPIO_Pin_5
+#define USB_DETECT_GPIO_PORT             GPIOB
+#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
 
 #define USE_VCP
 #define USE_USART1
@@ -169,21 +176,22 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM1
-//
-//#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-//#define WS2811_GPIO                     GPIOA
-//#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-//#define WS2811_GPIO_AF                  GPIO_AF_6
-//#define WS2811_PIN                      GPIO_Pin_8
-//#define WS2811_PIN_SOURCE               GPIO_PinSource8
-//#define WS2811_TIMER                    TIM1
-//#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-//#define WS2811_DMA_CHANNEL              DMA1_Channel2
-//#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define LED_STRIP
+#define LED_STRIP_TIMER TIM1
 
-#define USE_TRANSPONDER_ON_DMA1_CHANNEL2
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_6
+#define WS2811_PIN                      GPIO_Pin_8
+#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_TIMER                    TIM1
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define WS2811_DMA_CHANNEL              DMA1_Channel2
+#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+
+#define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
 #define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define TRANSPONDER_GPIO_AF                  GPIO_AF_6
@@ -193,23 +201,22 @@
 #define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
 #define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
+#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define USB_CABLE_DETECTION
-#define USB_DETECT_PIN                   GPIO_Pin_5
-#define USB_DETECT_GPIO_PORT             GPIOB
-#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+#define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
-#define TRANSPONDER
 #define SERIAL_RX
 #define AUTOTUNE
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
 
+#define BUTTONS
 #define BUTTON_A_PORT  GPIOB
 #define BUTTON_A_PIN   Pin_1
 #define BUTTON_B_PORT  GPIOB
@@ -225,7 +232,6 @@
 #define BINDPLUG_PIN   BUTTON_B_PIN
 
 #define USE_SERIAL_1WIRE
-#define USE_SERIAL_1WIRE_CLI
 
 #define S1W_TX_GPIO         UART1_GPIO
 #define S1W_TX_PIN          UART1_TX_PIN
