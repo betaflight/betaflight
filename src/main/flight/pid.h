@@ -72,11 +72,10 @@ typedef struct pidProfile_s {
 #endif
 } pidProfile_t;
 
-typedef struct airModePlus {
+typedef struct acroPlus_s {
     float factor;
     float wowFactor;
-    float iTermScaler;
-} airModePlus_t;
+} acroPlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
