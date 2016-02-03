@@ -79,7 +79,7 @@ void handleMSPTelemetry(void)
         return;
     }
 
-    sendMspTelemetry();
+    //sendMspTelemetry(); TODO - Cleanup / fix
 }
 
 void freeMSPTelemetryPort(void)
@@ -106,7 +106,7 @@ void configureMSPTelemetryPort(void)
     if (!mspTelemetryPort) {
         return;
     }
-    mspSetTelemetryPort(mspTelemetryPort);
+    //mspSetTelemetryPort(mspTelemetryPort); TODO - Cleanup / Fix
 
     mspTelemetryEnabled = true;
 }
