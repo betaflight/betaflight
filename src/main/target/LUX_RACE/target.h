@@ -158,6 +158,9 @@
 #define BLACKBOX
 #define GPS
 #define GTUNE
+
+
+/* FIXME - Ledstrip cannot compile
 #define LED_STRIP
 
 #define LED_STRIP_TIMER TIM16
@@ -172,6 +175,7 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+*/
 
 #define TELEMETRY
 #define SERIAL_RX
