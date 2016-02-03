@@ -580,7 +580,7 @@ static void resetConf(void)
     currentControlRateProfile->rates[FD_YAW] = 90;
     currentControlRateProfile->dynThrPID = 30;
     currentControlRateProfile->tpa_breakpoint = 1500;
-    currentProfile->rcControlsConfig.deadband = 10;
+    masterConfig.rcControlsConfig.deadband = 10;
 
     masterConfig.escAndServoConfig.minthrottle = 1025;
     masterConfig.escAndServoConfig.maxthrottle = 1980;
