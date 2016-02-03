@@ -1181,9 +1181,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_RC_DEADBAND:
         headSerialReply(3);
-        serialize8(currentProfile->rcControlsConfig.deadband);
-        serialize8(currentProfile->rcControlsConfig.yaw_deadband);
-        serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        serialize8(masterConfig.rcControlsConfig.deadband);
+        serialize8(masterConfig.rcControlsConfig.yaw_deadband);
+        serialize8(masterConfig.rcControlsConfig.alt_hold_deadband);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
@@ -1450,9 +1450,9 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_DEADBAND:
-        currentProfile->rcControlsConfig.deadband = read8();
-        currentProfile->rcControlsConfig.yaw_deadband = read8();
-        currentProfile->rcControlsConfig.alt_hold_deadband = read8();
+        masterConfig.rcControlsConfig.deadband = read8();
+        masterConfig.rcControlsConfig.yaw_deadband = read8();
+        masterConfig.rcControlsConfig.alt_hold_deadband = read8();
         break;
 
     case MSP_SET_RESET_CURR_PID:
