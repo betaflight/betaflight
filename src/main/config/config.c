@@ -637,6 +637,7 @@ static void resetConf(void)
 #ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
+    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
 #else
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif

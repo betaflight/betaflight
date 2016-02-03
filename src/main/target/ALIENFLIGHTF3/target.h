@@ -48,7 +48,7 @@
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
-#define DEBUG_MPU_DATA_READY_INTERRUPT
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 
 // Using MPU6050 for the moment.
@@ -72,7 +72,7 @@
 //#define BARO
 //#define USE_BARO_MS5611
 
-// No mag support for now (option to use MPU9150 in the future).
+// option to use MPU9150 or MPU9250 integrated AK89xx Mag
 #define MAG
 #define USE_MAG_AK8963
 

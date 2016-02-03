@@ -171,7 +171,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 
 #ifdef ALIENFLIGHTF3
     // MPU_INT output on V1 PA15
-    static const extiConfig_t alienWiiF3V1MPUIntExtiConfig = {
+    static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,
             .gpioPin = Pin_15,
@@ -181,7 +181,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_irqn = EXTI15_10_IRQn
     };
     // MPU_INT output on V2 PB13
-    static const extiConfig_t alienWiiF3V2MPUIntExtiConfig = {
+    static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
             .gpioPort = GPIOB,
             .gpioPin = Pin_13,
@@ -191,9 +191,9 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .exti_irqn = EXTI15_10_IRQn
     };
     if (hardwareRevision == AFF3_REV_1) {
-        return &alienWiiF3V1MPUIntExtiConfig;
+        return &alienFlightF3V1MPUIntExtiConfig;
     } else {
-        return &alienWiiF3V2MPUIntExtiConfig;
+        return &alienFlightF3V2MPUIntExtiConfig;
     }
 #endif
 
