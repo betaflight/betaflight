@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 #include "debug.h"
@@ -28,7 +27,6 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
-#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
@@ -36,7 +34,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
-#include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
 
@@ -51,6 +48,7 @@
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/lowpass.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -79,6 +77,7 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
+static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 #endif
 
 static const motorMixer_t mixerQuadX[] = {
@@ -925,8 +924,6 @@ void filterServos(void)
 {
 #ifdef USE_SERVOS
     int16_t servoIdx;
-    static bool servoFilterIsSet;
-    biquad_t servoFitlerState[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
@@ -934,11 +931,7 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            if (!servoFilterIsSet) {
-                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFitlerState[servoIdx], targetLooptime);
-                servoFilterIsSet = true;
-            }
-            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFitlerState[servoIdx]));
+            servo[servoIdx] = (int16_t)lowpassFixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
