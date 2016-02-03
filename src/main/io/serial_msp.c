@@ -1203,6 +1203,7 @@ static bool processInCommand(void)
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
+    uint16_t gyroRefreshRate;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1247,7 +1248,34 @@ static bool processInCommand(void)
         masterConfig.disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        read16();
+        gyroRefreshRate = read16();
+        if (gyroRefreshRate != targetLooptime) {
+            switch (gyroRefreshRate) {
+#ifdef STM32F303xC
+                default:
+                case(1000):
+                    masterConfig.gyro_lpf = 1;
+                    break;
+                case(500):
+                    masterConfig.gyro_lpf = 0;
+                    break;
+#else
+                default:
+                case(1000):
+                    masterConfig.gyro_lpf = 1;
+                    masterConfig.acc_hardware = 0;
+                    masterConfig.baro_hardware = 0;
+                    masterConfig.mag_hardware = 0;
+                    break;
+                case(500):
+                    masterConfig.gyro_lpf = 0;
+                    masterConfig.acc_hardware = 1;
+                    masterConfig.baro_hardware = 1;
+                    masterConfig.mag_hardware = 1;
+                    break;
+#endif
+            }
+        }
         break;
     case MSP_SET_PID_CONTROLLER:
         currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
