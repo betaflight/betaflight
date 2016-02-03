@@ -60,8 +60,7 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
-    uint8_t gyro_lpf_hz;                    // Gyro Soft filter in hz
-    uint8_t dterm_lpf_hz;                   // Delta Filter in hz
+    float dterm_lpf_hz;                     // Delta Filter in hz
     uint8_t deltaFromGyro;                  // Alternative delta Calculation
 
 #ifdef GTUNE

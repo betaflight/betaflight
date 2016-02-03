@@ -142,7 +142,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float horizonLevelStrength = 1;
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
         deltaStateIsSet = true;
     }
 
@@ -284,7 +284,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int8_t horizonLevelStrength = 100;
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
         deltaStateIsSet = true;
     }
 

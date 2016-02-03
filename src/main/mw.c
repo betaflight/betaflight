@@ -184,7 +184,7 @@ void filterRc(void){
 
     /* Initialize cycletime filter */
     if (!filterIsSet) {
-        BiQuadNewLpf(1, &filteredCycleTimeState, 0);
+        BiQuadNewLpf(0.5f, &filteredCycleTimeState, targetLooptime);
         filterIsSet = true;
     }
 

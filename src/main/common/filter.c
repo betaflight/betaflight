@@ -24,30 +24,23 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
-#include "drivers/gyro_sync.h"
-
-
 #define M_LN2_FLOAT	0.69314718055994530942f
 #define M_PI_FLOAT	3.14159265358979323846f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
 /* sets up a biquad Filter */
-void BiQuadNewLpf(uint8_t filterCutFreq, biquad_t *newState, float refreshRate)
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
 {
-	float samplingRate;
+    float sampleRate;
 
-    if (!refreshRate) {
-        samplingRate = 1 / (targetLooptime * 0.000001f);
-    } else {
-        samplingRate = refreshRate;
-    }
+    sampleRate = 1 / ((float)refreshRate * 0.000001f);
 
     float omega, sn, cs, alpha;
     float a0, a1, a2, b0, b1, b2;
 
     /* setup variables */
-    omega = 2 * M_PI_FLOAT * (float) filterCutFreq / samplingRate;
+    omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
     sn = sinf(omega);
     cs = cosf(omega);
     alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
@@ -60,11 +53,11 @@ void BiQuadNewLpf(uint8_t filterCutFreq, biquad_t *newState, float refreshRate)
     a2 = 1 - alpha;
 
     /* precompute the coefficients */
-    newState->a0 = b0 /a0;
-    newState->a1 = b1 /a0;
-    newState->a2 = b2 /a0;
-    newState->a3 = a1 /a0;
-    newState->a4 = a2 /a0;
+    newState->b0 = b0 /a0;
+    newState->b1 = b1 /a0;
+    newState->b2 = b2 /a0;
+    newState->a1 = a1 /a0;
+    newState->a2 = a2 /a0;
 
     /* zero initial samples */
     newState->x1 = newState->x2 = 0;
@@ -77,8 +70,8 @@ float applyBiQuadFilter(float sample, biquad_t *state)
     float result;
 
     /* compute result */
-    result = state->a0 * sample + state->a1 * state->x1 + state->a2 * state->x2 -
-        state->a3 * state->y1 - state->a4 * state->y2;
+    result = state->b0 * sample + state->b1 * state->x1 + state->b2 * state->x2 -
+        state->a1 * state->y1 - state->a2 * state->y2;
 
     /* shift x1 to x2, sample to x1 */
     state->x2 = state->x1;

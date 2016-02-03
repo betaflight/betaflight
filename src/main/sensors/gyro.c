@@ -41,15 +41,15 @@ int16_t gyroADC[XYZ_AXIS_COUNT];
 int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
-static biquad_t gyroBiQuadState[3];
+static biquad_t gyroFilterState[3];
 static bool gyroFilterStateIsSet;
-static uint8_t gyroLpfCutFreq;
+static float gyroLpfCutFreq;
 int axis;
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, uint8_t gyro_lpf_hz)
+void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
 {
     gyroConfig = gyroConfigToUse;
     gyroLpfCutFreq = gyro_lpf_hz;
@@ -57,7 +57,7 @@ void useGyroConfig(gyroConfig_t *gyroConfigToUse, uint8_t gyro_lpf_hz)
 
 void initGyroFilterCoefficients(void) {
     if (gyroLpfCutFreq && targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroBiQuadState[axis], 0);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
         gyroFilterStateIsSet = true;
     }
 }
@@ -140,10 +140,10 @@ void gyroUpdate(void)
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
     if (gyroLpfCutFreq) {
-        if (!gyroFilterStateIsSet) {
-            initGyroFilterCoefficients();
-        } else {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = lrintf(applyBiQuadFilter((float) gyroADC[axis], &gyroBiQuadState[axis]));
+        if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
+
+        if (gyroFilterStateIsSet) {
+            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = lrintf(applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]));
         }
     }
 

@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 119;
+static const uint8_t EEPROM_CONF_VERSION = 120;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -176,7 +176,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
-    pidProfile->gyro_lpf_hz = 60;    // filtering ON by default
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaFromGyro = 1;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
@@ -406,6 +405,7 @@ static void resetConf(void)
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 1;                 // 188HZ
+    masterConfig.gyro_soft_lpf_hz = 60;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -770,7 +770,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_lpf_hz);
+    useGyroConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

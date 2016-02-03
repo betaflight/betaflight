@@ -17,9 +17,9 @@
 
 /* this holds the data required to update samples thru a filter */
 typedef struct biquad_s {
-    float a0, a1, a2, a3, a4;
+    float b0, b1, b2, a1, a2;
     float x1, x2, y1, y2;
 } biquad_t;
 
 float applyBiQuadFilter(float sample, biquad_t *state);
-void BiQuadNewLpf(uint8_t filterCutFreq, biquad_t *newState, float refreshRate);
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate);
