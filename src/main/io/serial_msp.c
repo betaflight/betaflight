@@ -632,7 +632,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
             serialize8(boardIdentifier[i]);
         }
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
         serialize16(hardwareRevision);
 #else
         serialize16(0); // No other build targets currently have hardware revision detection.

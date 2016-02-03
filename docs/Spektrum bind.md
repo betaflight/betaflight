@@ -2,7 +2,7 @@
 
 Spektrum bind with hardware bind plug support.
  
-The Spektrum bind code is actually enabled for the NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY, CC3D, ALIENWIIF1, ALIENWIIF3 targets.
+The Spektrum bind code is actually enabled for the NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY, CC3D, ALIENFLIGHTF1, ALIENFLIGHTF3 targets.
 
 ## Configure the bind code
 
