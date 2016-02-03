@@ -75,14 +75,17 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 pidControllerFuncPtr pid_controller = pidRewrite; // which pid controller are we using, defaultMultiWii
 
-void pidResetErrorGyro(void)
+void pidResetErrorGyro(rxConfig_t *rxConfig)
 {
     int axis;
 
     for (axis = 0; axis < 3; axis++) {
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            PREVENT_WINDUP(errorGyroI[axis], previousErrorGyroI[axis]);
-            PREVENT_WINDUP(errorGyroIf[axis], previousErrorGyroIf[axis]);
+            int rollPitchStatus = calculateRollPitchCenterStatus(rxConfig);
+            if (rollPitchStatus == CENTERED) {
+                PREVENT_WINDUP(errorGyroI[axis], previousErrorGyroI[axis]);
+                PREVENT_WINDUP(errorGyroIf[axis], previousErrorGyroIf[axis]);
+            }
         } else {
             errorGyroI[axis] = 0;
             errorGyroIf[axis] = 0.0f;

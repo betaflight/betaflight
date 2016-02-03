@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "rx/rx.h"
 
 #pragma once
 
@@ -81,5 +82,5 @@ extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorGyro(void);
+void pidResetErrorGyro(rxConfig_t *rxConfig);
 

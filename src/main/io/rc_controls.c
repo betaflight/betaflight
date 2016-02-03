@@ -120,7 +120,6 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
     return THROTTLE_HIGH;
 }
 
-/* TODO - Cleanup
 rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
 {
     if (((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
@@ -129,7 +128,6 @@ rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
 
     return NOT_CENTERED;
 }
-*/
 
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
 {

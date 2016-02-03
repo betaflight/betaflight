@@ -478,7 +478,7 @@ void processRx(void)
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     if (throttleStatus == THROTTLE_LOW) {
-        pidResetErrorGyro();
+        pidResetErrorGyro(&masterConfig.rxConfig);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
