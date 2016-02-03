@@ -157,10 +157,6 @@ static void cliFlashRead(char *cmdline);
 #endif
 #endif
 
-#ifdef USE_SERIAL_1WIRE
-static void cliUSB1Wire(char *cmdline);
-#endif
-
 #ifdef USE_SDCARD
 static void cliSdInfo(char *cmdline);
 #endif
@@ -1857,7 +1853,7 @@ void cliEnter(serialPort_t *serialPort)
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
-                              serialWriteBufShim, serialPort);
+                             (bufWrite_t)serialWriteBufShim, serialPort);
 
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
     cliPrompt();

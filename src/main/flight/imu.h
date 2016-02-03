@@ -78,6 +78,7 @@ void imuConfigure(
     uint16_t throttle_correction_angle
 );
 
+float getCosTiltAngle(void);
 void calculateEstimatedAltitude(uint32_t currentTime);
 void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims);
 void imuUpdateGyroAndAttitude(void);

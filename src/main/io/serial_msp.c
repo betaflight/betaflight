@@ -2028,7 +2028,7 @@ void mspProcess(void)
         // Big enough to fit a MSP_STATUS in one write.
         uint8_t buf[sizeof(bufWriter_t) + 20];
         writer = bufWriterInit(buf, sizeof(buf),
-                               serialWriteBufShim, currentPort->port);
+                              (bufWrite_t)serialWriteBufShim, currentPort->port);
 
         while (serialRxBytesWaiting(mspSerialPort)) {
 
@@ -2117,7 +2117,7 @@ void sendMspTelemetry(void)
     setCurrentPort(mspTelemetryPort);
     uint8_t buf[sizeof(bufWriter_t) + 16];
     writer = bufWriterInit(buf, sizeof(buf),
-                           serialWriteBufShim, currentPort->port);
+                           (bufWrite_t)serialWriteBufShim, currentPort->port);
 
     processOutCommand(mspTelemetryCommandSequence[sequenceIndex]);
     tailSerialReply();
