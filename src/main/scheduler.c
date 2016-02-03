@@ -224,6 +224,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 };
 
+uint16_t averageSystemLoadPercent = 0;
+
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
 
@@ -233,7 +235,7 @@ void taskSystem(void)
 
     /* Calculate system load */
     if (totalWaitingTasksSamples > 0) {
-        averageWaitingTasks100 = 100 * totalWaitingTasks / totalWaitingTasksSamples;
+        averageSystemLoadPercent = 100 * totalWaitingTasks / totalWaitingTasksSamples;
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }

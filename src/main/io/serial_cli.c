@@ -1160,7 +1160,7 @@ static void cliMotorMix(char *cmdline)
                 cliMotorMix("");
             }
         } else {
-            cliShowArgumentRangeError("index", 1, MAX_SUPPORTED_MOTORS);
+            cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
 #endif
@@ -1734,6 +1734,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
         }
 
+#ifdef USE_SERVOS
         // print custom servo mixer if exists
         cliPrintf("smix reset\r\n");
 
@@ -1754,6 +1755,7 @@ static void cliDump(char *cmdline)
             );
         }
 
+#endif
 #endif
 
         cliPrint("\r\n\r\n# feature\r\n");
@@ -1853,7 +1855,7 @@ void cliEnter(serialPort_t *serialPort)
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
-                             (bufWrite_t)serialWriteBufShim, serialPort);
+                              (bufWrite_t)serialWriteBufShim, serialPort);
 
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
     cliPrompt();
@@ -1866,6 +1868,7 @@ static void cliExit(char *cmdline)
 
     cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
     bufWriterFlush(cliWriter);
+
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
@@ -2068,7 +2071,7 @@ static void cliMotor(char *cmdline)
     }
 
     if (motor_index < 0 || motor_index >= MAX_SUPPORTED_MOTORS) {
-        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS);
+        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         return;
     }
 
@@ -2157,6 +2160,7 @@ static void cliRateProfile(char *cmdline)
 
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
+    bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
     handleOneshotFeatureChangeOnRestart();
@@ -2183,8 +2187,8 @@ static void cliDefaults(char *cmdline)
 }
 
 static void cliPrint(const char *str)
- {
-     while (*str)
+{
+    while (*str)
         bufWriterAppend(cliWriter, *str++);
 }
 
@@ -2203,7 +2207,6 @@ static void cliPrintf(const char *fmt, ...)
 
 static void cliWrite(uint8_t ch)
 {
-    serialWrite(cliPort, ch);
     bufWriterAppend(cliWriter, ch);
 }
 
@@ -2382,7 +2385,7 @@ static void cliSet(char *cmdline)
         cliPrint("Invalid name\r\n");
     } else {
         // no equals, check for matching variables.
-    	cliGet(cmdline);
+        cliGet(cmdline);
     }
 }
 
@@ -2415,8 +2418,13 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
-            millis() / 1000, vbat, batteryCellCount, getBatteryStateString(), averageWaitingTasks100 / 100, averageWaitingTasks100 % 100);
+    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), CPU:%d%%\r\n",
+        millis() / 1000,
+        vbat,
+        batteryCellCount,
+        getBatteryStateString(),
+        constrain(averageSystemLoadPercent, 0, 100)
+    );
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
