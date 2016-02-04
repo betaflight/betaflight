@@ -203,7 +203,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
     }
 
-    mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+    mAhdrawnRaw += (MAX(0, amperage) * lastUpdateAt) / 1000;
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
 
