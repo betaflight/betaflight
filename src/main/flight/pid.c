@@ -100,7 +100,7 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static biquad_t deltaFilterState[3];
 
 void filterIsSetCheck(pidProfile_t *pidProfile) {
-	static bool deltaStateIsSet;
+    static bool deltaStateIsSet = false;
     if (!deltaStateIsSet && pidProfile->dterm_cut_hz) {
         int axis;
         for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_cut_hz, &deltaFilterState[axis], targetLooptime);
@@ -375,6 +375,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 #endif
 }
 
+
 static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
@@ -411,7 +412,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         // Using Level D as a Sensitivity for Horizon. 0 more level to 255 more rate. Default value of 100 seems to work fine.
         // For more rate mode increase D and slower flips and rolls will be possible
-       	horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
+        horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
     }
 
     // ----------PID controller----------
@@ -436,7 +437,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
                 AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
-                	AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
+                    AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
                 AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
@@ -458,7 +459,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * targetLooptime) >> 11) * pidProfile->I8[axis];
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -469,14 +470,15 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
             delta = RateError - lastErrorForDelta[axis];
             lastErrorForDelta[axis] = RateError;
-        } else {                                         /* Delta from measurement */
+        } else {
+            // Delta from measurement
             delta = -(gyroRate - lastErrorForDelta[axis]);
             lastErrorForDelta[axis] = gyroRate;
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / (targetLooptime >> 4))) >> 6;
+        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         // When dterm filter disabled apply moving average to reduce noise
         if (!pidProfile->dterm_cut_hz) {
@@ -511,6 +513,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     GET_PID_MULTI_WII_REWRITE_LOCALS(axis);
     }
 }
+
 
 void pidSetController(pidControllerType_e type)
 {
