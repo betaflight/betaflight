@@ -32,4 +32,4 @@ See the README file that comes with the configurator for installation instructio
 
 Cleanflight can also be configured by a command line interface.
 
-See the [CLI section](https://github.com/cleanflight/cleanflight/blob/master/docs/Cli.md) of the documentation for more details.
+See the [CLI section](Cli.md) of the documentation for more details.
