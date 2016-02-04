@@ -117,6 +117,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
+extern bool lowThrottleWindupProtection;
+
 
 static bool isRXDataNew;
 
@@ -476,9 +478,16 @@ void processRx(void)
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    rollPitchStatus_e rollPitchStatus = calculateRollPitchCenterStatus(&masterConfig.rxConfig);
 
     if (throttleStatus == THROTTLE_LOW) {
-        pidResetErrorGyro(&masterConfig.rxConfig);
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && rollPitchStatus == CENTERED) { /* Anti Windup when roll / pitch stick centered */
+            lowThrottleWindupProtection = true;
+        } else {
+            pidResetErrorGyro();
+        }
+    } else {
+        lowThrottleWindupProtection = false;
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
