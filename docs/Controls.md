@@ -103,3 +103,14 @@ In depth videos explaining these terms are available from Joshua Bardwell here:
 https://www.youtube.com/watch?v=WFU3VewGbbA
 
 https://www.youtube.com/watch?v=YNRl0OTKRGA
+
+
+## Deadband
+
+If yaw, roll or pitch sticks do not reliably return to centre or the radio has a lot of jitter around the centrepoint, deadband can be applied. The whole deadband value is applied *either side* of the center point rather than half the value above and half the value below. The deadband value will have an effect on stick endpoint values as the axis value will be reduced by the amount of deadband applied. 
+
+`deadband` -
+Applied to roll, pitch.
+
+`yaw_deadband`
+Only applied to yaw. 
