@@ -379,6 +379,9 @@ static const char * const lookupTableGyroLpf[] = {
     "10HZ"
 };
 
+static const char * const lookupDeltaMethod[] = {
+    "ERROR", "MEASUREMENT"
+};
 
 typedef struct lookupTableEntry_s {
     const char * const *values;
@@ -402,6 +405,7 @@ typedef enum {
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
     TABLE_GYRO_LPF,
+    TABLE_DELTA_METHOD,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -420,7 +424,8 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
-    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) }
+    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
+    { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -633,6 +638,8 @@ const clivalue_t valueTable[] = {
 
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX } },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, .config.minmax = { -18000,  18000 } },
+
+    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
 
