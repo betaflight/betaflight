@@ -786,11 +786,11 @@ void mixTable(void)
     // Find min and max throttle based on condition
     if (feature(FEATURE_3D)) {
         static int16_t throttleMinPrevious, throttleMaxPrevious, throttlePrevious;
-        if (rcData[THROTTLE] <= (flight3DConfig->neutral3d - flight3DConfig->deadband3d_throttle)) {
+        if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
             flightDirection3dReversed = true;
-        } else if (rcData[THROTTLE] >= (flight3DConfig->neutral3d + flight3DConfig->deadband3d_throttle)) {
+        } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
             throttleMax = escAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
             flightDirection3dReversed = false;
