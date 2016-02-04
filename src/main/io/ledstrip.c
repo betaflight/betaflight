@@ -782,14 +782,18 @@ void applyLedThrottleLayer()
 #define ROTATION_SEQUENCE_LED_COUNT 6 // 2 on, 4 off
 #define ROTATION_SEQUENCE_LED_WIDTH 2
 
+#define RING_PATTERN_NOT_CALCULATED 255
+
 void applyLedThrustRingLayer(void)
 {
-    uint8_t ledIndex;
-    static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
-    static uint8_t rotationSeqLedCount = 255;
-    bool nextLedOn = false;
-    hsvColor_t ringColor;
     const ledConfig_t *ledConfig;
+    hsvColor_t ringColor;
+    uint8_t ledIndex;
+
+    // initialised to special value instead of using more memory for a flag.
+    static uint8_t rotationSeqLedCount = RING_PATTERN_NOT_CALCULATED;
+    static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+    bool nextLedOn = false;
 
     uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
@@ -823,13 +827,14 @@ void applyLedThrustRingLayer(void)
         ledRingIndex++;
     }
 
-    // if not done yet, update ring pattern according to total number of ring leds found
-    if (rotationSeqLedCount == 255) {
+    uint8_t ledRingLedCount = ledRingIndex;
+    if (rotationSeqLedCount == RING_PATTERN_NOT_CALCULATED) {
+        // update ring pattern according to total number of ring leds found
 
-        rotationSeqLedCount = ledRingIndex;
+        rotationSeqLedCount = ledRingLedCount;
 
         // try to split in segments/rings of exactly ROTATION_SEQUENCE_LED_COUNT leds
-        if ((ledRingIndex % ROTATION_SEQUENCE_LED_COUNT) == 0) {
+        if ((ledRingLedCount % ROTATION_SEQUENCE_LED_COUNT) == 0) {
             rotationSeqLedCount = ROTATION_SEQUENCE_LED_COUNT;
         } else {
             // else split up in equal segments/rings of at most ROTATION_SEQUENCE_LED_COUNT leds
