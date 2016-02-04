@@ -480,10 +480,10 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 3500;
+    masterConfig.looptime = 2000;
     masterConfig.emf_avoidance = 0;
-    masterConfig.i2c_overclock = 0;
-    masterConfig.gyroSync = 0;
+    masterConfig.i2c_overclock = 1;
+    masterConfig.gyroSync = 1;
     masterConfig.gyroSyncDenominator = 1;
 
     resetPidProfile(&currentProfile->pidProfile);
