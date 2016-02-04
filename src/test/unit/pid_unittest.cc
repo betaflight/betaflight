@@ -56,8 +56,8 @@ extern "C" {
     float unittest_pidLuxFloat_PTerm[3];
     float unittest_pidLuxFloat_ITerm[3];
     float unittest_pidLuxFloat_DTerm[3];
-    int32_t cycleTime; // cycleTime for pidMultiWiiRewrite
     int32_t unittest_pidMultiWiiRewrite_lastErrorForDelta[3];
+    int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     int32_t unittest_pidMultiWiiRewrite_PTerm[3];
     int32_t unittest_pidMultiWiiRewrite_ITerm[3];
     int32_t unittest_pidMultiWiiRewrite_DTerm[3];
@@ -99,8 +99,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->gyro_soft_lpf = 0;   // no filtering by default
-    pidProfile->yaw_pterm_cut_hz = 0;
     pidProfile->dterm_cut_hz = 0;
     pidProfile->deltaMethod = DELTA_FROM_ERROR;
 
@@ -512,7 +510,7 @@ void pidControllerInitMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfi
     pidSetController(PID_CONTROLLER_MWREWRITE);
     deltaTotalSamples = 1;
     resetPidProfile(pidProfile);
-    cycleTime = 2048; // normalised cycleTime for pidMultiWiiRewrite
+    targetLooptime = 2048; // normalised targetLooptime for pidMultiWiiRewrite
     resetRollAndPitchTrims(rollAndPitchTrims);
     pidResetErrorAngle();
     pidResetErrorGyro();
@@ -577,11 +575,11 @@ int32_t calcMwrPTerm(pidProfile_t *pidProfile, pidIndex_e axis, int rateError) {
 }
 
 int32_t calcMwrITermDelta(pidProfile_t *pidProfile, pidIndex_e axis, int rateError) {
-    return pidProfile->I8[axis] * (rateError * cycleTime >> 11) >> 13;
+    return pidProfile->I8[axis] * (rateError * targetLooptime >> 11) >> 13;
 }
 
 int32_t calcMwrDTerm(pidProfile_t *pidProfile, pidIndex_e axis, int rateError) {
-    return (pidProfile->D8[axis] * (rateError * ((uint16_t) 0xFFFF / (cycleTime >> 4))) >> 6) >> 8;
+    return (pidProfile->D8[axis] * (rateError * ((uint16_t) 0xFFFF / (targetLooptime >> 4))) >> 6) >> 8;
 }
 
 TEST(PIDUnittest, TestPidMultiWiiRewrite)
@@ -662,9 +660,9 @@ TEST(PIDUnittest, TestPidMultiWiiRewriteITermConstrain)
     pid_controller(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_EQ(calcMwrITermDelta(&pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewrite_ITerm[FD_ROLL]);
 
-    // set up a very large rateError and a large cycleTime to force ITerm to be constrained
+    // set up a very large rateError and a large targetLooptime to force ITerm to be constrained
     pidControllerInitMultiWiiRewrite(&pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
-    cycleTime = 8192;
+    targetLooptime = 8192;
     rcCommand[ROLL] = calcMwrRcCommandRoll(32750, &controlRate); // can't use INT16_MAX, since get rounding error
     rateErrorRoll = calcMwrAngleRateRoll(&controlRate);
     EXPECT_EQ(32750, rateErrorRoll);// cross check

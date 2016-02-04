@@ -178,8 +178,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->gyro_soft_lpf = 0;   // no filtering by default
-    pidProfile->yaw_pterm_cut_hz = 0;
     pidProfile->dterm_cut_hz = 0;
     pidProfile->deltaMethod = 1;
 
@@ -406,7 +404,8 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                   // 0.003 * 10000
-    masterConfig.gyro_lpf = 3;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 1;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    masterConfig.soft_gyro_lpf_hz = 60;        // Software based lpf filter for gyro
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -481,10 +480,10 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 3500;
+    masterConfig.looptime = 1000;
     masterConfig.emf_avoidance = 0;
     masterConfig.i2c_overclock = 0;
-    masterConfig.gyroSync = 0;
+    masterConfig.gyroSync = 1;
     masterConfig.gyroSyncDenominator = 1;
 
     resetPidProfile(&currentProfile->pidProfile);
@@ -737,7 +736,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, filterGetFIRCoefficientsTable(currentProfile->pidProfile.gyro_soft_lpf, masterConfig.looptime));
+    useGyroConfig(&masterConfig.gyroConfig, masterConfig.soft_gyro_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
