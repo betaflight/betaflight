@@ -250,7 +250,7 @@ void init(void)
     // Configure the Flash Latency cycles and enable prefetch buffer
     SetSysClock(masterConfig.emf_avoidance);
 #endif
-    i2cSetOverclock(masterConfig.i2c_overclock);
+    i2cSetOverclock(masterConfig.i2c_highspeed);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
