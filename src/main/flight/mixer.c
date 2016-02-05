@@ -744,6 +744,11 @@ STATIC_UNIT_TESTED void servoMixer(void)
 #endif
 #endif
 
+void mixConstrainMotorForFailsafeCondition(uint8_t motorIndex)
+{
+    motor[motorIndex] = constrain(motor[motorIndex], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+}
+
 void mixTable(void)
 {
     uint32_t i;
@@ -829,11 +834,8 @@ void mixTable(void)
         for (i = 0; i < motorCount; i++) {
             motor[i] = rollPitchYawMix[i] + constrainf(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
-            /* Double code. Preparations for full mixer replacement to airMode mixer. Copy from old mixer*/
-
-            // TODO - Should probably not be needed for constraining failsafe, but keep it till it is investigated.
             if (isFailsafeActive) {
-                motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+                mixConstrainMotorForFailsafeCondition(i);
             } else if (feature(FEATURE_3D)) {
                 if (flightDirection3dReversed) {
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
@@ -892,7 +894,7 @@ void mixTable(void)
                 }
             } else {
                 if (isFailsafeActive) {
-                    motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+                    mixConstrainMotorForFailsafeCondition(i);
                 } else {
                     // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                     // do not spin the motors.
