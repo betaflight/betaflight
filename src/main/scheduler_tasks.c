@@ -59,7 +59,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,
+        .desiredPeriod = 1000000 / 100,     // every 10ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 

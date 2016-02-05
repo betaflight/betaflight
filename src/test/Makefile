@@ -671,6 +671,7 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 
 $(OBJECT_DIR)/scheduler_tasks.o : \
 	$(USER_DIR)/scheduler_tasks.c \
+	$(USER_DIR)/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -686,6 +687,7 @@ $(OBJECT_DIR)/scheduler.o : \
 
 $(OBJECT_DIR)/scheduler_unittest.o : \
 	$(TEST_DIR)/scheduler_unittest.cc \
+	$(USER_DIR)/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
