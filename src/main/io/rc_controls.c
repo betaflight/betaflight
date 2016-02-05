@@ -328,8 +328,8 @@ bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
     }
 
     uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-    return (channelValue >= 900 + (range->startStep * 25) &&
-            channelValue < 900 + (range->endStep * 25));
+    return (channelValue >= MODE_STEP_TO_CHANNEL_VALUE(range->startStep)
+            && channelValue < MODE_STEP_TO_CHANNEL_VALUE(range->endStep));
 }
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
