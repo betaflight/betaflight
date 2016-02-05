@@ -54,8 +54,6 @@ extern uint8_t motorCount;
 extern float dT;
 extern bool motorLimitReached;
 
-#define PREVENT_WINDUP(x,y,z) { if (z) {if (ABS(x) > ABS(y)) { if (x < 0) { x = -ABS(y); }  else { x = ABS(y); } } } else { y = x; }}
-
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -216,9 +214,14 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
 
+        // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            errorGyroIf[axis] *= scaleItermToRcInput(axis);
-            PREVENT_WINDUP(errorGyroIf[axis], errorGyroIfLimit[axis], antiWindupProtection || motorLimitReached);
+            errorGyroIf[axis] = errorGyroIf[axis] * scaleItermToRcInput(axis);
+            if (antiWindupProtection || motorLimitReached) {
+                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+            } else {
+                errorGyroIfLimit[axis] = errorGyroIf[axis];
+            }
         }
 
         ITerm = errorGyroIf[axis];
@@ -300,9 +303,14 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             errorGyroI[axis] = 0;
         }
 
+        // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
-            PREVENT_WINDUP(errorGyroI[axis], errorGyroILimit[axis], antiWindupProtection || motorLimitReached);
+            if (antiWindupProtection || motorLimitReached) {
+                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+            } else {
+                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+            }
         }
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
@@ -499,9 +507,14 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
+        // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
-            PREVENT_WINDUP(errorGyroI[axis], errorGyroILimit[axis], antiWindupProtection || motorLimitReached);
+            if (antiWindupProtection || motorLimitReached) {
+                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+            } else {
+                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+            }
         }
 
         ITerm = errorGyroI[axis] >> 13;
