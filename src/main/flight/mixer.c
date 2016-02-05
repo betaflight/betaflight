@@ -775,7 +775,7 @@ void mixTable(void)
             // Scale roll/pitch/yaw uniformly to fit within throttle range
             int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
             int16_t throttleRange, throttle;
-            int16_t throttleMin, throttleMax = 0;
+            int16_t throttleMin = 0, throttleMax = 0;
             static bool flightDirection3dReversed;
 
             throttle = rcCommand[THROTTLE];
