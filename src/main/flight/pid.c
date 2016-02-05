@@ -53,7 +53,6 @@
 extern uint8_t motorCount;
 extern float dT;
 extern bool motorLimitReached;
-bool antiWindupProtection;
 
 #define PREVENT_WINDUP(x,y,z) { if (z) {if (ABS(x) > ABS(y)) { if (x < 0) { x = -ABS(y); }  else { x = ABS(y); } } } else { y = x; }}
 
