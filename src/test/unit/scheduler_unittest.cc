@@ -184,32 +184,56 @@ TEST(SchedulerUnittest, TestQueueArray)
     }
     EXPECT_EQ(TASK_COUNT - 1, queueSize());
     EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 2]);
-    cfTask_t *lastTaskPrev = taskQueueArray[TASK_COUNT - 2];
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+    const cfTask_t *lastTaskPrev = taskQueueArray[TASK_COUNT - 2];
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
     setTaskEnabled(TASK_SYSTEM, false);
     EXPECT_EQ(TASK_COUNT - 2, queueSize());
     EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 3]);
     EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]); // NULL at end of queue
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
     taskQueueArray[TASK_COUNT - 2] = 0;
     setTaskEnabled(TASK_SYSTEM, true);
     EXPECT_EQ(TASK_COUNT - 1, queueSize());
     EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 2]);
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    // now there are TASK_COUNT items in the array
+    cfTaskInfo_t taskInfo;
+    getTaskInfo(static_cast<cfTaskId_e>(TASK_COUNT - 1), &taskInfo);
+    EXPECT_EQ(false, taskInfo.isEnabled);
     setTaskEnabled(static_cast<cfTaskId_e>(TASK_COUNT - 1), true);
     EXPECT_EQ(TASK_COUNT, queueSize());
     EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT]); // check no buffer overrun
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]); // check no buffer overrun
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+
+    setTaskEnabled(TASK_SYSTEM, false);
+    EXPECT_EQ(TASK_COUNT - 1, queueSize());
+    //EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 3]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+
+    setTaskEnabled(TASK_ACCEL, false);
+    EXPECT_EQ(TASK_COUNT - 2, queueSize());
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+
+    setTaskEnabled(TASK_BATTERY, false);
+    EXPECT_EQ(TASK_COUNT - 3, queueSize());
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 3]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 }
 
@@ -226,7 +250,7 @@ TEST(SchedulerUnittest, TestScheduleEmptyQueue)
     simulatedTime = 4000;
     // run the with an empty queue
     scheduler();
-    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
+    EXPECT_EQ(NULL, unittest_scheduler_selectedTask);
 }
 
 TEST(SchedulerUnittest, TestSingleTask)
@@ -268,7 +292,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed
-    EXPECT_EQ(TASK_NONE, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
 
     // NOTE:
     // TASK_GYROPID desiredPeriod is  1000 microseconds
@@ -277,33 +301,33 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime += 500;
     // no tasks should run, since neither task's desired time has elapsed
     scheduler();
-    EXPECT_EQ(TASK_NONE, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
     EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
     // 500 microseconds later, TASK_GYROPID desiredPeriod has elapsed
     simulatedTime += 500;
     // TASK_GYROPID should now run
     scheduler();
-    EXPECT_EQ(TASK_GYROPID, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
     EXPECT_EQ(1, unittest_scheduler_waitingTasks);
     EXPECT_EQ(5000 + pidLoopCheckerTime, simulatedTime);
 
     simulatedTime += 1000 - pidLoopCheckerTime;
     scheduler();
     // TASK_GYROPID should run again
-    EXPECT_EQ(TASK_GYROPID, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
 
     scheduler();
-    EXPECT_EQ(TASK_NONE, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
     EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
     simulatedTime = startTime + 10500; // TASK_GYROPID and TASK_ACCEL desiredPeriods have elapsed
     // of the two TASK_GYROPID should run first
     scheduler();
-    EXPECT_EQ(TASK_GYROPID, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
     // and finally TASK_ACCEL should now run
     scheduler();
-    EXPECT_EQ(TASK_ACCEL, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(&cfTasks[TASK_ACCEL], unittest_scheduler_selectedTask);
 }
 
 TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)

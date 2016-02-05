@@ -18,12 +18,16 @@
 #define SRC_MAIN_SCHEDULER_C_
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
-
+#ifdef UNIT_TEST
+// cannot include platform.h in UNIT_TEST build, since if included the build #defines (eg MAG, GPS, etc)
+// are set differently to test code
+typedef enum {TEST_IRQ = 0 } IRQn_Type;
+#else
+#include "platform.h"
+#endif
 #include "scheduler.h"
 #include "debug.h"
 #include "build_config.h"
@@ -81,7 +85,7 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 
 STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
 {
-    if ((taskQueueSize >= TASK_COUNT - 1) || queueContains(task)) {
+    if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
         return;
     }
     for (int ii = 0; ii <= taskQueueSize; ++ii) {
@@ -197,49 +201,46 @@ void schedulerInit(void)
 
 void scheduler(void)
 {
-    /* Cache currentTime */
+    // Cache currentTime
     currentTime = micros();
 
-    /* Check for realtime tasks */
+    // Check for realtime tasks
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
         const uint32_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
         if ((int32_t)(currentTime - nextExecuteAt) >= 0) {
             timeToNextRealtimeTask = 0;
-        }
-        else {
+        } else {
             const uint32_t newTimeInterval = nextExecuteAt - currentTime;
             timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
         }
     }
+    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
 
-    /* The task to be invoked */
-    uint8_t selectedTaskDynPrio = 0;
+    // The task to be invoked
+    uint32_t selectedTaskDynPrio = 0;
     cfTask_t *selectedTask = NULL;
 
-    /* Update task dynamic priorities */
+    // Update task dynamic priorities
     uint16_t waitingTasks = 0;
     for (cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
-        /* Task has checkFunc - event driven */
+        // Task has checkFunc - event driven
         if (task->checkFunc != NULL) {
-            /* Increase priority for event driven tasks */
+            // Increase priority for event driven tasks
             if (task->dynamicPriority > 0) {
                 task->taskAgeCycles = 1 + ((currentTime - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
-            }
-            else if (task->checkFunc(currentTime - task->lastExecutedAt)) {
+            } else if (task->checkFunc(currentTime - task->lastExecutedAt)) {
                 task->lastSignaledAt = currentTime;
                 task->taskAgeCycles = 1;
                 task->dynamicPriority = 1 + task->staticPriority;
                 waitingTasks++;
-            }
-            else {
+            } else {
                 task->taskAgeCycles = 0;
             }
-        }
-        /* Task is time-driven, dynamicPriority is last execution age measured in desiredPeriods) */
-        else {
+        } else {
+            // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
             // Task age is calculated from last execution
             task->taskAgeCycles = ((currentTime - task->lastExecutedAt) / task->desiredPeriod);
             if (task->taskAgeCycles > 0) {
@@ -248,11 +249,7 @@ void scheduler(void)
             }
         }
 
-        /* limit new priority to avoid overflow of uint8_t */
-        task->dynamicPriority = MIN(task->dynamicPriority, TASK_PRIORITY_MAX);;
-
         if (task->dynamicPriority > selectedTaskDynPrio) {
-            const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
             const bool taskCanBeChosenForScheduling =
                 (outsideRealtimeGuardInterval) ||
                 (task->taskAgeCycles > 1) ||
@@ -269,13 +266,13 @@ void scheduler(void)
 
     currentTask = selectedTask;
 
-    /* Found a task that should be run */
+    // Found a task that should be run
     if (selectedTask != NULL) {
         selectedTask->taskLatestDeltaTime = currentTime - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTime;
         selectedTask->dynamicPriority = 0;
 
-        /* Execute task */
+        // Execute task
         const uint32_t currentTimeBeforeTaskCall = micros();
         selectedTask->taskFunc();
         const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
