@@ -535,6 +535,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 #endif
 }
 
+#ifdef MAG
 static void detectMag(magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware;
@@ -637,6 +638,7 @@ retry:
     detectedSensors[SENSOR_INDEX_MAG] = magHardware;
     sensorsSet(SENSOR_MAG);
 }
+#endif
 
 void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
@@ -646,9 +648,11 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     if (sensorAlignmentConfig->acc_align != ALIGN_DEFAULT) {
         accAlign = sensorAlignmentConfig->acc_align;
     }
+#ifdef MAG
     if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
         magAlign = sensorAlignmentConfig->mag_align;
     }
+#endif
 }
 
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
@@ -657,6 +661,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
 
     int16_t deg, min;
 
+#ifndef MAG
+    UNUSED(magHardwareToUse);
+#endif
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -682,7 +689,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
     gyroUpdateSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
     gyro.init(gyroLpf);
 
+#ifdef MAG
     detectMag(magHardwareToUse);
+#endif
 
     reconfigureAlignment(sensorAlignmentConfig);
 

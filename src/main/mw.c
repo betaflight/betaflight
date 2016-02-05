@@ -729,10 +729,12 @@ void taskHandleSerial(void)
     handleSerial();
 }
 
+#ifdef BEEPER
 void taskUpdateBeeper(void)
 {
     beeperUpdate();          //call periodic beeper handler
 }
+#endif
 
 void taskUpdateBattery(void)
 {

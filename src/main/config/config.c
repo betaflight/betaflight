@@ -220,6 +220,7 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
+#ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -227,6 +228,7 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
+#endif
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
@@ -251,6 +253,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->deadband3d_throttle = 50;
 }
 
+#ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 0;
@@ -262,6 +265,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
 }
+#endif
 
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
@@ -424,7 +428,9 @@ static void resetConf(void)
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
+#ifdef TELEMETRY
     resetTelemetryConfig(&masterConfig.telemetryConfig);
+#endif
 
     masterConfig.rxConfig.serialrx_provider = 0;
     masterConfig.rxConfig.sbus_inversion = 1;
@@ -502,7 +508,9 @@ static void resetConf(void)
     currentProfile->accDeadband.z = 40;
     currentProfile->acc_unarmedcal = 1;
 
+#ifdef BARO
     resetBarometerConfig(&currentProfile->barometerConfig);
+#endif
 
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
@@ -778,12 +786,14 @@ void activateConfig(void)
         currentProfile->throttle_correction_angle
     );
 
+#if defined(BARO) || defined(SONAR)
     configureAltitudeHold(
         &currentProfile->pidProfile,
         &currentProfile->barometerConfig,
         &currentProfile->rcControlsConfig,
         &masterConfig.escAndServoConfig
     );
+#endif
 
 #ifdef BARO
     useBarometerConfig(&currentProfile->barometerConfig);
@@ -834,7 +844,9 @@ void validateAndFixConfig(void)
 
 #ifdef STM32F303xC
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+#ifdef TELEMETRY
     masterConfig.telemetryConfig.telemetry_inversion = 1;
+#endif
 #endif
 
     /*
