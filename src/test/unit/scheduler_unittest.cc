@@ -38,7 +38,8 @@ enum {
     calculateAltitudeTime = 154,
     updateDisplayTime = 10,
     telemetryTime = 10,
-    ledStripTime = 10
+    ledStripTime = 10,
+    transponderTime = 10
 };
 
 extern "C" {
@@ -67,6 +68,7 @@ extern "C" {
     void taskUpdateDisplay(void) {simulatedTime+=updateDisplayTime;}
     void taskTelemetry(void) {simulatedTime+=telemetryTime;}
     void taskLedStrip(void) {simulatedTime+=ledStripTime;}
+    void taskTransponder(void) {simulatedTime+=transponderTime;}
 }
 
 TEST(SchedulerUnittest, TestSingleTask)
