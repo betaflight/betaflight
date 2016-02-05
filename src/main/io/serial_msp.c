@@ -576,7 +576,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(FLIGHT_MODE(BOXAIRMODE)) << BOXAIRMODE;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));
