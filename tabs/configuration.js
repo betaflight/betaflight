@@ -70,6 +70,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             next_callback();
         }
     }
+    //Update Analog/Battery Data
+    function load_analog() {
+        MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
+	    $('input[name="batteryvoltage"]').val([ANALOG.voltage.toFixed(1)]);
+	    $('input[name="batterycurrent"]').val([ANALOG.amperage.toFixed(2)]);
+            });
+    }
 
     function load_html() {
         $('#content').load("./tabs/configuration.html", process_html);
@@ -381,7 +388,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
         $('input[name="mincommand"]').val(MISC.mincommand);
-
+        
         // fill battery
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
@@ -581,7 +588,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
-
+        GUI.interval_add('config_load_analog', load_analog, 250, true); // 4 fps
         GUI.content_ready(callback);
     }
 };
