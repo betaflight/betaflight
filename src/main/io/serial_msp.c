@@ -1213,7 +1213,7 @@ static bool processInCommand(void)
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
             masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 2) {
+            if (masterConfig.current_profile_index > 1) {
                 masterConfig.current_profile_index = 0;
             }
             writeEEPROM();
