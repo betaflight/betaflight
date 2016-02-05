@@ -781,13 +781,14 @@ void mixTable(void)
         int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
         int16_t throttleRange, throttle;
         int16_t throttleMin = 0, throttleMax = 0;
-        static bool flightDirection3dReversed;
+        static bool flightDirection3dReversed = false;
 
         throttle = rcCommand[THROTTLE];
 
         // Find min and max throttle based on condition
         if (feature(FEATURE_3D)) {
-            static int16_t throttleMinPrevious, throttleMaxPrevious, throttlePrevious;
+            static int16_t throttleMinPrevious = 0, throttleMaxPrevious = 0, throttlePrevious = 0;
+
             if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
                 throttleMax = flight3DConfig->deadband3d_low;
                 throttleMin = escAndServoConfig->minthrottle;
