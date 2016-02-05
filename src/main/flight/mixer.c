@@ -843,13 +843,6 @@ void mixTable(void)
                 } else {
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
                 }
-
-                // Motor stop handling. Airmode Overrules the Motor stop and acts like an Idle Up switch
-                if (feature(FEATURE_MOTOR_STOP) && !(IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !feature(FEATURE_3D)) {
-                    if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                        motor[i] = escAndServoConfig->mincommand;
-                    }
-                }
             }
         } else {
             // motors for non-servo mixes
