@@ -99,14 +99,17 @@ void pidResetErrorGyro(void)
 float scaleItermToRcInput(int axis) {
     float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
+    static float antiWindUpIncrement = 0;
+
+    if (antiWindUpIncrement) antiWindUpIncrement = 0.001 * (targetLooptime / 500);  // Calculate increment for 500ms period
 
     if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
         /* Reset Iterm on high stick inputs. No scaling necessary here */
         iTermScaler[axis] = 0.0f;
     } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm activity. Perhaps more scaling to looptime needed for consistency */
+        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
         if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + 0.001f, 0.0f, 1.0f);
+            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
         } else {
             iTermScaler[axis] = 1;
         }
