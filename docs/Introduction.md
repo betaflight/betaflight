@@ -16,7 +16,7 @@ Cleanflight is an community project which attempts to deliver flight controller 
 
 ## Hardware
 
-See the flight controller hardware chapter for details.
+See the [flight controller hardware](Boards.md) chapter for details.
 
 ## Software
 
