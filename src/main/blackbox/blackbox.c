@@ -850,7 +850,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
         
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(currentProfile->modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(masterConfig.modeActivationConditions, BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;
@@ -1136,7 +1136,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 4:
-            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile.rcRate8);
         break;
         case 5:
             blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);

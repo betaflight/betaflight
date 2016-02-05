@@ -713,14 +713,14 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO_CONFIGURATIONS:
         headSerialReply(MAX_SUPPORTED_SERVOS * sizeof(servoParam_t));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize16(currentProfile->servoConf[i].min);
-            serialize16(currentProfile->servoConf[i].max);
-            serialize16(currentProfile->servoConf[i].middle);
-            serialize8(currentProfile->servoConf[i].rate);
-            serialize8(currentProfile->servoConf[i].angleAtMin);
-            serialize8(currentProfile->servoConf[i].angleAtMax);
-            serialize8(currentProfile->servoConf[i].forwardFromChannel);
-            serialize32(currentProfile->servoConf[i].reversedSources);
+            serialize16(masterConfig.servoConf[i].min);
+            serialize16(masterConfig.servoConf[i].max);
+            serialize16(masterConfig.servoConf[i].middle);
+            serialize8(masterConfig.servoConf[i].rate);
+            serialize8(masterConfig.servoConf[i].angleAtMin);
+            serialize8(masterConfig.servoConf[i].angleAtMax);
+            serialize8(masterConfig.servoConf[i].forwardFromChannel);
+            serialize32(masterConfig.servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -837,7 +837,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             serialize8(box->permanentId);
             serialize8(mac->auxChannelIndex);
@@ -855,7 +855,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 1   // aux switch channel index
         ));
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             serialize8(adjRange->adjustmentIndex);
             serialize8(adjRange->auxChannelIndex);
             serialize8(adjRange->range.startStep);
@@ -900,7 +900,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.rssi_channel);
         serialize8(0);
 
-        serialize16(currentProfile->mag_declination / 10);
+        serialize16(masterConfig.mag_declination / 10);
 
         serialize8(masterConfig.batteryConfig.vbatscale);
         serialize8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -973,8 +973,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile->accelerometerTrims.values.pitch);
-        serialize16(currentProfile->accelerometerTrims.values.roll);
+        serialize16(masterConfig.accelerometerTrims.values.pitch);
+        serialize16(masterConfig.accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1181,9 +1181,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_RC_DEADBAND:
         headSerialReply(3);
-        serialize8(currentProfile->rcControlsConfig.deadband);
-        serialize8(currentProfile->rcControlsConfig.yaw_deadband);
-        serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        serialize8(masterConfig.rcControlsConfig.deadband);
+        serialize8(masterConfig.rcControlsConfig.yaw_deadband);
+        serialize8(masterConfig.rcControlsConfig.alt_hold_deadband);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
@@ -1240,8 +1240,8 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile->accelerometerTrims.values.pitch = read16();
-        currentProfile->accelerometerTrims.values.roll  = read16();
+        masterConfig.accelerometerTrims.values.pitch = read16();
+        masterConfig.accelerometerTrims.values.roll  = read16();
         break;
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
@@ -1310,7 +1310,7 @@ static bool processInCommand(void)
     case MSP_SET_MODE_RANGE:
         i = read8();
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             i = read8();
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1319,7 +1319,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1330,7 +1330,7 @@ static bool processInCommand(void)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = read8();
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             i = read8();
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1391,7 +1391,7 @@ static bool processInCommand(void)
         masterConfig.rxConfig.rssi_channel = read8();
         read8();
 
-        currentProfile->mag_declination = read16() * 10;
+        masterConfig.mag_declination = read16() * 10;
 
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1412,14 +1412,14 @@ static bool processInCommand(void)
         if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
         } else {
-            currentProfile->servoConf[i].min = read16();
-            currentProfile->servoConf[i].max = read16();
-            currentProfile->servoConf[i].middle = read16();
-            currentProfile->servoConf[i].rate = read8();
-            currentProfile->servoConf[i].angleAtMin = read8();
-            currentProfile->servoConf[i].angleAtMax = read8();
-            currentProfile->servoConf[i].forwardFromChannel = read8();
-            currentProfile->servoConf[i].reversedSources = read32();
+            masterConfig.servoConf[i].min = read16();
+            masterConfig.servoConf[i].max = read16();
+            masterConfig.servoConf[i].middle = read16();
+            masterConfig.servoConf[i].rate = read8();
+            masterConfig.servoConf[i].angleAtMin = read8();
+            masterConfig.servoConf[i].angleAtMax = read8();
+            masterConfig.servoConf[i].forwardFromChannel = read8();
+            masterConfig.servoConf[i].reversedSources = read32();
         }
 #endif
         break;
@@ -1450,9 +1450,9 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_DEADBAND:
-        currentProfile->rcControlsConfig.deadband = read8();
-        currentProfile->rcControlsConfig.yaw_deadband = read8();
-        currentProfile->rcControlsConfig.alt_hold_deadband = read8();
+        masterConfig.rcControlsConfig.deadband = read8();
+        masterConfig.rcControlsConfig.yaw_deadband = read8();
+        masterConfig.rcControlsConfig.alt_hold_deadband = read8();
         break;
 
     case MSP_SET_RESET_CURR_PID:

@@ -455,7 +455,7 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination, masterConfig.gyro_lpf)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -490,7 +490,7 @@ void init(void)
 
     failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    rxInit(&masterConfig.rxConfig, currentProfile->modeActivationConditions);
+    rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -499,7 +499,7 @@ void init(void)
             &masterConfig.gpsConfig
         );
         navigationInit(
-            &currentProfile->gpsProfile,
+            &masterConfig.gpsProfile,
             &currentProfile->pidProfile
         );
     }
