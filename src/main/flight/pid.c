@@ -50,9 +50,6 @@
 
 extern float dT;
 extern bool motorLimitReached;
-bool lowThrottleWindupProtection;
-
-#define PREVENT_WINDUP(x,y) { if (ABS(x) > ABS(y)) { if (x < 0) { x = -ABS(y); }  else { x = ABS(y); } } }
 
 int16_t axisPID[3];
 
@@ -201,11 +198,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroIf[axis] *= scaleItermToRcInput(axis);
-            if (motorLimitReached || lowThrottleWindupProtection) {
-                PREVENT_WINDUP(errorGyroIf[axis], errorGyroIfLimit[axis]);
+            errorGyroIf[axis] = (int32_t) (errorGyroIf[axis] * scaleItermToRcInput(axis));
+            if (antiWindupProtection || motorLimitReached) {
+                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
-                errorGyroIfLimit[axis] = errorGyroIf[axis];
+                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
             }
         }
 
@@ -349,10 +346,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
-            if (motorLimitReached || lowThrottleWindupProtection) {
-                PREVENT_WINDUP(errorGyroI[axis], errorGyroILimit[axis]);
+            if (antiWindupProtection || motorLimitReached) {
+                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
-                errorGyroILimit[axis] = errorGyroI[axis];
+                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
             }
         }
 
