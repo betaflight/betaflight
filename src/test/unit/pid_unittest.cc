@@ -49,6 +49,8 @@ extern "C" {
             uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
     extern pidControllerFuncPtr pid_controller;
     extern uint8_t PIDweight[3];
+    extern bool motorLimitReached;
+    extern uint32_t rcModeActivationMask;
     float dT; // dT for pidLuxFloat
     float unittest_pidLuxFloat_lastErrorForDelta[3];
     float unittest_pidLuxFloat_delta1[3];
@@ -683,4 +685,6 @@ gyro_t gyro;
 int16_t gyroADC[XYZ_AXIS_COUNT];
 int16_t rcCommand[4] = {1500,0,0,0};           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+bool motorLimitReached;
+uint32_t rcModeActivationMask;
 }

@@ -59,6 +59,7 @@
 
 #include "mw.h"
 
+#define AIRMODE_DEADBAND 12
 
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
@@ -120,6 +121,15 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
         return THROTTLE_LOW;
 
     return THROTTLE_HIGH;
+}
+
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
+{
+    if (((rcData[PITCH] < (rxConfig->midrc + AIRMODE_DEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODE_DEADBAND)))
+            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODE_DEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODE_DEADBAND))))
+        return CENTERED;
+
+    return NOT_CENTERED;
 }
 
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
