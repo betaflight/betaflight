@@ -792,13 +792,14 @@ void mixTable(void)
                     throttleMin = flight3DConfig->deadband3d_high;
                     flightDirection3dReversed = false;
                 } else {
-                    if (!throttleMin) {       /* when starting in neutral */
-                        throttleMax = escAndServoConfig->maxthrottle;
-                        throttle = throttleMin = flight3DConfig->deadband3d_high;
-                    } else {
+                    if (throttleMin) {
                         throttleMax = throttleMaxPrevious;
                         throttleMin = throttleMinPrevious;
                         throttle = throttlePrevious;
+                    } else {
+                        // when starting in neutral
+                        throttleMax = escAndServoConfig->maxthrottle;
+                        throttle = throttleMin = flight3DConfig->deadband3d_high;
                     }
                 }
 
