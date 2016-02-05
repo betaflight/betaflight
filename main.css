@@ -540,7 +540,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #tabs li a:hover {
     text-decoration: none;
-    background-color: rgba(0, 0, 0, 0.20);
+    background-color: rgba(128, 128, 128, 0.50);
     color: #fff;
 
 }
