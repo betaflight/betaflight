@@ -69,6 +69,9 @@ TABS.adjustments.initialize = function (callback) {
             availableFunctionCount += 2; // pitch and roll rate
             if (semver.gte(CONFIG.flightControllerVersion, '1.9.0')) {
                 availableFunctionCount += 6; // pitch p,i,d and roll p,i,d
+                if(semver.gte(CONFIG.apiVersion, "1.15.0")){
+                   availableFunctionCount += 18;
+                }
             }
         }
         
@@ -114,6 +117,7 @@ TABS.adjustments.initialize = function (callback) {
         $(rangeElement).find('.channel-slider').noUiSlider({
             start: rangeValues,
             behaviour: 'snap-drag',
+            margin: 50,
             step: 25,
             connect: true,
             range: channel_range,

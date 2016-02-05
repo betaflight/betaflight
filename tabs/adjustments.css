@@ -1,7 +1,3 @@
-.tab-adjustments {
-    
-}
-
 #tab-adjustments-templates {
     display: none;
 }
@@ -67,8 +63,7 @@
 .tab-adjustments .adjustment select {
     /* outline: 1px solid silver; */
     border-radius: 3px;
-    border: 1px solid silver;
-    #
+    border: 1px solid silver;    
 }
 
 .tab-adjustments .adjustment td {
@@ -122,4 +117,8 @@
 
 .tab-adjustments .adjustment .functionSwitchChannel {
     width: 5%;
+}
+
+.tab-adjustments .spacebottom {
+    margin-bottom: 15px;
 }

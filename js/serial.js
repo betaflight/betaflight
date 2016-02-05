@@ -68,12 +68,44 @@ var serial = {
                                 });
                             }
                             break;
+
+                        case 'break':
+                            // This occurs on F1 boards with old firmware during reboot
+                        case 'overrun':
+                            // wait 50 ms and attempt recovery
+                            self.error = info.error;
+                            setTimeout(function() {
+                                chrome.serial.setPaused(info.connectionId, false, function() {
+                                    self.getInfo(function (info) {
+                                        if (info.paused) {
+                                            // assume unrecoverable, disconnect
+                                            console.log('SERIAL: Connection did not recover from ' + self.error + ' condition, disconnecting');
+                                            GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                            googleAnalytics.sendException('Serial: ' + self.error + ' - unrecoverable', false);
+
+                                            if (GUI.connected_to || GUI.connecting_to) {
+                                                $('a.connect').click();
+                                            } else {
+                                                self.disconnect();
+                                            }
+                                        }
+                                        else {
+                                            console.log('SERIAL: Connection recovered from ' + self.error + ' condition');
+                                            googleAnalytics.sendException('Serial: ' + self.error + ' - recovered', false);
+                                        }
+                                    });
+                                });
+                            }, 50);
+                            break;
+                            
                         case 'timeout':
                             // TODO
                             break;
+                            
                         case 'device_lost':
                             // TODO
                             break;
+                            
                         case 'disconnected':
                             // TODO
                             break;

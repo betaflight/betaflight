@@ -54,12 +54,28 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_3d() {
-        var next_callback = load_html;
-        if (semver.lt(CONFIG.apiVersion, "1.14.0")) {
+        var next_callback = load_sensor_alignment;
+        if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             MSP.send_message(MSP_codes.MSP_3D, false, false, next_callback);
         } else {
             next_callback();
         }
+    }
+    
+    function load_sensor_alignment() {
+        var next_callback = load_html;
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            MSP.send_message(MSP_codes.MSP_SENSOR_ALIGNMENT, false, false, next_callback);
+        } else {
+            next_callback();
+        }
+    }
+    //Update Analog/Battery Data
+    function load_analog() {
+        MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
+	    $('input[name="batteryvoltage"]').val([ANALOG.voltage.toFixed(1)]);
+	    $('input[name="batterycurrent"]').val([ANALOG.amperage.toFixed(2)]);
+            });
     }
 
     function load_html() {
@@ -80,9 +96,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
     
     function process_html() {
-        // translate to user-selected language
-        localize();
-
+        
         var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
@@ -101,32 +115,47 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         // generate features
         var features = [
-            {bit: 0, group: 'rxMode', mode: 'group', name: 'RX_PPM', description: 'PPM RX input'},
-            {bit: 1, group: 'batteryVoltage', name: 'VBAT', description: 'Battery voltage monitoring'},
-            {bit: 2, group: 'other', name: 'INFLIGHT_ACC_CAL', description: 'In-flight level calibration'},
-            {bit: 3, group: 'rxMode', mode: 'group', name: 'RX_SERIAL', description: 'Serial-based receiver (SPEKSAT, SBUS, SUMD)'},
-            {bit: 4, group: 'esc', name: 'MOTOR_STOP', description: 'Don\'t spin the motors when armed'},
-            {bit: 5, group: 'other', name: 'SERVO_TILT', description: 'Servo gimbal'},
-            {bit: 6, group: 'other', name: 'SOFTSERIAL', description: 'Enable CPU based serial ports'},
-            {bit: 7, group: 'gps', name: 'GPS', description: 'Configure port scenario first'},
-            {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', description: 'Failsafe settings on RX signal loss'},
-            {bit: 9, group: 'other', name: 'SONAR', description: 'Sonar'},
-            {bit: 10, group: 'other', name: 'TELEMETRY', description: 'Telemetry output'},
-            {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER', description: 'Battery current monitoring'},
-            {bit: 12, group: 'other', name: '3D', description: '3D mode (for use with reversible ESCs)'},
-            {bit: 13, group: 'rxMode', mode: 'group', name: 'RX_PARALLEL_PWM', description: 'PWM RX input'},
-            {bit: 14, group: 'rxMode', mode: 'group', name: 'RX_MSP', description: 'MSP RX input'},
-            {bit: 15, group: 'rssi', name: 'RSSI_ADC', description: 'Analog RSSI input'},
-            {bit: 16, group: 'other', name: 'LED_STRIP', description: 'Addressable RGB LED strip support'},
-            {bit: 17, group: 'other', name: 'DISPLAY', description: 'OLED Screen Display'},
-            {bit: 18, group: 'esc', name: 'ONESHOT125', description: 'ONESHOT ESC support (disconnect ESCs, remove props)'},
-            {bit: 19, group: 'other', name: 'BLACKBOX', description: 'Blackbox flight data recorder'}
+            {bit: 0, group: 'rxMode', mode: 'group', name: 'RX_PPM'},
+            {bit: 1, group: 'batteryVoltage', name: 'VBAT'},
+            {bit: 2, group: 'other', name: 'INFLIGHT_ACC_CAL'},
+            {bit: 3, group: 'rxMode', mode: 'group', name: 'RX_SERIAL'},
+            {bit: 4, group: 'esc', name: 'MOTOR_STOP'},
+            {bit: 5, group: 'other', name: 'SERVO_TILT'},
+            {bit: 6, group: 'other', name: 'SOFTSERIAL', haveTip: true},
+            {bit: 7, group: 'gps', name: 'GPS', haveTip: true},
+            {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE'},
+            {bit: 9, group: 'other', name: 'SONAR'},
+            {bit: 10, group: 'other', name: 'TELEMETRY'},
+            {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER'},
+            {bit: 12, group: 'other', name: '3D'},
+            {bit: 13, group: 'rxMode', mode: 'group', name: 'RX_PARALLEL_PWM'},
+            {bit: 14, group: 'rxMode', mode: 'group', name: 'RX_MSP'},
+            {bit: 15, group: 'rssi', name: 'RSSI_ADC'},
+            {bit: 16, group: 'other', name: 'LED_STRIP'},
+            {bit: 17, group: 'other', name: 'DISPLAY'},
+            {bit: 18, group: 'esc', name: 'ONESHOT125', haveTip: true},
+            {bit: 19, group: 'other', name: 'BLACKBOX', haveTip: true}
         ];
         
         if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
             features.push(
-                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING', description: 'Forward aux channels to servo outputs'}
+                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING'}
             );
+        }
+
+        if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
+            features.push(
+                {bit: 21, group: 'other', name: 'TRANSPONDER', haveTip: true}
+            );
+        }
+
+        function isFeatureEnabled(featureName) {
+            for (var i = 0; i < features.length; i++) {
+                if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         var radioGroups = [];
@@ -134,6 +163,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         var features_e = $('.features');
         for (var i = 0; i < features.length; i++) {
             var row_e;
+            
+            var feature_tip_html = '';
+            if (features[i].haveTip) {
+                feature_tip_html = '<div class="helpicon cf_tip" i18n_title="feature' + features[i].name + 'Tip"></div>';
+            }
             
             if (features[i].mode === 'group') {
                 row_e = $('<tr><td style="width: 15px;"><input style="width: 13px;" class="feature" id="feature-'
@@ -148,9 +182,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td><span>'
-                        + features[i].description
-                        + '</td><span>');
+                        + '</label></td><td><span i18n="feature' + features[i].name + '"></span>' 
+                        + feature_tip_html + '</td></tr>');
                 radioGroups.push(features[i].group);
             } else {
                 row_e = $('<tr><td><input class="feature toggle"'
@@ -163,9 +196,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + i
                         + '">'
                         + features[i].name
-                        + '</label></td><td><span>'
-                        + features[i].description
-                        + '</span></td>');
+                        + '</label></td><td><span i18n="feature' + features[i].name + '"></span>' 
+                        + feature_tip_html + '</td></tr>');
                 
                 var feature_e = row_e.find('input.feature');
 
@@ -179,6 +211,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 }
             });
         }
+        
+        // translate to user-selected language
+        localize();
 
         for (var i = 0; i < radioGroups.length; i++) {
             var group = radioGroups[i];
@@ -193,6 +228,36 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             });
         }
 
+        
+        var alignments = [
+            'CW 0°',
+            'CW 90°',
+            'CW 180°',
+            'CW 270°',
+            'CW 0° flip',
+            'CW 90° flip',
+            'CW 180° flip',
+            'CW 270° flip'
+        ];
+        
+        var orientation_gyro_e = $('select.gyroalign');
+        var orientation_acc_e = $('select.accalign');
+        var orientation_mag_e = $('select.magalign');
+
+        if (semver.lt(CONFIG.apiVersion, "1.15.0")) {
+            $('.tab-configuration .sensoralignment').hide();
+        } else {
+            for (var i = 0; i < alignments.length; i++) {
+                orientation_gyro_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
+                orientation_acc_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
+                orientation_mag_e.append('<option value="' + (i+1) + '">'+ alignments[i] + '</option>');
+            }
+            orientation_gyro_e.val(SENSOR_ALIGNMENT.align_gyro);
+            orientation_acc_e.val(SENSOR_ALIGNMENT.align_acc);
+            orientation_mag_e.val(SENSOR_ALIGNMENT.align_mag);
+        }
+        
+        
         // generate GPS
         var gpsProtocols = [
             'NMEA',
@@ -208,13 +273,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         ];
 
         var gpsSbas = [
-            'Disabled',
             'Auto-detect',
             'European EGNOS',
             'North American WAAS',
             'Japanese MSAS',
             'Indian GAGAN'
         ];
+
 
         var gps_protocol_e = $('select.gps_protocol');
         for (var i = 0; i < gpsProtocols.length; i++) {
@@ -246,7 +311,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         
         var gps_ubx_sbas_e = $('select.gps_ubx_sbas');
         for (var i = 0; i < gpsSbas.length; i++) {
-            gps_ubx_sbas_e.append('<option value="' + (i - 1) + '">' + gpsSbas[i] + '</option>');
+            gps_ubx_sbas_e.append('<option value="' + i + '">' + gpsSbas[i] + '</option>');
         }
 
         gps_ubx_sbas_e.change(function () {
@@ -266,6 +331,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             'XBUS_MODE_B',
             'XBUS_MODE_B_RJ01'
         ];
+
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            serialRXtypes.push('IBUS');
+        }
 
         var serialRX_e = $('select.serialRX');
         for (var i = 0; i < serialRXtypes.length; i++) {
@@ -318,9 +387,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="minthrottle"]').val(MISC.minthrottle);
         $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
-        $('input[name="failsafe_throttle"]').val(MISC.failsafe_throttle);
         $('input[name="mincommand"]').val(MISC.mincommand);
-
+        
         // fill battery
         $('input[name="mincellvoltage"]').val(MISC.vbatmincellvoltage);
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
@@ -383,8 +451,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             });
         });
-		
-	
+
+
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
             BF_CONFIG.board_align_roll = parseInt($('input[name="board_align_roll"]').val());
@@ -405,7 +473,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
             MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
-            MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());
 
             MISC.vbatmincellvoltage = parseFloat($('input[name="mincellvoltage"]').val());
@@ -422,6 +489,24 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
             _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
 
+
+            SENSOR_ALIGNMENT.align_gyro = parseInt(orientation_gyro_e.val());
+            SENSOR_ALIGNMENT.align_acc = parseInt(orientation_acc_e.val());
+            SENSOR_ALIGNMENT.align_mag = parseInt(orientation_mag_e.val());
+
+            // track feature usage
+            if (isFeatureEnabled('RX_SERIAL')) {
+                googleAnalytics.sendEvent('Setting', 'SerialRxProvider', serialRXtypes[BF_CONFIG.serialrx_type]);
+            }
+            
+            for (var i = 0; i < features.length; i++) {
+                var featureName = features[i].name;
+                if (isFeatureEnabled(featureName)) {
+                    googleAnalytics.sendEvent('Setting', 'Feature', featureName);
+                }
+            }
+
+
             function save_serial_config() {
                 if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
                     MSP.send_message(MSP_codes.MSP_SET_CF_SERIAL_CONFIG, MSP.crunch(MSP_codes.MSP_SET_CF_SERIAL_CONFIG), false, save_misc);
@@ -435,7 +520,21 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
             
             function save_3d() {
-                MSP.send_message(MSP_codes.MSP_SET_3D, MSP.crunch(MSP_codes.MSP_SET_3D), false, save_acc_trim);
+                var next_callback = save_sensor_alignment;
+                if(semver.gte(CONFIG.apiVersion, "1.14.0")) {
+                   MSP.send_message(MSP_codes.MSP_SET_3D, MSP.crunch(MSP_codes.MSP_SET_3D), false, next_callback);
+                } else {
+                   next_callback();
+                }     
+            }
+            
+            function save_sensor_alignment() {
+                var next_callback = save_acc_trim;
+                if(semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                   MSP.send_message(MSP_codes.MSP_SET_SENSOR_ALIGNMENT, MSP.crunch(MSP_codes.MSP_SET_SENSOR_ALIGNMENT), false, next_callback);
+                } else {
+                   next_callback();
+                }     
             }
 
             function save_acc_trim() {
@@ -470,7 +569,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                     $('a.connect').click();
                     GUI.timeout_add('start_connection',function start_connection() {
                         $('a.connect').click();
-                    },2000);
+                    },2500);
                 } else {
 
                     GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
@@ -489,7 +588,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
         }, 250, true);
-
+        GUI.interval_add('config_load_analog', load_analog, 250, true); // 4 fps
         GUI.content_ready(callback);
     }
 };

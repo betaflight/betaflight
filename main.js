@@ -42,6 +42,13 @@ $(document).ready(function () {
         console.log('Application version expired');
         GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. There may be a more recent version with improvements and fixes.');
     }
+     
+    chrome.storage.local.get('logopen', function (result) {
+        if (result.logopen) {
+            $("#showlog").trigger('click');
+         }
+    });
+
 
     // log webgl capability
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future
@@ -126,7 +133,12 @@ $(document).ready(function () {
                     case 'led_strip':
                         TABS.led_strip.initialize(content_ready);
                         break;
-                                                
+                    case 'failsafe':
+                        TABS.failsafe.initialize(content_ready);
+                        break;
+                    case 'transponder':
+                        TABS.transponder.initialize(content_ready);
+                        break;
                     case 'setup':
                         TABS.setup.initialize(content_ready);
                         break;
@@ -157,8 +169,8 @@ $(document).ready(function () {
                     case 'logging':
                         TABS.logging.initialize(content_ready);
                         break;
-                    case 'dataflash':
-                        TABS.dataflash.initialize(content_ready);
+                    case 'onboard_logging':
+                        TABS.onboard_logging.initialize(content_ready);
                         break;
                     case 'cli':
                         TABS.cli.initialize(content_ready);
@@ -304,6 +316,45 @@ $(document).ready(function () {
             }
         }
     });
+    
+    $("#showlog").on('click', function() {
+    var state = $(this).data('state');
+    if ( state ) {
+        $("#log").animate({height: 27}, 200, function() {
+             var command_log = $('div#log');
+             command_log.scrollTop($('div.wrapper', command_log).height());
+        });
+        $("#log").removeClass('active');
+        $("#content").removeClass('logopen');
+        $(".tab_container").removeClass('logopen');
+        $("#scrollicon").removeClass('active');
+        chrome.storage.local.set({'logopen': false});
+	
+        state = false;
+    }else{
+        $("#log").animate({height: 111}, 200);
+        $("#log").addClass('active');
+        $("#content").addClass('logopen');
+        $(".tab_container").addClass('logopen');
+        $("#scrollicon").addClass('active');
+        chrome.storage.local.set({'logopen': true});
+
+        state = true;
+    }
+    $(this).text(state ? 'Hide Log' : 'Show Log');
+    $(this).data('state', state);
+    
+    });
+    
+    var profile_e = $('select[name="profilechange"]');
+    
+    profile_e.change(function () {
+        var profile = parseInt($(this).val());
+        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
+            GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
+            updateActivatedTab();
+        });
+    });
 });
 
 function catch_startup_time(startTime) {
@@ -359,31 +410,10 @@ String.prototype.format = function () {
     });
 };
 
-/** log trigger **/
-$(document).ready(function () {
 
-$("#showlog").on('click', function() {
-    var state = $(this).data('state');
-    if ( state ) {
-        $("#log").animate({height: 27}, 200);
-        $("#log").removeClass('active');
-        $("#content").removeClass('logopen');
-        $(".tab_container").removeClass('logopen');
-        $("#scrollicon").removeClass('active');
 
-        state = false;
-    }else{
-        $("#log").animate({height: 111}, 200);
-        $("#log").addClass('active');
-        $("#content").addClass('logopen');
-        $(".tab_container").addClass('logopen');
-        $("#scrollicon").addClass('active');
-
-        state = true;
-    }
-    $(this).text(state ? 'Hide Log' : 'Show Log');
-    $(this).data('state', state);
-    
-});
-
-});
+function updateActivatedTab() {
+    var activeTab = $('#tabs > ul li.active');
+    activeTab.removeClass('active');
+    $('a', activeTab).trigger('click');
+}

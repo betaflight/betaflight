@@ -12,12 +12,19 @@ TABS.ports.initialize = function (callback, scrollPosition) {
          {name: 'GPS',                  groups: ['gps'], maxPorts: 1},
          {name: 'TELEMETRY_FRSKY',      groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
          {name: 'TELEMETRY_HOTT',       groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
-         {name: 'TELEMETRY_MSP',        groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1},
          {name: 'TELEMETRY_SMARTPORT',  groups: ['telemetry'], maxPorts: 1},
          {name: 'RX_SERIAL',            groups: ['rx'], maxPorts: 1},
          {name: 'BLACKBOX',             groups: ['logging', 'blackbox'], sharableWith: ['msp'], notSharableWith: ['telemetry'], maxPorts: 1},
     ];
-    
+
+    if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+        var ltmFunctionRule = {name: 'TELEMETRY_LTM',        groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1};
+        functionRules.push(ltmFunctionRule);
+    } else {
+        var mspFunctionRule = {name: 'TELEMETRY_MSP',        groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1};
+        functionRules.push(mspFunctionRule);
+    }
+
     for (var i = 0; i < functionRules.length; i++) {
         functionRules[i].displayName = chrome.i18n.getMessage('portsFunction_' + functionRules[i].name);
     }
@@ -91,6 +98,8 @@ TABS.ports.initialize = function (callback, scrollPosition) {
            1: 'UART2',
            2: 'UART3',
            3: 'UART4',
+           4: 'UART5',
+           5: 'UART6',
            20: 'USB VCP',
            30: 'SOFTSERIAL1',
            31: 'SOFTSERIAL2'
@@ -125,8 +134,6 @@ TABS.ports.initialize = function (callback, scrollPosition) {
             
             port_configuration_e.data('serialPort', serialPort);
             
-            // TODO check functions
-            // TODO set baudrate
             var msp_baudrate_e = port_configuration_e.find('select.msp_baudrate');
             msp_baudrate_e.val(serialPort.msp_baudrate);
 
@@ -261,7 +268,7 @@ TABS.ports.initialize = function (callback, scrollPosition) {
                 $('a.connect').click();
                 GUI.timeout_add('start_connection',function start_connection() {
                     $('a.connect').click();
-                },2000);
+                },2500);
             } else {
                 GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
                     MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {

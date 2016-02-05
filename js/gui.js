@@ -18,6 +18,8 @@ var GUI_control = function () {
         'help'
     ];
     this.defaultAllowedTabsWhenConnected = [
+        'failsafe',
+        'transponder',
         'adjustments',
         'auxiliary',
         'cli',
@@ -25,7 +27,7 @@ var GUI_control = function () {
         'gps',
         'led_strip',
         'logging',
-        'dataflash',
+        'onboard_logging',
         'modes',
         'motors',
         'pid_tuning',
@@ -274,10 +276,12 @@ GUI_control.prototype.content_ready = function (callback) {
          $(elem).removeClass('togglemedium');
     });
 
-    // Build link to in-use CF version documentation
-    var documentationButton = $('div#content #button-documentation');
-    documentationButton.html("Documentation for "+CONFIG.flightControllerVersion);
-    documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+    if (CONFIGURATOR.connectionValid) {
+        // Build link to in-use CF version documentation
+        var documentationButton = $('div#content #button-documentation');
+        documentationButton.html("Documentation for " + CONFIG.flightControllerVersion);
+        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+    }
 
     // loading tooltip
     jQuery(document).ready(function($) {
@@ -286,8 +290,7 @@ GUI_control.prototype.content_ready = function (callback) {
     });
 
     $('.cf_tip').each(function() {
-        $(this).jBox('Tooltip', {
-            content: $(this).children('.cf_tooltiptext'),
+        $(this).jBox('Tooltip', {            
             delayOpen: 100,
             delayClose: 100,
             position: {

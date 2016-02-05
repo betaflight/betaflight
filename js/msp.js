@@ -13,6 +13,8 @@ var MSP_codes = {
     MSP_SET_CHANNEL_FORWARDING: 33,
     MSP_MODE_RANGES:            34,
     MSP_SET_MODE_RANGE:         35,
+    MSP_RX_CONFIG:              44,
+    MSP_SET_RX_CONFIG:          45,
     MSP_LED_STRIP_CONFIG:       48,
     MSP_SET_LED_STRIP_CONFIG:   49,
     MSP_ADJUSTMENT_RANGES:      52,
@@ -29,6 +31,15 @@ var MSP_codes = {
     MSP_DATAFLASH_ERASE:        72,
     MSP_LOOP_TIME:              73,
     MSP_SET_LOOP_TIME:          74,
+    MSP_FAILSAFE_CONFIG:        75,
+    MSP_SET_FAILSAFE_CONFIG:    76,
+    MSP_RXFAIL_CONFIG:          77,
+    MSP_SET_RXFAIL_CONFIG:      78,
+    MSP_SDCARD_SUMMARY:         79,
+    MSP_BLACKBOX_CONFIG:        80,
+    MSP_SET_BLACKBOX_CONFIG:    81,
+    MSP_TRANSPONDER_CONFIG:     82,
+    MSP_SET_TRANSPONDER_CONFIG: 83,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -53,6 +64,8 @@ var MSP_codes = {
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
+    MSP_RC_DEADBAND:        125,
+    MSP_SENSOR_ALIGNMENT:   126,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -69,6 +82,9 @@ var MSP_codes = {
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
+    MSP_SET_RC_DEADBAND:    218,
+    MSP_SET_RESET_CURR_PID: 219,
+    MSP_SET_SENSOR_ALIGNMENT: 220,
     
     // MSP_BIND:               240,
     
@@ -227,6 +243,7 @@ var MSP = {
                 CONFIG.activeSensors = data.getUint16(4, 1);
                 CONFIG.mode = data.getUint32(6, 1);
                 CONFIG.profile = data.getUint8(10);
+                $('select[name="profilechange"]').val(CONFIG.profile);
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
@@ -495,8 +512,8 @@ var MSP = {
                                 'max':                      data.getInt16(i + 2, 1),
                                 'middle':                   data.getInt16(i + 4, 1),
                                 'rate':                     data.getInt8(i + 6),
-                                'angleAtMin':               90,
-                                'angleAtMax':               90,
+                                'angleAtMin':               45,
+                                'angleAtMax':               45,
                                 'indexOfChannelToForward':  undefined,
                                 'reversedInputSources':     0
                             };
@@ -512,6 +529,18 @@ var MSP = {
                         } 
                     }
                 }
+                break;
+            case MSP_codes.MSP_RC_DEADBAND:
+                var offset = 0;
+                RC_deadband.deadband = data.getUint8(offset++, 1);
+                RC_deadband.yaw_deadband = data.getUint8(offset++, 1);
+                RC_deadband.alt_hold_deadband = data.getUint8(offset++, 1);
+                break;
+            case MSP_codes.MSP_SENSOR_ALIGNMENT:
+                var offset = 0;
+                SENSOR_ALIGNMENT.align_gyro = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_acc = data.getUint8(offset++, 1);
+                SENSOR_ALIGNMENT.align_mag = data.getUint8(offset++, 1);
                 break;
             case MSP_codes.MSP_SET_RAW_RC:
                 break;
@@ -755,6 +784,7 @@ var MSP = {
                     ADJUSTMENT_RANGES.push(adjustmentRange);
                 }
                 break;
+
             case MSP_codes.MSP_CHANNEL_FORWARDING:
                 for (var i = 0; i < data.byteLength && i < SERVO_CONFIG.length; i ++) {
                     var channelIndex = data.getUint8(i);
@@ -765,6 +795,58 @@ var MSP = {
                     }
                 }
                 break;
+
+            case MSP_codes.MSP_RX_CONFIG:
+                var offset = 0;
+                RX_CONFIG.serialrx_provider = data.getUint8(offset, 1);
+                offset++;
+                RX_CONFIG.maxcheck = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.midrc = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.mincheck = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.spektrum_sat_bind = data.getUint8(offset, 1);
+                offset++;
+                RX_CONFIG.rx_min_usec = data.getUint16(offset, 1);
+                offset += 2;
+                RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
+                offset += 2;
+                break;
+
+            case MSP_codes.MSP_FAILSAFE_CONFIG:
+                var offset = 0;
+                FAILSAFE_CONFIG.failsafe_delay = data.getUint8(offset, 1);
+                offset++;
+                FAILSAFE_CONFIG.failsafe_off_delay = data.getUint8(offset, 1);
+                offset++;
+                FAILSAFE_CONFIG.failsafe_throttle = data.getUint16(offset, 1);
+                offset += 2;
+                if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                    FAILSAFE_CONFIG.failsafe_kill_switch = data.getUint8(offset, 1);
+                    offset++;
+                    FAILSAFE_CONFIG.failsafe_throttle_low_delay = data.getUint16(offset, 1);
+                    offset += 2;
+                    FAILSAFE_CONFIG.failsafe_procedure = data.getUint8(offset, 1);
+                    offset++;
+                }
+                break;
+
+            case MSP_codes.MSP_RXFAIL_CONFIG:
+                RXFAIL_CONFIG = []; // empty the array as new data is coming in
+
+                var channelCount = data.byteLength / 3;
+
+                var offset = 0;
+                for (var i = 0; offset < data.byteLength && i < channelCount; i++, offset++) {
+                    var rxfailChannel = {
+                        mode:  data.getUint8(offset++, 1),
+                        value: data.getUint16(offset++, 1)
+                    };
+                    RXFAIL_CONFIG.push(rxfailChannel);
+                }
+                break;
+
 
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
@@ -811,23 +893,58 @@ var MSP = {
                 break;
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
                 if (data.byteLength >= 13) {
-                    DATAFLASH.ready = (data.getUint8(0) & 1) != 0;
+                    var
+                        flags = data.getUint8(0);
+                    DATAFLASH.ready = (flags & 1) != 0;
+                    DATAFLASH.supported = (flags & 2) != 0 || DATAFLASH.ready;
                     DATAFLASH.sectors = data.getUint32(1, 1);
                     DATAFLASH.totalSize = data.getUint32(5, 1);
                     DATAFLASH.usedSize = data.getUint32(9, 1);
                 } else {
                     // Firmware version too old to support MSP_DATAFLASH_SUMMARY
                     DATAFLASH.ready = false;
+                    DATAFLASH.supported = false;
                     DATAFLASH.sectors = 0;
                     DATAFLASH.totalSize = 0;
                     DATAFLASH.usedSize = 0;
                 }
+                update_dataflash_global();
                 break;
             case MSP_codes.MSP_DATAFLASH_READ:
                 // No-op, let callback handle it
                 break;
             case MSP_codes.MSP_DATAFLASH_ERASE:
                 console.log("Data flash erase begun...");
+                break;
+            case MSP_codes.MSP_SDCARD_SUMMARY:
+                var flags = data.getUint8(0); 
+                
+                SDCARD.supported = (flags & 0x01) != 0;
+                SDCARD.state = data.getUint8(1);
+                SDCARD.filesystemLastError = data.getUint8(2);
+                SDCARD.freeSizeKB = data.getUint32(3, 1);
+                SDCARD.totalSizeKB = data.getUint32(7, 1);
+                break;
+            case MSP_codes.MSP_BLACKBOX_CONFIG:
+                BLACKBOX.supported = (data.getUint8(0) & 1) != 0;
+                BLACKBOX.blackboxDevice = data.getUint8(1);
+                BLACKBOX.blackboxRateNum = data.getUint8(2);
+                BLACKBOX.blackboxRateDenom = data.getUint8(3);
+                break;
+            case MSP_codes.MSP_SET_BLACKBOX_CONFIG:
+                console.log("Blackbox config saved");
+                break;
+            case MSP_codes.MSP_TRANSPONDER_CONFIG:
+                var offset = 0;
+                TRANSPONDER.supported = (data.getUint8(offset++) & 1) != 0;
+                TRANSPONDER.data = [];
+                var bytesRemaining = data.byteLength - offset; 
+                for (var i = 0; i < bytesRemaining; i++) {
+                    TRANSPONDER.data.push(data.getUint8(offset++));
+                }
+                break;
+            case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+                console.log("Transponder config saved");
                 break;
             case MSP_codes.MSP_SET_MODE_RANGE:
                 console.log('Mode range saved');
@@ -848,7 +965,27 @@ var MSP = {
             case MSP_codes.MSP_SET_ARMING_CONFIG:
                 console.log('Arming config saved');
                 break;
-                
+            case MSP_codes.MSP_SET_RESET_CURR_PID:
+                console.log('Current PID profile reset');
+                break;
+            case MSP_codes.MSP_SET_3D:
+                console.log('3D settings saved');
+                break;
+            case MSP_codes.MSP_SET_RC_DEADBAND:
+                console.log('Rc controls settings saved');
+                break;
+            case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+                console.log('Sensor alignment saved');
+                break; 
+            case MSP_codes.MSP_SET_RX_CONFIG:
+                console.log('Rx config saved');
+                break;
+            case MSP_codes.MSP_SET_RXFAIL_CONFIG:
+                console.log('Rxfail config saved');
+                break;
+            case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
+                console.log('Failsafe config saved');
+                break;
             default:
                 console.log('Unknown code detected: ' + code);
         } else {
@@ -1034,7 +1171,7 @@ MSP.crunch = function (code) {
                 buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
                 buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
             }
-			if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
+            if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
                 buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
             }
             break;
@@ -1090,6 +1227,41 @@ MSP.crunch = function (code) {
             buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
             buffer.push(Math.round(MISC.vbatwarningcellvoltage * 10));
             break;
+
+        case MSP_codes.MSP_SET_RX_CONFIG:
+            buffer.push(RX_CONFIG.serialrx_provider);
+            buffer.push(lowByte(RX_CONFIG.maxcheck));
+            buffer.push(highByte(RX_CONFIG.maxcheck));
+            buffer.push(lowByte(RX_CONFIG.midrc));
+            buffer.push(highByte(RX_CONFIG.midrc));
+            buffer.push(lowByte(RX_CONFIG.mincheck));
+            buffer.push(highByte(RX_CONFIG.mincheck));
+            buffer.push(RX_CONFIG.spektrum_sat_bind);
+            buffer.push(lowByte(RX_CONFIG.rx_min_usec));
+            buffer.push(highByte(RX_CONFIG.rx_min_usec));
+            buffer.push(lowByte(RX_CONFIG.rx_max_usec));
+            buffer.push(highByte(RX_CONFIG.rx_max_usec));
+            break;
+
+        case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
+            buffer.push(FAILSAFE_CONFIG.failsafe_delay);
+            buffer.push(FAILSAFE_CONFIG.failsafe_off_delay);
+            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
+            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
+            if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+                buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
+                buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
+                buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+            }
+            break;
+
+        case MSP_codes.MSP_SET_TRANSPONDER_CONFIG:
+            for (var i = 0; i < TRANSPONDER.data.length; i++) {
+                buffer.push(TRANSPONDER.data[i]);
+            }
+            break;
+
         case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
             for (var i = 0; i < SERVO_CONFIG.length; i++) {
                 var out = SERVO_CONFIG[i].indexOfChannelToForward;
@@ -1151,8 +1323,20 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.neutral3d));
             buffer.push(lowByte(_3D.deadband3d_throttle));
             buffer.push(highByte(_3D.deadband3d_throttle));
+            break;    
+
+        case MSP_codes.MSP_SET_RC_DEADBAND:
+            buffer.push(RC_deadband.deadband);
+            buffer.push(RC_deadband.yaw_deadband); 
+            buffer.push(RC_deadband.alt_hold_deadband);
             break;
-            
+
+        case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
+            buffer.push(SENSOR_ALIGNMENT.align_gyro);
+            buffer.push(SENSOR_ALIGNMENT.align_acc);
+            buffer.push(SENSOR_ALIGNMENT.align_mag);
+            break
+
         default:
             return false;
     }
@@ -1174,6 +1358,19 @@ MSP.setRawRx = function(channels) {
     }
     
     MSP.send_message(MSP_codes.MSP_SET_RAW_RC, buffer, false);
+}
+
+MSP.sendBlackboxConfiguration = function(onDataCallback) {
+    var 
+        message = [
+            BLACKBOX.blackboxDevice & 0xFF, 
+            BLACKBOX.blackboxRateNum & 0xFF, 
+            BLACKBOX.blackboxRateDenom & 0xFF
+        ];
+    
+    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, message, false, function(response) {
+        onDataCallback();
+    });
 }
 
 /**
@@ -1210,10 +1407,11 @@ MSP.sendServoConfigurations = function(onCompleteCallback) {
 
     if (SERVO_CONFIG.length == 0) {
         onCompleteCallback();
+    } else {
+        nextFunction();
     }
-    
-    nextFunction();
-    
+
+
     function send_next_servo_configuration() {
         
         var buffer = [];
@@ -1300,11 +1498,10 @@ MSP.sendModeRanges = function(onCompleteCallback) {
 
     if (MODE_RANGES.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_mode_range();
     }
-    
-    send_next_mode_range();
 
-    
     function send_next_mode_range() {
         
         var modeRange = MODE_RANGES[modeRangeIndex];
@@ -1333,11 +1530,11 @@ MSP.sendAdjustmentRanges = function(onCompleteCallback) {
 
     if (ADJUSTMENT_RANGES.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_adjustment_range();
     }
-    
-    send_next_adjustment_range();
 
-    
+
     function send_next_adjustment_range() {
         
         var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
@@ -1369,9 +1566,9 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
 
     if (LED_STRIP.length == 0) {
         onCompleteCallback();
+    } else {
+        send_next_led_strip_config();
     }
-    
-    send_next_led_strip_config();
 
     function send_next_led_strip_config() {
         
@@ -1438,3 +1635,42 @@ MSP.serialPortFunctionsToMask = function(functions) {
     }
     return mask;
 }
+
+MSP.sendRxFailConfig = function(onCompleteCallback) {
+    var nextFunction = send_next_rxfail_config;
+
+    var rxFailIndex = 0;
+
+    if (RXFAIL_CONFIG.length == 0) {
+        onCompleteCallback();
+    } else {
+        send_next_rxfail_config();
+    }
+
+    function send_next_rxfail_config() {
+
+        var rxFail = RXFAIL_CONFIG[rxFailIndex];
+
+        var buffer = [];
+        buffer.push(rxFailIndex);
+        buffer.push(rxFail.mode);
+        buffer.push(lowByte(rxFail.value));
+        buffer.push(highByte(rxFail.value));
+
+        // prepare for next iteration
+        rxFailIndex++;
+        if (rxFailIndex == RXFAIL_CONFIG.length) {
+            nextFunction = onCompleteCallback;
+
+        }
+        MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, buffer, false, nextFunction);
+    }
+};
+
+MSP.SDCARD_STATE_NOT_PRESENT = 0;
+MSP.SDCARD_STATE_FATAL       = 1;
+MSP.SDCARD_STATE_CARD_INIT   = 2;
+MSP.SDCARD_STATE_FS_INIT     = 3;
+MSP.SDCARD_STATE_READY       = 4;
+
+

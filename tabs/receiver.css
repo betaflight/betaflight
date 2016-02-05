@@ -193,11 +193,11 @@
 }
 
 .tab-receiver .tunings table td:first-child {
-    border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 3px;
 }
 
 .tab-receiver .tunings table td:last-child {
-    border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 3px;
     border-right: 0px;
 }
 
@@ -219,9 +219,10 @@
     text-align: right;
 }
 
+
 .tab-receiver .rssi_channel_wrapper {
     float: right;
-    margin: 0px 0px 10px 0;
+    margin: 0px 0px 20px 0;
     border-left: 0;
     width: 30%;
     border-top-right-radius: 5px;
@@ -229,6 +230,13 @@
     background-color: #DEDEDE;
 }
 
+.tab-receiver .rssi_channel_wrapper select {
+    height: 22px;
+    padding-left: 5px;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 8px);
+}
 .tab-receiver .rssi_channel_wrapper .head {
     height: 15px;
     padding: 4px;
@@ -237,7 +245,7 @@
     font-weight: normal;
     background: #828885;
     color: white;
-    border-top-right-radius: 5px;
+    border-top-right-radius: 3px;
 }
 
 .tab-receiver .rssi_channel_wrapper select {
@@ -251,7 +259,7 @@
 .tab-receiver .rcmap_wrapper {
     float: right;
     position: relative;
-    margin: 0px 0px 10px 0;
+    margin: 0px 0px 20px 0;
     width: calc(70% - 0px);
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
@@ -266,12 +274,8 @@
     font-weight: normal;
     background: #828885;
     color: white;
-    border-top-left-radius: 5px;
+    border-top-left-radius: 3px;
     border-right: 1px solid silver;
-}
-
-.tab-receiver .rcmap_wrapper .head span {
-    
 }
 
 .tab-receiver .hybrid_element {
@@ -292,7 +296,6 @@
 }
 
 .tab-receiver .hybrid_element select {
-    width: 100%;
     height: 22px;
     z-index: 1;
     border: 1px solid silver;

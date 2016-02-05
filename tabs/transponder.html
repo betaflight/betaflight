@@ -1,0 +1,52 @@
+<div class="tab-transponder toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabTransponder">Transponder</div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+        </div>
+        
+        <div class="require-transponder-unsupported note">
+            <div class="note_spacer">
+                <p i18n="transponderNotSupported"></p>
+            </div>
+        </div>
+
+        <div class="require-transponder-supported">
+            
+            <div class="note" style="margin-bottom: 20px;">
+                <div class="note_spacer">
+                    <p i18n="transponderHelp"></p>
+                </div>
+            </div>
+            
+            <div class="gui_box grey">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="transponderConfiguration"></div>
+                </div>
+                <div class="spacer_box">
+                    <div class="text transponderData">
+                        <div class="textspacer" >
+                            <input type="text" name="data" spellcheck="false"/>
+                        </div>
+                        <label for="failsafe_feature_new"><span i18n="transponderData"></span>
+                        </label>
+                        <div class="helpicon cf_tip" i18n_title="transponderDataHelp"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="clear-both"></div>
+        </div>
+        
+        <div class="note">
+            <div class="note_spacer">
+                <p i18n="transponderInformation"></p>
+            </div>
+        </div>
+        
+    </div>
+    <div class="content_toolbar require-transponder-supported">
+        <div class="btn save_btn">
+            <a class="save" href="#" i18n="transponderButtonSave"></a>
+        </div>
+    </div>
+</div>

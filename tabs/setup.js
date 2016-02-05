@@ -228,7 +228,7 @@ TABS.setup.initialize3D = function (compatibility) {
         renderer = new THREE.CanvasRenderer({canvas: canvas.get(0), alpha: true});
     }
     // initialize render size for current canvas size
-    renderer.setSize(wrapper.width(), wrapper.height());
+    renderer.setSize(wrapper.width()*2, wrapper.height()*2);
 
 
 //    // modelWrapper adds an extra axis of rotation to avoid gimbal lock with the euler angles
@@ -295,7 +295,7 @@ TABS.setup.initialize3D = function (compatibility) {
 
     // handle canvas resize
     this.resize3D = function () {
-        renderer.setSize(wrapper.width(), wrapper.height());
+        renderer.setSize(wrapper.width()*2, wrapper.height()*2);
         camera.aspect = wrapper.width() / wrapper.height();
         camera.updateProjectionMatrix();
 

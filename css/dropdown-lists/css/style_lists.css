@@ -111,13 +111,6 @@
   z-index: 3;
 }
 
-/* Dirty fix for Firefox adding padding where it shouldn't. */
-@-moz-document url-prefix() {
-  .dropdown-select {
-    padding-left: 6px;
-  }
-}
-
 .dropdown-dark {
     background: #636363; /* NEW2 */
   background: #3e403f; /* NEW */

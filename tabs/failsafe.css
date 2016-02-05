@@ -1,0 +1,257 @@
+.tab-failsafe {
+    position: relative;
+}
+
+.tab-failsafe .leftWrapper {
+    float: left;
+    width: calc(50% - 20px);
+}
+
+.tab-failsafe .rightWrapper {
+    float: left;
+    width: calc(50% - 0px);
+    margin: 0 0 0 20px;
+}
+
+.tab-failsafe .number {
+    margin-bottom: 5px;
+    clear: left;
+}
+
+.tab-failsafe .number input {
+    width: 50px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.tab-failsafe .number input:disabled {
+    background-color: #ececec;
+}
+
+.tab-failsafe .number span {
+    margin-left: 0;
+}
+
+.tab-failsafe .checkbox {
+    float: left;
+    width: 100%;
+    margin-bottom: 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    margin-top: 0;
+}
+
+.tab-failsafe .subline {
+    float: left;
+    width: 100%;
+    font-size: 13px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.tab-failsafe .radioarea {
+    float: left;
+    width: 100%;
+    border-radius: 5px;
+    background-color: #ededed;
+    margin-bottom: 0;
+    margin-top: 5px;
+    height: 150px;
+}
+
+.tab-failsafe .radiobuttons {
+    float: left;
+    width: 50%;
+    margin-top: 38px;
+    margin-left: 15px;
+    font-size: 12px;
+    font-family: 'open_sansregular', sans-serif;
+}
+
+.tab-failsafe .radiobuttons input {
+    margin-right: 8px;
+    margin-bottom: 10px;
+}
+
+.tab-failsafe .proceduresettings {
+    padding: 10px;
+    margin-top: 75px;
+}
+
+.tab-failsafe .radiobuttons label {
+    float: left;
+    width: 130px;
+    margin-top: -2px;
+}
+
+.tab-failsafe .pro1 {
+    background-image: url(../images/icons/cf_failsafe_procedure1.svg);
+    background-position: top right 10px;
+    background-size: 200px;
+    background-repeat: no-repeat;
+}
+
+.tab-failsafe .pro2 {
+    background-image: url(../images/icons/cf_failsafe_procedure2.svg);
+    background-position: top right 10px;
+    background-size: 200px;
+    background-repeat: no-repeat;
+}
+
+.tab-failsafe .pro3 {
+    background-image: url(../images/icons/cf_failsafe_procedure3.svg);
+    background-position: top right 10px;
+    background-size: 200px;
+    background-repeat: no-repeat;
+}
+
+.tab-failsafe .pro4 {
+    background-image: url(../images/icons/cf_failsafe_procedure4.svg);
+    background-position: top right 10px;
+    background-size: 200px;
+    background-repeat: no-repeat;
+}
+
+.tab-failsafe .spacer_box .helpicon {
+    margin-top: 3px;
+    margin-right: 0;
+    
+}
+
+.tab-failsafe .checkbox:last-child {
+    border-bottom: none;
+}
+
+.tab-failsafe .freelabel {
+    margin-left: 10px;
+    position: relative;
+}
+
+.tab-failsafe input {
+    float: left;
+}
+
+.tab-failsafe span {
+    margin: 0;
+}
+
+.tab-failsafe .spacer_box {
+    padding-bottom: 10px;
+    float: left;
+    width: calc(100% - 20px);
+}
+
+.tab-failsafe .number {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-failsafe .number:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.tab-failsafe .gui_box_titlebar {
+    margin-bottom: 0;
+}
+
+.tab-failsafe .numberspacer {
+    float: left;
+    width: 65px;
+    height: 21px;
+}
+
+.tab-failsafe .gui_box {
+    font-style: normal;
+    font-family: 'open_sanssemibold', sans-serif;
+    margin-bottom: 15px;
+    float: left;
+}
+
+.tab-failsafe .gui_box span {
+    font-style: normal;
+    font-family: 'open_sansregular', sans-serif;
+    line-height: 19px;
+    color: #4F4F4F;
+    font-size: 11px;
+}
+
+.tab-failsafe .stage1 .number input {
+    float: right;
+    margin-right: 0;
+ }
+    
+.tab-failsafe .stage1 select {
+    float: left;
+    width: 95%;
+    height: 22px;
+    margin: 0;
+    border: 1px solid silver;
+    }
+
+.tab-failsafe .modename {
+    background-color: #828885;
+    border-radius: 3px;
+    border: 1px solid #686c6a;
+    color: #fff !important;
+    font-weight: normal;
+    font-family: 'open_sanssemibold', sans-serif;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin-right: 3px;
+}
+
+.tab-failsafe .channelprimary {
+    float:left;   
+    width:60%;   
+}
+
+.tab-failsafe .channelauxiliary {
+    float:left;   
+    width:60%;
+    padding-top: 2px;
+}
+
+.tab-failsafe .channelname {
+    margin-right: 3px;
+}
+
+.tab-failsafe .channelsetting {
+    float:left;    
+    width:25%;    
+}
+
+.tab-failsafe .auxiliary {
+    float:left;    
+    width:15%;    
+}
+
+.tab-failsafe .note {
+    margin-bottom: 20px;
+}
+
+.tab-failsafe .cf_tooltiptext {
+    display: none;
+}
+
+.tab-failsafe .rightWrapper .spacer_box {
+    padding-bottom: 7px;
+}
+
+.tab-failsafe .pro1 {
+    height: 90px;
+}
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+
+}

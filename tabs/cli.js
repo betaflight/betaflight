@@ -2,6 +2,7 @@
 
 TABS.cli = {
     'validateText': "",
+    'currentLine': "",
     'sequenceElements': 0
 };
 
@@ -12,20 +13,12 @@ TABS.cli.initialize = function (callback) {
         GUI.active_tab = 'cli';
         googleAnalytics.sendAppView('CLI');
     }
-
+    
     $('#content').load("./tabs/cli.html", function () {
         // translate to user-selected language
         localize();
 
         CONFIGURATOR.cliActive = true;
-
-        // Enter CLI mode
-        var bufferOut = new ArrayBuffer(1);
-        var bufView = new Uint8Array(bufferOut);
-
-        bufView[0] = 0x23; // #
-
-        serial.send(bufferOut);
 
         var textarea = $('.tab-cli textarea');
 
@@ -61,6 +54,16 @@ TABS.cli.initialize = function (callback) {
 
         // give input element user focus
         textarea.focus();
+
+        GUI.timeout_add('enter_cli', function enter_cli() {
+            // Enter CLI mode
+            var bufferOut = new ArrayBuffer(1);
+            var bufView = new Uint8Array(bufferOut);
+
+            bufView[0] = 0x23; // #
+
+            serial.send(bufferOut);
+        }, 250);
 
         GUI.content_ready(callback);
     });
@@ -135,11 +138,13 @@ TABS.cli.read = function (readInfo) {
                         if (GUI.operating_system != "MacOS") {
                             text += "<br />";
                         }
+                        this.currentLine = "";
                         break;
                     case 13: // carriage return
                         if (GUI.operating_system == "MacOS") {
                             text += "<br />";
                         }
+                        this.currentLine = "";
                         break;
                     case 60:
                         text += '&lt';
@@ -150,19 +155,43 @@ TABS.cli.read = function (readInfo) {
 
                     default:
                         text += String.fromCharCode(data[i]);
+                        this.currentLine += String.fromCharCode(data[i]);
+                }
+            }
+            if (this.currentLine == 'Rebooting') {
+                CONFIGURATOR.cliActive = false;
+                CONFIGURATOR.cliValid = false;
+                GUI.log(chrome.i18n.getMessage('cliReboot'));
+                GUI.log(chrome.i18n.getMessage('deviceRebooting'));
+
+                if (BOARD.find_board_definition(CONFIG.boardIdentifier).vcp) { // VCP-based flight controls may crash old drivers, we catch and reconnect
+                    $('a.connect').click();
+                    GUI.timeout_add('start_connection',function start_connection() {
+                        $('a.connect').click();
+                    },2500);
+                } else {
+
+                    GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
+                        MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                            GUI.log(chrome.i18n.getMessage('deviceReady'));
+                            if (!GUI.tab_switch_in_progress) {
+                                $('#tabs ul.mode-connected .tab_setup a').click();
+                            }
+                        });
+                    },1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts
                 }
             }
         } else {
             // try to catch part of valid CLI enter message
             this.validateText += String.fromCharCode(data[i]);
+            text += String.fromCharCode(data[i]);
         }
     }
 
     if (!CONFIGURATOR.cliValid && this.validateText.indexOf('CLI') != -1) {
+        GUI.log(chrome.i18n.getMessage('cliEnter'));
         CONFIGURATOR.cliValid = true;
         this.validateText = "";
-
-        text = "Entering CLI Mode, type 'exit' to return, or 'help'<br /><br /># ";
     }
 
     $('.tab-cli .window .wrapper').append(text);
@@ -170,7 +199,7 @@ TABS.cli.read = function (readInfo) {
 };
 
 TABS.cli.cleanup = function (callback) {
-    if (!CONFIGURATOR.connectionValid) {
+    if (!CONFIGURATOR.connectionValid || !CONFIGURATOR.cliValid) {
         if (callback) callback();
         return;
     }
@@ -190,10 +219,7 @@ TABS.cli.cleanup = function (callback) {
         // we can setup an interval asking for data lets say every 200ms, when data arrives, callback will be triggered and tab switched
         // we could probably implement this someday
         GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-            CONFIGURATOR.cliActive = false;
-            CONFIGURATOR.cliValid = false;
-
             if (callback) callback();
-        }, 5000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
+        }, 1000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
     });
 };

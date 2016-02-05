@@ -30,7 +30,7 @@
     width: 160px;
     /* border: 1px solid silver; */
     height: 100%;
-    height: 160px;
+    height: 180px;
     margin: 0px;
     background-color: #ECECEC;
     border-top-right-radius: 3px;
@@ -97,6 +97,18 @@
 
 .tab-motors .plot_control .z {
     background-color: #CB4B4B;
+    padding: 3px;
+    color: #fff;
+    height: 12px;
+    float: right;
+    border-radius: 3px;
+    line-height: 12px;
+    margin-bottom: 2px;
+    text-align: right;
+}
+
+.tab-motors .plot_control .rms {
+    background-color: #00D800;
     padding: 3px;
     color: #fff;
     height: 12px;

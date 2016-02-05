@@ -87,6 +87,12 @@
     "tabServos": {
         "message": "Servos"
     },
+    "tabFailsafe": {
+        "message": "Failsafe"
+    },
+    "tabTransponder": {
+        "message": "Race Transponder"
+    },
     "tabGPS": {
         "message": "GPS"
     },
@@ -103,10 +109,10 @@
         "message": "CLI"
     },
     "tabLogging": {
-        "message": "Logging"
+        "message": "Tethered Logging"
     },
-    "tabDataflash": {
-        "message": "Dataflash"
+    "tabOnboardLogging": {
+        "message": "Blackbox"
     },
     "tabAdjustments": {
         "message": "Adjustments"
@@ -212,6 +218,12 @@
     "dfu_erased_kilobytes": {
         "message": "Erased $1 kB of flash <span style=\"color: #57a929\">successfully</span>"
     },
+    "dfu_device_flash_info": {
+        "message": "Detected device with total flash size $1 kiB"
+    },
+    "dfu_error_image_size": {
+        "message": "<span style=\"color: red; font-weight: bold\">Error</span>: Supplied image is larger then flash available on the chip! Image: $1 kiB, limit = $2 kiB"
+    },
 
     "eeprom_saved_ok": {
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
@@ -249,14 +261,42 @@
         "message": "Documentation / Manual"
     },
     "defaultDocumentation": {
-        "message": "Cleanflight documentation is available in Markdown and PDF formats.<br /><br />The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/cleanflight/cleanflight/releases\" target=\"_blank\">here</a>.<br />The Markdown latest online documentation is available <a href=\"https://github.com/cleanflight/cleanflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
+        "message": "Cleanflight documentation is available in Markdown and PDF formats.<br /><br />"
+    },
+    "defaultDocumentation1": {
+        "message": "The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/cleanflight/cleanflight/releases\" target=\"_blank\">here</a>."
+    },
+    "defaultDocumentation2": {
+        "message": "The Markdown latest online documentation is available <a href=\"https://github.com/cleanflight/cleanflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
     },
     "defaultSupportHead": {
         "message": "Support"
     },
-    "defaultSupport": {
-        "message": "For support please search the forums first or contact your vendor.<br /><br />RC Groups thread is <a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">here</a>. MultiWii forums thread is <a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">here</a>.<br /><br />Developers and users hang out in IRC channel on freenode<br /><a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">irc://irc.freenode.net/#cleanflight</a> or <a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via web client</a>."
+    "defaultSupportSubline1": {
+        "message": "Support Scources"
     },
+    "defaultSupportSubline2": {
+        "message": "Developer"
+    },
+    "defaultSupport": {
+        "message": "For support please search the forums first or contact your vendor.<br /><br />"
+    },
+    "defaultSupport1": {
+        "message": "<a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">RC Groups thread</a>"
+    },
+    "defaultSupport2": {
+        "message": "<a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">MultiWii forums thread</a>"
+    },
+    "defaultSupport3": {
+        "message": "<a href=\"https://github.com/cleanflight\" target=\"_blank\">GitHub</a>"
+    },
+    "defaultSupport4": {
+        "message": "<a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">IRC channel on freenode</a>"
+    },
+    "defaultSupport5": {
+        "message": "<a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via WebClient</a>"
+    },
+    
     "initialSetupBackupAndRestoreApiVersion": {
         "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: #57a929\">$2</span>.  Please backup your settings via the CLI, see Cleanflight documentation for procedure."
     },
@@ -405,6 +445,88 @@
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
+    "featureRX_PPM": {
+        "message": "PPM RX input"
+    },
+    "featureVBAT": {
+        "message": "Battery voltage monitoring"
+    },
+    "featureINFLIGHT_ACC_CAL": {
+        "message": "In-flight level calibration"
+    },
+    "featureRX_SERIAL": {
+        "message": "Serial-based receiver (SPEKSAT, SBUS, SUMD)"
+    },
+    "featureMOTOR_STOP": {
+        "message": "Don't spin the motors when armed"
+    },
+    "featureSERVO_TILT": {
+        "message": "Servo gimbal"
+    },
+    "featureSOFTSERIAL": {
+        "message": "Enable CPU based serial ports"
+    },
+    "featureSOFTSERIALTip": {
+        "message": "Configure ports on the Ports tab after enabling."
+    },
+    "featureGPS": {
+        "message": "GPS for navigation and telemetry"
+    },
+    "featureGPSTip": {
+        "message": "Configure port scenario first"
+    },
+    "featureFAILSAFE": {
+        "message": "Apply failsafe settings on RX signal loss"
+    },
+    "featureSONAR": {
+        "message": "Sonar"
+    },
+    "featureTELEMETRY": {
+        "message": "Telemetry output"
+    },
+    "featureCURRENT_METER": {
+        "message": "Battery current monitoring"
+    },
+    "feature3D": {
+        "message": "3D mode (for use with reversible ESCs)"
+    },
+    "featureRX_PARALLEL_PWM": {
+        "message": "PWM RX input (one wire per channel)"
+    },
+    "featureRX_MSP": {
+        "message": "MSP RX input (control via MSP port)"
+    },
+    "featureRSSI_ADC": {
+        "message": "Analog RSSI input"
+    },
+    "featureLED_STRIP": {
+        "message": "Multi-color RGB LED strip support"
+    },
+    "featureDISPLAY": {
+        "message": "OLED Screen Display"
+    },
+    "featureONESHOT125": {
+        "message": "ONESHOT ESC support"
+    },
+    "featureONESHOT125Tip": {
+        "message": "Disconnect flight battery and remove props before enabling."
+    },
+    "featureBLACKBOX": {
+        "message": "Blackbox flight data recorder"
+    },
+    "featureBLACKBOXTip": {
+        "message": "Configure via the BlackBox tab after enabling."
+    },
+    "featureCHANNEL_FORWARDING": {
+        "message": "Forward aux channels to servo outputs"
+    },
+    "featureTRANSPONDER": {
+        "message": "Race Transponder"
+    },
+    "featureTRANSPONDERTip": {
+        "message": "Configure via the Race Transponder tab after enabling."
+    },
+    
     "configurationFeatureEnabled": {
         "message": "Enabled"
     },
@@ -414,8 +536,6 @@
     "configurationFeatureDescription": {
         "message": "Description"
     },
-
-
     "configurationMixer": {
         "message": "Mixer"
     },
@@ -425,11 +545,11 @@
     "configurationReceiver": {
         "message": "Receiver Mode"
     },
-    "configurationFailsafe": {
-        "message": "Receiver failsafe"
-    },
     "configurationRSSI": {
         "message": "RSSI (Signal Strength)"
+    },
+    "configurationRSSIHelp": {
+        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft is going out of range or if it is suffering RF interference."
     },
     "configurationEscFeatures": {
         "message": "ESC/Motor Features"
@@ -437,22 +557,29 @@
     "configurationFeaturesHelp": {
         "message": "<strong>Note:</strong> Not all combinations of features are valid.  When the flight controller firmware detects invalid feature combinations conflicting features will be disabled.<br /><strong>Note:</strong> Configure serial ports <span style=\"color: red\">before</span> enabling the features that will use the ports."
     },
-    
     "configurationSerialRXHelp": {
         "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) and choose a Serial Receiver Provider when using RX_SERIAL feature."
     },
-
     "configurationBoardAlignment": {
-        "message": "Board Alignment"
+        "message": "Board and Sensor Alignment"
     },
     "configurationBoardAlignmentRoll": {
-        "message": "Roll Adjustment [deg]"
+        "message": "Roll Degrees"
     },
     "configurationBoardAlignmentPitch": {
-        "message": "Pitch Adjustment [deg]"
+        "message": "Pitch Degrees"
     },
     "configurationBoardAlignmentYaw": {
-        "message": "Yaw Adjustment [deg]"
+        "message": "Yaw Degrees"
+    },
+    "configurationSensorAlignmentGyro": {
+        "message": "GYRO Alignment"
+    },
+    "configurationSensorAlignmentAcc": {
+        "message": "ACCEL Alignment"
+    },
+    "configurationSensorAlignmentMag": {
+        "message": "MAG Alignment"
     },
     "configurationAccelTrims": {
         "message": "Accelerometer Trim"
@@ -471,7 +598,7 @@
     },
     "configurationDisarmKillSwitch": {
         "message": "Disarm motors regardless of throttle value (When arming via AUX channel)"
-    }, 
+    },
     "configurationThrottleMinimum": {
         "message": "Minimum Throttle"
     },
@@ -481,14 +608,14 @@
     "configurationThrottleMaximum": {
         "message": "Maximum Throttle"
     },
-    "configurationThrottleFailsafe": {
-        "message": "Failsafe Throttle"
-    },
     "configurationThrottleMinimumCommand": {
         "message": "Minimum Command"
     },
     "configurationBatteryVoltage": {
         "message": "Battery Voltage"
+    },
+    "configurationBatteryCurrent": {
+        "message": "Battery Current"
     },
     "configurationBatteryMinimum": {
         "message": "Minimum Cell Voltage"
@@ -514,7 +641,7 @@
     "configurationBatteryMultiwiiCurrent": {
         "message": "Enable support for legacy Multiwii MSP current output"
     },
-   "configuration3d": {
+    "configuration3d": {
         "message": "3D"
     },
     "configuration3dDeadbandLow": {
@@ -556,7 +683,6 @@
     "configurationGPSHelp": {
         "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) when using GPS feature."
     },
-
     "configurationSerialRX": {
         "message": "Serial Receiver Provider"
     },
@@ -593,6 +719,9 @@
     },
     "portsFunction_TELEMETRY_HOTT": {
         "message": "HoTT"
+    },
+    "portsFunction_TELEMETRY_LTM": {
+        "message": "LTM"
     },
     "portsFunction_TELEMETRY_MSP": {
         "message": "MSP"
@@ -673,6 +802,18 @@
     },
     "receiverRcRate": {
         "message": "RC Rate"
+    },
+    "receiverDeadband": {
+        "message": "RC Deadband"
+    },
+    "receiverHelpDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle."
+    },
+    "receiverHelpYawDeadband": {
+        "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle. <strong>This setting is for Yaw only.</strong>"
+    },    
+    "receiverYawDeadband": {
+        "message": "Yaw Deadband"
     },
     "receiverRcExpo": {
         "message": "RC Expo"
@@ -838,6 +979,60 @@
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
     },
+    "adjustmentsFunction21": {
+        "message": "Alt P Adjustment"
+    },
+    "adjustmentsFunction22": {
+        "message": "Alt I Adjustment"
+    },
+    "adjustmentsFunction23": {
+        "message": "Alt D Adjustment"
+    },
+    "adjustmentsFunction24": {
+        "message": "Vel P Adjustment"
+    },
+    "adjustmentsFunction25": {
+        "message": "Vel I Adjustment"
+    },
+    "adjustmentsFunction26": {
+        "message": "Vel D Adjustment"
+    },
+    "adjustmentsFunction27": {
+        "message": "MAG P Adjustment"
+    },
+    "adjustmentsFunction28": {
+        "message": "Pos P Adjustment"
+    },
+    "adjustmentsFunction29": {
+        "message": "Pos I Adjustment"
+    },
+    "adjustmentsFunction30": {
+        "message": "PosR P Adjustment"
+    },
+    "adjustmentsFunction31": {
+        "message": "PosR I Adjustment"
+    },
+    "adjustmentsFunction32": {
+        "message": "PosR D Adjustment"
+    },
+    "adjustmentsFunction33": {
+        "message": "NavR P Adjustment"
+    },
+    "adjustmentsFunction34": {
+        "message": "NavR I Adjustment"
+    },
+    "adjustmentsFunction35": {
+        "message": "NavR D Adjustment"
+    },
+    "adjustmentsFunction36": {
+        "message": "Level P Adjustment"
+    },
+    "adjustmentsFunction37": {
+        "message": "Level I Adjustment"
+    },
+    "adjustmentsFunction38": {
+        "message": "Level D Adjustment"
+    },
     "adjustmentsSave": {
         "message": "Save"
     },
@@ -845,11 +1040,37 @@
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
-
-    "servosFirmwareUpgradeRequired": {
-        "message": "Servos requires firmware &gt;= 1.10.0."
+    "transponderNotSupported": {
+        "message": "Your flight controller's firmware does not support transponder functionality."
+    },
+    "transponderHelp": {
+        "message": "Configure your transponder code here.  Note: Only valid codes will be recognised by race timing systems.  Valid transponder codes can be obtained from <a href=\"http://seriouslypro.com/transponder-codes\" target=\"_blank\">Seriously Pro</a>."
+    },
+    "transponderInformation": {
+        "message": "Transponders systems allow race organizers to time your laps.  The transponder is fitted to your aircraft and when your aircraft passes the timing gate the track-side receiver registers your code and records your laptime.  When fitting an IR based transponder your should ensure that it points outward from your aircraft towards the track-side receivers and that the light beam is not obstructed by your airframe, battery-straps, cables, propellers, etc."
+    },
+    "transponderConfiguration": {
+        "message": "Configuration"
+    },
+    "transponderData": {
+        "message": "Data"
+    },
+    "transponderDataHelp": {
+        "message": "Hexadecimal digits only, 0-9, A-F"
+    },
+    "transponderButtonSave": {
+        "message": "Save"
+    },
+    "transponderDataInvalid": {
+        "message": "Transponder data is <span style=\"color: red\">invalid</span>"
+    },    
+    "transponderEepromSaved": {
+        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
 
+    "servosFirmwareUpgradeRequired": {
+        "message": "Servos requires firmware &gt;= 1.10.0. and target support."
+    },
     "servosChangeDirection": {
         "message": "Change Direction in TX To Match"
     },
@@ -893,6 +1114,15 @@
     "gpsHead": {
         "message": "GPS"
     },
+    "gpsMapHead": {
+        "message": "Current GPS location"
+    },
+    "gpsMapMessage1": {
+        "message": "Please check your internet connection"
+    },
+    "gpsMapMessage2": {
+        "message": "Waiting for GPS 3D fix…"
+    },
     "gps3dFix": {
         "message": "3D Fix:"
     },
@@ -934,7 +1164,7 @@
         "message": "<strong>Motor Test Mode Notice:</strong><br />Moving the sliders will cause the motors to <strong>spin up</strong>.<br />In order to prevent injury <strong style=\"color: red\">remove ALL propellers</strong> before using this feature.<br />"
     },
     "motorsEnableControl": {
-        "message": "I understand the risks, propellors are removed - Enable motor control."
+        "message": "I understand the risks, propellers are removed - Enable motor control."
     },
 
     "sensorsInfo": {
@@ -952,6 +1182,12 @@
     },
     "cliInputPlaceholder": {
         "message": "Write your command here"
+    },
+    "cliEnter": {
+        "message": "CLI mode detected"
+    },
+    "cliReboot": {
+        "message": "CLI reboot detected"
     },
 
     "loggingNote": {
@@ -988,10 +1224,30 @@
         "message": "Automatically loaded previous log file: <strong>$1</strong>"
     },
 
-    "dataflashNote": {
-        "message": "Blackbox flight logs can be recorded to your flight controller's onboard dataflash chip."
+    "blackboxNotSupported": {
+        "message": "Your flight controller's firmware does not support Blackbox logging."
     },
-    "dataflashNotSupportedNote": {
+    "blackboxMaybeSupported": {
+        "message": "Your flight controller's firmware is too old to support this tab, or the Blackbox feature is disabled on the Configuration tab."
+    },
+    "blackboxConfiguration": {
+        "message": "Blackbox configuration"
+    },
+    "blackboxButtonSave": {
+        "message": "Save and reboot"
+    },
+    
+    "serialLoggingSupportedNote": {
+        "message": "You can log to an external logging device (such as an OpenLog or compatible clone) by using a serial port. Configure the port on the Ports tab."
+    },
+    "sdcardNote": {
+        "message": "Flight logs can be recorded to your flight controller's onboard SD card slot."
+    },
+    
+    "dataflashNote": {
+        "message": "Flight logs can be recorded to your flight controller's onboard dataflash chip."
+    },
+    "dataflashNotPresentNote": {
         "message": "Your flight controller does not have a compatible dataflash chip available."
     },
     "dataflashFirmwareUpgradeRequired": {
@@ -1033,6 +1289,7 @@
     "dataflashFileWriteFailed": {
         "message": "Failed to write to the file you selected, are the permissions on that folder okay?"
     },
+    
     "firmwareFlasherReleaseSummaryHead": {
         "message": "Release info"
     },
@@ -1089,25 +1346,25 @@
         "message": "Available online firmware releases - Select the correct firmware appropriate for your board."
     },
     "firmwareFlasherNoRebootDescription": {
-        "message": "Enable if you are flashing board with bootloader pins shorted"
+        "message": "Enable if you powered your FC while the bootloader pins are jumpered or have your FC's BOOT button pressed."
     },
     "firmwareFlasherFlashOnConnect": {
         "message": "Flash on connect"
     },
     "firmwareFlasherFlashOnConnectDescription": {
-        "message": "Attempt to flash the board automatically (triggered by newly detected serial port)"
+        "message": "Attempt to flash the board automatically (triggered by newly detected serial port)."
     },
     "firmwareFlasherFullChipErase": {
         "message": "Full chip erase"
     },
     "firmwareFlasherFullChipEraseDescription": {
-        "message": "Wipes all configuration data currently stored on the board"
+        "message": "Wipes all configuration data currently stored on the board."
     },
     "firmwareFlasherFlashDevelopmentFirmware": {
         "message": "Use Development Firmware"
     },
     "firmwareFlasherFlashDevelopmentFirmwareDescription": {
-        "message": "Flash most recent (untested) development firmware"
+        "message": "Flash most recent (untested) development firmware."
     },
     "firmwareFlasherManualBaud": {
         "message": "Manual baud rate"
@@ -1116,10 +1373,10 @@
         "message": "Manual selection of baud rate for boards that don't support the default speed or for flashing via bluetooth."
     },
     "firmwareFlasherShowDevelopmentReleases":{
-      "message": "Show unstable releases"
+        "message": "Show unstable releases"
     },
     "firmwareFlasherShowDevelopmentReleasesDescription":{
-      "message": "Show Release-Candidates and Development Releases"
+        "message": "Show Release-Candidates and Development Releases."
     },
     "firmwareFlasherOptionLabelSelectFirmware": {
         "message": "Choose a Firmware / Board"
@@ -1151,11 +1408,17 @@
     "firmwareFlasherMessage": {
         "message": "Message:"
     },
-    "firmwareFlasherWarninghead": {
+    "firmwareFlasherWarningHead": {
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC.<br /><br /><strong>Note: </strong>If you have lost comminication with your board then power off the board, jumper the bootloader pins, power on, enable 'No reboot sequence', enable 'Full chip erase', re-flash, then power off, remove bootloader jumper, power on and connect (For all firmware except OPBL firmware)."
+        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC first, try rebooting, upgrade chrome, upgrade drivers.<br />"
+    },
+    "firmwareFlasherRecoveryHead": {
+        "message": "<strong>Recovery / Lost communication<strong>"
+    },
+    "firmwareFlasherRecoveryText": {
+        "message": "If you have lost communication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
@@ -1182,6 +1445,7 @@
     "ledStripEepromSaved": {
         "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
     },
+    
     "controlAxisRoll": {
         "message": "Roll"
     },
@@ -1242,6 +1506,7 @@
     "controlAxisAux16": {
         "message": "AUX 16"
     },
+    
     "pidTuningBasic": {
         "message": "Basic/Acro"
     },
@@ -1265,11 +1530,95 @@
     },
     "pidTuningLevelD": {
         "message": "Transition (Horizon)"
-    },
-    "pidHelp1": {
+    },    
+    "pidTuningLevelHelp": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },
-    "configHelp1": {
-        "message": "RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference."
+    "configHelp2": {
+        "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
+    },
+    "failsafeFeaturesHelpOld": {
+        "message": "Failsafe configuration has changed considerably. Use Cleanflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
+    },
+    "failsafePaneTitleOld": {
+        "message": "Receiver failsafe"
+    },
+    "failsafeFeatureItemOld": {
+        "message": "Failsafe settings on RX signal loss"
+    },
+    "failsafeThrottleItemOld": {
+        "message": "Failsafe Throttle"
+    },
+    "failsafeFeaturesHelpNew": {
+        "message": "Failsafe has two stages. <strong>Stage 1</strong> is entered when a flightchannel has an invalid pulse length, the receiver reports failsafe mode or there is no signal from the receiver at all, the channel fallback settings are applied to <span style=\"color: red\">all channels</span> and a short amount of time is provided to allow for recovery. <strong>Stage 2</strong> is entered when the error condition takes longer than the configured guard time while the craft is <span style=\"color: red\">armed</span>, all channels will remain at the applied channel fallback setting unless overruled by the chosen procedure. <br /><strong>Note:</strong> Prior to entering stage 1, channel fallback settings are also applied to individual AUX channels that have invalid pulses."
+    },
+    "failsafePulsrangeTitle": {
+        "message": "Valid Pulse Range Settings"
+    },
+    "failsafePulsrangeHelp": {
+        "message": "Pulses shorter than minimum or longer than maximum are invalid and will trigger application of individual channel fallback settings for AUX channels or entering stage 1 for flightchannels"
+    },
+    "failsafeRxMinUsecItem": {
+        "message": "Minimum length"
+    },
+    "failsafeRxMaxUsecItem": {
+        "message": "Maximum length"
+    },
+    "failsafeChannelFallbackSettingsTitle": {
+        "message": "Channel Fallback Settings"
+    },
+    "failsafeChannelFallbackSettingsHelp": {
+        "message": "These settings are applied to invalid individual AUX channels or to all channels when entering stage 1. <strong>Note:</strong> values are saved in steps of 25usec, so small changes disappear"
+    },
+    "failsafeChannelFallbackSettingsAuto": {
+        "message": "<strong>Auto</strong> means Roll, Pitch and Yaw to center and Throttle low. <strong>Hold</strong> means maintain the last good value received"
+    },
+    "failsafeChannelFallbackSettingsHold": {
+        "message": "<strong>Hold</strong> means maintain the last good value received. <strong>Set</strong> means the value given here will be used"
+    },
+    "failsafeStageTwoSettingsTitle": {
+        "message": "Stage 2 - Settings"
+    },
+    "failsafeFeatureItem": {
+        "message": "Failsafe Stage 2 enabled"
+    },
+    "failsafeFeatureHelp": {
+        "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
+    },
+    "failsafeDelayItem": {
+        "message": "Guard time for stage 2 activation after signal lost [1 = 0.1 sec.]"
+    },
+    "failsafeDelayHelp": {
+        "message": "Time for stage 1 to wait for recovery"
+    },
+    "failsafeThrottleLowItem": {
+        "message": "Failsafe Throttle Low Delay [1 = 0.1 sec.]"
+    },
+    "failsafeThrottleLowHelp": {
+        "message": "Just disarm the craft instead of executing the selected failsafe procedure when the throttle was low for this amount of time"
+    },
+    "failsafeThrottleItem": {
+        "message": "Throttle value used while landing"
+    },
+    "failsafeOffDelayItem": {
+        "message": "Delay for turning off the Motors during Failsafe [1 = 0.1 sec.]"
+    },
+    "failsafeOffDelayHelp": {
+        "message": "Time to stay in landing mode untill the motors are turned off and the craft is disarmed"
+    },
+    "failsafeSubTitle1": {
+        "message": "Stage 2 - Failsafe Procedure"
+    },
+    "failsafeProcedureItemSelect1": {
+        "message": "Land"
+    },
+    "failsafeProcedureItemSelect2": {
+        "message": "Drop"
+    },
+    "failsafeKillSwitchItem": {
+        "message": "Failsafe Kill Switch (setup Failsafe in Modes Tab)"
+    },
+    "failsafeKillSwitchHelp": {
+        "message": "Set this option to make the failsafe switch, configured in the modes tab, act as a direct kill switch, bypassing the selected failsafe procedure. <strong>Note:</strong> Arming is blocked with the failsafe kill switch in the ON position"
     }
 }
