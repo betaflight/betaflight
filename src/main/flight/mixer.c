@@ -831,6 +831,9 @@ void mixTable(void)
             motorLimitReached = true;
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
+
+                // Get the max correction from center when agressivity enabled. (Some setups don't like this option)
+                if (mixerConfig->agressive_airmode) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
             }
         } else {
             motorLimitReached = false;
