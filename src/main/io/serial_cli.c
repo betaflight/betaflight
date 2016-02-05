@@ -371,7 +371,7 @@ static const char * const lookupTableGyroFilter[] = {
 };
 
 static const char * const lookupTableGyroLpf[] = {
-    "256HZ",
+    "OFF",
     "188HZ",
     "98HZ",
     "42HZ",
