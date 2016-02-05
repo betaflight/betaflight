@@ -30,7 +30,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the CLI command as follows:
 
 ```
-set telemetry_inversion = 1
+set telemetry_inversion = ON
 ```
 
 ### Precision setting for VFAS
@@ -118,10 +118,27 @@ More information about the implementation can be found here: https://github.com/
 
 In time this documentation will be updated with further details.
 
+### SmartPort on F3 targets with hardware UART
+
 Smartport devices can be connected directly to STM32F3 boards such as the SPRacingF3 and Sparky, with a single straight through cable without the need for any hardware modifications on the FC or the receiver. Connect the TX PIN of the UART to the Smartport signal pin.
 
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
 ```
-set telemetry_inversion = 1
+set telemetry_inversion = ON
 ```
+
+### SmartPort on F1 and F3 targets with SoftSerial
+
+Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters, SoftSerial might be simpler to use. 
+
+1. Enable SoftSerial ```feature SOFTSERIAL```
+2. In Configurator assign _Telemetry_ > _Smartport_ > _Auto_ to SoftSerial port of your choice
+3. Enable Telemetry ```feature TELEMETRY```
+4. Confirm telemetry invesion ```set telemetry_inversion = ON```
+5. You have to bridge TX and RX lines of SoftSerial and connect them together to S.Port signal line in receiver
+
+Notes:
+
+* This has been tested with Flip32 and SPracingF3 boards and FrSky X8R and X4R receivers
+* To discover all sensors board has to be armed. When not armed, values like ***Vfas*** or GPS coordinates are not sent
