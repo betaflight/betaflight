@@ -94,6 +94,16 @@ TEST(SchedulerUnittest, TestPriorites)
         EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY].staticPriority);
 }
 
+TEST(SchedulerUnittest, TestPriorites)
+{
+    // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
+    EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_LOW, cfTasks[TASK_SERIAL].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY].staticPriority);
+}
+
 TEST(SchedulerUnittest, TestQueueInit)
 {
     queueClear();
@@ -132,11 +142,11 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_BEEPER]); // TASK_PRIORITY_MEDIUM
+    queueAdd(&cfTasks[TASK_BATTERY]); // TASK_PRIORITY_MEDIUM
     EXPECT_EQ(4, queueSize());
     EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
@@ -146,7 +156,7 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
@@ -155,19 +165,22 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(4, queueSize());
     EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BEEPER], queueNext());
+    EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 }
 
 TEST(SchedulerUnittest, TestQueueArray)
 {
     // test there are no "out by one" errors or buffer overruns when items are added and removed
     queueClear();
-    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr;
+    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr; // note, must set deadBeefPtr after queueClear
 
-    for (int taskId=0; taskId < TASK_COUNT - 1; ++taskId) {
+    for (int taskId = 0; taskId < TASK_COUNT - 1; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), true);
+        EXPECT_EQ(taskId + 1, queueSize());
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
     }
     EXPECT_EQ(TASK_COUNT - 1, queueSize());
     EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 2]);

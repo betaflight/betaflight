@@ -92,7 +92,7 @@ typedef struct {
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
     uint32_t desiredPeriod;     // target period of execution
-    uint8_t staticPriority;     // dynamicPriority grows in steps of this size, shouldn't be zero
+    const uint8_t staticPriority;// dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
     uint8_t dynamicPriority;    // measurement of how old task was last executed, used to avoid task starvation
