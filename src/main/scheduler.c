@@ -61,7 +61,7 @@ static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer 
 #endif
 STATIC_UNIT_TESTED void queueClear(void)
 {
-    memset(taskQueueArray, 0, (int)(sizeof(taskQueueArray)));
+    memset(taskQueueArray, 0, sizeof(cfTask_t) * (TASK_COUNT + 1));
     taskQueuePos = 0;
     taskQueueSize = 0;
 }
