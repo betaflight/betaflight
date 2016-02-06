@@ -69,8 +69,6 @@ static rxConfig_t *rxConfig;
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
-bool motorLimitReached;
-
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
@@ -81,6 +79,12 @@ STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
 #endif
+
+typedef enum {
+	THROTTLE_3D_NEUTRAL = 0,
+	THROTTLE_3D_POSITIVE,
+	THROTTLE_3D_NEGATIVE
+} throttle3dState_e;
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -780,9 +784,8 @@ void mixTable(void)
         // Scale roll/pitch/yaw uniformly to fit within throttle range
         int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
         int16_t throttleRange, throttle;
-        int16_t throttleMin = 0, throttleMax = 0;
-        static bool flightDirection3dReversed = false;
-
+        int16_t throttleMin, throttleMax;
+        throttle3dState_e throttle3dPosition = THROTTLE_3D_NEUTRAL;  // Initiate in Neutral before all throttle checks
         throttle = rcCommand[THROTTLE];
 
         // Find min and max throttle based on condition
@@ -792,20 +795,25 @@ void mixTable(void)
             if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
                 throttleMax = flight3DConfig->deadband3d_low;
                 throttleMin = escAndServoConfig->minthrottle;
-                flightDirection3dReversed = true;
+                throttle3dPosition = THROTTLE_3D_NEGATIVE;
             } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
                 throttleMax = escAndServoConfig->maxthrottle;
                 throttleMin = flight3DConfig->deadband3d_high;
-                flightDirection3dReversed = false;
+                throttle3dPosition = THROTTLE_3D_POSITIVE;
             } else {
-                if (throttleMin) {
+                // when starting in neutral go positive and  when coming from positive. Keep positive throttle within deadband
+                if ((throttle3dPosition == THROTTLE_3D_NEUTRAL && !throttleMinPrevious)
+                    || (throttle3dPosition == THROTTLE_3D_NEUTRAL && (throttleMinPrevious >= flight3DConfig->deadband3d_high))) {
+                    throttleMax = escAndServoConfig->maxthrottle;
+                    throttle = throttleMin = flight3DConfig->deadband3d_high;
+                // When coming from negative. Keep negative throttle within deadband
+                } else if (throttle3dPosition == THROTTLE_3D_NEUTRAL && (throttleMinPrevious <= flight3DConfig->deadband3d_low)) {
+                    throttleMax = escAndServoConfig->mincommand;
+                    throttle = throttleMin = flight3DConfig->deadband3d_low;
+                }  else {
                     throttleMax = throttleMaxPrevious;
                     throttleMin = throttleMinPrevious;
                     throttle = throttlePrevious;
-                } else {
-                    // when starting in neutral
-                    throttleMax = escAndServoConfig->maxthrottle;
-                    throttle = throttleMin = flight3DConfig->deadband3d_high;
                 }
             }
 
@@ -823,6 +831,9 @@ void mixTable(void)
             motorLimitReached = true;
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
+
+                // Get the max correction from center when agressivity enabled. (Some setups don't like this option)
+                if (mixerConfig->agressive_airmode) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
             }
         } else {
             motorLimitReached = false;
@@ -833,12 +844,12 @@ void mixTable(void)
         // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
         // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
         for (i = 0; i < motorCount; i++) {
-            motor[i] = rollPitchYawMix[i] + constrainf(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
+            motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
             if (isFailsafeActive) {
                 mixConstrainMotorForFailsafeCondition(i);
             } else if (feature(FEATURE_3D)) {
-                if (flightDirection3dReversed) {
+                if (throttle3dPosition == THROTTLE_3D_NEGATIVE) {
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
                 } else {
                     motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
