@@ -832,7 +832,7 @@ void mixTable(void)
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
         if (isFailsafeActive) {
-            mixConstrainMotorForFailsafeCondition(i);
+            motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
         } else if (feature(FEATURE_3D)) {
             if (throttle >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle))  {
                 motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
