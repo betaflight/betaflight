@@ -54,12 +54,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
-typedef enum {
-	THROTTLE_3D_NEUTRAL = 0,
-	THROTTLE_3D_POSITIVE,
-	THROTTLE_3D_NEGATIVE
-} throttle3dState_e;
-
 uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
@@ -786,42 +780,32 @@ void mixTable(void)
     int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
     int16_t throttleRange, throttle;
     int16_t throttleMin, throttleMax;
-    throttle3dState_e throttle3dPosition = THROTTLE_3D_NEUTRAL;  // Initiate in Neutral before all throttle checks
-    throttle = rcCommand[THROTTLE];
 
     // Find min and max throttle based on condition
     if (feature(FEATURE_3D)) {
-        static int16_t throttleMinPrevious = 0, throttleMaxPrevious = 0, throttlePrevious = 0;
+        static int16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
 
-        if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
+        if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) { // Out of deadband handling
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
-            throttle3dPosition = THROTTLE_3D_NEGATIVE;
+            throttlePrevious = throttle = rcCommand[THROTTLE];
         } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
             throttleMax = escAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
-            throttle3dPosition = THROTTLE_3D_POSITIVE;
-        } else {
-            // when starting in neutral go positive and  when coming from positive. Keep positive throttle within deadband
-            if ((throttle3dPosition == THROTTLE_3D_NEUTRAL && !throttleMinPrevious)
-                || (throttle3dPosition == THROTTLE_3D_NEUTRAL && (throttleMinPrevious >= flight3DConfig->deadband3d_high))) {
+            throttlePrevious = throttle = rcCommand[THROTTLE];
+        } else {  // Deadband handling
+            // Always start positive. When coming from positive keep positive throttle within deadband
+            if ((throttlePrevious >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) || !throttlePrevious) {
                 throttleMax = escAndServoConfig->maxthrottle;
                 throttle = throttleMin = flight3DConfig->deadband3d_high;
             // When coming from negative. Keep negative throttle within deadband
-            } else if (throttle3dPosition == THROTTLE_3D_NEUTRAL && (throttleMinPrevious <= flight3DConfig->deadband3d_low)) {
-                throttleMax = escAndServoConfig->mincommand;
-                throttle = throttleMin = flight3DConfig->deadband3d_low;
-            }  else {
-                throttleMax = throttleMaxPrevious;
-                throttleMin = throttleMinPrevious;
-                throttle = throttlePrevious;
+            } else if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
+                throttle = throttleMax = flight3DConfig->deadband3d_low;
+                throttleMin = escAndServoConfig->minthrottle;
             }
         }
-
-        throttleMaxPrevious = throttleMax;
-        throttleMinPrevious = throttleMin;
-        throttlePrevious = throttle;
     } else {
+        throttle = rcCommand[THROTTLE];
         throttleMin = escAndServoConfig->minthrottle;
         throttleMax = escAndServoConfig->maxthrottle;
     }
@@ -848,12 +832,12 @@ void mixTable(void)
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
         if (isFailsafeActive) {
-            motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            mixConstrainMotorForFailsafeCondition(i);
         } else if (feature(FEATURE_3D)) {
-            if (throttle3dPosition == THROTTLE_3D_NEGATIVE) {
-                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
-            } else {
+            if (throttle >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle))  {
                 motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+            } else {
+                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
             }
         } else {
             motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
