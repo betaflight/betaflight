@@ -177,7 +177,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
-    pidProfile->deltaFromGyro = 1;
+    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.1f;

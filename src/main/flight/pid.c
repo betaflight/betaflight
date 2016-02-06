@@ -128,7 +128,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastError[3], lastGyroRate[3];
+    static float lastErrorForDelta[3];
     static float previousDelta[3][DELTA_TOTAL_SAMPLES];
     float delta, deltaSum;
     int axis, deltaCount;
@@ -215,12 +215,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        if (!pidProfile->deltaFromGyro) {
-            delta = RateError - lastError[axis];
-            lastError[axis] = RateError;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
         } else {
-            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastGyroRate[axis] = gyroRate;
+            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = gyroRate;
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
@@ -269,9 +269,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     int axis, deltaCount;
     int32_t PTerm, ITerm, DTerm, delta, deltaSum;
-    static int32_t lastError[3] = { 0, 0, 0 };
+    static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
     static int32_t previousDelta[3][DELTA_TOTAL_SAMPLES];
-    static int32_t lastGyroRate[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
@@ -360,12 +359,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (!pidProfile->deltaFromGyro) {   // quick and dirty solution for testing
-            delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastError[axis] = RateError;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = RateError;
         } else {
-            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastGyroRate[axis] = gyroRate;
+            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = gyroRate;
         }
         
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference

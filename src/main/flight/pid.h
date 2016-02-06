@@ -42,6 +42,11 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 
+typedef enum {
+	DELTA_FROM_ERROR = 0,
+	DELTA_FROM_MEASUREMENT
+} pidDeltaType_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
@@ -60,7 +65,7 @@ typedef struct pidProfile_s {
 
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
     float dterm_lpf_hz;                     // Delta Filter in hz
-    uint8_t deltaFromGyro;                  // Alternative delta Calculation
+    uint8_t deltaMethod;                  // Alternative delta Calculation
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
