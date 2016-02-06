@@ -151,7 +151,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &MotolabF3MPUIntExtiConfig;
 #endif
 
-#if defined(COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
     static const extiConfig_t colibriRaceMPUIntExtiConfig = {
          .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
          .gpioPort = GPIOA,
