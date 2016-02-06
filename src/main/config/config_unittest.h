@@ -20,9 +20,6 @@
 #ifdef SRC_MAIN_SCHEDULER_C_
 #ifdef UNIT_TEST
 
-#ifdef SRC_MAIN_SCHEDULER_C_
-#ifdef UNIT_TEST
-
 cfTask_t *unittest_scheduler_selectedTask;
 uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 uint16_t unittest_scheduler_waitingTasks;
