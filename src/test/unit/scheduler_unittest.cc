@@ -77,8 +77,8 @@ extern "C" {
     extern void queueClear(void);
     extern int queueSize();
     extern bool queueContains(cfTask_t *task);
-    extern void queueAdd(cfTask_t *task);
-    extern void queueRemove(cfTask_t *task);
+    extern bool queueAdd(cfTask_t *task);
+    extern bool queueRemove(cfTask_t *task);
     extern cfTask_t *queueFirst(void);
     extern cfTask_t *queueNext(void);
 }
@@ -169,6 +169,38 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+}
+
+TEST(SchedulerUnittest, TestQueueAddAndRemove)
+{
+    queueClear();
+    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr;
+
+    // fill up the queue
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        const bool added = queueAdd(&cfTasks[taskId]);
+        EXPECT_EQ(true, added);
+        EXPECT_EQ(taskId + 1, queueSize());
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    }
+    // double check end of queue
+    EXPECT_EQ(TASK_COUNT, queueSize());
+    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
+    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]); // null pointer at end of queue is preserved
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]); // there hasn't been an out by one error
+
+    // and empty it again
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        const bool removed = queueRemove(&cfTasks[taskId]);
+        EXPECT_EQ(true, removed);
+        EXPECT_EQ(TASK_COUNT - taskId - 1, queueSize());
+        EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - taskId]);
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    }
+    // double check size and end of queue
+    EXPECT_EQ(0, queueSize()); // queue is indeed empty
+    EXPECT_EQ(NULL, taskQueueArray[0]); // there is a null pointer at the end of the queueu
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]); // no accidental overwrites past end of queue
 }
 
 TEST(SchedulerUnittest, TestQueueArray)
