@@ -423,7 +423,8 @@ void processRx(void)
     rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
-     This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
+     This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
+     Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
     if (throttleStatus == THROTTLE_LOW) {
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (rollPitchStatus == CENTERED) {
