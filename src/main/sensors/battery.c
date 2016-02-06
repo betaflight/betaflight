@@ -208,7 +208,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 float calculateVbatPidCompensation(void) {
 	float batteryScaler =  1.0f;
     if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
-        batteryScaler =  0.2f + constrainf(batteryWarningVoltage / vbat, 0.80f, 1.0f);   // Up to 20% increment. Should be fine for 3,3 to 4,2 difference
+        batteryScaler =  1.0f + constrainf(1.0f - (batteryWarningVoltage / vbat), 0.75f, 1.0f);   // Up to 25% increment. Should be fine for 3,3 to 4,2 difference
     }
 
     return batteryScaler;
