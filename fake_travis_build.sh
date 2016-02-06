@@ -9,6 +9,7 @@ targets=("PUBLISHMETA=True" \
     "TARGET=CJMCU" \
     "TARGET=SPARKY" \
     "TARGET=COLIBRI_RACE" \
+    "TARGET=LUX_RACE" \
     "TARGET=MOTOLAB" \
     "TARGET=RMDO" \
     "TARGET=ALIENWIIF3" \

@@ -90,7 +90,7 @@ void EXTI15_10_IRQHandler(void)
 }
 #endif
 
-#if defined (COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 void EXTI9_5_IRQHandler(void)
 {
     extiHandler(EXTI9_5_IRQn);
