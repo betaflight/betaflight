@@ -74,16 +74,6 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-// External I2C BARO
-//#define BARO
-//#define USE_BARO_MS5611
-
-// External I2C MAG
-//#define MAG
-//#define USE_MAG_HMC5883
-//#define USE_MAG_AK8975
-//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
-
 #define BEEPER
 #define LED0
 #define LED1
@@ -134,6 +124,7 @@
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
@@ -186,7 +177,7 @@
 #define BIND_PIN   Pin_5
 
 #define USE_SERIAL_1WIRE
-// USART2, RX is on USART1
+// USART3, RX is on USART1
 #define S1W_TX_GPIO         GPIOB
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB
