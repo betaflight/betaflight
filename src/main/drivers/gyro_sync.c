@@ -41,27 +41,14 @@ bool gyroSyncCheckUpdate(void) {
     return getMpuDataStatus(&gyro);
 }
 
-void gyroUpdateSampleRate(uint8_t lpf) {
-    int gyroSamplePeriod, gyroSyncDenominator;
+void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator) {
+    int gyroSamplePeriod;
 
     if (!lpf) {
         gyroSamplePeriod = 125;
-#ifdef STM32F303xC
-#ifdef COLIBRI_RACE // Leave out LUX target for now.  Need to test 2.6Khz
-        gyroSyncDenominator = 3; // Sample every 3d gyro measurement 2,6khz
-#else
-        gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
-#endif
-#else
-        if (!sensors(SENSOR_ACC) && !sensors(SENSOR_BARO) && !sensors(SENSOR_MAG)) {
-            gyroSyncDenominator = 4; // Sample every 4th gyro measurement 2khz
-        } else {
-            gyroSyncDenominator = 8; // Sample every 8th gyro measurement 1khz
-        }
-#endif
     } else {
         gyroSamplePeriod = 1000;
-        gyroSyncDenominator = 1; // Full Sampling 1khz
+        gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)

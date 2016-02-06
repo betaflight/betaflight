@@ -400,6 +400,7 @@ static void resetConf(void)
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 1;                 // 188HZ
+    masterConfig.gyro_sync_denom = 1;
     masterConfig.gyro_soft_lpf_hz = 60;
 
     resetAccelerometerTrims(&masterConfig.accZero);

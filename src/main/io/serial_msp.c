@@ -101,6 +101,39 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
+
+void setGyroSamplingSpeed(uint16_t looptime) {
+    uint16_t gyroSampleRate = 1000;
+    uint8_t maxDivider = 1;
+
+    if (looptime != targetLooptime) {
+#ifdef STM32F303xC
+        if (looptime < 1000) {
+            masterConfig.gyro_lpf = 1;
+            gyroSampleRate = 125;
+            maxDivider = 8;
+        } else {
+            masterConfig.gyro_lpf = 1;
+        }
+#else
+        if (looptime < 1000) {
+            masterConfig.gyro_lpf = 0;
+            masterConfig.acc_hardware = 1;
+            masterConfig.baro_hardware = 1;
+            masterConfig.mag_hardware = 1;
+            gyroSampleRate = 125;
+            maxDivider = 8;
+        } else {
+            masterConfig.gyro_lpf = 1;
+            masterConfig.acc_hardware = 0;
+            masterConfig.baro_hardware = 0;
+            masterConfig.mag_hardware = 0;
+        }
+#endif
+    }
+    masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
+}
+
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -1203,7 +1236,6 @@ static bool processInCommand(void)
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
-    uint16_t gyroRefreshRate;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1248,34 +1280,7 @@ static bool processInCommand(void)
         masterConfig.disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        gyroRefreshRate = read16();
-        if (gyroRefreshRate != targetLooptime) {
-            switch (gyroRefreshRate) {
-#ifdef STM32F303xC
-                default:
-                case(1000):
-                    masterConfig.gyro_lpf = 1;
-                    break;
-                case(500):
-                    masterConfig.gyro_lpf = 0;
-                    break;
-#else
-                default:
-                case(1000):
-                    masterConfig.gyro_lpf = 1;
-                    masterConfig.acc_hardware = 0;
-                    masterConfig.baro_hardware = 0;
-                    masterConfig.mag_hardware = 0;
-                    break;
-                case(500):
-                    masterConfig.gyro_lpf = 0;
-                    masterConfig.acc_hardware = 1;
-                    masterConfig.baro_hardware = 1;
-                    masterConfig.mag_hardware = 1;
-                    break;
-#endif
-            }
-        }
+        setGyroSamplingSpeed(read16());
         break;
     case MSP_SET_PID_CONTROLLER:
         currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
