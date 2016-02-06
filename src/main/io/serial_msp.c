@@ -109,7 +109,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
     if (looptime != targetLooptime) {
 #ifdef STM32F303xC
         if (looptime < 1000) {
-            masterConfig.gyro_lpf = 1;
+            masterConfig.gyro_lpf = 0;
             gyroSampleRate = 125;
             maxDivider = 8;
         } else {
