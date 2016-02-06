@@ -25,6 +25,7 @@ uint8_t unittest_scheduler_selectedTaskId;
 uint8_t unittest_scheduler_selectedTaskDynPrio;
 uint16_t unittest_scheduler_waitingTasks;
 uint32_t unittest_scheduler_timeToNextRealtimeTask;
+bool unittest_outsideRealtimeGuardInterval;
 
 #define SET_SCHEDULER_LOCALS() \
     { \
@@ -37,6 +38,7 @@ uint32_t unittest_scheduler_timeToNextRealtimeTask;
     unittest_scheduler_selectedTaskDynPrio = selectedTaskDynPrio; \
     unittest_scheduler_waitingTasks = waitingTasks; \
     unittest_scheduler_timeToNextRealtimeTask = timeToNextRealtimeTask; \
+    unittest_outsideRealtimeGuardInterval = outsideRealtimeGuardInterval; \
     }
 
 #else

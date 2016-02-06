@@ -39,16 +39,17 @@ typedef enum {TEST_IRQ = 0 } IRQn_Type;
 
 cfTaskId_e currentTaskId = TASK_NONE;
 
+#define REALTIME_GUARD_INTERVAL_MIN     10
+#define REALTIME_GUARD_INTERVAL_MAX     300
+#define REALTIME_GUARD_INTERVAL_MARGIN  25
+
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval;
+static uint32_t realtimeGuardInterval = REALTIME_GUARD_INTERVAL_MAX;
 
 uint32_t currentTime = 0;
 uint16_t averageSystemLoadPercent = 0;
 
-#define REALTIME_GUARD_INTERVAL_MIN     10
-#define REALTIME_GUARD_INTERVAL_MAX     300
-#define REALTIME_GUARD_INTERVAL_MARGIN  25
 
 void taskSystem(void)
 {
@@ -124,18 +125,15 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 void scheduler(void)
 {
     uint8_t taskId;
-    uint8_t selectedTaskId;
-    uint8_t selectedTaskDynPrio;
+    /* The task to be invoked */
+    uint8_t selectedTaskId = TASK_NONE;
+    uint8_t selectedTaskDynPrio = 0;
     uint16_t waitingTasks = 0;
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
 
     SET_SCHEDULER_LOCALS();
     /* Cache currentTime */
     currentTime = micros();
-
-    /* The task to be invoked */
-    selectedTaskId = TASK_NONE;
-    selectedTaskDynPrio = 0;
 
     /* Check for realtime tasks */
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
