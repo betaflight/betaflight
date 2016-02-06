@@ -21,7 +21,7 @@
 
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 

@@ -21,13 +21,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef UNIT_TEST
-// cannot include platform.h in UNIT_TEST build, since if included the build #defines (eg MAG, GPS, etc)
-// are set differently to test code
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
-#else
-#include "platform.h"
-#endif
+#include <platform.h>
 
 #include "scheduler.h"
 #include "debug.h"

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "debug.h"
 
 #include "common/maths.h"

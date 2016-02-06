@@ -21,7 +21,7 @@
 //#define DEBUG_RC_CONTROLS
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
 
     #include "common/maths.h"
     #include "common/axis.h"

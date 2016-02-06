@@ -21,7 +21,7 @@
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
 
     #include "drivers/serial.h"
     #include "io/serial.h"

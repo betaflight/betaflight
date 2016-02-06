@@ -23,7 +23,7 @@
 
 #include "build_config.h"
 
-#include "platform.h"
+#include <platform.h>
 
 #include "drivers/gpio.h"
 #include "drivers/timer.h"

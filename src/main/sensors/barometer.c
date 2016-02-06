@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 
 #include "common/maths.h"

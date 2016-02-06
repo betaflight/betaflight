@@ -24,7 +24,7 @@
 extern "C" {
     #include "debug.h"
 
-    #include "platform.h"
+    #include <platform.h>
 
     #include "common/axis.h"
 

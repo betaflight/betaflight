@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
     #include "scheduler.h"
 }
 
@@ -76,7 +76,7 @@ extern "C" {
 TEST(SchedulerUnittest, TestPriorites)
 {
     // check that the #defines used by scheduler.c and scheduler_unittest.cc are in sync
-    EXPECT_EQ(6, TASK_COUNT);
+    EXPECT_EQ(14, TASK_COUNT);
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);

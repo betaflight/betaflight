@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 

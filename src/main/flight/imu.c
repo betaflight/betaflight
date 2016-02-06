@@ -24,7 +24,7 @@
 #include "common/maths.h"
 
 #include "build_config.h"
-#include "platform.h"
+#include <platform.h>
 #include "debug.h"
 
 #include "common/axis.h"

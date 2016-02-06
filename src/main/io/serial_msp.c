@@ -23,7 +23,7 @@
 
 #include "build_config.h"
 #include "debug.h"
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 
 #include "common/axis.h"

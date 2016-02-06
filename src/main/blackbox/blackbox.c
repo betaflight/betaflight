@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #ifdef BLACKBOX

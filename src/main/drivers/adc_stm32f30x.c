@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "system.h"
 
 #include "gpio.h"

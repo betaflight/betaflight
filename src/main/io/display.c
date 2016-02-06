@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #include "build_config.h"

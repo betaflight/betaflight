@@ -23,7 +23,7 @@
 #include <math.h>
 #include <ctype.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 #include "version.h"
 
