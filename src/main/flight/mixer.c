@@ -43,6 +43,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
+#include "sensors/battery.h"
 
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
@@ -774,6 +775,8 @@ void mixTable(void)
             axisPID[PITCH] * currentMixer[i].pitch +
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+
+        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] *= calculateVbatPidCompensation();  // Add voltage PID compensation
 
         if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
         if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
