@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 extern "C" {
-    #include <platform.h>
+    #include "platform.h"
     #include "scheduler.h"
 }
 
@@ -96,7 +96,8 @@ TEST(SchedulerUnittest, TestPriorites)
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
+    EXPECT_EQ(14, TASK_COUNT);
+          // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
@@ -381,7 +382,7 @@ TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
     EXPECT_EQ(300, unittest_scheduler_timeToNextRealtimeTask);
 
     // Nothing should be scheduled in guard period
-    EXPECT_EQ((uint8_t)TASK_NONE, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(NULL, unittest_scheduler_selectedTask);
     EXPECT_EQ(100000, cfTasks[TASK_SYSTEM].lastExecutedAt);
 
     EXPECT_EQ(200000, cfTasks[TASK_GYROPID].lastExecutedAt);
@@ -406,7 +407,7 @@ TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
     EXPECT_EQ(301, unittest_scheduler_timeToNextRealtimeTask);
 
     // System should be scheduled as not in guard period
-    EXPECT_EQ((uint8_t)TASK_SYSTEM, unittest_scheduler_selectedTaskId);
+    EXPECT_EQ(&cfTasks[TASK_SYSTEM], unittest_scheduler_selectedTask);
     EXPECT_EQ(200699, cfTasks[TASK_SYSTEM].lastExecutedAt);
 
     EXPECT_EQ(200000, cfTasks[TASK_GYROPID].lastExecutedAt);
