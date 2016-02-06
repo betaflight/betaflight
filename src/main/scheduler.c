@@ -83,30 +83,32 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
     return false;
 }
 
-STATIC_UNIT_TESTED void queueAdd(cfTask_t *task)
+STATIC_UNIT_TESTED bool queueAdd(cfTask_t *task)
 {
     if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
-        return;
+        return false;
     }
     for (int ii = 0; ii <= taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
             memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
             taskQueueArray[ii] = task;
             ++taskQueueSize;
-            return;
+            return true;
         }
     }
+    return false;
 }
 
-STATIC_UNIT_TESTED void queueRemove(cfTask_t *task)
+STATIC_UNIT_TESTED bool queueRemove(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
             memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
             --taskQueueSize;
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 /*
@@ -218,8 +220,8 @@ void scheduler(void)
     const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
 
     // The task to be invoked
-    uint32_t selectedTaskDynPrio = 0;
     cfTask_t *selectedTask = NULL;
+    uint16_t selectedTaskDynamicPriority = 0;
 
     // Update task dynamic priorities
     uint16_t waitingTasks = 0;
@@ -249,13 +251,13 @@ void scheduler(void)
             }
         }
 
-        if (task->dynamicPriority > selectedTaskDynPrio) {
+        if (task->dynamicPriority > selectedTaskDynamicPriority) {
             const bool taskCanBeChosenForScheduling =
                 (outsideRealtimeGuardInterval) ||
                 (task->taskAgeCycles > 1) ||
                 (task->staticPriority == TASK_PRIORITY_REALTIME);
             if (taskCanBeChosenForScheduling) {
-                selectedTaskDynPrio = task->dynamicPriority;
+                selectedTaskDynamicPriority = task->dynamicPriority;
                 selectedTask = task;
             }
         }
@@ -266,8 +268,8 @@ void scheduler(void)
 
     currentTask = selectedTask;
 
-    // Found a task that should be run
     if (selectedTask != NULL) {
+        // Found a task that should be run
         selectedTask->taskLatestDeltaTime = currentTime - selectedTask->lastExecutedAt;
         selectedTask->lastExecutedAt = currentTime;
         selectedTask->dynamicPriority = 0;
