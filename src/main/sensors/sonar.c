@@ -30,6 +30,8 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 #include "sensors/sonar.h"

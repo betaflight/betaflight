@@ -22,14 +22,14 @@
 #include <platform.h>
 #include "build_config.h"
 
+#include "io/rc_controls.h"
+
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
-#include "rx/rx.h"
-#include "io/rc_controls.h"
 #include "io/statusindicator.h"
 
 #ifdef GPS

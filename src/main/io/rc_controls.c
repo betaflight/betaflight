@@ -35,18 +35,17 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-#include "rx/rx.h"
-
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/rc_curves.h"
 
 #include "io/display.h"

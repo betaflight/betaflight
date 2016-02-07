@@ -37,12 +37,11 @@
 
 #include <common/printf.h>
 
+#include "io/rc_controls.h"
+
 #include "sensors/battery.h"
 
-#include "io/rc_controls.h"
 #include "io/ledstrip.h"
-
-#include "rx/rx.h"
 
 #include "flight/failsafe.h"
 

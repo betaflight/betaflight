@@ -68,6 +68,7 @@
 
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
 
