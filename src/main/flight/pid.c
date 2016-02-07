@@ -99,7 +99,7 @@ float scaleItermToRcInput(int axis) {
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
     static float antiWindUpIncrement = 0;
 
-    if (antiWindUpIncrement) antiWindUpIncrement = 0.001 * (targetLooptime / 500);  // Calculate increment for 500ms period
+    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
 
     if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
         /* Reset Iterm on high stick inputs. No scaling necessary here */
@@ -220,7 +220,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
-                errorGyroIfLimit[axis] = errorGyroIf[axis];
+                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
             }
         }
 
