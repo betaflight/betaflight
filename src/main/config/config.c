@@ -336,7 +336,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->pid_at_min_throttle = 1;
-    mixerConfig->agressive_airmode = 0;
+    mixerConfig->airmode_saturation_limit = 50;
     mixerConfig->yaw_motor_direction = 1;
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
