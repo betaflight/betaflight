@@ -22,12 +22,9 @@
 #include <string.h>
 
 #ifdef UNIT_TEST
-// cannot include platform.h in UNIT_TEST build, since if included the build #defines (eg MAG, GPS, etc)
-// are set differently to test code
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
-#else
-#include "platform.h"
 #endif
+#include "platform.h"
 
 #include "scheduler.h"
 #include "debug.h"
@@ -62,7 +59,7 @@ static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer 
 #endif
 STATIC_UNIT_TESTED void queueClear(void)
 {
-    memset(taskQueueArray, 0, sizeof(cfTask_t) * (TASK_COUNT + 1));
+    memset(taskQueueArray, 0, sizeof(taskQueueArray));
     taskQueuePos = 0;
     taskQueueSize = 0;
 }
