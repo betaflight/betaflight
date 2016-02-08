@@ -813,12 +813,12 @@ void mixTable(void)
 
         if (rollPitchYawMixRange > throttleRange) {
             motorLimitReached = true;
+            float mixReduction = (float) throttleRange / rollPitchYawMixRange;
             for (i = 0; i < motorCount; i++) {
-                rollPitchYawMix[i] = (rollPitchYawMix[i] * throttleRange) / rollPitchYawMixRange;
-
-                // Get the max correction from center when agressivity enabled. (Some setups don't like this option)
-                if (mixerConfig->agressive_airmode) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+                rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
             }
+            // Get the maximum correction by setting throtte offset to center. Configurable limit will constrain values once limit exceeded to prevent spazzing out in crashes
+            if (mixReduction > (mixerConfig->airmode_saturation_limit / 100.0f)) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         } else {
             motorLimitReached = false;
             throttleMin = throttleMin + (rollPitchYawMixRange / 2);
@@ -833,7 +833,7 @@ void mixTable(void)
             if (isFailsafeActive) {
                 mixConstrainMotorForFailsafeCondition(i);
             } else if (feature(FEATURE_3D)) {
-                if (throttle >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle))  {
+                if (throttle >= flight3DConfig->deadband3d_high)  {
                     motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
                 } else {
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);

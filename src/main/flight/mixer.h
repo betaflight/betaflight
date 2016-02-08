@@ -75,7 +75,7 @@ typedef struct mixer_s {
 
 typedef struct mixerConfig_s {
     uint8_t pid_at_min_throttle;            // when enabled pids are used at minimum throttle
-    uint8_t agressive_airmode;              // Use max possible correction when in saturation in Air mode
+    uint8_t airmode_saturation_limit;       // Use max possible correction when within the limit
     int8_t yaw_motor_direction;
     uint16_t yaw_jump_prevention_limit;      // make limit configurable (original fixed value was 100)
 #ifdef USE_SERVOS
