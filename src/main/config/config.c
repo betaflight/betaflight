@@ -890,9 +890,19 @@ void validateAndFixConfig(void)
     masterConfig.telemetryConfig.telemetry_inversion = 1;
 #endif
 
-#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
-        featureClear(FEATURE_SONAR);
+
+#if defined(LED_STRIP) && defined(TRANSPONDER)
+    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
+        featureClear(FEATURE_LED_STRIP);
+    }
+#endif
+
+#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+    // shared pin
+    if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
+    	featureClear(FEATURE_SONAR);
+    	featureClear(FEATURE_SOFTSERIAL);
+    	featureClear(FEATURE_RSSI_ADC);
     }
 #endif
 
