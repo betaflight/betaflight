@@ -837,7 +837,7 @@ void mixTable(void)
         if (isFailsafeActive) {
             motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
         } else if (feature(FEATURE_3D)) {
-            if (throttle >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle))  {
+            if (throttle >= flight3DConfig->deadband3d_high)  {
                 motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
             } else {
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
