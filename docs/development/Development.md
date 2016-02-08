@@ -52,7 +52,7 @@ The tests and test build system is very simple and based off the googletest exam
 make test
 ```
 
-You can also dp:
+You can also do:
 
 ```
 make junittest
@@ -60,7 +60,7 @@ make junittest
 
 This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
 
-After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the junittest" goal. Junit report files are aved in obj/test directory and has the following  naming pattern <test_name>_results.xml, for example: obj/test/battery_unittest_results.xml 
+After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the "junittest" goal. Junit report files are saved in obj/test directory and has the following  naming pattern test_name_results.xml, for example: obj/test/battery_unittest_results.xml 
 
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
