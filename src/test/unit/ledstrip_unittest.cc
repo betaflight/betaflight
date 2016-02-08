@@ -27,13 +27,11 @@ extern "C" {
     #include "common/color.h"
     #include "common/axis.h"
 
+    #include "io/rc_controls.h"
+
     #include "sensors/battery.h"
     #include "config/runtime_config.h"
     #include "config/config.h"
-
-    #include "rx/rx.h"
-
-    #include "io/rc_controls.h"
 
     #include "drivers/light_ws2811strip.h"
     #include "io/ledstrip.h"
