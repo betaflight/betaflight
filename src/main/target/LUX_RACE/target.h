@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "LUX"
+#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
@@ -44,10 +45,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#define SPI1_NSS_GPIO           GPIOA
-#define SPI1_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI1_NSS_PIN            GPIO_Pin_4
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_SCK_PIN            GPIO_Pin_3
@@ -59,6 +56,8 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -69,15 +68,12 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
 #define BEEPER
 #define LED0
 #define LED1
 #define LED2
+
+#define USB_IO
 
 #define USE_VCP
 #define USE_USART1
@@ -92,8 +88,8 @@
 #define UART1_TX_PINSOURCE  GPIO_PinSource4
 #define UART1_RX_PINSOURCE  GPIO_PinSource5
 
-#define UART2_TX_PIN        GPIO_Pin_14 //PA14
-#define UART2_RX_PIN        GPIO_Pin_15 //PA15
+#define UART2_TX_PIN        GPIO_Pin_14
+#define UART2_RX_PIN        GPIO_Pin_15
 #define UART2_GPIO          GPIOA
 #define UART2_GPIO_AF       GPIO_AF_7
 #define UART2_TX_PINSOURCE  GPIO_PinSource14
@@ -106,25 +102,10 @@
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
-
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
@@ -149,13 +130,10 @@
 #define BLACKBOX
 #define GPS
 #define GTUNE
-
-
 #define LED_STRIP
 
 #define LED_STRIP_TIMER TIM16
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -165,6 +143,14 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define TELEMETRY
 #define SERIAL_RX
@@ -172,12 +158,12 @@
 #define USE_CLI
 
 #define SPEKTRUM_BIND
-// USART1
+// USART1, PC5
 #define BIND_PORT  GPIOC
 #define BIND_PIN   Pin_5
 
 #define USE_SERIAL_1WIRE
-// USART3, RX is on USART1
+// Untested
 #define S1W_TX_GPIO         GPIOB
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB

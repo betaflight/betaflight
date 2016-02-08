@@ -592,7 +592,6 @@ COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   io/i2c_bst.c \
 		   drivers/bus_bst_stm32f30x.c \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
@@ -610,15 +609,10 @@ COLIBRI_RACE_SRC = \
 
 LUX_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/accgyro_mpu6500.c \
-		   drivers/barometer_ms5611.c \
-		   drivers/compass_ak8975.c \
-		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \

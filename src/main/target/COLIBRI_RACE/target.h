@@ -46,10 +46,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#define SPI1_NSS_GPIO           GPIOA
-#define SPI1_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI1_NSS_PIN            GPIO_Pin_4
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_SCK_PIN            GPIO_Pin_3
@@ -61,6 +57,8 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -71,25 +69,19 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
-// External I2C BARO
 #define BARO
 #define USE_BARO_MS5611
 
-// External I2C MAG
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
 
 #define BEEPER
 #define LED0
 #define LED1
 #define LED2
+
+#define USB_IO
 
 #define USE_VCP
 #define USE_USART1
@@ -118,9 +110,6 @@
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
-
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
@@ -138,7 +127,7 @@
 #define USE_BST
 #define BST_DEVICE (BSTDEV_1)
 /* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
-#define BST_CRC_POLYNOM			 0xD5
+#define BST_CRC_POLYNOM                         0xD5
 
 #define USE_ADC
 
@@ -169,7 +158,6 @@
 
 #define LED_STRIP_TIMER TIM16
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -179,8 +167,22 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+
+#define USE_SERIAL_1WIRE
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_10
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_11
