@@ -820,7 +820,9 @@ void mixTable(void)
             rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
         }
         // Get the maximum correction by setting offset to center. Only active below 50% of saturation levels to reduce spazzing out in crashes
-        if (mixReduction > (mixerConfig->airmode_saturation_limit / 100.0f)) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        if ((mixReduction > (mixerConfig->airmode_saturation_limit / 100.0f)) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        }
     } else {
         motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
