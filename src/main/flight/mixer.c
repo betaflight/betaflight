@@ -781,11 +781,10 @@ void mixTable(void)
     int16_t rollPitchYawMixRange = rollPitchYawMixMax - rollPitchYawMixMin;
     int16_t throttleRange, throttle;
     int16_t throttleMin, throttleMax;
+    static int16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
 
     // Find min and max throttle based on condition
     if (feature(FEATURE_3D)) {
-        static int16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
-
         if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) { // Out of deadband handling
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
@@ -800,7 +799,7 @@ void mixTable(void)
                 throttleMax = escAndServoConfig->maxthrottle;
                 throttle = throttleMin = flight3DConfig->deadband3d_high;
             // When coming from negative. Keep negative throttle within deadband
-            } else if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
+            } else {
                 throttle = throttleMax = flight3DConfig->deadband3d_low;
                 throttleMin = escAndServoConfig->minthrottle;
             }
@@ -837,7 +836,7 @@ void mixTable(void)
         if (isFailsafeActive) {
             motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
         } else if (feature(FEATURE_3D)) {
-            if (throttle >= flight3DConfig->deadband3d_high)  {
+            if (throttlePrevious >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle))  {
                 motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
             } else {
                 motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
