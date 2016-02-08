@@ -22,12 +22,14 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SE
 | --- | --------- | -------------------------------- |
 | 1   | Ground    |                                  |
 | 2   | +5V       |                                  |
-| 3   | PPM Input | Enable `feature RX_PPM`          | 
+| 3   | Unused |  | 
 | 4   | SoftSerial1 TX / Sonar trigger | |
-| 5   | SoftSerial1 RX / Sonar Echo    | |
+| 5   | SoftSerial1 RX / Sonar Echo / RSSI_ADC    | Used either for SOFTSERIAL, SONAR or RSSI_ADC*. Only one feature can be enabled at any time. |
 | 6   | Current   | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
 | 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
-| 8   | RSSI      | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input |
+| 8   | PPM Input | Enable `feature RX_PPM` |
+
+*Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input. 
 
 The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
 
