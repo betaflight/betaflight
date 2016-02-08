@@ -20,6 +20,8 @@
 
 #include <limits.h>
 
+#include <platform.h>
+
 //#define DEBUG_ALTITUDE_HOLD
 
 #define BARO

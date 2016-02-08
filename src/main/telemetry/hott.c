@@ -56,7 +56,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 #include "debug.h"
 
@@ -68,6 +68,7 @@
 
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
 

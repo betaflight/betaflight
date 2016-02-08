@@ -20,7 +20,7 @@
 #include <math.h>
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
     #include "build_config.h"
     #include "version.h"
     #include "debug.h"

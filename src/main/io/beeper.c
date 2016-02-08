@@ -19,8 +19,10 @@
 #include "stdint.h"
 #include "stdlib.h"
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
+
+#include "io/rc_controls.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
@@ -28,8 +30,6 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
-#include "rx/rx.h"
-#include "io/rc_controls.h"
 #include "io/statusindicator.h"
 
 #ifdef GPS
@@ -51,6 +51,7 @@
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
 
+#ifdef BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -379,3 +380,17 @@ int beeperTableEntryCount(void)
 {
     return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
+
+#else
+
+// Stub out beeper functions if #BEEPER not defined
+void beeper(beeperMode_e mode) {UNUSED(mode);}
+void beeperSilence(void) {}
+void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
+void beeperUpdate(void) {}
+uint32_t getArmingBeepTimeMicros(void) {return 0;}
+beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
+const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
+int beeperTableEntryCount(void) {return 0;}
+
+#endif

@@ -25,5 +25,5 @@ different flight modes.
 With the default configuration, when the controller is armed, the propellers *WILL* begin spinning at low speed.
 We recommend keeping this setting as it provides a good visual indication the craft is armed.
 
-If you wish to change this behavior, see the MOTOR_STOP feature in the Configurator and relevant docuemntation pages.
+If you wish to change this behavior, see the MOTOR_STOP feature in the Configurator and relevant documentation pages.
 Enabling this feature will stop the props from spinning when armed.

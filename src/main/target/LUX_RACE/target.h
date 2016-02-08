@@ -17,7 +17,8 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "CLBR"
+#define TARGET_BOARD_IDENTIFIER "LUX"
+#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
@@ -67,13 +68,6 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
-#define BARO
-#define USE_BARO_MS5611
-
-#define MAG
-#define USE_MAG_HMC5883
-#define USE_MAG_AK8975
-
 #define BEEPER
 #define LED0
 #define LED1
@@ -110,17 +104,6 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
-
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
 
@@ -174,7 +157,13 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define SPEKTRUM_BIND
+// USART1, PC5
+#define BIND_PORT  GPIOC
+#define BIND_PIN   Pin_5
+
 #define USE_SERIAL_1WIRE
+// Untested
 #define S1W_TX_GPIO         GPIOB
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB

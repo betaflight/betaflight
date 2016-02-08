@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "platform.h"
+#include <platform.h>
 
 #ifdef USE_SERIAL_1WIRE
 #include "drivers/gpio.h"

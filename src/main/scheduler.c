@@ -15,30 +15,35 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define SRC_MAIN_SCHEDULER_C_
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
+
 #include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
 
 #include "drivers/system.h"
+#include "config/config_unittest.h"
 
 cfTaskId_e currentTaskId = TASK_NONE;
-
-static uint32_t totalWaitingTasks;
-static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval;
-
-uint32_t currentTime = 0;
-uint16_t averageSystemLoadPercent = 0;
 
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
 #define REALTIME_GUARD_INTERVAL_MARGIN  25
+
+static uint32_t totalWaitingTasks;
+static uint32_t totalWaitingTasksSamples;
+static uint32_t realtimeGuardInterval = REALTIME_GUARD_INTERVAL_MAX;
+
+uint32_t currentTime = 0;
+uint16_t averageSystemLoadPercent = 0;
+
 
 void taskSystem(void)
 {
@@ -114,17 +119,15 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 void scheduler(void)
 {
     uint8_t taskId;
-    uint8_t selectedTaskId;
-    uint8_t selectedTaskDynPrio;
+    /* The task to be invoked */
+    uint8_t selectedTaskId = TASK_NONE;
+    uint8_t selectedTaskDynPrio = 0;
     uint16_t waitingTasks = 0;
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
 
+    SET_SCHEDULER_LOCALS();
     /* Cache currentTime */
     currentTime = micros();
-
-    /* The task to be invoked */
-    selectedTaskId = TASK_NONE;
-    selectedTaskDynPrio = 0;
 
     /* Check for realtime tasks */
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
@@ -223,4 +226,5 @@ void scheduler(void)
         debug[3] = (micros() - currentTime);
 #endif
     }
+    GET_SCHEDULER_LOCALS();
 }

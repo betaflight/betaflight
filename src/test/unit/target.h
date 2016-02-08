@@ -15,22 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdbool.h"
-#include "stdint.h"
+#pragma once
 
-#include <platform.h>
+#define MAG
+#define BARO
+#define GPS
+#define DISPLAY
+#define TELEMETRY
+#define LED_STRIP
+#define USE_SERVOS
+#define TRANSPONDER
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_mapping.h"
-#include "flight/mixer.h"
+#define SERIAL_PORT_COUNT 4
 
-#include "build_config.h"
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
-#if MAX_PWM_MOTORS != MAX_SUPPORTED_MOTORS
-#error Motor configuration mismatch
-#endif
-
-#if MAX_PWM_SERVOS != MAX_SUPPORTED_SERVOS
-#error Servo configuration mismatch
-#endif
+#define TARGET_BOARD_IDENTIFIER "TEST"

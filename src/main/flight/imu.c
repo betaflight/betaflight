@@ -24,7 +24,7 @@
 #include "common/maths.h"
 
 #include "build_config.h"
-#include "platform.h"
+#include <platform.h>
 #include "debug.h"
 
 #include "common/axis.h"
@@ -370,10 +370,12 @@ static bool imuIsAccelerometerHealthy(void)
     return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
+#ifdef MAG
 static bool isMagnetometerHealthy(void)
 {
     return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
 }
+#endif
 
 static void imuCalculateEstimatedAttitude(void)
 {
@@ -402,9 +404,11 @@ static void imuCalculateEstimatedAttitude(void)
         useAcc = true;
     }
 
+#ifdef MAG
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
     }
+#endif
 #if defined(GPS)
     else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading

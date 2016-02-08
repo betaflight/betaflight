@@ -20,7 +20,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #ifdef GTUNE
 

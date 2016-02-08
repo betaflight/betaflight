@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "scheduler.h"
 #include "debug.h"
 
@@ -42,6 +42,8 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
@@ -54,7 +56,6 @@
 #include "io/beeper.h"
 #include "io/display.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/rc_curves.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -729,10 +730,12 @@ void taskHandleSerial(void)
     handleSerial();
 }
 
+#ifdef BEEPER
 void taskUpdateBeeper(void)
 {
     beeperUpdate();          //call periodic beeper handler
 }
+#endif
 
 void taskUpdateBattery(void)
 {
@@ -751,7 +754,10 @@ void taskUpdateBattery(void)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+
+            throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+
+            updateCurrentMeter(ibatTimeSinceLastServiced, throttleStatus);
         }
     }
 }

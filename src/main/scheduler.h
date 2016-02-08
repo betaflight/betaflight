@@ -44,7 +44,9 @@ typedef enum {
     TASK_GYROPID,
     TASK_ACCEL,
     TASK_SERIAL,
+#ifdef BEEPER
     TASK_BEEPER,
+#endif
     TASK_BATTERY,
     TASK_RX,
 #ifdef GPS

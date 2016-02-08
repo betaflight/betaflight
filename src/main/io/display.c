@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #include "build_config.h"
@@ -39,15 +39,14 @@
 
 #ifdef DISPLAY
 
+#include "io/rc_controls.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#include "rx/rx.h"
-
-#include "io/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"

@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #ifdef BLACKBOX
@@ -39,6 +39,8 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
@@ -51,7 +53,6 @@
 #include "io/beeper.h"
 #include "io/display.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"

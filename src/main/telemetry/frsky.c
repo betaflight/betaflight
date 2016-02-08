@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #ifdef TELEMETRY
 
@@ -37,6 +37,7 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 
+#include "io/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -45,10 +46,7 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 #include "io/gps.h"
-
-#include "rx/rx.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"

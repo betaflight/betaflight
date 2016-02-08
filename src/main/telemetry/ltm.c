@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 
@@ -49,6 +49,8 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_rx.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -57,12 +59,9 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-
-#include "rx/rx.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"

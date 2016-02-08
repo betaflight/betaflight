@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 
 #include "common/utils.h"

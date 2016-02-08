@@ -21,7 +21,7 @@
 
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 
@@ -35,18 +35,17 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
+#include "io/rc_controls.h"
+
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-#include "rx/rx.h"
-
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/rc_curves.h"
 
 #include "io/display.h"
@@ -328,8 +327,8 @@ bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
     }
 
     uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-    return (channelValue >= 900 + (range->startStep * 25) &&
-            channelValue < 900 + (range->endStep * 25));
+    return (channelValue >= MODE_STEP_TO_CHANNEL_VALUE(range->startStep)
+            && channelValue < MODE_STEP_TO_CHANNEL_VALUE(range->endStep));
 }
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)

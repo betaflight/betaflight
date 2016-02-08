@@ -27,7 +27,7 @@ typedef struct master_t {
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
-    uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
+    uint8_t i2c_highspeed;                  // Overclock i2c Bus for faster IMU readings
     uint8_t gyroSync;                       // Enable interrupt based loop
     uint8_t gyroSyncDenominator;            // Gyro sync Denominator
 
@@ -87,7 +87,9 @@ typedef struct master_t {
 
     serialConfig_t serialConfig;
 
+#ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
+#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];

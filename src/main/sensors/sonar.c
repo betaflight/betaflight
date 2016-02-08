@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 
 #include "common/maths.h"
@@ -29,6 +29,8 @@
 #include "drivers/gpio.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
+
+#include "io/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"

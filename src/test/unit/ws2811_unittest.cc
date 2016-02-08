@@ -20,7 +20,7 @@
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
 
     #include "build_config.h"
 

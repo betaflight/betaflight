@@ -669,6 +669,39 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/scheduler_tasks.o : \
+	$(USER_DIR)/scheduler_tasks.c \
+	$(USER_DIR)/scheduler.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler_tasks.c -o $@
+
+$(OBJECT_DIR)/scheduler.o : \
+	$(USER_DIR)/scheduler.c \
+	$(USER_DIR)/scheduler.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler.c -o $@
+
+$(OBJECT_DIR)/scheduler_unittest.o : \
+	$(TEST_DIR)/scheduler_unittest.cc \
+	$(USER_DIR)/scheduler.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/scheduler_unittest.cc -o $@
+
+$(OBJECT_DIR)/scheduler_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/scheduler_tasks.o \
+	$(OBJECT_DIR)/scheduler.o \
+	$(OBJECT_DIR)/scheduler_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 test: $(TESTS:%=test-%)
 
 test-%: $(OBJECT_DIR)/%
