@@ -130,8 +130,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.mag_hardware = 0;
         }
 #endif
+        masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
     }
-    masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
 }
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
