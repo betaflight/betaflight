@@ -851,10 +851,12 @@ void validateAndFixConfig(void)
     }
 #endif
 
-
-#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_SOFTSERIAL)) {
-        featureClear(FEATURE_SONAR);
+#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+    // shared pin
+    if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
+    	featureClear(FEATURE_SONAR);
+    	featureClear(FEATURE_SOFTSERIAL);
+    	featureClear(FEATURE_RSSI_ADC);
     }
 #endif
 
