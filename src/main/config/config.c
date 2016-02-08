@@ -153,9 +153,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 54;
     pidProfile->I8[PITCH] = 40;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 100;
+    pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 50;
-    pidProfile->D8[YAW] = 5;
+    pidProfile->D8[YAW] = 0;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -168,8 +168,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 55;
-    pidProfile->I8[PIDLEVEL] = 55;
+    pidProfile->P8[PIDLEVEL] = 30;
+    pidProfile->I8[PIDLEVEL] = 30;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 120;
@@ -183,14 +183,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P_f[ROLL] = 1.1f;
     pidProfile->I_f[ROLL] = 0.4f;
     pidProfile->D_f[ROLL] = 0.01f;
-    pidProfile->P_f[PITCH] = 1.5f;
+    pidProfile->P_f[PITCH] = 1.4f;
     pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.01f;
     pidProfile->P_f[YAW] = 4.0f;
     pidProfile->I_f[YAW] = 0.4f;
     pidProfile->D_f[YAW] = 0.00f;
-    pidProfile->A_level = 6.0f;
-    pidProfile->H_level = 6.0f;
+    pidProfile->A_level = 4.0f;
+    pidProfile->H_level = 4.0f;
     pidProfile->H_sensitivity = 75;
 
 #ifdef GTUNE
