@@ -119,7 +119,8 @@ extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
 extern bool antiWindupProtection;
 
-
+static filterStatePt1_t filteredCycleTimeState;
+uint16_t filteredCycleTime;
 static bool isRXDataNew;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
@@ -177,20 +178,9 @@ void filterRc(void){
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     uint16_t rxRefreshRate;
-    static biquad_t filteredCycleTimeState;
-    static bool filterIsSet;
-    uint16_t filteredCycleTime;
 
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
-
-    /* Initialize cycletime filter */
-    if (!filterIsSet) {
-        BiQuadNewLpf(0.5f, &filteredCycleTimeState, targetLooptime);
-        filterIsSet = true;
-    }
-
-    filteredCycleTime = applyBiQuadFilter((float) cycleTime, &filteredCycleTimeState);
 
     rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
@@ -646,6 +636,12 @@ void taskMainPidLoop(void)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)targetLooptime * 0.000001f;
+
+    // Calculate average cycle time and average jitter
+    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 0.5f, dT);
+
+    debug[0] = cycleTime;
+    debug[1] = cycleTime - filteredCycleTime;
 
     imuUpdateGyroAndAttitude();
 

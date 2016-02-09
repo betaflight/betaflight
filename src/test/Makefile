@@ -332,29 +332,6 @@ $(OBJECT_DIR)/ws2811_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/lowpass.o : \
-	$(USER_DIR)/flight/lowpass.c \
-	$(USER_DIR)/flight/lowpass.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/lowpass.c -o $@
-
-$(OBJECT_DIR)/lowpass_unittest.o : \
-	$(TEST_DIR)/lowpass_unittest.cc \
-	$(USER_DIR)/flight/lowpass.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/lowpass_unittest.cc -o $@
-
-$(OBJECT_DIR)/lowpass_unittest : \
-	$(OBJECT_DIR)/flight/lowpass.o \
-	$(OBJECT_DIR)/lowpass_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
 $(OBJECT_DIR)/flight/mixer.o : \
 	$(USER_DIR)/flight/mixer.c \
 	$(USER_DIR)/flight/mixer.h \

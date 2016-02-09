@@ -29,6 +29,19 @@
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
+// PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
+float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dT) {
+
+	// Pre calculate and store RC
+	if (!filter->RC) {
+		filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+	}
+
+    filter->state = filter->state + dT / (filter->RC + dT) * (input - filter->state);
+
+    return filter->state;
+}
+
 /* sets up a biquad Filter */
 void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
 {
