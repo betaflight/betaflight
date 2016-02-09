@@ -1807,35 +1807,6 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
 
-        cliPrint("\r\n# aux\r\n");
-
-        cliAux("");
-
-        cliPrint("\r\n# adjrange\r\n");
-
-        cliAdjustmentRange("");
-
-        cliPrintf("\r\n# rxrange\r\n");
-
-        cliRxRange("");
-
-#ifdef USE_SERVOS
-        cliPrint("\r\n# servo\r\n");
-
-        cliServo("");
-
-        // print servo directions
-        unsigned int channel;
-
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
-                if (servoDirection(i, channel) < 0) {
-                    cliPrintf("smix reverse %d %d r\r\n", i , channel);
-                }
-            }
-        }
-#endif
-
         printSectionBreak();
 
         dumpValues(PROFILE_VALUE);
