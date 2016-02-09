@@ -136,11 +136,11 @@
 
 #undef DISPLAY
 #undef SONAR
-#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
+//#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef BARO
 //#undef BLACKBOX
 #undef GPS
-#endif
+//#endif
 #define SKIP_CLI_COMMAND_HELP
 
 #define SPEKTRUM_BIND
