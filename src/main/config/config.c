@@ -570,56 +570,12 @@ static void resetConf(void)
 
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
-    currentProfile->pidProfile.pidController = 1;
-
-    masterConfig.rxConfig.rcSmoothing = 0;
-
-    currentControlRateProfile->rcRate8 = 100;
-    currentControlRateProfile->rcExpo8 = 70;
-    currentControlRateProfile->rcYawExpo8 = 70;
-    currentControlRateProfile->thrMid8 = 50;
-    currentControlRateProfile->thrExpo8 = 0;
-    currentControlRateProfile->rates[FD_ROLL] = 90;
-    currentControlRateProfile->rates[FD_PITCH] = 90;
-    currentControlRateProfile->rates[FD_YAW] = 90;
-    currentControlRateProfile->dynThrPID = 30;
-    currentControlRateProfile->tpa_breakpoint = 1500;
-    masterConfig.rcControlsConfig.deadband = 10;
-
     masterConfig.escAndServoConfig.minthrottle = 1025;
     masterConfig.escAndServoConfig.maxthrottle = 1980;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
     masterConfig.batteryConfig.vbatmincellvoltage = 30;
 
-    currentProfile->pidProfile.P8[ROLL] = 31;     // new PID with preliminary defaults test carefully
-    currentProfile->pidProfile.I8[ROLL] = 42;
-    currentProfile->pidProfile.D8[ROLL] = 21;
-    currentProfile->pidProfile.P8[PITCH] = 62;
-    currentProfile->pidProfile.I8[PITCH] = 74;
-    currentProfile->pidProfile.D8[PITCH] = 23;
-    currentProfile->pidProfile.P8[YAW] = 100;
-    currentProfile->pidProfile.I8[YAW] = 45;
-    currentProfile->pidProfile.D8[YAW] = 15;
-    currentProfile->pidProfile.P8[PIDLEVEL] = 60;
-    currentProfile->pidProfile.I8[PIDLEVEL] = 60;
-    currentProfile->pidProfile.D8[PIDLEVEL] = 100;
-
-    currentProfile->pidProfile.P_f[ROLL] = 0.7f;     // new PID with preliminary defaults test carefully
-    currentProfile->pidProfile.I_f[ROLL] = 0.4f;
-    currentProfile->pidProfile.D_f[ROLL] = 0.025f;
-    currentProfile->pidProfile.P_f[PITCH] = 1.5f;
-    currentProfile->pidProfile.I_f[PITCH] = 0.4f;
-    currentProfile->pidProfile.D_f[PITCH] = 0.035f;
-    currentProfile->pidProfile.P_f[YAW] = 3.5f;
-    currentProfile->pidProfile.I_f[YAW] = 0.9f;
-    currentProfile->pidProfile.D_f[YAW] = 0.01f;
-
-    masterConfig.failsafeConfig.failsafe_delay = 10;
-    masterConfig.failsafeConfig.failsafe_off_delay = 20;
-
-    featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_LED_STRIP);
     featureSet(FEATURE_FAILSAFE);
 #endif
 
@@ -627,7 +583,6 @@ static void resetConf(void)
 #ifdef ALIENFLIGHT
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-    featureClear(FEATURE_ONESHOT125);
 #ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
@@ -640,13 +595,6 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    currentProfile->pidProfile.pidController = 2;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 100;
-    currentControlRateProfile->rates[FD_PITCH] = 20;
-    currentControlRateProfile->rates[FD_ROLL] = 20;
-    currentControlRateProfile->rates[FD_YAW] = 20;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
