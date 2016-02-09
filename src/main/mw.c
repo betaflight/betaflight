@@ -483,7 +483,7 @@ void processRx(void)
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
             if (rollPitchStatus == CENTERED) {
                 antiWindupProtection = true;
             } else {
