@@ -783,26 +783,22 @@ void mixTable(void)
     int16_t throttleMin, throttleMax;
     static int16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
 
-    // Find min and max throttle based on condition
+    // Find min and max throttle based on condition. Use rcData for 3D to prevent loss of power due to min_check
     if (feature(FEATURE_3D)) {
-        if (rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) { // Out of deadband handling
+        if ((rcData[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
-            throttlePrevious = throttle = rcCommand[THROTTLE];
-        } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) {
+            throttlePrevious = throttle = rcData[THROTTLE];
+        } else if (rcData[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
             throttleMax = escAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
-            throttlePrevious = throttle = rcCommand[THROTTLE];
-        } else {  // Deadband handling
-            // Always start positive. When coming from positive keep positive throttle within deadband
-            if ((throttlePrevious >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) || !throttlePrevious) {
-                throttleMax = escAndServoConfig->maxthrottle;
-                throttle = throttleMin = flight3DConfig->deadband3d_high;
-            // When coming from negative. Keep negative throttle within deadband
-            } else {
-                throttle = throttleMax = flight3DConfig->deadband3d_low;
-                throttleMin = escAndServoConfig->minthrottle;
-            }
+            throttlePrevious = throttle = rcData[THROTTLE];
+        } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
+            throttle = throttleMax = flight3DConfig->deadband3d_low;
+            throttleMin = escAndServoConfig->minthrottle;
+        } else {  // Deadband handling from positive to negative
+            throttleMax = escAndServoConfig->maxthrottle;
+            throttle = throttleMin = flight3DConfig->deadband3d_high;
         }
     } else {
         throttle = rcCommand[THROTTLE];
