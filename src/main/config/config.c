@@ -342,7 +342,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400;
+    mixerConfig->servo_lowpass_freq = 400.0f;
     mixerConfig->servo_lowpass_enable = 0;
 #endif
 }

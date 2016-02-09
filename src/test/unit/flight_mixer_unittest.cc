@@ -27,10 +27,12 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/maths.h"
+    #include "common/filter.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "drivers/pwm_mapping.h"
+    #include "drivers/gyro_sync.h"
 
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
@@ -39,7 +41,6 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
-    #include "flight/lowpass.h"
 
     #include "io/escservo.h"
     #include "io/gimbal.h"
@@ -402,14 +403,16 @@ uint8_t stateFlags;
 uint16_t flightModeFlags;
 uint8_t armingFlags;
 
+uint32_t targetLooptime;
+
 void delay(uint32_t) {}
+
+float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
+
 
 bool feature(uint32_t mask) {
     return (mask & testFeatureMask);
-}
-
-int32_t lowpassFixed(lowpass_t *, int32_t, int16_t) {
-    return 0;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value) {
