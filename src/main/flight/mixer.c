@@ -752,6 +752,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 void mixTable(void)
 {
     uint32_t i;
+    float vbatCompensationFactor;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
@@ -765,6 +766,8 @@ void mixTable(void)
     int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
     int16_t rollPitchYawMixMin = 0;
 
+    if (batteryConfig->vbatPidCompensation) vbatCompensationFactor = calculateVbatPidCompensation(); // Calculate voltage compensation
+
     // Find roll/pitch/yaw desired output
     for (i = 0; i < motorCount; i++) {
         rollPitchYawMix[i] =
@@ -772,7 +775,7 @@ void mixTable(void)
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] *= calculateVbatPidCompensation();  // Add voltage PID compensation
+        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] *= vbatCompensationFactor;  // Add voltage compensation
 
         if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
         if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
