@@ -1,14 +1,8 @@
 ALL_TARGETS := naze
 ALL_TARGETS += cc3d
 ALL_TARGETS += cc3d_opbl
-ALL_TARGETS += nazepro
-ALL_TARGETS += olimexino
-ALL_TARGETS += stm32f3discovery
-ALL_TARGETS += chebuzzf3
-#ALL_TARGETS += cjmcu
-ALL_TARGETS += eustm32f103rc
 ALL_TARGETS += spracingf3
-ALL_TARGETS += port103r
+ALL_TARGETS += spracingf3mini
 ALL_TARGETS += sparky
 ALL_TARGETS += alienwiif1
 ALL_TARGETS += alienwiif3
@@ -17,20 +11,15 @@ ALL_TARGETS += lux_race
 ALL_TARGETS += motolab
 ALL_TARGETS += rmdo
 ALL_TARGETS += ircfusionf3
+ALL_TARGETS += afromini
 
 CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
 
 clean_naze naze :                         opts := TARGET=NAZE
 clean_cc3d cc3d:                          opts := TARGET=CC3D
 clean_cc3d_opbl cc3d_opbl :               opts := TARGET=CC3D_OPBL
-clean_nazepro nazepro :                   opts := TARGET=NAZE32PRO
-clean_olimexino olimexino :               opts := TARGET=OLIMEXINO
-clean_stm32f3discovery stm32f3discovery : opts := TARGET=STM32F3DISCOVERY
-clean_chebuzzf3 chebuzzf3 :               opts := TARGET=CHEBUZZF3
-clean_cjmcu cjmcu :                       opts := TARGET=CJMCU
-clean_eustm32f103rc eustm32f103rc :       opts := TARGET=EUSTM32F103RC
+clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3MINI
 clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3
-clean_port103r port103r  :                opts := TARGET=PORT103R
 clean_sparky sparky :                     opts := TARGET=SPARKY
 clean_alienwiif1 alienwiif1 :             opts := TARGET=ALIENFLIGHTF1
 clean_alienwiif3 alienwiif3  :            opts := TARGET=ALIENFLIGHTF3
@@ -39,6 +28,7 @@ clean_lux_race lux_race :                 opts := TARGET=LUX_RACE
 clean_motolab motolab :                   opts := TARGET=MOTOLAB
 clean_rmdo rmdo :                         opts := TARGET=RMDO
 clean_ircfusionf3 ircfusionf3 :           opts := TARGET=IRCFUSIONF3
+clean_ircfusionf3 ircfusionf3 :           opts := TARGET=AFROMINI
 
 
 .PHONY: all clean
