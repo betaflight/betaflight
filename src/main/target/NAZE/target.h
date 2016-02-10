@@ -169,16 +169,18 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-//#define GPS
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
+#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
+//#define GPS
+#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
-#define GTUNE
 #define USE_CLI
 
 #define SPEKTRUM_BIND
@@ -195,10 +197,10 @@
 #define S1W_RX_GPIO         GPIOA
 #define S1W_RX_PIN          GPIO_Pin_10
 
-// alternative defaults for AlienFlight F1 target
-#ifdef ALIENFLIGHT
+// alternative defaults for AlienWii32 F1 target
+#ifdef ALIENWII32
 #undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "AWF1" // AlienFlight F1.
+#define TARGET_BOARD_IDENTIFIER "AWF1" // AlienWii32 F1.
 #undef BOARD_HAS_VOLTAGE_DIVIDER
 #define HARDWARE_BIND_PLUG
 

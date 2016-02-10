@@ -112,9 +112,10 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
 #define RSSI_ADC_CHANNEL            ADC_Channel_8
 
-#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
+#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
 #define BLACKBOX
 #define TELEMETRY
