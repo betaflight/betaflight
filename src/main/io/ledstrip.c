@@ -37,12 +37,11 @@
 
 #include <common/printf.h>
 
+#include "io/rc_controls.h"
+
 #include "sensors/battery.h"
 
-#include "io/rc_controls.h"
 #include "io/ledstrip.h"
-
-#include "rx/rx.h"
 
 #include "flight/failsafe.h"
 
@@ -381,6 +380,10 @@ void updateLedCount(void)
     uint8_t ledIndex;
     ledCount = 0;
     ledsInRingCount = 0;
+
+    if( ledConfigs == 0 ){
+        return;
+    }
 
     for (ledIndex = 0; ledIndex < MAX_LED_STRIP_LENGTH; ledIndex++) {
 
@@ -778,13 +781,18 @@ void applyLedThrottleLayer()
 #define ROTATION_SEQUENCE_LED_COUNT 6 // 2 on, 4 off
 #define ROTATION_SEQUENCE_LED_WIDTH 2
 
+#define RING_PATTERN_NOT_CALCULATED 255
+
 void applyLedThrustRingLayer(void)
 {
+    const ledConfig_t *ledConfig;
+    hsvColor_t ringColor;
     uint8_t ledIndex;
+
+    // initialised to special value instead of using more memory for a flag.
+    static uint8_t rotationSeqLedCount = RING_PATTERN_NOT_CALCULATED;
     static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
     bool nextLedOn = false;
-    hsvColor_t ringColor;
-    const ledConfig_t *ledConfig;
 
     uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
@@ -797,7 +805,7 @@ void applyLedThrustRingLayer(void)
 
         bool applyColor = false;
         if (ARMING_FLAG(ARMED)) {
-            if ((ledRingIndex + rotationPhase) % ROTATION_SEQUENCE_LED_COUNT < ROTATION_SEQUENCE_LED_WIDTH) {
+            if ((ledRingIndex + rotationPhase) % rotationSeqLedCount < ROTATION_SEQUENCE_LED_WIDTH) {
                 applyColor = true;
             }
         } else {
@@ -818,9 +826,29 @@ void applyLedThrustRingLayer(void)
         ledRingIndex++;
     }
 
+    uint8_t ledRingLedCount = ledRingIndex;
+    if (rotationSeqLedCount == RING_PATTERN_NOT_CALCULATED) {
+        // update ring pattern according to total number of ring leds found
+
+        rotationSeqLedCount = ledRingLedCount;
+
+        // try to split in segments/rings of exactly ROTATION_SEQUENCE_LED_COUNT leds
+        if ((ledRingLedCount % ROTATION_SEQUENCE_LED_COUNT) == 0) {
+            rotationSeqLedCount = ROTATION_SEQUENCE_LED_COUNT;
+        } else {
+            // else split up in equal segments/rings of at most ROTATION_SEQUENCE_LED_COUNT leds
+            while ((rotationSeqLedCount > ROTATION_SEQUENCE_LED_COUNT) && ((rotationSeqLedCount % 2) == 0)) {
+                rotationSeqLedCount >>= 1;
+            }
+        }
+
+        // trigger start over
+        rotationPhase = 1;
+    }
+
     rotationPhase--;
     if (rotationPhase == 0) {
-        rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+        rotationPhase = rotationSeqLedCount;
     }
 }
 
@@ -1017,7 +1045,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
 
 void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)
 {
-    memset(colors, 0, colorCount * sizeof(colors));
+    memset(colors, 0, colorCount * sizeof(hsvColor_t));
     for (uint8_t colorIndex = 0; colorIndex < colorCount && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
         *colors++ = *defaultColors[colorIndex];
     }

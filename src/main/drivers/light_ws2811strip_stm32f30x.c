@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "gpio.h"
 #include "nvic.h"
@@ -27,7 +27,6 @@
 #include "drivers/light_ws2811strip.h"
 
 #ifndef WS2811_GPIO
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOB
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -37,6 +36,9 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
 #endif
 
 void ws2811LedStripHardwareInit(void)
@@ -123,39 +125,6 @@ void ws2811LedStripHardwareInit(void)
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }
-
-#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL3
-void DMA1_Channel3_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC3)) {
-        ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel3, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC3);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
-
-#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL2
-void DMA1_Channel2_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC2)) {
-        ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel2, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC2);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
-
-#ifdef USE_LED_STRIP_ON_DMA1_CHANNEL7
-void DMA1_Channel7_IRQHandler(void)
-{
-    if (DMA_GetFlagStatus(DMA1_FLAG_TC7)) {
-        ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(DMA1_Channel7, DISABLE);            // disable DMA channel
-        DMA_ClearFlag(DMA1_FLAG_TC7);               // clear DMA1 Channel transfer complete flag
-    }
-}
-#endif
 
 void ws2811LedStripDMAEnable(void)
 {

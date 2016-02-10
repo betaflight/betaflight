@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "common/utils.h"
 
@@ -27,62 +27,52 @@
 
 #include "light_led.h"
 
-void ledInit(bool alternative_led)
+void ledInit(void)
 {
-#if defined(LED0) || defined(LED1) || defined(LED2)
-    gpio_config_t cfg;
-    cfg.mode = Mode_Out_PP;
-    cfg.speed = Speed_2MHz;
+    uint32_t i;
+
+    struct {
+        GPIO_TypeDef *gpio;
+        gpio_config_t cfg;
+    } gpio_setup[] = {
 #ifdef LED0
-    if (alternative_led) {
-#ifdef LED0_PERIPHERAL_2
-        RCC_AHBPeriphClockCmd(LED0_PERIPHERAL_2, ENABLE);
-        led_config[0].gpio = LED0_GPIO_2;
-        led_config[0].pin = LED0_PIN_2;
-#endif
-    } else {
-        RCC_AHBPeriphClockCmd(LED0_PERIPHERAL, ENABLE);
-        led_config[0].gpio = LED0_GPIO;
-        led_config[0].pin = LED0_PIN;
-    }
-    cfg.pin = led_config[0].pin;
-    LED0_OFF;
-    gpioInit(led_config[0].gpio, &cfg);
+        {
+            .gpio = LED0_GPIO,
+            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz }
+        },
 #endif
 #ifdef LED1
-    if (alternative_led) {
-#ifdef LED1_PERIPHERAL_2
-        RCC_AHBPeriphClockCmd(LED1_PERIPHERAL_2, ENABLE);
-        led_config[1].gpio = LED1_GPIO_2;
-        led_config[1].pin = LED1_PIN_2;
-#endif
-    } else {
-        RCC_AHBPeriphClockCmd(LED1_PERIPHERAL, ENABLE);
-        led_config[1].gpio = LED1_GPIO;
-        led_config[1].pin = LED1_PIN;
-    }
-    cfg.pin = led_config[1].pin;
-    LED1_OFF;
-    gpioInit(led_config[1].gpio, &cfg);
+        {
+            .gpio = LED1_GPIO,
+            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
+        },
 #endif
 #ifdef LED2
-    if (alternative_led) {
-#ifdef LED2_PERIPHERAL_2
-        RCC_AHBPeriphClockCmd(LED2_PERIPHERAL_2, ENABLE);
-        led_config[2].gpio = LED2_GPIO_2;
-        led_config[2].pin = LED2_PIN_2;
+        {
+        	.gpio = LED2_GPIO,
+        	.cfg = { LED2_PIN, Mode_Out_PP, Speed_2MHz }
+        }
 #endif
-    } else {
-        RCC_AHBPeriphClockCmd(LED2_PERIPHERAL, ENABLE);
-        led_config[2].gpio = LED2_GPIO;
-        led_config[2].pin = LED2_PIN;
-    }
-    cfg.pin = led_config[2].pin;
+    };
+
+    uint8_t gpio_count = ARRAYLEN(gpio_setup);
+
+#ifdef LED0
+    RCC_AHBPeriphClockCmd(LED0_PERIPHERAL, ENABLE);
+#endif
+#ifdef LED1
+    RCC_AHBPeriphClockCmd(LED1_PERIPHERAL, ENABLE);
+#endif
+#ifdef LED2
+    RCC_AHBPeriphClockCmd(LED2_PERIPHERAL, ENABLE);
+#endif
+
+    LED0_OFF;
+    LED1_OFF;
     LED2_OFF;
-    gpioInit(led_config[2].gpio, &cfg);
-#endif
-#else
-    UNUSED(alternative_led);
-#endif
+
+    for (i = 0; i < gpio_count; i++) {
+        gpioInit(gpio_setup[i].gpio, &gpio_setup[i].cfg);
+    }
 }
 

@@ -17,20 +17,15 @@
 
 #pragma once
 
-struct {
-    GPIO_TypeDef *gpio;
-    uint16_t pin;
-} led_config[3];
-
 // Helpful macros
 #ifdef LED0
-#define LED0_TOGGLE              digitalToggle(led_config[0].gpio, led_config[0].pin)
+#define LED0_TOGGLE              digitalToggle(LED0_GPIO, LED0_PIN)
 #ifndef LED0_INVERTED
-#define LED0_OFF                 digitalHi(led_config[0].gpio, led_config[0].pin)
-#define LED0_ON                  digitalLo(led_config[0].gpio, led_config[0].pin)
+#define LED0_OFF                 digitalHi(LED0_GPIO, LED0_PIN)
+#define LED0_ON                  digitalLo(LED0_GPIO, LED0_PIN)
 #else
-#define LED0_OFF                 digitalLo(led_config[0].gpio, led_config[0].pin)
-#define LED0_ON                  digitalHi(led_config[0].gpio, led_config[0].pin)
+#define LED0_OFF                 digitalLo(LED0_GPIO, LED0_PIN)
+#define LED0_ON                  digitalHi(LED0_GPIO, LED0_PIN)
 #endif // inverted
 #else
 #define LED0_TOGGLE              do {} while(0)
@@ -39,13 +34,13 @@ struct {
 #endif
 
 #ifdef LED1
-#define LED1_TOGGLE              digitalToggle(led_config[1].gpio, led_config[1].pin)
+#define LED1_TOGGLE              digitalToggle(LED1_GPIO, LED1_PIN)
 #ifndef LED1_INVERTED
-#define LED1_OFF                 digitalHi(led_config[1].gpio, led_config[1].pin)
-#define LED1_ON                  digitalLo(led_config[1].gpio, led_config[1].pin)
+#define LED1_OFF                 digitalHi(LED1_GPIO, LED1_PIN)
+#define LED1_ON                  digitalLo(LED1_GPIO, LED1_PIN)
 #else
-#define LED1_OFF                 digitalLo(led_config[1].gpio, led_config[1].pin)
-#define LED1_ON                  digitalHi(led_config[1].gpio, led_config[1].pin)
+#define LED1_OFF                 digitalLo(LED1_GPIO, LED1_PIN)
+#define LED1_ON                  digitalHi(LED1_GPIO, LED1_PIN)
 #endif // inverted
 #else
 #define LED1_TOGGLE              do {} while(0)
@@ -55,13 +50,13 @@ struct {
 
 
 #ifdef LED2
-#define LED2_TOGGLE              digitalToggle(led_config[2].gpio, led_config[2].pin)
+#define LED2_TOGGLE              digitalToggle(LED2_GPIO, LED2_PIN)
 #ifndef LED2_INVERTED
-#define LED2_OFF                 digitalHi(led_config[2].gpio, led_config[2].pin)
-#define LED2_ON                  digitalLo(led_config[2].gpio, led_config[2].pin)
+#define LED2_OFF                 digitalHi(LED2_GPIO, LED2_PIN)
+#define LED2_ON                  digitalLo(LED2_GPIO, LED2_PIN)
 #else
-#define LED2_OFF                 digitalLo(led_config[2].gpio, led_config[2].pin)
-#define LED2_ON                  digitalHi(led_config[2].gpio, led_config[2].pin)
+#define LED2_OFF                 digitalLo(LED2_GPIO, LED2_PIN)
+#define LED2_ON                  digitalHi(LED2_GPIO, LED2_PIN)
 #endif // inverted
 #else
 #define LED2_TOGGLE              do {} while(0)
@@ -69,4 +64,4 @@ struct {
 #define LED2_ON                  do {} while(0)
 #endif
 
-void ledInit(bool alternative_led);
+void ledInit(void);
