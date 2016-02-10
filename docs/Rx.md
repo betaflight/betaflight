@@ -8,6 +8,8 @@ There are 3 basic types of receivers:
 2. PPM Receivers
 3. Serial Receivers
 
+As of 2016 the recommendation for new purchases is a Serial or PPM based receiver.  Avoid Parallel PWM recievers (1 wire per channel).  This is due to the amount of IO pins parallel PWM based receivers use.  Some new FC's do not support parallel PWM. 
+
 ## Parallel PWM Receivers
 
 8 channel support, 1 channel per input pin.  On some platforms using parallel input will disable the use of serial ports
@@ -21,17 +23,14 @@ PPM is sometimes known as PPM SUM or CPPM.
 
 These receivers are reported working:
 
-FrSky D4R-II
-http://www.frsky-rc.com/product/pro.php?pro_id=24
+* [FrSky D4R-II](http://www.frsky-rc.com/product/pro.php?pro_id=24)
+* [Graupner GR24](http://www.graupner.de/en/products/33512/product.aspx)
+* [R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM](http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/)
+* [FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver](http://www.frsky-rc.com/product/pro.php?pro_id=21)
+* [FrSky X4R and FrSky X4RSB](http://www.frsky-rc.com/download/view.php?sort=&down=158&file=X4R-X4RSB) when flashed with CPPM firmware and bound with jumper between signal pins 2 and 3
+* All FrSky S.Bus enabled devices when connected with [S.Bus CPPM converter cable](http://www.frsky-rc.com/product/pro.php?pro_id=112). Without jumper this converter cable uses 21ms frame size (Channels 1-8). When jumper is in place, it uses 28ms frame and channels 1-12 are available
+* FlySky/Turnigy FS-iA6B receiver for FS-i6 and FS-i10 transmitters
 
-Graupner GR24
-http://www.graupner.de/en/products/33512/product.aspx
-
-R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM
-http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/
-
-FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver
-http://www.frsky-rc.com/product/pro.php?pro_id=21
 
 ## Serial Receivers
 
@@ -50,6 +49,7 @@ http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 16 channels via serial currently supported.  See below how to set up your transmitter.
 
 * You probably need an inverter between the receiver output and the flight controller. However, some flight controllers have this built in (the main port on CC3D, for example), and doesn't need one.
+* Some OpenLRS receivers produce a non-inverted SBUS signal. It is possible to switch SBUS inversion off using CLI command `set sbus_inversion = OFF` when using an F3 based flight controller.
 * Softserial ports cannot be used with SBUS because it runs at too high of a bitrate (1Mbps).  Refer to the chapter specific to your board to determine which port(s) may be used.
 * You will need to configure the channel mapping in the GUI (Receiver tab) or CLI (`map` command). Note that channels above 8 are mapped "straight", with no remapping.
 
@@ -241,6 +241,15 @@ One or more control channels may be set to OFF to signal a failsafe condition to
 Do __NOT USE__ the mode indicated with FAILSAFE instead, as this combination is NOT handled correctly by the FC.
 
 ## Receiver Channel Range Configuration.
+
+The channels defined in CleanFlight are as follows:
+
+| Channel number | Channel name |
+| ----- | --------- |
+| 0     | Roll |
+| 1     | Pitch |
+| 2     | Yaw |
+| 3     | Throttle |
 
 If you have a transmitter/receiver, that output a non-standard pulse range (i.e. 1070-1930 as some Spektrum receivers)
 you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.

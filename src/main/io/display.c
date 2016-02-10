@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #include "build_config.h"
@@ -39,15 +39,14 @@
 
 #ifdef DISPLAY
 
+#include "io/rc_controls.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#include "rx/rx.h"
-
-#include "io/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -56,6 +55,10 @@
 #ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
+#endif
+
+#ifdef SONAR
+#include "sensors/sonar.h"
 #endif
 
 #include "config/runtime_config.h"
@@ -70,8 +73,12 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define DISPLAY_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
+#define PAGE_TOGGLE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 2)
+
+#define GPS_DISPLAY_FORCE_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 1)
 
 static uint32_t nextDisplayUpdateAt = 0;
+
 static bool displayPresent = false;
 
 static rxConfig_t *rxConfig;
@@ -131,6 +138,8 @@ typedef struct pageState_s {
     uint8_t pageFlags;
     uint8_t cycleIndex;
     uint32_t nextPageAt;
+    uint32_t nextToggleAt;
+    uint8_t toggleCounter;
 } pageState_t;
 
 static pageState_t pageState;
@@ -337,16 +346,29 @@ void showProfilePage(void)
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef GPS
-void showGpsPage() {
+void showGpsPage(uint32_t now) {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     static uint8_t gpsTicker = 0;
     static uint32_t lastGPSSvInfoReceivedCount = 0;
+    static uint32_t lastGPSPacketCount = 0;
+    static uint32_t gpsPageForceUpdateAt = 0;
+
+    bool forceUpdateNow = (int32_t)(now - gpsPageForceUpdateAt) >= 0L;
+
+
+    if (GPS_packetCount == lastGPSPacketCount && !forceUpdateNow) {
+        return;
+    }
+    lastGPSPacketCount = GPS_packetCount;
+    gpsPageForceUpdateAt = now + GPS_DISPLAY_FORCE_UPDATE_FREQUENCY;
+
     if (GPS_svInfoReceivedCount != lastGPSSvInfoReceivedCount) {
         lastGPSSvInfoReceivedCount = GPS_svInfoReceivedCount;
         gpsTicker++;
         gpsTicker = gpsTicker % TICKER_CHARACTER_COUNT;
     }
+
 
     i2c_OLED_set_xy(0, rowIndex);
     i2c_OLED_send_char(tickerCharacters[gpsTicker]);
@@ -387,7 +409,7 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors, gpsData.timeouts);
+    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors);
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
@@ -397,10 +419,16 @@ void showGpsPage() {
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "TOs: %d", gpsData.timeouts);
+    if (pageState.toggleCounter & 1) {
+        tfp_sprintf(lineBuffer, "TOs: %d", gpsData.timeouts);
+    } else {
+        tfp_sprintf(lineBuffer, "GBC: %d", GPS_garbageByteCount);
+    }
+
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);
+
 
     strncpy(lineBuffer, gpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
     padHalfLineBuffer();
@@ -481,35 +509,20 @@ void showSensorsPage(void)
     }
 #endif
 
-    tfp_sprintf(lineBuffer, format, "I&H", inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees, heading);
+    tfp_sprintf(lineBuffer, format, "I&H", attitude.values.roll, attitude.values.pitch, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    uint8_t length;
-
-    ftoa(EstG.A[X], lineBuffer);
-    length = strlen(lineBuffer);
-    while (length < HALF_SCREEN_CHARACTER_COLUMN_COUNT) {
-        lineBuffer[length++] = ' ';
-        lineBuffer[length+1] = 0;
+#ifdef SONAR
+    if (sensors(SENSOR_SONAR)) {
+        static const char *sonarFormat = "%s             %5d";
+        tfp_sprintf(lineBuffer, sonarFormat, "SNR", sonarGetLatestAltitude());
+        padLineBuffer();
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
     }
-    ftoa(EstG.A[Y], lineBuffer + length);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
-    ftoa(EstG.A[Z], lineBuffer);
-    length = strlen(lineBuffer);
-    while (length < HALF_SCREEN_CHARACTER_COLUMN_COUNT) {
-        lineBuffer[length++] = ' ';
-        lineBuffer[length+1] = 0;
-    }
-    ftoa(smallAngle, lineBuffer + length);
-    padLineBuffer();
-    i2c_OLED_set_line(rowIndex++);
-    i2c_OLED_send_string(lineBuffer);
-
+#endif
 }
 
 #ifdef ENABLE_DEBUG_OLED_PAGE
@@ -568,6 +581,8 @@ void updateDisplay(void)
     if (pageState.pageChanging) {
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
         pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+        pageState.nextToggleAt = now + PAGE_TOGGLE_FREQUENCY;
+        pageState.toggleCounter = 0;
 
         // Some OLED displays do not respond on the first initialisation so refresh the display
         // when the page changes in the hopes the hardware responds.  This also allows the
@@ -582,6 +597,11 @@ void updateDisplay(void)
 
     if (!displayPresent) {
         return;
+    }
+
+    if ((int32_t)(now - pageState.nextToggleAt) >= 0L) {
+        pageState.toggleCounter++;
+        pageState.nextToggleAt += PAGE_TOGGLE_FREQUENCY;
     }
 
     switch(pageState.pageId) {
@@ -606,7 +626,7 @@ void updateDisplay(void)
 #ifdef GPS
         case PAGE_GPS:
             if (feature(FEATURE_GPS)) {
-                showGpsPage();
+                showGpsPage(now);
             } else {
                 pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
             }

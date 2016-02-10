@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "system.h"
 
 #include "gpio.h"
@@ -29,6 +29,8 @@
 
 #include "adc.h"
 #include "adc_impl.h"
+
+#ifdef USE_ADC
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
@@ -178,3 +180,4 @@ void adcInit(drv_adc_config_t *init)
     ADC_StartConversion(ADC_INSTANCE);
 }
 
+#endif

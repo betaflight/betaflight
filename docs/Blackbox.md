@@ -5,7 +5,8 @@
 ## Introduction
 
 This feature transmits your flight data information on every control loop iteration over a serial port to an external
-logging device to be recorded, or to a dataflash chip which is present on some flight controllers.
+logging device like an OpenLog to be recorded, to an onboard dataflash chip which is present on some flight controllers,
+or to an onboard SD card socket.
 
 After your flight, you can view the resulting logs using the interactive log viewer:
 
@@ -194,6 +195,31 @@ then save.
 [your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
 [Cleanflight Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
 
+### Onboard SD card socket
+Some flight controllers have an SD or Micro SD card socket on their circuit boards. This allows for very high speed
+logging (1KHz or faster, which is a looptime of 1000 or lower) on suitable cards.
+
+The card can be either Standard (SDSC) or High capacity (SDHC), and must be formatted with the FAT16 or FAT32
+filesystems. This covers a range of card capacities from 1 to 32GB. Extended capacity cards (SDXC) are not supported.
+
+The first time you power up Cleanflight with a new card inserted, the flight controller will spend a few seconds
+scanning the disk for free space and collecting this space together into a file called "FREESPAC.E". During flight,
+Cleanflight will carve chunks from this file to create new log files. You must not edit this file on your computer (i.e.
+open it in a program and save changes) because this may cause it to become fragmented. Don't run any defragmentation
+tools on the card either.
+
+You can delete the FREESPAC.E file if you want to free up space on the card to fit non-Blackbox files (Cleanflight will 
+recreate the FREESPAC.E file next time it starts, using whatever free space was left over).
+
+The maximum size of the FREESPAC.E file is currently 4GB. Once 4GB worth of logs have been recorded, the FREESPAC.E
+file will be nearly empty and no more logs will be able to be recorded. At this point you should either delete the 
+FREESPAC.E file (and any logs left on the card to free up space), or just reformat the card. A new FREESPAC.E file 
+will be created by Cleanflight on its next boot.
+
+#### Enable recording to SD card
+On the Configurator's CLI tab, you must enter `set blackbox_device=SDCARD` to switch to logging to an onboard SD card,
+then save.
+
 ## Configuring the Blackbox
 
 The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 
@@ -256,6 +282,17 @@ After downloading the log, be sure to erase the chip to make it ready for reuse 
 
 If you try to start recording a new flight when the dataflash is already full, Blackbox logging will be disabled and
 nothing will be recorded.
+
+### Usage - Onboard SD card socket
+You must insert your SD card before powering on your flight controller. You can remove the SD card while the board is
+powered up, but you must wait 5 seconds after disarming before you do so in order to give Cleanflight a chance to finish
+saving your log (otherwise the filesystem may become corrupted).
+
+Cleanflight will create a new log file in the "LOG" directory each time the craft is armed. If you are using a Blackbox
+logging switch and you keep it paused for the entire flight, the resulting empty log file will be deleted after disarming.
+
+To read your logs, you must remove the SD card and insert it into a card reader on your computer (Cleanflight doesn't
+support reading these logs directly through the Configurator).
 
 ### Usage - Logging switch
 If you're recording to an onboard flash chip, you probably want to disable Blackbox recording when not required in order

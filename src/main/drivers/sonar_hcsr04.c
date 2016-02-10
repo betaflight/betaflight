@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 
 #include "system.h"
@@ -47,7 +47,7 @@ static void ECHO_EXTI_IRQHandler(void)
     static uint32_t timing_start;
     uint32_t timing_stop;
 
-    if (digitalIn(GPIOB, sonarHardware->echo_pin) != 0) {
+    if (digitalIn(sonarHardware->echo_gpio, sonarHardware->echo_pin) != 0) {
         timing_start = micros();
     } else {
         timing_stop = micros();
@@ -102,12 +102,12 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
     gpio.pin = sonarHardware->trigger_pin;
     gpio.mode = Mode_Out_PP;
     gpio.speed = Speed_2MHz;
-    gpioInit(GPIOB, &gpio);
+    gpioInit(sonarHardware->trigger_gpio, &gpio);
 
     // echo pin
     gpio.pin = sonarHardware->echo_pin;
     gpio.mode = Mode_IN_FLOATING;
-    gpioInit(GPIOB, &gpio);
+    gpioInit(sonarHardware->echo_gpio, &gpio);
 
 #ifdef STM32F10X
     // setup external interrupt on echo pin
@@ -154,10 +154,10 @@ void hcsr04_start_reading(void)
 
     lastMeasurementAt = now;
 
-    digitalHi(GPIOB, sonarHardware->trigger_pin);
+    digitalHi(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
     //  The width of trig signal must be greater than 10us
     delayMicroseconds(11);
-    digitalLo(GPIOB, sonarHardware->trigger_pin);
+    digitalLo(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
 #endif
 }
 

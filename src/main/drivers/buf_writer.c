@@ -15,27 +15,33 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-initLeds(void)
+#include <stdint.h>
+
+#include "buf_writer.h"
+
+bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
 {
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup[] = {
-#ifdef LED0
-        {
-            .gpio = LED0_GPIO,
-            .cfg = { LED0_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
-#ifdef LED1
+    bufWriter_t *buf = (bufWriter_t *)b;
+    buf->writer = writer;
+    buf->arg = arg;
+    buf->at = 0;
+    buf->capacity = total_size - sizeof(*buf);
 
-        {
-            .gpio = LED1_GPIO,
-            .cfg = { LED1_PIN, Mode_Out_PP, Speed_2MHz }
-        },
-#endif
+    return buf;
+}
+
+void bufWriterAppend(bufWriter_t *b, uint8_t ch)
+{
+    b->data[b->at++] = ch;
+    if (b->at >= b->capacity) {
+        bufWriterFlush(b);
     }
+}
 
-    uint8_t gpio_count = sizeof(gpio_setup) / sizeof(gpio_setup[0]);
-
+void bufWriterFlush(bufWriter_t *b)
+{
+    if (b->at != 0) {
+        b->writer(b->arg, b->data, b->at);
+        b->at = 0;
+    }
 }

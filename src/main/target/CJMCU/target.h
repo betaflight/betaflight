@@ -40,8 +40,8 @@
 #define GYRO
 #define USE_GYRO_MPU6050
 
-//#define MAG
-//#define USE_MAG_HMC5883
+#define MAG
+#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 
@@ -72,8 +72,11 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#else
+#define SKIP_TASK_STATISTICS
+#define SKIP_CLI_COMMAND_HELP
 #endif
 
 //#undef USE_CLI
-#define GTUNE
+//#define GTUNE
 //#define BLACKBOX

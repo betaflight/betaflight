@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "gpio.h"
 #include "timer.h"

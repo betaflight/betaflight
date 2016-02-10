@@ -17,11 +17,13 @@
 
 #pragma once
 
-#include "platform.h"
+#include <platform.h>
 
 typedef struct sonarHardware_s {
     uint16_t trigger_pin;
+	GPIO_TypeDef* trigger_gpio;
     uint16_t echo_pin;
+	GPIO_TypeDef* echo_gpio;
     uint32_t exti_line;
     uint8_t exti_pin_source;
     IRQn_Type exti_irqn;

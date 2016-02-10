@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #ifdef TELEMETRY
 
@@ -38,8 +38,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 #include "telemetry/hott.h"
-#include "telemetry/msp.h"
 #include "telemetry/smartport.h"
+#include "telemetry/ltm.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -52,8 +52,8 @@ void telemetryInit(void)
 {
     initFrSkyTelemetry(telemetryConfig);
     initHoTTTelemetry(telemetryConfig);
-    initMSPTelemetry(telemetryConfig);
     initSmartPortTelemetry(telemetryConfig);
+    initLtmTelemetry(telemetryConfig);
 
     telemetryCheckState();
 }
@@ -76,16 +76,16 @@ void telemetryCheckState(void)
 {
     checkFrSkyTelemetryState();
     checkHoTTTelemetryState();
-    checkMSPTelemetryState();
     checkSmartPortTelemetryState();
+    checkLtmTelemetryState();
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
     handleHoTTTelemetry();
-    handleMSPTelemetry();
     handleSmartPortTelemetry();
+    handleLtmTelemetry();
 }
 
 #endif

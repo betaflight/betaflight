@@ -21,9 +21,9 @@
 //#define DEBUG_BATTERY
 
 extern "C" {
-    #include "sensors/battery.h"
-    
     #include "io/rc_controls.h"
+
+    #include "sensors/battery.h"
     #include "flight/lowpass.h"
     #include "io/beeper.h"
 }

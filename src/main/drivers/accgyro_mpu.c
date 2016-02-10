@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 #include "debug.h"
 
@@ -32,6 +32,7 @@
 #include "gpio.h"
 #include "exti.h"
 #include "bus_i2c.h"
+#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -44,11 +45,12 @@
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
 static void mpu6050FindRevision(void);
+
+static volatile bool mpuDataReady;
 
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(void);
@@ -167,6 +169,8 @@ static void mpu6050FindRevision(void)
             mpuDetectionResult.resolution = MPU_HALF_RESOLUTION;
         } else if (revision == 2) {
             mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
+        } else if ((revision == 3) || (revision == 7)) {
+            mpuDetectionResult.resolution = MPU_FULL_RESOLUTION;
         } else {
             failureMode(FAILURE_ACC_INCOMPATIBLE);
         }
@@ -190,6 +194,8 @@ void MPU_DATA_READY_EXTI_Handler(void)
     }
 
     EXTI_ClearITPendingBit(mpuIntExtiConfig->exti_line);
+
+    mpuDataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     // Measure the delta in micro seconds between calls to the interrupt handler
@@ -287,30 +293,6 @@ void mpuIntExtiInit(void)
     mpuExtiInitDone = true;
 }
 
-uint8_t determineMPULPF(uint16_t lpf)
-{
-    uint8_t mpuLowPassFilter;
-
-    if (lpf == 256)
-        mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
-    else if (lpf >= 188)
-        mpuLowPassFilter = INV_FILTER_188HZ;
-    else if (lpf >= 98)
-        mpuLowPassFilter = INV_FILTER_98HZ;
-    else if (lpf >= 42)
-        mpuLowPassFilter = INV_FILTER_42HZ;
-    else if (lpf >= 20)
-        mpuLowPassFilter = INV_FILTER_20HZ;
-    else if (lpf >= 10)
-        mpuLowPassFilter = INV_FILTER_10HZ;
-    else if (lpf > 0)
-        mpuLowPassFilter = INV_FILTER_5HZ;
-    else
-        mpuLowPassFilter = INV_FILTER_256HZ_NOLPF2;
-
-    return mpuLowPassFilter;
-}
-
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
 {
     bool ack = i2cRead(MPU_ADDRESS, reg, length, data);
@@ -353,4 +335,14 @@ bool mpuGyroRead(int16_t *gyroADC)
     gyroADC[2] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
+}
+
+bool mpuIsDataReady(void)
+{
+    if (mpuDataReady) {
+        mpuDataReady = false;
+        return true;
+    }
+
+    return false;
 }

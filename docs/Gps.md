@@ -12,7 +12,7 @@ Two GPS protocols are supported. NMEA text and UBLOX binary.
 
 Enable the GPS from the CLI as follows:
 
-1. configure a serial port to use for GPS.
+1. [configure a serial port to use for GPS.](Serial.md) 
 1. set your GPS baud rate
 1. enable the `feature GPS`
 1. set the `gps_provider`
@@ -25,18 +25,18 @@ For the connections step check the Board documentation for pins and port numbers
 
 ### GPS Provider
 
-Set the `gps_provider` appropriately.
+Set the `gps_provider` appropriately, for example `set gps_provider=UBLOX`
 
-| Value | Meaning  |
-| ----- | -------- |
-| 0     | NMEA     |
-| 1     | UBLOX    |
+| Value    |
+| -------- |
+| NMEA     |
+| UBLOX    |
 
 ### GPS Auto configuration
 
 When using UBLOX it is a good idea to use GPS auto configuration so your FC gets the GPS messages it needs.
 
-Enable GPS auto configuration as follows `set gps_auto_config=1`.
+Enable GPS auto configuration as follows `set gps_auto_config=ON`.
 
 If you are not using GPS auto configuration then ensure your GPS receiver sends out the correct messages at the right frequency.  See below for manual UBlox settings.
 
@@ -46,17 +46,17 @@ When using a UBLOX GPS the SBAS mode can be configured using `gps_sbas_mode`.
 
 The default is AUTO.
 
-| Value | Meaning  | Region        |
-| ----- | -------- | ------------- |
-| 0     | AUTO     | Global        |
-| 1     | EGNOS    | Europe        |
-| 2     | WAAS     | North America |
-| 3     | MSAS     | Asia          |
-| 4     | GAGAN    | India         |
+| Value    | Region        |
+| -------- | ------------- |
+| AUTO     | Global        |
+| EGNOS    | Europe        |
+| WAAS     | North America |
+| MSAS     | Asia          |
+| GAGAN    | India         |
 
 If you use a regional specific setting you may achieve a faster GPS lock than using AUTO.
 
-This setting only works when `gps_auto_config=1`
+This setting only works when `gps_auto_config=ON`
 
 ## GPS Receiver Configuration
 
@@ -151,7 +151,7 @@ Below are some examples of user-tested hardware.
 #### NEO-M8
 Module | Comments
 -------|--------
-U-blox Neo-M8N w/Compass |
+U-blox Neo-M8N w/Compass | Pinout can be found in Pixfalcon manual. SDA and SCL can be attached to I2C bus for compass, TX and RX can be attached to UART for GPS. Power must be applied for either to function.
 Reyax RY825AI | NEO-M8N, 18Hz UART USB interface GPS Glonass BeiDou QZSS antenna module flash. [eBay](http://www.ebay.com/itm/RY825AI-18Hz-UART-USB-interface-GPS-Glonass-BeiDou-QZSS-antenna-module-flash/181566850426)
 
 #### NEO-7
@@ -171,3 +171,4 @@ Ublox NEO-6M GPS with Compass | [eBay](http://www.ebay.com/itm/111585855757)
 Module | Comments
 -------|--------
 MTK 3329 | Tested on hardware serial at 115200 baud (default) and on softserial at 19200 baud. The baudrate and refresh rate can be adjusted using the MiniGPS software (recommended if you lower the baudrate). The software will estimate the percentage of UART bandwidth used for your chosen baudrate and update rate.
+

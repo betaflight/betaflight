@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 
@@ -322,5 +322,8 @@ const struct serialPortVTable uartVTable[] = {
         uartSetBaudRate,
         isUartTransmitBufferEmpty,
         uartSetMode,
+        .writeBuf = NULL,
+        .beginWrite = NULL,
+        .endWrite = NULL,
     }
 };

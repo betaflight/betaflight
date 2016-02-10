@@ -12,7 +12,7 @@
 /* Specify the memory areas. */
 MEMORY
 {
-  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 126K /* last 2kb used for config storage */
+  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 124K /* last 4kb used for config storage */
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 20K
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }

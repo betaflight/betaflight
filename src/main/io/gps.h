@@ -114,6 +114,8 @@ extern uint8_t GPS_svinfo_svid[16];        // Satellite ID
 extern uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
 extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
 
+extern uint32_t GPS_garbageByteCount;
+
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 

@@ -22,7 +22,8 @@
 #include <math.h>
 
 
-#include "platform.h"
+#include <platform.h>
+
 #include "debug.h"
 
 #include "common/maths.h"
@@ -169,9 +170,9 @@ void updateSonarAltHoldState(void)
     }
 }
 
-bool isThrustFacingDownwards(rollAndPitchInclination_t *inclination)
+bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude)
 {
-    return ABS(inclination->values.rollDeciDegrees) < DEGREES_80_IN_DECIDEGREES && ABS(inclination->values.pitchDeciDegrees) < DEGREES_80_IN_DECIDEGREES;
+    return ABS(attitude->values.roll) < DEGREES_80_IN_DECIDEGREES && ABS(attitude->values.pitch) < DEGREES_80_IN_DECIDEGREES;
 }
 
 int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, float accZ_old)
@@ -180,7 +181,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     int32_t error;
     int32_t setVel;
 
-    if (!isThrustFacingDownwards(&inclination)) {
+    if (!isThrustFacingDownwards(&attitude)) {
         return result;
     }
 
@@ -219,14 +220,16 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     float vel_acc;
     int32_t vel_tmp;
     float accZ_tmp;
-    int32_t sonarAlt = SONAR_OUT_OF_RANGE;
     static float accZ_old = 0.0f;
     static float vel = 0.0f;
     static float accAlt = 0.0f;
     static int32_t lastBaroAlt;
 
+#ifdef SONAR
+    int32_t sonarAlt = SONAR_OUT_OF_RANGE;
     static int32_t baroAlt_offset = 0;
     float sonarTransition;
+#endif
 
     dTime = currentTime - previousTime;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
@@ -248,8 +251,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
 #ifdef SONAR
     sonarAlt = sonarRead();
-    sonarAlt = sonarCalculateAltitude(sonarAlt, inclination.values.rollDeciDegrees, inclination.values.pitchDeciDegrees);
-#endif
+    sonarAlt = sonarCalculateAltitude(sonarAlt, getCosTiltAngle());
 
     if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {
         // just use the SONAR
@@ -259,10 +261,11 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         BaroAlt -= baroAlt_offset;
         if (sonarAlt > 0  && sonarAlt <= sonarMaxAltWithTiltCm) {
             // SONAR in range, so use complementary filter
-            sonarTransition = (sonarMaxAltWithTiltCm - sonarAlt) / 100.0f;
+            sonarTransition = (float)(sonarMaxAltWithTiltCm - sonarAlt) / (sonarMaxAltWithTiltCm - sonarCfAltCm);
             BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
+#endif
 
     dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
@@ -293,12 +296,16 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     }
 #endif
 
+#ifdef SONAR
     if (sonarAlt > 0 && sonarAlt < sonarCfAltCm) {
         // the sonar has the best range
         EstAlt = BaroAlt;
     } else {
         EstAlt = accAlt;
     }
+#else
+    EstAlt = accAlt;
+#endif
 
     baroVel = (BaroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = BaroAlt;

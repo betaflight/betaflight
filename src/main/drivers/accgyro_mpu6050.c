@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of Cleanflight.
  *
  * Cleanflight is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 #include "debug.h"
 
@@ -31,6 +31,7 @@
 #include "gpio.h"
 #include "exti.h"
 #include "bus_i2c.h"
+#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -51,7 +52,7 @@ extern uint8_t mpuLowPassFilter;
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
 static void mpu6050AccInit(void);
-static void mpu6050GyroInit(uint16_t lpf);
+static void mpu6050GyroInit(uint8_t lpf);
 
 bool mpu6050AccDetect(acc_t *acc)
 {
@@ -73,6 +74,7 @@ bool mpu6050GyroDetect(gyro_t *gyro)
     }
     gyro->init = mpu6050GyroInit;
     gyro->read = mpuGyroRead;
+    gyro->isDataReady = mpuIsDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -94,20 +96,18 @@ static void mpu6050AccInit(void)
     }
 }
 
-static void mpu6050GyroInit(uint16_t lpf)
+static void mpu6050GyroInit(uint8_t lpf)
 {
     bool ack;
 
     mpuIntExtiInit();
 
-    uint8_t mpuLowPassFilter = determineMPULPF(lpf);
-
     ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(100);
-    ack = mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0x00); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
     ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x03); //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
+    ack = mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
     delay(15); //PLL Settling time when changing CLKSEL is max 10ms.  Use 15ms to be sure 
-    ack = mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
+    ack = mpuConfiguration.write(MPU_RA_CONFIG, lpf); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
     ack = mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
     // ACC Init stuff.
