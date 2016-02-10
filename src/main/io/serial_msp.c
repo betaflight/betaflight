@@ -1756,6 +1756,8 @@ static bool processInCommand(void)
                 // proceed with a success reply first
                 headSerialReply(0);
                 tailSerialReply();
+                // flush the transmit buffer
+                bufWriterFlush(writer);
                 // wait for all data to send
                 waitForSerialPortToFinishTransmitting(currentPort->port);
                 // Start to activate here
