@@ -39,10 +39,9 @@ Please refer to the satellite receiver documentation for more details of the spe
 | 3     | DSM2 1024bit/22ms |                    |
 | 5     | DSM2 2048bit/11ms | default AlienWii32 |
 | 7     | DSMX 1024bit/22ms |                    |
+| 8     | DSMX 2048bit/22ms | Used by new DXe    |
 | 9     | DSMX 2048bit/11ms |                    |
 
-More detailed information regarding the satellite binding process can be found here:
-http://wiki.openpilot.org/display/Doc/Spektrum+Satellite
 
 ### Supported Hardware
 
@@ -62,3 +61,4 @@ In order to connect the satellite to a Flip32+, you have to wire the serial data
 | Lemon RX DSM2/DSMX   | Spektrum DX8   | Bind value 5                                             |
 | Lemon RX DSMX        | Walkera Devo10 | Bind value 9, Deviation firmware 4.01 up to 12 channels  |
 | Lemon RX DSM2        | Walkera Devo7  | Bind value 9, Deviation firmware                         |
+| Lemon RX DSMX        | Spektrum DXe   | Bind value 8, Supports up to 9 channels                  |
