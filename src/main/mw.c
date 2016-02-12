@@ -718,8 +718,9 @@ void taskUpdateBattery(void)
 
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
+            uint32_t vbatTimeDelta = currentTime - vbatLastServiced;
             vbatLastServiced = currentTime;
-            updateBattery();
+            updateBattery(vbatTimeDelta);
         }
     }
 

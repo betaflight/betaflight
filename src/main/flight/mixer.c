@@ -27,6 +27,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
@@ -48,7 +49,6 @@
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/lowpass.h"
 #include "flight/navigation_rewrite.h"
 
 #include "config/runtime_config.h"
@@ -78,7 +78,8 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
-static lowpass_t lowpassFilters[MAX_SUPPORTED_SERVOS];
+static biquad_t servoFitlerState[MAX_SUPPORTED_SERVOS];
+static bool servoFilterIsSet;
 #endif
 
 static const motorMixer_t mixerQuadX[] = {
@@ -891,7 +892,13 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = (int16_t)lowpassFixed(&lowpassFilters[servoIdx], servo[servoIdx], mixerConfig->servo_lowpass_freq);
+            if (!servoFilterIsSet) {
+                // Servos are calculated at looptime rate
+                filterInitBiQuad(mixerConfig->servo_lowpass_freq, &servoFitlerState[servoIdx], 0);
+                servoFilterIsSet = true;
+            }
+
+            servo[servoIdx] = (int16_t) filterApplyBiQuad((float)servo[servoIdx], &servoFitlerState[servoIdx]);
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
