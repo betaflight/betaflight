@@ -65,10 +65,14 @@ static void updateBatteryVoltage(void)
 {
     uint16_t vbatSample;
     static filterStatePt1_t vbatFilterState;
+    static uint32_t previousTime;
+    uint32_t now;
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    float delta = micros() * 0.000001f;
+    now = micros();
+    float delta = (now - previousTime) * 0.000001f;
+    previousTime = now;
     vbatSample = filterApplyPt1(vbatSample, &vbatFilterState, VBATT_LPF_FREQ, delta);
     vbat = batteryAdcToVoltage(vbatSample);
 }
