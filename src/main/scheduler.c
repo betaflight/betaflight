@@ -211,8 +211,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BST_READ_WRITE] = {
         .taskName = "BST_MASTER_WRITE",
         .taskFunc = taskBstReadWrite,
-        .desiredPeriod = 1000000 / 500,         // 500 Hz
-        .staticPriority = TASK_PRIORITY_HIGH,
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
     },
 
     [TASK_BST_MASTER_PROCESS] = {
