@@ -583,6 +583,7 @@ static void resetConf(void)
 #ifdef ALIENFLIGHT
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
+    featureClear(FEATURE_ONESHOT125);
 #ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
@@ -595,6 +596,14 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
+    currentProfile->pidProfile.pidController = 2;
+    masterConfig.failsafeConfig.failsafe_delay = 2;
+    masterConfig.failsafeConfig.failsafe_off_delay = 0;
+    masterConfig.mixerConfig.yaw_jump_prevention_limit = 500;
+    currentControlRateProfile->rcRate8 = 100;
+    currentControlRateProfile->rates[FD_PITCH] = 20;
+    currentControlRateProfile->rates[FD_ROLL] = 20;
+    currentControlRateProfile->rates[FD_YAW] = 20;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R

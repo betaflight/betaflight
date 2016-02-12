@@ -189,7 +189,15 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-    ledInit();
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_1) {
+        ledInit(false);
+    } else {
+        ledInit(true);
+    }
+#else
+    ledInit(false);
+#endif
 
 #ifdef SPRACINGF3MINI
     gpio_config_t buttonAGpioConfig = {
