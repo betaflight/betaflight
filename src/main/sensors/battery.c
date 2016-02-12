@@ -38,7 +38,7 @@
 #include "io/beeper.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
-#define VBATT_LPF_FREQ  1.0f
+#define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -64,16 +64,16 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 static void updateBatteryVoltage(void)
 {
     uint16_t vbatSample;
-    static filterStatePt1_t vbatFilterState;
-    static uint32_t previousTime;
-    uint32_t now;
+    static biquad_t vbatFilterState;
+    static bool vbatFilterStateIsSet;
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    now = micros();
-    float delta = (now - previousTime) * 0.000001f;
-    previousTime = now;
-    vbatSample = filterApplyPt1(vbatSample, &vbatFilterState, VBATT_LPF_FREQ, delta);
+    if (!vbatFilterStateIsSet) {
+        BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000); //50HZ Update
+        vbatFilterStateIsSet = true;
+    }
+    vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
     vbat = batteryAdcToVoltage(vbatSample);
 }
 
