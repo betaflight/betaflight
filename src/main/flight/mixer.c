@@ -743,9 +743,9 @@ STATIC_UNIT_TESTED void servoMixer(void)
 #endif
 #endif
 
-void mixConstrainMotorForFailsafeCondition(uint8_t motorIndex)
+uint16_t mixConstrainMotorForFailsafeCondition(uint8_t motorIndex)
 {
-    motor[motorIndex] = constrain(motor[motorIndex], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+    return constrain(motor[motorIndex], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
 }
 
 void mixTable(void)
@@ -829,7 +829,7 @@ void mixTable(void)
             motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
             if (isFailsafeActive) {
-                mixConstrainMotorForFailsafeCondition(i);
+                motor[i] = mixConstrainMotorForFailsafeCondition(i);
             } else if (feature(FEATURE_3D)) {
                 if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
                     motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
@@ -888,7 +888,7 @@ void mixTable(void)
                 }
             } else {
                 if (isFailsafeActive) {
-                    mixConstrainMotorForFailsafeCondition(i);
+                    motor[i] = mixConstrainMotorForFailsafeCondition(i);
                 } else {
                     // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
                     // do not spin the motors.
