@@ -426,7 +426,7 @@ void processRx(void)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
      Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
     if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
             if (rollPitchStatus == CENTERED) {
                 antiWindupProtection = true;
             } else {
