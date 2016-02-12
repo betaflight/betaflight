@@ -644,7 +644,7 @@ static bool gpsReceiveData(void)
     bool hasNewData = false;
 
     if (gpsState.gpsPort) {
-        while (serialRxBytesWaiting(gpsState.gpsPort)) {
+        while (serialRxBytesWaiting(gpsState.gpsPort) && !hasNewData) {
             uint8_t newChar = serialRead(gpsState.gpsPort);
             if (gpsNewFrameUBLOX(newChar)) {
                 hasNewData = true;
