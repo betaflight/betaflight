@@ -427,16 +427,16 @@ void processRx(void)
     if (throttleStatus == THROTTLE_LOW) {
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
             if (rollPitchStatus == CENTERED) {
-                antiWindupProtection = true;
+                ENABLE_STATE(ANTI_WINDUP);
             } else {
-                antiWindupProtection = false;
+                DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
             pidResetErrorAngle();
             pidResetErrorGyro();
         }
     } else {
-        antiWindupProtection = false;
+        DISABLE_STATE(ANTI_WINDUP);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm

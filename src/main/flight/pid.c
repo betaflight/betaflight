@@ -54,8 +54,6 @@
 extern uint8_t motorCount;
 extern float dT;
 
-
-bool antiWindupProtection;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -221,7 +219,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             errorGyroIf[axis] = errorGyroIf[axis] * scaleItermToRcInput(axis);
-            if (antiWindupProtection || motorLimitReached) {
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
                 errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
@@ -310,7 +308,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
-            if (antiWindupProtection || motorLimitReached) {
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
                 errorGyroILimit[axis] = ABS(errorGyroI[axis]);
@@ -514,7 +512,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
-            if (antiWindupProtection || motorLimitReached) {
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
                 errorGyroILimit[axis] = ABS(errorGyroI[axis]);
