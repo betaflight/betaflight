@@ -46,14 +46,16 @@
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
+#include "flight/mixer.h"
 
 #include "config/runtime_config.h"
 #include "config/config_unittest.h"
 
 extern uint8_t motorCount;
 extern float dT;
-extern bool motorLimitReached;
 
+
+bool antiWindupProtection;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX

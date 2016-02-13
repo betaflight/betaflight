@@ -114,7 +114,6 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
-extern bool antiWindupProtection;
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
