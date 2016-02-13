@@ -680,6 +680,7 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {return MIN(ABS(rcDat
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims) {rollAndPitchTrims->values.roll = 0;rollAndPitchTrims->values.pitch = 0;};
 uint16_t flightModeFlags = 0; // acro mode
+uint8_t stateFlags = 0;
 uint8_t motorCount = 4;
 gyro_t gyro;
 int16_t gyroADC[XYZ_AXIS_COUNT];
