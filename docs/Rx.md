@@ -121,6 +121,11 @@ devices with a different label, therefore they also work.
 If you are using a 6ch tx such as the FS-I6 or TGY-I6 then you must flash a 10ch
 firmware on the tx to make use of these extra channels.
 
+These receivers are reported working:
+
+FlySky/Turnigy FS-iA6B 6-Channel Receiver
+http://www.flysky-cn.com/products_detail/&productId=51.html
+
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
@@ -224,6 +229,7 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
 | XBUS_MODE_B_RJ01   | 6     |
+| IBUS               | 7     |
 
 ### PPM/PWM input filtering.
 
