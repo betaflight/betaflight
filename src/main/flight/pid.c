@@ -46,6 +46,7 @@
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
+#include "flight/mixer.h"
 
 #include "config/runtime_config.h"
 #include "config/config_unittest.h"
@@ -62,10 +63,10 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
-static int32_t errorGyroI[3] = { 0, 0, 0 };
-static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
-static int32_t errorAngleI[2] = { 0, 0 };
-static float errorAngleIf[2] = { 0.0f, 0.0f };
+static int32_t errorGyroI[3], errorGyroILimit[3];
+static float errorGyroIf[3], errorGyroIfLimit[3];
+static int32_t errorAngleI[2];
+static float errorAngleIf[2];
 
 static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -86,13 +87,35 @@ void pidResetErrorAngle(void)
 
 void pidResetErrorGyro(void)
 {
-    errorGyroI[ROLL] = 0;
-    errorGyroI[PITCH] = 0;
-    errorGyroI[YAW] = 0;
+    int axis;
+    for (axis = 0; axis < 3; axis++) {
+        errorGyroI[axis] = 0;
+        errorGyroIf[axis] = 0.0f;
+    }
+}
 
-    errorGyroIf[ROLL] = 0.0f;
-    errorGyroIf[PITCH] = 0.0f;
-    errorGyroIf[YAW] = 0.0f;
+float scaleItermToRcInput(int axis) {
+    float rcCommandDeflection = (float)rcCommand[axis] / 500.0f;
+    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
+    static float antiWindUpIncrement = 0;
+
+    if (!antiWindUpIncrement) {
+        antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
+    }
+
+    if (ABS(rcCommandDeflection) > 0.7f && (!flightModeFlags)) {   // scaling should not happen in level modes
+        // Reset Iterm on high stick inputs. No scaling necessary here
+        iTermScaler[axis] = 0.0f;
+    } else {
+        // Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms
+        if (iTermScaler[axis] < 1) {
+            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
+        } else {
+            iTermScaler[axis] = 1;
+        }
+    }
+
+    return iTermScaler[axis];
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -192,6 +215,17 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
+
+        // Anti windup protection
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            errorGyroIf[axis] = errorGyroIf[axis] * scaleItermToRcInput(axis);
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
+                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+            } else {
+                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
+            }
+        }
+
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
@@ -269,6 +303,16 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         if (ABS(gyroADC[axis]) > (640 * 4)) {
             errorGyroI[axis] = 0;
+        }
+
+        // Anti windup protection
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
+                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+            } else {
+                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+            }
         }
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
@@ -464,6 +508,17 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
+
+        // Anti windup protection
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
+            if (STATE(ANTI_WINDUP) || motorLimitReached) {
+                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+            } else {
+                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+            }
+        }
+
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
