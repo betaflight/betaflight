@@ -38,7 +38,7 @@
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
-#define IBUS_MAX_CHANNEL 8
+#define IBUS_MAX_CHANNEL 10
 #define IBUS_BUFFSIZE 32
 #define IBUS_SYNCBYTE 0x20
 
@@ -124,6 +124,8 @@ uint8_t ibusFrameStatus(void)
         ibusChannelData[5] = (ibus[13] << 8) + ibus[12];
         ibusChannelData[6] = (ibus[15] << 8) + ibus[14];
         ibusChannelData[7] = (ibus[17] << 8) + ibus[16];
+        ibusChannelData[8] = (ibus[19] << 8) + ibus[18];
+        ibusChannelData[9] = (ibus[21] << 8) + ibus[20];
         
         frameStatus = SERIAL_RX_FRAME_COMPLETE;
     }
