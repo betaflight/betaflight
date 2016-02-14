@@ -294,7 +294,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 30;
+        uint8_t rate = 40;
         // -----Get the desired angle rate depending on flight mode
         if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             rate = controlRateConfig->rates[axis];
