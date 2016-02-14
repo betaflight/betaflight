@@ -214,7 +214,7 @@ float calculateVbatPidCompensation(void) {
 	float batteryScaler =  1.0f;
     if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
         // Up to 25% PID gain. Should be fine for 4,2to 3,3 difference
-        batteryScaler =  constrainf((1.0f / ((float) vbat)) * ((float)batteryConfig->vbatmaxcellvoltage * batteryCellCount), 1.0f, 1.25f);
+        batteryScaler =  constrainf((( (float)batteryConfig->vbatmaxcellvoltage * batteryCellCount ) / (float) vbat), 1.0f, 1.25f);
     }
 
     return batteryScaler;
