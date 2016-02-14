@@ -88,7 +88,7 @@ all accounts, and fixes some inherent problems in the way the old one worked. Fr
 and it tolerates a wider range of PID values well.
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
-be. Note that the default value for P_Level is 90.  This is more than likely too high of a value for most, and will cause the model to be very unstable in Angle Mode, and could result in loss of control.  It is recommended to change this value to 20 before using PID Controller 1 in Angle Mode.
+be. Note that the default value for P_Level is 20. This is the recommended value for PID Controller 1 which provides a stable flight in Angle mode. The old default value was 90 which provided a very unstable flight for some users.
 
 In Horizon mode, this controller uses the LEVEL "I" PID setting to decide how much auto-level correction should be applied. Level "I" term: Strength of horizon auto-level. value of 0.030 in the configurator equals to 3.0 for Level P. Level "D" term: Strength of horizon transition. 0 is more stick travel on level and 255 is more rate mode what means very narrow angle of leveling.
 
