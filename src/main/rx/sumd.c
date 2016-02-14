@@ -29,6 +29,8 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
+#include "telemetry/telemetry.h"
+
 #include "rx/rx.h"
 #include "rx/sumd.h"
 
@@ -63,7 +65,13 @@ bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
-    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+
+    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumdDataReceive, SUMD_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+    if (portShared) {
+        telemetrySharedPort = sumdPort;
+    }
 
     return sumdPort != NULL;
 }
