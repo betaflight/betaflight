@@ -35,6 +35,8 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
+#include "telemetry/telemetry.h"
+
 #include "rx/rx.h"
 #include "rx/sumh.h"
 
@@ -75,7 +77,13 @@ bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
-    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+
+    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+    if (portShared) {
+        telemetrySharedPort = sumhPort;
+    }
 
     return sumhPort != NULL;
 }
