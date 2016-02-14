@@ -35,6 +35,8 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
+#include "telemetry/telemetry.h"
+
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
@@ -64,7 +66,13 @@ bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+    if (portShared) {
+        telemetrySharedPort = ibusPort;
+    }
 
     return ibusPort != NULL;
 }
