@@ -33,6 +33,8 @@
 
 #include "config/config.h"
 
+#include "telemetry/telemetry.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
@@ -87,7 +89,13 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
         return false;
     }
 
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+
+    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+    if (portShared) {
+        telemetrySharedPort = spektrumPort;
+    }
 
     return spektrumPort != NULL;
 }
