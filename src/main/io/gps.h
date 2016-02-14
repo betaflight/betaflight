@@ -20,8 +20,6 @@
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
-#define GPS_SV_MAXSATS   16
-
 #define LAT 0
 #define LON 1
 
@@ -84,13 +82,6 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t mmmm;
 } gpsCoordinateDDDMMmmmm_t;
 
-typedef struct {
-    uint8_t chn;     // Channel number
-    uint8_t svid;    // Satellite ID
-    uint8_t quality; // Bitfield Qualtity
-    uint8_t cno;     // Carrier to Noise Ratio (Signal Strength)
-} gpsSVChannel_t;
-
 /* LLH Location in NEU axis system */
 typedef struct gpsLocation_s {
     int32_t lat;    // Lattitude * 1e+7
@@ -109,9 +100,6 @@ typedef struct gpsSolutionData_s {
     } flags;
 
     uint8_t numSat;
-
-    uint8_t numCh;
-    gpsSVChannel_t svInfo[GPS_SV_MAXSATS];
 
     gpsLocation_t llh;
     int16_t       magData[3];

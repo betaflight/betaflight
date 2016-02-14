@@ -322,6 +322,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
+#define MSP_GPSSTATISTICS        166    //out message         get GPS debugging data
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
@@ -1150,14 +1151,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
     case MSP_GPSSVINFO:
-        headSerialReply(1 + (gpsSol.numCh * 4));
-        serialize8(gpsSol.numCh);
-           for (i = 0; i < gpsSol.numCh; i++){
-               serialize8(gpsSol.svInfo[i].chn);
-               serialize8(gpsSol.svInfo[i].svid);
-               serialize8(gpsSol.svInfo[i].quality);
-               serialize8(gpsSol.svInfo[i].cno);
-           }
+        /* Compatibility stub - return zero SVs */
+        headSerialReply(1 + (0 * 4));
+        serialize8(0);
+        break;
+    case MSP_GPSSTATISTICS:
+        headSerialReply(1);
+        serialize16(gpsStats.lastMessageDt);
+        serialize32(gpsStats.errors);
+        serialize32(gpsStats.timeouts);
+        serialize32(gpsStats.packetCount);
+        serialize16(gpsSol.eph);
+        serialize16(gpsSol.epv);
         break;
 #endif
     case MSP_DEBUG:

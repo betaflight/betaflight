@@ -96,7 +96,7 @@ static const uint8_t ubloxInit_MSG_UBX_POSLLH[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x02, 0x01, 0x0E, 0x47,           // set POSLLH MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x03, 0x01, 0x0F, 0x49,           // set STATUS MSG rate
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x06, 0x01, 0x12, 0x4F,           // set SOL MSG rate
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x05, 0x40, 0xA7,           // set SVINFO MSG rate (evey 5 cycles - low bandwidth)
+    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x00, 0x3B, 0xA2,           // disable SVINFO
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67            // set VELNED MSG rate
 };
 
@@ -105,7 +105,7 @@ static const uint8_t ubloxInit_MSG_UBX_PVT[] = {
     0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xB9, // disable POSLLH
     0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xC0, // disable STATUS
     0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0xD5, // disable SOL
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x30, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x4A, 0x2D, // enable SVINFO 10 cycle
+    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0xFB, // disable SVINFO
     0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x29, // disable VELNED
     0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x18, 0xE1  // enable PVT 1 cycle
 };
@@ -327,9 +327,7 @@ static bool _new_speed;
 //15:17:55  R -> UBX NAV,  Size 100,  'Navigation'
 //15:17:55  R -> UBX NAV-SVINFO,  Size 328,  'Satellite Status and Information'
 
-// from the UBlox6 document, the largest payout we receive i the NAV-SVINFO and the payload size
-// is calculated as 8 + 12*numCh.  numCh in the case of a Glonass receiver is 28.
-#define MAX_UBLOX_PAYLOAD_SIZE 344
+#define MAX_UBLOX_PAYLOAD_SIZE 100  // 100 bytes should be enough for all used messages
 #define UBLOX_BUFFER_SIZE MAX_UBLOX_PAYLOAD_SIZE
 
 // Receive buffer
@@ -353,11 +351,8 @@ void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
     }
 }
 
-
 static bool gpsParceFrameUBLOX(void)
 {
-    uint32_t i;
-
     switch (_msg_id) {
     case MSG_POSLLH:
         //i2c_dataset.time                = _buffer.posllh.time;
@@ -366,7 +361,8 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
         gpsSol.eph = gpsConstrainEPE(_buffer.posllh.horizontal_accuracy / 10);
         gpsSol.epv = gpsConstrainEPE(_buffer.posllh.vertical_accuracy / 10);
-        gpsSol.flags.fix3D = next_fix ? 1 : 0;
+        if (next_fix)
+            gpsSol.flags.fix3D = 1;
         _new_position = true;
         break;
     case MSG_STATUS:
@@ -418,17 +414,6 @@ static bool gpsParceFrameUBLOX(void)
         }
         break;
 #endif
-    case MSG_SVINFO:
-        gpsSol.numCh = _buffer.svinfo.numCh;
-        if (gpsSol.numCh > 16)
-            gpsSol.numCh = 16;
-        for (i = 0; i < gpsSol.numCh; i++){
-            gpsSol.svInfo[i].chn = _buffer.svinfo.channel[i].chn;
-            gpsSol.svInfo[i].svid = _buffer.svinfo.channel[i].svid;
-            gpsSol.svInfo[i].quality = _buffer.svinfo.channel[i].quality;
-            gpsSol.svInfo[i].cno =  _buffer.svinfo.channel[i].cno;
-        }
-        break;
     default:
         return false;
     }
@@ -509,6 +494,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             if (_ck_a != data) {
                 _skip_packet = true;          // bad checksum
                 gpsStats.errors++;
+                _step = 0;
             }
             break;
         case 8:

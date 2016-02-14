@@ -62,7 +62,6 @@
 #define NO_FRAME   0
 #define FRAME_GGA  1
 #define FRAME_RMC  2
-#define FRAME_GSV  3
 
 static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
@@ -104,8 +103,6 @@ static bool gpsNewFrameNMEA(char c)
     static uint8_t param = 0, offset = 0, parity = 0;
     static char string[15];
     static uint8_t checksum_param, gps_frame = NO_FRAME;
-    static uint8_t svMessageNum = 0;
-    uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
 
     switch (c) {
         case '$':
@@ -122,8 +119,6 @@ static bool gpsNewFrameNMEA(char c)
                     gps_frame = FRAME_GGA;
                 if (string[0] == 'G' && string[1] == 'P' && string[2] == 'R' && string[3] == 'M' && string[4] == 'C')
                     gps_frame = FRAME_RMC;
-                if (string[0] == 'G' && string[1] == 'P' && string[2] == 'G' && string[3] == 'S' && string[4] == 'V')
-                    gps_frame = FRAME_GSV;
             }
 
             switch (gps_frame) {
@@ -170,49 +165,6 @@ static bool gpsNewFrameNMEA(char c)
                             break;
                         case 8:
                             gps_Msg.ground_course = (grab_fields(string, 1));      // ground course deg * 10
-                            break;
-                    }
-                    break;
-                case FRAME_GSV:
-                    switch(param) {
-                      /*case 1:
-                            // Total number of messages of this type in this cycle
-                            break; */
-                        case 2:
-                            // Message number
-                            svMessageNum = grab_fields(string, 0);
-                            break;
-                        case 3:
-                            // Total number of SVs visible
-                            gpsSol.numCh = grab_fields(string, 0);
-                            break;
-                    }
-                    if(param < 4)
-                        break;
-
-                    svPacketIdx = (param - 4) / 4 + 1; // satellite number in packet, 1-4
-                    svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
-                    svSatParam  = param - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
-
-                    if(svSatNum > GPS_SV_MAXSATS)
-                        break;
-
-                    switch(svSatParam) {
-                        case 1:
-                            // SV PRN number
-                            gpsSol.svInfo[svSatNum - 1].chn = svSatNum;
-                            gpsSol.svInfo[svSatNum - 1].svid = grab_fields(string, 0);
-                            break;
-                      /*case 2:
-                            // Elevation, in degrees, 90 maximum
-                            break;
-                        case 3:
-                            // Azimuth, degrees from True North, 000 through 359
-                            break; */
-                        case 4:
-                            // SNR, 00 through 99 dB (null when not tracking)
-                            gpsSol.svInfo[svSatNum - 1].cno = grab_fields(string, 0);
-                            gpsSol.svInfo[svSatNum - 1].quality = 0; // only used by ublox
                             break;
                     }
                     break;

@@ -147,15 +147,6 @@ static void gpsHandleProtocol(void)
 
 static void gpsResetSolution(void)
 {
-    // Clear satellites in view information, if we use I2C driver this is not used
-    gpsSol.numCh = 0;
-    for (int i = 0; i < GPS_SV_MAXSATS; i++){
-        gpsSol.svInfo[i].chn = 0;
-        gpsSol.svInfo[i].svid = 0;
-        gpsSol.svInfo[i].quality = 0;
-        gpsSol.svInfo[i].cno = 0;
-    }
-
     gpsSol.eph = 9999;
     gpsSol.epv = 9999;
 
