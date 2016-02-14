@@ -37,8 +37,9 @@
 #include "sensors/gyro.h"
 
 uint16_t calibratingG = 0;
-int16_t gyroADC[XYZ_AXIS_COUNT];
-int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
+int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+int32_t gyroADC[XYZ_AXIS_COUNT];
+int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
@@ -133,9 +134,11 @@ static void applyGyroZero(void)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-    if (!gyro.read(gyroADC)) {
+    if (!gyro.read(gyroADCRaw)) {
         return;
     }
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = gyroADCRaw[axis];
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 

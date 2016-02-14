@@ -51,20 +51,20 @@ void initBoardAlignment(boardAlignment_t *boardAlignment)
     buildRotationMatrix(&rotationAngles, boardRotation);
 }
 
-static void alignBoard(int16_t *vec)
+static void alignBoard(int32_t *vec)
 {
-    int16_t x = vec[X];
-    int16_t y = vec[Y];
-    int16_t z = vec[Z];
+    int32_t x = vec[X];
+    int32_t y = vec[Y];
+    int32_t z = vec[Z];
 
     vec[X] = lrintf(boardRotation[0][X] * x + boardRotation[1][X] * y + boardRotation[2][X] * z);
     vec[Y] = lrintf(boardRotation[0][Y] * x + boardRotation[1][Y] * y + boardRotation[2][Y] * z);
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
+void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation)
 {
-    static uint16_t swap[3];
+    static uint32_t swap[3];
     memcpy(swap, src, sizeof(swap));
 
     switch (rotation) {
