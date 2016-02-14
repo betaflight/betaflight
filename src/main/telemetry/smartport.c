@@ -259,16 +259,23 @@ bool isSmartPortTimedOut(void)
 
 void checkSmartPortTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
+    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+        if (!smartPortTelemetryEnabled && telemetrySharedPort != NULL) {
+            smartPortSerialPort = telemetrySharedPort;
+            smartPortTelemetryEnabled = true;
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
 
-    if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
-        return;
+        if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
+            return;
+        }
+
+        if (newTelemetryEnabledValue)
+            configureSmartPortTelemetryPort();
+        else
+            freeSmartPortTelemetryPort();
     }
-
-    if (newTelemetryEnabledValue)
-        configureSmartPortTelemetryPort();
-    else
-        freeSmartPortTelemetryPort();
 }
 
 void handleSmartPortTelemetry(void)
