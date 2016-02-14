@@ -32,6 +32,8 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
+#include "telemetry/telemetry.h"
+
 #include "rx/rx.h"
 #include "rx/sbus.h"
 
@@ -92,8 +94,14 @@ bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+
     portOptions_t options = (rxConfig->sbus_inversion) ? (SBUS_PORT_OPTIONS | SERIAL_INVERTED) : SBUS_PORT_OPTIONS;
-    serialPort_t *sBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sbusDataReceive, SBUS_BAUDRATE, MODE_RX, options);
+    serialPort_t *sBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sbusDataReceive, SBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, options);
+
+    if (portShared) {
+        telemetrySharedPort = sBusPort;
+    }
 
     return sBusPort != NULL;
 }
