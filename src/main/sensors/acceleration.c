@@ -37,7 +37,8 @@
 
 #include "sensors/acceleration.h"
 
-int16_t accADC[XYZ_AXIS_COUNT];
+int16_t accADCRaw[XYZ_AXIS_COUNT];
+int32_t accADC[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
@@ -174,9 +175,14 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    if (!acc.read(accADC)) {
+    int axis;
+
+    if (!acc.read(accADCRaw)) {
         return;
     }
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) accADC[axis] = accADCRaw[axis];
+
     alignSensors(accADC, accADC, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
