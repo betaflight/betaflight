@@ -196,8 +196,6 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
         rxRefreshRate = 20000;
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
-
-    rxRuntimeConfig.auxChannelCount = rxRuntimeConfig.channelCount - STICK_CHANNEL_COUNT;
 }
 
 #ifdef SERIAL_RX

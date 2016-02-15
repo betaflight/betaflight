@@ -132,7 +132,6 @@ typedef struct rxConfig_s {
 
 typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver
-    uint8_t auxChannelCount;
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
