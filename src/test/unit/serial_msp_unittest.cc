@@ -499,7 +499,7 @@ uint16_t vbat = 0;                   // battery voltage in 0.1V steps (filtered)
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 // from compass.c
-int16_t magADC[XYZ_AXIS_COUNT];
+int32_t magADC[XYZ_AXIS_COUNT];
 // from config.c
 master_t masterConfig;
 controlRateConfig_t *currentControlRateProfile;
@@ -528,7 +528,7 @@ uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS];    // Satellite ID
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS]; // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal Strength)
 // from gyro.c
-int16_t gyroADC[XYZ_AXIS_COUNT];
+int32_t gyroADC[XYZ_AXIS_COUNT];
 // form imu.c
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 int16_t accSmooth[XYZ_AXIS_COUNT];

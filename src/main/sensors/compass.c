@@ -43,7 +43,8 @@ mag_t mag;                   // mag access functions
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
-int16_t magADC[XYZ_AXIS_COUNT];
+int16_t magADCRaw[XYZ_AXIS_COUNT];
+int32_t magADC[XYZ_AXIS_COUNT];
 sensor_align_e magAlign = 0;
 #ifdef MAG
 static uint8_t magInit = 0;
@@ -64,7 +65,8 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     static flightDynamicsTrims_t magZeroTempMax;
     uint32_t axis;
 
-    mag.read(magADC);
+    mag.read(magADCRaw);
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
     alignSensors(magADC, magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
