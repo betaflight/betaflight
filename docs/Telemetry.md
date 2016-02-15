@@ -202,4 +202,4 @@ Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters,
 Notes:
 
 * This has been tested with Flip32 and SPracingF3 boards and FrSky X8R and X4R receivers
-* To discover all sensors board has to be armed. When not armed, values like ***Vfas*** or GPS coordinates are not senti
+* To discover all sensors board has to be armed, and when GPS is connected, it needs to have a proper 3D fix. When not armed, values like ***Vfas*** or GPS coordinates may not sent.
