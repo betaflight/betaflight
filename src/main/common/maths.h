@@ -122,8 +122,8 @@ typedef struct {
 } sensorCalibrationState_t;
 
 void sensorCalibrationResetState(sensorCalibrationState_t * state);
-void sensorCalibrationPushSampleForOffsetCalculation(sensorCalibrationState_t * state, int16_t sample[3]);
-void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * state, int axis, int16_t sample[3], int target);
+void sensorCalibrationPushSampleForOffsetCalculation(sensorCalibrationState_t * state, int32_t sample[3]);
+void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * state, int axis, int32_t sample[3], int target);
 void sensorCalibrationSolveForOffset(sensorCalibrationState_t * state, float result[3]);
 void sensorCalibrationSolveForScale(sensorCalibrationState_t * state, float result[3]);
 

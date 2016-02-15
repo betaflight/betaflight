@@ -38,7 +38,8 @@
 
 #include "sensors/acceleration.h"
 
-int16_t accADC[XYZ_AXIS_COUNT];
+int16_t accADCRaw[XYZ_AXIS_COUNT];
+int32_t accADC[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
@@ -78,7 +79,7 @@ static bool calibratedAxis[6];
 static int32_t accSamples[6][3];
 static int  calibratedAxisCount = 0;
 
-int getPrimaryAxisIndex(int16_t sample[3])
+int getPrimaryAxisIndex(int32_t sample[3])
 {
     if (ABS(sample[Z]) > ABS(sample[X]) && ABS(sample[Z]) > ABS(sample[Y])) {
         //Z-axis
@@ -135,7 +136,7 @@ void performAcclerationCalibration(void)
 
     if (calibratedAxisCount == 6) {
         float accTmp[3];
-        int16_t accSample16[3];
+        int32_t accSample[3];
 
         /* Calculate offset */
         sensorCalibrationSolveForOffset(&calState, accTmp);
@@ -148,11 +149,11 @@ void performAcclerationCalibration(void)
         sensorCalibrationResetState(&calState);
 
         for (axis = 0; axis < 6; axis++) {
-            accSample16[X] = accSamples[axis][X] / CALIBRATING_ACC_CYCLES - accZero->raw[X];
-            accSample16[Y] = accSamples[axis][Y] / CALIBRATING_ACC_CYCLES - accZero->raw[Y];
-            accSample16[Z] = accSamples[axis][Z] / CALIBRATING_ACC_CYCLES - accZero->raw[Z];
+            accSample[X] = accSamples[axis][X] / CALIBRATING_ACC_CYCLES - accZero->raw[X];
+            accSample[Y] = accSamples[axis][Y] / CALIBRATING_ACC_CYCLES - accZero->raw[Y];
+            accSample[Z] = accSamples[axis][Z] / CALIBRATING_ACC_CYCLES - accZero->raw[Z];
 
-            sensorCalibrationPushSampleForScaleCalculation(&calState, axis / 2, accSample16, acc_1G);
+            sensorCalibrationPushSampleForScaleCalculation(&calState, axis / 2, accSample, acc_1G);
         }
 
         sensorCalibrationSolveForScale(&calState, accTmp);
@@ -178,9 +179,11 @@ void updateAccelerationReadings(void)
 {
     int axis;
 
-    if (!acc.read(accADC)) {
+    if (!acc.read(accADCRaw)) {
         return;
     }
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) accADC[axis] = accADCRaw[axis];
 
     if (accLpfCutHz) {
         if (!accFilterInitialised) {

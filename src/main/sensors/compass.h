@@ -35,7 +35,7 @@ void updateCompass(flightDynamicsTrims_t *magZero);
 bool isCompassReady(void);
 #endif
 
-extern int16_t magADC[XYZ_AXIS_COUNT];
+extern int32_t magADC[XYZ_AXIS_COUNT];
 
 extern sensor_align_e magAlign;
 extern mag_t mag;
