@@ -37,7 +37,8 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_MWREWRITE = 1,
+    PID_CONTROLLER_MW23,
+    PID_CONTROLLER_MWREWRITE,
     PID_CONTROLLER_LUX_FLOAT,
     PID_COUNT
 } pidControllerType_e;
@@ -66,6 +67,7 @@ typedef struct pidProfile_s {
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
     float dterm_lpf_hz;                     // Delta Filter in hz
     uint8_t deltaMethod;                  // Alternative delta Calculation
+    uint16_t yaw_p_limit;
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
@@ -86,5 +88,6 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool antiWindupProtection;
 
 void pidSetController(pidControllerType_e type);
+void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
 

@@ -1283,7 +1283,7 @@ static bool processInCommand(void)
         setGyroSamplingSpeed(read16());
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
+        currentProfile->pidProfile.pidController = read8();
         pidSetController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:

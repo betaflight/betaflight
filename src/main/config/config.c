@@ -176,6 +176,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
+    pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
@@ -719,7 +720,6 @@ void activateConfig(void)
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
-    currentProfile->pidProfile.pidController = constrain(currentProfile->pidProfile.pidController, 1, 2); // This should prevent UNUSED values. CF 1.11 support
     pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
