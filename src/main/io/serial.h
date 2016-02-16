@@ -93,7 +93,7 @@ typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
 } serialConfig_t;
 
-+typedef void serialConsumer(uint8_t);
+typedef void serialConsumer(uint8_t);
 
 //
 // configuration
