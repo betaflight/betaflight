@@ -99,7 +99,7 @@ static void ibusDataReceive(uint16_t c)
 
 uint8_t ibusFrameStatus(void)
 {
-    uint8_t i, pos;
+    uint8_t i, offset;
     uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
     uint16_t chksum, rxsum;
 
@@ -116,8 +116,8 @@ uint8_t ibusFrameStatus(void)
     rxsum = ibus[30] + (ibus[31] << 8);
 
     if (chksum == rxsum) {
-        for (i = 0, pos = 2; i < IBUS_MAX_CHANNEL; i++) {
-            ibusChannelData[i] = ibus[pos++] + (ibus[pos++] << 8);
+        for (i = 0, offset = 2; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
+            ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
         }
         frameStatus = SERIAL_RX_FRAME_COMPLETE;
     }
