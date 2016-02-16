@@ -81,6 +81,9 @@ In Horizon and Angle modes, this controller uses both the LEVEL "P" and "I" sett
 auto-leveling corrections in a similar way to the way that P and I settings are applied to roll and yaw axes in the acro
 flight modes. The LEVEL "D" term is used as a limiter to constrain the maximum correction applied by the LEVEL "P" term.
 
+Cleanflight 1.12.0 changed the default value for P_Level from 90 to 20 because MWREWRITE became the default PID controller.
+If you use MW23 then try setting this to 90 before flying.
+
 ### PID controller "MWREWRITE"
 
 This is a newer PID controller that is derived from the one in MultiWii 2.3 and later. It works better from
@@ -88,7 +91,9 @@ all accounts, and fixes some inherent problems in the way the old one worked. Fr
 and it tolerates a wider range of PID values well.
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
-be. Note that the default value for P_Level is 90.  This is more than likely too high of a value for most, and will cause the model to be very unstable in Angle Mode, and could result in loss of control.  It is recommended to change this value to 20 before using PID Controller 1 in Angle Mode.
+be. 
+
+Cleanflight 1.12.0 changed the default value for P_Level to 20. This is the recommended value for the MWREWRITE PID controller  which provides a stable flight in Angle mode.  The old default value was 90 which provided a very unstable flight for some users with this pid controller.
 
 In Horizon mode, this controller uses the LEVEL "I" PID setting to decide how much auto-level correction should be applied. Level "I" term: Strength of horizon auto-level. value of 0.030 in the configurator equals to 3.0 for Level P. Level "D" term: Strength of horizon transition. 0 is more stick travel on level and 255 is more rate mode what means very narrow angle of leveling.
 
@@ -134,7 +139,7 @@ On PID Controller MW23 can be used to set the "feel" around center stick for sma
 
 ### Pitch and Roll rates
 
-In PID Controller MW23 the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick extremes. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
+In PID Controller MW23 the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick 90. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
 
 For PID Controllers MWREWRITE and LUX, this is an multiplier on overall stick sensitivity, like RC rate, but for roll and pitch independently. Stablility (to outside factors like turbulence) is not reduced at stick extremes. A zero value is no increase in stick sensitivity over that set by RC rate above. Higher values increases stick sensitivity across the entire stick movement range.
 
