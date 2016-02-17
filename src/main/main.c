@@ -651,7 +651,6 @@ int main(void) {
 
     setTaskEnabled(TASK_GYROPID, true);
     if(sensors(SENSOR_ACC)) {
-        uint32_t accTargetLooptime = 0;
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {
             case(500):

@@ -492,8 +492,7 @@ static void resetConf(void)
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
-    masterConfig.acc_lpf_hz = 20;
-    masterConfig.accz_lpf_cutoff = 5.0f;
+    masterConfig.acc_lpf_hz = 10.0f;
     masterConfig.accDeadband.xy = 40;
     masterConfig.accDeadband.z = 40;
     masterConfig.acc_unarmedcal = 1;
@@ -730,6 +729,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
+    setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
@@ -745,7 +745,6 @@ void activateConfig(void)
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = masterConfig.acc_lpf_hz;
     imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
@@ -753,7 +752,6 @@ void activateConfig(void)
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
         &masterConfig.accDeadband,
-        masterConfig.accz_lpf_cutoff,
         masterConfig.throttle_correction_angle
     );
 
