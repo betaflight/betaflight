@@ -446,6 +446,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_ppm_invert = 0;
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
+    masterConfig.rxConfig.max_aux_channel = 4;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
