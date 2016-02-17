@@ -210,11 +210,12 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
 
-float calculateVbatPidCompensation(void) {
-	float batteryScaler =  1.0f;
+q_number_t calculateVbatPidCompensation(void) {
+	q_number_t batteryScaler;
     if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
-        // Up to 25% PID gain. Should be fine for 4,2to 3,3 difference
-        batteryScaler =  constrainf((( (float)batteryConfig->vbatmaxcellvoltage * batteryCellCount ) / (float) vbat), 1.0f, 1.25f);
+        qConstruct(&batteryScaler, batteryConfig->vbatmaxcellvoltage * batteryCellCount, constrain(vbat, batteryConfig->vbatmaxcellvoltage >> 2, batteryConfig->vbatmaxcellvoltage), Q12_NUMBER);
+    } else {
+        qConstruct(&batteryScaler, 1, 1, Q12_NUMBER);
     }
 
     return batteryScaler;

@@ -80,8 +80,8 @@ typedef struct pidProfile_s {
 } pidProfile_t;
 
 typedef struct acroPlus_s {
-    float factor;
-    float wowFactor;
+    int16_t factor;
+    q_number_t wowFactor;
 } acroPlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];

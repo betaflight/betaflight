@@ -94,38 +94,45 @@ void pidResetErrorGyro(void)
     }
 }
 
-float scaleItermToRcInput(int axis) {
-    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
-    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
-    static float antiWindUpIncrement = 0;
+q_number_t scaleItermToRcInput(int axis) {
+    int16_t rcCommandReflection = ABS(rcCommand[axis]);
+    static int16_t antiWindUpIncrement;
+    static q_number_t qItermScaler[3] = {
+        { .num= Q13(1), .den = Q13(1) },
+        { .num= Q13(1), .den = Q13(1) },
+        { .num= Q13(1), .den = Q13(1) },
+    };
 
-    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
+    if (!antiWindUpIncrement) {
+        antiWindUpIncrement = constrain(targetLooptime >> 6, 1, Q13(1));  // Calculate increment for 512ms period. Should be consistent up to 8khz
+    }
 
-    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
+    if (rcCommandReflection > 350) {   /* scaling should not happen in level modes */
         /* Reset Iterm on high stick inputs. No scaling necessary here */
-        iTermScaler[axis] = 0.0f;
+        qItermScaler[axis].num = 0;
     } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
-        if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
+        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 512ms  */
+        if (qItermScaler[axis].num <= (Q13(1) - antiWindUpIncrement)) {
+            qItermScaler[axis].num = qItermScaler[axis].num + antiWindUpIncrement;
         } else {
-            iTermScaler[axis] = 1;
+            qItermScaler[axis].num = Q13(1);
         }
     }
 
-    return iTermScaler[axis];
+    return qItermScaler[axis];
 }
 
+
 void acroPlusApply(acroPlus_t *axisState, int axis, pidProfile_t *pidProfile) {
-    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
-    axisState->wowFactor = 1;
+    int16_t rcCommandDeflection = constrain(rcCommand[axis], 0, 500); // Limit stick input to 500 (rcCommand 100)
+    qConstruct(&axisState->wowFactor, 1, 1, Q12_NUMBER);
     axisState->factor = 0;
 
     /* acro plus factor handling */
     if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor && (!flightModeFlags)) {
-        axisState->wowFactor = ABS(rcCommandReflection) * ((float)pidProfile->airModeInsaneAcrobilityFactor / 100.0f); //0-1f
-        axisState->factor = axisState->wowFactor * rcCommandReflection * 1000;
-        axisState->wowFactor = 1.0f - axisState->wowFactor;
+        qConstruct(&axisState->wowFactor,ABS(rcCommandDeflection) * pidProfile->airModeInsaneAcrobilityFactor / 100, 500, Q12_NUMBER);
+        axisState->factor = qMultiply(axisState->wowFactor, rcCommandDeflection << 1);  // Max factor 1000 on rcCommand of 500
+        axisState->wowFactor.num = axisState->wowFactor.den - axisState->wowFactor.num;
     }
 }
 
@@ -214,7 +221,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroIf[axis] *= scaleItermToRcInput(axis);
+            errorGyroIf[axis] = qMultiply(scaleItermToRcInput(axis),(int16_t) errorGyroIf[axis] * 10) / 10.0f; // Scale up and down to avoid truncating
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
@@ -257,7 +264,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = acroPlusState[axis].factor + acroPlusState[axis].wowFactor * axisPID[axis];
+            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
 
 #ifdef GTUNE
@@ -310,7 +317,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
+            errorGyroI[axis] = qMultiply(scaleItermToRcInput(axis),errorGyroI[axis]);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
@@ -373,7 +380,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = lrintf(acroPlusState[axis].factor + acroPlusState[axis].wowFactor * axisPID[axis]);
+            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
 
 #ifdef GTUNE
@@ -510,7 +517,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
+            errorGyroI[axis] = qMultiply(scaleItermToRcInput(axis),errorGyroI[axis]);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
@@ -551,7 +558,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = lrintf(acroPlusState[axis].factor + acroPlusState[axis].wowFactor * axisPID[axis]);
+            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
 
 #ifdef GTUNE

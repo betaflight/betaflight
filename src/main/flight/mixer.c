@@ -752,7 +752,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 void mixTable(void)
 {
     uint32_t i;
-    float vbatCompensationFactor;
+    q_number_t vbatCompensationFactor;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
@@ -775,7 +775,7 @@ void mixTable(void)
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] *= vbatCompensationFactor;  // Add voltage compensation
+        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] = qMultiply(vbatCompensationFactor, rollPitchYawMix[i]);  // Add voltage compensation
 
         if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
         if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
@@ -816,12 +816,14 @@ void mixTable(void)
 
     if (rollPitchYawMixRange > throttleRange) {
         motorLimitReached = true;
-        float mixReduction = (float) throttleRange / rollPitchYawMixRange;
+        q_number_t mixReduction;
+        qConstruct(&mixReduction, throttleRange, rollPitchYawMixRange, Q12_NUMBER);
+        //float mixReduction = (float) throttleRange / rollPitchYawMixRange;
         for (i = 0; i < motorCount; i++) {
-            rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
+            rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center. Only active below 50% of saturation levels to reduce spazzing out in crashes
-        if ((mixReduction > (mixerConfig->airmode_saturation_limit / 100.0f)) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if ((qPercent(mixReduction) > mixerConfig->airmode_saturation_limit) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         }
 
