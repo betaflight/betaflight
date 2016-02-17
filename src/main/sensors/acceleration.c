@@ -36,12 +36,10 @@
 #include "sensors/acceleration.h"
 
 int32_t accADC[XYZ_AXIS_COUNT];
-int16_t accADCRaw[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
 uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
-int axis;
 
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
@@ -82,6 +80,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
+    int axis;
 
     for (axis = 0; axis < 3; axis++) {
 
@@ -173,6 +172,9 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
+	int16_t accADCRaw[XYZ_AXIS_COUNT];
+	int axis;
+
     if (!acc.read(accADCRaw)) {
         return;
     }
