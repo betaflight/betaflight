@@ -68,6 +68,7 @@ typedef struct pidProfile_s {
     float dterm_lpf_hz;                     // Delta Filter in hz
     uint8_t deltaMethod;                  // Alternative delta Calculation
     uint16_t yaw_p_limit;
+    uint8_t dterm_average_count;            // Configurable delta count for dterm
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
