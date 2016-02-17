@@ -18,6 +18,7 @@
 #pragma once
 
 #include "rx/rx.h"
+#include "common/maths.h"
 
 #define VBAT_SCALE_DEFAULT 110
 #define VBAT_RESDIVVAL_DEFAULT 10
@@ -76,6 +77,6 @@ batteryConfig_t *batteryConfig;
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
-float calculateVbatPidCompensation(void);
+q_number_t calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
 uint8_t calculateBatteryCapacityRemainingPercentage(void);

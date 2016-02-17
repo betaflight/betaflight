@@ -337,3 +337,16 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
         dest[i] = array1[i] - array2[i];
     }
 }
+
+int16_t qPercent(q_number_t q) {
+    return 100 * q.num / q.den;
+}
+
+int16_t qMultiply(q_number_t q, int16_t input) {
+    return input *  q.num / q.den;
+}
+
+void qConstruct(q_number_t *qNumber, int16_t num, int16_t den, int qType) {
+    qNumber->num = (1 << qType) / den;
+    qNumber->den = (1 << qType) / num;
+}
