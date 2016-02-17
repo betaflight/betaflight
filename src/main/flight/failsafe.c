@@ -68,6 +68,11 @@ static void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
 
+failsafeConfig_t * getActiveFailsafeConfig(void)
+{
+    return failsafeConfig;
+}
+
 /*
  * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
  */

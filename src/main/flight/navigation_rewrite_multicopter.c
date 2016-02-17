@@ -39,6 +39,7 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
+#include "flight/failsafe.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -507,7 +508,14 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
     }
     else {
         /* Sensors has gone haywire, attempt to land regardless */
-        rcCommand[THROTTLE] = 1300; // FIXME
+        failsafeConfig_t * failsafeConfig = getActiveFailsafeConfig();
+
+        if (failsafeConfig) {
+            rcCommand[THROTTLE] = failsafeConfig->failsafe_throttle;
+        }
+        else {
+            rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
+        }
     }
 }
 

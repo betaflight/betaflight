@@ -82,6 +82,7 @@ typedef struct failsafeState_s {
 } failsafeState_t;
 
 void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
+failsafeConfig_t * getActiveFailsafeConfig(void);
 
 void failsafeStartMonitoring(void);
 void failsafeUpdateState(void);
@@ -96,8 +97,3 @@ bool failsafeMayRequireNavigationMode(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);
-
-
-
-
-
