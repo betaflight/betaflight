@@ -310,7 +310,6 @@ void handleSmartPortTelemetry(void)
         smartPortIdCnt++;
 
         int32_t tmpi;
-        static uint8_t t1Cnt = 0;
 
         switch(id) {
 #ifdef GPS
@@ -400,12 +399,7 @@ void handleSmartPortTelemetry(void)
             case FSSP_DATAID_T1         :
                 // we send all the flags as decimal digits for easy reading
 
-                // the t1Cnt simply allows the telemetry view to show at least some changes
-                t1Cnt++;
-                if (t1Cnt >= 4) {
-                    t1Cnt = 1;
-                }
-                tmpi = t1Cnt * 10000; // start off with at least one digit so the most significant 0 won't be cut off
+                tmpi =  10000; // start off with at least one digit so the most significant 0 won't be cut off
                 // the Taranis seems to be able to fit 5 digits on the screen
                 // the Taranis seems to consider this number a signed 16 bit integer
 
