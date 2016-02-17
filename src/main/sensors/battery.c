@@ -21,6 +21,7 @@
 #include "platform.h"
 
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
@@ -33,11 +34,10 @@
 #include "rx/rx.h"
 
 #include "io/rc_controls.h"
-#include "flight/lowpass.h"
 #include "io/beeper.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
-#define VBATT_LPF_FREQ  10
+#define VBATT_LPF_FREQ  1
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -54,7 +54,6 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 batteryConfig_t *batteryConfig;
 
 static batteryState_e batteryState;
-static lowpass_t lowpassFilter;
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -63,24 +62,24 @@ uint16_t batteryAdcToVoltage(uint16_t src)
     return ((((uint32_t)src * batteryConfig->vbatscale * 33 + (0xFFF * 5)) / (0xFFF * batteryConfig->vbatresdivval))/batteryConfig->vbatresdivmultiplier);
 }
 
-static void updateBatteryVoltage(void)
+static void updateBatteryVoltage(uint32_t vbatTimeDelta)
 {
     uint16_t vbatSample;
-    uint16_t vbatFiltered;
+    static filterStatePt1_t vbatFilterState;
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    vbatFiltered = (uint16_t)lowpassFixed(&lowpassFilter, vbatSample, VBATT_LPF_FREQ);
-    vbat = batteryAdcToVoltage(vbatFiltered);
+    vbatSample = filterApplyPt1(vbatSample, &vbatFilterState, VBATT_LPF_FREQ, vbatTimeDelta * 1e-6f);
+    vbat = batteryAdcToVoltage(vbatSample);
 }
 
 #define VBATTERY_STABLE_DELAY 40
 /* Batt Hysteresis of +/-100mV */
 #define VBATT_HYSTERESIS 1
 
-void updateBattery(void)
+void updateBattery(uint32_t vbatTimeDelta)
 {
-    updateBatteryVoltage();
+    updateBatteryVoltage(vbatTimeDelta);
     
     /* battery has just been connected*/
     if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
@@ -92,7 +91,7 @@ void updateBattery(void)
         We only do this on the ground so don't care if we do block, not
         worse than original code anyway*/
         delay(VBATTERY_STABLE_DELAY);
-        updateBatteryVoltage();
+        updateBatteryVoltage(vbatTimeDelta);
 
         unsigned cells = (batteryAdcToVoltage(vbatLatestADC) / batteryConfig->vbatmaxcellvoltage) + 1;
         if (cells > 8) {

@@ -68,7 +68,7 @@ extern int32_t mAhDrawn;
 uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
-void updateBattery(void);
+void updateBattery(uint32_t vbatTimeDelta);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);

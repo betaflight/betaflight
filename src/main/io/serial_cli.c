@@ -374,10 +374,6 @@ static const char * const lookupTableGyroLpf[] = {
     "10HZ"
 };
 
-static const char * const lookupTableSoftFilter[] = {
-    "OFF", "LOW", "MEDIUM", "HIGH"
-};
-
 static const char * const lookupTableFailsafeProcedure[] = {
     "SET-THR", "DROP", "RTH"
 };
@@ -413,7 +409,6 @@ typedef enum {
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
-    TABLE_SOFT_FILTER,
     TABLE_GYRO_LPF,
     TABLE_FAILSAFE_PROCEDURE,
 #ifdef NAV
@@ -438,7 +433,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
-    { lookupTableSoftFilter, sizeof(lookupTableSoftFilter) / sizeof(char *) },
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
 #ifdef NAV
@@ -732,10 +726,9 @@ const clivalue_t valueTable[] = {
     { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDLEVEL], .config.minmax = { 0,  200 }, 0 },
 
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
-	{ "gyro_soft_lpf",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.gyro_soft_lpf, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
-    { "acc_soft_lpf",               VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.acc_soft_lpf, .config.lookup = { TABLE_SOFT_FILTER }, 0 },
-    { "dterm_cut_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_cut_hz, .config.minmax = {0, 200 } },
-    { "yaw_pterm_cut_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_pterm_cut_hz, .config.minmax = {0, 200 } },
+	{ "gyro_soft_lpf_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_lpf_hz, .config.minmax = {0, 200 } },
+    { "acc_soft_lpf_hz",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acc_soft_lpf_hz, .config.minmax = {0, 200 } },
+    { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 200 } },
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 }, 0 },

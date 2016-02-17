@@ -27,6 +27,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -47,8 +48,10 @@ uint16_t calibratingA = 0;      // the calibration is done is the main loop. Cal
 
 static flightDynamicsTrims_t * accZero;
 static flightDynamicsTrims_t * accGain;
-static int8_t * accFIRTable = 0L;
-static int16_t accFIRState[3][9];
+
+static int8_t accLpfCutHz = 0;
+static biquad_t accFilterState[XYZ_AXIS_COUNT];
+static bool accFilterInitialised = false;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
@@ -173,12 +176,28 @@ void applyAccelerationZero(flightDynamicsTrims_t * accZero, flightDynamicsTrims_
 
 void updateAccelerationReadings(void)
 {
+    int axis;
+
     if (!acc.read(accADC)) {
         return;
     }
 
-    if (accFIRTable) {
-        filterApply9TapFIR(accADC, accFIRState, accFIRTable);
+    if (accLpfCutHz) {
+        if (!accFilterInitialised) {
+            if (targetLooptime) {  /* Initialisation needs to happen once sample rate is known */
+                for (axis = 0; axis < 3; axis++) {
+                    filterInitBiQuad(accLpfCutHz, &accFilterState[axis], 0);
+                }
+
+                accFilterInitialised = true;
+            }
+        }
+
+        if (accFilterInitialised) {
+            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                accADC[axis] = lrintf(filterApplyBiQuad((float) accADC[axis], &accFilterState[axis]));
+            }
+        }
     }
 
     if (!isAccelerationCalibrationComplete()) {
@@ -200,7 +219,7 @@ void setAccelerationGain(flightDynamicsTrims_t * accGainToUse)
     accGain = accGainToUse;
 }
 
-void setAccelerationFilter(int8_t * filterTableToUse)
+void setAccelerationFilter(int8_t initialAccLpfCutHz)
 {
-    accFIRTable = filterTableToUse;
+    accLpfCutHz = initialAccLpfCutHz;
 }
