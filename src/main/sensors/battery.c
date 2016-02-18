@@ -21,6 +21,7 @@
 #include <platform.h>
 
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
@@ -33,10 +34,9 @@
 
 #include "sensors/battery.h"
 
-#include "flight/lowpass.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
-#define VBATT_LPF_FREQ  10
+#define VBATT_LPF_FREQ  1.0f
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -53,7 +53,6 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 batteryConfig_t *batteryConfig;
 
 static batteryState_e batteryState;
-static lowpass_t lowpassFilter;
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -65,12 +64,17 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 static void updateBatteryVoltage(void)
 {
     uint16_t vbatSample;
-    uint16_t vbatFiltered;
+    static biquad_t vbatFilterState;
+    static bool vbatFilterStateIsSet;
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    vbatFiltered = (uint16_t)lowpassFixed(&lowpassFilter, vbatSample, VBATT_LPF_FREQ);
-    vbat = batteryAdcToVoltage(vbatFiltered);
+    if (!vbatFilterStateIsSet) {
+        BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000);
+        vbatFilterStateIsSet = true;
+    }
+    vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
+    vbat = batteryAdcToVoltage(vbatSample);
 }
 
 #define VBATTERY_STABLE_DELAY 40
