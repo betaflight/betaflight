@@ -228,3 +228,4 @@ void mixTable(void);
 void writeMotors(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);
+void mixerInitialiseServoFiltering(uint32_t targetLooptime);

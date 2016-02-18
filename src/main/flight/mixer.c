@@ -36,7 +36,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
-#include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
 
@@ -61,7 +60,6 @@ uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-extern float dT;
 
 bool motorLimitReached;
 
@@ -82,6 +80,7 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
+static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 #endif
 
 static const motorMixer_t mixerQuadX[] = {
@@ -348,6 +347,16 @@ void mixerUseConfigs(
     mixerConfig = mixerConfigToUse;
     airplaneConfig = airplaneConfigToUse;
     rxConfig = rxConfigToUse;
+
+}
+
+void mixerInitialiseServoFiltering(uint32_t targetLooptime)
+{
+    if (mixerConfig->servo_lowpass_enable) {
+        for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
+            BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetLooptime);
+        }
+    }
 }
 
 #ifdef USE_SERVOS
@@ -980,8 +989,6 @@ void filterServos(void)
 {
 #ifdef USE_SERVOS
     int16_t servoIdx;
-    static bool servoFilterIsSet;
-    biquad_t servoFitlerState[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
@@ -989,11 +996,7 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            if (!servoFilterIsSet) {
-                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFitlerState[servoIdx], targetLooptime);
-                servoFilterIsSet = true;
-            }
-            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFitlerState[servoIdx]));
+            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFilterState[servoIdx]));
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
