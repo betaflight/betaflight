@@ -177,7 +177,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->dterm_average_count = 3;
+    pidProfile->dterm_average_count = 4;
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
@@ -334,7 +334,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->airmode_saturation_limit = 50;
+    mixerConfig->airmode_saturation_limit = 30;
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
@@ -403,7 +403,7 @@ static void resetConf(void)
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 1;                 // 188HZ
-    masterConfig.gyro_sync_denom = 1;
+    masterConfig.gyro_sync_denom = 4;
     masterConfig.gyro_soft_lpf_hz = 60;
 
     resetAccelerometerTrims(&masterConfig.accZero);
