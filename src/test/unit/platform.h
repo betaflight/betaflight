@@ -48,3 +48,16 @@ typedef struct
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
+
+typedef struct {
+    void* test;
+} DMA_Channel_TypeDef;
+
+uint8_t DMA_GetFlagStatus(uint32_t);
+void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
+void DMA_ClearFlag(uint32_t);
+
+#define WS2811_DMA_TC_FLAG 1
+#define WS2811_DMA_HANDLER_IDENTIFER 0
+
+#include "target.h"
