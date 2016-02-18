@@ -53,6 +53,8 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 batteryConfig_t *batteryConfig;
 
 static batteryState_e batteryState;
+static biquad_t vbatFilterState;
+
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -64,15 +66,8 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 static void updateBatteryVoltage(void)
 {
     uint16_t vbatSample;
-    static biquad_t vbatFilterState;
-    static bool vbatFilterStateIsSet;
-
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    if (!vbatFilterStateIsSet) {
-        BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000);
-        vbatFilterStateIsSet = true;
-    }
     vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
     vbat = batteryAdcToVoltage(vbatSample);
 }
@@ -165,6 +160,9 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     batteryCellCount = 1;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
+
+    BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000);
+
 }
 
 #define ADCVREF 3300   // in mV
