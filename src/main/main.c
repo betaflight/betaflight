@@ -486,6 +486,10 @@ void init(void)
 
     flashLedsAndBeep();
 
+#ifdef USE_SERVOS
+    mixerInitialiseServoFiltering(targetLooptime);
+#endif
+
 #ifdef MAG
     if (sensors(SENSOR_MAG))
         compassInit();

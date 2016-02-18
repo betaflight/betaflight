@@ -80,7 +80,7 @@ typedef struct mixerConfig_s {
     uint16_t yaw_jump_prevention_limit;      // make limit configurable (original fixed value was 100)
 #ifdef USE_SERVOS
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
+    float servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
 #endif
 } mixerConfig_t;
@@ -228,3 +228,4 @@ void mixTable(void);
 void writeMotors(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);
+void mixerInitialiseServoFiltering(uint32_t targetLooptime);
