@@ -64,9 +64,10 @@ typedef struct pidProfile_s {
     float H_level;
     uint8_t H_sensitivity;
 
-    uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
+    uint8_t acroPlusFactor;                 // Air mode acrobility factor
+    uint8_t acroPlusOffset;                 // Air mode stick offset
     float dterm_lpf_hz;                     // Delta Filter in hz
-    uint8_t deltaMethod;                  // Alternative delta Calculation
+    uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
 
