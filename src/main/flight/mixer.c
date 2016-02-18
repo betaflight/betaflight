@@ -350,6 +350,8 @@ void mixerUseConfigs(
 
 }
 
+#ifdef USE_SERVOS
+
 void mixerInitialiseServoFiltering(uint32_t targetLooptime)
 {
     if (mixerConfig->servo_lowpass_enable) {
@@ -359,7 +361,6 @@ void mixerInitialiseServoFiltering(uint32_t targetLooptime)
     }
 }
 
-#ifdef USE_SERVOS
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
