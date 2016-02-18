@@ -180,7 +180,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_average_count = 4;
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->airModeInsaneAcrobilityFactor = 0;
+    pidProfile->acroPlusFactor = 30;
+    pidProfile->acroPlusOffset = 40;
 
     pidProfile->P_f[ROLL] = 1.1f;
     pidProfile->I_f[ROLL] = 0.4f;

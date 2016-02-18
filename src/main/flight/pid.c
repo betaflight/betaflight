@@ -58,7 +58,7 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
-#define DELTA_MAX_SAMPLES 10
+#define DELTA_MAX_SAMPLES 12
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
@@ -122,17 +122,23 @@ q_number_t scaleItermToRcInput(int axis) {
     return qItermScaler[axis];
 }
 
-
 void acroPlusApply(acroPlus_t *axisState, int axis, pidProfile_t *pidProfile) {
-    int16_t rcCommandDeflection = constrain(rcCommand[axis], 0, 500); // Limit stick input to 500 (rcCommand 100)
-    qConstruct(&axisState->wowFactor, 1, 1, Q12_NUMBER);
-    axisState->factor = 0;
+    int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
+    int16_t acroPlusStickOffset = pidProfile->acroPlusOffset * 5;
 
     /* acro plus factor handling */
-    if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor && (!flightModeFlags)) {
-        qConstruct(&axisState->wowFactor,ABS(rcCommandDeflection) * pidProfile->airModeInsaneAcrobilityFactor / 100, 500, Q12_NUMBER);
+    if (pidProfile->acroPlusFactor && ABS(rcCommandDeflection) > acroPlusStickOffset + 10) {
+        if (rcCommandDeflection > 0) {
+            rcCommandDeflection -= acroPlusStickOffset;
+        } else {
+            rcCommandDeflection += acroPlusStickOffset;
+        }
+        qConstruct(&axisState->wowFactor,ABS(rcCommandDeflection) * pidProfile->acroPlusFactor / 100, 500, Q12_NUMBER);
         axisState->factor = qMultiply(axisState->wowFactor, rcCommandDeflection << 1);  // Max factor 1000 on rcCommand of 500
         axisState->wowFactor.num = axisState->wowFactor.den - axisState->wowFactor.num;
+    } else {
+        qConstruct(&axisState->wowFactor, 1, 1, Q12_NUMBER);
+        axisState->factor = 0;
     }
 }
 
@@ -174,11 +180,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 30;
-        // -----Get the desired angle rate depending on flight mode
-        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            rate = controlRateConfig->rates[axis];
-        }
+        uint8_t rate = controlRateConfig->rates[axis];
 
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
@@ -262,7 +264,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
             axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
@@ -378,7 +380,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
             axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
@@ -463,11 +465,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 40;
-        // -----Get the desired angle rate depending on flight mode
-        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            rate = controlRateConfig->rates[axis];
-        }
+        uint8_t rate = controlRateConfig->rates[axis];
 
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
@@ -556,7 +554,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
             acroPlusApply(&acroPlusState[axis], axis, pidProfile);
             axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
         }
