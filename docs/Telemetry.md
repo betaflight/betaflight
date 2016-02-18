@@ -156,7 +156,7 @@ Hdg : heading, North is 0°, South is 180°.
 
 AccX,Y,Z : accelerometers values.
 
-Tmp1 : actual flight mode, sent as 4 digits. Number is sent as 1234, the numbers are aditives (for example, if first digit is 6, it means GPS Home and Headfree are both active) :
+Tmp1 : actual flight mode, sent as 4 digits. Number is sent as (1)1234. Please ignore the leading 1, it is just there to ensure the number as always 5 digits (the 1 + 4 digits of actual data) the numbers are aditives (for example, if first digit after the leading 1 is 6, it means GPS Home and Headfree are both active) :
 
 1. 1 is GPS Hold, 2 is GPS Home, 4 is Headfree
 2. 1 is mag enabled, 2 is baro enabled, 4 is sonar enabled
