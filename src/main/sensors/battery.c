@@ -213,7 +213,8 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 q_number_t calculateVbatPidCompensation(void) {
 	q_number_t batteryScaler;
     if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
-        qConstruct(&batteryScaler, batteryConfig->vbatmaxcellvoltage * batteryCellCount, constrain(vbat, batteryConfig->vbatmaxcellvoltage >> 2, batteryConfig->vbatmaxcellvoltage), Q12_NUMBER);
+        uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
+        qConstruct(&batteryScaler, maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage), Q12_NUMBER);
     } else {
         qConstruct(&batteryScaler, 1, 1, Q12_NUMBER);
     }
