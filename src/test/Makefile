@@ -907,7 +907,7 @@ test-%: $(OBJECT_DIR)/%
 ## help        : print this help message and exit
 ## what        : print this help message and exit
 ## usage       : print this help message and exit
-help what usage: makefile
+help what usage: Makefile
 	@echo ""
 	@echo "Makefile for Unit Tests"
 	@echo ""
