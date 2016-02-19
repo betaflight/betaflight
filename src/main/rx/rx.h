@@ -122,6 +122,8 @@ typedef struct rxConfig_s {
     uint8_t rcSmoothing;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
     uint8_t max_aux_channel;
+    uint8_t acroPlusFactor;                 // Air mode acrobility factor
+    uint8_t acroPlusOffset;                 // Air mode stick offset
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;

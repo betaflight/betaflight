@@ -644,6 +644,8 @@ const clivalue_t valueTable[] = {
     { "yaw_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
+    { "acro_plus_factor",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.rxConfig.acroPlusFactor, .config.minmax = {1, 100 } },
+    { "acro_plus_offset",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.rxConfig.acroPlusOffset, .config.minmax = {1, 90 } },
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
     { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
@@ -716,9 +718,6 @@ const clivalue_t valueTable[] = {
     { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDVEL], .config.minmax = { 0,  200 } },
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], .config.minmax = { 0,  200 } },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
-
-    { "acro_plus_factor",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acroPlusFactor, .config.minmax = {1, 100 } },
-    { "acro_plus_offset",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acroPlusOffset, .config.minmax = {1, 90 } },
 
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },

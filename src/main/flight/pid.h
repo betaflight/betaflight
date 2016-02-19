@@ -64,8 +64,6 @@ typedef struct pidProfile_s {
     float H_level;
     uint8_t H_sensitivity;
 
-    uint8_t acroPlusFactor;                 // Air mode acrobility factor
-    uint8_t acroPlusOffset;                 // Air mode stick offset
     float dterm_lpf_hz;                     // Delta Filter in hz
     uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
@@ -79,11 +77,6 @@ typedef struct pidProfile_s {
     uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
 #endif
 } pidProfile_t;
-
-typedef struct acroPlus_s {
-    int16_t factor;
-    q_number_t wowFactor;
-} acroPlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];

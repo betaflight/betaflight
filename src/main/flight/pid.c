@@ -122,29 +122,8 @@ q_number_t scaleItermToRcInput(int axis) {
     return qItermScaler[axis];
 }
 
-void acroPlusApply(acroPlus_t *axisState, int axis, pidProfile_t *pidProfile) {
-    int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
-    int16_t acroPlusStickOffset = pidProfile->acroPlusOffset * 5;
-
-    /* acro plus factor handling */
-    if (pidProfile->acroPlusFactor && ABS(rcCommandDeflection) > acroPlusStickOffset + 10) {
-        if (rcCommandDeflection > 0) {
-            rcCommandDeflection -= acroPlusStickOffset;
-        } else {
-            rcCommandDeflection += acroPlusStickOffset;
-        }
-        qConstruct(&axisState->wowFactor,ABS(rcCommandDeflection) * pidProfile->acroPlusFactor / 100, 500, Q12_NUMBER);
-        axisState->factor = qMultiply(axisState->wowFactor, rcCommandDeflection << 1);  // Max factor 1000 on rcCommand of 500
-        axisState->wowFactor.num = axisState->wowFactor.den - axisState->wowFactor.num;
-    } else {
-        qConstruct(&axisState->wowFactor, 1, 1, Q12_NUMBER);
-        axisState->factor = 0;
-    }
-}
-
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static acroPlus_t acroPlusState[3];
 static biquad_t deltaBiQuadState[3];
 static bool deltaStateIsSet;
 
@@ -264,11 +243,6 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
-            acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
-        }
-
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             calculate_Gtune(axis);
@@ -379,11 +353,6 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm + DTerm;
-
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
-            acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
-        }
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -553,11 +522,6 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
-
-        if (IS_RC_MODE_ACTIVE(BOXACROPLUS) && axis != YAW) {
-            acroPlusApply(&acroPlusState[axis], axis, pidProfile);
-            axisPID[axis] = acroPlusState[axis].factor + qMultiply(acroPlusState[axis].wowFactor, axisPID[axis]);
-        }
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 123;
+static const uint8_t EEPROM_CONF_VERSION = 124;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -180,8 +180,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_average_count = 4;
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->acroPlusFactor = 30;
-    pidProfile->acroPlusOffset = 40;
 
     pidProfile->P_f[ROLL] = 1.1f;
     pidProfile->I_f[ROLL] = 0.4f;
@@ -448,6 +446,8 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 4;
+    masterConfig.rxConfig.acroPlusFactor = 30;
+    masterConfig.rxConfig.acroPlusOffset = 40;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
