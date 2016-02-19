@@ -31,7 +31,7 @@
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 14 // 8 Outputs; PPM; LED Strip; SonarPads; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -61,7 +61,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW270_DEG_FLIP
+#define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define SONAR
 #define BEEPER
