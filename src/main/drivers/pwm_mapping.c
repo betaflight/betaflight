@@ -779,6 +779,11 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif
+#ifdef SPRACINGF3MINI
+            if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
+                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM3);
+            }
+#endif
             ppmInConfig(timerHardwarePtr);
             pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_PPM;
             pwmIOConfiguration.ppmInputCount++;
