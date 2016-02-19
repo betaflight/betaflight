@@ -25,7 +25,7 @@ These receivers are reported working:
 
 * [FrSky D4R-II](http://www.frsky-rc.com/product/pro.php?pro_id=24)
 * [Graupner GR24](http://www.graupner.de/en/products/33512/product.aspx)
-* [R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM](http://orangerx.com/2014/05/20/r615x-spektrumjr-dsm2dsmx-compatible-6ch-2-4ghz-receiver-wcppm-2/)
+* [R615X Spektrum/JR DSM2/DSMX Compatible 6Ch 2.4GHz Receiver w/CPPM](http://www.hobbyking.com/hobbyking/store/__46632__OrangeRx_R615X_DSM2_DSMX_Compatible_6Ch_2_4GHz_Receiver_w_CPPM.html)
 * [FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver](http://www.frsky-rc.com/product/pro.php?pro_id=21)
 * [FrSky X4R and FrSky X4RSB](http://www.frsky-rc.com/download/view.php?sort=&down=158&file=X4R-X4RSB) when flashed with CPPM firmware and bound with jumper between signal pins 2 and 3
 * All FrSky S.Bus enabled devices when connected with [S.Bus CPPM converter cable](http://www.frsky-rc.com/product/pro.php?pro_id=112). Without jumper this converter cable uses 21ms frame size (Channels 1-8). When jumper is in place, it uses 28ms frame and channels 1-12 are available
