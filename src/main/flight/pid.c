@@ -94,32 +94,29 @@ void pidResetErrorGyro(void)
     }
 }
 
-q_number_t scaleItermToRcInput(int axis) {
-    int16_t rcCommandReflection = ABS(rcCommand[axis]);
-    static int16_t antiWindUpIncrement;
-    static q_number_t qItermScaler[3] = {
-        { .num= Q13(1), .den = Q13(1) },
-        { .num= Q13(1), .den = Q13(1) },
-        { .num= Q13(1), .den = Q13(1) },
-    };
+void scaleItermToRcInput(int axis, pidProfile_t *pidProfile) {
+    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
+    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
+    static float antiWindUpIncrement = 0;
 
-    if (!antiWindUpIncrement) {
-        antiWindUpIncrement = constrain(targetLooptime >> 6, 1, Q13(1));  // Calculate increment for 512ms period. Should be consistent up to 8khz
-    }
+    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
 
-    if (rcCommandReflection > 350) {   /* scaling should not happen in level modes */
+    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
         /* Reset Iterm on high stick inputs. No scaling necessary here */
-        qItermScaler[axis].num = 0;
+        iTermScaler[axis] = 0.0f;
+        errorGyroI[axis] = 0;
+        errorGyroIf[axis] = 0.0f;
     } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 512ms  */
-        if (qItermScaler[axis].num <= (Q13(1) - antiWindUpIncrement)) {
-            qItermScaler[axis].num = qItermScaler[axis].num + antiWindUpIncrement;
-        } else {
-            qItermScaler[axis].num = Q13(1);
+        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
+        if (iTermScaler[axis] < 1) {
+            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
+            if (pidProfile->pidController != PID_CONTROLLER_LUX_FLOAT) {
+                errorGyroI[axis] *= iTermScaler[axis];
+            } else {
+                errorGyroIf[axis] *= iTermScaler[axis];
+            }
         }
     }
-
-    return qItermScaler[axis];
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -202,7 +199,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroIf[axis] = qMultiply(scaleItermToRcInput(axis),(int16_t) errorGyroIf[axis] * 10) / 10.0f; // Scale up and down to avoid truncating
+            scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
@@ -293,7 +290,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroI[axis] = qMultiply(scaleItermToRcInput(axis),errorGyroI[axis]);
+            scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
@@ -484,7 +481,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroI[axis] = qMultiply(scaleItermToRcInput(axis),errorGyroI[axis]);
+            scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
