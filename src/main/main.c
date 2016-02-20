@@ -656,6 +656,12 @@ int main(void) {
             case(500):
                 accTargetLooptime = 10000;
                 break;
+            case(375):
+                accTargetLooptime = 20000;
+                break;
+            case(250):
+                accTargetLooptime = 30000;
+                break;
             default:
             case(1000):
 #ifdef STM32F10X
