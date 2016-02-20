@@ -67,6 +67,7 @@ static int32_t errorGyroI[3], errorGyroILimit[3];
 static float errorGyroIf[3], errorGyroIfLimit[3];
 static int32_t errorAngleI[2];
 static float errorAngleIf[2];
+static bool lowThrottlePidReduction;
 
 static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -85,12 +86,20 @@ void pidResetErrorAngle(void)
     errorAngleIf[PITCH] = 0.0f;
 }
 
-void pidResetErrorGyro(void)
+void pidResetErrorGyroState(uint8_t resetOption)
 {
-    int axis;
-    for (axis = 0; axis < 3; axis++) {
-        errorGyroI[axis] = 0;
-        errorGyroIf[axis] = 0.0f;
+    if (resetOption >= RESET_ITERM) {
+        int axis;
+        for (axis = 0; axis < 3; axis++) {
+            errorGyroI[axis] = 0;
+            errorGyroIf[axis] = 0.0f;
+        }
+    }
+
+    if (resetOption == RESET_ITERM_AND_REDUCE_PID) {
+        lowThrottlePidReduction = true;
+    } else {
+        lowThrottlePidReduction = false;
     }
 }
 
@@ -242,6 +251,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
+        if (lowThrottlePidReduction) axisPID[axis] /= 4;
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -347,6 +358,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         axisPID[axis] = PTerm + ITerm + DTerm;
 
+        if (lowThrottlePidReduction) axisPID[axis] /= 4;
+
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
@@ -377,6 +390,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     axisPID[FD_YAW] =  PTerm + ITerm;
 
+    if (lowThrottlePidReduction) axisPID[FD_YAW] /= 4;
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
@@ -505,6 +519,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
+
+        if (lowThrottlePidReduction) axisPID[axis] /= 4;
 
 
 #ifdef BLACKBOX

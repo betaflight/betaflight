@@ -460,10 +460,15 @@ void processRx(void)
                 antiWindupProtection = false;
             }
         } else {
-            pidResetErrorGyro();
+            if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+                pidResetErrorGyroState(RESET_ITERM);
+            } else {
+                pidResetErrorGyroState(RESET_ITERM_AND_REDUCE_PID);
+            }
             pidResetErrorAngle();
         }
     } else {
+        pidResetErrorGyroState(RESET_DISABLE);
         antiWindupProtection = false;
     }
 

@@ -48,6 +48,12 @@ typedef enum {
 	DELTA_FROM_MEASUREMENT
 } pidDeltaType_e;
 
+typedef enum {
+    RESET_DISABLE = 0,
+    RESET_ITERM,
+    RESET_ITERM_AND_REDUCE_PID
+} pidErrorResetOption_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
@@ -77,5 +83,5 @@ bool antiWindupProtection;
 
 void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
-void pidResetErrorGyro(void);
+void pidResetErrorGyroState(uint8_t resetOption);
 
