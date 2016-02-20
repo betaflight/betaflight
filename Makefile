@@ -733,7 +733,6 @@ TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 ## all         : Make all filetypes, binary and hex
 all: hex bin
 
-## bin         : Make binary filetype
 ## binary      : Make binary filetype
 ## hex         : Make hex filetype
 bin:    $(TARGET_BIN)
