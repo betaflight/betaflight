@@ -181,14 +181,14 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     SERIAL_PORT_USB_VCP,
 #endif
-#ifdef USE_USART1
-    SERIAL_PORT_USART1,
+#ifdef USE_UART1
+    SERIAL_PORT_UART1,
 #endif
-#ifdef USE_USART2
-    SERIAL_PORT_USART2,
+#ifdef USE_UART2
+    SERIAL_PORT_UART2,
 #endif
-#ifdef USE_USART3
-    SERIAL_PORT_USART3,
+#ifdef USE_UART3
+    SERIAL_PORT_UART3,
 #endif
 #ifdef USE_SOFTSERIAL1
     SERIAL_PORT_SOFTSERIAL1,
