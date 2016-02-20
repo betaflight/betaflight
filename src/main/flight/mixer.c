@@ -748,7 +748,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 #endif
 
-void acroPlusApply(int16_t axisPID[3]) {
+void acroPlusApply(void) {
     int axis;
 
     for (axis = 0; axis < 2; axis++) {
@@ -785,7 +785,7 @@ void mixTable(void)
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
     if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-        acroPlusApply(axisPID);
+        acroPlusApply();
     }
 
     if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
