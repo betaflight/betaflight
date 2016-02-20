@@ -162,7 +162,6 @@
 #endif
 
 #define BLACKBOX
-#define GTUNE
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
