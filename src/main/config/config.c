@@ -350,7 +350,8 @@ uint8_t getCurrentProfile(void)
 static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
-    currentControlRateProfile = &currentProfile->controlRateProfile;
+    currentControlRateProfileIndex = currentProfile->activeRateProfile;
+    currentControlRateProfile = &currentProfile->controlRateProfile[currentControlRateProfileIndex];
 }
 
 uint8_t getCurrentControlRateProfile(void)
@@ -358,8 +359,15 @@ uint8_t getCurrentControlRateProfile(void)
     return currentControlRateProfileIndex;
 }
 
+static void setControlRateProfile(uint8_t profileIndex)	{		
+	currentControlRateProfileIndex = profileIndex;	
+	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;	
+	currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];		
+}
+
+
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.profile[profileIndex].controlRateProfile;
+    return &masterConfig.profile[profileIndex].controlRateProfile[masterConfig.profile[profileIndex].activeRateProfile];
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -490,9 +498,11 @@ static void resetConf(void)
     masterConfig.emf_avoidance = 0;
 
     resetPidProfile(&currentProfile->pidProfile);
-
-    resetControlRateConfig(&masterConfig.profile[0].controlRateProfile);
-
+	
+	uint8_t rI;
+	for (rI = 0; rI<MAX_RATEPROFILES; rI++) {
+		resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
+	}
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
@@ -1004,6 +1014,14 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
+}
+
+void changeControlRateProfile(uint8_t profileIndex) {		
+	if (profileIndex > MAX_RATEPROFILES) {		
+		profileIndex = MAX_RATEPROFILES - 1;		
+	}		
+	setControlRateProfile(profileIndex);		
+	activateControlRateConfig();		
 }
 
 void handleOneshotFeatureChangeOnRestart(void)

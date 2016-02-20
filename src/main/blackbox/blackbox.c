@@ -1136,7 +1136,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 4:
-            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile.rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         break;
         case 5:
             blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);

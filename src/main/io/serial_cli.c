@@ -113,6 +113,7 @@ static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
 static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
+static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
@@ -279,6 +280,7 @@ const clicmd_t cmdTable[] = {
         "[<index>]\r\n", cliPlaySound),
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
+	CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
@@ -470,7 +472,7 @@ typedef enum {
     // value section
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
-
+	PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -634,16 +636,17 @@ const clivalue_t valueTable[] = {
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
 #endif
 
-    { "rc_rate",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rcRate8, .config.minmax = { 0,  250 } },
-    { "rc_expo",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rcExpo8, .config.minmax = { 0,  100 } },
-    { "rc_yaw_expo",                VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rcYawExpo8, .config.minmax = { 0,  100 } },
-    { "thr_mid",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.thrMid8, .config.minmax = { 0,  100 } },
-    { "thr_expo",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.thrExpo8, .config.minmax = { 0,  100 } },
-    { "roll_rate",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "pitch_rate",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "yaw_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
-    { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
-    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].controlRateProfile.tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
+	{ "rateProfile",				VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].activeRateProfile, .config.minmax = { 0, MAX_RATEPROFILES } },
+    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  250 } },
+    { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
+    { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
+    { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
+    { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
+    { "roll_rate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "pitch_rate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "yaw_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
+    { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
+    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "acro_plus_factor",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.rxConfig.acroPlusFactor, .config.minmax = {1, 100 } },
     { "acro_plus_offset",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.rxConfig.acroPlusOffset, .config.minmax = {1, 90 } },
 
@@ -1678,9 +1681,10 @@ static void dumpValues(uint16_t valueSection)
 typedef enum {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
+    DUMP_RATES = (1 << 2),
 } dumpFlags_e;
 
-#define DUMP_ALL (DUMP_MASTER | DUMP_PROFILE)
+#define DUMP_ALL (DUMP_MASTER | DUMP_PROFILE | DUMP_RATES)
 
 
 static const char* const sectionBreak = "\r\n";
@@ -1703,6 +1707,9 @@ static void cliDump(char *cmdline)
     }
     if (strcasecmp(cmdline, "profile") == 0) {
         dumpMask = DUMP_PROFILE; // only
+    }
+    if (strcasecmp(cmdline, "rates") == 0) {
+        dumpMask = DUMP_RATES; 
     }
 
     if (dumpMask & DUMP_MASTER) {
@@ -1842,7 +1849,19 @@ static void cliDump(char *cmdline)
         printSectionBreak();
 
         dumpValues(PROFILE_VALUE);
+        dumpValues(PROFILE_RATE_VALUE);
     }
+    if (dumpMask & DUMP_RATES) {		
+		cliPrint("\r\n# dump rates\r\n");		
+ 
+		cliPrint("\r\n# rateprofile\r\n");		
+		cliRateProfile("");		
+ 
+		printSectionBreak();		
+ 
+        dumpValues(PROFILE_RATE_VALUE);
+ }
+    
 }
 
 void cliEnter(serialPort_t *serialPort)
@@ -2138,6 +2157,21 @@ static void cliProfile(char *cmdline)
     }
 }
 
+static void cliRateProfile(char *cmdline) {		
+	int i;		
+	
+	if (isEmpty(cmdline)) {		
+		cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());		
+		return;		
+	} else {		
+		i = atoi(cmdline);		
+		if (i >= 0 && i < MAX_RATEPROFILES) {		
+			changeControlRateProfile(i);		
+			cliRateProfile("");		
+		}		
+	}		
+}
+
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
@@ -2200,6 +2234,10 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
 
+	if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {		
+		ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());		
+	}
+
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
             value = *(uint8_t *)ptr;
@@ -2249,6 +2287,9 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
+	if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {		
+		ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());		
+	}
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:

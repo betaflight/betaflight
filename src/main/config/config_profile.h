@@ -19,5 +19,6 @@
 
 typedef struct profile_s {
     pidProfile_t pidProfile;
-    controlRateConfig_t controlRateProfile;
+    uint8_t activeRateProfile;
+    controlRateConfig_t controlRateProfile[MAX_RATEPROFILES];
 } profile_t;
