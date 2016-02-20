@@ -759,7 +759,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 ## all         : default task; compile C code, build firmware
 all: binary
 
-## rule to reinvoke make with TARGET= parameter
+# rule to reinvoke make with TARGET= parameter
 # rules that should be handled in toplevel Makefile, not dependent on TARGET
 GLOBAL_GOALS	= all_targets cppcheck test
 
@@ -767,7 +767,7 @@ GLOBAL_GOALS	= all_targets cppcheck test
 $(VALID_TARGETS):
 	$(MAKE) TARGET=$@ $(filter-out $(VALID_TARGETS) $(GLOBAL_GOALS), $(MAKECMDGOALS))
 
-## rule to build all targets
+## all_targets : Make all TARGETs
 .PHONY: all_targets
 all_targets : $(VALID_TARGETS)
 
