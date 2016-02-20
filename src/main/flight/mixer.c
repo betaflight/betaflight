@@ -57,7 +57,6 @@
 #include "config/config.h"
 
 uint8_t motorCount;
-extern float dT;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
@@ -962,7 +961,8 @@ void filterServos(void)
 {
 #ifdef USE_SERVOS
     int16_t servoIdx;
-    static filterStatePt1_t servoFitlerState[MAX_SUPPORTED_SERVOS];
+    static bool servoFilterIsSet;
+    static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
@@ -970,7 +970,12 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = filterApplyPt1(servo[servoIdx], &servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, dT);
+            if (!servoFilterIsSet) {
+                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetLooptime);
+                servoFilterIsSet = true;
+            }
+
+            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFilterState[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }

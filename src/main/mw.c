@@ -101,7 +101,8 @@ enum {
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 
-#define GYRO_WATCHDOG_DELAY 100 // Watchdog delay for gyro sync
+#define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
+#define JITTER_BUFFER_TIME 20  // cycleTime jitter buffer time
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
@@ -119,7 +120,6 @@ extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 extern bool antiWindupProtection;
 
-static filterStatePt1_t filteredCycleTimeState;
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 
@@ -182,7 +182,7 @@ void filterRc(void){
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
 
-    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+    rcInterpolationFactor = rxRefreshRate / targetLooptime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
@@ -640,15 +640,6 @@ static bool haveProcessedAnnexCodeOnce = false;
 
 void taskMainPidLoop(void)
 {
-    cycleTime = getTaskDeltaTime(TASK_SELF);
-    dT = (float)targetLooptime * 0.000001f;
-
-    // Calculate average cycle time and average jitter
-    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 0.5f, dT);
-
-    //debug[0] = cycleTime;
-    //debug[1] = cycleTime - filteredCycleTime;
-
     imuUpdateGyroAndAttitude();
 
     annexCode();
@@ -740,12 +731,21 @@ void taskMainPidLoop(void)
 
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
-    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
-    // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    static uint32_t previousTime;
+
+    cycleTime = micros() - previousTime;
+    previousTime = micros();
+
+    // Debugging parameters
+    debug[0] = cycleTime;
+    debug[1] = cycleTime - targetLooptime;
+    debug[2] = averageSystemLoadPercent;
 
     while (1) {
-        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (gyroSyncCheckUpdate() || ((cycleTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            while (1) {
+                if (micros() >= JITTER_BUFFER_TIME + previousTime) break;
+            }
             break;
         }
     }

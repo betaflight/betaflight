@@ -135,6 +135,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     int axis, deltaCount;
     float horizonLevelStrength = 1;
 
+    float dT = (float)targetLooptime * 0.000001f;
+
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
         for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
         deltaStateIsSet = true;
