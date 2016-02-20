@@ -725,39 +725,20 @@ TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
-# List of buildable ELF files and their object dependencies.
-# It would be nice to compute these lists, but that seems to be just beyond make.
+## Default make goal:
+## hex         : Make filetype hex only
+.DEFAULT_GOAL := hex
 
-$(TARGET_HEX): $(TARGET_ELF)
-	$(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+## Optional make goals:
+## all         : Make all filetypes, binary and hex
+all: hex bin
 
-$(TARGET_BIN): $(TARGET_ELF)
-	$(OBJCOPY) -O binary $< $@
-
-$(TARGET_ELF):  $(TARGET_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
-	$(SIZE) $(TARGET_ELF)
-
-# Compile
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(CFLAGS) $<
-
-# Assemble
-$(OBJECT_DIR)/$(TARGET)/%.o: %.s
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
-
-$(OBJECT_DIR)/$(TARGET)/%.o: %.S
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
-
-
-## all         : default task; compile C code, build firmware
-all: binary
+## bin         : Make binary filetype
+## binary      : Make binary filetype
+## hex         : Make hex filetype
+bin:    $(TARGET_BIN)
+binary: $(TARGET_BIN)
+hex:    $(TARGET_HEX)
 
 # rule to reinvoke make with TARGET= parameter
 # rules that should be handled in toplevel Makefile, not dependent on TARGET
@@ -825,6 +806,37 @@ test:
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
+
+# List of buildable ELF files and their object dependencies.
+# It would be nice to compute these lists, but that seems to be just beyond make.
+
+$(TARGET_HEX): $(TARGET_ELF)
+	$(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+
+$(TARGET_BIN): $(TARGET_ELF)
+	$(OBJCOPY) -O binary $< $@
+
+$(TARGET_ELF):  $(TARGET_OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+	$(SIZE) $(TARGET_ELF)
+
+# Compile
+$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+	@mkdir -p $(dir $@)
+	@echo %% $(notdir $<)
+	@$(CC) -c -o $@ $(CFLAGS) $<
+
+# Assemble
+$(OBJECT_DIR)/$(TARGET)/%.o: %.s
+	@mkdir -p $(dir $@)
+	@echo %% $(notdir $<)
+	@$(CC) -c -o $@ $(ASFLAGS) $<
+
+$(OBJECT_DIR)/$(TARGET)/%.o: %.S
+	@mkdir -p $(dir $@)
+	@echo %% $(notdir $<)
+	@$(CC) -c -o $@ $(ASFLAGS) $<
+
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
