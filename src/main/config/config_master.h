@@ -63,6 +63,8 @@ typedef struct master_t {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
+    uint8_t pid_jitter_buffer;              // Jitter buffer time in us for pid controller for smoother motor output
+
     gyroConfig_t gyroConfig;
 
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device

@@ -101,7 +101,6 @@ enum {
 #define IBATINTERVAL (6 * 3500)
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
-#define JITTER_BUFFER_TIME 20  // cycleTime jitter buffer time
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
@@ -720,7 +719,7 @@ void taskMainPidLoopCheck(void) {
     while (1) {
         if (gyroSyncCheckUpdate() || ((cycleTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
             while (1) {
-                if (micros() >= JITTER_BUFFER_TIME + previousTime) break;
+                if (micros() >= masterConfig.pid_jitter_buffer + previousTime) break;
             }
             break;
         }
