@@ -651,11 +651,16 @@ int main(void) {
 
     setTaskEnabled(TASK_GYROPID, true);
     if(sensors(SENSOR_ACC)) {
-        uint32_t accTargetLooptime = 0;
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {
             case(500):
                 accTargetLooptime = 10000;
+                break;
+            case(375):
+                accTargetLooptime = 20000;
+                break;
+            case(250):
+                accTargetLooptime = 30000;
                 break;
             default:
             case(1000):

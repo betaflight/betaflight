@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 122;
+static const uint8_t EEPROM_CONF_VERSION = 125;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -176,9 +176,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
+    pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
+    pidProfile->dterm_average_count = 4;
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.1f;
     pidProfile->I_f[ROLL] = 0.4f;
@@ -193,17 +194,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->H_level = 4.0f;
     pidProfile->H_sensitivity = 75;
 
-#ifdef GTUNE
-    pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
-    pidProfile->gtune_lolimP[PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
-    pidProfile->gtune_lolimP[YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
-    pidProfile->gtune_hilimP[ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_pwr = 0;                    // [0..10] Strength of adjustment
-    pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
-    pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
 }
 
 #ifdef GPS
@@ -332,7 +322,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->airmode_saturation_limit = 50;
+    mixerConfig->airmode_saturation_limit = 30;
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
@@ -349,7 +339,8 @@ uint8_t getCurrentProfile(void)
 static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
-    currentControlRateProfile = &currentProfile->controlRateProfile;
+    currentControlRateProfileIndex = currentProfile->activeRateProfile;
+    currentControlRateProfile = &currentProfile->controlRateProfile[currentControlRateProfileIndex];
 }
 
 uint8_t getCurrentControlRateProfile(void)
@@ -357,8 +348,15 @@ uint8_t getCurrentControlRateProfile(void)
     return currentControlRateProfileIndex;
 }
 
+static void setControlRateProfile(uint8_t profileIndex)	{		
+	currentControlRateProfileIndex = profileIndex;	
+	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;	
+	currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];		
+}
+
+
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.profile[profileIndex].controlRateProfile;
+    return &masterConfig.profile[profileIndex].controlRateProfile[masterConfig.profile[profileIndex].activeRateProfile];
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -401,7 +399,7 @@ static void resetConf(void)
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 1;                 // 188HZ
-    masterConfig.gyro_sync_denom = 1;
+    masterConfig.gyro_sync_denom = 4;
     masterConfig.gyro_soft_lpf_hz = 60;
 
     resetAccelerometerTrims(&masterConfig.accZero);
@@ -444,6 +442,9 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_ppm_invert = 0;
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
+    masterConfig.rxConfig.max_aux_channel = 4;
+    masterConfig.rxConfig.acroPlusFactor = 30;
+    masterConfig.rxConfig.acroPlusOffset = 40;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
@@ -486,14 +487,15 @@ static void resetConf(void)
     masterConfig.emf_avoidance = 0;
 
     resetPidProfile(&currentProfile->pidProfile);
-
-    resetControlRateConfig(&masterConfig.profile[0].controlRateProfile);
-
+	
+	uint8_t rI;
+	for (rI = 0; rI<MAX_RATEPROFILES; rI++) {
+		resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
+	}
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
-    masterConfig.acc_lpf_hz = 20;
-    masterConfig.accz_lpf_cutoff = 5.0f;
+    masterConfig.acc_lpf_hz = 10.0f;
     masterConfig.accDeadband.xy = 40;
     masterConfig.accDeadband.z = 40;
     masterConfig.acc_unarmedcal = 1;
@@ -720,7 +722,6 @@ void activateConfig(void)
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
-    currentProfile->pidProfile.pidController = constrain(currentProfile->pidProfile.pidController, 1, 2); // This should prevent UNUSED values. CF 1.11 support
     pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
@@ -730,6 +731,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
+    setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
@@ -745,7 +747,6 @@ void activateConfig(void)
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = masterConfig.acc_lpf_hz;
     imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
     imuRuntimeConfig.small_angle = masterConfig.small_angle;
 
@@ -753,7 +754,6 @@ void activateConfig(void)
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
         &masterConfig.accDeadband,
-        masterConfig.accz_lpf_cutoff,
         masterConfig.throttle_correction_angle
     );
 
@@ -1003,6 +1003,14 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
+}
+
+void changeControlRateProfile(uint8_t profileIndex) {		
+	if (profileIndex > MAX_RATEPROFILES) {		
+		profileIndex = MAX_RATEPROFILES - 1;		
+	}		
+	setControlRateProfile(profileIndex);		
+	activateControlRateConfig();		
 }
 
 void handleOneshotFeatureChangeOnRestart(void)

@@ -61,7 +61,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW270_DEG_FLIP
+#define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define SONAR
 #define BEEPER

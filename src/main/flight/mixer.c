@@ -57,7 +57,6 @@
 #include "config/config.h"
 
 uint8_t motorCount;
-extern float dT;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
@@ -749,12 +748,45 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 #endif
 
+void acroPlusApply(void) {
+    int axis;
+
+    for (axis = 0; axis < 2; axis++) {
+        int16_t factor;
+        q_number_t wowFactor;
+        int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
+        int16_t acroPlusStickOffset = rxConfig->acroPlusOffset * 5;
+        int16_t motorRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
+        if (feature(FEATURE_3D)) motorRange = (motorRange - (flight3DConfig->deadband3d_high - flight3DConfig->deadband3d_low)) / 2;
+
+        /* acro plus factor handling */
+        if (rxConfig->acroPlusFactor && ABS(rcCommandDeflection) > acroPlusStickOffset + 10) {
+            if (rcCommandDeflection > 0) {
+                rcCommandDeflection -= acroPlusStickOffset;
+            } else {
+                rcCommandDeflection += acroPlusStickOffset;
+            }
+            qConstruct(&wowFactor,ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500, Q12_NUMBER);
+            factor = qMultiply(wowFactor, (rcCommandDeflection * motorRange) / 500);
+            wowFactor.num = wowFactor.den - wowFactor.num;
+        } else {
+            qConstruct(&wowFactor, 1, 1, Q12_NUMBER);
+            factor = 0;
+        }
+        axisPID[axis] = factor + qMultiply(wowFactor, axisPID[axis]);
+    }
+}
+
 void mixTable(void)
 {
     uint32_t i;
-    float vbatCompensationFactor;
+    q_number_t vbatCompensationFactor;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
+
+    if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+        acroPlusApply();
+    }
 
     if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
         // prevent "yaw jump" during yaw correction
@@ -775,7 +807,7 @@ void mixTable(void)
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] *= vbatCompensationFactor;  // Add voltage compensation
+        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] = qMultiply(vbatCompensationFactor, rollPitchYawMix[i]);  // Add voltage compensation
 
         if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
         if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
@@ -816,12 +848,14 @@ void mixTable(void)
 
     if (rollPitchYawMixRange > throttleRange) {
         motorLimitReached = true;
-        float mixReduction = (float) throttleRange / rollPitchYawMixRange;
+        q_number_t mixReduction;
+        qConstruct(&mixReduction, throttleRange, rollPitchYawMixRange, Q12_NUMBER);
+        //float mixReduction = (float) throttleRange / rollPitchYawMixRange;
         for (i = 0; i < motorCount; i++) {
-            rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
+            rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center. Only active below 50% of saturation levels to reduce spazzing out in crashes
-        if ((mixReduction > (mixerConfig->airmode_saturation_limit / 100.0f)) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if ((qPercent(mixReduction) > mixerConfig->airmode_saturation_limit) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         }
 
@@ -927,7 +961,8 @@ void filterServos(void)
 {
 #ifdef USE_SERVOS
     int16_t servoIdx;
-    static filterStatePt1_t servoFitlerState[MAX_SUPPORTED_SERVOS];
+    static bool servoFilterIsSet;
+    static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
@@ -935,7 +970,12 @@ void filterServos(void)
 
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = filterApplyPt1(servo[servoIdx], &servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, dT);
+            if (!servoFilterIsSet) {
+                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetLooptime);
+                servoFilterIsSet = true;
+            }
+
+            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFilterState[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }

@@ -37,7 +37,6 @@
 #include "sensors/gyro.h"
 
 uint16_t calibratingG = 0;
-int16_t gyroADCRaw[XYZ_AXIS_COUNT];
 int32_t gyroADC[XYZ_AXIS_COUNT];
 int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
@@ -45,7 +44,6 @@ static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
 static bool gyroFilterStateIsSet;
 static float gyroLpfCutFreq;
-int axis;
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
@@ -57,6 +55,7 @@ void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
 }
 
 void initGyroFilterCoefficients(void) {
+	int axis;
     if (gyroLpfCutFreq && targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
         for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
         gyroFilterStateIsSet = true;
@@ -133,6 +132,9 @@ static void applyGyroZero(void)
 
 void gyroUpdate(void)
 {
+	int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+	int axis;
+
     // range: +/- 8192; +/- 2000 deg/sec
     if (!gyro.read(gyroADCRaw)) {
         return;

@@ -72,8 +72,7 @@ typedef struct master_t {
 
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
-    uint8_t acc_lpf_hz;                     // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    float accz_lpf_cutoff;                  // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    float acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off

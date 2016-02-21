@@ -5,7 +5,7 @@
  *      Author: borisb
  */
 
-#define INTERRUPT_WAIT_TIME 12
+#define INTERRUPT_WAIT_TIME 5
 
 extern uint32_t targetLooptime;
 

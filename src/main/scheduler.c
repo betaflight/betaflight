@@ -226,8 +226,7 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
 uint16_t averageSystemLoadPercent = 0;
 
-#define REALTIME_GUARD_INTERVAL_MIN     10
-#define REALTIME_GUARD_INTERVAL_MAX     300
+#define GUARD_INTERVAL 5
 
 void taskSystem(void)
 {
@@ -248,7 +247,7 @@ void taskSystem(void)
         }
     }
 
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX);
+    realtimeGuardInterval = GUARD_INTERVAL;
 #if defined SCHEDULER_DEBUG
     debug[2] = realtimeGuardInterval;
 #endif

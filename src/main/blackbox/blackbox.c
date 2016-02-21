@@ -1136,7 +1136,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 4:
-            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile.rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         break;
         case 5:
             blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);
@@ -1205,11 +1205,6 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
                 blackboxWrite(data->inflightAdjustment.adjustmentFunction);
                 blackboxWriteSignedVB(data->inflightAdjustment.newValue);
             }
-        break;
-        case FLIGHT_LOG_EVENT_GTUNE_RESULT:
-            blackboxWrite(data->gtuneCycleResult.gtuneAxis);
-            blackboxWriteSignedVB(data->gtuneCycleResult.gtuneGyroAVG);
-            blackboxWriteS16(data->gtuneCycleResult.gtuneNewP);
         break;
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);

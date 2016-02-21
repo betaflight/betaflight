@@ -37,7 +37,8 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_MWREWRITE = 1,
+    PID_CONTROLLER_MW23,
+    PID_CONTROLLER_MWREWRITE,
     PID_CONTROLLER_LUX_FLOAT,
     PID_COUNT
 } pidControllerType_e;
@@ -46,6 +47,12 @@ typedef enum {
 	DELTA_FROM_ERROR = 0,
 	DELTA_FROM_MEASUREMENT
 } pidDeltaType_e;
+
+typedef enum {
+    RESET_DISABLE = 0,
+    RESET_ITERM,
+    RESET_ITERM_AND_REDUCE_PID
+} pidErrorResetOption_e;
 
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
@@ -63,28 +70,18 @@ typedef struct pidProfile_s {
     float H_level;
     uint8_t H_sensitivity;
 
-    uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
     float dterm_lpf_hz;                     // Delta Filter in hz
-    uint8_t deltaMethod;                  // Alternative delta Calculation
+    uint8_t deltaMethod;                    // Alternative delta Calculation
+    uint16_t yaw_p_limit;
+    uint8_t dterm_average_count;            // Configurable delta count for dterm
 
-#ifdef GTUNE
-    uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
-    uint8_t  gtune_hilimP[3];               // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
-    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
-    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
 } pidProfile_t;
-
-typedef struct acroPlus_s {
-    float factor;
-    float wowFactor;
-} acroPlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool antiWindupProtection;
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorGyro(void);
+void pidResetErrorAngle(void);
+void pidResetErrorGyroState(uint8_t resetOption);
 

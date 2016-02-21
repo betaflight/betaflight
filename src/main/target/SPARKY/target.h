@@ -120,7 +120,6 @@
 
 #define BLACKBOX
 #define GPS
-#define GTUNE
 #define DISPLAY
 #define SERIAL_RX
 #define TELEMETRY

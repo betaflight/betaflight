@@ -77,6 +77,3 @@
 #define SKIP_CLI_COMMAND_HELP
 #endif
 
-//#undef USE_CLI
-#define GTUNE
-//#define BLACKBOX
