@@ -436,7 +436,7 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_APB2PeriphClockCmd(UART5_APB2_PERIPHERALS_TX, ENABLE);
 #endif
 #ifdef UART5_APB2_PERIPHERALS_RX
-    RCC_APB2PeriphClockCmd(UART5_APB2_PERIPHERALS_TX, ENABLE);
+    RCC_APB2PeriphClockCmd(UART5_APB2_PERIPHERALS_RX, ENABLE);
 #endif
 
     gpio.speed = Speed_2MHz;
