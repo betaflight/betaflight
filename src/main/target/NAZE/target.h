@@ -176,7 +176,7 @@
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
 //#define GPS
-#define GTUNE
+//#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX

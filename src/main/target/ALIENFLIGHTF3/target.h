@@ -153,7 +153,7 @@
 //#define BLACKBOX
 #define SERIAL_RX
 //#define GPS
-#define GTUNE
+//#define GTUNE
 //#define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
