@@ -203,6 +203,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
+        if (lowThrottlePidReduction) RateError /= 4;
+
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
@@ -285,6 +287,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     for (axis = 0; axis < 2; axis++) {
 
         rc = rcCommand[axis] << 1;
+
+        if (lowThrottlePidReduction) rc /= 4;
 
         gyroError = gyroADC[axis] / 4;
 
@@ -465,6 +469,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         gyroRate = gyroADC[axis] / 4;
         RateError = AngleRateTmp - gyroRate;
+
+        if (lowThrottlePidReduction) RateError /= 4;
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
