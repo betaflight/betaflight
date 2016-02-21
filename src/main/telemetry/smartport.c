@@ -326,7 +326,7 @@ void handleSmartPortTelemetry(void)
 #endif
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
-                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
+                    smartPortSendPackage(id, (vbat / batteryCellCount) * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;
