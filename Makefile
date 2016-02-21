@@ -326,6 +326,7 @@ COMMON_SRC = build_config.c \
 		   $(DEVICE_STDPERIPH_SRC)
 
 HIGHEND_SRC = \
+		   flight/gtune.c \
 		   flight/navigation.c \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \
