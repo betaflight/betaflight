@@ -309,6 +309,7 @@ void init(void)
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
     pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
+    pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
