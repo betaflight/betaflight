@@ -77,21 +77,23 @@ var serial = {
                             setTimeout(function() {
                                 chrome.serial.setPaused(info.connectionId, false, function() {
                                     self.getInfo(function (info) {
-                                        if (info.paused) {
-                                            // assume unrecoverable, disconnect
-                                            console.log('SERIAL: Connection did not recover from ' + self.error + ' condition, disconnecting');
-                                            GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
-                                            googleAnalytics.sendException('Serial: ' + self.error + ' - unrecoverable', false);
-
-                                            if (GUI.connected_to || GUI.connecting_to) {
-                                                $('a.connect').click();
-                                            } else {
-                                                self.disconnect();
+                                        if (info) {
+                                            if (info.paused) {
+                                                // assume unrecoverable, disconnect
+                                                console.log('SERIAL: Connection did not recover from ' + self.error + ' condition, disconnecting');
+                                                GUI.log('Unrecoverable <span style="color: red">failure</span> of serial connection, disconnecting...');
+                                                googleAnalytics.sendException('Serial: ' + self.error + ' - unrecoverable', false);
+    
+                                                if (GUI.connected_to || GUI.connecting_to) {
+                                                    $('a.connect').click();
+                                                } else {
+                                                    self.disconnect();
+                                                }
                                             }
-                                        }
-                                        else {
-                                            console.log('SERIAL: Connection recovered from ' + self.error + ' condition');
-                                            googleAnalytics.sendException('Serial: ' + self.error + ' - recovered', false);
+                                            else {
+                                                console.log('SERIAL: Connection recovered from ' + self.error + ' condition');
+                                                googleAnalytics.sendException('Serial: ' + self.error + ' - recovered', false);
+                                            }
                                         }
                                     });
                                 });
