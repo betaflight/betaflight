@@ -97,6 +97,8 @@ The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW`
 
 Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers. 
 
+Note: You have to configure every motor number starting at 0. Your command will be ignored if there was no `mmix` command for the previous motor number. See example 5.
+
 ## Custom Servo Mixing
 
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
@@ -237,3 +239,17 @@ smix 3 5 2 100 0 0 100 0  # Yaw / Rudder
 smix 2 2 1 100 0 0 100 0  # Pitch / Elevator
 
 ```
+
+### Example 5: Use motor output 0,1,2,4 because your output 3 is broken
+For this to work you have to make a dummy mmix for motor 3. We do this by just saying it has 0 impact on yaw,roll and pitch. 
+```
+mixer custom
+mmix reset
+mmix 0 1.0, -1.0, 1.0, -1.0
+mmix 1 1.0, -1.0, -1.0,  1.0
+mmix 2 1.0, 1.0, 1.0, 1.0
+mmix 3 1.0, 0.0, 0.0, 0.0
+mmix 4 1.0, 1.0, -1.0, -1.0
+save
+```
+
