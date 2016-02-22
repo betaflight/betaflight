@@ -140,6 +140,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float ITerm,PTerm,DTerm;
     static float lastErrorForDelta[3];
     static float previousDelta[3][DELTA_MAX_SAMPLES];
+    static float previousAverageDelta[3];
     float delta, deltaSum;
     int axis, deltaCount;
     float horizonLevelStrength = 1;
@@ -245,7 +246,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             for (deltaCount = pidProfile->dterm_average_count-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-            delta = (deltaSum / pidProfile->dterm_average_count);
+            delta = ((deltaSum / pidProfile->dterm_average_count) + previousAverageDelta[axis]) / 2;  // Keep same original scaling + double pass averaging
+            previousAverageDelta[axis] = delta;
         }
 
         DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
@@ -279,6 +281,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
     static int16_t lastErrorForDelta[2];
     static int32_t previousDelta[2][DELTA_MAX_SAMPLES];
+    static int32_t previousAverageDelta[2];
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
         for (axis = 0; axis < 2; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
@@ -361,7 +364,8 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             for (deltaCount = pidProfile->dterm_average_count-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) DTerm += previousDelta[axis][deltaCount];
-            delta = (DTerm / pidProfile->dterm_average_count) * 3;  // Keep same original scaling
+            DTerm = (((DTerm / pidProfile->dterm_average_count) << 1) + previousAverageDelta[axis]) >> 1;  // Keep same original scaling + double pass averaging
+            previousAverageDelta[axis] = DTerm;
         }
 
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
@@ -429,6 +433,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     int32_t PTerm, ITerm, DTerm, delta, deltaSum;
     static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
     static int32_t previousDelta[3][DELTA_MAX_SAMPLES];
+    static int32_t previousAverageDelta[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
@@ -535,7 +540,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
             for (deltaCount = pidProfile->dterm_average_count -1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
             previousDelta[axis][0] = delta;
             for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-            delta = (deltaSum / pidProfile->dterm_average_count) * 3;  // Keep same original scaling
+            delta = (((deltaSum / pidProfile->dterm_average_count) << 1) + previousAverageDelta[axis]) >> 1;  // Keep same original scaling + double pass averaging
+            previousAverageDelta[axis] = delta;
         }
 
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
