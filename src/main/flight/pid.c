@@ -44,7 +44,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
-
+#include "flight/gtune.h"
 
 #include "config/runtime_config.h"
 
@@ -255,6 +255,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (lowThrottlePidReduction) axisPID[axis] /= 4;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
+
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
         axisPID_I[axis] = ITerm;
@@ -364,6 +370,11 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         if (lowThrottlePidReduction) axisPID[axis] /= 4;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+            calculate_Gtune(axis);
+        }
+#endif
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
@@ -395,6 +406,12 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     axisPID[FD_YAW] =  PTerm + ITerm;
 
     if (lowThrottlePidReduction) axisPID[FD_YAW] /= 4;
+
+#ifdef GTUNE
+    if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+        calculate_Gtune(FD_YAW);
+    }
+#endif
 
 #ifdef BLACKBOX
     axisPID_P[FD_YAW] = PTerm;
@@ -528,6 +545,11 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         if (lowThrottlePidReduction) axisPID[axis] /= 4;
 
+#ifdef GTUNE
+        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
+             calculate_Gtune(axis);
+        }
+#endif
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;
