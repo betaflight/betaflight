@@ -308,8 +308,13 @@ void init(void)
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
-    pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
+    if (masterConfig.use_fast_pwm || masterConfig.use_oneshot42) {
+        pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
+        pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
+        masterConfig.use_multiShot = false;
+    } else {
+        pwm_params.useMultiShot = masterConfig.use_multiShot ? true : false;
+    }
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))

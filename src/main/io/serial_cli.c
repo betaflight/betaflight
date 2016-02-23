@@ -530,6 +530,7 @@ const clivalue_t valueTable[] = {
 
     { "use_fast_pwm",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_fast_pwm, .config.lookup = { TABLE_OFF_ON } },
     { "use_oneshot42",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_oneshot42, .config.lookup = { TABLE_OFF_ON } },
+    { "use_multishot",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_multiShot, .config.lookup = { TABLE_OFF_ON } },
 #ifdef CC3D
     { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
 #endif
