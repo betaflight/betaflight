@@ -213,7 +213,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            scaleItermToRcInput(axis, pidProfile);
+            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
@@ -310,7 +310,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            scaleItermToRcInput(axis, pidProfile);
+            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
@@ -509,7 +509,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            scaleItermToRcInput(axis, pidProfile);
+            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
