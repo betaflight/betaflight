@@ -308,8 +308,8 @@ void init(void)
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    if (masterConfig.use_fast_pwm || masterConfig.use_oneshot42) {
-        pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
+    pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
+    if (masterConfig.use_oneshot42) {
         pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
         masterConfig.use_multiShot = false;
     } else {
