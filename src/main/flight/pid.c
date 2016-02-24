@@ -360,6 +360,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             lastErrorForDelta[axis] = gyroError;
         }
 
+        // Scale delta to looptime
+        delta = (delta * ((uint16_t) 0xFFFF)) / ((uint16_t)targetPidLooptime << 3);
+
         if (deltaStateIsSet) {
             DTerm = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
         } else {
