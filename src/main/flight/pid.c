@@ -301,9 +301,9 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         rc = rcCommand[axis] << 1;
 
-        if (lowThrottlePidReduction) rc = rc >> 2;
+        if (lowThrottlePidReduction) rc /= 4;
 
-        gyroError = gyroADC[axis] >> 2;
+        gyroError = gyroADC[axis] / 4;
 
         error = rc - gyroError;
         errorGyroI[axis]  = constrain(errorGyroI[axis] + ((error * (uint16_t)targetPidLooptime) >> 12) , -16000, +16000);   // WindUp   16 bits is ok here
@@ -379,7 +379,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (lowThrottlePidReduction) axisPID[axis] = axisPID[axis] >> 2;
+        if (lowThrottlePidReduction) axisPID[axis] /= 4;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
