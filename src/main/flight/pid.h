@@ -87,8 +87,10 @@ typedef struct pidProfile_s {
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool antiWindupProtection;
+extern uint32_t targetPidLooptime;
 
 void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
 void pidResetErrorGyroState(uint8_t resetOption);
+void setTargetPidLooptime(uint8_t pidProcessDenom);
 

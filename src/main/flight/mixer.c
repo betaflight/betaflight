@@ -960,7 +960,7 @@ bool isMixerUsingServos(void)
 void filterServos(void)
 {
 #ifdef USE_SERVOS
-    int16_t servoIdx;
+    static int16_t servoIdx;
     static bool servoFilterIsSet;
     static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
@@ -971,7 +971,7 @@ void filterServos(void)
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             if (!servoFilterIsSet) {
-                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetLooptime);
+                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetPidLooptime);
                 servoFilterIsSet = true;
             }
 

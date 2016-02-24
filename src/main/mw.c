@@ -181,7 +181,7 @@ void filterRc(void){
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
 
-    rcInterpolationFactor = rxRefreshRate / targetLooptime + 1;
+    rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
@@ -644,7 +644,7 @@ static bool haveProcessedAnnexCodeOnce = false;
 
 void taskMainPidLoop(void)
 {
-    imuUpdateGyroAndAttitude();
+    imuUpdateAttitude();
 
     annexCode();
 
@@ -736,6 +736,9 @@ void taskMainPidLoop(void)
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
+    static uint8_t pidUpdateCountdown;
+
+    if (!pidUpdateCountdown) pidUpdateCountdown = masterConfig.pid_process_denom;
 
     cycleTime = micros() - previousTime;
     previousTime = micros();
@@ -747,14 +750,16 @@ void taskMainPidLoopCheck(void) {
 
     while (1) {
         if (gyroSyncCheckUpdate() || ((cycleTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            while (1) {
-                if (micros() >= masterConfig.pid_jitter_buffer + previousTime) break;
+            imuUpdateGyro();
+            if (pidUpdateCountdown == 1) {
+                pidUpdateCountdown = masterConfig.pid_process_denom;
+                taskMainPidLoop();
+            } else {
+                pidUpdateCountdown--;
             }
-            break;
         }
+        break;
     }
-
-    taskMainPidLoop();
 }
 
 void taskUpdateAccelerometer(void)

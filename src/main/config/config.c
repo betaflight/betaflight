@@ -414,7 +414,7 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 4;
     masterConfig.gyro_soft_lpf_hz = 60;
 
-    masterConfig.pid_jitter_buffer = 20;
+    masterConfig.pid_process_denom = 1;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 

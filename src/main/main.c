@@ -580,6 +580,9 @@ void init(void)
     afatfs_init();
 #endif
 
+    if (masterConfig.gyro_lpf) masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+    setTargetPidLooptime(masterConfig.pid_process_denom); // Initialize pid looptime
+
 #ifdef BLACKBOX
     initBlackbox();
 #endif

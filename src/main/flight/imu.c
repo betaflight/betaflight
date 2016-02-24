@@ -419,10 +419,13 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateGyroAndAttitude(void)
+void imuUpdateGyro(void)
 {
     gyroUpdate();
+}
 
+void imuUpdateAttitude(void)
+{
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {
