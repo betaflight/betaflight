@@ -71,7 +71,6 @@ typedef struct mixer_s {
 
 typedef struct mixerConfig_s {
     int8_t yaw_motor_direction;
-    uint8_t airmode_saturation_limit;       // Percentage in airmode where the mixer stops trying to get maximum possible correction
     uint16_t yaw_jump_prevention_limit;     // make limit configurable (original fixed value was 100)
 #ifdef USE_SERVOS
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed

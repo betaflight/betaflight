@@ -113,13 +113,12 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.gyro_lpf = 0;
             gyroSampleRate = 125;
             maxDivider = 8;
+            masterConfig.pid_process_denom = 1;
             if (looptime < 250) {
                 masterConfig.acc_hardware = 1;
                 masterConfig.baro_hardware = 1;
                 masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
-            } else if (looptime < 1000) {
-                masterConfig.pid_process_denom = 1;
             }
         } else {
             masterConfig.gyro_lpf = 1;
@@ -133,6 +132,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.mag_hardware = 1;
             gyroSampleRate = 125;
             maxDivider = 8;
+            masterConfig.pid_process_denom = 1;
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 3;
             } else if (looptime < 500) {
@@ -140,12 +140,6 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
-                }
-            } else {
-                if (currentProfile->pidProfile.pidController == 2) {
-                    masterConfig.pid_process_denom = 2;
-                } else {
-                    masterConfig.pid_process_denom = 1;
                 }
             }
         } else {
