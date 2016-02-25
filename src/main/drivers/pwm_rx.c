@@ -22,6 +22,7 @@
 
 #include "platform.h"
 #include "build_config.h"
+#include "debug.h"
 
 #include "common/utils.h"
 
@@ -35,6 +36,8 @@
 
 #include "pwm_rx.h"
 
+#define DEBUG_PPM_ISR
+
 #define PPM_CAPTURE_COUNT 12
 #define PWM_INPUT_PORT_COUNT 8
 
@@ -44,7 +47,7 @@
 #define PWM_PORTS_OR_PPM_CAPTURE_COUNT PWM_INPUT_PORT_COUNT
 #endif
 
-// TODO - change to timer cloks ticks
+// TODO - change to timer clocks ticks
 #define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
 
 static inputFilteringMode_e inputFilteringMode;
@@ -85,7 +88,8 @@ static uint8_t ppmCountShift = 0;
 
 typedef struct ppmDevice_s {
     uint8_t  pulseIndex;
-    uint32_t previousTime;
+    //uint32_t previousTime;
+    uint32_t currentCapture;
     uint32_t currentTime;
     uint32_t deltaTime;
     uint32_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
@@ -95,6 +99,7 @@ typedef struct ppmDevice_s {
     uint8_t  stableFramesSeenCount;
 
     bool     tracking;
+    bool     overflowed;
 } ppmDevice_t;
 
 ppmDevice_t ppmDev;
@@ -125,10 +130,35 @@ void pwmRxInit(inputFilteringMode_e initialInputFilteringMode)
     inputFilteringMode = initialInputFilteringMode;
 }
 
+#ifdef DEBUG_PPM_ISR
+typedef enum {
+    SOURCE_OVERFLOW = 0,
+    SOURCE_EDGE = 1
+} eventSource_e;
+
+typedef struct ppmISREvent_s {
+    eventSource_e source;
+    uint32_t capture;
+} ppmISREvent_t;
+
+static ppmISREvent_t ppmEvents[20];
+static uint8_t ppmEventIndex = 0;
+
+void ppmISREvent(eventSource_e source, uint32_t capture)
+{
+    ppmEventIndex = (ppmEventIndex + 1) % (sizeof(ppmEvents) / sizeof(ppmEvents[0]));
+
+    ppmEvents[ppmEventIndex].source = source;
+    ppmEvents[ppmEventIndex].capture = capture;
+}
+#else
+void ppmISREvent(eventSource_e source, uint32_t capture) {}
+#endif
+
 static void ppmInit(void)
 {
     ppmDev.pulseIndex   = 0;
-    ppmDev.previousTime = 0;
+    ppmDev.currentCapture = 0;
     ppmDev.currentTime  = 0;
     ppmDev.deltaTime    = 0;
     ppmDev.largeCounter = 0;
@@ -136,42 +166,77 @@ static void ppmInit(void)
     ppmDev.numChannelsPrevFrame = -1;
     ppmDev.stableFramesSeenCount = 0;
     ppmDev.tracking     = false;
+    ppmDev.overflowed   = false;
 }
 
 static void ppmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t capture)
 {
     UNUSED(cbRec);
+    ppmISREvent(SOURCE_OVERFLOW, capture);
+
     ppmDev.largeCounter += capture + 1;
+    if (capture == PPM_TIMER_PERIOD - 1) {
+        ppmDev.overflowed = true;
+    }
+
 }
 
 static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture)
 {
     UNUSED(cbRec);
+    ppmISREvent(SOURCE_EDGE, capture);
+
     int32_t i;
 
-    /* Shift the last measurement out */
-    ppmDev.previousTime = ppmDev.currentTime;
+    uint32_t previousTime = ppmDev.currentTime;
+    uint32_t previousCapture = ppmDev.currentCapture;
 
     /* Grab the new count */
-    ppmDev.currentTime  = capture;
+    uint32_t currentTime = capture;
 
     /* Convert to 32-bit timer result */
-    ppmDev.currentTime += ppmDev.largeCounter;
+    currentTime += ppmDev.largeCounter;
+
+    if (capture < previousCapture) {
+        if (ppmDev.overflowed) {
+            currentTime += PPM_TIMER_PERIOD;
+        }
+    }
 
     // Divide by 8 if Oneshot125 is active and this is a CC3D board
-    ppmDev.currentTime = ppmDev.currentTime >> ppmCountShift;
+    currentTime = currentTime >> ppmCountShift;
 
     /* Capture computation */
-    ppmDev.deltaTime    = ppmDev.currentTime - ppmDev.previousTime;
+    if (currentTime > previousTime) {
+        ppmDev.deltaTime    = currentTime - (previousTime + (ppmDev.overflowed ? (PPM_TIMER_PERIOD >> ppmCountShift) : 0));
+    } else {
+        ppmDev.deltaTime    = (PPM_TIMER_PERIOD >> ppmCountShift) + currentTime - previousTime;
+    }
 
-    ppmDev.previousTime = ppmDev.currentTime;
+    ppmDev.overflowed = false;
 
-#if 0
+
+    /* Store the current measurement */
+    ppmDev.currentTime = currentTime;
+    ppmDev.currentCapture = capture;
+
+#if 1
     static uint32_t deltaTimes[20];
     static uint8_t deltaIndex = 0;
 
     deltaIndex = (deltaIndex + 1) % 20;
     deltaTimes[deltaIndex] = ppmDev.deltaTime;
+    UNUSED(deltaTimes);
+#endif
+
+
+#if 1
+    static uint32_t captureTimes[20];
+    static uint8_t captureIndex = 0;
+
+    captureIndex = (captureIndex + 1) % 20;
+    captureTimes[captureIndex] = capture;
+    UNUSED(captureTimes);
 #endif
 
     /* Sync pulse detection */
@@ -187,6 +252,7 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
                 ppmDev.numChannels = ppmDev.pulseIndex;
             }
         } else {
+            debug[2]++;
             ppmDev.stableFramesSeenCount = 0;
         }
 
