@@ -46,6 +46,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
+#include "drivers/gyro_sync.h"
 
 #include "drivers/buf_writer.h"
 
@@ -2577,7 +2578,28 @@ static void cliTasks(char *cmdline)
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            cliPrintf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
+            uint16_t taskFrequency;
+            uint16_t subTaskFrequency;
+
+            if (taskId == TASK_GYROPID) {
+                subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
+                taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
+            } else {
+                taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
+            }
+
+            uint32_t taskTotalTime = taskInfo.totalExecutionTime / 1000;
+
+            cliPrintf("%d - (%s) max: %dus, avg: %dus, rate: %dhz, total: ", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
+
+            if (taskTotalTime >= 1000) {
+                cliPrintf("%ds", taskTotalTime / 1000);
+            } else {
+                cliPrintf("%dms", taskTotalTime);
+            }
+
+            if (taskId == TASK_GYROPID) cliPrintf(" (%s rate: %dhz)", taskInfo.subTaskName, subTaskFrequency);
+            cliPrintf("\r\n", taskTotalTime);
         }
     }
 }

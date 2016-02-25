@@ -737,8 +737,11 @@ void taskMainPidLoop(void)
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
     static uint8_t pidUpdateCountdown;
+    static uint32_t previousPidUpdateTime, pidCycleTime;
 
     if (!pidUpdateCountdown) pidUpdateCountdown = masterConfig.pid_process_denom;
+
+    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     cycleTime = micros() - previousTime;
     previousTime = micros();
@@ -747,18 +750,31 @@ void taskMainPidLoopCheck(void) {
     debug[0] = cycleTime;
     debug[1] = cycleTime - targetLooptime;
     debug[2] = averageSystemLoadPercent;
+    debug[3] = pidCycleTime;
 
     while (1) {
-        if (gyroSyncCheckUpdate() || ((cycleTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+
             imuUpdateGyro();
-            if (pidUpdateCountdown == 1) {
-                pidUpdateCountdown = masterConfig.pid_process_denom;
-                taskMainPidLoop();
-            } else {
-                pidUpdateCountdown--;
+
+            switch (pidUpdateCountdown) {
+                case(1):
+                    pidCycleTime = micros() - previousPidUpdateTime;
+                    previousPidUpdateTime = micros();
+
+                    pidUpdateCountdown = masterConfig.pid_process_denom;
+                    taskMainPidLoop();
+                    if (masterConfig.pid_process_denom > 1) realTimeCycle = false;
+                    break;
+                case(2):
+				    realTimeCycle = true;
+                    pidUpdateCountdown--;
+                    break;
+                default:
+                    pidUpdateCountdown--;
             }
+            break;
         }
-        break;
     }
 }
 

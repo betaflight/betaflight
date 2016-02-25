@@ -78,7 +78,7 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using, defaultMultiWii
 
 void setTargetPidLooptime(uint8_t pidProcessDenom) {
-	targetPidLooptime = targetLooptime * pidProcessDenom;
+	targetPidLooptime = targetLooptime / pidProcessDenom;
 }
 
 void pidResetErrorAngle(void)

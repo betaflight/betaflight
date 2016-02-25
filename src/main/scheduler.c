@@ -35,12 +35,15 @@ static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
 static uint32_t realtimeGuardInterval;
 
+bool realTimeCycle = true;
+
 uint32_t currentTime = 0;
 uint16_t averageWaitingTasks100 = 0;
 
 typedef struct {
     /* Configuration */
     const char * taskName;
+    const char * subTaskName;  // For future use, but now just for naming convention
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
     bool isEnabled;
@@ -93,7 +96,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
     },
 
     [TASK_GYROPID] = {
-        .taskName = "GYRO/PID",
+        .taskName = "PID",
+	    .subTaskName = "GYRO",
         .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
@@ -226,7 +230,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
 uint16_t averageSystemLoadPercent = 0;
 
-#define GUARD_INTERVAL 5
+#define MAX_GUARD_INTERVAL 100
+#define MIN_GUARD_INTERVAL 10
 
 void taskSystem(void)
 {
@@ -241,13 +246,13 @@ void taskSystem(void)
 
     /* Calculate guard interval */
     uint32_t maxNonRealtimeTaskTime = 0;
+
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
         if (cfTasks[taskId].staticPriority != TASK_PRIORITY_REALTIME) {
             maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, cfTasks[taskId].averageExecutionTime);
         }
     }
-
-    realtimeGuardInterval = GUARD_INTERVAL;
+    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, MIN_GUARD_INTERVAL, MAX_GUARD_INTERVAL);
 #if defined SCHEDULER_DEBUG
     debug[2] = realtimeGuardInterval;
 #endif
@@ -257,12 +262,14 @@ void taskSystem(void)
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
+    taskInfo->subTaskName = cfTasks[taskId].subTaskName;
     taskInfo->isEnabled= cfTasks[taskId].isEnabled;
     taskInfo->desiredPeriod = cfTasks[taskId].desiredPeriod;
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
     taskInfo->averageExecutionTime = cfTasks[taskId].averageExecutionTime;
+    taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
 }
 #endif
 
@@ -299,6 +306,8 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
     }
 }
 
+#define MAXT_TIME_TICKS_TO_RESET 10000
+
 void scheduler(void)
 {
     uint8_t taskId;
@@ -306,6 +315,15 @@ void scheduler(void)
     uint8_t selectedTaskDynPrio;
     uint16_t waitingTasks = 0;
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
+    uint32_t currentRealtimeGuardInterval;
+
+    static uint16_t maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
+
+    if (realTimeCycle) {
+        currentRealtimeGuardInterval = realtimeGuardInterval;
+    } else {
+        currentRealtimeGuardInterval = MIN_GUARD_INTERVAL;
+    }
 
     /* Cache currentTime */
     currentTime = micros();
@@ -328,7 +346,7 @@ void scheduler(void)
         }
     }
 
-    bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
+    bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > currentRealtimeGuardInterval);
 
     /* Update task dynamic priorities */
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
@@ -399,7 +417,13 @@ void scheduler(void)
         cfTasks[selectedTaskId].averageExecutionTime = ((uint32_t)cfTasks[selectedTaskId].averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
         cfTasks[selectedTaskId].totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
-        cfTasks[selectedTaskId].maxExecutionTime = MAX(cfTasks[selectedTaskId].maxExecutionTime, taskExecutionTime);
+        if (maxTaskCalculationReset > 0) {
+            cfTasks[selectedTaskId].maxExecutionTime = MAX(cfTasks[selectedTaskId].maxExecutionTime, taskExecutionTime);
+            maxTaskCalculationReset--;
+        } else {
+            cfTasks[selectedTaskId].maxExecutionTime = taskExecutionTime;
+            maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
+        }
 #endif
 #if defined SCHEDULER_DEBUG
         debug[3] = (micros() - currentTime) - taskExecutionTime;
