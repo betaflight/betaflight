@@ -20,6 +20,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
@@ -187,7 +188,10 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
         return;
     }
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) accSmooth[axis] = accADCRaw[axis];
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];
+        accSmooth[axis] = accADCRaw[axis];
+    }
 
     if (accLpfCutHz) {
         if (!accFilterInitialised) {

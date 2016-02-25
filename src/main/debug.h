@@ -17,6 +17,7 @@
 
 #define DEBUG16_VALUE_COUNT 4
 extern int16_t debug[DEBUG16_VALUE_COUNT];
+extern uint8_t debugMode;
 
 #define DEBUG_SECTION_TIMES
 
@@ -39,3 +40,12 @@ extern uint32_t sectionTimes[2][4];
 #define TIME_SECTION_END(index) {}
 
 #endif
+
+typedef enum {
+    DEBUG_CYCLETIME = 1,
+    DEBUG_BATTERY,
+    DEBUG_GYRO,
+    DEBUG_ACCELEROMETER,
+    DEBUG_MIXER,
+    DEBUG_AIRMODE
+} debugType_e;

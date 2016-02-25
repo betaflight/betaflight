@@ -94,8 +94,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-//#define JITTER_DEBUG 0  // Specify debug value for jitter debug
-
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
@@ -657,7 +655,7 @@ void taskMainPidLoop(void)
     writeServos();
 #endif
 
-    if (masterConfig.debug_mode) {
+    if (debugMode == DEBUG_CYCLETIME) {
         static uint32_t previousMotorUpdateTime, motorCycleTime;
 
         motorCycleTime = micros() - previousMotorUpdateTime;
@@ -757,7 +755,7 @@ void taskMainPidLoopCheck(void) {
     cycleTime = micros() - previousTime;
     previousTime = micros();
 
-    if (masterConfig.debug_mode) {
+    if (debugMode == DEBUG_CYCLETIME) {
         // Debugging parameters
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;

@@ -140,7 +140,10 @@ void gyroUpdate(void)
         return;
     }
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = gyroADCRaw[axis];
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (debugMode == DEBUG_GYRO) debug[axis] = gyroADC[axis];
+        gyroADC[axis] = gyroADCRaw[axis];
+    }
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 

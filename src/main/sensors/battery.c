@@ -69,12 +69,17 @@ static void updateBatteryVoltage(void)
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
+
+    if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
+
     if (!vbatFilterStateIsSet) {
         BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000); //50HZ Update
         vbatFilterStateIsSet = true;
     }
     vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
     vbat = batteryAdcToVoltage(vbatSample);
+
+    if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
 
 #define VBATTERY_STABLE_DELAY 40

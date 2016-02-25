@@ -182,6 +182,8 @@ void init(void)
 
     systemInit();
 
+    debugMode = masterConfig.debug_mode;
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
