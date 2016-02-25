@@ -526,6 +526,7 @@ const clivalue_t valueTable[] = {
     { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_OFF_ON } },
     { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
+    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_OFF_ON } },
 
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -2581,24 +2582,31 @@ static void cliTasks(char *cmdline)
             uint16_t taskFrequency;
             uint16_t subTaskFrequency;
 
-            if (taskId == TASK_GYROPID) {
-                subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
-                taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-            } else {
-                taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
-            }
-
             uint32_t taskTotalTime = taskInfo.totalExecutionTime / 1000;
 
-            cliPrintf("%d - (%s) max: %dus, avg: %dus, rate: %dhz, total: ", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
+            if (taskId == TASK_GYROPID) {
+                subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
+                if (masterConfig.pid_process_denom > 1) {
+                    taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
+                    cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+                } else {
+                    taskFrequency = subTaskFrequency;
+                    cliPrintf("%d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                }
+            } else {
+                taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
+                cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+            }
+
+            cliPrintf("max: %dus, avg: %dus, rate: %dhz, total: ", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
 
             if (taskTotalTime >= 1000) {
-                cliPrintf("%ds", taskTotalTime / 1000);
+                cliPrintf("%dsec", taskTotalTime / 1000);
             } else {
                 cliPrintf("%dms", taskTotalTime);
             }
 
-            if (taskId == TASK_GYROPID) cliPrintf(" (%s rate: %dhz)", taskInfo.subTaskName, subTaskFrequency);
+            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n- - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
             cliPrintf("\r\n", taskTotalTime);
         }
     }

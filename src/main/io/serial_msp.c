@@ -114,7 +114,10 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            if (looptime < 250) {
+            masterConfig.acc_hardware = 0;
+            masterConfig.baro_hardware = 0;
+            masterConfig.mag_hardware = 0;
+            if (looptime < 375) {
                 masterConfig.acc_hardware = 1;
                 masterConfig.baro_hardware = 1;
                 masterConfig.mag_hardware = 1;
@@ -123,6 +126,9 @@ void setGyroSamplingSpeed(uint16_t looptime) {
         } else {
             masterConfig.gyro_lpf = 1;
             masterConfig.pid_process_denom = 1;
+            masterConfig.acc_hardware = 0;
+            masterConfig.baro_hardware = 0;
+            masterConfig.mag_hardware = 0;
         }
 #else
         if (looptime < 1000) {
@@ -133,14 +139,18 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
+            masterConfig.emf_avoidance = 0;
+            if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 3;
-            } else if (looptime < 500) {
+                masterConfig.emf_avoidance = 1;
+            } else if (looptime < 375) {
                 if (currentProfile->pidProfile.pidController == 2) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
                 }
+                masterConfig.emf_avoidance = 1;
             }
         } else {
             masterConfig.gyro_lpf = 1;

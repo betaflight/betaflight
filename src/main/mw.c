@@ -286,10 +286,6 @@ void annexCode(void)
         rcCommand[PITCH] = rcCommand_PITCH;
     }
 
-    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
-        filterRc();
-    }
-
     // experimental scaling of RC command to FPV cam angle
     if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
         scaleRcCommandToFpvCamAngle();
@@ -644,59 +640,6 @@ static bool haveProcessedAnnexCodeOnce = false;
 
 void taskMainPidLoop(void)
 {
-    imuUpdateAttitude();
-
-    annexCode();
-
-#if defined(BARO) || defined(SONAR)
-    haveProcessedAnnexCodeOnce = true;
-#endif
-
-#ifdef MAG
-        if (sensors(SENSOR_MAG)) {
-            updateMagHold();
-        }
-#endif
-
-#ifdef GTUNE
-        updateGtuneState();
-#endif
-
-#if defined(BARO) || defined(SONAR)
-        if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-            if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                applyAltHold(&masterConfig.airplaneConfig);
-            }
-        }
-#endif
-
-    // If we're armed, at minimum throttle, and we do arming via the
-    // sticks, do not process yaw input from the rx.  We do this so the
-    // motors do not spin up while we are trying to arm or disarm.
-    // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
-#ifndef USE_QUAD_MIXER_ONLY
-#ifdef USE_SERVOS
-                && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
-#endif
-                && masterConfig.mixerMode != MIXER_AIRPLANE
-                && masterConfig.mixerMode != MIXER_FLYING_WING
-#endif
-    ) {
-        rcCommand[YAW] = 0;
-    }
-
-    if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
-    }
-
-#ifdef GPS
-    if (sensors(SENSOR_GPS)) {
-        if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
-            updateGpsStateForHomeAndHoldMode();
-        }
-    }
-#endif
 
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
@@ -714,30 +657,98 @@ void taskMainPidLoop(void)
     writeServos();
 #endif
 
+    if (masterConfig.debug_mode) {
+        static uint32_t previousMotorUpdateTime, motorCycleTime;
+
+        motorCycleTime = micros() - previousMotorUpdateTime;
+        previousMotorUpdateTime = micros();
+        debug[2] = motorCycleTime;
+        debug[3] = motorCycleTime - targetPidLooptime;
+    }
+
     if (motorControlEnable) {
         writeMotors();
     }
+}
 
-#ifdef USE_SDCARD
-    afatfs_poll();
-#endif
+void subTasksPreMainPidLoop(void) {
+    imuUpdateAttitude();
 
-#ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox();
+    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
+        filterRc();
     }
-#endif
 
-#ifdef TRANSPONDER
-    updateTransponder();
-#endif
+    #if defined(BARO) || defined(SONAR)
+        haveProcessedAnnexCodeOnce = true;
+    #endif
+
+    #ifdef MAG
+            if (sensors(SENSOR_MAG)) {
+                updateMagHold();
+            }
+    #endif
+
+    #ifdef GTUNE
+            updateGtuneState();
+    #endif
+
+    #if defined(BARO) || defined(SONAR)
+            if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
+                if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
+                    applyAltHold(&masterConfig.airplaneConfig);
+                }
+            }
+    #endif
+
+        // If we're armed, at minimum throttle, and we do arming via the
+        // sticks, do not process yaw input from the rx.  We do this so the
+        // motors do not spin up while we are trying to arm or disarm.
+        // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
+        if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
+    #ifndef USE_QUAD_MIXER_ONLY
+    #ifdef USE_SERVOS
+                    && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+    #endif
+                    && masterConfig.mixerMode != MIXER_AIRPLANE
+                    && masterConfig.mixerMode != MIXER_FLYING_WING
+    #endif
+        ) {
+            rcCommand[YAW] = 0;
+        }
+
+        if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
+        }
+
+    #ifdef GPS
+        if (sensors(SENSOR_GPS)) {
+            if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
+                updateGpsStateForHomeAndHoldMode();
+            }
+        }
+    #endif
+}
+
+void subTasksPostMainPidLoop(void) {
+    #ifdef USE_SDCARD
+        afatfs_poll();
+    #endif
+
+    #ifdef BLACKBOX
+        if (!cliMode && feature(FEATURE_BLACKBOX)) {
+            handleBlackbox();
+        }
+    #endif
+
+    #ifdef TRANSPONDER
+        updateTransponder();
+    #endif
 }
 
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
     static uint8_t pidUpdateCountdown;
-    static uint32_t previousPidUpdateTime, pidCycleTime;
 
     if (!pidUpdateCountdown) pidUpdateCountdown = masterConfig.pid_process_denom;
 
@@ -746,33 +757,32 @@ void taskMainPidLoopCheck(void) {
     cycleTime = micros() - previousTime;
     previousTime = micros();
 
-    // Debugging parameters
-    debug[0] = cycleTime;
-    debug[1] = cycleTime - targetLooptime;
-    debug[2] = averageSystemLoadPercent;
-    debug[3] = pidCycleTime;
+    if (masterConfig.debug_mode) {
+        // Debugging parameters
+        debug[0] = cycleTime;
+        debug[1] = averageSystemLoadPercent;
+    }
 
-    while (1) {
+    while (true) {
         if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
 
             imuUpdateGyro();
 
-            switch (pidUpdateCountdown) {
-                case(1):
-                    pidCycleTime = micros() - previousPidUpdateTime;
-                    previousPidUpdateTime = micros();
-
-                    pidUpdateCountdown = masterConfig.pid_process_denom;
-                    taskMainPidLoop();
-                    if (masterConfig.pid_process_denom > 1) realTimeCycle = false;
-                    break;
-                case(2):
-				    realTimeCycle = true;
-                    pidUpdateCountdown--;
-                    break;
-                default:
-                    pidUpdateCountdown--;
+            if (pidUpdateCountdown == 2 || masterConfig.pid_process_denom == 1) {
+                subTasksPreMainPidLoop();
+                realTimeCycle = true;  // Set realtime guard interval
             }
+
+            if (pidUpdateCountdown == 1) {
+                pidUpdateCountdown = masterConfig.pid_process_denom;
+                taskMainPidLoop();
+                if (masterConfig.pid_process_denom > 1) realTimeCycle = false;
+            } else {
+                pidUpdateCountdown--;
+            }
+
+            if (realTimeCycle) subTasksPostMainPidLoop();
+
             break;
         }
     }
@@ -843,6 +853,7 @@ void taskUpdateRxMain(void)
         }
     }
 #endif
+    annexCode();
 }
 
 #ifdef GPS

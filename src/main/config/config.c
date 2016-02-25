@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 126;
+static const uint8_t EEPROM_CONF_VERSION = 127;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -414,6 +414,8 @@ static void resetConf(void)
     masterConfig.gyro_soft_lpf_hz = 60;
 
     masterConfig.pid_process_denom = 1;
+
+    masterConfig.debug_mode = 0;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 

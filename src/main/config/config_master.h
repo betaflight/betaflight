@@ -67,6 +67,8 @@ typedef struct master_t {
 
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 
+    uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
+
     gyroConfig_t gyroConfig;
 
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
