@@ -212,9 +212,6 @@ bool fakeAccDetect(acc_t *acc)
 
 bool detectGyro(void)
 {
-    bool sensorDetected;
-    UNUSED(sensorDetected); // avoid unused-variable warning on some targets.
-
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
     gyroAlign = ALIGN_DEFAULT;
 
@@ -283,17 +280,22 @@ bool detectGyro(void)
 
         case GYRO_MPU6500:
 #ifdef USE_GYRO_MPU6500
-#ifdef USE_GYRO_SPI_MPU6500
-            sensorDetected = mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro);
-#else
-            sensorDetected = mpu6500GyroDetect(&gyro);
-#endif
-            if (sensorDetected) {
+            if (mpu6500GyroDetect(&gyro)) {
                 gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
                 gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
 
+                break;
+            }
+#endif
+
+#ifdef USE_GYRO_SPI_MPU6500
+            if (mpu6500SpiGyroDetect(&gyro)) {
+                gyroHardware = GYRO_MPU6500;
+#ifdef GYRO_MPU6500_ALIGN
+                gyroAlign = GYRO_MPU6500_ALIGN;
+#endif
                 break;
             }
 #endif
@@ -418,12 +420,17 @@ retry:
             ; // fallthrough
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
-#ifdef USE_ACC_SPI_MPU6500
-            sensorDetected = mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc);
-#else
-            sensorDetected = mpu6500AccDetect(&acc);
+            if (mpu6500AccDetect(&acc)) {
+#ifdef ACC_MPU6500_ALIGN
+                accAlign = ACC_MPU6500_ALIGN;
 #endif
-            if (sensorDetected) {
+                accHardware = ACC_MPU6500;
+                break;
+            }
+#endif
+
+#ifdef USE_ACC_SPI_MPU6500
+            if (mpu6500SpiAccDetect(&acc)) {
 #ifdef ACC_MPU6500_ALIGN
                 accAlign = ACC_MPU6500_ALIGN;
 #endif
