@@ -49,8 +49,9 @@
 
 
 typedef struct sonarGPIOConfig_s {
-    GPIO_TypeDef *gpio;
+    GPIO_TypeDef *triggerGPIO;
     uint16_t triggerPin;
+    GPIO_TypeDef *echoGPIO;
     uint16_t echoPin;
 } sonarGPIOConfig_t;
 
