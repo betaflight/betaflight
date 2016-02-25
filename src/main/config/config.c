@@ -74,6 +74,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifndef DEFAULT_RX_FEATURE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
@@ -735,22 +739,23 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
+        featureSet(DEFAULT_RX_FEATURE);
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_SERIAL | FEATURE_RX_MSP);
     }
 
     if (featureConfigured(FEATURE_RX_MSP)) {
-        featureClear(FEATURE_RX_SERIAL);
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM);
     }
 
     if (featureConfigured(FEATURE_RX_SERIAL)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
+        featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM);
+    }
+
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM);
     }
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
