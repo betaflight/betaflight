@@ -1058,6 +1058,18 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
+static void gpsHandlePassthrough(uint8_t data)
+ {
+     gpsNewData(data);
+ #ifdef DISPLAY
+     if (feature(FEATURE_DISPLAY)) {
+         updateDisplay();
+     }
+ #endif
+ 	
+ }
+ 
+
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
     waitForSerialPortToFinishTransmitting(gpsPort);
@@ -1066,34 +1078,13 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
-    LED0_OFF;
-    LED1_OFF;
-
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayShowFixedPage(PAGE_GPS);
     }
 #endif
-    char c;
-    while(1) {
-        if (serialRxBytesWaiting(gpsPort)) {
-            LED0_ON;
-            c = serialRead(gpsPort);
-            gpsNewData(c);
-            serialWrite(gpsPassthroughPort, c);
-            LED0_OFF;
-        }
-        if (serialRxBytesWaiting(gpsPassthroughPort)) {
-            LED1_ON;
-            serialWrite(gpsPort, serialRead(gpsPassthroughPort));
-            LED1_OFF;
-        }
-#ifdef DISPLAY
-        if (feature(FEATURE_DISPLAY)) {
-            updateDisplay();
-        }
-#endif
-    }
+    
+    serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 
 void updateGpsIndicator(uint32_t currentTime)
