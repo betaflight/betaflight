@@ -509,7 +509,7 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_AHBPeriphClockCmd(UART5_AHB_PERIPHERALS_TX, ENABLE);
 #endif
 #ifdef UART5_AHB_PERIPHERALS_RX
-    RCC_AHBPeriphClockCmd(UART5_AHB_PERIPHERALS_TX, ENABLE);
+    RCC_AHBPeriphClockCmd(UART5_AHB_PERIPHERALS_RX, ENABLE);
 #endif
 
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
