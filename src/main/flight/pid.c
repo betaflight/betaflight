@@ -241,17 +241,15 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // would be scaled by different dt each time. Division by dT fixes that.
         delta *= (1.0f / dT);
 
-        // When dterm filter disabled apply moving average to reduce noise
-        if (!pidProfile->dterm_cut_hz) {
+        if (pidProfile->dterm_cut_hz) {
+            // Dterm low pass
+            delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
+        } else {
+            // When dterm filter disabled apply moving average to reduce noise
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
             delta = deltaSum / 3.0f;
-        }
-
-        // Dterm low pass
-        if (pidProfile->dterm_cut_hz) {
-            delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         }
 
         DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
@@ -353,18 +351,15 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             lastErrorForDelta[axis] = gyroError;
         }
 
-        // When dterm filter disabled apply moving average to reduce noise
-        if (!pidProfile->dterm_cut_hz) {
+        if (pidProfile->dterm_cut_hz) {
+            // Dterm delta low pass
+            DTerm = delta;
+            DTerm = lrintf(applyBiQuadFilter((float) DTerm, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered DTerm
+        } else {
+            // When dterm filter disabled apply moving average to reduce noise
             DTerm  = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
-        } else {
-            DTerm = delta;
-        }
-
-        // Dterm delta low pass
-        if (pidProfile->dterm_cut_hz) {
-            DTerm = lrintf(applyBiQuadFilter((float) DTerm, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered DTerm
         }
 
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
@@ -477,14 +472,16 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
 
-            if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
+            if (FLIGHT_MODE(ANGLE_MODE)) {
+                // it's ANGLE mode - control is angle based, so control loop is needed
+                AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+            } else {
+                //control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
                 AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
                     AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
-            } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -535,18 +532,15 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
-        // When dterm filter disabled apply moving average to reduce noise
-        if (!pidProfile->dterm_cut_hz) {
+        if (pidProfile->dterm_cut_hz) {
+            // Dterm delta low pass
+            deltaSum = delta;
+            deltaSum = lrintf(applyBiQuadFilter((float) deltaSum, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
+        } else {
+            // When dterm filter disabled apply moving average to reduce noise
             deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
-        } else {
-           deltaSum = delta;
-        }
-
-        // Dterm delta low pass
-        if (pidProfile->dterm_cut_hz) {
-            deltaSum = lrintf(applyBiQuadFilter((float) deltaSum, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
         }
 
         DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
