@@ -345,7 +345,7 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_UART2)
+#if defined(USE_UART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_UART2);
 #endif
 #if defined(USE_UART3)
