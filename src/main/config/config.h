@@ -55,7 +55,7 @@ void featureClear(uint32_t mask);
 void featureClearAll(void);
 uint32_t featureMask(void);
 void beeperOffSet(uint32_t mask);
-void beeperOffSetAll(void);
+void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);
 void beeperOffClearAll(void);
 uint32_t getBeeperOffMask(void);
