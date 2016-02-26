@@ -117,10 +117,15 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.acc_hardware = 0;
             masterConfig.baro_hardware = 0;
             masterConfig.mag_hardware = 0;
-            if (looptime < 375) {
+            if (looptime < 250) {
                 masterConfig.acc_hardware = 1;
                 masterConfig.baro_hardware = 1;
                 masterConfig.mag_hardware = 1;
+                masterConfig.pid_process_denom = 2;
+            } else if (looptime < 375) {
+                masterConfig.acc_hardware = 0;
+                masterConfig.baro_hardware = 0;
+                masterConfig.mag_hardware = 0;
                 masterConfig.pid_process_denom = 2;
             }
         } else {
@@ -150,7 +155,9 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 } else {
                     masterConfig.pid_process_denom = 2;
                 }
+#ifndef CC3D
                 masterConfig.emf_avoidance = 1;
+#endif
             }
         } else {
             masterConfig.gyro_lpf = 1;
