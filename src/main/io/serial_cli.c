@@ -158,6 +158,10 @@ static void cliFlashRead(char *cmdline);
 #endif
 #endif
 
+#ifdef BEEPER
+static void cliBeeper(char *cmdline);
+#endif
+
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -301,6 +305,10 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
+#ifdef BEEPER
+    CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
+            "\t<+|->[name]", cliBeeper),
+#endif
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -1746,6 +1754,21 @@ static void cliDump(char *cmdline)
                 cliPrintf("feature %s\r\n", featureNames[i]);
         }
 
+
+#ifdef BEEPER
+        cliPrint("\r\n\r\n# beeper\r\n");
+
+        uint8_t beeperCount = beeperTableEntryCount();
+        mask = getBeeperOffMask();
+        for (int i = 0; i < (beeperCount-2); i++) {
+            if (mask & (1 << i))
+                printf("beeper -%s\r\n", beeperNameForTableIndex(i));
+            else
+                printf("beeper  %s\r\n", beeperNameForTableIndex(i));
+        }
+#endif
+
+
         cliPrint("\r\n\r\n# map\r\n");
 
         for (i = 0; i < 8; i++)
@@ -1922,6 +1945,79 @@ static void cliFeature(char *cmdline)
         }
     }
 }
+
+#ifdef BEEPER
+static void cliBeeper(char *cmdline)
+{
+    uint32_t i;
+    uint32_t len = strlen(cmdline);;
+    uint8_t beeperCount = beeperTableEntryCount();
+    uint32_t mask = getBeeperOffMask();
+
+    if (len == 0) {
+        printf("Disabled:");
+        for (int i = 0; ; i++) {
+        	if (i == beeperCount-2){
+                if (mask == 0)
+                	cliPrint("  none");
+        		break;
+        	}
+            if (mask & (1 << i))
+                printf("  %s", beeperNameForTableIndex(i));
+        }
+        cliPrint("\r\n");
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        cliPrint("Available:");
+        for (i = 0; i < beeperCount; i++)
+            printf("  %s", beeperNameForTableIndex(i));
+        cliPrint("\r\n");
+        return;
+    } else {
+        bool remove = false;
+        if (cmdline[0] == '-') {
+            remove = true;     // this is for beeper OFF condition
+            cmdline++;
+            len--;
+        }
+
+        for (i = 0; ; i++) {
+            if (i == beeperCount) {
+                cliPrint("Invalid name\r\n");
+                break;
+            }
+            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
+                if (remove) { // beeper off
+                    if (i == BEEPER_ALL-1)
+                        beeperOffSetAll(beeperCount-2);
+                    else
+                    	if (i == BEEPER_PREFERENCE-1)
+                            setBeeperOffMask(getPreferedBeeperOffMask());
+                        else {
+                            mask = 1 << i;
+                            beeperOffSet(mask);
+                        }
+                    cliPrint("Disabled");
+                }
+                else { // beeper on
+                    if (i == BEEPER_ALL-1)
+                        beeperOffClearAll();
+                    else
+                    	if (i == BEEPER_PREFERENCE-1)
+                            setPreferedBeeperOffMask(getBeeperOffMask());
+                        else {
+                            mask = 1 << i;
+                            beeperOffClear(mask);
+                        }
+                    cliPrint("Enabled");
+                }
+            printf(" %s\r\n", beeperNameForTableIndex(i));
+            break;
+            }
+        }
+    }
+}
+#endif
+
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline)

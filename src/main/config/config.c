@@ -1126,3 +1126,43 @@ void persistentFlagClear(uint8_t mask)
 {
     masterConfig.persistentFlags &= ~(mask);
 }
+
+void beeperOffSet(uint32_t mask)
+{
+    masterConfig.beeper_off_flags |= mask;
+}
+
+void beeperOffSetAll(uint8_t beeperCount)
+{
+    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
+}
+
+void beeperOffClear(uint32_t mask)
+{
+    masterConfig.beeper_off_flags &= ~(mask);
+}
+
+void beeperOffClearAll(void)
+{
+    masterConfig.beeper_off_flags = 0;
+}
+
+uint32_t getBeeperOffMask(void)
+{
+    return masterConfig.beeper_off_flags;
+}
+
+void setBeeperOffMask(uint32_t mask)
+{
+    masterConfig.beeper_off_flags = mask;
+}
+
+uint32_t getPreferedBeeperOffMask(void)
+{
+    return masterConfig.prefered_beeper_off_flags;
+}
+
+void setPreferedBeeperOffMask(uint32_t mask)
+{
+    masterConfig.prefered_beeper_off_flags = mask;
+}

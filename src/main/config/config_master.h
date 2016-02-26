@@ -108,6 +108,9 @@ typedef struct master_t {
     uint8_t blackbox_device;
 #endif
 
+    uint32_t beeper_off_flags;
+    uint32_t prefered_beeper_off_flags;
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
 } master_t;
