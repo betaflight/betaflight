@@ -649,27 +649,9 @@ void taskMainPidLoop(void)
     );
 
     mixTable();
-
-#ifdef USE_SERVOS
-    filterServos();
-    writeServos();
-#endif
-
-    if (debugMode == DEBUG_CYCLETIME) {
-        static uint32_t previousMotorUpdateTime, motorCycleTime;
-
-        motorCycleTime = micros() - previousMotorUpdateTime;
-        previousMotorUpdateTime = micros();
-        debug[2] = motorCycleTime;
-        debug[3] = motorCycleTime - targetPidLooptime;
-    }
-
-    if (motorControlEnable) {
-        writeMotors();
-    }
 }
 
-void subTasksPreMainPidLoop(void) {
+void subTasksMainPidLoop(void) {
     imuUpdateAttitude();
 
     if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
@@ -725,9 +707,7 @@ void subTasksPreMainPidLoop(void) {
             }
         }
     #endif
-}
 
-void subTasksPostMainPidLoop(void) {
     #ifdef USE_SDCARD
         afatfs_poll();
     #endif
@@ -746,9 +726,6 @@ void subTasksPostMainPidLoop(void) {
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
-    static uint8_t pidUpdateCountdown;
-
-    if (!pidUpdateCountdown) pidUpdateCountdown = masterConfig.pid_process_denom;
 
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
@@ -756,30 +733,40 @@ void taskMainPidLoopCheck(void) {
     previousTime = micros();
 
     if (debugMode == DEBUG_CYCLETIME) {
-        // Debugging parameters
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;
     }
 
+    if (motorControlEnable && realTimeCycle) {
+        if (debugMode == DEBUG_CYCLETIME) {
+            static uint32_t previousMotorUpdateTime, motorCycleTime;
+            motorCycleTime = micros() - previousMotorUpdateTime;
+            previousMotorUpdateTime = micros();
+            debug[2] = motorCycleTime;
+            debug[3] = motorCycleTime - targetPidLooptime;
+        }
+
+        writeMotors();
+    }
+
     while (true) {
         if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            static uint8_t pidUpdateCountdown;
+
+            if (realTimeCycle) {
+                subTasksMainPidLoop();
+                realTimeCycle = false;
+            }
 
             imuUpdateGyro();
 
-            if (pidUpdateCountdown == 2 || masterConfig.pid_process_denom == 1) {
-                subTasksPreMainPidLoop();
-                realTimeCycle = true;  // Set realtime guard interval
-            }
-
-            if (pidUpdateCountdown == 1) {
-                pidUpdateCountdown = masterConfig.pid_process_denom;
-                taskMainPidLoop();
-                if (masterConfig.pid_process_denom > 1) realTimeCycle = false;
-            } else {
+            if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
+            } else {
+                pidUpdateCountdown = masterConfig.pid_process_denom - 1;
+                taskMainPidLoop();
+                realTimeCycle = true;
             }
-
-            if (realTimeCycle) subTasksPostMainPidLoop();
 
             break;
         }

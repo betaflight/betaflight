@@ -230,8 +230,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
 uint16_t averageSystemLoadPercent = 0;
 
-#define MAX_GUARD_INTERVAL 100
-#define MIN_GUARD_INTERVAL 10
+#define MAX_GUARD_INTERVAL 80
+#define MIN_GUARD_INTERVAL 0
 
 void taskSystem(void)
 {
