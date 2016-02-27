@@ -111,6 +111,7 @@ typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
+	uint8_t spektrum_sat_bind_autoreset;
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_ppm_invert;
