@@ -668,14 +668,12 @@ int main(void) {
     setTaskEnabled(TASK_GYROPID, true);
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(targetLooptime) {
+        switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future
             case(500):
-                accTargetLooptime = 5000;
-                break;
             case(375):
             case(250):
             case(125):
-                accTargetLooptime = 10000;
+                accTargetLooptime = 1000;
                 break;
             default:
             case(1000):
