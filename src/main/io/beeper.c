@@ -191,7 +191,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        5, beep_armedGpsFix,      "ARMING_GPS_FIX") },
     { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          6, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
     { BEEPER_ENTRY(BEEPER_BAT_LOW,               7, beep_lowBatteryBeep,   "BAT_LOW") },
-    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            8, beep_multiBeeps,       NULL) },
+    { BEEPER_ENTRY(BEEPER_USB,                   8, beep_multiBeeps,       NULL) },
     { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
@@ -211,7 +211,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-    if (mode == BEEPER_SILENCE || (feature(FEATURE_VBAT) && (batteryCellCount < 2))) {
+	if (mode == BEEPER_SILENCE || ((masterConfig.beeper_off.flags & (1 << (BEEPER_USB - 1))) && (feature(FEATURE_VBAT) && (batteryCellCount < 2)))) {
         beeperSilence();
         return;
     }

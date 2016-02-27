@@ -19,8 +19,10 @@
 #include "stdint.h"
 
 #include "platform.h"
+#include "debug.h"
 
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
@@ -33,11 +35,10 @@
 #include "rx/rx.h"
 
 #include "io/rc_controls.h"
-#include "flight/lowpass.h"
 #include "io/beeper.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
-#define VBATT_LPF_FREQ  10
+#define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
 uint8_t batteryCellCount = 3;       // cell count
@@ -51,10 +52,7 @@ uint16_t amperageLatestADC = 0;     // most recent raw reading from current ADC
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
-batteryConfig_t *batteryConfig;
-
 static batteryState_e batteryState;
-static lowpass_t lowpassFilter;
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {
@@ -66,12 +64,22 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 static void updateBatteryVoltage(void)
 {
     uint16_t vbatSample;
-    uint16_t vbatFiltered;
+    static biquad_t vbatFilterState;
+    static bool vbatFilterStateIsSet;
 
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-    vbatFiltered = (uint16_t)lowpassFixed(&lowpassFilter, vbatSample, VBATT_LPF_FREQ);
-    vbat = batteryAdcToVoltage(vbatFiltered);
+
+    if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
+
+    if (!vbatFilterStateIsSet) {
+        BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000); //50HZ Update
+        vbatFilterStateIsSet = true;
+    }
+    vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
+    vbat = batteryAdcToVoltage(vbatSample);
+
+    if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
 
 #define VBATTERY_STABLE_DELAY 40
@@ -205,6 +213,18 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
     mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
+}
+
+q_number_t calculateVbatPidCompensation(void) {
+	q_number_t batteryScaler;
+    if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
+        uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
+        qConstruct(&batteryScaler, maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage), Q12_NUMBER);
+    } else {
+        qConstruct(&batteryScaler, 1, 1, Q12_NUMBER);
+    }
+
+    return batteryScaler;
 }
 
 uint8_t calculateBatteryPercentage(void)

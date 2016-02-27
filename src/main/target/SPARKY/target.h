@@ -56,7 +56,7 @@
 #define MAG
 #define USE_MAG_AK8975
 
-#define MAG_AK8975_ALIGN CW0_DEG_FLIP
+#define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
 #define LED0
 #define LED1
@@ -120,7 +120,7 @@
 
 #define BLACKBOX
 #define GPS
-#define GTUNE
+//#define GTUNE
 #define DISPLAY
 #define SERIAL_RX
 #define TELEMETRY
@@ -142,6 +142,8 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 #endif
 
 #if 0
@@ -162,7 +164,7 @@
 #endif
 
 #define USE_SERIAL_1WIRE
-#define ESC_COUNT 6
+
 #define S1W_TX_GPIO         GPIOB
 #define S1W_TX_PIN          GPIO_Pin_6
 #define S1W_RX_GPIO         GPIOB

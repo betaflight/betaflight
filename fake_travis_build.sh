@@ -1,23 +1,20 @@
 #!/bin/bash
 
 targets=("PUBLISHMETA=True" \
-    "RUNTESTS=True" \
     "TARGET=CC3D" \
-    "TARGET=CC3D OPBL=yes" \
-    "TARGET=CHEBUZZF3" \
-    "TARGET=CJMCU" \
+    "TARGET=CC3D_OPBL" \
     "TARGET=COLIBRI_RACE" \
-    "TARGET=EUSTM32F103RC" \
+    "TARGET=LUX_RACE" \
     "TARGET=SPRACINGF3" \
+    "TARGET=SPRACINGF3MINI" \
     "TARGET=NAZE" \
-    "TARGET=NAZE32PRO" \
-    "TARGET=OLIMEXINO" \
-    "TARGET=PORT103R" \
+    "TARGET=AFROMINI" \
     "TARGET=RMDO" \
     "TARGET=SPARKY" \
-    "TARGET=STM32F3DISCOVERY" \
-    "TARGET=ALIENWIIF1" \
-    "TARGET=ALIENWIIF3")
+    "TARGET=MOTOLAB" \
+    "TARGET=IRCFUSIONF3" \
+    "TARGET=ALIENFLIGHTF1" \
+    "TARGET=ALIENFLIGHTF3")
 
 #fake a travis build environment
 export TRAVIS_BUILD_NUMBER=$(date +%s)
@@ -26,8 +23,8 @@ export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 
 for target in "${targets[@]}"
 do
-	unset RUNTESTS PUBLISHMETA TARGET OPBL
+	unset RUNTESTS PUBLISHMETA TARGET
 	eval "export $target"
-	make clean
+	make -f Makefile clean
 	./.travis.sh
 done

@@ -16,6 +16,8 @@
  */
 
 #pragma once
+#include "gpio.h"
+#include "timer.h"
 
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
@@ -34,9 +36,9 @@
 #define MAX_INPUTS  8
 
 #define PWM_TIMER_MHZ 1
-#define ONESHOT125_TIMER_MHZ 8
+#define ONESHOT_TIMER_MHZ 24
 #define PWM_BRUSHED_TIMER_MHZ 8
-
+#define MULTISHOT_TIMER_MHZ 12
 
 typedef struct sonarGPIOConfig_s {
     GPIO_TypeDef *gpio;
@@ -59,6 +61,8 @@ typedef struct drv_pwm_config_s {
     bool useVbat;
     bool useOneshot;
     bool useFastPWM;
+    bool useOneshot42;
+    bool useMultiShot;
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef SONAR
@@ -67,6 +71,9 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
+#ifdef CC3D
+    bool useBuzzerP6;
+#endif
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif
@@ -78,9 +85,27 @@ typedef struct drv_pwm_config_s {
 } drv_pwm_config_t;
 
 
+typedef enum {
+  PWM_PF_NONE = 0,
+  PWM_PF_MOTOR = (1 << 0),
+  PWM_PF_SERVO = (1 << 1),
+  PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
+  PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
+  PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
+} pwmPortFlags_e;
+
+
+typedef struct pwmPortConfiguration_s {
+    uint8_t index;
+    pwmPortFlags_e flags;
+    const timerHardware_t *timerHardware;
+} pwmPortConfiguration_t;
+
 typedef struct pwmOutputConfiguration_s {
     uint8_t servoCount;
     uint8_t motorCount;
+    uint8_t outputCount;
+    pwmPortConfiguration_t portConfigurations[MAX_PWM_OUTPUT_PORTS];
 } pwmOutputConfiguration_t;
 
 // This indexes into the read-only hardware definition structure, timerHardware_t
@@ -102,3 +127,5 @@ enum {
     PWM15,
     PWM16
 };
+
+pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);

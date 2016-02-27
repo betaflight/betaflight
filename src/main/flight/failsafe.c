@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "debug.h"
 
@@ -167,7 +167,7 @@ void failsafeUpdateState(void)
         return;
     }
 
-    bool receivingRxData = failsafeIsReceivingRxData();        // FIXME - Original check for received data
+    bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
@@ -222,8 +222,20 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
-                    // Stabilize, and set Throttle to specified level
-                    failsafeActivate();
+                    switch (failsafeConfig->failsafe_procedure) {
+                        default:
+                        case FAILSAFE_PROCEDURE_AUTO_LANDING:
+                            // Stabilize, and set Throttle to specified level
+                            failsafeActivate();
+                            break;
+
+                        case FAILSAFE_PROCEDURE_DROP_IT:
+                            // Drop the craft
+                            failsafeActivate();
+                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
+                            break;
+                    }
                 }
                 reprocessState = true;
                 break;

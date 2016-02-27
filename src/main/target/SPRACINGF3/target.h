@@ -49,6 +49,7 @@
 
 #define BARO
 #define USE_BARO_MS5611
+#define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
 #define MAG
@@ -108,17 +109,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
-
 #define M25P16_CS_GPIO          GPIOB
 #define M25P16_CS_PIN           GPIO_Pin_12
 #define M25P16_SPI_INSTANCE     SPI2
@@ -156,11 +146,13 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define BLACKBOX
 #define DISPLAY
 #define GPS
-#define GTUNE
+//#define GTUNE
 #define SERIAL_RX
 #define TELEMETRY
 #define USE_SERVOS
@@ -172,7 +164,7 @@
 #define BIND_PIN   Pin_11
 
 #define USE_SERIAL_1WIRE
-#define ESC_COUNT 8
+
 #define S1W_TX_GPIO         GPIOA
 #define S1W_TX_PIN          GPIO_Pin_9
 #define S1W_RX_GPIO         GPIOA

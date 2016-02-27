@@ -59,7 +59,6 @@
 
 #include "mw.h"
 
-
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
 
@@ -106,7 +105,6 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
-
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
@@ -122,10 +120,20 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
     return THROTTLE_HIGH;
 }
 
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
+{
+    if (((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
+            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODEDEADBAND))))
+        return CENTERED;
+
+    return NOT_CENTERED;
+}
+
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
+    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
 
@@ -149,6 +157,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     if (!isUsingSticksToArm) {
 
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            rcDisarmTicks = 0;
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -159,10 +168,13 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             // Disarming via ARM BOX
 
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
-                if (disarm_kill_switch) {
-                    mwDisarm();
-                } else if (throttleStatus == THROTTLE_LOW) {
-                    mwDisarm();
+                rcDisarmTicks++;
+                if (rcDisarmTicks > 3) {
+                    if (disarm_kill_switch) {
+                        mwDisarm();
+                    } else if (throttleStatus == THROTTLE_LOW) {
+                        mwDisarm();
+                    }
                 }
             }
         }
@@ -215,9 +227,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         if (sensors(SENSOR_BARO))
             baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
 #endif
-
-        if (!sensors(SENSOR_MAG))
-            heading = 0; // reset heading to zero after gyro calibration
 
         return;
     }
@@ -642,8 +651,6 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     };
 }
 
-void changeControlRateProfile(uint8_t profileIndex);
-
 void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
@@ -651,7 +658,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
-                changeControlRateProfile(position);
+				changeControlRateProfile(position);  
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
                 applied = true;
             }
@@ -716,8 +723,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
             applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
-            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
-            uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
+            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions); 
+            uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth; 
 
             applySelectAdjustment(adjustmentFunction, position);
         }

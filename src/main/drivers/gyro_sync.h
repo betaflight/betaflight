@@ -5,8 +5,10 @@
  *      Author: borisb
  */
 
+#define INTERRUPT_WAIT_TIME 8
+
 extern uint32_t targetLooptime;
 
 bool gyroSyncCheckUpdate(void);
 uint8_t gyroMPU6xxxGetDividerDrops(void);
-void gyroUpdateSampleRate(void);
+void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);

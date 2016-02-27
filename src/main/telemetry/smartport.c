@@ -326,7 +326,13 @@ void handleSmartPortTelemetry(void)
 #endif
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
-                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
+                    uint16_t vfasVoltage;
+                    if (telemetryConfig->frsky_vfas_cell_voltage) {
+                        vfasVoltage = vbat / batteryCellCount;
+                    } else {
+                        vfasVoltage = vbat;
+                    }
+                    smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -381,7 +387,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_HEADING    :
-                smartPortSendPackage(id, heading * 100); // given in deg, requested in 10000 = 100 deg
+                smartPortSendPackage(id, attitude.values.yaw * 10); // given in 10*deg, requested in 10000 = 100 deg
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :

@@ -27,8 +27,9 @@
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
 #define INVERTER_USART USART1
 
+
 #define BEEP_GPIO GPIOA
-#define BEEP_PIN Pin_2 // PA2 (Beeper)
+#define BEEP_PIN Pin_15 // PA15 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
 
 #define MPU6000_CS_GPIO       GPIOA
@@ -107,13 +108,14 @@
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
 #define VBAT_ADC_CHANNEL            ADC_Channel_0
 
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_1
+#define RSSI_ADC_GPIO               GPIOB
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
+#define RSSI_ADC_CHANNEL            ADC_Channel_8
 
-#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
+#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
 #define BLACKBOX
 #define TELEMETRY
@@ -123,8 +125,6 @@
 #define USE_CLI
 
 #define USE_SERIAL_1WIRE
-// How many escs does this board support?
-#define ESC_COUNT 6
 
 // FlexPort (pin 21/22, TX/RX respectively):
 // Note, FlexPort has 10k pullups on both TX and RX
@@ -135,12 +135,14 @@
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
 
-#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef DISPLAY
 #undef SONAR
+//#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
 #undef BARO
+//#undef BLACKBOX
+#undef GPS
+//#endif
 #define SKIP_CLI_COMMAND_HELP
-#endif
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)

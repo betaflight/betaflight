@@ -237,8 +237,10 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
+#if !defined(COLIBRI_RACE) || !defined(LUX_RACE)
     if (gpsConfig->provider == GPS_NMEA)
 	    mode &= ~MODE_TX;
+#endif
 
     // no callback - buffer will be consumed in gpsThread()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
@@ -253,11 +255,49 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 
 void gpsInitNmea(void)
 {
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+	uint32_t now;
+#endif
     switch(gpsData.state) {
         case GPS_INITIALIZING:
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+		   now = millis();
+		   if (now - gpsData.state_ts < 1000)
+			   return;
+		   gpsData.state_ts = now;
+		   if (gpsData.state_position < 1) {
+			   serialSetBaudRate(gpsPort, 4800);
+			   gpsData.state_position++;
+		   } else if (gpsData.state_position < 2) {
+			   // print our FIXED init string for the baudrate we want to be at
+			   serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
+			   gpsData.state_position++;
+		   } else {
+			   // we're now (hopefully) at the correct rate, next state will switch to it
+			   gpsSetState(GPS_CHANGE_BAUD);
+		   }
+		   break;
+#endif
         case GPS_CHANGE_BAUD:
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+		   now = millis();
+		   if (now - gpsData.state_ts < 1000)
+			   return;
+		   gpsData.state_ts = now;
+		   if (gpsData.state_position < 1) {
+			   serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+			   gpsData.state_position++;
+		   } else if (gpsData.state_position < 2) {
+			   serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
+			   gpsData.state_position++;
+		   } else {
+#else
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+#endif
             gpsSetState(GPS_RECEIVING_DATA);
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+		   }
+#endif
             break;
     }
 }
@@ -1018,6 +1058,18 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
+static void gpsHandlePassthrough(uint8_t data)
+ {
+     gpsNewData(data);
+ #ifdef DISPLAY
+     if (feature(FEATURE_DISPLAY)) {
+         updateDisplay();
+     }
+ #endif
+ 	
+ }
+ 
+
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
     waitForSerialPortToFinishTransmitting(gpsPort);
@@ -1026,34 +1078,13 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
-    LED0_OFF;
-    LED1_OFF;
-
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayShowFixedPage(PAGE_GPS);
     }
 #endif
-    char c;
-    while(1) {
-        if (serialRxBytesWaiting(gpsPort)) {
-            LED0_ON;
-            c = serialRead(gpsPort);
-            gpsNewData(c);
-            serialWrite(gpsPassthroughPort, c);
-            LED0_OFF;
-        }
-        if (serialRxBytesWaiting(gpsPassthroughPort)) {
-            LED1_ON;
-            serialWrite(gpsPort, serialRead(gpsPassthroughPort));
-            LED1_OFF;
-        }
-#ifdef DISPLAY
-        if (feature(FEATURE_DISPLAY)) {
-            updateDisplay();
-        }
-#endif
-    }
+    
+    serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 
 void updateGpsIndicator(uint32_t currentTime)

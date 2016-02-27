@@ -51,7 +51,9 @@ typedef enum {
     SERIALRX_SUMH = 4,
     SERIALRX_XBUS_MODE_B = 5,
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
-    SERIALRX_PROVIDER_MAX = SERIALRX_XBUS_MODE_B_RJ01
+    SERIALRX_IBUS = 7,
+    SERIALRX_JETIEXBUS = 8,
+    SERIALRX_PROVIDER_MAX = SERIALRX_JETIEXBUS
 } SerialRXType;
 
 #define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
@@ -110,6 +112,7 @@ typedef struct rxChannelRangeConfiguration_s {
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
+    uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t rssi_channel;
     uint8_t rssi_scale;
@@ -117,6 +120,11 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t rcSmoothing;
+    uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
+    uint8_t max_aux_channel;
+    uint8_t acroPlusFactor;                 // Air mode acrobility factor
+    uint8_t acroPlusOffset;                 // Air mode stick offset
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;

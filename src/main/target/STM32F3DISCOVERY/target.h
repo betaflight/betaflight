@@ -38,6 +38,50 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+
+#define USE_SD_CARD
+
+#define SD_DETECT_PIN                    GPIO_Pin_14
+#define SD_DETECT_EXTI_LINE              EXTI_Line14
+#define SD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
+#define SD_DETECT_GPIO_PORT              GPIOC
+#define SD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
+#define SD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
+#define SD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
+
+#define SD_CS_GPIO          GPIOB
+#define SD_CS_PIN           GPIO_Pin_12
+#define SD_SPI_INSTANCE     SPI2
+
+//#define USE_FLASHFS
+//#define USE_FLASH_M25P16
+
+//#define M25P16_CS_GPIO          GPIOB
+//#define M25P16_CS_PIN           GPIO_Pin_12
+//#define M25P16_SPI_INSTANCE     SPI2
+// SPI1
+// PB5  SPI1_MOSI
+// PB4  SPI1_MISO
+// PB3  SPI1_SCK
+// PA15 SPI1_NSS
+
+// SPI2
+// PB15 SPI2_MOSI
+// PB14 SPI2_MISO
+// PB13 SPI2_SCK
+// PB12 SPI2_NSS
 
 #define GYRO
 #define USE_GYRO_L3GD20
@@ -48,6 +92,25 @@
 #define L3GD20_CS_PIN                   GPIO_Pin_3
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI2
+
+#define SDCARD_SPI_INSTANCE               SPI2
+#define SDCARD_SPI_CS_GPIO                GPIOB
+#define SDCARD_SPI_CS_PIN                 GPIO_Pin_12
+#define SDCARD_SPI_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
+// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2
+
+// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+
+// Performance logging for SD card operations:
+// #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
 #define ACC
 #define USE_ACC_LSM303DLHC
@@ -91,7 +154,7 @@
 
 #define BLACKBOX
 #define GPS
-#define GTUNE
+//#define GTUNE
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
 #define TELEMETRY
@@ -102,9 +165,9 @@
 #define USE_SERIAL_1WIRE
 // How many escs does this board support?
 #define ESC_COUNT 6
-// STM32F3DISCOVERY TX - PC3 connects to UART RX
-#define S1W_TX_GPIO         GPIOC
-#define S1W_TX_PIN          GPIO_Pin_3
-// STM32F3DISCOVERY RX - PC1 connects to UART TX
-#define S1W_RX_GPIO         GPIOC
-#define S1W_RX_PIN          GPIO_Pin_1
+// STM32F3DISCOVERY TX - PD5 connects to UART RX
+#define S1W_TX_GPIO         GPIOD
+#define S1W_TX_PIN          GPIO_Pin_5
+// STM32F3DISCOVERY RX - PD6 connects to UART TX
+#define S1W_RX_GPIO         GPIOD
+#define S1W_RX_PIN          GPIO_Pin_6

@@ -33,21 +33,23 @@
 
 void (*systemBeepPtr)(bool onoff) = NULL;
 
+static uint16_t beeperPin;
+
 static void beepNormal(bool onoff)
 {
     if (onoff) {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
+        digitalLo(BEEP_GPIO, beeperPin);
     } else {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
+        digitalHi(BEEP_GPIO, beeperPin);
     }
 }
 
 static void beepInverted(bool onoff)
 {
     if (onoff) {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
+        digitalHi(BEEP_GPIO, beeperPin);
     } else {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
+        digitalLo(BEEP_GPIO, beeperPin);
     }
 }
 #endif
@@ -66,6 +68,7 @@ void beeperInit(beeperConfig_t *config)
 #ifndef BEEPER
     UNUSED(config);
 #else
+    beeperPin = config->gpioPin;
     initBeeperHardware(config);
     if (config->isInverted)
         systemBeepPtr = beepInverted;

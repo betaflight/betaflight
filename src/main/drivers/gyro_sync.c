@@ -41,15 +41,18 @@ bool gyroSyncCheckUpdate(void) {
     return getMpuDataStatus(&gyro);
 }
 
-void gyroUpdateSampleRate(void) {
+void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator) {
     int gyroSamplePeriod;
-    int minLooptime;
 
-    gyroSamplePeriod = 1000; // gyro sampling rate 1khz
-    minLooptime = 1000;      // Full 1khz sampling
+    if (!lpf) {
+        gyroSamplePeriod = 125;
+    } else {
+        gyroSamplePeriod = 1000;
+        gyroSyncDenominator = 1; // Always full Sampling 1khz
+    }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
-    mpuDividerDrops  = (minLooptime + gyroSamplePeriod -1 ) / gyroSamplePeriod - 1;
+    mpuDividerDrops  = gyroSyncDenominator - 1;
     targetLooptime = (mpuDividerDrops + 1) * gyroSamplePeriod;
 }
 

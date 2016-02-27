@@ -18,6 +18,8 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
+#define BST_DEVICE_NAME "COLIBRI RACE"
+#define BST_DEVICE_NAME_LENGTH 12
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
@@ -60,7 +62,6 @@
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
 #define ACC
@@ -79,6 +80,8 @@
 #define LED0
 #define LED1
 #define LED2
+
+#define USB_IO
 
 #define USE_VCP
 #define USE_USART1
@@ -121,6 +124,11 @@
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
+#define USE_BST
+#define BST_DEVICE (BSTDEV_1)
+/* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
+#define BST_CRC_POLYNOM                         0xD5
+
 #define USE_ADC
 
 #define ADC_INSTANCE                ADC1
@@ -143,19 +151,13 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
 #define BLACKBOX
 #define GPS
-#define GTUNE
+//#define GTUNE
 #define LED_STRIP
 
 #define LED_STRIP_TIMER TIM16
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -165,8 +167,22 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+
+#define USE_SERIAL_1WIRE
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_10
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_11

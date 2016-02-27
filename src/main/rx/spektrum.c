@@ -106,11 +106,13 @@ static void spektrumDataReceive(uint16_t c)
         spekFramePosition = 0;
     }
 
-    spekFrame[spekFramePosition] = (uint8_t)c;
-    if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
-        rcFrameComplete = true;
-    } else {
-        spekFramePosition++;
+    if (spekFramePosition < SPEK_FRAME_SIZE) {
+        spekFrame[spekFramePosition++] = (uint8_t)c;
+        if (spekFramePosition < SPEK_FRAME_SIZE) {
+            rcFrameComplete = false;
+        } else {
+            rcFrameComplete = true;
+        }
     }
 }
 

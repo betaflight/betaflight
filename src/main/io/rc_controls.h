@@ -48,6 +48,8 @@ typedef enum {
     BOXSERVO3,
     BOXBLACKBOX,
     BOXFAILSAFE,
+    BOXAIRMODE,
+	BOXACROPLUS,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -75,6 +77,13 @@ typedef enum {
     THROTTLE_LOW = 0,
     THROTTLE_HIGH
 } throttleStatus_e;
+
+#define AIRMODEDEADBAND 12
+
+typedef enum {
+    NOT_CENTERED = 0,
+    CENTERED
+} rollPitchStatus_e;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -176,10 +185,10 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+    ADJUSTMENT_FUNCTION_COUNT,
 
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 21
 
 typedef enum {
     ADJUSTMENT_MODE_STEP,
@@ -231,7 +240,7 @@ typedef struct adjustmentState_s {
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
 
-#define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
+#define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
@@ -242,3 +251,4 @@ bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
