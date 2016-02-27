@@ -50,4 +50,4 @@ void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
-uint8_t beeperTableEntryCount(void);
+int beeperTableEntryCount(void);

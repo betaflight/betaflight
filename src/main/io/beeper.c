@@ -379,9 +379,9 @@ const char *beeperNameForTableIndex(int idx)
 /*
  * Returns the number of entries in the beeper-sounds table.
  */
-uint8_t beeperTableEntryCount(void)
+int beeperTableEntryCount(void)
 {
-    return (uint8_t)BEEPER_TABLE_ENTRY_COUNT;
+    return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
 
 #else
@@ -394,6 +394,6 @@ void beeperUpdate(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
-uint8_t beeperTableEntryCount(void) {return 0;}
+int beeperTableEntryCount(void) {return 0;}
 
 #endif

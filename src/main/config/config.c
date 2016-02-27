@@ -1087,11 +1087,7 @@ void beeperOffSet(uint32_t mask)
 
 void beeperOffSetAll(uint8_t beeperCount)
 {
-    uint32_t mask = 0;
-	for (int i = 0; i < beeperCount; i++){
-		mask |= (1 << i);
-	}
-    masterConfig.beeper_off_flags = mask;
+    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
 }
 
 void beeperOffClear(uint32_t mask)
