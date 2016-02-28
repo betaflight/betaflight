@@ -310,7 +310,7 @@ void init(void)
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.useFastPWM = masterConfig.use_fast_pwm ? true : false;
+    pwm_params.useFixedPWM = masterConfig.force_motor_pwm_rate ? true : false;
     if (masterConfig.use_oneshot42) {
         pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
         masterConfig.use_multiShot = false;
@@ -321,7 +321,7 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500 && !masterConfig.use_fast_pwm)
+    if (pwm_params.motorPwmRate > 500 && !masterConfig.force_motor_pwm_rate)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -668,14 +668,12 @@ int main(void) {
     setTaskEnabled(TASK_GYROPID, true);
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(targetLooptime) {
+        switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future
             case(500):
-                accTargetLooptime = 5000;
-                break;
             case(375):
             case(250):
             case(125):
-                accTargetLooptime = 10000;
+                accTargetLooptime = 1000;
                 break;
             default:
             case(1000):

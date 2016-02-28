@@ -60,7 +60,7 @@ typedef struct drv_pwm_config_s {
 #endif
     bool useVbat;
     bool useOneshot;
-    bool useFastPWM;
+    bool useFixedPWM;
     bool useOneshot42;
     bool useMultiShot;
     bool useSoftSerial;

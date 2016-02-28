@@ -124,8 +124,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
                 masterConfig.acc_hardware = 0;
-                masterConfig.baro_hardware = 0;
-                masterConfig.mag_hardware = 0;
+                masterConfig.baro_hardware = 1;
+                masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
             }
         } else {
@@ -144,20 +144,15 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            masterConfig.emf_avoidance = 0;
             if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 3;
-                masterConfig.emf_avoidance = 1;
             } else if (looptime < 375) {
                 if (currentProfile->pidProfile.pidController == 2) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
                 }
-#ifndef CC3D
-                masterConfig.emf_avoidance = 1;
-#endif
             }
         } else {
             masterConfig.gyro_lpf = 1;
@@ -168,6 +163,14 @@ void setGyroSamplingSpeed(uint16_t looptime) {
         }
 #endif
         masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
+
+        if (looptime < 1000) {
+            masterConfig.force_motor_pwm_rate = 1;
+            masterConfig.motor_pwm_rate = lrintf(1.0f / (gyroSampleRate * masterConfig.gyro_sync_denom * masterConfig.pid_process_denom * 0.000001f)) + 100;
+            if (!(masterConfig.use_multiShot || masterConfig.use_oneshot42)) masterConfig.motor_pwm_rate = constrain(masterConfig.motor_pwm_rate, 1000, 3800);
+        } else {
+            masterConfig.force_motor_pwm_rate = 0;
+        }
     }
 }
 
