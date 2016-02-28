@@ -724,6 +724,12 @@ void subTasksMainPidLoop(void) {
 }
 
 void taskMotorUpdate(void) {
+
+#ifdef USE_SERVOS
+    filterServos();
+    writeServos();
+#endif
+
     if (motorControlEnable) {
         if (debugMode == DEBUG_CYCLETIME) {
             static uint32_t previousMotorUpdateTime;
