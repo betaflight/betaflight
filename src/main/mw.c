@@ -723,6 +723,20 @@ void subTasksMainPidLoop(void) {
     #endif
 }
 
+void taskMotorUpdate(void) {
+    if (motorControlEnable) {
+        if (debugMode == DEBUG_CYCLETIME) {
+            static uint32_t previousMotorUpdateTime;
+            uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+            debug[2] = currentDeltaTime;
+            debug[3] = currentDeltaTime - previousMotorUpdateTime;
+            previousMotorUpdateTime = currentDeltaTime;
+        }
+
+        writeMotors();
+    }
+}
+
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
@@ -735,18 +749,6 @@ void taskMainPidLoopCheck(void) {
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;
-    }
-
-    if (motorControlEnable && realTimeCycle) {
-        if (debugMode == DEBUG_CYCLETIME) {
-            static uint32_t previousMotorUpdateTime, motorCycleTime;
-            motorCycleTime = micros() - previousMotorUpdateTime;
-            previousMotorUpdateTime = micros();
-            debug[2] = motorCycleTime;
-            debug[3] = motorCycleTime - targetPidLooptime;
-        }
-
-        writeMotors(masterConfig.force_motor_pwm_rate);
     }
 
     while (true) {
@@ -765,7 +767,7 @@ void taskMainPidLoopCheck(void) {
             } else {
                 pidUpdateCountdown = masterConfig.pid_process_denom - 1;
                 taskMainPidLoop();
-                realTimeCycle = true;
+                //realTimeCycle = true;
             }
 
             break;

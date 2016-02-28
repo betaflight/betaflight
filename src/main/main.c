@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 #include "scheduler.h"
@@ -310,7 +311,6 @@ void init(void)
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.useFixedPWM = masterConfig.force_motor_pwm_rate ? true : false;
     if (masterConfig.use_oneshot42) {
         pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
         masterConfig.use_multiShot = false;
@@ -321,7 +321,7 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500 && !masterConfig.force_motor_pwm_rate)
+    if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -666,6 +666,8 @@ int main(void) {
     rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
 
     setTaskEnabled(TASK_GYROPID, true);
+    setTaskEnabled(TASK_MOTOR, true);
+    rescheduleTask(TASK_MOTOR, lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000));
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future

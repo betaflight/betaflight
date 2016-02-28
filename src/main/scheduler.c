@@ -66,6 +66,7 @@ typedef struct {
 } cfTask_t;
 
 void taskMainPidLoopCheck(void);
+void taskMotorUpdate(void);
 void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
 void taskUpdateBeeper(void);
@@ -101,6 +102,13 @@ static cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
+    },
+
+    [TASK_MOTOR] = {
+        .taskName = "MOTOR",
+        .taskFunc = taskMotorUpdate,
+        .desiredPeriod = 1000,
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_ACCEL] = {

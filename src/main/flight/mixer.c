@@ -633,7 +633,7 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t useMotorPwmRate)
+void writeMotors(void)
 {
     uint8_t i;
 
@@ -641,7 +641,7 @@ void writeMotors(uint8_t useMotorPwmRate)
         pwmWriteMotor(i, motor[i]);
 
 
-    if (feature(FEATURE_ONESHOT125) && useMotorPwmRate) {
+    if (feature(FEATURE_ONESHOT125)) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -653,7 +653,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(0);
+    writeMotors();
 }
 
 void stopMotors(void)
