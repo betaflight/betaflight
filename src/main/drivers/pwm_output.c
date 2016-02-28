@@ -134,7 +134,17 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = value;
 }
+#if defined(STM32F10X) && !defined(CC3D)
+static void pwmWriteOneshot125(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = value * 21 / 6;  // 24Mhz -> 8Mhz
+}
 
+static void pwmWriteOneshot42(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = value * 7 / 6;
+}
+#else
 static void pwmWriteOneshot125(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = value * 3;  // 24Mhz -> 8Mhz
@@ -144,6 +154,7 @@ static void pwmWriteOneshot42(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = value;
 }
+#endif
 
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {

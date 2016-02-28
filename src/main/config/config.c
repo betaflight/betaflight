@@ -500,7 +500,11 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
+#if defined(STM32F10X) && !defined(CC3D)
+    masterConfig.emf_avoidance = 1;
+#else
     masterConfig.emf_avoidance = 0;
+#endif
 
     resetPidProfile(&currentProfile->pidProfile);
 	
