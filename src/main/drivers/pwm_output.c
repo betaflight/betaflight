@@ -205,7 +205,7 @@ void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motor
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
 
-void fastPWMMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t useOneshot42, uint8_t useMultiShot)
+void pwmFixedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t useOneshot42, uint8_t useMultiShot)
 {
     uint32_t hz;
     if (useMultiShot) {

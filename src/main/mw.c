@@ -746,7 +746,7 @@ void taskMainPidLoopCheck(void) {
             debug[3] = motorCycleTime - targetPidLooptime;
         }
 
-        writeMotors();
+        writeMotors(masterConfig.force_motor_pwm_rate);
     }
 
     while (true) {

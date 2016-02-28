@@ -165,10 +165,14 @@ void setGyroSamplingSpeed(uint16_t looptime) {
         masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
 
         if (looptime < 1000) {
-            masterConfig.use_fast_pwm = 1;
-            masterConfig.motor_pwm_rate = lrintf(1.0f / (gyroSampleRate * masterConfig.gyro_sync_denom * masterConfig.pid_process_denom * 0.000001f));
+            masterConfig.force_motor_pwm_rate = 1;
+            if (masterConfig.use_multiShot || masterConfig.use_oneshot42) {
+                masterConfig.motor_pwm_rate = 4200;
+            } else {
+                masterConfig.motor_pwm_rate = 2700;
+            }
         } else {
-            masterConfig.use_fast_pwm = 0;
+            masterConfig.force_motor_pwm_rate = 0;
         }
     }
 }

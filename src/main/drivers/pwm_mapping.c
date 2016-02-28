@@ -31,7 +31,7 @@
 
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void fastPWMMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t useOneshot42, uint8_t useMultiShot);
+void pwmFixedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t useOneshot42, uint8_t useMultiShot);
 void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t useOneshot42);
 void pwmMultiShotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex);
 void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
@@ -805,8 +805,8 @@ if (init->useBuzzerP6) {
             }
 #endif
             if (init->useOneshot) {
-                if (init->useFastPWM) {
-                    fastPWMMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->useOneshot42, init->useMultiShot);
+                if (init->useFixedPWM) {
+                    pwmFixedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->useOneshot42, init->useMultiShot);
                 } else if (init->useMultiShot) {
                     pwmMultiShotMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount);
                 } else {
