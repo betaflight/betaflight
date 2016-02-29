@@ -44,7 +44,7 @@ bool gyroSyncCheckUpdate(void) {
 void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator) {
     int gyroSamplePeriod;
 
-    if (!lpf) {
+    if (!lpf || lpf == 7) {
         gyroSamplePeriod = 125;
     } else {
         gyroSamplePeriod = 1000;

@@ -380,7 +380,11 @@ static const char * const lookupTableGyroLpf[] = {
     "OFF",
     "188HZ",
     "98HZ",
-    "42HZ"
+    "42HZ",
+    "20HZ",
+    "10HZ",
+    "5HZ",
+    "EXPERIMENTAL"
 };
 
 static const char * const lookupTableAccHardware[] = {

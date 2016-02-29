@@ -582,7 +582,7 @@ void init(void)
     afatfs_init();
 #endif
 
-    if (masterConfig.gyro_lpf) {
+    if (masterConfig.gyro_lpf > 0 && masterConfig.gyro_lpf < 7) {
         masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         masterConfig.gyro_sync_denom = 1;
     }
