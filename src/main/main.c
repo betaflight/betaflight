@@ -663,7 +663,7 @@ int main(void) {
     init();
 
     /* Setup scheduler */
-    rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
+    rescheduleTask(TASK_GYROPID, targetLooptime);
 
     setTaskEnabled(TASK_GYROPID, true);
     setTaskEnabled(TASK_MOTOR, true);

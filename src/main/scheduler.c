@@ -33,7 +33,6 @@ cfTaskId_e currentTaskId = TASK_NONE;
 
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval;
 
 bool realTimeCycle = true;
 
@@ -101,21 +100,21 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 	    .subTaskName = "GYRO",
         .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_REALTIME,
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_MOTOR] = {
         .taskName = "MOTOR",
         .taskFunc = taskMotorUpdate,
         .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_HIGH,
+        .staticPriority = TASK_PRIORITY_REALTIME,
     },
 
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
         .desiredPeriod = 1000000 / 100,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_SERIAL] = {
@@ -129,14 +128,14 @@ static cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BEEPER",
         .taskFunc = taskUpdateBeeper,
         .desiredPeriod = 1000000 / 100,     // 100 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
         .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_RX] = {
@@ -238,12 +237,8 @@ static cfTask_t cfTasks[TASK_COUNT] = {
 
 uint16_t averageSystemLoadPercent = 0;
 
-#define MAX_GUARD_INTERVAL 80
-#define MIN_GUARD_INTERVAL 0
-
 void taskSystem(void)
 {
-    uint8_t taskId;
 
     /* Calculate system load */
     if (totalWaitingTasksSamples > 0) {
@@ -251,19 +246,6 @@ void taskSystem(void)
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
-
-    /* Calculate guard interval */
-    uint32_t maxNonRealtimeTaskTime = 0;
-
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
-        if (cfTasks[taskId].staticPriority != TASK_PRIORITY_REALTIME) {
-            maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, cfTasks[taskId].averageExecutionTime);
-        }
-    }
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, MIN_GUARD_INTERVAL, MAX_GUARD_INTERVAL);
-#if defined SCHEDULER_DEBUG
-    debug[2] = realtimeGuardInterval;
-#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -318,20 +300,12 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 
 void scheduler(void)
 {
+    static uint16_t maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
     uint8_t taskId;
     uint8_t selectedTaskId;
     uint8_t selectedTaskDynPrio;
     uint16_t waitingTasks = 0;
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
-    uint32_t currentRealtimeGuardInterval;
-
-    static uint16_t maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
-
-    if (realTimeCycle) {
-        currentRealtimeGuardInterval = realtimeGuardInterval;
-    } else {
-        currentRealtimeGuardInterval = MIN_GUARD_INTERVAL;
-    }
 
     /* Cache currentTime */
     currentTime = micros();
@@ -354,7 +328,7 @@ void scheduler(void)
         }
     }
 
-    bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > currentRealtimeGuardInterval);
+    bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
 
     /* Update task dynamic priorities */
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {

@@ -724,6 +724,13 @@ void subTasksMainPidLoop(void) {
 }
 
 void taskMotorUpdate(void) {
+    if (debugMode == DEBUG_CYCLETIME) {
+        static uint32_t previousMotorUpdateTime;
+        uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+        debug[2] = currentDeltaTime;
+        debug[3] = currentDeltaTime - previousMotorUpdateTime;
+        previousMotorUpdateTime = currentDeltaTime;
+    }
 
 #ifdef USE_SERVOS
     filterServos();
@@ -731,14 +738,6 @@ void taskMotorUpdate(void) {
 #endif
 
     if (motorControlEnable) {
-        if (debugMode == DEBUG_CYCLETIME) {
-            static uint32_t previousMotorUpdateTime;
-            uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-            debug[2] = currentDeltaTime;
-            debug[3] = currentDeltaTime - previousMotorUpdateTime;
-            previousMotorUpdateTime = currentDeltaTime;
-        }
-
         writeMotors();
     }
 }
@@ -746,6 +745,7 @@ void taskMotorUpdate(void) {
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
+    static bool runTaskMainSubprocesses;
 
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
@@ -761,9 +761,9 @@ void taskMainPidLoopCheck(void) {
         if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
-            if (realTimeCycle) {
+            if (runTaskMainSubprocesses) {
                 subTasksMainPidLoop();
-                realTimeCycle = false;
+                runTaskMainSubprocesses = false;
             }
 
             imuUpdateGyro();
@@ -773,7 +773,7 @@ void taskMainPidLoopCheck(void) {
             } else {
                 pidUpdateCountdown = masterConfig.pid_process_denom - 1;
                 taskMainPidLoop();
-                //realTimeCycle = true;
+                runTaskMainSubprocesses = true;
             }
 
             break;

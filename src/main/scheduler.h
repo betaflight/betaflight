@@ -88,7 +88,6 @@ typedef enum {
 
 extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
-extern bool realTimeCycle;
 
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
