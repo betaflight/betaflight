@@ -149,10 +149,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 42;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 13;
+    pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 54;
     pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 0;
@@ -334,7 +334,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 200;
+    mixerConfig->yaw_jump_prevention_limit = 100;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
     mixerConfig->servo_lowpass_freq = 400;
