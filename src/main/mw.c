@@ -941,3 +941,12 @@ void taskLedStrip(void)
     }
 }
 #endif
+
+#ifdef TRANSPONDER
+void taskTransponder(void)
+{
+    if (feature(FEATURE_TRANSPONDER)) {
+        updateTransponder();
+    }
+}
+#endif
