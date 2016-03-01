@@ -663,9 +663,12 @@ int main(void) {
     init();
 
     /* Setup scheduler */
+    schedulerInit();
     rescheduleTask(TASK_GYROPID, targetLooptime);
-
     setTaskEnabled(TASK_GYROPID, true);
+
+    setTaskEnabled(TASK_MOTOR, true);
+    rescheduleTask(TASK_MOTOR, lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000));
 
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
@@ -713,6 +716,8 @@ int main(void) {
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
+    // Reschedule telemetry to 500hz for Jeti Exbus
+    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) rescheduleTask(TASK_TELEMETRY, 2000);
 #endif
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
@@ -721,7 +726,6 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
-    schedulerInit();
     while (1) {
         scheduler();
         processLoopback();

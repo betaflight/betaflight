@@ -405,4 +405,3 @@ TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
 // STUBS
 extern "C" {
 }
-

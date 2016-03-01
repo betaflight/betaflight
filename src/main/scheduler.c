@@ -21,9 +21,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifdef UNIT_TEST
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
-#endif
 #include "platform.h"
 
 #include "scheduler.h"
@@ -36,13 +33,8 @@ typedef enum {TEST_IRQ = 0 } IRQn_Type;
 
 static cfTask_t *currentTask = NULL;
 
-#define REALTIME_GUARD_INTERVAL_MIN     10
-#define REALTIME_GUARD_INTERVAL_MAX     300
-#define REALTIME_GUARD_INTERVAL_MARGIN  25
-
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval = REALTIME_GUARD_INTERVAL_MAX;
 
 uint32_t currentTime = 0;
 uint16_t averageSystemLoadPercent = 0;
@@ -51,26 +43,17 @@ uint16_t averageSystemLoadPercent = 0;
 static int taskQueuePos = 0;
 static int taskQueueSize = 0;
 // No need for a linked list for the queue, since items are only inserted at startup
-#ifdef UNIT_TEST
-STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 2]; // 1 extra space so test code can check for buffer overruns
-#else
+
 static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
-#endif
-STATIC_UNIT_TESTED void queueClear(void)
+
+void queueClear(void)
 {
     memset(taskQueueArray, 0, sizeof(taskQueueArray));
     taskQueuePos = 0;
     taskQueueSize = 0;
 }
 
-#ifdef UNIT_TEST
-STATIC_UNIT_TESTED int queueSize(void)
-{
-    return taskQueueSize;
-}
-#endif
-
-STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
+bool queueContains(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
@@ -80,7 +63,7 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
     return false;
 }
 
-STATIC_UNIT_TESTED bool queueAdd(cfTask_t *task)
+bool queueAdd(cfTask_t *task)
 {
     if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
         return false;
@@ -96,7 +79,7 @@ STATIC_UNIT_TESTED bool queueAdd(cfTask_t *task)
     return false;
 }
 
-STATIC_UNIT_TESTED bool queueRemove(cfTask_t *task)
+bool queueRemove(cfTask_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
@@ -111,7 +94,7 @@ STATIC_UNIT_TESTED bool queueRemove(cfTask_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-STATIC_INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
+cfTask_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -120,7 +103,7 @@ STATIC_INLINE_UNIT_TESTED cfTask_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-STATIC_INLINE_UNIT_TESTED cfTask_t *queueNext(void)
+cfTask_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
@@ -133,31 +116,20 @@ void taskSystem(void)
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
-
-    /* Calculate guard interval */
-    uint32_t maxNonRealtimeTaskTime = 0;
-    for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
-        if (task->staticPriority != TASK_PRIORITY_REALTIME) {
-            maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, task->averageExecutionTime);
-        }
-    }
-
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX) + REALTIME_GUARD_INTERVAL_MARGIN;
-#if defined SCHEDULER_DEBUG
-    debug[2] = realtimeGuardInterval;
-#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
+    taskInfo->subTaskName = cfTasks[taskId].subTaskName;
     taskInfo->isEnabled = queueContains(&cfTasks[taskId]);
     taskInfo->desiredPeriod = cfTasks[taskId].desiredPeriod;
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
     taskInfo->averageExecutionTime = cfTasks[taskId].averageExecutionTime;
+    taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
 }
 #endif
 
@@ -213,7 +185,7 @@ void scheduler(void)
             timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
         }
     }
-    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > realtimeGuardInterval);
+    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
 
     // The task to be invoked
     cfTask_t *selectedTask = NULL;
@@ -286,5 +258,4 @@ void scheduler(void)
         debug[3] = (micros() - currentTime);
 #endif
     }
-    GET_SCHEDULER_LOCALS();
 }
