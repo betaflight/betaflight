@@ -164,8 +164,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
 #define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
 
-#define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
-#define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
+#define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
+#define MSP_SET_TRANSPONDER_CONFIG      83 //in  message         Set transponder settings
 
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
