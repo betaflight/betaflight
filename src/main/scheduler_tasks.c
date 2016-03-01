@@ -87,7 +87,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BEEPER",
         .taskFunc = taskUpdateBeeper,
         .desiredPeriod = 1000000 / 100,     // 100 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -95,7 +95,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
         .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_RX] = {
@@ -120,7 +120,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "COMPASS",
         .taskFunc = taskUpdateCompass,
         .desiredPeriod = 1000000 / 10,      // Compass is updated at 10 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -129,7 +129,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BARO",
         .taskFunc = taskUpdateBaro,
         .desiredPeriod = 1000000 / 20,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -138,7 +138,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
         .desiredPeriod = 1000000 / 20,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -147,7 +147,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
         .desiredPeriod = 1000000 / 40,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 

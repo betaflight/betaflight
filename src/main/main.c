@@ -668,7 +668,12 @@ int main(void) {
     setTaskEnabled(TASK_GYROPID, true);
 
     setTaskEnabled(TASK_MOTOR, true);
-    rescheduleTask(TASK_MOTOR, constrain(lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000), 250, 3500));
+
+    if (feature(FEATURE_ONESHOT125)) {
+        rescheduleTask(TASK_MOTOR, constrain(lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000), 250, 3500));
+    } else {
+        rescheduleTask(TASK_MOTOR, 1000);
+    }
 
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
