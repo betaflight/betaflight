@@ -40,6 +40,10 @@ void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
 void taskSystem(void);
+#ifdef USE_BST
+void taskBstReadWrite(void);
+void taskBstMasterProcess(void);
+#endif
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -179,6 +183,22 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
         .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_BST
+    [TASK_BST_READ_WRITE] = {
+        .taskName = "BST_MASTER_WRITE",
+        .taskFunc = taskBstReadWrite,
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+
+    [TASK_BST_MASTER_PROCESS] = {
+        .taskName = "BST_MASTER_PROCESS",
+        .taskFunc = taskBstMasterProcess,
+        .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

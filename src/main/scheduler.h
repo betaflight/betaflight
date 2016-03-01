@@ -80,6 +80,11 @@ typedef enum {
     TASK_TRANSPONDER,
 #endif
 
+#ifdef USE_BST
+    TASK_BST_READ_WRITE,
+    TASK_BST_MASTER_PROCESS,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 
