@@ -101,6 +101,46 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
     }
 }
 
+TEST(AltitudeHoldTest, applyMultirotorAltHold)
+{
+    // given
+    escAndServoConfig_t escAndServoConfig;
+    rcControlsConfig_t rcControlsConfig;
+    
+    memset(&escAndServoConfig, 0, sizeof(escAndServoConfig));
+    escAndServoConfig.minthrottle = 1150;
+    escAndServoConfig.maxthrottle = 1850;
+    memset(&rcControlsConfig, 0, sizeof(rcControlsConfig));
+    rcControlsConfig.alt_hold_deadband = 40;
+    
+    configureAltitudeHold(
+                          NULL,
+                          NULL,
+                          &rcControlsConfig,
+                          &escAndServoConfig
+                          );
+    
+    rcData[THROTTLE] = 1400;
+    rcCommand[THROTTLE] = 1500;
+    ACTIVATE_RC_MODE(BOXBARO);
+    updateAltHoldState();
+    
+    // when
+    applyAltHold(NULL);
+    
+    // expect
+    EXPECT_EQ(1500, rcCommand[THROTTLE]);
+    
+    // and given
+    rcControlsConfig.alt_hold_fast_change = 1;
+    
+    // when
+    applyAltHold(NULL);
+    
+    // expect
+    EXPECT_EQ(1500, rcCommand[THROTTLE]);
+}
+
 // STUBS
 
 extern "C" {
@@ -154,17 +194,8 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 
 void imuResetAccelerationSum(void) {};
 
-int32_t applyDeadband(int32_t, int32_t) { return 0; }
 uint32_t micros(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
-
 }

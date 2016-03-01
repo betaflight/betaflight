@@ -211,6 +211,7 @@ $(OBJECT_DIR)/altitude_hold_unittest.o : \
 $(OBJECT_DIR)/altitude_hold_unittest : \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/altitude_hold_unittest.o \
+    $(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
