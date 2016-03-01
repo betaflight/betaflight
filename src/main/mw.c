@@ -238,13 +238,6 @@ void annexCode(void)
             }
 
             tmp2 = tmp / 100;
-            if (isUsingSticksForArming()) {
-                tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
-                tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
-            } else {
-                tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-                tmp = (uint32_t)(tmp - PWM_RANGE_MIN) * PWM_RANGE_MIN / (PWM_RANGE_MAX - PWM_RANGE_MIN);
-            }
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
