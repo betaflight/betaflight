@@ -657,7 +657,6 @@ void taskMainPidLoop(void)
 }
 
 void subTasksMainPidLoop(void) {
-    imuUpdateAttitude();
 
     if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
         filterRc();
@@ -789,6 +788,10 @@ void taskMainPidLoopCheck(void) {
 void taskUpdateAccelerometer(void)
 {
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+}
+
+void taskUpdateAttitude(void) {
+    imuUpdateAttitude();
 }
 
 void taskHandleSerial(void)

@@ -696,6 +696,7 @@ int main(void) {
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
     }
     setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);

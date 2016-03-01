@@ -26,6 +26,7 @@ void taskMainPidLoopCheck(void);
 void taskMotorUpdate(void);
 void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
+void taskUpdateAttitude(void);
 void taskUpdateBeeper(void);
 void taskUpdateBattery(void);
 bool taskUpdateRxCheck(uint32_t currentDeltaTime);
@@ -66,6 +67,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskMotorUpdate,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
+    },
+
+    [TASK_ATTITUDE] = {
+        .taskName = "ATTITUDE",
+        .taskFunc = taskUpdateAttitude,
+        .desiredPeriod = 1000000 / 100,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_ACCEL] = {
