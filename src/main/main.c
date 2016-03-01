@@ -666,19 +666,18 @@ int main(void) {
     rescheduleTask(TASK_GYROPID, targetLooptime);
 
     setTaskEnabled(TASK_GYROPID, true);
-    setTaskEnabled(TASK_MOTOR, true);
-    rescheduleTask(TASK_MOTOR, lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000));
+
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future
-            case(500):
-            case(375):
-            case(250):
-            case(125):
-                accTargetLooptime = 1000;
-                break;
-            default:
-            case(1000):
+             case(500):
+             case(375):
+             case(250):
+             case(125):
+                 accTargetLooptime = 1000;
+                 break;
+             default:
+                 case(1000):
 #ifdef STM32F10X
                 accTargetLooptime = 3000;
 #else
@@ -687,8 +686,11 @@ int main(void) {
         }
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
     }
+    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+#ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
+#endif
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 #ifdef GPS
@@ -711,15 +713,12 @@ int main(void) {
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-    // Reschedule telemetry to 500hz for Jeti Exbus
-    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) rescheduleTask(TASK_TELEMETRY, 2000);
 #endif
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
-#ifdef USE_BST
-    setTaskEnabled(TASK_BST_READ_WRITE, true);
-    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#ifdef TRANSPONDER
+    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
     while (1) {
@@ -731,9 +730,17 @@ int main(void) {
 void HardFault_Handler(void)
 {
     // fall out of the sky
-    uint8_t requiredState = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
-    if ((systemState & requiredState) == requiredState) {
+    uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
+    if ((systemState & requiredStateForMotors) == requiredStateForMotors) {
         stopMotors();
     }
+#ifdef TRANSPONDER
+    // prevent IR LEDs from burning out.
+    uint8_t requiredStateForTransponder = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_TRANSPONDER_ENABLED;
+    if ((systemState & requiredStateForTransponder) == requiredStateForTransponder) {
+        transponderIrDisable();
+    }
+#endif
+
     while (1);
 }
