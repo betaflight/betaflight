@@ -560,7 +560,7 @@ TEST_F(SerialMspUnitTest, TestMspOutMessageLengthsCommand)
         MSP_ACC_TRIM,            // 240    //out message         get acc angle trim values
         MSP_SERVO_MIX_RULES,     // 241    //out message         Returns servo mixer configuration
     };
-    for (uint ii= 0; ii < sizeof(outMessages); ++ii) {
+    for (uint ii = 0; ii < sizeof(outMessages); ++ii) {
         serialWritePos = 0;
         serialReadPos = 0;
         currentPort->cmdMSP = outMessages[ii];
