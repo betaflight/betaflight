@@ -24,6 +24,7 @@
 
 #include "gpio.h"
 #include "timer.h"
+#include "drivers/bus_i2c.h"
 
 #include "pwm_output.h"
 #include "pwm_rx.h"
@@ -611,6 +612,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
         if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
+            continue;
+#endif
+
+#ifdef STM32F10X
+        // skip I2C ports if device 1 is selected
+        if (I2C_DEVICE == I2CDEV_1 && timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
             continue;
 #endif
 
