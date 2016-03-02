@@ -781,8 +781,15 @@ void mixTable(void)
 {
     uint32_t i;
     q_number_t vbatCompensationFactor;
+    static q_number_t mixReduction;
+    uint8_t axis;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
+
+    if (motorLimitReached) {
+        for (axis = 0; axis < 3; axis++) axisPID[axis] *= constrain(qPercent(mixReduction), 10, 100) / 100;
+        if (debugMode == DEBUG_AIRMODE) debug[0] = qPercent(mixReduction);
+    }
 
     if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
         acroPlusApply();
@@ -850,31 +857,24 @@ void mixTable(void)
 
     if (rollPitchYawMixRange > throttleRange) {
         motorLimitReached = true;
-        q_number_t mixReduction;
         qConstruct(&mixReduction, throttleRange, rollPitchYawMixRange, Q12_NUMBER);
 
         for (i = 0; i < motorCount; i++) {
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
-        }
+        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
 
-        if (debugMode == DEBUG_AIRMODE) debug[0] = rollPitchYawMixRange;
-
+        if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
         motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
-        if (debugMode == DEBUG_AIRMODE) debug[0] = 0;
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {
-        if (debugMode == DEBUG_AIRMODE && i < 3) debug[i] = rollPitchYawMix[i];
-
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
         if (isFailsafeActive) {
