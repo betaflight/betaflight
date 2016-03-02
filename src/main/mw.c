@@ -766,6 +766,7 @@ void taskMainPidLoopCheck(void) {
             static uint8_t pidUpdateCountdown;
 
             if (runTaskMainSubprocesses) {
+                taskMotorUpdate();
                 subTasksMainPidLoop();
                 runTaskMainSubprocesses = false;
             }

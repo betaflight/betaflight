@@ -668,14 +668,6 @@ int main(void) {
     rescheduleTask(TASK_GYROPID, targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
-    setTaskEnabled(TASK_MOTOR, true);
-
-    if (feature(FEATURE_ONESHOT125)) {
-        rescheduleTask(TASK_MOTOR, constrain(lrintf((1.0f / masterConfig.motor_pwm_rate) * 1000000), 250, 3500));
-    } else {
-        rescheduleTask(TASK_MOTOR, 1000);
-    }
-
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
         switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future
@@ -731,6 +723,10 @@ int main(void) {
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef USE_BST
+    setTaskEnabled(TASK_BST_READ_WRITE, true);
+    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 
     while (1) {

@@ -23,7 +23,6 @@
 #include "scheduler.h"
 
 void taskMainPidLoopCheck(void);
-void taskMotorUpdate(void);
 void taskUpdateAccelerometer(void);
 void taskHandleSerial(void);
 void taskUpdateAttitude(void);
@@ -58,13 +57,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
         .taskFunc = taskMainPidLoopCheck,
-        .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-    [TASK_MOTOR] = {
-        .taskName = "MOTOR",
-        .taskFunc = taskMotorUpdate,
         .desiredPeriod = 1000,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },

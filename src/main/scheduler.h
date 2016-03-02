@@ -44,7 +44,6 @@ typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
     TASK_GYROPID,
-    TASK_MOTOR,
     TASK_ATTITUDE,
     TASK_ACCEL,
     TASK_SERIAL,
