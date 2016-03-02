@@ -730,10 +730,10 @@ void subTasksMainPidLoop(void) {
 void taskMotorUpdate(void) {
     if (debugMode == DEBUG_CYCLETIME) {
         static uint32_t previousMotorUpdateTime;
-        uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+        uint32_t currentDeltaTime = micros() - previousMotorUpdateTime;
         debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - previousMotorUpdateTime;
-        previousMotorUpdateTime = currentDeltaTime;
+        debug[3] = currentDeltaTime - targetPidLooptime;
+        previousMotorUpdateTime = micros();
     }
 
 #ifdef USE_SERVOS
