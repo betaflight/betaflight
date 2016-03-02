@@ -477,7 +477,7 @@ void init(void)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
-        BEEP_ON;
+        if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
         delay(25);
         BEEP_OFF;
     }

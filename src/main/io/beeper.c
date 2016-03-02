@@ -168,9 +168,10 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
+    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   16, NULL,      		   "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            17, NULL,                 "PREFERED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   17, NULL,      		   "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            18, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
