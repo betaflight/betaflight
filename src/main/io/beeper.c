@@ -168,9 +168,10 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
+    { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   17, NULL,      		   "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            18, NULL,                 "PREFERED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,      		   "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -183,7 +184,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-    if (mode == BEEPER_SILENCE) {
+    if (mode == BEEPER_SILENCE || (mode == BEEPER_USB && (feature(FEATURE_VBAT) && (batteryCellCount < 2)))) {
         beeperSilence();
         return;
     }
