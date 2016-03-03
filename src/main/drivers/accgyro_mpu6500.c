@@ -69,7 +69,7 @@ void mpu6500AccInit(void)
 {
     mpuIntExtiInit();
 
-    acc_1G = 512 * 8;
+    acc_1G = 512 * 4;
 }
 
 void mpu6500GyroInit(uint8_t lpf)
@@ -101,7 +101,7 @@ void mpu6500GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
     delay(15);
