@@ -34,27 +34,15 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
+#define Q12 (1 << 12)
+
+typedef int32_t fix12_t;
+
 typedef struct stdev_s
 {
     float m_oldM, m_newM, m_oldS, m_newS;
     int m_n;
 } stdev_t;
-
-#define Q12(x) ((1 << 12) / x)
-#define Q13(x) ((1 << 13) / x)
-#define Q14(x) ((1 << 14) / x)
-
-typedef enum {
-    Q12_NUMBER = 12,
-    Q13_NUMBER,
-    Q14_NUMBER
-} qTypeIndex_e;
-
-typedef struct q_number_s {
-    int16_t num;
-    int16_t den;
-} q_number_t;
-
 
 // Floating point 3 vector.
 typedef struct fp_vector {
@@ -125,6 +113,6 @@ float acos_approx(float x);
 
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 
-int16_t qPercent(q_number_t q);
-int16_t qMultiply(q_number_t q, int16_t input);
-void qConstruct(q_number_t *qNumber, int16_t num, int16_t den, int qType);
+int16_t qPercent(fix12_t q);
+int16_t qMultiply(fix12_t q, int16_t input);
+fix12_t qConstruct(int16_t num, int16_t den);

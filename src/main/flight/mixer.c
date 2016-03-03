@@ -753,7 +753,7 @@ void acroPlusApply(void) {
 
     for (axis = 0; axis < 2; axis++) {
         int16_t factor;
-        q_number_t wowFactor;
+        fix12_t wowFactor;
         int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
         int16_t acroPlusStickOffset = rxConfig->acroPlusOffset * 5;
         int16_t motorRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
@@ -766,11 +766,11 @@ void acroPlusApply(void) {
             } else {
                 rcCommandDeflection += acroPlusStickOffset;
             }
-            qConstruct(&wowFactor,ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500, Q12_NUMBER);
+            wowFactor = qConstruct(ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500);
             factor = qMultiply(wowFactor, (rcCommandDeflection * motorRange) / 500);
-            wowFactor.num = wowFactor.den - wowFactor.num;
+            wowFactor = Q12 - wowFactor;
         } else {
-            qConstruct(&wowFactor, 1, 1, Q12_NUMBER);
+            wowFactor = Q12;
             factor = 0;
         }
         axisPID[axis] = factor + qMultiply(wowFactor, axisPID[axis]);
@@ -780,8 +780,8 @@ void acroPlusApply(void) {
 void mixTable(void)
 {
     uint32_t i;
-    q_number_t vbatCompensationFactor;
-    static q_number_t mixReduction;
+    fix12_t vbatCompensationFactor;
+    static fix12_t mixReduction;
     uint8_t axis;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
@@ -857,7 +857,7 @@ void mixTable(void)
 
     if (rollPitchYawMixRange > throttleRange) {
         motorLimitReached = true;
-        qConstruct(&mixReduction, throttleRange, rollPitchYawMixRange, Q12_NUMBER);
+        mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
