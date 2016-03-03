@@ -746,6 +746,17 @@ void taskMotorUpdate(void) {
     }
 }
 
+// Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
+bool shouldUpdateMotorsAfterPIDLoop(void) {
+    if (targetPidLooptime > 375 ) {
+        return true;
+    } else if ((masterConfig.use_multiShot || masterConfig.use_oneshot42) && feature(FEATURE_ONESHOT125)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
@@ -766,8 +777,7 @@ void taskMainPidLoopCheck(void) {
             static uint8_t pidUpdateCountdown;
 
             if (runTaskMainSubprocesses) {
-                taskMotorUpdate();
-                subTasksMainPidLoop();
+                if (!shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 runTaskMainSubprocesses = false;
             }
 
@@ -778,6 +788,7 @@ void taskMainPidLoopCheck(void) {
             } else {
                 pidUpdateCountdown = masterConfig.pid_process_denom - 1;
                 taskMainPidLoop();
+                if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 runTaskMainSubprocesses = true;
             }
 
