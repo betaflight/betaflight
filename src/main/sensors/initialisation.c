@@ -197,6 +197,20 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     }
 #endif
 
+#if defined(RGFC_OSD)
+    static const extiConfig_t rgfcRev1MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
+            .gpioPin = Pin_13,
+            .gpioPort = GPIOC,
+            .exti_port_source = EXTI_PortSourceGPIOC,
+            .exti_line = EXTI_Line13,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+
+    return &rgfcRev1MPUIntExtiConfig;
+#endif
+
     return NULL;
 }
 

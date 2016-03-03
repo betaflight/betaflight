@@ -103,6 +103,7 @@
   */           
 #if !defined  (HSE_VALUE) 
  #define HSE_VALUE            ((uint32_t)8000000) /*!< Value of the External oscillator in Hz */
+//#error "HSE_Value is not defined"
 #endif /* HSE_VALUE */
 
 /**
@@ -123,6 +124,7 @@
 
 #if !defined  (HSI_VALUE) 
  #define HSI_VALUE  ((uint32_t)8000000)
+//#error "HSI_Value is not defined"
 #endif /* HSI_VALUE */                      /*!< Value of the Internal High Speed oscillator in Hz.
                                             The real value may vary depending on the variations
                                              in voltage and temperature.  */

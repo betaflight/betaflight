@@ -15,6 +15,9 @@
 
 # Things that the user might override on the commandline
 #
+#PATH := $(PATH):/home/vlad/usr/gcc-arm-none-eabi-5_2-2015q4/bin/:/home/vlad/usr/gcc-arm-none-eabi-5_2-2015q4/arm-none-eabi/bin/
+PATH := $(PATH):/home/vlad/usr/gcc-arm-none-eabi-4_9-2014q4/bin/:/home/vlad/usr/gcc-arm-none-eabi-4_9-2014q4/arm-none-eabi/bin/
+#PATH := $(PATH):/home/vlad/usr/gcc-arm-none-eabi-4_8-2014q2/bin/:/home/vlad/usr/gcc-arm-none-eabi-4_8-2014q2/arm-none-eabi/bin/
 
 # The target to build, see VALID_TARGETS below
 TARGET		?= NAZE
@@ -42,7 +45,7 @@ FORKNAME			 = betaflight
 
 CC3D_TARGETS = CC3D CC3D_OPBL
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 $(CC3D_TARGETS) CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENFLIGHTF1 ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO IRCFUSIONF3 AFROMINI SPRACINGF3MINI
+VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 $(CC3D_TARGETS) CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENFLIGHTF1 ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO IRCFUSIONF3 AFROMINI SPRACINGF3MINI RGFC_OSD
 
 # Valid targets for OP VCP support
 VCP_VALID_TARGETS = $(CC3D_TARGETS)
@@ -52,9 +55,9 @@ OPBL_VALID_TARGETS = CC3D_OPBL
 
 64K_TARGETS  = CJMCU
 128K_TARGETS = ALIENFLIGHTF1 $(CC3D_TARGETS) NAZE OLIMEXINO RMDO AFROMINI
-256K_TARGETS = EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB SPRACINGF3MINI
+256K_TARGETS = EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB SPRACINGF3MINI RGFC_OSD
 
-F3_TARGETS = STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO SPRACINGF3MINI
+F3_TARGETS = STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO SPRACINGF3MINI RGFC_OSD
 
 
 # Configure default flash sizes for the targets
@@ -152,6 +155,13 @@ endif
 ifeq ($(TARGET),$(filter $(TARGET),RMDO IRCFUSIONF3))
 # RMDO and IRCFUSIONF3 are a VARIANT of SPRACINGF3
 TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3
+endif
+
+ifeq ($(TARGET),RGFC_OSD)
+# Make sure our system clock right.
+DEVICE_FLAGS := $(DEVICE_FLAGS) -DHSE_VALUE="((uint32_t)12000000)" -DHSI_VALUE="((uint32_t)12000000)"
+else
+DEVICE_FLAGS := $(DEVICE_FLAGS) -DHSE_VALUE="((uint32_t)8000000)" -DHSI_VALUE="((uint32_t)8000000)"
 endif
 
 else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
@@ -748,6 +758,22 @@ SPRACINGF3MINI_SRC	 = \
 		   $(VCP_SRC)
 #		   $(FATFS_SRC)
 
+RGFC_OSD_SRC = \
+		   $(STM32F30x_COMMON_SRC) \
+		   drivers/display_ug2864hsweg01.c \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6500.c \
+		   drivers/accgyro_spi_mpu6500.c \
+		   drivers/barometer_bmp280.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/sonar_hcsr04.c \
+		   drivers/flash_m25p16.c \
+		   io/flashfs.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC) \
+		   $(VCP_SRC)
+
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 
@@ -897,6 +923,11 @@ st-flash_$(TARGET): $(TARGET_BIN)
 
 ## st-flash    : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
+
+st-link_$(TARGET): $(TARGET_BIN)
+	ST-LINK_CLI.exe -c SWD SWCLK=8 UR LPM -P $< 0x08000000 -V -Halt
+
+st-link: st-link_$(TARGET)
 
 binary: $(TARGET_BIN)
 hex:    $(TARGET_HEX)

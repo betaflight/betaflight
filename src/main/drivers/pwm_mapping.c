@@ -562,6 +562,69 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#ifdef RGFC_OSD
+static const uint16_t multiPPM[] = {
+    PWM4  | (MAP_TO_PPM_INPUT    << 8), // PPM input
+
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    PWM4  | (MAP_TO_PWM_INPUT << 8),
+    PWM1  | (MAP_TO_PWM_INPUT << 8),
+    PWM2  | (MAP_TO_PWM_INPUT << 8),
+    PWM3  | (MAP_TO_PWM_INPUT << 8),
+    PWM5  | (MAP_TO_PWM_INPUT << 8),
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM16 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    PWM4  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM15 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM16 | (MAP_TO_SERVO_OUTPUT  << 8),
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    PWM4  | (MAP_TO_PWM_INPUT << 8),     // input #1
+    PWM1  | (MAP_TO_PWM_INPUT << 8),
+    PWM2  | (MAP_TO_PWM_INPUT << 8),
+    PWM3  | (MAP_TO_PWM_INPUT << 8),
+    PWM5  | (MAP_TO_PWM_INPUT << 8),
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM15 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM16 | (MAP_TO_SERVO_OUTPUT  << 8), // server #6
+    0xFFFF
+};
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
