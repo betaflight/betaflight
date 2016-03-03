@@ -38,6 +38,7 @@ typedef enum {
     BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
     BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
+    BEEPER_USB,                     // Some boards have beeper powered USB connected
 
     BEEPER_ALL,					    // Turn ON or OFF all beeper conditions
     BEEPER_PREFERENCE,              // Save prefered beeper configuration
