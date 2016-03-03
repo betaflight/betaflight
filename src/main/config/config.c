@@ -384,7 +384,6 @@ static void resetConf(void)
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
 
-    masterConfig.beeper_off.flags = BEEPER_OFF_FLAGS_MIN;
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
@@ -1079,4 +1078,44 @@ void featureClearAll()
 uint32_t featureMask(void)
 {
     return masterConfig.enabledFeatures;
+}
+
+void beeperOffSet(uint32_t mask)
+{
+    masterConfig.beeper_off_flags |= mask;
+}
+
+void beeperOffSetAll(uint8_t beeperCount)
+{
+    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
+}
+
+void beeperOffClear(uint32_t mask)
+{
+    masterConfig.beeper_off_flags &= ~(mask);
+}
+
+void beeperOffClearAll(void)
+{
+    masterConfig.beeper_off_flags = 0;
+}
+
+uint32_t getBeeperOffMask(void)
+{
+    return masterConfig.beeper_off_flags;
+}
+
+void setBeeperOffMask(uint32_t mask)
+{
+    masterConfig.beeper_off_flags = mask;
+}
+
+uint32_t getPreferedBeeperOffMask(void)
+{
+    return masterConfig.prefered_beeper_off_flags;
+}
+
+void setPreferedBeeperOffMask(uint32_t mask)
+{
+    masterConfig.prefered_beeper_off_flags = mask;
 }
