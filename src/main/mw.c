@@ -778,6 +778,7 @@ void taskMainPidLoopCheck(void) {
 
             if (runTaskMainSubprocesses) {
                 if (!shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
+                subTasksMainPidLoop();
                 runTaskMainSubprocesses = false;
             }
 
