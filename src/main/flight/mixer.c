@@ -787,8 +787,9 @@ void mixTable(void)
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
     if (motorLimitReached) {
-        for (axis = 0; axis < 3; axis++) axisPID[axis] *= constrain(qPercent(mixReduction), 10, 100) / 100;
-        if (debugMode == DEBUG_AIRMODE) debug[0] = qPercent(mixReduction);
+        uint8_t pidAttenuation = constrain(qPercent(mixReduction), 20, 100);
+        for (axis = 0; axis < 2; axis++) axisPID[axis] *= pidAttenuation / 100;
+        if (debugMode == DEBUG_AIRMODE) debug[0] = pidAttenuation;
     }
 
     if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
