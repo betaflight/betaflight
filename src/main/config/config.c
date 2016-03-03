@@ -532,6 +532,14 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 #endif
 
+#ifdef SPRACINGF3EVO
+    featureSet(FEATURE_TRANSPONDER);
+    featureSet(FEATURE_RSSI_ADC);
+    featureSet(FEATURE_CURRENT_METER);
+    featureSet(FEATURE_TELEMETRY);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_TELEMETRY_FRSKY;
+#endif
+
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
@@ -814,6 +822,10 @@ void validateAndFixConfig(void)
     if(featureConfigured(FEATURE_RX_SERIAL)) {
         masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
+#endif
+
+#if defined(USE_VCP)
+    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
 #endif
 
     useRxConfig(&masterConfig.rxConfig);
