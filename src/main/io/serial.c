@@ -48,6 +48,7 @@
 #include "drivers/serial_usb_vcp.h"
 #endif
 
+#include "io/beeper.h"
 #include "io/serial.h"
 
 #include "msp/msp.h"
@@ -441,6 +442,11 @@ for specialized data processing.
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
                        *leftC, serialConsumer *rightC)
 {
+#ifdef BEEPER
+    // fix for buzzer beeping continuously when CPU is in endless loop
+    beeperSilence();
+#endif
+
     waitForSerialPortToFinishTransmitting(left);
     waitForSerialPortToFinishTransmitting(right);
 
