@@ -15,255 +15,107 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define SRC_MAIN_SCHEDULER_C_
+
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
+
 #include "scheduler.h"
 #include "debug.h"
+#include "build_config.h"
 
 #include "common/maths.h"
 
 #include "drivers/system.h"
 
-//#define SCHEDULER_DEBUG
-
-cfTaskId_e currentTaskId = TASK_NONE;
+static cfTask_t *currentTask = NULL;
 
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval;
-
-bool realTimeCycle = true;
 
 uint32_t currentTime = 0;
-uint16_t averageWaitingTasks100 = 0;
-
-typedef struct {
-    /* Configuration */
-    const char * taskName;
-    const char * subTaskName;  // For future use, but now just for naming convention
-    bool (*checkFunc)(uint32_t currentDeltaTime);
-    void (*taskFunc)(void);
-    bool isEnabled;
-    uint32_t desiredPeriod;     // target period of execution
-    uint8_t staticPriority;     // dynamicPriority grows in steps of this size, shouldn't be zero
-
-    /* Scheduling */
-    uint8_t dynamicPriority;    // measurement of how old task was last executed, used to avoid task starvation
-    uint32_t lastExecutedAt;    // last time of invocation
-    uint32_t lastSignaledAt;    // time of invocation event for event-driven tasks
-    uint16_t taskAgeCycles;
-
-    /* Statistics */
-    uint32_t averageExecutionTime;  // Moving averate over 6 samples, used to calculate guard interval
-    uint32_t taskLatestDeltaTime;   //
-#ifndef SKIP_TASK_STATISTICS
-    uint32_t maxExecutionTime;
-    uint32_t totalExecutionTime;    // total time consumed by task since boot
-#endif
-} cfTask_t;
-
-void taskMainPidLoopCheck(void);
-void taskMotorUpdate(void);
-void taskUpdateAccelerometer(void);
-void taskHandleSerial(void);
-void taskUpdateBeeper(void);
-void taskUpdateBattery(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskProcessGPS(void);
-void taskUpdateCompass(void);
-void taskUpdateBaro(void);
-void taskUpdateSonar(void);
-void taskCalculateAltitude(void);
-void taskUpdateDisplay(void);
-void taskTelemetry(void);
-void taskLedStrip(void);
-void taskSystem(void);
-#ifdef USE_BST
-void taskBstReadWrite(void);
-void taskBstMasterProcess(void);
-#endif
-
-static cfTask_t cfTasks[TASK_COUNT] = {
-    [TASK_SYSTEM] = {
-        .isEnabled = true,
-        .taskName = "SYSTEM",
-        .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-    [TASK_GYROPID] = {
-        .taskName = "PID",
-	    .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoopCheck,
-        .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_REALTIME,
-    },
-
-    [TASK_MOTOR] = {
-        .taskName = "MOTOR",
-        .taskFunc = taskMotorUpdate,
-        .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-    [TASK_ACCEL] = {
-        .taskName = "ACCEL",
-        .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_SERIAL] = {
-        .taskName = "SERIAL",
-        .taskFunc = taskHandleSerial,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-
-    [TASK_BEEPER] = {
-        .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_RX] = {
-        .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
-        .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-#ifdef GPS
-    [TASK_GPS] = {
-        .taskName = "GPS",
-        .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef MAG
-    [TASK_COMPASS] = {
-        .taskName = "COMPASS",
-        .taskFunc = taskUpdateCompass,
-        .desiredPeriod = 1000000 / 10,      // Compass is updated at 10 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef BARO
-    [TASK_BARO] = {
-        .taskName = "BARO",
-        .taskFunc = taskUpdateBaro,
-        .desiredPeriod = 1000000 / 20,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef SONAR
-    [TASK_SONAR] = {
-        .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#if defined(BARO) || defined(SONAR)
-    [TASK_ALTITUDE] = {
-        .taskName = "ALTITUDE",
-        .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = 1000000 / 40,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef DISPLAY
-    [TASK_DISPLAY] = {
-        .taskName = "DISPLAY",
-        .taskFunc = taskUpdateDisplay,
-        .desiredPeriod = 1000000 / 10,
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifdef TELEMETRY
-    [TASK_TELEMETRY] = {
-        .taskName = "TELEMETRY",
-        .taskFunc = taskTelemetry,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef LED_STRIP
-    [TASK_LEDSTRIP] = {
-        .taskName = "LEDSTRIP",
-        .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef USE_BST
-    [TASK_BST_READ_WRITE] = {
-        .taskName = "BST_MASTER_WRITE",
-        .taskFunc = taskBstReadWrite,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-
-    [TASK_BST_MASTER_PROCESS] = {
-        .taskName = "BST_MASTER_PROCESS",
-        .taskFunc = taskBstMasterProcess,
-        .desiredPeriod = 1000000 / 50,          // 50 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-};
-
 uint16_t averageSystemLoadPercent = 0;
 
-#define MAX_GUARD_INTERVAL 80
-#define MIN_GUARD_INTERVAL 0
+
+static int taskQueuePos = 0;
+static int taskQueueSize = 0;
+// No need for a linked list for the queue, since items are only inserted at startup
+
+static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+
+void queueClear(void)
+{
+    memset(taskQueueArray, 0, sizeof(taskQueueArray));
+    taskQueuePos = 0;
+    taskQueueSize = 0;
+}
+
+bool queueContains(cfTask_t *task)
+{
+    for (int ii = 0; ii < taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == task) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool queueAdd(cfTask_t *task)
+{
+    if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
+        return false;
+    }
+    for (int ii = 0; ii <= taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
+            memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
+            taskQueueArray[ii] = task;
+            ++taskQueueSize;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool queueRemove(cfTask_t *task)
+{
+    for (int ii = 0; ii < taskQueueSize; ++ii) {
+        if (taskQueueArray[ii] == task) {
+            memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
+            --taskQueueSize;
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+ * Returns first item queue or NULL if queue empty
+ */
+cfTask_t *queueFirst(void)
+{
+    taskQueuePos = 0;
+    return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
+}
+
+/*
+ * Returns next item in queue or NULL if at end of queue
+ */
+cfTask_t *queueNext(void)
+{
+    return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
+}
 
 void taskSystem(void)
 {
-    uint8_t taskId;
-
     /* Calculate system load */
     if (totalWaitingTasksSamples > 0) {
         averageSystemLoadPercent = 100 * totalWaitingTasks / totalWaitingTasksSamples;
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
-
-    /* Calculate guard interval */
-    uint32_t maxNonRealtimeTaskTime = 0;
-
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
-        if (cfTasks[taskId].staticPriority != TASK_PRIORITY_REALTIME) {
-            maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, cfTasks[taskId].averageExecutionTime);
-        }
-    }
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, MIN_GUARD_INTERVAL, MAX_GUARD_INTERVAL);
-#if defined SCHEDULER_DEBUG
-    debug[2] = realtimeGuardInterval;
-#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -271,7 +123,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
     taskInfo->subTaskName = cfTasks[taskId].subTaskName;
-    taskInfo->isEnabled= cfTasks[taskId].isEnabled;
+    taskInfo->isEnabled = queueContains(&cfTasks[taskId]);
     taskInfo->desiredPeriod = cfTasks[taskId].desiredPeriod;
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
@@ -283,163 +135,126 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
 {
-    if (taskId == TASK_SELF)
-        taskId = currentTaskId;
-
-    if (taskId < TASK_COUNT) {
-        cfTasks[taskId].desiredPeriod = MAX(100, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
+    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+        cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
+        task->desiredPeriod = MAX(100, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     }
 }
 
-void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState)
+void setTaskEnabled(cfTaskId_e taskId, bool enabled)
 {
-    if (taskId == TASK_SELF)
-        taskId = currentTaskId;
-
-    if (taskId < TASK_COUNT) {
-        cfTasks[taskId].isEnabled = newEnabledState;
+    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+        cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
+        if (enabled && task->taskFunc) {
+            queueAdd(task);
+        } else {
+            queueRemove(task);
+        }
     }
 }
 
 uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 {
-    if (taskId == TASK_SELF)
-        taskId = currentTaskId;
-
-    if (taskId < TASK_COUNT) {
-        return cfTasks[taskId].taskLatestDeltaTime;
-    }
-    else {
+    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+        cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
+        return task->taskLatestDeltaTime;
+    } else {
         return 0;
     }
 }
 
-#define MAXT_TIME_TICKS_TO_RESET 10000
+void schedulerInit(void)
+{
+    queueClear();
+    queueAdd(&cfTasks[TASK_SYSTEM]);
+}
 
 void scheduler(void)
 {
-    uint8_t taskId;
-    uint8_t selectedTaskId;
-    uint8_t selectedTaskDynPrio;
-    uint16_t waitingTasks = 0;
-    uint32_t timeToNextRealtimeTask = UINT32_MAX;
-    uint32_t currentRealtimeGuardInterval;
-
-    static uint16_t maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
-
-    if (realTimeCycle) {
-        currentRealtimeGuardInterval = realtimeGuardInterval;
-    } else {
-        currentRealtimeGuardInterval = MIN_GUARD_INTERVAL;
-    }
-
-    /* Cache currentTime */
+    // Cache currentTime
     currentTime = micros();
 
-    /* The task to be invoked */
-    selectedTaskId = TASK_NONE;
-    selectedTaskDynPrio = 0;
-
-    /* Check for realtime tasks */
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
-        if (cfTasks[taskId].staticPriority == TASK_PRIORITY_REALTIME) {
-            uint32_t nextExecuteAt = cfTasks[taskId].lastExecutedAt + cfTasks[taskId].desiredPeriod;
-            if ((int32_t)(currentTime - nextExecuteAt) >= 0) {
-                timeToNextRealtimeTask = 0;
-            }
-            else {
-                uint32_t newTimeInterval = nextExecuteAt - currentTime;
-                timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
-            }
+    // Check for realtime tasks
+    uint32_t timeToNextRealtimeTask = UINT32_MAX;
+    for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
+        const uint32_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
+        if ((int32_t)(currentTime - nextExecuteAt) >= 0) {
+            timeToNextRealtimeTask = 0;
+        } else {
+            const uint32_t newTimeInterval = nextExecuteAt - currentTime;
+            timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
         }
     }
+    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
 
-    bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > currentRealtimeGuardInterval);
+    // The task to be invoked
+    cfTask_t *selectedTask = NULL;
+    uint16_t selectedTaskDynamicPriority = 0;
 
-    /* Update task dynamic priorities */
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
-        if (cfTasks[taskId].isEnabled) {
-            /* Task has checkFunc - event driven */
-            if (cfTasks[taskId].checkFunc != NULL) {
-                /* Increase priority for event driven tasks */
-                if (cfTasks[taskId].dynamicPriority > 0) {
-                    cfTasks[taskId].taskAgeCycles = 1 + ((currentTime - cfTasks[taskId].lastSignaledAt) / cfTasks[taskId].desiredPeriod);
-                    cfTasks[taskId].dynamicPriority = 1 + cfTasks[taskId].staticPriority * cfTasks[taskId].taskAgeCycles;
-                    waitingTasks++;
-                }
-                else if (cfTasks[taskId].checkFunc(currentTime - cfTasks[taskId].lastExecutedAt)) {
-                    cfTasks[taskId].lastSignaledAt = currentTime;
-                    cfTasks[taskId].taskAgeCycles = 1;
-                    cfTasks[taskId].dynamicPriority = 1 + cfTasks[taskId].staticPriority;
-                    waitingTasks++;
-                }
-                else {
-                    cfTasks[taskId].taskAgeCycles = 0;
-                }
+    // Update task dynamic priorities
+    uint16_t waitingTasks = 0;
+    for (cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
+        // Task has checkFunc - event driven
+        if (task->checkFunc != NULL) {
+            // Increase priority for event driven tasks
+            if (task->dynamicPriority > 0) {
+                task->taskAgeCycles = 1 + ((currentTime - task->lastSignaledAt) / task->desiredPeriod);
+                task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
+                waitingTasks++;
+            } else if (task->checkFunc(currentTime - task->lastExecutedAt)) {
+                task->lastSignaledAt = currentTime;
+                task->taskAgeCycles = 1;
+                task->dynamicPriority = 1 + task->staticPriority;
+                waitingTasks++;
+            } else {
+                task->taskAgeCycles = 0;
             }
-            /* Task is time-driven, dynamicPriority is last execution age measured in desiredPeriods) */
-            else {
-                // Task age is calculated from last execution
-                cfTasks[taskId].taskAgeCycles = ((currentTime - cfTasks[taskId].lastExecutedAt) / cfTasks[taskId].desiredPeriod);
-                if (cfTasks[taskId].taskAgeCycles > 0) {
-                    cfTasks[taskId].dynamicPriority = 1 + cfTasks[taskId].staticPriority * cfTasks[taskId].taskAgeCycles;
-                    waitingTasks++;
-                }
+        } else {
+            // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
+            // Task age is calculated from last execution
+            task->taskAgeCycles = ((currentTime - task->lastExecutedAt) / task->desiredPeriod);
+            if (task->taskAgeCycles > 0) {
+                task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
+                waitingTasks++;
             }
+        }
 
-            /* limit new priority to avoid overflow of uint8_t */
-            cfTasks[taskId].dynamicPriority = MIN(cfTasks[taskId].dynamicPriority, TASK_PRIORITY_MAX);;
-
-            bool taskCanBeChosenForScheduling =
+        if (task->dynamicPriority > selectedTaskDynamicPriority) {
+            const bool taskCanBeChosenForScheduling =
                 (outsideRealtimeGuardInterval) ||
-                (cfTasks[taskId].taskAgeCycles > 1) ||
-                (cfTasks[taskId].staticPriority == TASK_PRIORITY_REALTIME);
-
-            if (taskCanBeChosenForScheduling && (cfTasks[taskId].dynamicPriority > selectedTaskDynPrio)) {
-                selectedTaskDynPrio = cfTasks[taskId].dynamicPriority;
-                selectedTaskId = taskId;
+                (task->taskAgeCycles > 1) ||
+                (task->staticPriority == TASK_PRIORITY_REALTIME);
+            if (taskCanBeChosenForScheduling) {
+                selectedTaskDynamicPriority = task->dynamicPriority;
+                selectedTask = task;
             }
         }
     }
 
-    totalWaitingTasksSamples += 1;
+    totalWaitingTasksSamples++;
     totalWaitingTasks += waitingTasks;
 
-    /* Found a task that should be run */
-    if (selectedTaskId != TASK_NONE) {
-        cfTasks[selectedTaskId].taskLatestDeltaTime = currentTime - cfTasks[selectedTaskId].lastExecutedAt;
-        cfTasks[selectedTaskId].lastExecutedAt = currentTime;
-        cfTasks[selectedTaskId].dynamicPriority = 0;
+    currentTask = selectedTask;
 
-        currentTaskId = selectedTaskId;
+    if (selectedTask != NULL) {
+        // Found a task that should be run
+        selectedTask->taskLatestDeltaTime = currentTime - selectedTask->lastExecutedAt;
+        selectedTask->lastExecutedAt = currentTime;
+        selectedTask->dynamicPriority = 0;
 
-        uint32_t currentTimeBeforeTaskCall = micros();
+        // Execute task
+        const uint32_t currentTimeBeforeTaskCall = micros();
+        selectedTask->taskFunc();
+        const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
-        /* Execute task */
-        if (cfTasks[selectedTaskId].taskFunc != NULL) {
-            cfTasks[selectedTaskId].taskFunc();
-        }
-
-        uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
-
-        cfTasks[selectedTaskId].averageExecutionTime = ((uint32_t)cfTasks[selectedTaskId].averageExecutionTime * 31 + taskExecutionTime) / 32;
+        selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
-        cfTasks[selectedTaskId].totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
-        if (maxTaskCalculationReset > 0) {
-            cfTasks[selectedTaskId].maxExecutionTime = MAX(cfTasks[selectedTaskId].maxExecutionTime, taskExecutionTime);
-            maxTaskCalculationReset--;
-        } else {
-            cfTasks[selectedTaskId].maxExecutionTime = taskExecutionTime;
-            maxTaskCalculationReset = MAXT_TIME_TICKS_TO_RESET;
-        }
+        selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
+        selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif
 #if defined SCHEDULER_DEBUG
         debug[3] = (micros() - currentTime) - taskExecutionTime;
-#endif
-    }
-    else {
-        currentTaskId = TASK_NONE;
-#if defined SCHEDULER_DEBUG
+    } else {
         debug[3] = (micros() - currentTime);
 #endif
     }

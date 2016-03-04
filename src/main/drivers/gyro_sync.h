@@ -5,8 +5,6 @@
  *      Author: borisb
  */
 
-#define INTERRUPT_WAIT_TIME 0
-
 extern uint32_t targetLooptime;
 
 bool gyroSyncCheckUpdate(void);

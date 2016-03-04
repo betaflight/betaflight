@@ -77,6 +77,6 @@ batteryConfig_t *batteryConfig;
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
-q_number_t calculateVbatPidCompensation(void);
+fix12_t calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
 uint8_t calculateBatteryCapacityRemainingPercentage(void);

@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 128;
+static const uint8_t EEPROM_CONF_VERSION = 129;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -149,10 +149,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 42;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 13;
+    pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 54;
     pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 0;
@@ -384,7 +384,6 @@ static void resetConf(void)
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
 
-    masterConfig.beeper_off.flags = BEEPER_OFF_FLAGS_MIN;
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
@@ -441,8 +440,9 @@ static void resetConf(void)
     masterConfig.rxConfig.serialrx_provider = 0;
     masterConfig.rxConfig.sbus_inversion = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
+    masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.rxConfig.midrc = 1500;
-    masterConfig.rxConfig.mincheck = 1100;
+    masterConfig.rxConfig.mincheck = 1040;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
@@ -615,6 +615,7 @@ static void resetConf(void)
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
+	masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
@@ -1077,4 +1078,44 @@ void featureClearAll()
 uint32_t featureMask(void)
 {
     return masterConfig.enabledFeatures;
+}
+
+void beeperOffSet(uint32_t mask)
+{
+    masterConfig.beeper_off_flags |= mask;
+}
+
+void beeperOffSetAll(uint8_t beeperCount)
+{
+    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
+}
+
+void beeperOffClear(uint32_t mask)
+{
+    masterConfig.beeper_off_flags &= ~(mask);
+}
+
+void beeperOffClearAll(void)
+{
+    masterConfig.beeper_off_flags = 0;
+}
+
+uint32_t getBeeperOffMask(void)
+{
+    return masterConfig.beeper_off_flags;
+}
+
+void setBeeperOffMask(uint32_t mask)
+{
+    masterConfig.beeper_off_flags = mask;
+}
+
+uint32_t getPreferedBeeperOffMask(void)
+{
+    return masterConfig.prefered_beeper_off_flags;
+}
+
+void setPreferedBeeperOffMask(uint32_t mask)
+{
+    masterConfig.prefered_beeper_off_flags = mask;
 }

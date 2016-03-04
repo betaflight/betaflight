@@ -843,7 +843,7 @@ if (init->useBuzzerP6) {
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
-#ifdef SPARKY
+#if defined(SPARKY) || defined(ALIENFLIGHTF3)
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }

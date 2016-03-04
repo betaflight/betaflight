@@ -753,7 +753,7 @@ void acroPlusApply(void) {
 
     for (axis = 0; axis < 2; axis++) {
         int16_t factor;
-        q_number_t wowFactor;
+        fix12_t wowFactor;
         int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
         int16_t acroPlusStickOffset = rxConfig->acroPlusOffset * 5;
         int16_t motorRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
@@ -766,11 +766,11 @@ void acroPlusApply(void) {
             } else {
                 rcCommandDeflection += acroPlusStickOffset;
             }
-            qConstruct(&wowFactor,ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500, Q12_NUMBER);
+            wowFactor = qConstruct(ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500);
             factor = qMultiply(wowFactor, (rcCommandDeflection * motorRange) / 500);
-            wowFactor.num = wowFactor.den - wowFactor.num;
+            wowFactor = Q12 - wowFactor;
         } else {
-            qConstruct(&wowFactor, 1, 1, Q12_NUMBER);
+            wowFactor = Q12;
             factor = 0;
         }
         axisPID[axis] = factor + qMultiply(wowFactor, axisPID[axis]);
@@ -780,9 +780,17 @@ void acroPlusApply(void) {
 void mixTable(void)
 {
     uint32_t i;
-    q_number_t vbatCompensationFactor;
+    fix12_t vbatCompensationFactor;
+    static fix12_t mixReduction;
+    uint8_t axis;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
+
+    if (motorLimitReached) {
+        uint8_t pidAttenuation = constrain(qPercent(mixReduction), 20, 100);
+        for (axis = 0; axis < 2; axis++) axisPID[axis] *= pidAttenuation / 100;
+        if (debugMode == DEBUG_AIRMODE) debug[0] = pidAttenuation;
+    }
 
     if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
         acroPlusApply();
@@ -850,31 +858,24 @@ void mixTable(void)
 
     if (rollPitchYawMixRange > throttleRange) {
         motorLimitReached = true;
-        q_number_t mixReduction;
-        qConstruct(&mixReduction, throttleRange, rollPitchYawMixRange, Q12_NUMBER);
+        mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
-        }
+        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
 
-        if (debugMode == DEBUG_AIRMODE) debug[0] = rollPitchYawMixRange;
-
+        if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
         motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
-        if (debugMode == DEBUG_AIRMODE) debug[0] = 0;
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {
-        if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMix[i];
-
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
         if (isFailsafeActive) {

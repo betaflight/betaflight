@@ -15,63 +15,31 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include "platform.h"
+#include "stdbool.h"
+#include "stdint.h"
+#include "stdlib.h"
 
-#include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/utils.h"
+#include <platform.h>
+#include "build_config.h"
+
+#include "io/rc_controls.h"
 
 #include "drivers/gpio.h"
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
-
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
+#include "drivers/system.h"
 #include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-#include "io/display.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-
-#include "io/beeper.h"
+#ifdef GPS
+#include "io/gps.h"
+#endif
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
+#include "io/beeper.h"
 
 #if FLASH_SIZE > 64
 #define BEEPER_NAMES
@@ -82,6 +50,7 @@
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
 
+#ifdef BEEPER
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -182,23 +151,28 @@ typedef struct beeperTableEntry_s {
 #define BEEPER_ENTRY(a,b,c,d) a,b,c
 #endif
 
-static const beeperTableEntry_t beeperTable[] = {
+/*static*/ const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       1, beep_sos,              "RX_LOST_LANDING") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST,               2, beep_txLostBeep,       "RX_LOST") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       2, beep_sos,              "RX_LOST_LANDING") },
     { BEEPER_ENTRY(BEEPER_DISARMING,             3, beep_disarmBeep,       "DISARMING") },
     { BEEPER_ENTRY(BEEPER_ARMING,                4, beep_armingBeep,       "ARMING")  },
     { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        5, beep_armedGpsFix,      "ARMING_GPS_FIX") },
     { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          6, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
     { BEEPER_ENTRY(BEEPER_BAT_LOW,               7, beep_lowBatteryBeep,   "BAT_LOW") },
-    { BEEPER_ENTRY(BEEPER_USB,                   8, beep_multiBeeps,       NULL) },
+    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            8, beep_multiBeeps,       "GPS_STATUS") },
     { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      NULL) }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
+    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
+    { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
+
+    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,      		   "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -211,7 +185,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-	if (mode == BEEPER_SILENCE || ((masterConfig.beeper_off.flags & (1 << (BEEPER_USB - 1))) && (feature(FEATURE_VBAT) && (batteryCellCount < 2)))) {
+    if (mode == BEEPER_SILENCE || ((getBeeperOffMask() & (1 << (BEEPER_USB-1))) && (feature(FEATURE_VBAT) && (batteryCellCount < 2)))) {
         beeperSilence();
         return;
     }
@@ -333,7 +307,7 @@ void beeperUpdate(void)
     if (!beeperIsOn) {
         beeperIsOn = 1;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-        	if (!(masterConfig.beeper_off.flags & (1 << (currentBeeperEntry->mode - 1))))
+        	if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
                 BEEP_ON;
             warningLedEnable();
             warningLedRefresh();
@@ -411,3 +385,17 @@ int beeperTableEntryCount(void)
 {
     return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
+
+#else
+
+// Stub out beeper functions if #BEEPER not defined
+void beeper(beeperMode_e mode) {UNUSED(mode);}
+void beeperSilence(void) {}
+void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
+void beeperUpdate(void) {}
+uint32_t getArmingBeepTimeMicros(void) {return 0;}
+beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
+const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
+int beeperTableEntryCount(void) {return 0;}
+
+#endif

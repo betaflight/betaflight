@@ -270,8 +270,8 @@ void annexCode(void)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - PWM_RANGE_MIN) * PWM_RANGE_MIN / (PWM_RANGE_MAX - PWM_RANGE_MIN);       // [MINCHECK;2000] -> [0;1000]
+    tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
+    tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
@@ -652,7 +652,6 @@ void taskMainPidLoop(void)
 }
 
 void subTasksMainPidLoop(void) {
-    imuUpdateAttitude();
 
     if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
         filterRc();
@@ -724,6 +723,13 @@ void subTasksMainPidLoop(void) {
 }
 
 void taskMotorUpdate(void) {
+    if (debugMode == DEBUG_CYCLETIME) {
+        static uint32_t previousMotorUpdateTime;
+        uint32_t currentDeltaTime = micros() - previousMotorUpdateTime;
+        debug[2] = currentDeltaTime;
+        debug[3] = currentDeltaTime - targetPidLooptime;
+        previousMotorUpdateTime = micros();
+    }
 
 #ifdef USE_SERVOS
     filterServos();
@@ -731,21 +737,25 @@ void taskMotorUpdate(void) {
 #endif
 
     if (motorControlEnable) {
-        if (debugMode == DEBUG_CYCLETIME) {
-            static uint32_t previousMotorUpdateTime;
-            uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-            debug[2] = currentDeltaTime;
-            debug[3] = currentDeltaTime - previousMotorUpdateTime;
-            previousMotorUpdateTime = currentDeltaTime;
-        }
-
         writeMotors();
+    }
+}
+
+// Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
+bool shouldUpdateMotorsAfterPIDLoop(void) {
+    if (targetPidLooptime > 375 ) {
+        return true;
+    } else if ((masterConfig.use_multiShot || masterConfig.use_oneshot42) && feature(FEATURE_ONESHOT125)) {
+        return true;
+    } else {
+        return false;
     }
 }
 
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
     static uint32_t previousTime;
+    static bool runTaskMainSubprocesses;
 
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
@@ -761,9 +771,10 @@ void taskMainPidLoopCheck(void) {
         if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
-            if (realTimeCycle) {
+            if (runTaskMainSubprocesses) {
+                if (!shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 subTasksMainPidLoop();
-                realTimeCycle = false;
+                runTaskMainSubprocesses = false;
             }
 
             imuUpdateGyro();
@@ -773,7 +784,8 @@ void taskMainPidLoopCheck(void) {
             } else {
                 pidUpdateCountdown = masterConfig.pid_process_denom - 1;
                 taskMainPidLoop();
-                //realTimeCycle = true;
+                if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
+                runTaskMainSubprocesses = true;
             }
 
             break;
@@ -784,6 +796,10 @@ void taskMainPidLoopCheck(void) {
 void taskUpdateAccelerometer(void)
 {
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+}
+
+void taskUpdateAttitude(void) {
+    imuUpdateAttitude();
 }
 
 void taskHandleSerial(void)
@@ -933,6 +949,15 @@ void taskLedStrip(void)
 {
     if (feature(FEATURE_LED_STRIP)) {
         updateLedStrip();
+    }
+}
+#endif
+
+#ifdef TRANSPONDER
+void taskTransponder(void)
+{
+    if (feature(FEATURE_TRANSPONDER)) {
+        updateTransponder();
     }
 }
 #endif
