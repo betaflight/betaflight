@@ -442,7 +442,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.rxConfig.midrc = 1500;
-    masterConfig.rxConfig.mincheck = 1100;
+    masterConfig.rxConfig.mincheck = 1040;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
