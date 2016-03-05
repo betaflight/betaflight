@@ -183,9 +183,8 @@
 #define USE_CLI
 //#define SONAR
 
-//#define LED_STRIP
-#if 0 // <----------
-// LED strip configuration using PWM motor output pin 5.
+#define LED_STRIP
+#if 1 // <----------
 #define LED_STRIP_TIMER TIM3
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
@@ -195,26 +194,11 @@
 #define WS2811_PIN                      GPIO_Pin_6
 #define WS2811_PIN_SOURCE               GPIO_PinSource6
 #define WS2811_TIMER                    TIM3
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM3
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#endif
-
-#if 0
-// Alternate LED strip pin
-// FIXME DMA IRQ Transfer Complete is never called because the  TIM17_DMA_RMP needs to be set in SYSCFG_CFGR1
-#define LED_STRIP_TIMER TIM17
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL7
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_7 // TIM17_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource7
-#define WS2811_TIMER                    TIM17
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
-#define WS2811_DMA_CHANNEL              DMA1_Channel7
-#define WS2811_IRQ                      DMA1_Channel7_IRQn
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB1Periph_TIM3
+#define WS2811_DMA_CHANNEL              DMA1_Channel6
+#define WS2811_IRQ                      DMA1_Channel6_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 #endif
 
 //#define USE_SERIAL_1WIRE
