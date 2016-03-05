@@ -450,11 +450,11 @@ static void updateEstimatedTopic(uint32_t currentTime)
     }
 
     /* increase EPH/EPV on each iteration */
-    if (posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) {
+    if (posEstimator.est.eph <= posControl.navConfig->inav.max_eph_epv) {
         posEstimator.est.eph *= 1.0f + dt;
     }
 
-    if (posEstimator.est.epv < posControl.navConfig->inav.max_eph_epv) {
+    if (posEstimator.est.epv <= posControl.navConfig->inav.max_eph_epv) {
         posEstimator.est.epv *= 1.0f + dt;
     }
 
@@ -537,13 +537,10 @@ static void updateEstimatedTopic(uint32_t currentTime)
         inavFilterCorrectVel(Z, dt, 0.0f - posEstimator.est.vel.V.Z, posControl.navConfig->inav.w_z_res_v);
     }
 
-    /* Estimate XY-axis */
-    if ((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) {
-        /* Predict position only if heading is valid (X-Y acceleration is North-East)*/
-        if (isImuHeadingValid()) {
-            inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
-            inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
-        }
+    /* Estimate XY-axis only if heading is valid (X-Y acceleration is North-East)*/
+    if (((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) && isImuHeadingValid()) {
+        inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
+        inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
 
         /* Correct position from GPS - always if GPS is valid */
         if (isGPSValid) {
