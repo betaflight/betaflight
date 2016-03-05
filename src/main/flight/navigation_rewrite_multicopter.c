@@ -54,7 +54,6 @@ extern int16_t magHold;
 /*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
-static int16_t altholdInitialRCThrottle;      // Throttle input when althold was activated
 static int16_t rcCommandAdjustedThrottle;
 static filterStatePt1_t altholdThrottleFilterState;
 
@@ -100,7 +99,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
-    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - altholdInitialRCThrottle;
+    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - posControl.rxConfig->midrc;
     if (ABS(rcThrottleAdjustment) > posControl.rcControlsConfig->alt_hold_deadband) {
         // set velocity proportional to stick movement
         float rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / 500;
@@ -120,16 +119,7 @@ bool adjustMulticopterAltitudeFromRCInput(void)
 
 void setupMulticopterAltitudeController(void)
 {
-    // Use midrc as neutral point for throttle if explicitly selected or if not possible to ascend or descend due to deadband
-    if (posControl.navConfig->flags.use_midrc_for_althold ||
-        (((int16_t)rcCommand[THROTTLE] - (int16_t)posControl.rcControlsConfig->alt_hold_deadband) <= ((int16_t)posControl.rxConfig->mincheck)) ||
-        (((int16_t)rcCommand[THROTTLE] + (int16_t)posControl.rcControlsConfig->alt_hold_deadband) >= ((int16_t)posControl.rxConfig->maxcheck)) ||
-        !ARMING_FLAG(ARMED)) {
-        altholdInitialRCThrottle = posControl.rxConfig->midrc;
-    }
-    else {
-        altholdInitialRCThrottle = rcCommand[THROTTLE];
-    }
+    // Nothing here
 }
 
 void resetMulticopterAltitudeController()

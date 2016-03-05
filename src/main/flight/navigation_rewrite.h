@@ -68,7 +68,7 @@ enum {
 
 typedef struct navConfig_s {
     struct {
-        uint8_t use_midrc_for_althold;      // Don't remember throttle when althold was initiated, assume that throttle is at middle = zero climb rate
+        uint8_t __stub;                     // Don't remember throttle when althold was initiated, assume that throttle is at middle = zero climb rate
         uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
         uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
         uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
