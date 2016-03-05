@@ -133,7 +133,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.pid_process_denom = 2;
             }
         } else {
-            masterConfig.gyro_lpf = 1;
+            masterConfig.gyro_lpf = 0;
+            masterConfig.gyro_sync_denom = 8;
             masterConfig.pid_process_denom = 1;
             masterConfig.acc_hardware = 0;
             masterConfig.baro_hardware = 0;
@@ -159,7 +160,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 }
             }
         } else {
-            masterConfig.gyro_lpf = 1;
+            masterConfig.gyro_lpf = 0;
+            masterConfig.gyro_sync_denom = 8;
             masterConfig.acc_hardware = 0;
             masterConfig.baro_hardware = 0;
             masterConfig.mag_hardware = 0;
