@@ -20,7 +20,7 @@
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX 300                 // Maximum value for yaw P limiter
 
 typedef enum {
     PIDROLL,

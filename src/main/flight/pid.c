@@ -213,6 +213,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate P component
         PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
+        // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
+        if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
+            PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+        }
+
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
@@ -407,7 +412,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6; // TODO: Bitwise shift on a signed integer is not recommended
 
-    // Constrain YAW by D value if not servo driven in that case servolimits apply
+    // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
     if(motorCount >= 4 && pidProfile->yaw_p_limit < YAW_P_LIMIT_MAX) {
         PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
@@ -503,6 +508,11 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+
+        // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
+        if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
+            PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+        }
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.

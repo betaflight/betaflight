@@ -785,11 +785,6 @@ void mixTable(void)
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
-    if (motorLimitReached) {
-        axisPID[YAW] *= constrain(qPercent(mixReduction), 40, 100);
-        if (debugMode == DEBUG_AIRMODE) debug[0] = axisPID[YAW];
-    }
-
     if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
         acroPlusApply();
     }
