@@ -70,6 +70,7 @@
 
 #define INAV_SONAR_W1                       0.8461f // Sonar predictive filter gain for altitude
 #define INAV_SONAR_W2                       6.2034f // Sonar predictive filter gain for velocity
+#define INAV_SONAR_MAX_DISTANCE             70      // Sonar is unreliable above 70cm due to noise from propellers
 
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
@@ -365,7 +366,7 @@ static void updateSonarTopic(uint32_t currentTime)
             newSonarAlt = sonarCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
             /* Apply predictive filter to sonar readings (inspired by PX4Flow) */
-            if (posEstimator.sonar.alt > 0) {
+            if (posEstimator.sonar.alt > 0 && posEstimator.sonar.alt <= INAV_SONAR_MAX_DISTANCE) {
                 float sonarPredVel, sonarPredAlt;
                 float sonarDt = (currentTime - posEstimator.sonar.lastUpdateTime) * 1e-6;
                 posEstimator.sonar.lastUpdateTime = currentTime;

@@ -613,7 +613,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
         setupAltitudeController();
 
         // If low enough and surface offset valid - enter surface tracking
-        setDesiredSurfaceOffset(posControl.actualState.surface);
+        if (posControl.flags.hasValidSurfaceSensor) {
+            setDesiredSurfaceOffset(posControl.actualState.surface);
+        }
+        else {
+            setDesiredSurfaceOffset(-1.0f);
+        }
+
         setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
     }
 
@@ -664,7 +670,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 
     if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         // If low enough and surface offset valid - enter surface tracking
-        setDesiredSurfaceOffset(posControl.actualState.surface);
+        if (posControl.flags.hasValidSurfaceSensor) {
+            setDesiredSurfaceOffset(posControl.actualState.surface);
+        }
+        else {
+            setDesiredSurfaceOffset(-1.0f);
+        }
+
         setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
     }
 
