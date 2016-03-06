@@ -364,6 +364,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXNAVWP, "NAV WP;", 28 },
     { BOXAIRMODE, "AIR MODE;", 29 },
+    { BOXHOMERESET, "HOME RESET;", 30 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -666,10 +667,9 @@ void mspInit(serialConfig_t *serialConfig)
     }
     if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
-    }
-    if ((feature(FEATURE_GPS) && sensors(SENSOR_ACC) && sensors(SENSOR_MAG)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
         activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
+        activeBoxIds[activeBoxIdCount++] = BOXHOMERESET;
     }
 #endif
 
@@ -748,7 +748,8 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
         IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));

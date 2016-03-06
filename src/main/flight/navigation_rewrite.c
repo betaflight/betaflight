@@ -1459,6 +1459,11 @@ void updateHomePosition(void)
         }
     }
     else {
+        // If pilot so desires he may reset home position to current position
+        if (IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE) && posControl.flags.hasValidPositionSensor) {
+            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+        }
+
         // Update distance and direction to home if armed (home is not updated when armed)
         if (STATE(GPS_FIX_HOME)) {
             posControl.homeDistance = calculateDistanceToDestination(&posControl.homePosition.pos);
