@@ -2129,7 +2129,7 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
 
         navPidInit(&posControl.pids.vel[axis], (float)posControl.pidProfile->P8[PIDPOSR] / 100.0f,
                                                (float)posControl.pidProfile->I8[PIDPOSR] / 100.0f,
-                                               (float)posControl.pidProfile->D8[PIDPOSR] / 1000.0f);
+                                               (float)posControl.pidProfile->D8[PIDPOSR] / 100.0f);
     }
 
     // Initialize altitude hold PID-controllers (pos_z, vel_z, acc_z
@@ -2137,16 +2137,16 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
 
     navPidInit(&posControl.pids.vel[Z], (float)posControl.pidProfile->P8[PIDVEL] / 100.0f,
                                         (float)posControl.pidProfile->I8[PIDVEL] / 100.0f,
-                                        (float)posControl.pidProfile->D8[PIDVEL] / 1000.0f);
+                                        (float)posControl.pidProfile->D8[PIDVEL] / 100.0f);
 
     // Initialize fixed wing PID controllers
     navPidInit(&posControl.pids.fw_nav, (float)posControl.pidProfile->P8[PIDNAVR] / 100.0f,
                                         (float)posControl.pidProfile->I8[PIDNAVR] / 100.0f,
-                                        (float)posControl.pidProfile->D8[PIDNAVR] / 1000.0f);
+                                        (float)posControl.pidProfile->D8[PIDNAVR] / 100.0f);
 
     navPidInit(&posControl.pids.fw_alt, (float)posControl.pidProfile->P8[PIDALT] / 100.0f,
                                         (float)posControl.pidProfile->I8[PIDALT] / 100.0f,
-                                        (float)posControl.pidProfile->D8[PIDALT] / 1000.0f);
+                                        (float)posControl.pidProfile->D8[PIDALT] / 100.0f);
 }
 
 void navigationInit(navConfig_t *initialnavConfig,

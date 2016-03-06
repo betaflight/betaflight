@@ -168,17 +168,17 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDPOS] = 30;    // posResponseExpo * 100
     pidProfile->P8[PIDPOSR] = 90;   // NAV_VEL_XY_P * 100
     pidProfile->I8[PIDPOSR] = 15;   // NAV_VEL_XY_I * 100
-    pidProfile->D8[PIDPOSR] = 1;    // NAV_VEL_XY_D * 1000
+    pidProfile->D8[PIDPOSR] = 0;    // NAV_VEL_XY_D * 100
     pidProfile->P8[PIDNAVR] = 14;   // FW_NAV_P * 100
     pidProfile->I8[PIDNAVR] = 2;    // FW_NAV_I * 100
-    pidProfile->D8[PIDNAVR] = 80;   // FW_NAV_D * 1000
+    pidProfile->D8[PIDNAVR] = 8;    // FW_NAV_D * 100
     pidProfile->P8[PIDLEVEL] = 20;
     pidProfile->I8[PIDLEVEL] = 20;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 100;   // NAV_VEL_Z_P * 100
-    pidProfile->I8[PIDVEL] = 5;     // NAV_VEL_Z_I * 100
-    pidProfile->D8[PIDVEL] = 100;   // NAV_VEL_Z_D * 1000
+    pidProfile->I8[PIDVEL] = 50;    // NAV_VEL_Z_I * 100
+    pidProfile->D8[PIDVEL] = 10;    // NAV_VEL_Z_D * 100
 
     pidProfile->acc_soft_lpf_hz = 15;
     pidProfile->gyro_soft_lpf_hz = 60;
