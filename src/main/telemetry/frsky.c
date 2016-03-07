@@ -518,7 +518,9 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
         sendThrottleOrBatterySizeAsRpm(rxConfig, deadband3d_throttle);
 
         if (feature(FEATURE_VBAT)) {
-            sendVoltage();
+	        if (telemetryConfig->telemetry_flvss_cells) {
+            	sendVoltage();
+            }
             sendVoltageAmp();
             sendAmperage();
             sendFuelLevel();

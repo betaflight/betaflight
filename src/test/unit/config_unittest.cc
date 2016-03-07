@@ -96,7 +96,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(0, masterConfig.batteryConfig.batteryCapacity);
 
     EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_inversion);
-    EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_sport_flvss);
+    EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_flvss_cells);
     EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_switch);
     EXPECT_EQ(0, masterConfig.telemetryConfig.gpsNoFixLatitude);
     EXPECT_EQ(0, masterConfig.telemetryConfig.gpsNoFixLongitude);
