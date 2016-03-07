@@ -542,16 +542,15 @@ int main(void) {
     init();
 
     /* Setup scheduler */
-    if (masterConfig.gyroSync) {
-        rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
-    }
-    else {
-        rescheduleTask(TASK_GYROPID, targetLooptime);
-    }
+    schedulerInit();
 
+    rescheduleTask(TASK_GYROPID, targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
+
     setTaskEnabled(TASK_SERIAL, true);
+#ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
+#endif
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 #ifdef GPS
@@ -576,7 +575,6 @@ int main(void) {
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
 
-    schedulerInit();
     while (1) {
         scheduler();
         processLoopback();
