@@ -79,7 +79,7 @@ bool isOnFinalGyroCalibrationCycle(void)
 
 bool isOnFirstGyroCalibrationCycle(void)
 {
-    return calibratingG == CALIBRATING_GYRO_CYCLES;
+    return calibratingG == (CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES;
 }
 
 static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
@@ -108,10 +108,10 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
             float dev = devStandardDeviation(&var[axis]);
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
-                gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+                gyroSetCalibrationCycles((CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES);
                 return;
             }
-            gyroZero[axis] = (g[axis] + (CALIBRATING_GYRO_CYCLES / 2)) / CALIBRATING_GYRO_CYCLES;
+            gyroZero[axis] = (g[axis] + ((CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES / 2)) / (CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES;
         }
     }
 
