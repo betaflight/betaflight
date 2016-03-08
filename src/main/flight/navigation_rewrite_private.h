@@ -59,6 +59,9 @@ typedef struct navigationFlags_s {
     bool isAdjustingAltitude;
     bool isAdjustingHeading;
 
+    // Behaviour modifiers
+    bool isGCSAssistedNavigationEnabled;    // Does iNav accept WP#255 - follow-me etc.
+
     bool forcedRTHActivated;
 } navigationFlags_t;
 

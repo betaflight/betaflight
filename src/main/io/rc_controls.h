@@ -37,7 +37,7 @@ typedef enum {
     BOXLEDMAX,
     BOXLEDLOW,
     BOXLLIGHTS,
-    //BOXCALIB,
+    BOXGCSNAV,
     BOXGOV,
     BOXOSD,
     BOXTELEMETRY,

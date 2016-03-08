@@ -1738,8 +1738,8 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     }
     // WP #255 - special waypoint - directly set desiredPosition
     // Only valid when armed and in poshold mode
-    else if ((wpNumber == 255) && (wpData->action == NAV_WP_ACTION_WAYPOINT) && 
-             ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid &&
+    else if ((wpNumber == 255) && (wpData->action == NAV_WP_ACTION_WAYPOINT) &&
+             ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid && posControl.flags.isGCSAssistedNavigationEnabled &&
              (posControl.navState == NAV_STATE_POSHOLD_2D_IN_PROGRESS || posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
         // Convert to local coordinates
         geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
@@ -2058,6 +2058,11 @@ static void updateReadyStatus(void)
     }
 }
 
+void updateFlightBehaviorModifiers(void)
+{
+    posControl.flags.isGCSAssistedNavigationEnabled = IS_RC_MODE_ACTIVE(BOXGCSNAV);
+}
+
 /**
  * Process NAV mode transition and WP/RTH state machine
  *  Update rate: RX (data driven or 50Hz)
@@ -2069,6 +2074,9 @@ void updateWaypointsAndNavigationMode(void)
 
     /* Update NAV ready status */
     updateReadyStatus();
+
+    // Update flight behaviour modifiers
+    updateFlightBehaviorModifiers();
 
     // Process switch to a different navigation mode (if needed)
     navProcessFSMEvents(selectNavEventFromBoxModeInput());

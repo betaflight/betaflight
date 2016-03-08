@@ -365,6 +365,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXNAVWP, "NAV WP;", 28 },
     { BOXAIRMODE, "AIR MODE;", 29 },
     { BOXHOMERESET, "HOME RESET;", 30 },
+    { BOXGCSNAV, "GCS NAV;", 31 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -670,6 +671,7 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
         activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
         activeBoxIds[activeBoxIdCount++] = BOXHOMERESET;
+        activeBoxIds[activeBoxIdCount++] = BOXGCSNAV;
     }
 #endif
 
@@ -749,6 +751,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {
