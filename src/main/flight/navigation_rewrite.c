@@ -181,7 +181,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     [NAV_STATE_POSHOLD_2D_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_POSHOLD_2D_IN_PROGRESS,
         .timeoutMs = 10,
-        .stateFlags = NAV_CTL_POS | NAV_REQUIRE_ANGLE | NAV_RC_POS | NAV_RC_YAW,
+        .stateFlags = NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_POSHOLD_MODE,
         .mwState = MW_NAV_STATE_HOLD_INFINIT,
         .mwError = MW_NAV_ERROR_NONE,
@@ -214,7 +214,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     [NAV_STATE_POSHOLD_3D_IN_PROGRESS] = {
         .onEntry = navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS,
         .timeoutMs = 10,
-        .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_REQUIRE_ANGLE | NAV_REQUIRE_THRTILT | NAV_RC_ALT | NAV_RC_POS | NAV_RC_YAW,
+        .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_THRTILT | NAV_RC_ALT | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_ALTHOLD_MODE | NAV_POSHOLD_MODE,
         .mwState = MW_NAV_STATE_HOLD_INFINIT,
         .mwError = MW_NAV_ERROR_NONE,
@@ -1738,13 +1738,12 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     }
     // WP #255 - special waypoint - directly set desiredPosition
     // Only valid when armed and in poshold mode
-    else if ((wpNumber == 255) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid &&
+    else if ((wpNumber == 255) && (wpData->action == NAV_WP_ACTION_WAYPOINT) && 
+             ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid &&
              (posControl.navState == NAV_STATE_POSHOLD_2D_IN_PROGRESS || posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
-        // Converto to local coordinates
+        // Convert to local coordinates
         geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
 
-        // If close to actualPos, use heading, if far - use bearing
-        uint32_t wpDistance = calculateDistanceToDestination(&wpPos.pos);
         navSetWaypointFlags_t waypointUpdateFlags = NAV_POS_UPDATE_XY;
 
         // If we received global altitude == 0, use current altitude
@@ -1752,14 +1751,11 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
             waypointUpdateFlags |= NAV_POS_UPDATE_Z;
         }
 
-        if (wpDistance <= posControl.navConfig->waypoint_radius) {
+        if (wpData->p1 > 0 && wpData->p1 < 360) {
             waypointUpdateFlags |= NAV_POS_UPDATE_HEADING;
         }
-        else {
-            waypointUpdateFlags |= NAV_POS_UPDATE_BEARING;
-        }
 
-        setDesiredPosition(&wpPos.pos, posControl.actualState.yaw, waypointUpdateFlags);
+        setDesiredPosition(&wpPos.pos, DEGREES_TO_DECIDEGREES(wpData->p1), waypointUpdateFlags);
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS) && !ARMING_FLAG(ARMED)) {
