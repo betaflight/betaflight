@@ -125,6 +125,7 @@ typedef struct navConfig_s {
     uint8_t  fw_max_climb_angle;            // Fixed wing max banking angle (deg)
     uint8_t  fw_max_dive_angle;             // Fixed wing max banking angle (deg)
     uint8_t  fw_pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
+    uint16_t fw_loiter_radius;              // Loiter radius when executing PH on a fixed wing
 } navConfig_t;
 
 typedef struct gpsOrigin_s {
