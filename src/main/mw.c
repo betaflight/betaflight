@@ -741,6 +741,14 @@ void taskMotorUpdate(void) {
     }
 }
 
+uint8_t setPidUpdateCountDown(void) {
+    if (masterConfig.gyro_soft_lpf_hz) {
+	    return masterConfig.pid_process_denom - 1;
+    } else {
+        return 1;
+    }
+}
+
 // Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
 bool shouldUpdateMotorsAfterPIDLoop(void) {
     if (targetPidLooptime > 375 ) {
@@ -782,7 +790,7 @@ void taskMainPidLoopCheck(void) {
             if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
             } else {
-                pidUpdateCountdown = masterConfig.pid_process_denom - 1;
+                pidUpdateCountdown = setPidUpdateCountDown();
                 taskMainPidLoop();
                 if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 runTaskMainSubprocesses = true;
