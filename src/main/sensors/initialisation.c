@@ -55,6 +55,7 @@
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
+#include "drivers/compass_mag3110.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -685,6 +686,18 @@ retry:
                 magAlign = MAG_GPS_ALIGN;
 #endif
                 magHardware = MAG_GPS;
+                break;
+            }
+#endif
+            ; // fallthrough
+
+        case MAG_MAG3110:
+#ifdef USE_MAG_MAG3110
+            if (mag3110detect(&mag)) {
+#ifdef MAG_MAG3110_ALIGN
+                magAlign = MAG_MAG3110_ALIGN;
+#endif
+                magHardware = MAG_MAG3110;
                 break;
             }
 #endif

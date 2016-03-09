@@ -55,6 +55,8 @@
 #define MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
+#define USE_MAG_MAG3110
+
 #define MAG_HMC5883_ALIGN CW270_DEG
 
 #define USE_FLASHFS

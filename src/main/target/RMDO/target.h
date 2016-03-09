@@ -53,6 +53,7 @@
 #define MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
+#define USE_MAG_MAG3110
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
