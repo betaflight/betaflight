@@ -216,7 +216,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
-        gyroSetCalibrationCycles((CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES);
+        gyroSetCalibrationCycles(calculateCalibratingCycles());
 
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
