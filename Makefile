@@ -50,7 +50,7 @@ $(error FLASH_SIZE not configured for target)
 endif
 endif
 
-REVISION = $(shell git log -1 --format="%h")
+REVISION := $(shell git log -1 --format="%h")
 
 # Working directories
 ROOT		 := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
