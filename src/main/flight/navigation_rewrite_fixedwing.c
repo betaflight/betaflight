@@ -391,11 +391,20 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         applyFixedWingEmergencyLandingController();
     }
     else {
-        if (navStateFlags & NAV_CTL_ALT)
-            applyFixedWingAltitudeController(currentTime);
+        // Don't apply anything if ground speed is too low (<3m/s)
+        float forwardVelocitySquared = sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y);
+        if (forwardVelocitySquared > (300 * 300)) {
+            if (navStateFlags & NAV_CTL_ALT)
+                applyFixedWingAltitudeController(currentTime);
 
-        if (navStateFlags & NAV_CTL_POS)
-            applyFixedWingPositionController(currentTime);
+            if (navStateFlags & NAV_CTL_POS)
+                applyFixedWingPositionController(currentTime);
+        }
+        else {
+            posControl.rcAdjustment[PITCH] = 0;
+            posControl.rcAdjustment[ROLL] = 0;
+            posControl.rcAdjustment[THROTTLE] = 0;
+        }
 
         //if (navStateFlags & NAV_CTL_YAW)
         if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS))

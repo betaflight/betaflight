@@ -539,9 +539,11 @@ static void updateEstimatedTopic(uint32_t currentTime)
     }
 
     /* Estimate XY-axis only if heading is valid (X-Y acceleration is North-East)*/
-    if (((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) && isImuHeadingValid()) {
-        inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
-        inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+    if (((posEstimator.est.eph < posControl.navConfig->inav.max_eph_epv) || isGPSValid) && (isImuHeadingValid() || STATE(FIXED_WING))) {
+        if (isImuHeadingValid()) {
+            inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
+            inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+        }
 
         /* Correct position from GPS - always if GPS is valid */
         if (isGPSValid) {
