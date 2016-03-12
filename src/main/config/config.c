@@ -418,8 +418,8 @@ static void resetConf(void)
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
-    masterConfig.gyro_lpf = 1;                 // 188HZ
-    masterConfig.gyro_sync_denom = 4;
+    masterConfig.gyro_lpf = 0;                 // 256HZ default
+    masterConfig.gyro_sync_denom = 8;
     masterConfig.gyro_soft_lpf_hz = 60;
 
     masterConfig.pid_process_denom = 1;
@@ -452,7 +452,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.rxConfig.midrc = 1500;
-    masterConfig.rxConfig.mincheck = 1100;
+    masterConfig.rxConfig.mincheck = 1040;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection

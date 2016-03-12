@@ -271,15 +271,20 @@ void annexCode(void)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    if (isUsingSticksForArming()) {
+    if (feature(FEATURE_3D)) {
+        tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
+    } else {
         tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
-    } else {
-        tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-        tmp = (uint32_t)(tmp - PWM_RANGE_MIN) * PWM_RANGE_MIN / (PWM_RANGE_MAX - PWM_RANGE_MIN);       // [MINCHECK;2000] -> [0;1000]
     }
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+
+    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
+        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+        rcCommand[THROTTLE] = masterConfig.rxConfig.midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - masterConfig.rxConfig.midrc);
+    }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
@@ -747,6 +752,14 @@ void taskMotorUpdate(void) {
     }
 }
 
+uint8_t setPidUpdateCountDown(void) {
+    if (masterConfig.gyro_soft_lpf_hz) {
+	    return masterConfig.pid_process_denom - 1;
+    } else {
+        return 1;
+    }
+}
+
 // Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
 bool shouldUpdateMotorsAfterPIDLoop(void) {
     if (targetPidLooptime > 375 ) {
@@ -788,7 +801,7 @@ void taskMainPidLoopCheck(void) {
             if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
             } else {
-                pidUpdateCountdown = masterConfig.pid_process_denom - 1;
+                pidUpdateCountdown = setPidUpdateCountDown();
                 taskMainPidLoop();
                 if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 runTaskMainSubprocesses = true;

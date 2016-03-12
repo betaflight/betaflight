@@ -43,4 +43,5 @@ void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);
+uint16_t calculateCalibratingCycles(void);
 

@@ -134,9 +134,10 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
             }
+            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
-            masterConfig.gyro_lpf = 1;
-            masterConfig.pid_process_denom = 1;
+            masterConfig.gyro_lpf = 0;
+            masterConfig.gyro_sync_denom = 8;
             masterConfig.acc_hardware = 0;
             masterConfig.baro_hardware = 0;
             masterConfig.mag_hardware = 0;
@@ -160,15 +161,17 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                     masterConfig.pid_process_denom = 2;
                 }
             }
+            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
-            masterConfig.gyro_lpf = 1;
+            masterConfig.gyro_lpf = 0;
+
+            masterConfig.gyro_sync_denom = 8;
             masterConfig.acc_hardware = 0;
             masterConfig.baro_hardware = 0;
             masterConfig.mag_hardware = 0;
             masterConfig.pid_process_denom = 1;
         }
 #endif
-        masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
 
         if (!(masterConfig.use_multiShot || masterConfig.use_oneshot42) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125)) masterConfig.pid_process_denom = 3;
     }
@@ -216,6 +219,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOXACROPLUS, "ACRO PLUS;", 29 },
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -543,7 +547,7 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOXACROPLUS;
-
+    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
