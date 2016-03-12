@@ -125,6 +125,10 @@ typedef struct master_t {
     uint8_t transponderData[6];
 #endif
 
+#ifdef OSD
+    uint8_t vtx_channel;
+#endif
+
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
  

@@ -278,6 +278,26 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #endif
 
+#if defined(SIRINFPV)
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+
+    { TIM4,  GPIOB, Pin_6, TIM_Channel_1, TIM4_IRQn,               1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2}, // PWM1 - PB6
+    { TIM4,  GPIOB, Pin_7, TIM_Channel_2, TIM4_IRQn,               1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2}, // PWM2 - PB6
+    { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,               1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_2},  // PWM3 - PB8
+    { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,               1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_2},  // PWM4 - PB9
+
+    { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_2}, // PWM5 - PB0  - *TIM3_CH3
+    { TIM3,  GPIOB, Pin_1,  TIM_Channel_4, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_2}, // PWM6 - PB1  - *TIM3_CH4
+
+};
+
+#define USED_TIMERS  (TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOB)
+
+#endif
+
 #if defined(MOTOLAB)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  GPIOA, Pin_4,  TIM_Channel_2, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource4,  GPIO_AF_2}, // PWM1  - PA4  - *TIM3_CH2

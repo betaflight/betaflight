@@ -130,6 +130,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &spRacingF3MPUIntExtiConfig;
 #endif
 
+#if defined(SIRINFPV)
+    static const extiConfig_t fpvRacerMPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_8,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource8,
+            .exti_line = EXTI_Line8,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    return &fpvRacerMPUIntExtiConfig;
+#endif
+
 #if defined(CC3D)
     static const extiConfig_t cc3dMPUIntExtiConfig = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,

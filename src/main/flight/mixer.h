@@ -189,8 +189,9 @@ extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isMixerUsingServos(void);
 void writeServos(void);
 void filterServos(void);
-bool motorLimitReached;
 #endif
+
+bool motorLimitReached;
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];

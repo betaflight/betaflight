@@ -395,6 +395,16 @@ static void resetConf(void)
 //    featureSet(FEATURE_DISPLAY);
 //#endif
 
+#ifdef SIRINFPV
+    featureSet(FEATURE_OSD);
+    featureSet(FEATURE_RX_SERIAL);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    //masterConfig.batteryConfig.vbatscale = 20;
+    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
+    masterConfig.vtx_channel = 0;
+#endif
+
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.

@@ -131,6 +131,7 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 void transponderInit(uint8_t* transponderCode);
+void osdInit(void);
 //void usbCableDetectInit(void);
 
 #ifdef STM32F303xC
@@ -464,6 +465,12 @@ void init(void)
     }
 #endif
 
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
+
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf, masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -723,6 +730,9 @@ int main(void) {
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_READ_WRITE, true);

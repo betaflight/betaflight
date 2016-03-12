@@ -40,6 +40,9 @@ void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
 void taskSystem(void);
+#ifdef OSD
+void taskUpdateOsd(void);
+#endif
 #ifdef USE_BST
 void taskBstReadWrite(void);
 void taskBstMasterProcess(void);
@@ -168,7 +171,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-
+#ifdef OSD
+    [TASK_OSD] = {
+        .taskName = "OSD",
+        .taskFunc = taskUpdateOsd,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
 #ifdef TELEMETRY
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
