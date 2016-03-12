@@ -699,7 +699,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
 {
     UNUSED(previousState);
     /* All good for RTH */
-    if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME)) {
+    if (posControl.flags.hasValidPositionSensor &&  posControl.flags.hasValidHeadingSensor && STATE(GPS_FIX_HOME)) {
         // Switch between 2D and 3D RTH depending on altitude sensor availability
         if (posControl.flags.hasValidAltitudeSensor) {
             return NAV_FSM_EVENT_SWITCH_TO_RTH_3D;
@@ -739,7 +739,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(naviga
     UNUSED(previousState);
 
     // If no position sensor available - switch to NAV_STATE_RTH_2D_GPS_FAILING
-    if (!posControl.flags.hasValidPositionSensor) {
+    if (!posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) {
         return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_2D_GPS_FAILING
     }
 
@@ -765,7 +765,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navi
     UNUSED(previousState);
 
     /* Wait for GPS to be online again */
-    if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME)) {
+    if (posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor && STATE(GPS_FIX_HOME)) {
         return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_HEAD_HOME
     }
     /* No HOME set or position sensor failure timeout - land */
@@ -831,7 +831,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (!posControl.flags.hasValidPositionSensor && checkForPositionSensorTimeout()) {
+    if (!posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor && checkForPositionSensorTimeout()) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
@@ -856,7 +856,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (!posControl.flags.hasValidPositionSensor) {
+    if (!posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) {
         return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_3D_GPS_FAILING
     }
 
@@ -893,7 +893,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_L
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (!posControl.flags.hasValidPositionSensor && checkForPositionSensorTimeout()) {
+    if (!posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor && checkForPositionSensorTimeout()) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
@@ -990,7 +990,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(na
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (posControl.flags.hasValidPositionSensor) {
+    if (posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) {
         switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
             case NAV_WP_ACTION_WAYPOINT:
             case NAV_WP_ACTION_RTH:
@@ -1039,7 +1039,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_FINISHED(navig
     UNUSED(previousState);
 
     // If no position sensor available - land immediately
-    if (posControl.flags.hasValidPositionSensor) {
+    if (posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) {
         return NAV_FSM_EVENT_NONE;
     }
     /* No pos sensor available for NAV_WAIT_FOR_GPS_TIMEOUT_MS - land */
@@ -1279,6 +1279,7 @@ void updateActualHorizontalPositionAndVelocity(bool hasValidSensor, float newX, 
     posControl.actualState.vel.V.Y = newVelY;
 
     posControl.flags.hasValidPositionSensor = hasValidSensor;
+    posControl.flags.hasValidHeadingSensor = isImuHeadingValid();
 
     if (hasValidSensor) {
         posControl.flags.horizontalPositionNewData = 1;
@@ -1947,7 +1948,7 @@ static bool canActivateAltHoldMode(void)
 
 static bool canActivatePosHoldMode(void)
 {
-    return posControl.flags.hasValidPositionSensor;
+    return posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor;
 }
 
 static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
@@ -2170,6 +2171,7 @@ void navigationInit(navConfig_t *initialnavConfig,
     posControl.flags.hasValidAltitudeSensor = 0;
     posControl.flags.hasValidPositionSensor = 0;
     posControl.flags.hasValidSurfaceSensor = 0;
+    posControl.flags.hasValidHeadingSensor = 0;
 
     posControl.flags.forcedRTHActivated = 0;
     posControl.waypointCount = 0;
