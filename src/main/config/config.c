@@ -426,10 +426,10 @@ static void resetConf(void)
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
     masterConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
-    masterConfig.dcm_ki_acc = 0;                // 0.00 * 10000
+    masterConfig.dcm_ki_acc = 50;               // 0.005 * 10000
     masterConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
-    masterConfig.gyro_lpf = 3;                  // BITS_DLPF_CFG_42HZ, In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyro_lpf = 2;                  // BITS_DLPF_CFG_98HZ, In case of ST gyro, will default to 54Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero, &masterConfig.accGain);
 
