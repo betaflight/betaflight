@@ -73,6 +73,7 @@ void pidResetErrorGyro(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
+static filterStatePt1_t angleFilterState[2];    // Only ROLL and PITCH
 static biquad_t deltaBiQuadState[3];
 static bool deltaFilterInit = false;
 
@@ -133,8 +134,6 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
 
         // Outer PID loop (ANGLE/HORIZON)
         if ((axis != FD_YAW) && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            static filterStatePt1_t angleFilterState[2];    // Only ROLL and PITCH
-
             float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
             float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination, +pidProfile->max_angle_inclination) - attitude.raw[axis]) / 10.0f;
 
@@ -147,6 +146,14 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
             }
 
             // Apply simple LPF to rateTarget to make response less jerky
+            // Ideas behind this:
+            //  1) Attitude is updated at gyro rate, rateTarget for ANGLE mode is calculated from attitude
+            //  2) If this rateTarget is passed directly into gyro-base PID controller this effectively doubles the rateError. D-term that is calculated from error
+            //     tend to amplify this even more. Moreover, this tend to respond to every slightest change in attitude making self-leveling jittery
+            //  3) Lowering LEVEL P can make the effects of (2) less visible, but this also slows down self-leveling.
+            //  4) Human pilot response to attitude change in RATE mode is fairly slow and smooth, human pilot doesn't compensate for each slightest change
+            //  5) (2) and (4) lead to a simple idea of adding a low-pass filter on rateTarget for ANGLE mode damping response to rapid attitude changes and smoothing
+            //     out self-leveling reaction
             if (pidProfile->I8[PIDLEVEL]) {
                 // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
                 rateTarget = filterApplyPt1(rateTarget, &angleFilterState[axis], pidProfile->I8[PIDLEVEL], dT);
@@ -182,8 +189,8 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
             if (!deltaFilterInit) {
-                for (axis = 0; axis < 3; axis++)
-                    filterInitBiQuad(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
+                for (n = 0; n < 3; n++)
+                    filterInitBiQuad(pidProfile->dterm_lpf_hz, &deltaBiQuadState[n], 0);
                 deltaFilterInit = true;
             }
 
