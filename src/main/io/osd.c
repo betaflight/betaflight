@@ -122,10 +122,12 @@ static bool armed = false;
 
 static uint8_t current_page = 0;
 static uint8_t sticks[] = {0,0,0,0};
-char string_buffer[30];
-uint8_t cursor_row = 255;
-uint8_t cursor_col = 0;
-bool in_menu = false;
+static char string_buffer[30];
+static uint8_t cursor_row = 255;
+static uint8_t cursor_col = 0;
+static bool in_menu = false;
+extern uint16_t rssi;
+
 
 #ifdef USE_RTC6705
 void update_vtx_band(bool increase, uint8_t col) {
@@ -519,7 +521,7 @@ void show_menu(void) {
         }
     }
 
-    if (sticks[YAW] > 90) {
+    if (sticks[YAW] > 90 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 10 && sticks[PITCH] < 90) {
         if (cursor_row > MAX_MENU_ROWS) {
             switch(cursor_col) {
                 case 0:
@@ -547,7 +549,7 @@ void show_menu(void) {
         }
     }
 
-    if (sticks[YAW] < 10) {
+    if (sticks[YAW] < 10 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 10 && sticks[PITCH] < 90) {
         if (cursor_row > MAX_MENU_ROWS) {
             if (cursor_col == 2 && current_page > 0) {
                 current_page--;
@@ -558,7 +560,7 @@ void show_menu(void) {
         }
     }
 
-    if (sticks[PITCH] > 90) {
+    if (sticks[PITCH] > 90 && sticks[YAW] > 10 && sticks[YAW] < 90) {
         if (cursor_row > MAX_MENU_ROWS) {
             cursor_row = menu_pages[current_page].rows_number - 1;
             cursor_col = 0;
@@ -567,13 +569,13 @@ void show_menu(void) {
                 cursor_row--;
         }
     }
-    if (sticks[PITCH] < 10) {
+    if (sticks[PITCH] < 10 && sticks[YAW] > 10 && sticks[YAW] < 90) {
         if (cursor_row < (menu_pages[current_page].rows_number - 1))
             cursor_row++;
         else
             cursor_row = 255;
     }
-    if (sticks[ROLL] > 90) {
+    if (sticks[ROLL] > 90 && sticks[YAW] > 10 && sticks[YAW] < 90) {
         if (cursor_row > MAX_MENU_ROWS) {
             if (cursor_col < 2)
                 cursor_col++;
@@ -582,7 +584,7 @@ void show_menu(void) {
                 cursor_col++;
         }
     }
-    if (sticks[ROLL] < 10) {
+    if (sticks[ROLL] < 10 && sticks[YAW] > 10 && sticks[YAW] < 90) {
         if (cursor_col > 0)
             cursor_col--;
     }
@@ -609,6 +611,9 @@ void show_menu(void) {
 
 void updateOsd(void)
 {
+    static uint8_t skip = 0;
+    static bool blink = false;
+    static uint8_t arming = 0;
     uint32_t seconds;
     char line[30];
     uint32_t now = micros();
@@ -618,12 +623,16 @@ void updateOsd(void)
         return;
     }
     next_osd_update_at = now + OSD_UPDATE_FREQUENCY;
-    if ((now / 1000000) & 1) {
+    if ( !(skip % 2))
+        blink = !blink;
+
+    if (skip++ & 1) {
         if (ARMING_FLAG(ARMED)) {
             if (!armed) {
                 armed = true;
                 armed_at = now;
                 in_menu = false;
+                arming = 5;
             }
         } else {
             if (armed) {
@@ -633,7 +642,7 @@ void updateOsd(void)
             for (uint8_t channelIndex = 0; channelIndex < 4; channelIndex++) {
                 sticks[channelIndex] = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
             }
-            if (!in_menu && sticks[YAW] > 90 && sticks[THROTTLE] > 90 && sticks[ROLL] < 10 && sticks[PITCH] > 90) {
+            if (!in_menu && sticks[YAW] < 10 && sticks[THROTTLE] > 10 && sticks[THROTTLE] < 90 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 90) {
                 in_menu = true;
                 cursor_row = 255;
                 cursor_col = 2;
@@ -642,8 +651,21 @@ void updateOsd(void)
         if (in_menu) {
             show_menu();
         } else {
+            if (batteryWarningVoltage > vbat && blink) {
+                max7456_write_string("LOW VOLTAGE", 310);
+            }
+            if (arming && blink) {
+                max7456_write_string("ARMED", 283);
+                arming--;
+            }
+            if (!armed) {
+                max7456_write_string("DISARMED", 281);
+            }
+
             sprintf(line, "\x97%d.%1d", vbat / 10, vbat % 10);
             max7456_write_string(line, 361);
+            sprintf(line, "\xba%d", rssi / 10);
+            max7456_write_string(line, 331);
             sprintf(line, "\x7e%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
             max7456_write_string(line, 381);
             seconds = (now - armed_at) / 1000000 + armed_seconds;
