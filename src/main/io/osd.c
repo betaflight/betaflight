@@ -70,6 +70,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -104,7 +105,6 @@
 
 #ifdef OSD
 
-#include "io/osd.h"
 #include "drivers/max7456.h"
 #include "drivers/rtc6705.h"
 #include "scheduler.h"
@@ -485,10 +485,10 @@ void show_menu(void) {
     uint16_t pos;
     col_t *col;
     row_t *row;
-    uint16_t cursor_x, cursor_y;
+    int16_t cursor_x, cursor_y;
 
     sprintf(string_buffer, "EXIT     SAVE+EXIT     PAGE");
-    max7456_write_string(string_buffer, 12 * OSD_LINE_LENGTH + 1);
+    max7456_write_string(string_buffer, -29);
 
     pos = (OSD_LINE_LENGTH - strlen(menu_pages[current_page].title)) / 2 + line * OSD_LINE_LENGTH;
     sprintf(string_buffer, "%s", menu_pages[current_page].title);
@@ -591,7 +591,7 @@ void show_menu(void) {
 
     if (cursor_row > MAX_MENU_ROWS) {
         cursor_row = 255;
-        cursor_y = 12;
+        cursor_y = -1;
         switch(cursor_col) {
             case 0:
                 cursor_x = 0;
@@ -651,27 +651,37 @@ void updateOsd(void)
         if (in_menu) {
             show_menu();
         } else {
-            if (batteryWarningVoltage > vbat && blink) {
-                max7456_write_string("LOW VOLTAGE", 310);
+            if (batteryWarningVoltage > vbat && blink && masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING] != -1) {
+                max7456_write_string("LOW VOLTAGE", masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]);
             }
-            if (arming && blink) {
-                max7456_write_string("ARMED", 283);
+            if (arming && blink && masterConfig.osdProfile.item_pos[OSD_ARMED] != -1) {
+                max7456_write_string("ARMED", masterConfig.osdProfile.item_pos[OSD_ARMED]);
                 arming--;
             }
-            if (!armed) {
-                max7456_write_string("DISARMED", 281);
+            if (!armed && masterConfig.osdProfile.item_pos[OSD_DISARMED] != -1) {
+                max7456_write_string("DISARMED", masterConfig.osdProfile.item_pos[OSD_DISARMED]);
             }
 
-            sprintf(line, "\x97%d.%1d", vbat / 10, vbat % 10);
-            max7456_write_string(line, 361);
-            sprintf(line, "\xba%d", rssi / 10);
-            max7456_write_string(line, 331);
-            sprintf(line, "\x7e%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-            max7456_write_string(line, 381);
-            seconds = (now - armed_at) / 1000000 + armed_seconds;
-            sprintf(line, "\x9C %02d:%02d", seconds / 60, seconds % 60);
-            max7456_write_string(line, 351);
-            print_average_system_load(26, 0);
+            if (masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] != -1) {
+                sprintf(line, "\x97%d.%1d", vbat / 10, vbat % 10);
+                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
+            }
+            if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
+                sprintf(line, "\xba%d", rssi / 10);
+                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]);
+            }
+            if (masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS] != -1) {
+                sprintf(line, "\x7e%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
+            }
+            if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
+                seconds = (now - armed_at) / 1000000 + armed_seconds;
+                sprintf(line, "\x9C %02d:%02d", seconds / 60, seconds % 60);
+                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);
+            }
+            if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {
+                print_average_system_load(masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], 0);
+            }
         }
     } else {
         max7456_draw_screen_fast();
@@ -686,7 +696,7 @@ void osdInit(void)
     current_vtx_channel = masterConfig.vtx_channel;
     rtc6705_set_channel(vtx_freq[current_vtx_channel]);
 #endif
-    max7456_init();
+    max7456_init(masterConfig.osdProfile.system);
 
 }
 

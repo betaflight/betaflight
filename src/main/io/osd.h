@@ -38,5 +38,25 @@ typedef struct {
     row_t       rows[MAX_MENU_ROWS];
 } page_t;
 
+
+typedef enum {
+    OSD_MAIN_BATT_VOLTAGE,
+    OSD_RSSI_VALUE,
+    OSD_TIMER,
+    OSD_THROTTLE_POS,
+    OSD_CPU_LOAD,
+    OSD_VTX_CHANNEL,
+    OSD_VOLTAGE_WARNING,
+    OSD_ARMED,
+    OSD_DISARMED,
+    OSD_MAX_ITEMS, // MUST BE LAST
+} osd_items;
+
+
+typedef struct {
+    uint8_t system;
+    int16_t item_pos[OSD_MAX_ITEMS];
+} osd_profile;
+
 void updateOsd(void);
 void osdInit(void);

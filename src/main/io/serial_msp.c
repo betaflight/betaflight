@@ -59,6 +59,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/osd.h"
 
 #include "telemetry/telemetry.h"
 
@@ -1569,6 +1570,9 @@ static bool processInCommand(void)
 #endif
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
+        masterConfig.osdProfile.system = read8();
+        for (i = 0; i < OSD_MAX_ITEMS; i++)
+            masterConfig.osdProfile.item_pos[i] = read16();
         break;
     case MSP_OSD_CHAR_WRITE:
         addr = read8();

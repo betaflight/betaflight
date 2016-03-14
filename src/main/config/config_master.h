@@ -127,6 +127,7 @@ typedef struct master_t {
 
 #ifdef OSD
     uint8_t vtx_channel;
+    osd_profile osdProfile;
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];

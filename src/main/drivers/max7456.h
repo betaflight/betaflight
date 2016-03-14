@@ -119,12 +119,13 @@
 //uint8_t ENABLE_display;
 //uint8_t ENABLE_display_vert;
 //uint8_t DISABLE_display;
-uint16_t MAX_screen_size;
+
+extern uint16_t max_screen_size;
 char screen[480];
 
 
-void max7456_init(void);
+void max7456_init(uint8_t system);
 void max7456_draw_screen(void);
 void max7456_draw_screen_fast(void);
-void max7456_write_string(const char *string, int address);
+void max7456_write_string(const char *string, int16_t address);
 void max7456_write_nvm(uint8_t char_address, uint8_t *font_data);

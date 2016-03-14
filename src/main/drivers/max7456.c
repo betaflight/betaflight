@@ -46,7 +46,7 @@ uint8_t max7456_send(uint8_t add, uint8_t data) {
 
 // ============================================================   WRITE TO SCREEN
 
-void max7456_init(void) {
+void max7456_init(uint8_t system) {
     uint8_t max7456_reset=0x02;
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
@@ -66,6 +66,16 @@ void max7456_init(void) {
     }
     else if((0x02 & srdata) == 0x02){ //NTSC
         video_signal_type = VIDEO_MODE_NTSC;
+    }
+
+    // Override detected type: 0-AUTO, 1-PAL, 2-NTSC
+    switch(system) {
+        case 1:
+            video_signal_type = VIDEO_MODE_PAL;
+            break;
+        case 2:
+            video_signal_type = VIDEO_MODE_NTSC;
+            break;
     }
 
     max7456_reset |= video_signal_type;
@@ -94,8 +104,13 @@ void max7456_init(void) {
 }
 
 // Copy string from ram into screen buffer
-void max7456_write_string(const char *string, int address) {
-    char *dest = screen + address;
+void max7456_write_string(const char *string, int16_t address) {
+    char *dest;
+
+    if (address >= 0)
+        dest  = screen + address;
+    else
+        dest  = screen + (max_screen_size + address);
 
     while(*string)
         *dest++ = *string++;
