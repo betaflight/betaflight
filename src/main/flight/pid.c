@@ -55,7 +55,7 @@ extern float dT;
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
-int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPID_Setpoint[3];
 #endif
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
@@ -218,12 +218,13 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
 
         axisPID[axis] = newOutputLimited;
 
-        debug[axis] = newOutputLimited;
+        debug[axis] = rateTarget;
 
 #ifdef BLACKBOX
         axisPID_P[axis] = newPTerm;
         axisPID_I[axis] = errorGyroIf[axis];
         axisPID_D[axis] = newDTerm;
+        axisPID_Setpoint[axis] = rateTarget;
 #endif
     }
 }
