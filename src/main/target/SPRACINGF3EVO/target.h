@@ -54,11 +54,11 @@
 #define USE_BARO_BMP280
 
 #define MAG
-//#define USE_MPU9250_MAG // Enables bypass configuration
-//#define USE_MAG_AK8975
+#define USE_MPU9250_MAG // Enables bypass configuration
+#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
-//#define MAG_AK8975_ALIGN CW270_DEG_FLIP
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
 #define BEEPER
