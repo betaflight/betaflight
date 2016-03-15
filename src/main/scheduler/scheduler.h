@@ -36,6 +36,7 @@ typedef struct {
     uint32_t     maxExecutionTime;
     uint32_t     totalExecutionTime;
     uint32_t     averageExecutionTime;
+    uint32_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
