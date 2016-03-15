@@ -783,7 +783,6 @@ void validateAndFixConfig(void)
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
 #ifdef TELEMETRY
     masterConfig.telemetryConfig.telemetry_inversion = 1;
-    //masterConfig.telemetryConfig.telemetry_flvss_cells = 1;  // ON/Enabled by default
 #endif
 #endif
 
