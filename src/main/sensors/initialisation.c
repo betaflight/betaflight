@@ -55,6 +55,7 @@
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
+#include "drivers/compass_ak8963.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -610,11 +611,22 @@ retry:
 
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-            if (ak8975detect(&mag)) {
+            if (ak8975Detect(&mag)) {
 #ifdef MAG_AK8975_ALIGN
                 magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
+                break;
+            }
+#endif
+            ; // fallthrough
+        case MAG_AK8963:
+#ifdef USE_MAG_AK8963
+            if (ak8963Detect(&mag)) {
+#ifdef MAG_AK8963_ALIGN
+                magAlign = MAG_AK8963_ALIGN;
+#endif
+                magHardware = MAG_AK8963;
                 break;
             }
 #endif
