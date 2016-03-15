@@ -21,7 +21,8 @@
 #include <string.h>
 
 #include "platform.h"
-#include "scheduler.h"
+
+#include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"

@@ -24,8 +24,9 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "version.h"
+
+#include "scheduler/scheduler.h"
 
 #include "build_config.h"
 
