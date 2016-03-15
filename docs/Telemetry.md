@@ -178,6 +178,11 @@ GSpd : current speed, calculated by GPS.
 
 GPS : GPS coordinates.
 
+### Integrate Cleanflight telemetry with FrSky Smartport sensors
+
+While Cleanflight telemetry brings a lot of valuable data to the radio, there are additional sensors, like Lipo cells sensor FLVSS, that can be a great addition for many aircrafts. Smartport sensors are designed to be daisy chained, and CF telemetry is no exception to that. To add an external sensor, just connect the "S" port of the FC and sensor(s) together, and ensure the sensor(s) are getting connected to GND and VCC either from the controler or the receiver
+
+![Smartport diagram](assets/images/integrate_smartport.png)
 
 ### SmartPort on F3 targets with hardware UART
 
