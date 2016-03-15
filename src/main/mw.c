@@ -110,7 +110,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern float PIDweight[3];
 
 static bool isRXDataNew;
 
@@ -129,17 +129,16 @@ bool isCalibrating()
 
 void annexCode(void)
 {
-    int32_t tmp, tmp2;
-    int32_t axis, prop1 = 0, prop2;
+    int32_t tmp, tmp2, axis, tpaPercentage;
 
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop2 = 100;
+        tpaPercentage = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+            tpaPercentage = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
-            prop2 = 100 - currentControlRateProfile->dynThrPID;
+            tpaPercentage = 100 - currentControlRateProfile->dynThrPID;
         }
     }
 
@@ -156,8 +155,6 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
-            prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
             if (currentProfile->rcControlsConfig.yaw_deadband) {
                 if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
@@ -168,19 +165,14 @@ void annexCode(void)
             }
             tmp2 = tmp / 100;
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
-        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
-            PIDweight[axis] = 100;
+            PIDweight[axis] = 1.0f;
         }
         else {
-            PIDweight[axis] = prop2;
+            PIDweight[axis] = tpaPercentage / 100.0f;
         }
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)

@@ -58,8 +58,8 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPID_Setpoint[3];
 #endif
 
-// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
-uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 1 = 100% scale means no PID reduction
+float PIDweight[3];
 
 static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static float errorGyroIfLimit[3] = { 0.0f, 0.0f, 0.0f };
@@ -122,9 +122,10 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
     }
 
     for (axis = 0; axis < 3; axis++) {
-        float kP = pidProfile->P8[axis] / FP_PID_RATE_P_MULTIPLIER;
+        float kP = pidProfile->P8[axis] / FP_PID_RATE_P_MULTIPLIER * PIDweight[axis];
         float kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
-        float kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER;
+        float kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER * PIDweight[axis];
+
         bool useIntegralComponent = (pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0);
 
         float rateTarget;   // rotation rate target (dps)
@@ -168,7 +169,7 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
         float rateError = rateTarget - gyroRate;
 
         // Calculate new P-term
-        float newPTerm = rateError * kP * (PIDweight[axis] / 100);
+        float newPTerm = rateError * kP;
 
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
             newPTerm = constrain(newPTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
@@ -184,7 +185,7 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
         rateErrorBuf[axis][0] = rateError;
 
         // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
-        float newDTerm = ((2 * (rateErrorBuf[axis][1] - rateErrorBuf[axis][3]) + (rateErrorBuf[axis][0] - rateErrorBuf[axis][4])) / (8 * dT)) * kD * (PIDweight[axis] / 100);
+        float newDTerm = ((2 * (rateErrorBuf[axis][1] - rateErrorBuf[axis][3]) + (rateErrorBuf[axis][0] - rateErrorBuf[axis][4])) / (8 * dT)) * kD;
 
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
