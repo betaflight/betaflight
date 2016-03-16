@@ -188,7 +188,8 @@ static bool gpsNewFrameNMEA(char c)
                         frameOK = 1;
                         gpsSol.numSat = gps_Msg.numSat;
                         if (gps_Msg.fix) {
-                            gpsSol.flags.fix3D = 1;
+                            gpsSol.fixType = GPS_FIX_3D;    // NMEA doesn't report fix type, assume 3D
+
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.llh.alt = gps_Msg.altitude;
@@ -200,7 +201,7 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.flags.validEPE = 0;
                         }
                         else {
-                            gpsSol.flags.fix3D = 0;
+                            gpsSol.fixType = GPS_NO_FIX;
                         }
 
                         // NMEA does not report VELNED
@@ -278,7 +279,7 @@ bool gpsHandleNMEA(void)
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        // No autoconfig, switch straight to receiving data 
+        // No autoconfig, switch straight to receiving data
         gpsSetState(GPS_RECEIVING_DATA);
         return false;
 

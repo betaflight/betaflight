@@ -66,7 +66,13 @@ bool gpsPollI2CNAV(void)
     i2cnavGPSModuleRead(&gpsMsg);
 
     if (gpsMsg.flags.gpsOk) {
-        gpsSol.flags.fix3D = gpsMsg.flags.fix3D;
+        if (gpsMsg.flags.fix3D) {
+            // No fix type available - assume 3D
+            gpsSol.fixType = GPS_FIX_3D;
+        }
+        else {
+            gpsSol.fixType = GPS_NO_FIX;
+        }
 
         // sat count
         gpsSol.numSat = gpsMsg.numSat;

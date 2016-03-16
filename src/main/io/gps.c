@@ -126,11 +126,13 @@ static void gpsHandleProtocol(void)
 
     // Received new update for solution data
     if (newDataReceived) {
-        // Set GPS fix flag
-        if (gpsSol.flags.fix3D)
+        // Set GPS fix flag only if we have 3D fix
+        if (gpsSol.fixType == GPS_FIX_3D) {
             ENABLE_STATE(GPS_FIX);
-        else
+        }
+        else {
             DISABLE_STATE(GPS_FIX);
+        }
 
         // Update GPS coordinates etc
         sensorsSet(SENSOR_GPS);
@@ -143,6 +145,9 @@ static void gpsHandleProtocol(void)
         // Update statistics
         gpsStats.lastMessageDt = gpsState.lastMessageMs - gpsState.lastLastMessageMs;
     }
+
+    debug[0] = gpsSol.fixType;
+    debug[1] = STATE(GPS_FIX);
 }
 
 static void gpsResetSolution(void)
@@ -150,7 +155,8 @@ static void gpsResetSolution(void)
     gpsSol.eph = 9999;
     gpsSol.epv = 9999;
 
-    gpsSol.flags.fix3D = 0;
+    gpsSol.fixType = GPS_NO_FIX;
+
     gpsSol.flags.validVelNE = 0;
     gpsSol.flags.validVelD = 0;
     gpsSol.flags.validMag = 0;
@@ -217,6 +223,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 static void gpsFakeGPSUpdate(void)
 {
     if (millis() - gpsState.lastMessageMs > 100) {
+        gpsSol.fixType = GPS_FIX_3D;
         gpsSol.numSat = 6;
         gpsSol.llh.lat = 509102311;
         gpsSol.llh.lon = -15349744;
@@ -282,6 +289,8 @@ void gpsThread(void)
             if ((millis() - gpsState.lastStateSwitchMs) >= GPS_INIT_DELAY) {
                 // Reset internals
                 DISABLE_STATE(GPS_FIX);
+                gpsSol.fixType = GPS_NO_FIX;
+
                 gpsState.hwVersion = 0;
                 gpsState.autoConfigStep = 0;
                 gpsState.autoConfigPosition = 0;
@@ -308,6 +317,8 @@ void gpsThread(void)
                 // Check for GPS timeout
                 sensorsClear(SENSOR_GPS);
                 DISABLE_STATE(GPS_FIX);
+                gpsSol.fixType = GPS_NO_FIX;
+
                 gpsSetState(GPS_LOST_COMMUNICATION);
             }
             break;
@@ -361,6 +372,8 @@ void gpsThread(void)
             // No valid data from GPS unit, cause re-init and re-detection
             gpsStats.timeouts++;
             DISABLE_STATE(GPS_FIX);
+            gpsSol.fixType = GPS_NO_FIX;
+
             gpsSetState(GPS_INITIALIZING);
             break;
         }

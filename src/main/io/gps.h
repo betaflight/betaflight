@@ -67,6 +67,12 @@ typedef enum {
     GPS_MODEL_HIGH_G,
 } gpsNavModel_e;
 
+typedef enum {
+    GPS_NO_FIX = 0,
+    GPS_FIX_2D,
+    GPS_FIX_3D
+} gpsFixType_e;
+
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
@@ -92,13 +98,13 @@ typedef struct gpsLocation_s {
 typedef struct gpsSolutionData_s {
     struct {
         unsigned gpsHeartbeat   : 1;     // Toggle each update
-        unsigned fix3D          : 1;     // gps fix status
         unsigned validVelNE     : 1;
         unsigned validVelD      : 1;
         unsigned validMag       : 1;
         unsigned validEPE       : 1;    // EPH/EPV values are valid - actual accuracy
     } flags;
 
+    uint8_t fixType;
     uint8_t numSat;
 
     gpsLocation_t llh;

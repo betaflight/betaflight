@@ -306,7 +306,7 @@ static uint8_t _msg_id;
 static uint16_t _payload_length;
 static uint16_t _payload_counter;
 
-static bool next_fix;
+static uint8_t next_fix_type;
 static uint8_t _class;
 
 // do we have new position information?
@@ -351,6 +351,15 @@ void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
     }
 }
 
+static uint8_t gpsMapFixType(bool fixValid, uint8_t ubloxFixType)
+{
+    if (fixValid && ubloxFixType == FIX_2D)
+        return GPS_FIX_2D;
+    if (fixValid && ubloxFixType == FIX_3D)
+        return GPS_FIX_3D;
+    return GPS_NO_FIX;
+}
+
 static bool gpsParceFrameUBLOX(void)
 {
     switch (_msg_id) {
@@ -361,19 +370,19 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
         gpsSol.eph = gpsConstrainEPE(_buffer.posllh.horizontal_accuracy / 10);
         gpsSol.epv = gpsConstrainEPE(_buffer.posllh.vertical_accuracy / 10);
-        if (next_fix)
-            gpsSol.flags.fix3D = 1;
+        if (next_fix_type != GPS_NO_FIX)
+            gpsSol.fixType = next_fix_type;
         _new_position = true;
         break;
     case MSG_STATUS:
-        next_fix = (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.status.fix_type == FIX_3D);
-        if (!next_fix)
-            gpsSol.flags.fix3D = 0;
+        next_fix_type = gpsMapFixType(_buffer.status.fix_status & NAV_STATUS_FIX_VALID, _buffer.status.fix_type);
+        if (next_fix_type == GPS_NO_FIX)
+            gpsSol.fixType = GPS_NO_FIX;
         break;
     case MSG_SOL:
-        next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
-        if (!next_fix)
-            gpsSol.flags.fix3D = 0;
+        next_fix_type = gpsMapFixType(_buffer.solution.fix_status & NAV_STATUS_FIX_VALID, _buffer.solution.fix_type);
+        if (next_fix_type == GPS_NO_FIX)
+            gpsSol.fixType = GPS_NO_FIX;
         gpsSol.numSat = _buffer.solution.satellites;
         gpsSol.hdop = gpsConstrainHDOP(_buffer.solution.position_DOP);
         break;
@@ -389,8 +398,8 @@ static bool gpsParceFrameUBLOX(void)
         break;
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
     case MSG_PVT:
-        next_fix = (_buffer.pvt.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fix_type == FIX_3D);
-        gpsSol.flags.fix3D = next_fix ? 1 : 0;
+        next_fix_type = gpsMapFixType(_buffer.pvt.fix_status & NAV_STATUS_FIX_VALID, _buffer.pvt.fix_type);
+        gpsSol.fixType = next_fix_type;
         gpsSol.llh.lon = _buffer.pvt.longitude;
         gpsSol.llh.lat = _buffer.pvt.latitude;
         gpsSol.llh.alt = _buffer.pvt.altitude_msl / 10;  //alt in cm

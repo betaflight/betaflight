@@ -327,7 +327,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough 
+#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough
 
 #define INBUF_SIZE 64
 
@@ -765,7 +765,7 @@ static uint32_t packFlightModeFlags(void)
         if (flag)
             junk |= 1 << i;
     }
-    
+
     return junk;
 }
 
@@ -972,7 +972,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ARMING_CONFIG:
         headSerialReply(2);
-        serialize8(masterConfig.auto_disarm_delay); 
+        serialize8(masterConfig.auto_disarm_delay);
         serialize8(masterConfig.disarm_kill_switch);
         break;
     case MSP_LOOP_TIME:
@@ -1163,7 +1163,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(gpsSol.hdop / 100);
         break;
     case MSP_GPSSTATISTICS:
-        headSerialReply(1);
+        headSerialReply(32);
         serialize16(gpsStats.lastMessageDt);
         serialize32(gpsStats.errors);
         serialize32(gpsStats.timeouts);
@@ -1575,7 +1575,7 @@ static bool processInCommand(void)
         }
 #endif
         break;
-        
+
     case MSP_SET_SERVO_MIX_RULE:
 #ifdef USE_SERVOS
         i = read8();
@@ -1609,14 +1609,14 @@ static bool processInCommand(void)
 
     case MSP_SET_RESET_CURR_PID:
         resetPidProfile(&currentProfile->pidProfile);
-        break;    
+        break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
         masterConfig.sensorAlignmentConfig.gyro_align = read8();
         masterConfig.sensorAlignmentConfig.acc_align = read8();
         masterConfig.sensorAlignmentConfig.mag_align = read8();
         break;
-        
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
@@ -1883,7 +1883,7 @@ static bool processInCommand(void)
                 waitForSerialPortToFinishTransmitting(currentPort->port);
                 // Start to activate here
                 // motor 1 => index 0
-                
+
                 // search currentPort portIndex
                 /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
                 uint8_t portIndex;	
@@ -1902,7 +1902,7 @@ static bool processInCommand(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
                 /* restore currentPort and mspSerialPort
                 setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-                */ 
+                */
                 // former used MSP uart is active again
                 // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
                 currentPort->cmdMSP = MSP_SET_1WIRE;
