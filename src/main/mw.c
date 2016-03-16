@@ -363,28 +363,6 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
-       This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
-       Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
-    if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
-            rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
-
-            if (rollPitchStatus == CENTERED) {
-                ENABLE_STATE(ANTI_WINDUP);
-            }
-            else {
-                DISABLE_STATE(ANTI_WINDUP);
-            }
-        }
-        else {
-            pidResetErrorGyro();
-        }
-    }
-    else {
-        DISABLE_STATE(ANTI_WINDUP);
-    }
-
     // When armed and motors aren't spinning, do beeps and then disarm
     // board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
@@ -496,6 +474,34 @@ void processRx(void)
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
+    }
+
+    /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
+       This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
+       Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
+    if (FLIGHT_MODE(PASSTHRU_MODE)) {
+        /* In PASSTHRU mode anti-windup must be explicitly enabled to prevent I-term wind-up (PID output is not used in PASSTHRU) */
+        ENABLE_STATE(ANTI_WINDUP);
+    }
+    else {
+        if (throttleStatus == THROTTLE_LOW) {
+            if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
+                rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+
+                if (rollPitchStatus == CENTERED) {
+                    ENABLE_STATE(ANTI_WINDUP);
+                }
+                else {
+                    DISABLE_STATE(ANTI_WINDUP);
+                }
+            }
+            else {
+                pidResetErrorGyro();
+            }
+        }
+        else {
+            DISABLE_STATE(ANTI_WINDUP);
+        }
     }
 
     if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
