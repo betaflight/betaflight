@@ -598,7 +598,7 @@ void init(void)
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+    gyroSetCalibrationCycles(calculateCalibratingCycles());
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif

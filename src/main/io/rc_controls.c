@@ -34,6 +34,7 @@
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/gyro_sync.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -215,7 +216,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
-        gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+        gyroSetCalibrationCycles(calculateCalibratingCycles());
 
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
