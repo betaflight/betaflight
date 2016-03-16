@@ -110,6 +110,8 @@ typedef struct gpsSolutionData_s {
 
     uint16_t eph;   // horizontal accuracy (cm)
     uint16_t epv;   // vertical accuracy (cm)
+
+    uint16_t hdop;  // generic HDOP value (*100)
 } gpsSolutionData_t;
 
 typedef struct {

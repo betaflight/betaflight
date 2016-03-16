@@ -375,6 +375,7 @@ static bool gpsParceFrameUBLOX(void)
         if (!next_fix)
             gpsSol.flags.fix3D = 0;
         gpsSol.numSat = _buffer.solution.satellites;
+        gpsSol.hdop = gpsConstrainHDOP(_buffer.solution.position_DOP);
         break;
     case MSG_VELNED:
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
@@ -401,6 +402,7 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.numSat = _buffer.pvt.satellites;
         gpsSol.eph = gpsConstrainEPE(_buffer.pvt.horizontal_accuracy / 10);
         gpsSol.epv = gpsConstrainEPE(_buffer.pvt.vertical_accuracy / 10);
+        gpsSol.hdop = gpsConstrainHDOP(_buffer.pvt.position_DOP);
         gpsSol.flags.validVelNE = 1;
         gpsSol.flags.validVelD = 1;
         gpsSol.flags.validEPE = 1;

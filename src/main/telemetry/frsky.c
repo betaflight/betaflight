@@ -222,8 +222,8 @@ static void sendTemperature1(void)
 static void sendSatalliteSignalQualityAsTemperature2(void)
 {
     uint16_t satellite = gpsSol.numSat;
-    if (gpsSol.eph > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) {//Every 1s
-        satellite = constrain(gpsSol.eph, 0, GPS_MAX_HDOP_VAL);
+    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) {//Every 1s
+        satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
     }
     sendDataHead(ID_TEMPRATURE2);
 

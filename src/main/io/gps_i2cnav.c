@@ -74,8 +74,9 @@ bool gpsPollI2CNAV(void)
         // Other data
         if (gpsMsg.flags.newData) {
             if (gpsMsg.flags.fix3D) {
-                gpsSol.eph = gpsConstrainEPE(gpsMsg.hdop);
-                gpsSol.epv = gpsConstrainEPE(gpsMsg.hdop);  // i2c-nav doesn't give vdop data, fake it using hdop
+                gpsSol.hdop = gpsConstrainHDOP(gpsMsg.hdop);
+                gpsSol.eph = gpsConstrainEPE(gpsMsg.hdop * GPS_HDOP_TO_EPH_MULTIPLIER);
+                gpsSol.epv = gpsConstrainEPE(gpsMsg.hdop * GPS_HDOP_TO_EPH_MULTIPLIER);  // i2c-nav doesn't give vdop data, fake it using hdop
                 gpsSol.groundSpeed = gpsMsg.speed;
                 gpsSol.groundCourse = gpsMsg.ground_course;
                 gpsSol.llh.lat = gpsMsg.latitude;

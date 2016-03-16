@@ -181,13 +181,14 @@ static bool NAZA_parse_gps(void)
         gpsSol.velNED[2] = decodeLong(_buffernaza.nav.ned_down, mask);   // cm/s
 
 
-        //uint16_t pdop = decodeShort(_buffernaza.nav.pdop, mask); // pdop
+        uint16_t pdop = decodeShort(_buffernaza.nav.pdop, mask); // pdop
         //uint16_t vdop = decodeShort(_buffernaza.nav.vdop, mask); // vdop
         //uint16_t ndop = decodeShort(_buffernaza.nav.ndop, mask);
         //uint16_t edop = decodeShort(_buffernaza.nav.edop, mask);
         //gpsSol.hdop = sqrtf(powf(ndop,2)+powf(edop,2));
         //gpsSol.vdop = decodeShort(_buffernaza.nav.vdop, mask); // vdop
 
+        gpsSol.hdop = gpsConstrainEPE(pdop);        // PDOP
         gpsSol.eph = gpsConstrainEPE(h_acc / 10);   // hAcc in cm
         gpsSol.epv = gpsConstrainEPE(v_acc / 10);   // vAcc in cm
         gpsSol.numSat = _buffernaza.nav.satellites;

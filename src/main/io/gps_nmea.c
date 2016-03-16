@@ -151,7 +151,7 @@ static bool gpsNewFrameNMEA(char c)
                             gps_Msg.numSat = grab_fields(string, 0);
                             break;
                         case 8:
-                            gps_Msg.hdop = grab_fields(string, 1) * 10;         // hdop (assume GPS is reporting it in meters)
+                            gps_Msg.hdop = grab_fields(string, 1) * 10;          // hdop
                             break;
                         case 9:
                             gps_Msg.altitude = grab_fields(string, 1) * 10;     // altitude in cm
@@ -194,8 +194,9 @@ static bool gpsNewFrameNMEA(char c)
                             gpsSol.llh.alt = gps_Msg.altitude;
 
                             // EPH/EPV are unreliable for NMEA as they are not real accuracy
-                            gpsSol.eph = gpsConstrainEPE(gps_Msg.hdop);
-                            gpsSol.epv = gpsConstrainEPE(gps_Msg.hdop);
+                            gpsSol.hdop = gpsConstrainHDOP(gps_Msg.hdop);
+                            gpsSol.eph = gpsConstrainEPE(gps_Msg.hdop * GPS_HDOP_TO_EPH_MULTIPLIER);
+                            gpsSol.epv = gpsConstrainEPE(gps_Msg.hdop * GPS_HDOP_TO_EPH_MULTIPLIER);
                             gpsSol.flags.validEPE = 0;
                         }
                         else {

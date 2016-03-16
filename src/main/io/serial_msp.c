@@ -1109,7 +1109,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #ifdef GPS
     case MSP_RAW_GPS:
-        headSerialReply(16);
+        headSerialReply(18);
         serialize8(STATE(GPS_FIX));
         serialize8(gpsSol.numSat);
         serialize32(gpsSol.llh.lat);
@@ -1117,6 +1117,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(gpsSol.llh.alt/100); // meters
         serialize16(gpsSol.groundSpeed);
         serialize16(gpsSol.groundCourse);
+        serialize16(gpsSol.hdop);
         break;
     case MSP_COMP_GPS:
         headSerialReply(5);
@@ -1152,8 +1153,14 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
     case MSP_GPSSVINFO:
         /* Compatibility stub - return zero SVs */
-        headSerialReply(1 + (0 * 4));
+        headSerialReply(1 + (1 * 4));
+        serialize8(1);
+
+        // HDOP
         serialize8(0);
+        serialize8(0);
+        serialize8(gpsSol.hdop / 100);
+        serialize8(gpsSol.hdop / 100);
         break;
     case MSP_GPSSTATISTICS:
         headSerialReply(1);
@@ -1161,6 +1168,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(gpsStats.errors);
         serialize32(gpsStats.timeouts);
         serialize32(gpsStats.packetCount);
+        serialize16(gpsSol.hdop);
         serialize16(gpsSol.eph);
         serialize16(gpsSol.epv);
         break;
