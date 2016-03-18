@@ -115,6 +115,10 @@
 #define OSD_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define OSD_LINE_LENGTH 30
 
+#define STICKMIN 10
+#define STICKMAX 90
+
+
 static uint32_t next_osd_update_at = 0;
 static uint32_t armed_seconds = 0;
 static uint32_t armed_at = 0;
@@ -126,6 +130,7 @@ static char string_buffer[30];
 static uint8_t cursor_row = 255;
 static uint8_t cursor_col = 0;
 static bool in_menu = false;
+static bool activating_menu = false;
 extern uint16_t rssi;
 
 
@@ -226,6 +231,20 @@ void print_pitch_rate(uint16_t pos, uint8_t col) {
 void print_yaw_rate(uint16_t pos, uint8_t col) {
     if (col == 0) {
         sprintf(string_buffer, "%d", currentControlRateProfile->rates[FD_YAW]);
+        max7456_write_string(string_buffer, pos);
+    }
+}
+
+void print_tpa_rate(uint16_t pos, uint8_t col) {
+    if (col == 0) {
+        sprintf(string_buffer, "%d", currentControlRateProfile->dynThrPID);
+        max7456_write_string(string_buffer, pos);
+    }
+}
+
+void print_tpa_brkpt(uint16_t pos, uint8_t col) {
+    if (col == 0) {
+        sprintf(string_buffer, "%d", currentControlRateProfile->tpa_breakpoint);
         max7456_write_string(string_buffer, pos);
     }
 }
@@ -337,6 +356,28 @@ void update_yaw_rate(bool increase, uint8_t col) {
     }
 }
 
+void update_tpa_rate(bool increase, uint8_t col) {
+    (void)col;
+    if (increase) {
+        if (currentControlRateProfile->dynThrPID < CONTROL_RATE_CONFIG_TPA_MAX)
+            currentControlRateProfile->dynThrPID++;
+    } else {
+        if (currentControlRateProfile->dynThrPID > 0)
+            currentControlRateProfile->dynThrPID--;
+    }
+}
+
+void update_tpa_brkpt(bool increase, uint8_t col) {
+    (void)col;
+    if (increase) {
+        if (currentControlRateProfile->tpa_breakpoint < PWM_RANGE_MAX)
+            currentControlRateProfile->tpa_breakpoint++;
+    } else {
+        if (currentControlRateProfile->tpa_breakpoint > PWM_RANGE_MIN)
+            currentControlRateProfile->tpa_breakpoint--;
+    }
+}
+
 void print_average_system_load(uint16_t pos, uint8_t col) {
     (void)col;
     sprintf(string_buffer, "%d", averageSystemLoadPercent);
@@ -376,13 +417,11 @@ page_t menu_pages[] = {
         .rows = {
             {
                 .title  = "AVG LOAD",
-                .y_pos  = 0,
                 .update = NULL,
                 .print  = print_average_system_load
             },
             {
                 .title  = "BATT",
-                .y_pos  = 1,
                 .update = NULL,
                 .print  = print_batt_voltage
             },
@@ -402,19 +441,16 @@ page_t menu_pages[] = {
         .rows = { 
             {
                 .title  = "BAND",
-                .y_pos  = 0,
                 .update = update_vtx_band,
                 .print  = print_vtx_band
             },
             {
                 .title  = "CHANNEL",
-                .y_pos  = 1,
                 .update = update_vtx_channel,
                 .print  = print_vtx_channel
             },
             {
                 .title  = "FREQUENCY",
-                .y_pos  = 2,
                 .update = NULL,
                 .print  = print_vtx_freq
             }
@@ -442,39 +478,43 @@ page_t menu_pages[] = {
         .rows = { 
             {
                 .title  = "ROLL",
-                .y_pos  = 0,
                 .update = update_roll_pid,
                 .print  = print_roll_pid
             },
             {
                 .title  = "PITCH",
-                .y_pos  = 1,
                 .update = update_pitch_pid,
                 .print  = print_pitch_pid
             },
             {
                 .title  = "YAW",
-                .y_pos  = 2,
                 .update = update_yaw_pid,
                 .print  = print_yaw_pid
             },
             {
-                .title  = "ROLL_RATE",
-                .y_pos  = 3,
+                .title  = "ROLL RATE",
                 .update = update_roll_rate,
                 .print  = print_roll_rate
             },
             {
-                .title  = "PITCH_RATE",
-                .y_pos  = 4,
+                .title  = "PITCH RATE",
                 .update = update_pitch_rate,
                 .print  = print_pitch_rate
             },
             {
-                .title  = "YAW_RATE",
-                .y_pos  = 5,
+                .title  = "YAW RATE",
                 .update = update_yaw_rate,
                 .print  = print_yaw_rate
+            },
+            {
+                .title  = "TPA RATE",
+                .update = update_tpa_rate,
+                .print  = print_tpa_rate
+            },
+            {
+                .title  = "TPA BRKPT",
+                .update = update_tpa_brkpt,
+                .print  = print_tpa_brkpt
             },
         }
     },
@@ -487,41 +527,14 @@ void show_menu(void) {
     row_t *row;
     int16_t cursor_x, cursor_y;
 
-    sprintf(string_buffer, "EXIT     SAVE+EXIT     PAGE");
-    max7456_write_string(string_buffer, -29);
-
-    pos = (OSD_LINE_LENGTH - strlen(menu_pages[current_page].title)) / 2 + line * OSD_LINE_LENGTH;
-    sprintf(string_buffer, "%s", menu_pages[current_page].title);
-    max7456_write_string(string_buffer, pos);
-
-    line += 2;
-
-    for (int i = 0; i < menu_pages[current_page].cols_number; i++){
-        col = &menu_pages[current_page].cols[i];
-        if (cursor_col == i)
-            cursor_x = col->x_pos - 1;
-
-        if (col->title) {
-            sprintf(string_buffer, "%s", col->title);
-            max7456_write_string(string_buffer, line * OSD_LINE_LENGTH + col->x_pos);
-        }
+    if (activating_menu) {
+        if (sticks[YAW] < 60 && sticks[YAW] > 40 && sticks[PITCH] > 40 && sticks[PITCH] < 60 && sticks[ROLL] > 40 && sticks[ROLL] < 60)
+            activating_menu = false;
+        else
+            return;
     }
 
-    line++;
-    for (int i = 0; i < menu_pages[current_page].rows_number; i++) {
-        row = &menu_pages[current_page].rows[i];
-        if (cursor_row == i)
-            cursor_y = line + row->y_pos;
-
-        sprintf(string_buffer, "%s", row->title);
-        max7456_write_string(string_buffer, (line + row->y_pos) * OSD_LINE_LENGTH + 1);
-        for (int j = 0; j < menu_pages[current_page].cols_number; j++) {
-            col = &menu_pages[current_page].cols[j];
-            row->print((line + row->y_pos) * OSD_LINE_LENGTH + col->x_pos, j);
-        }
-    }
-
-    if (sticks[YAW] > 90 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 10 && sticks[PITCH] < 90) {
+    if (sticks[YAW] > STICKMAX && sticks[ROLL] > STICKMIN && sticks[ROLL] < STICKMAX && sticks[PITCH] > STICKMIN && sticks[PITCH] < STICKMAX) {
         if (cursor_row > MAX_MENU_ROWS) {
             switch(cursor_col) {
                 case 0:
@@ -549,7 +562,7 @@ void show_menu(void) {
         }
     }
 
-    if (sticks[YAW] < 10 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 10 && sticks[PITCH] < 90) {
+    if (sticks[YAW] < STICKMIN && sticks[ROLL] > STICKMIN && sticks[ROLL] < STICKMAX && sticks[PITCH] > STICKMIN && sticks[PITCH] < STICKMAX) {
         if (cursor_row > MAX_MENU_ROWS) {
             if (cursor_col == 2 && current_page > 0) {
                 current_page--;
@@ -560,7 +573,7 @@ void show_menu(void) {
         }
     }
 
-    if (sticks[PITCH] > 90 && sticks[YAW] > 10 && sticks[YAW] < 90) {
+    if (sticks[PITCH] > STICKMAX && sticks[YAW] > STICKMIN && sticks[YAW] < STICKMAX) {
         if (cursor_row > MAX_MENU_ROWS) {
             cursor_row = menu_pages[current_page].rows_number - 1;
             cursor_col = 0;
@@ -569,13 +582,13 @@ void show_menu(void) {
                 cursor_row--;
         }
     }
-    if (sticks[PITCH] < 10 && sticks[YAW] > 10 && sticks[YAW] < 90) {
+    if (sticks[PITCH] < STICKMIN && sticks[YAW] > STICKMIN && sticks[YAW] < STICKMAX) {
         if (cursor_row < (menu_pages[current_page].rows_number - 1))
             cursor_row++;
         else
             cursor_row = 255;
     }
-    if (sticks[ROLL] > 90 && sticks[YAW] > 10 && sticks[YAW] < 90) {
+    if (sticks[ROLL] > STICKMAX && sticks[YAW] > STICKMIN && sticks[YAW] < STICKMAX) {
         if (cursor_row > MAX_MENU_ROWS) {
             if (cursor_col < 2)
                 cursor_col++;
@@ -584,7 +597,7 @@ void show_menu(void) {
                 cursor_col++;
         }
     }
-    if (sticks[ROLL] < 10 && sticks[YAW] > 10 && sticks[YAW] < 90) {
+    if (sticks[ROLL] < STICKMIN && sticks[YAW] > STICKMIN && sticks[YAW] < STICKMAX) {
         if (cursor_col > 0)
             cursor_col--;
     }
@@ -606,6 +619,42 @@ void show_menu(void) {
                 cursor_x = 0;
         }
     }
+
+    sprintf(string_buffer, "EXIT     SAVE+EXIT     PAGE");
+    max7456_write_string(string_buffer, -29);
+
+    pos = (OSD_LINE_LENGTH - strlen(menu_pages[current_page].title)) / 2 + line * OSD_LINE_LENGTH;
+    sprintf(string_buffer, "%s", menu_pages[current_page].title);
+    max7456_write_string(string_buffer, pos);
+
+    line += 2;
+
+    for (int i = 0; i < menu_pages[current_page].cols_number; i++){
+        col = &menu_pages[current_page].cols[i];
+        if (cursor_col == i && cursor_row < MAX_MENU_ROWS)
+            cursor_x = col->x_pos - 1;
+
+        if (col->title) {
+            sprintf(string_buffer, "%s", col->title);
+            max7456_write_string(string_buffer, line * OSD_LINE_LENGTH + col->x_pos);
+        }
+    }
+
+    line++;
+    for (int i = 0; i < menu_pages[current_page].rows_number; i++) {
+        row = &menu_pages[current_page].rows[i];
+        if (cursor_row == i)
+            cursor_y = line;
+
+        sprintf(string_buffer, "%s", row->title);
+        max7456_write_string(string_buffer, line * OSD_LINE_LENGTH + 1);
+        for (int j = 0; j < menu_pages[current_page].cols_number; j++) {
+            col = &menu_pages[current_page].cols[j];
+            row->print(line * OSD_LINE_LENGTH + col->x_pos, j);
+        }
+        line++;
+    }
+
     max7456_write_string(">", cursor_x + cursor_y * OSD_LINE_LENGTH);
 }
 
@@ -637,15 +686,16 @@ void updateOsd(void)
         } else {
             if (armed) {
                 armed = false;
-                armed_seconds += (now - armed_at) / 1000000;
+                armed_seconds += ((now - armed_at) / 1000000);
             }
             for (uint8_t channelIndex = 0; channelIndex < 4; channelIndex++) {
                 sticks[channelIndex] = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
             }
-            if (!in_menu && sticks[YAW] < 10 && sticks[THROTTLE] > 10 && sticks[THROTTLE] < 90 && sticks[ROLL] > 10 && sticks[ROLL] < 90 && sticks[PITCH] > 90) {
+            if (!in_menu && sticks[YAW] > STICKMAX && sticks[THROTTLE] > STICKMIN && sticks[THROTTLE] < STICKMAX && sticks[ROLL] > STICKMIN && sticks[ROLL] < STICKMAX && sticks[PITCH] > STICKMAX) {
                 in_menu = true;
                 cursor_row = 255;
                 cursor_col = 2;
+                activating_menu = true;
             }
         }
         if (in_menu) {
@@ -663,20 +713,25 @@ void updateOsd(void)
             }
 
             if (masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] != -1) {
-                sprintf(line, "\x97%d.%1d", vbat / 10, vbat % 10);
+                sprintf(line, "\x01%d.%1d", vbat / 10, vbat % 10);
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
-                sprintf(line, "\xba%d", rssi / 10);
+                sprintf(line, "\x02%d", rssi / 10);
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS] != -1) {
-                sprintf(line, "\x7e%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+                sprintf(line, "\x03%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
-                seconds = (now - armed_at) / 1000000 + armed_seconds;
-                sprintf(line, "\x9C %02d:%02d", seconds / 60, seconds % 60);
+                if (armed) {
+                    seconds = armed_seconds + ((now-armed_at) / 1000000);
+                    sprintf(line, "\x04 %02d:%02d", seconds / 60, seconds % 60);
+                } else {
+                    seconds = now  / 1000000;
+                    sprintf(line, "\x05 %02d:%02d", seconds / 60, seconds % 60);
+                }
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {

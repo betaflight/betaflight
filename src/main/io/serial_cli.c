@@ -786,7 +786,7 @@ const clivalue_t valueTable[] = {
     { "vtx_channel",                VAR_INT16  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
 #endif
 #ifdef OSD
-    { "osd_system",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.system, .config.lookup = { TABLE_OSD } },
+    { "osd_system",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.system, .config.minmax = { 0, 2 } },
     { "osd_main_voltage_pos",       VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { -480, 480 } },
     { "osd_rssi_pos",               VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], .config.minmax = { -480, 480 } },
     { "osd_timer_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_TIMER], .config.minmax = { -480, 480 } },

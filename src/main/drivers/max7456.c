@@ -17,9 +17,12 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <stdint.h>
 
+#include "common/printf.h"
 #include "platform.h"
+#include "version.h"
 
 #ifdef USE_MAX7456
 
@@ -44,13 +47,12 @@ uint8_t max7456_send(uint8_t add, uint8_t data) {
 }
 
 
-// ============================================================   WRITE TO SCREEN
-
 void max7456_init(uint8_t system) {
     uint8_t max7456_reset=0x02;
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
     uint16_t x;
+    char buf[30];
 
     //Minimum spi clock period for max7456 is 100ns (10Mhz)
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
@@ -98,8 +100,17 @@ void max7456_init(uint8_t system) {
 
     DISABLE_MAX7456;
     delay(100);
-    for (x=0; x<256; x++)
-        screen[x] = (char)x;
+
+    x =  160;
+    for (int i = 1; i < 5; i++) {
+        for (int j = 3; j < 27; j++)
+            screen[i * 30 + j] = (char)x++;
+    }
+    tfp_sprintf(buf, "BF VERSION: %s", FC_VERSION_STRING);
+    max7456_write_string(buf, 5*30+5);
+    max7456_write_string("MENU: THRT MID", 6*30+7);
+    max7456_write_string("YAW RIGHT", 7*30+13);
+    max7456_write_string("PITCH UP", 8*30+13);
     max7456_draw_screen();
 }
 
