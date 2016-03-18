@@ -110,6 +110,8 @@ static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
 static void cliDump(char *cmdLine);
+void cliDumpProfile(uint8_t profileIndex);
+void cliDumpRateProfile(uint8_t rateProfileIndex) ;
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
@@ -1818,8 +1820,6 @@ typedef enum {
     DUMP_RATES = (1 << 2),
 } dumpFlags_e;
 
-#define DUMP_ALL (DUMP_MASTER | DUMP_PROFILE | DUMP_RATES)
-
 
 static const char* const sectionBreak = "\r\n";
 
@@ -1835,7 +1835,7 @@ static void cliDump(char *cmdline)
     float thr, roll, pitch, yaw;
 #endif
 
-    uint8_t dumpMask = DUMP_ALL;
+    uint8_t dumpMask = DUMP_MASTER;
     if (strcasecmp(cmdline, "master") == 0) {
         dumpMask = DUMP_MASTER; // only
     }
@@ -1930,7 +1930,7 @@ static void cliDump(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("beeper -%s\r\n", beeperNameForTableIndex(i));
             else
-                cliPrintf("beeper  %s\r\n", beeperNameForTableIndex(i));
+                cliPrintf("beeper %s\r\n", beeperNameForTableIndex(i));
         }
 #endif
 
@@ -1987,38 +1987,56 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
+        
+        uint8_t activeProfile = masterConfig.current_profile_index;
+        uint8_t i;
+        for (i=0; i<MAX_PROFILE_COUNT;i++) 
+            cliDumpProfile(i);
+        
+        changeProfile(activeProfile);
+        
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliPrint("\r\n# dump profile\r\n");
+        cliDumpProfile(masterConfig.current_profile_index);
 
-        cliPrint("\r\n# profile\r\n");
-        cliProfile("");
-
-        printSectionBreak();
-
-        dumpValues(PROFILE_VALUE);
-
-        cliPrint("\r\n# rateprofile\r\n");		
-        cliRateProfile("");		
-
-        printSectionBreak();		
-
-        dumpValues(PROFILE_RATE_VALUE);
     }
-    if (dumpMask & DUMP_RATES) {		
-        cliPrint("\r\n# dump rates\r\n");		
-
-        cliPrint("\r\n# rateprofile\r\n");		
-        cliRateProfile("");		
-
-        printSectionBreak();		
- 
-        dumpValues(PROFILE_RATE_VALUE);
+    if (dumpMask & DUMP_RATES) {				
+        cliDumpRateProfile(currentProfile->activeRateProfile);
  }
     
 }
 
+void cliDumpProfile(uint8_t profileIndex) {
+        if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
+            return;
+        
+        changeProfile(profileIndex);
+        cliPrint("\r\n# profile\r\n");
+        cliProfile("");
+        printSectionBreak();
+        dumpValues(PROFILE_VALUE);
+        uint8_t currentRateIndex = currentProfile->activeRateProfile;
+        uint8_t i;
+        for (i=0; i<MAX_RATEPROFILES; i++)
+            cliDumpRateProfile(i);
+        
+        changeControlRateProfile(currentRateIndex);
+        cliPrintf("\r\n# Active rateprofile for profile %d, \r\n", profileIndex);	// output rateprofile again to mark "active rateprofile" 
+        cliRateProfile("");
+}
+void cliDumpRateProfile(uint8_t rateProfileIndex) {
+    if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
+            return;
+    
+    changeControlRateProfile(rateProfileIndex);
+    cliPrint("\r\n# rateprofile\r\n");		
+    cliRateProfile("");		
+    printSectionBreak();		
+
+    dumpValues(PROFILE_RATE_VALUE);
+            
+}
 void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
