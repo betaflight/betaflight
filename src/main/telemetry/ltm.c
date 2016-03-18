@@ -35,7 +35,7 @@
 
 #include "build_config.h"
 
-#ifdef TELEMETRY
+#if defined(TELEMETRY) && defined(TELEMETRY_LTM)
 
 #include "common/maths.h"
 #include "common/axis.h"

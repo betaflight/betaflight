@@ -101,6 +101,11 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
 #define TELEMETRY
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_SMARTPORT
+#define TELEMETRY_LTM
+
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

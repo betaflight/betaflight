@@ -50,10 +50,21 @@ void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
 
 void telemetryInit(void)
 {
+#if defined(TELEMETRY_FRSKY)
     initFrSkyTelemetry(telemetryConfig);
+#endif
+
+#if defined(TELEMETRY_HOTT)
     initHoTTTelemetry(telemetryConfig);
+#endif
+
+#if defined(TELEMETRY_SMARTPORT)
     initSmartPortTelemetry(telemetryConfig);
+#endif
+
+#if defined(TELEMETRY_LTM)
     initLtmTelemetry(telemetryConfig);
+#endif
 
     telemetryCheckState();
 }
@@ -74,18 +85,40 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 
 void telemetryCheckState(void)
 {
+#if defined(TELEMETRY_FRSKY)
     checkFrSkyTelemetryState();
+#endif
+
+#if defined(TELEMETRY_HOTT)
     checkHoTTTelemetryState();
+#endif
+
+#if defined(TELEMETRY_SMARTPORT)
     checkSmartPortTelemetryState();
+#endif
+
+#if defined(TELEMETRY_LTM)
     checkLtmTelemetryState();
+#endif
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
+#if defined(TELEMETRY_FRSKY)
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+#endif
+
+#if defined(TELEMETRY_HOTT)
     handleHoTTTelemetry();
+#endif
+
+#if defined(TELEMETRY_SMARTPORT)
     handleSmartPortTelemetry();
+#endif
+
+#if defined(TELEMETRY_LTM)
     handleLtmTelemetry();
+#endif
 }
 
 #endif
