@@ -1762,9 +1762,9 @@ static void cliDump(char *cmdline)
         mask = getBeeperOffMask();
         for (int i = 0; i < (beeperCount-2); i++) {
             if (mask & (1 << i))
-                printf("beeper -%s\r\n", beeperNameForTableIndex(i));
+                cliPrintf("beeper -%s\r\n", beeperNameForTableIndex(i));
             else
-                printf("beeper  %s\r\n", beeperNameForTableIndex(i));
+                cliPrintf("beeper  %s\r\n", beeperNameForTableIndex(i));
         }
 #endif
 
@@ -1955,7 +1955,7 @@ static void cliBeeper(char *cmdline)
     uint32_t mask = getBeeperOffMask();
 
     if (len == 0) {
-        printf("Disabled:");
+        cliPrintf("Disabled:");
         for (int i = 0; ; i++) {
         	if (i == beeperCount-2){
                 if (mask == 0)
@@ -1963,13 +1963,13 @@ static void cliBeeper(char *cmdline)
         		break;
         	}
             if (mask & (1 << i))
-                printf("  %s", beeperNameForTableIndex(i));
+                cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrint("\r\n");
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (i = 0; i < beeperCount; i++)
-            printf("  %s", beeperNameForTableIndex(i));
+            cliPrintf("  %s", beeperNameForTableIndex(i));
         cliPrint("\r\n");
         return;
     } else {
@@ -2010,7 +2010,7 @@ static void cliBeeper(char *cmdline)
                         }
                     cliPrint("Enabled");
                 }
-            printf(" %s\r\n", beeperNameForTableIndex(i));
+            cliPrintf(" %s\r\n", beeperNameForTableIndex(i));
             break;
             }
         }
