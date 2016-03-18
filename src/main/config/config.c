@@ -216,6 +216,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
 void resetNavConfig(navConfig_t * navConfig)
 {
     // Navigation flags
+    navConfig->flags.use_thr_mid_for_althold = 1;
     navConfig->flags.extra_arming_safety = 1;
     navConfig->flags.user_control_mode = NAV_GPS_ATTI;
     navConfig->flags.rth_alt_control_style = NAV_RTH_AT_LEAST_ALT;
@@ -802,6 +803,7 @@ void activateConfig(void)
     navigationUsePIDs(&currentProfile->pidProfile);
     navigationUseRcControlsConfig(&currentProfile->rcControlsConfig);
     navigationUseRxConfig(&masterConfig.rxConfig);
+    navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
     navigationUseEscAndServoConfig(&masterConfig.escAndServoConfig);
 #endif
 

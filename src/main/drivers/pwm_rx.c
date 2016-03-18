@@ -252,7 +252,6 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
                 ppmDev.numChannels = ppmDev.pulseIndex;
             }
         } else {
-            debug[2]++;
             ppmDev.stableFramesSeenCount = 0;
         }
 

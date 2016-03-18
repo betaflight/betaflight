@@ -586,6 +586,7 @@ const clivalue_t valueTable[] = {
     { "inav_max_eph_epv",           VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.max_eph_epv, .config.minmax = { 0,  9999 }, 0 },
     { "inav_baro_epv",              VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.inav.baro_epv, .config.minmax = { 0,  9999 }, 0 },
 
+    { "nav_use_midthr_for_althold", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.use_thr_mid_for_althold, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_extra_arming_safety",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.extra_arming_safety, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_user_control_mode",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.flags.user_control_mode, .config.lookup = { TABLE_NAV_USER_CTL_MODE }, 0 },
     { "nav_position_timeout",       VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.pos_failure_timeout, .config.minmax = { 0,  10 }, 0 },

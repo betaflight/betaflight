@@ -2106,6 +2106,11 @@ void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig)
     posControl.rcControlsConfig = initialRcControlsConfig;
 }
 
+void navigationUseFlight3DConfig(flight3DConfig_t * initialFlight3DConfig)
+{
+    posControl.flight3DConfig = initialFlight3DConfig;
+}
+
 void navigationUseRxConfig(rxConfig_t * initialRxConfig)
 {
     posControl.rxConfig = initialRxConfig;
@@ -2158,6 +2163,7 @@ void navigationInit(navConfig_t *initialnavConfig,
                     pidProfile_t *initialPidProfile,
                     rcControlsConfig_t *initialRcControlsConfig,
                     rxConfig_t * initialRxConfig,
+                    flight3DConfig_t * initialFlight3DConfig,
                     escAndServoConfig_t * initialEscAndServoConfig)
 {
     /* Initial state */
@@ -2189,6 +2195,7 @@ void navigationInit(navConfig_t *initialnavConfig,
     navigationUseRcControlsConfig(initialRcControlsConfig);
     navigationUseRxConfig(initialRxConfig);
     navigationUseEscAndServoConfig(initialEscAndServoConfig);
+    navigationUseFlight3DConfig(initialFlight3DConfig);
 }
 
 /*-----------------------------------------------------------
