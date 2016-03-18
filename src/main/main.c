@@ -54,6 +54,7 @@
 
 #include "rx/rx.h"
 
+#include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -142,6 +143,23 @@ typedef enum {
 } systemState_e;
 
 static uint8_t systemState = SYSTEM_STATE_INITIALISING;
+
+void flashLedsAndBeep(void)
+{
+    LED1_ON;
+    LED0_OFF;
+    for (uint8_t i = 0; i < 10; i++) {
+        LED1_TOGGLE;
+        LED0_TOGGLE;
+        delay(25);
+    	if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1))))
+        	BEEP_ON;
+        delay(25);
+        BEEP_OFF;
+    }
+    LED0_OFF;
+    LED1_OFF;
+}
 
 void init(void)
 {
