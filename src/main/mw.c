@@ -21,8 +21,9 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "debug.h"
+
+#include "scheduler/scheduler.h"
 
 #include "common/maths.h"
 #include "common/axis.h"

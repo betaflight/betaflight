@@ -21,7 +21,8 @@
 #include <string.h>
 
 #include "platform.h"
-#include "scheduler.h"
+
+#include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -542,16 +543,15 @@ int main(void) {
     init();
 
     /* Setup scheduler */
-    if (masterConfig.gyroSync) {
-        rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
-    }
-    else {
-        rescheduleTask(TASK_GYROPID, targetLooptime);
-    }
+    schedulerInit();
 
+    rescheduleTask(TASK_GYROPID, targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
+
     setTaskEnabled(TASK_SERIAL, true);
+#ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
+#endif
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 #ifdef GPS

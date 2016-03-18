@@ -66,7 +66,7 @@ VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 
-CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
+CSOURCES		:= $(shell find $(SRC_DIR) -name '*.c')
 
 ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
 
@@ -208,7 +208,7 @@ TARGET_DIR = $(ROOT)/src/main/target/NAZE
 endif
 
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
-		    $(TARGET_DIR)
+			$(TARGET_DIR)
 
 VPATH		:= $(VPATH):$(TARGET_DIR)
 
@@ -223,8 +223,8 @@ COMMON_SRC = build_config.c \
 		   common/typeconversion.c \
 		   common/encoding.c \
 		   common/filter.c \
-		   scheduler.c \
-           scheduler_tasks.c \
+		   scheduler/scheduler.c \
+		   scheduler/scheduler_tasks.c \
 		   main.c \
 		   mw.c \
 		   flight/failsafe.c \
@@ -236,7 +236,7 @@ COMMON_SRC = build_config.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
-           drivers/gps_i2cnav.c \
+		   drivers/gps_i2cnav.c \
 		   drivers/gyro_sync.c \
 		   drivers/buf_writer.c \
 		   io/beeper.c \
@@ -267,18 +267,18 @@ COMMON_SRC = build_config.c \
 
 HIGHEND_SRC = \
 		   flight/gtune.c \
-           flight/navigation_rewrite.c \
-           flight/navigation_rewrite_multicopter.c \
-           flight/navigation_rewrite_fixedwing.c \
-           flight/navigation_rewrite_pos_estimator.c \
-           flight/navigation_rewrite_geo.c \
+		   flight/navigation_rewrite.c \
+		   flight/navigation_rewrite_multicopter.c \
+		   flight/navigation_rewrite_fixedwing.c \
+		   flight/navigation_rewrite_pos_estimator.c \
+		   flight/navigation_rewrite_geo.c \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \
 		   io/gps.c \
 		   io/gps_ublox.c \
-           io/gps_nmea.c \
-           io/gps_naza.c \
-           io/gps_i2cnav.c \
+		   io/gps_nmea.c \
+		   io/gps_naza.c \
+		   io/gps_i2cnav.c \
 		   io/ledstrip.c \
 		   io/display.c \
 		   telemetry/telemetry.c \
@@ -319,8 +319,8 @@ NAZE_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_spi.c \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
-           drivers/compass_mag3110.c \
-           drivers/compass_ak8975.c \
+		   drivers/compass_mag3110.c \
+		   drivers/compass_ak8975.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
 		   drivers/gpio_stm32f10x.c \
@@ -363,7 +363,7 @@ EUSTM32F103RC_SRC = startup_stm32f10x_hd_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_ak8975.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
@@ -398,8 +398,8 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
-           drivers/compass_mag3110.c \
-           drivers/compass_ak8975.c \
+		   drivers/compass_mag3110.c \
+		   drivers/compass_ak8975.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/light_ws2811strip.c \
@@ -425,9 +425,9 @@ CJMCU_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/bus_i2c_stm32f10x.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_hmc5883l.c \
-           drivers/compass_ak8975.c \
+		   drivers/compass_ak8975.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/light_led_stm32f10x.c \
 		   drivers/pwm_mapping.c \
@@ -456,9 +456,9 @@ CC3D_SRC = \
 		   drivers/barometer_bmp280.c \
 		   drivers/bus_spi.c \
 		   drivers/bus_i2c_stm32f10x.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_hmc5883l.c \
-           drivers/compass_ak8975.c \
+		   drivers/compass_ak8975.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
 		   drivers/gpio_stm32f10x.c \
@@ -513,9 +513,9 @@ STM32F3DISCOVERY_COMMON_SRC = \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_hmc5883l.c \
-           drivers/compass_ak8975.c \
+		   drivers/compass_ak8975.c \
 		   $(VCP_SRC)
 
 STM32F3DISCOVERY_SRC = \
@@ -528,8 +528,8 @@ STM32F3DISCOVERY_SRC = \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/accgyro_l3g4200d.c \
 		   drivers/barometer_ms5611.c \
-           drivers/compass_mag3110.c \
-           drivers/compass_hmc5883l.c \
+		   drivers/compass_mag3110.c \
+		   drivers/compass_hmc5883l.c \
 		   drivers/compass_ak8975.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
@@ -547,7 +547,7 @@ COLIBRI_RACE_SRC = \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_ms5611.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/serial_usb_vcp.c \
@@ -576,7 +576,7 @@ SPARKY_SRC = \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/barometer_bmp280.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/serial_usb_vcp.c \
@@ -594,7 +594,7 @@ RMDO_SRC = \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/barometer_bmp280.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
@@ -612,7 +612,7 @@ SPRACINGF3_SRC = \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/barometer_bmp280.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
@@ -628,7 +628,7 @@ MOTOLAB_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
-           drivers/compass_mag3110.c \
+		   drivers/compass_mag3110.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.c \
@@ -699,14 +699,14 @@ LDFLAGS		 = -lm \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -Wl,-L$(LINKER_DIR) \
-           -Wl,--cref \
+		   -Wl,--cref \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################
 # No user-serviceable parts below
 ###############################################################################
 
-CPPCHECK         = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
+CPPCHECK		 = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 		   --std=c99 --inline-suppr --quiet --force \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   -I/usr/include -I/usr/include/linux
@@ -726,19 +726,19 @@ TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 ## Default make goal:
-## hex         : Make filetype hex only
+## hex		 : Make filetype hex only
 .DEFAULT_GOAL := hex
 
 ## Optional make goals:
-## all         : Make all filetypes, binary and hex
+## all		 : Make all filetypes, binary and hex
 all: hex bin
 
-## binary      : Make binary filetype
-## bin         : Alias of 'binary'
-## hex         : Make hex filetype
-bin:    $(TARGET_BIN)
+## binary	  : Make binary filetype
+## bin		 : Alias of 'binary'
+## hex		 : Make hex filetype
+bin:	$(TARGET_BIN)
 binary: $(TARGET_BIN)
-hex:    $(TARGET_HEX)
+hex:	$(TARGET_HEX)
 
 # rule to reinvoke make with TARGET= parameter
 # rules that should be handled in toplevel Makefile, not dependent on TARGET
@@ -752,7 +752,7 @@ $(VALID_TARGETS):
 .PHONY: all_targets
 all_targets : $(VALID_TARGETS)
 
-## clean       : clean up all temporary / machine-generated files
+## clean	   : clean up all temporary / machine-generated files
 clean:
 	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
@@ -763,13 +763,13 @@ flash_$(TARGET): $(TARGET_HEX)
 	echo -n 'R' >$(SERIAL_DEVICE)
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## flash       : flash firmware (.hex) onto flight controller
+## flash	   : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	st-flash --reset write $< 0x08000000
 
-## st-flash    : flash firmware (.bin) onto flight controller
+## st-flash	: flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
 binary: $(TARGET_BIN)
@@ -778,29 +778,29 @@ unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## unbrick     : unbrick flight controller
+## unbrick	 : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
-## cppcheck    : run static analysis on C source code
+## cppcheck	: run static analysis on C source code
 cppcheck: $(CSOURCES)
 	$(CPPCHECK)
 
 cppcheck-result.xml: $(CSOURCES)
 	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
-## help        : print this help message and exit
+## help		: print this help message and exit
 help: Makefile
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""
 	@echo "Usage:"
-	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo "		make [TARGET=<target>] [OPTIONS=\"<options>\"]"
 	@echo ""
 	@echo "Valid TARGET values are: $(VALID_TARGETS)"
 	@echo ""
 	@sed -n 's/^## //p' $<
 
-## test        : run the cleanflight test suite
+## test		: run the cleanflight test suite
 test:
 	cd src/test && $(MAKE) test || true
 
