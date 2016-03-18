@@ -42,6 +42,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
+#include "drivers/buf_writer.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -414,10 +415,11 @@ typedef struct mspPort_s {
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static mspPort_t *currentPort;
+static bufWriter_t *writer;
 
 static void serialize8(uint8_t a)
 {
-    serialWrite(mspSerialPort, a);
+    bufWriterAppend(writer, a);
     currentPort->checksum ^= a;
 }
 
@@ -454,6 +456,8 @@ static uint32_t read32(void)
 
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
+    serialBeginWrite(mspSerialPort);
+    
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -475,6 +479,7 @@ static void headSerialError(uint8_t responseBodySize)
 static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
+    serialEndWrite(mspSerialPort);
 }
 
 static void s_struct(uint8_t *cb, uint8_t siz)
@@ -1858,6 +1863,8 @@ static bool processInCommand(void)
                 // proceed with a success reply first
                 headSerialReply(0);
                 tailSerialReply();
+                // flush the transmit buffer
+                bufWriterFlush(writer);
                 // wait for all data to send
                 waitForSerialPortToFinishTransmitting(currentPort->port);
                 // Start to activate here
@@ -1953,7 +1960,7 @@ static bool mspProcessReceivedData(uint8_t c)
     return true;
 }
 
-void setCurrentPort(mspPort_t *port)
+static void setCurrentPort(mspPort_t *port)
 {
     currentPort = port;
     mspSerialPort = currentPort->port;
@@ -1971,6 +1978,10 @@ void mspProcess(void)
         }
 
         setCurrentPort(candidatePort);
+        // Big enough to fit a MSP_STATUS in one write.
+        uint8_t buf[sizeof(bufWriter_t) + 20];
+        writer = bufWriterInit(buf, sizeof(buf),
+                               (bufWrite_t)serialWriteBufShim, currentPort->port);
 
         while (serialRxBytesWaiting(mspSerialPort)) {
 
@@ -1986,6 +1997,8 @@ void mspProcess(void)
                 break; // process one command at a time so as not to block.
             }
         }
+
+        bufWriterFlush(writer);
 
         if (isRebootScheduled) {
             waitForSerialPortToFinishTransmitting(candidatePort->port);

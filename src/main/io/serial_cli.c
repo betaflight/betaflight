@@ -46,6 +46,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
+#include "drivers/buf_writer.h"
 
 #include "io/escservo.h"
 #include "io/gps.h"
@@ -96,6 +97,8 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 
 static serialPort_t *cliPort;
+static bufWriter_t *cliWriter;
+static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 16];
 
 static void cliAux(char *cmdline);
 static void cliRxFail(char *cmdline);
@@ -772,11 +775,13 @@ typedef union {
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrint(const char *str);
+static void cliPrintf(const char *fmt, ...);
 static void cliWrite(uint8_t ch);
 
 static void cliPrompt(void)
 {
     cliPrint("\r\n# ");
+    bufWriterFlush(cliWriter);
 }
 
 static void cliShowParseError(void)
@@ -786,7 +791,7 @@ static void cliShowParseError(void)
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
 {
-    printf("%s must be between %d and %d\r\n", name, min, max);
+    cliPrintf("%s must be between %d and %d\r\n", name, min, max);
 }
 
 static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
@@ -880,19 +885,19 @@ static void cliRxFail(char *cmdline)
 
             char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
 
-            // triple use of printf below
+            // triple use of cliPrintf below
             // 1. acknowledge interpretation on command,
             // 2. query current setting on single item,
             // 3. recursive use for full list.
 
             if (requireValue) {
-                printf("rxfail %u %c %d\r\n",
+                cliPrintf("rxfail %u %c %d\r\n",
                     channel,
                     modeCharacter,
                     RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
                 );
             } else {
-                printf("rxfail %u %c\r\n",
+                cliPrintf("rxfail %u %c\r\n",
                     channel,
                     modeCharacter
                 );
@@ -912,7 +917,7 @@ static void cliAux(char *cmdline)
         // print out aux channel settings
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
-            printf("aux %u %u %u %u %u\r\n",
+            cliPrintf("aux %u %u %u %u %u\r\n",
                 i,
                 mac->modeId,
                 mac->auxChannelIndex,
@@ -963,7 +968,7 @@ static void cliSerial(char *cmdline)
             if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
                 continue;
             };
-            printf("serial %d %d %ld %ld %ld %ld\r\n" ,
+            cliPrintf("serial %d %d %ld %ld %ld %ld\r\n" ,
                 masterConfig.serialConfig.portConfigs[i].identifier,
                 masterConfig.serialConfig.portConfigs[i].functionMask,
                 baudRates[masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex],
@@ -1059,7 +1064,7 @@ static void cliAdjustmentRange(char *cmdline)
         // print out adjustment ranges channel settings
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             adjustmentRange_t *ar = &currentProfile->adjustmentRanges[i];
-            printf("adjrange %u %u %u %u %u %u %u\r\n",
+            cliPrintf("adjrange %u %u %u %u %u %u %u\r\n",
                 i,
                 ar->adjustmentIndex,
                 ar->auxChannelIndex,
@@ -1139,11 +1144,11 @@ static void cliMotorMix(char *cmdline)
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
                 break;
             num_motors++;
-            printf("#%d:\t", i);
-            printf("%s\t", ftoa(masterConfig.customMotorMixer[i].throttle, buf));
-            printf("%s\t", ftoa(masterConfig.customMotorMixer[i].roll, buf));
-            printf("%s\t", ftoa(masterConfig.customMotorMixer[i].pitch, buf));
-            printf("%s\r\n", ftoa(masterConfig.customMotorMixer[i].yaw, buf));
+            cliPrintf("#%d:\t", i);
+            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].throttle, buf));
+            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].roll, buf));
+            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].pitch, buf));
+            cliPrintf("%s\r\n", ftoa(masterConfig.customMotorMixer[i].yaw, buf));
         }
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
@@ -1161,7 +1166,7 @@ static void cliMotorMix(char *cmdline)
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
                     mixerLoadMix(i, masterConfig.customMotorMixer);
-                    printf("Loaded %s\r\n", mixerNames[i]);
+                    cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
                     break;
                 }
@@ -1211,7 +1216,7 @@ static void cliRxRange(char *cmdline)
     if (isEmpty(cmdline)) {
         for (i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
             rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
-            printf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
+            cliPrintf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
         }
     } else if (strcasecmp(cmdline, "reset") == 0) {
         resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
@@ -1258,7 +1263,7 @@ static void cliLed(char *cmdline)
     if (isEmpty(cmdline)) {
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
             generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
-            printf("led %u %s\r\n", i, ledConfigBuffer);
+            cliPrintf("led %u %s\r\n", i, ledConfigBuffer);
         }
     } else {
         ptr = cmdline;
@@ -1281,7 +1286,7 @@ static void cliColor(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            printf("color %u %d,%u,%u\r\n",
+            cliPrintf("color %u %d,%u,%u\r\n",
                 i,
                 masterConfig.colors[i].h,
                 masterConfig.colors[i].s,
@@ -1319,7 +1324,7 @@ static void cliServo(char *cmdline)
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servo = &currentProfile->servoConf[i];
 
-            printf("servo %u %d %d %d %d %d %d %d\r\n",
+            cliPrintf("servo %u %d %d %d %d %d %d %d\r\n",
                 i,
                 servo->min,
                 servo->max,
@@ -1412,7 +1417,7 @@ static void cliServoMix(char *cmdline)
             if (masterConfig.customServoMixer[i].rate == 0)
                 break;
 
-            printf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
+            cliPrintf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
                 i,
                 masterConfig.customServoMixer[i].targetChannel,
                 masterConfig.customServoMixer[i].inputSource,
@@ -1423,7 +1428,7 @@ static void cliServoMix(char *cmdline)
                 masterConfig.customServoMixer[i].box
             );
         }
-        printf("\r\n");
+        cliPrintf("\r\n");
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
@@ -1437,12 +1442,12 @@ static void cliServoMix(char *cmdline)
             len = strlen(++ptr);
             for (i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    printf("Invalid name\r\n");
+                    cliPrintf("Invalid name\r\n");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
                     servoMixerLoadMix(i, masterConfig.customServoMixer);
-                    printf("Loaded %s\r\n", mixerNames[i]);
+                    cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliServoMix("");
                     break;
                 }
@@ -1455,16 +1460,16 @@ static void cliServoMix(char *cmdline)
 
         len = strlen(ptr);
         if (len == 0) {
-            printf("s");
+            cliPrintf("s");
             for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
-                printf("\ti%d", inputSource);
-            printf("\r\n");
+                cliPrintf("\ti%d", inputSource);
+            cliPrintf("\r\n");
 
             for (servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
-                printf("%d", servoIndex);
+                cliPrintf("%d", servoIndex);
                 for (inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
-                    printf("\t%s  ", (currentProfile->servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
-                printf("\r\n");
+                    cliPrintf("\t%s  ", (currentProfile->servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
+                cliPrintf("\r\n");
             }
             return;
         }
@@ -1537,7 +1542,7 @@ static void cliFlashInfo(char *cmdline)
 
     UNUSED(cmdline);
 
-    printf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
+    cliPrintf("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u, usedSize=%u\r\n",
             layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
 }
 
@@ -1545,14 +1550,14 @@ static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("Erasing...\r\n");
+    cliPrintf("Erasing...\r\n");
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
         delay(100);
     }
 
-    printf("Done.\r\n");
+    cliPrintf("Done.\r\n");
 }
 
 #ifdef USE_FLASH_TOOLS
@@ -1569,7 +1574,7 @@ static void cliFlashWrite(char *cmdline)
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
 
-        printf("Wrote %u bytes at %u.\r\n", strlen(text), address);
+        cliPrintf("Wrote %u bytes at %u.\r\n", strlen(text), address);
     }
 }
 
@@ -1588,7 +1593,7 @@ static void cliFlashRead(char *cmdline)
     } else {
         length = atoi(nextArg);
 
-        printf("Reading %u bytes at %u:\r\n", length, address);
+        cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
         while (length > 0) {
             int bytesRead;
@@ -1607,7 +1612,7 @@ static void cliFlashRead(char *cmdline)
                 break;
             }
         }
-        printf("\r\n");
+        cliPrintf("\r\n");
     }
 }
 
@@ -1625,7 +1630,7 @@ static void dumpValues(uint16_t valueSection)
             continue;
         }
 
-        printf("set %s = ", valueTable[i].name);
+        cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
     }
@@ -1642,7 +1647,7 @@ typedef enum {
 
 static const char* const sectionBreak = "\r\n";
 
-#define printSectionBreak() printf((char *)sectionBreak)
+#define printSectionBreak() cliPrintf((char *)sectionBreak)
 
 static void cliDump(char *cmdline)
 {
@@ -1677,9 +1682,9 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
-        printf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
 
-        printf("mmix reset\r\n");
+        cliPrintf("mmix reset\r\n");
 
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
@@ -1688,30 +1693,30 @@ static void cliDump(char *cmdline)
             roll = masterConfig.customMotorMixer[i].roll;
             pitch = masterConfig.customMotorMixer[i].pitch;
             yaw = masterConfig.customMotorMixer[i].yaw;
-            printf("mmix %d", i);
+            cliPrintf("mmix %d", i);
             if (thr < 0)
                 cliWrite(' ');
-            printf("%s", ftoa(thr, buf));
+            cliPrintf("%s", ftoa(thr, buf));
             if (roll < 0)
                 cliWrite(' ');
-            printf("%s", ftoa(roll, buf));
+            cliPrintf("%s", ftoa(roll, buf));
             if (pitch < 0)
                 cliWrite(' ');
-            printf("%s", ftoa(pitch, buf));
+            cliPrintf("%s", ftoa(pitch, buf));
             if (yaw < 0)
                 cliWrite(' ');
-            printf("%s\r\n", ftoa(yaw, buf));
+            cliPrintf("%s\r\n", ftoa(yaw, buf));
         }
 
         // print custom servo mixer if exists
-        printf("smix reset\r\n");
-#ifdef USE_SERVOS
+        cliPrintf("smix reset\r\n");
+
         for (i = 0; i < MAX_SERVO_RULES; i++) {
 
             if (masterConfig.customServoMixer[i].rate == 0)
                 break;
 
-            printf("smix %d %d %d %d %d %d %d %d\r\n",
+            cliPrintf("smix %d %d %d %d %d %d %d %d\r\n",
                 i,
                 masterConfig.customServoMixer[i].targetChannel,
                 masterConfig.customServoMixer[i].inputSource,
@@ -1724,7 +1729,6 @@ static void cliDump(char *cmdline)
         }
 
 #endif
-#endif
 
         cliPrint("\r\n\r\n# feature\r\n");
 
@@ -1732,13 +1736,13 @@ static void cliDump(char *cmdline)
         for (i = 0; ; i++) { // disable all feature first
             if (featureNames[i] == NULL)
                 break;
-            printf("feature -%s\r\n", featureNames[i]);
+            cliPrintf("feature -%s\r\n", featureNames[i]);
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
-                printf("feature %s\r\n", featureNames[i]);
+                cliPrintf("feature %s\r\n", featureNames[i]);
         }
 
         cliPrint("\r\n\r\n# map\r\n");
@@ -1746,7 +1750,7 @@ static void cliDump(char *cmdline)
         for (i = 0; i < 8; i++)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
-        printf("map %s\r\n", buf);
+        cliPrintf("map %s\r\n", buf);
 
         cliPrint("\r\n\r\n# serial\r\n");
         cliSerial("");
@@ -1779,7 +1783,7 @@ static void cliDump(char *cmdline)
 
         cliAdjustmentRange("");
 
-        printf("\r\n# rxrange\r\n");
+        cliPrintf("\r\n# rxrange\r\n");
 
         cliRxRange("");
 
@@ -1794,7 +1798,7 @@ static void cliDump(char *cmdline)
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
-                    printf("smix reverse %d %d r\r\n", i , channel);
+                    cliPrintf("smix reverse %d %d r\r\n", i , channel);
                 }
             }
         }
@@ -1822,6 +1826,9 @@ void cliEnter(serialPort_t *serialPort)
     cliMode = 1;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
+    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
+                              (bufWrite_t)serialWriteBufShim, serialPort);
+    
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
     cliPrompt();
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
@@ -1832,6 +1839,8 @@ static void cliExit(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
+    bufWriterFlush(cliWriter);
+    
     *cliBuffer = '\0';
     bufferIndex = 0;
     cliMode = 0;
@@ -1839,7 +1848,7 @@ static void cliExit(char *cmdline)
     mixerResetDisarmedMotors();
     cliReboot();
 
-    cliPort = NULL;
+    cliWriter = NULL;
 }
 
 static void cliFeature(char *cmdline)
@@ -1857,7 +1866,7 @@ static void cliFeature(char *cmdline)
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
-                printf("%s ", featureNames[i]);
+                cliPrintf("%s ", featureNames[i]);
         }
         cliPrint("\r\n");
     } else if (strncasecmp(cmdline, "list", len) == 0) {
@@ -1865,7 +1874,7 @@ static void cliFeature(char *cmdline)
         for (i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            printf("%s ", featureNames[i]);
+            cliPrintf("%s ", featureNames[i]);
         }
         cliPrint("\r\n");
         return;
@@ -1906,7 +1915,7 @@ static void cliFeature(char *cmdline)
                     featureSet(mask);
                     cliPrint("Enabled");
                 }
-                printf(" %s\r\n", featureNames[i]);
+                cliPrintf(" %s\r\n", featureNames[i]);
                 break;
             }
         }
@@ -1932,10 +1941,10 @@ static void cliHelp(char *cmdline)
         cliPrint(cmdTable[i].name);
 #ifndef SKIP_CLI_COMMAND_HELP
         if (cmdTable[i].description) {
-            printf(" - %s", cmdTable[i].description);
+            cliPrintf(" - %s", cmdTable[i].description);
         }
         if (cmdTable[i].args) {
-            printf("\r\n\t%s", cmdTable[i].args);
+            cliPrintf("\r\n\t%s", cmdTable[i].args);
         }
 #endif
         cliPrint("\r\n");
@@ -1966,7 +1975,7 @@ static void cliMap(char *cmdline)
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
-    printf("%s\r\n", out);
+    cliPrintf("%s\r\n", out);
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -1978,14 +1987,14 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printf("Mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("Mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
         for (i = 0; ; i++) {
             if (mixerNames[i] == NULL)
                 break;
-            printf("%s ", mixerNames[i]);
+            cliPrintf("%s ", mixerNames[i]);
         }
         cliPrint("\r\n");
         return;
@@ -2047,7 +2056,7 @@ static void cliMotor(char *cmdline)
         }
     }
 
-    printf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+    cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
 static void cliPlaySound(char *cmdline)
@@ -2068,7 +2077,7 @@ static void cliPlaySound(char *cmdline)
                 if ((name=beeperNameForTableIndex(i)) != NULL)
                     break;   //if name OK then play sound below
                 if (i == lastSoundIdx + 1) {     //prevent infinite loop
-                    printf("Error playing sound\r\n");
+                    cliPrintf("Error playing sound\r\n");
                     return;
                 }
             }
@@ -2076,13 +2085,13 @@ static void cliPlaySound(char *cmdline)
     } else {       //index value was given
         i = atoi(cmdline);
         if ((name=beeperNameForTableIndex(i)) == NULL) {
-            printf("No sound for index %d\r\n", i);
+            cliPrintf("No sound for index %d\r\n", i);
             return;
         }
     }
     lastSoundIdx = i;
     beeperSilence();
-    printf("Playing sound %d: %s\r\n", i, name);
+    cliPrintf("Playing sound %d: %s\r\n", i, name);
     beeper(beeperModeForTableIndex(i));
 #endif
 }
@@ -2092,7 +2101,7 @@ static void cliProfile(char *cmdline)
     int i;
 
     if (isEmpty(cmdline)) {
-        printf("profile %d\r\n", getCurrentProfile());
+        cliPrintf("profile %d\r\n", getCurrentProfile());
         return;
     } else {
         i = atoi(cmdline);
@@ -2110,7 +2119,7 @@ static void cliRateProfile(char *cmdline)
     int i;
 
     if (isEmpty(cmdline)) {
-        printf("rateprofile %d\r\n", getCurrentControlRateProfile());
+        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
     } else {
         i = atoi(cmdline);
@@ -2123,6 +2132,7 @@ static void cliRateProfile(char *cmdline)
 
 static void cliReboot(void) {
     cliPrint("\r\nRebooting");
+    bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
     handleOneshotFeatureChangeOnRestart();
@@ -2151,12 +2161,25 @@ static void cliDefaults(char *cmdline)
 static void cliPrint(const char *str)
 {
     while (*str)
-        serialWrite(cliPort, *(str++));
+        bufWriterAppend(cliWriter, *str++);
+}
+
+static void cliPutp(void *p, char ch)
+{
+    bufWriterAppend(p, ch);
+}
+
+static void cliPrintf(const char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(cliWriter, cliPutp, fmt, va);
+    va_end(va);
 }
 
 static void cliWrite(uint8_t ch)
 {
-    serialWrite(cliPort, ch);
+    bufWriterAppend(cliWriter, ch);
 }
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
@@ -2194,23 +2217,23 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
 
         case VAR_FLOAT:
-            printf("%s", ftoa(*(float *)ptr, buf));
+            cliPrintf("%s", ftoa(*(float *)ptr, buf));
             if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                printf(" %s", ftoa((float)var->config.minmax.min, buf));
-                printf(" %s", ftoa((float)var->config.minmax.max, buf));
+                cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
+                cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
             }
             return; // return from case for float only
     }
 
     switch(var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
-            printf("%d", value);
+            cliPrintf("%d", value);
             if (full) {
-                printf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
             }
             break;
         case MODE_LOOKUP:
-            printf(lookupTables[var->config.lookup.tableIndex].values[value]);
+            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
             break;
     }
 }
@@ -2263,7 +2286,7 @@ static void cliSet(char *cmdline)
         cliPrint("Current settings: \r\n");
         for (i = 0; i < VALUE_COUNT; i++) {
             val = &valueTable[i];
-            printf("%s = ", valueTable[i].name);
+            cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
         }
@@ -2326,7 +2349,7 @@ static void cliSet(char *cmdline)
                 if (changeValue) {
                     cliSetVar(val, tmp);
 
-                    printf("%s set to ", valueTable[i].name);
+                    cliPrintf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
                     cliPrint("Invalid value\r\n");
@@ -2338,7 +2361,7 @@ static void cliSet(char *cmdline)
         cliPrint("Invalid name\r\n");
     } else {
         // no equals, check for matching variables.
-    	cliGet(cmdline);
+        cliGet(cmdline);
     }
 }
 
@@ -2351,7 +2374,7 @@ static void cliGet(char *cmdline)
     for (i = 0; i < VALUE_COUNT; i++) {
         if (strstr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
-            printf("%s = ", valueTable[i].name);
+            cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
             cliPrint("\r\n");
 
@@ -2371,10 +2394,10 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
+    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
         millis() / 1000, vbat, batteryCellCount, getBatteryStateString(), averageSystemLoadPercent / 100, averageSystemLoadPercent % 100);
 
-    printf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
+    cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
 #ifndef CJMCU
     uint8_t i;
@@ -2392,10 +2415,10 @@ static void cliStatus(char *cmdline)
             uint8_t sensorHardwareIndex = detectedSensors[i];
             sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
 
-            printf(", %s=%s", sensorTypeNames[i], sensorHardware);
+            cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
 
             if (mask == SENSOR_ACC && acc.revisionCode) {
-                printf(".%c", acc.revisionCode);
+                cliPrintf(".%c", acc.revisionCode);
             }
         }
     }
@@ -2408,7 +2431,7 @@ static void cliStatus(char *cmdline)
     uint16_t i2cErrorCounter = 0;
 #endif
 
-    printf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -2419,11 +2442,11 @@ static void cliTasks(char *cmdline)
     cfTaskId_e taskId;
     cfTaskInfo_t taskInfo;
 
-    printf("Task list:\r\n");
+    cliPrintf("Task list:\r\n");
     for (taskId = 0; taskId < TASK_COUNT; taskId++) {
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            printf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
+            cliPrintf("%d - %s, max = %d us, avg = %d us, total = %d ms\r\n", taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskInfo.totalExecutionTime / 1000);
         }
     }
 }
@@ -2433,7 +2456,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("# iNav/%s %s %s / %s (%s)",
+    cliPrintf("# iNav/%s %s %s / %s (%s)",
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -2446,15 +2469,18 @@ static void cliPFlags(char *cmdline)
 {
     UNUSED(cmdline);
 
-    printf("# Persistent config flags: 0x%08x", masterConfig.persistentFlags );
+    cliPrintf("# Persistent config flags: 0x%08x", masterConfig.persistentFlags );
 }
 
 void cliProcess(void)
 {
-    if (!cliPort) {
+    if (!cliWriter) {
         return;
     }
 
+    // Be a little bit tricky.  Flush the last inputs buffer, if any.
+    bufWriterFlush(cliWriter);
+    
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
         if (c == '\t' || c == '?') {
