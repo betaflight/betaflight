@@ -352,7 +352,6 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLEDMAX, "LEDMAX;", 14 },
     { BOXLEDLOW, "LEDLOW;", 15 },
     { BOXLLIGHTS, "LLIGHTS;", 16 },
-    //{ BOXCALIB, "CALIB;", 17 },
     { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
@@ -1025,8 +1024,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
-            const box_t *box = &boxes[mac->modeId];
-            serialize8(box->permanentId);
+            const box_t *box = findBoxByActiveBoxId(mac->modeId);
+            serialize8(box ? box->permanentId : 0);
             serialize8(mac->auxChannelIndex);
             serialize8(mac->range.startStep);
             serialize8(mac->range.endStep);

@@ -24,7 +24,6 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXNAVALTHOLD,  // old BOXBARO
-    // BOXVARIO,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -37,7 +36,6 @@ typedef enum {
     BOXLEDMAX,
     BOXLEDLOW,
     BOXLLIGHTS,
-    BOXGCSNAV,
     BOXGOV,
     BOXOSD,
     BOXTELEMETRY,
@@ -50,6 +48,7 @@ typedef enum {
     BOXNAVWP,
     BOXAIRMODE,
     BOXHOMERESET,
+    BOXGCSNAV,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
