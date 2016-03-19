@@ -172,8 +172,8 @@ void failsafeUpdateState(void)
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
-	// Beep RX lost only if we are not seeing data, but we have seen it in the past.
-    if (!receivingRxData && failsafeState.validRxDataReceivedAt) {
+	// Beep RX lost only if we are not seeing data and we have been armed earlier
+    if (!receivingRxData && ARMING_FLAG(WAS_EVER_ARMED)) {
         beeperMode = BEEPER_RX_LOST;
     }
 
