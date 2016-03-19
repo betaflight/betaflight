@@ -55,6 +55,7 @@
 // which results in false gyro drift. See
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
 #define SPIN_RATE_LIMIT 20
+#define MAX_ACC_NEARNESS 25
 
 int32_t accSum[XYZ_AXIS_COUNT];
 
@@ -224,7 +225,7 @@ static float imuGetPGainScaleFactor(void)
 }
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
-                                float useAcc, float ax, float ay, float az,
+                                int useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
                                 bool useYaw, float yawError)
 {
@@ -272,7 +273,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ez += rMat[2][2] * ez_ef;
     }
 
-    if (useAcc > 0.0f) {
+    if (useAcc > 0) {
 		// Just scale by 1G length - That's our vector adjustment. Rather than 
 		// using one-over-exact length (which needs a costly square root), we already 
 		// know the vector is enough "roughly unit length" and since it is only weighted
@@ -283,10 +284,11 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ay *= recipNorm;
         az *= recipNorm;
         
+		float fMix = useAcc / (float)MAX_ACC_NEARNESS;
 
-        ex += (ay * rMat[2][2] - az * rMat[2][1]) * useAcc;
-        ey += (az * rMat[2][0] - ax * rMat[2][2]) * useAcc;
-        ez += (ax * rMat[2][1] - ay * rMat[2][0]) * useAcc;
+        ex += (ay * rMat[2][2] - az * rMat[2][1]) * fMix;
+        ey += (az * rMat[2][0] - ax * rMat[2][2]) * fMix;
+        ez += (ax * rMat[2][1] - ay * rMat[2][0]) * fMix;
     }
 
     // Compute and apply integral feedback if enabled
@@ -355,7 +357,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static float imuAccelerometerWeight(void)
+static int imuAccelerometerNearness(void)
 {
     int32_t axis;
     int32_t accMagnitude = 0;
@@ -367,8 +369,9 @@ static float imuAccelerometerWeight(void)
     accMagnitude = accMagnitude * 100 / ((((int32_t)acc_1G)*((int32_t)acc_1G)));
 
 	int32_t nearness = ABS(100 - accMagnitude);
-	if (nearness > 25) return 0.0f;
-	return 1.0f - (nearness / 25.0f);
+	
+	if (nearness > MAX_ACC_NEARNESS) return 0;	
+	return MAX_ACC_NEARNESS - nearness;
 }
 
 static bool isMagnetometerHealthy(void)
@@ -380,7 +383,7 @@ static void imuCalculateEstimatedAttitude(void)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
-    float useAcc = 0.0f;
+    int useAcc = 0;
     bool useMag = false;
     bool useYaw = false;
 
@@ -388,7 +391,7 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
-    useAcc = imuAccelerometerWeight();
+    useAcc = imuAccelerometerNearness();
 
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
