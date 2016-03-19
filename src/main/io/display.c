@@ -98,6 +98,12 @@ static const char* const pageTitles[] = {
 #endif
 };
 
+static const char* const gpsFixTypeText[] = {
+    "NO",
+    "2D",
+    "3D"
+};
+
 const pageId_e cyclePageIds[] = {
     PAGE_PROFILE,
 #ifdef GPS
@@ -351,16 +357,8 @@ void showGpsPage() {
 
     i2c_OLED_set_xy(0, rowIndex);
     i2c_OLED_send_char(tickerCharacters[gpsTicker]);
-    
-    char *fixChar = "NO";
-    
-    if (gpsSol.fixType == 2) {
-        fixChar = "3D";
-    } else if (gpsSol.fixType == 1) {
-        fixChar = "2D";
-    } 
-    
-    tfp_sprintf(lineBuffer, "Sats: %d Fix: %s", gpsSol.numSat, fixChar);
+        
+    tfp_sprintf(lineBuffer, "Sats: %d Fix: %s", gpsSol.numSat, gpsFixTypeText[gpsSol.fixType]);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
