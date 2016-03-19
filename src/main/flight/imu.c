@@ -224,7 +224,7 @@ static float imuGetPGainScaleFactor(void)
 }
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
-                                bool useAcc, float ax, float ay, float az,
+                                float useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
                                 bool useYaw, float yawError)
 {
@@ -272,19 +272,21 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ez += rMat[2][2] * ez_ef;
     }
 
-    // Use measured acceleration vector
-    recipNorm = sq(ax) + sq(ay) + sq(az);
-    if (useAcc && recipNorm > 0.01f) {
-        // Normalise accelerometer measurement
-        recipNorm = invSqrt(recipNorm);
+    if (useAcc > 0.0f) {
+		// Just scale by 1G length - That's our vector adjustment. Rather than 
+		// using one-over-exact length (which needs a costly square root), we already 
+		// know the vector is enough "roughly unit length" and since it is only weighted
+		// in by a certain amount anyway later, having that exact is meaningless.
+ 	    recipNorm = 1.0f / acc_1G;; 		
+
         ax *= recipNorm;
         ay *= recipNorm;
         az *= recipNorm;
+        
 
-        // Error is sum of cross product between estimated direction and measured direction of gravity
-        ex += (ay * rMat[2][2] - az * rMat[2][1]);
-        ey += (az * rMat[2][0] - ax * rMat[2][2]);
-        ez += (ax * rMat[2][1] - ay * rMat[2][0]);
+        ex += (ay * rMat[2][2] - az * rMat[2][1]) * useAcc;
+        ey += (az * rMat[2][0] - ax * rMat[2][2]) * useAcc;
+        ez += (ax * rMat[2][1] - ay * rMat[2][0]) * useAcc;
     }
 
     // Compute and apply integral feedback if enabled
@@ -353,7 +355,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(void)
+static float imuAccelerometerWeight(void)
 {
     int32_t axis;
     int32_t accMagnitude = 0;
@@ -362,10 +364,11 @@ static bool imuIsAccelerometerHealthy(void)
         accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc_1G));
+    accMagnitude = accMagnitude * 100 / ((((int32_t)acc_1G)*((int32_t)acc_1G)));
 
-    // Accept accel readings only in range 0.90g - 1.10g
-    return (81 < accMagnitude) && (accMagnitude < 121);
+	int32_t nearness = ABS(100 - accMagnitude);
+	if (nearness > 25) return 0.0f;
+	return 1.0f - (nearness / 25.0f);
 }
 
 static bool isMagnetometerHealthy(void)
@@ -377,7 +380,7 @@ static void imuCalculateEstimatedAttitude(void)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
-    bool useAcc = false;
+    float useAcc = 0.0f;
     bool useMag = false;
     bool useYaw = false;
 
@@ -385,9 +388,7 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
-    if (imuIsAccelerometerHealthy()) {
-        useAcc = true;
-    }
+    useAcc = imuAccelerometerWeight();
 
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
