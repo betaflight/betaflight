@@ -81,6 +81,35 @@ uint32_t testFeatureMask = 0;
 int updatedServoCount;
 int updatedMotorCount;
 
+TEST(FlightAxisUnittest, TestAxisIndices)
+{
+    // In various places Cleanflight assumes equality between the flight dynamics indices,
+    // and angle indices, the RC controls indices, and the PID indices.
+    // This test asserts those equalities.
+
+    // check the FD indices have the correct absolute values
+    EXPECT_EQ(0, FD_ROLL);
+    EXPECT_EQ(1, FD_PITCH);
+    EXPECT_EQ(2, FD_YAW);
+    EXPECT_EQ(3, FD_INDEX_COUNT);
+
+    // check the AI indices match the FD indices
+    EXPECT_EQ(FD_ROLL, AI_ROLL);
+    EXPECT_EQ(FD_PITCH, AI_PITCH);
+    EXPECT_EQ(2, ANGLE_INDEX_COUNT);
+
+    // check the RC indices match the FD indices
+    EXPECT_EQ(FD_ROLL, ROLL);
+    EXPECT_EQ(FD_PITCH, PITCH);
+    EXPECT_EQ(FD_YAW, YAW);
+    EXPECT_EQ(3, THROTTLE); // throttle is sometimes used the fourth item in a zero based array
+
+    // check the PID indices match the FD indices
+    EXPECT_EQ(FD_ROLL, PIDROLL);
+    EXPECT_EQ(FD_PITCH, PIDPITCH);
+    EXPECT_EQ(FD_YAW, PIDYAW);
+}
+
 class ChannelForwardingTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
@@ -235,7 +264,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     mixerUsePWMIOConfiguration(&pwmIOConfiguration);
 
     // and
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
     // when
     mixTable();
@@ -272,7 +301,7 @@ TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 
     // and
     memset(axisPID, 0, sizeof(axisPID));
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
 
     // when
@@ -361,7 +390,7 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     // and
     memset(axisPID, 0, sizeof(axisPID));
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
 
     // when
