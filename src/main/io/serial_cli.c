@@ -2459,7 +2459,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# iNav/%s %s %s / %s (%s)",
+    cliPrintf("# %s/%s %s %s / %s (%s)",
+        FC_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,

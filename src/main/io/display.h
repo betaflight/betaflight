@@ -18,17 +18,11 @@
 //#define ENABLE_DEBUG_OLED_PAGE
 
 typedef enum {
-    PAGE_WELCOME,
-    PAGE_ARMED,
-    PAGE_BATTERY,
-    PAGE_SENSORS,
-    PAGE_RX,
-    PAGE_PROFILE,
-#ifdef GPS
-    PAGE_GPS,
-#endif
+    PAGE_WELCOME
+    ,PAGE_ARMED
+    ,PAGE_STATUS
 #ifdef ENABLE_DEBUG_OLED_PAGE
-    PAGE_DEBUG,
+    ,PAGE_DEBUG
 #endif
 } pageId_e;
 
