@@ -60,7 +60,7 @@
 #include "build_config.h"
 #include "debug.h"
 
-#ifdef TELEMETRY
+#if defined(TELEMETRY) && defined(TELEMETRY_HOTT)
 
 #include "common/axis.h"
 

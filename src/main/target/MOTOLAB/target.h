@@ -110,6 +110,11 @@
 #define SENSORS_SET (SENSOR_ACC)
 
 #define TELEMETRY
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_SMARTPORT
+#define TELEMETRY_LTM
+
 #define BLACKBOX
 #define SERIAL_RX
 //#define GPS

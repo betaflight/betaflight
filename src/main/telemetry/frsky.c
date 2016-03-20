@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#if defined(TELEMETRY) && defined(TELEMETRY_FRSKY)
 
 #include "common/maths.h"
 #include "common/axis.h"
