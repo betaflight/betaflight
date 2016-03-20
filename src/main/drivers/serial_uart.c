@@ -315,13 +315,13 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 
 const struct serialPortVTable uartVTable[] = {
     {
-        uartWrite,
-        uartTotalRxBytesWaiting,
-        uartTotalTxBytesFree,
-        uartRead,
-        uartSetBaudRate,
-        isUartTransmitBufferEmpty,
-        uartSetMode,
+        .serialWrite = uartWrite,
+        .serialTotalRxWaiting = uartTotalRxBytesWaiting,
+        .serialTotalTxFree = uartTotalTxBytesFree,
+        .serialRead = uartRead,
+        .serialSetBaudRate = uartSetBaudRate,
+        .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
+        .setMode = uartSetMode,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,
