@@ -17,7 +17,11 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FPVR"
+#define TARGET_BOARD_IDENTIFIER "SIRF"
+
+#define LED0_GPIO   GPIOB
+#define LED0_PIN    Pin_2
+#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_1
@@ -25,18 +29,20 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 6
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-//#define USE_GYRO_SPI_MPU6500
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-//#define USE_ACC_SPI_MPU6500
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
 
 // MPU6000
 #define ACC_MPU6000_ALIGN CW180_DEG
@@ -47,8 +53,8 @@
 #define MPU6000_SPI_INSTANCE SPI1
 
 // MPU6500
-#define ACC_MPU6500_ALIGN CW180_DEG
-#define GYRO_MPU6500_ALIGN CW180_DEG
+#define ACC_MPU6500_ALIGN CW90_DEG
+#define GYRO_MPU6500_ALIGN CW90_DEG
 
 #define MPU6500_CS_GPIO GPIOA
 #define MPU6500_CS_PIN GPIO_Pin_4
@@ -59,11 +65,11 @@
 #define BEEPER
 
 #define USB_IO
-#define USB_CABLE_DETECTION
 
-#define USB_DETECT_PIN                   GPIO_Pin_2
-#define USB_DETECT_GPIO_PORT             GPIOB
-#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
+//#define USB_CABLE_DETECTION
+//#define USB_DETECT_PIN                   GPIO_Pin_2
+//#define USB_DETECT_GPIO_PORT             GPIOB
+//#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
 
 #define USE_VCP
 #define USE_USART1
@@ -175,7 +181,6 @@
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
-
 #define ADC_INSTANCE                ADC1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
@@ -192,11 +197,7 @@
 #define GTUNE
 #define USE_CLI
 #define OSD
-
-//#define SPEKTRUM_BIND
-// USART3,
-//#define BIND_PORT  GPIOB
-//#define BIND_PIN   Pin_11
+#define LED0
 
 #define USE_SERIAL_1WIRE
 

@@ -142,7 +142,7 @@ void rtc6705_set_channel(uint16_t channel_freq) {
     uint32_t freq = (uint32_t)channel_freq * 1000;
     uint32_t N, A;
 
-    freq /= 40; // TODO check all channels for the R value
+    freq /= 40;
     N = freq / 64;
     A = freq % 64;
     rtc6705_write_register(0, 400);
