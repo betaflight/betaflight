@@ -73,6 +73,7 @@ typedef struct pidProfile_s {
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t dynamic_pid;                    // Dynamic PID implementation (currently only P and I)
+    uint8_t horizon_incl_fact;              // inclination factor for Horizon mode
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

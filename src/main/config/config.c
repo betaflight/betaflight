@@ -176,7 +176,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
     pidProfile->P8[PIDLEVEL] = 50;
     pidProfile->I8[PIDLEVEL] = 50;
-    pidProfile->D8[PIDLEVEL] = 100;
+    pidProfile->D8[PIDLEVEL] = 75;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 55;
     pidProfile->I8[PIDVEL] = 55;
@@ -188,6 +188,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawItermIgnoreRate = 35;
     pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
     pidProfile->dynamic_pid = 1;
+
+    pidProfile->horizon_incl_fact = 75;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
