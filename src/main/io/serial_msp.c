@@ -879,29 +879,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
-            for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 40.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 4000.0f), 0, 255));
-            }
-            for (i = 3; i < PID_ITEM_COUNT; i++) {
-                if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 255));
-                } else {
-                    serialize8(currentProfile->pidProfile.P8[i]);
-                    serialize8(currentProfile->pidProfile.I8[i]);
-                    serialize8(currentProfile->pidProfile.D8[i]);
-                }
-            }
-        } else {
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                serialize8(currentProfile->pidProfile.P8[i]);
-                serialize8(currentProfile->pidProfile.I8[i]);
-                serialize8(currentProfile->pidProfile.D8[i]);
-            }
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            serialize8(currentProfile->pidProfile.P8[i]);
+            serialize8(currentProfile->pidProfile.I8[i]);
+            serialize8(currentProfile->pidProfile.D8[i]);
         }
         break;
     case MSP_PIDNAMES:
@@ -1335,29 +1316,10 @@ static bool processInCommand(void)
         if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
     case MSP_SET_PID:
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
-            for (i = 0; i < 3; i++) {
-                currentProfile->pidProfile.P_f[i] = (float)read8() / 40.0f;
-                currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
-                currentProfile->pidProfile.D_f[i] = (float)read8() / 4000.0f;
-            }
-            for (i = 3; i < PID_ITEM_COUNT; i++) {
-                if (i == PIDLEVEL) {
-                    currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_sensitivity = read8();
-                } else {
-                    currentProfile->pidProfile.P8[i] = read8();
-                    currentProfile->pidProfile.I8[i] = read8();
-                    currentProfile->pidProfile.D8[i] = read8();
-                }
-            }
-        } else {
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile->pidProfile.P8[i] = read8();
-                currentProfile->pidProfile.I8[i] = read8();
-                currentProfile->pidProfile.D8[i] = read8();
-            }
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            currentProfile->pidProfile.P8[i] = read8();
+            currentProfile->pidProfile.I8[i] = read8();
+            currentProfile->pidProfile.D8[i] = read8();
         }
         break;
     case MSP_SET_MODE_RANGE:

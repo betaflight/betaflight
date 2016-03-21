@@ -700,29 +700,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(currentControlRateProfile->rcYawExpo8);
 			break;
 	    case BST_PID:
-			if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
-				for (i = 0; i < 3; i++) {
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 100));
-				}
-				for (i = 3; i < PID_ITEM_COUNT; i++) {
-					if (i == PIDLEVEL) {
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
-					} else {
-						bstWrite8(currentProfile->pidProfile.P8[i]);
-						bstWrite8(currentProfile->pidProfile.I8[i]);
-						bstWrite8(currentProfile->pidProfile.D8[i]);
-					}
-				}
-			} else {
-				for (i = 0; i < PID_ITEM_COUNT; i++) {
-					bstWrite8(currentProfile->pidProfile.P8[i]);
-					bstWrite8(currentProfile->pidProfile.I8[i]);
-					bstWrite8(currentProfile->pidProfile.D8[i]);
-				}
+			for (i = 0; i < PID_ITEM_COUNT; i++) {
+			    bstWrite8(currentProfile->pidProfile.P8[i]);
+				bstWrite8(currentProfile->pidProfile.I8[i]);
+				bstWrite8(currentProfile->pidProfile.D8[i]);
 			}
 			break;
 	    case BST_PIDNAMES:
@@ -1066,30 +1047,11 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			pidSetController(currentProfile->pidProfile.pidController);
 			break;
 		case BST_SET_PID:
-			if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
-				for (i = 0; i < 3; i++) {
-					currentProfile->pidProfile.P_f[i] = (float)bstRead8() / 10.0f;
-					currentProfile->pidProfile.I_f[i] = (float)bstRead8() / 100.0f;
-					currentProfile->pidProfile.D_f[i] = (float)bstRead8() / 1000.0f;
-					}
-					for (i = 3; i < PID_ITEM_COUNT; i++) {
-						if (i == PIDLEVEL) {
-							currentProfile->pidProfile.A_level = (float)bstRead8() / 10.0f;
-							currentProfile->pidProfile.H_level = (float)bstRead8() / 10.0f;
-							currentProfile->pidProfile.H_sensitivity = bstRead8();
-						} else {
-							currentProfile->pidProfile.P8[i] = bstRead8();
-							currentProfile->pidProfile.I8[i] = bstRead8();
-							currentProfile->pidProfile.D8[i] = bstRead8();
-						}
-					}
-				} else {
-					for (i = 0; i < PID_ITEM_COUNT; i++) {
-						currentProfile->pidProfile.P8[i] = bstRead8();
-						currentProfile->pidProfile.I8[i] = bstRead8();
-						currentProfile->pidProfile.D8[i] = bstRead8();
-					}
-				}
+		    for (i = 0; i < PID_ITEM_COUNT; i++) {
+			    currentProfile->pidProfile.P8[i] = bstRead8();
+				currentProfile->pidProfile.I8[i] = bstRead8();
+				currentProfile->pidProfile.D8[i] = bstRead8();
+			}
 			break;
 	    case BST_SET_MODE_RANGE:
 	        i = bstRead8();

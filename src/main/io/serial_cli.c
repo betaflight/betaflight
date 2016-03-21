@@ -728,7 +728,8 @@ const clivalue_t valueTable[] = {
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "dterm_lpf_hz",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
-    { "dterm_average_count",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_average_count, .config.minmax = {2, 12 } },
+    { "dterm_average_count",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_average_count, .config.minmax = {0, 12 } },
+    { "yaw_lpf_hz",                 VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
@@ -743,18 +744,6 @@ const clivalue_t valueTable[] = {
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[YAW], .config.minmax = { 0,  200 } },
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[YAW], .config.minmax = { 0,  200 } },
 
-    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[PITCH], .config.minmax = { 0,  100 } },
-    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[PITCH], .config.minmax = { 0,  100 } },
-    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[PITCH], .config.minmax = { 0,  100 } },
-    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[ROLL], .config.minmax = { 0,  100 } },
-    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[ROLL], .config.minmax = { 0,  100 } },
-    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[ROLL], .config.minmax = { 0,  100 } },
-    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P_f[YAW], .config.minmax = { 0,  100 } },
-    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I_f[YAW], .config.minmax = { 0,  100 } },
-    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D_f[YAW], .config.minmax = { 0,  100 } },
-
-    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.H_level, .config.minmax = { 0,  10 } },
-    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.A_level, .config.minmax = { 0,  10 } },
     { "sensitivity_horizon",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.H_sensitivity, .config.minmax = { 0,  250 } },
 
     { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDALT], .config.minmax = { 0,  200 } },

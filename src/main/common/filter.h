@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define DELTA_MAX_SAMPLES 12
+
 typedef struct filterStatePt1_s {
 	float state;
 	float RC;
@@ -29,4 +31,6 @@ typedef struct biquad_s {
 
 float applyBiQuadFilter(float sample, biquad_t *state);
 float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dt);
+int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]);
+float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]);
 void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate);

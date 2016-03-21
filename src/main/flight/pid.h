@@ -63,14 +63,10 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for lux float pid controller
-    float I_f[3];
-    float D_f[3];
-    float A_level;
-    float H_level;
     uint8_t H_sensitivity;
 
     float dterm_lpf_hz;                     // Delta Filter in hz
+    float yaw_lpf_hz;                       // Additional yaw filter when yaw axis too noisy
     uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
