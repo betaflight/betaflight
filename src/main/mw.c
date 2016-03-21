@@ -358,6 +358,10 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
+	if (!ARMING_FLAG(WAS_EVER_ARMED) && masterConfig.gyro_cal_on_first_arm) {
+	    gyroSetCalibrationCycles(calculateCalibratingCycles());
+	}
+
     if (ARMING_FLAG(OK_TO_ARM)) {
         if (ARMING_FLAG(ARMED)) {
             return;
@@ -367,6 +371,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
+            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
@@ -545,7 +550,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();

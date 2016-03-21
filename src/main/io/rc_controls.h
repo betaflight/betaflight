@@ -159,7 +159,7 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 

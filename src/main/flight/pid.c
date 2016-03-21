@@ -311,7 +311,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         gyroError = gyroADC[axis] / 4;
 
         error = rc - gyroError;
-        errorGyroI[axis]  = constrain(errorGyroI[axis] + ((error * (uint16_t)targetPidLooptime) >> 12) , -16000, +16000);   // WindUp   16 bits is ok here
+        errorGyroI[axis]  = constrain(errorGyroI[axis] + ((error * (uint16_t)targetPidLooptime) >> 11) , -16000, +16000);   // WindUp   16 bits is ok here
 
         if (ABS(gyroADC[axis]) > (640 * 4)) {
             errorGyroI[axis] = 0;
