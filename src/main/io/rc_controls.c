@@ -613,8 +613,11 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
         } else if (adjustmentState->config.mode == ADJUSTMENT_MODE_DIRECT) {
             float valueMin = adjustmentState->range->valueRange.min;
             float valueMax = adjustmentState->range->valueRange.max;
+            uint16_t channelMin = rxConfig->channelRanges[0].min;
+            uint16_t channelMax = rxConfig->channelRanges[0].max;
+            uint16_t channelRangeWidth = channelMax - channelMin;
             float rangeWidth = valueMax - valueMin;
-            float value = (constrain(rcData[channelIndex], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1) - CHANNEL_RANGE_MIN) * rangeWidth / CHANNEL_RANGE_WIDTH + valueMin;
+            float value = (constrain(rcData[channelIndex], channelMin, channelMax - 1) - channelMin) * rangeWidth / channelRangeWidth + valueMin;
             applyAdjustment(controlRateConfig, adjustmentFunction, 0, 1, value);
         }
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
