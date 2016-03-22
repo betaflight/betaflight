@@ -414,72 +414,32 @@ static void imuCalculateEstimatedAttitude(float dT)
     bool useMag = false;
     bool useCOG = false;
 
-    if (!isImuInitialized) {
-        /* Initialize initial attitude guess from accelerometer and magnetometer readings */
-        attitude.values.roll = RADIANS_TO_DECIDEGREES(atan2_approx(accADC[Y], accADC[Z]));
-        attitude.values.pitch = RADIANS_TO_DECIDEGREES(atan2_approx(-accADC[X], sqrtf(accADC[Y] * accADC[Y] + accADC[Z] * accADC[Z])));
+    if (imuIsAccelerometerHealthy()) {
+        useAcc = true;
+    }
 
-        imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, 0);
-
-#if defined(MAG)
-        if (sensors(SENSOR_MAG)) {
-            /* Wait until compass is read at least once */
-            if (isCompassReady()) {
-                t_fp_vector estM;
-
-                estM.V.X = magADC[X];
-                estM.V.Y = magADC[Y];
-                estM.V.Z = magADC[Z];
-
-                /* Pre-compute orientation quaternion and rotate measured mag field vector to earth frame */
-                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, 0);
-                imuTransformVectorBodyToEarth(&estM);
-
-                /* Calculate yaw from mag vector */
-                attitude.values.yaw = RADIANS_TO_DECIDEGREES(-atan2_approx(estM.V.Y, estM.V.X));
-
-                if (attitude.values.yaw < 0)
-                    attitude.values.yaw += 3600;
-
-                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, attitude.values.yaw);
-                isImuInitialized = true;
-            }
+    if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
+        useMag = true;
+    }
+#if defined(GPS)
+    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
+        // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
+        if (gpsHeadingInitialized) {
+            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            useCOG = true;
         }
         else {
-            isImuInitialized = true;
+            // Re-initialize quaternion from known Roll, Pitch and GPS heading
+            imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+            gpsHeadingInitialized = true;
         }
-#else
-        isImuInitialized = true;
-#endif
     }
-    else {
-        if (imuIsAccelerometerHealthy()) {
-            useAcc = true;
-        }
-
-        if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
-            useMag = true;
-        }
-#if defined(GPS)
-        else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
-            // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-            if (gpsHeadingInitialized) {
-                courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-                useCOG = true;
-            }
-            else {
-                // Re-initialize quaternion from known Roll, Pitch and GPS heading
-                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-                gpsHeadingInitialized = true;
-            }
-        }
 #endif
 
-        imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
-                            useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
-                            useMag, magADC[X], magADC[Y], magADC[Z],
-                            useCOG, courseOverGround);
-    }
+    imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
+                        useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
+                        useMag, magADC[X], magADC[Y], magADC[Z],
+                        useCOG, courseOverGround);
 
     imuUpdateEulerAngles();
 }
