@@ -56,6 +56,7 @@
  * that use the API and the users of those tools.
  */
 
+
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
@@ -230,6 +231,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 
 // #define MSP_BIND                 240    //in message          no param
+#ifndef SKIP_SERIAL_PASSTHROUGH
+#define MSP_PASSTHROUGH_SERIAL   244    //in message          serial port number
+#endif
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
 

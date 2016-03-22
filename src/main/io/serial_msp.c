@@ -1323,7 +1323,30 @@ static bool processInCommand(void)
         masterConfig.sensorAlignmentConfig.acc_align = read8();
         masterConfig.sensorAlignmentConfig.mag_align = read8();
         break;
-        
+
+#ifndef SKIP_SERIAL_PASSTHROUGH
+    case MSP_PASSTHROUGH_SERIAL:
+        if (!ARMING_FLAG(ARMED)) {
+            int id = read8();
+            serialPort_t *passThroughPort;
+            serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
+            if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
+                passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
+                                                 115200, MODE_RXTX,
+                                                 SERIAL_NOT_INVERTED);
+                if (!passThroughPort) {
+                    headSerialError(0);
+                    break;
+                }
+            } else {
+                passThroughPort = passThroughPortUsage->serialPort;
+            }
+
+            serialPassthrough(mspSerialPort, passThroughPort, NULL, NULL);
+        }
+        break;
+#endif
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
