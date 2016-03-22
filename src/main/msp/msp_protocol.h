@@ -283,6 +283,7 @@
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242
+#define MSP_PASSTHROUGH_SERIAL   244    //in message          serial port number
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
 #define MSP_RESERVE_1            251    //reserved for system usage
