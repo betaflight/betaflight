@@ -67,7 +67,8 @@
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
-#define SPIN_RATE_LIMIT 20
+#define SPIN_RATE_LIMIT     20
+#define MAX_ACC_SQ_NEARNESS 25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
 
 t_fp_vector imuAccelInBodyFrame;
 t_fp_vector imuMeasuredGravityBF;
@@ -198,29 +199,18 @@ static bool imuUseFastGains(void)
     return !ARMING_FLAG(ARMED) && millis() < 20000;
 }
 
-// Taken from http://gentlenav.googlecode.com/files/fastRotations.pdf
-static float imuGetPGainScaleFactor(float spin_rate)
+static float imuGetPGainScaleFactor(void)
 {
     if (imuUseFastGains()) {
         return 10.0f;
     }
     else {
-        /* FIXME: More reliance on accel at high speed rotation is a VERY BAD idea unless you do some centripetal accel compensation */
         return 1.0f;
-
-        if (spin_rate < DEGREES_TO_RADIANS(50)) {
-            return 1.0f;
-        }
-        else if (spin_rate > DEGREES_TO_RADIANS(500)) {
-            return 10.0f;
-        }
-
-        return spin_rate / DEGREES_TO_RADIANS(50);
     }
 }
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
-                                bool useAcc, float ax, float ay, float az,
+                                int accWeight, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
                                 bool useCOG, float courseOverGround)
 {
@@ -231,12 +221,12 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float qa, qb, qc;
 
     /* Calculate general spin rate (rad/s) */
-    float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
+    float spin_rate_sq = sq(gx) + sq(gy) + sq(gz);
 
     /* Step 1: Yaw correction */
     // Use measured magnetic field vector
     if (useMag || useCOG) {
-        float kpMag = imuRuntimeConfig->dcm_kp_mag * imuGetPGainScaleFactor(spin_rate);
+        float kpMag = imuRuntimeConfig->dcm_kp_mag * imuGetPGainScaleFactor();
 
         recipNorm = mx * mx + my * my + mz * mz;
         if (useMag && recipNorm > 0.01f) {
@@ -287,7 +277,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         // Compute and apply integral feedback if enabled
         if(imuRuntimeConfig->dcm_ki_mag > 0.0f) {
             // Stop integrating if spinning beyond the certain limit
-            if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
+            if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
                 integralMagX += imuRuntimeConfig->dcm_ki_mag * ex * dt;    // integral error scaled by Ki
                 integralMagY += imuRuntimeConfig->dcm_ki_mag * ey * dt;
                 integralMagZ += imuRuntimeConfig->dcm_ki_mag * ez * dt;
@@ -306,41 +296,44 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 
     /* Step 2: Roll and pitch correction -  use measured acceleration vector */
-    if (useAcc) {
-        float kpAcc = imuRuntimeConfig->dcm_kp_acc * imuGetPGainScaleFactor(spin_rate);
+    if (accWeight > 0) {
+        float kpAcc = imuRuntimeConfig->dcm_kp_acc * imuGetPGainScaleFactor();
 
-        recipNorm = ax * ax + ay * ay + az * az;
-        if (recipNorm > 0.01f) {
-            // Normalise accelerometer measurement
-            recipNorm = invSqrt(recipNorm);
-            ax *= recipNorm;
-            ay *= recipNorm;
-            az *= recipNorm;
+        // Just scale by 1G length - That's our vector adjustment. Rather than 
+        // using one-over-exact length (which needs a costly square root), we already 
+        // know the vector is enough "roughly unit length" and since it is only weighted
+        // in by a certain amount anyway later, having that exact is meaningless. (c) MasterZap
+        recipNorm = 1.0f / GRAVITY_CMSS;
 
-            // Error is sum of cross product between estimated direction and measured direction of gravity
-            ex = (ay * rMat[2][2] - az * rMat[2][1]);
-            ey = (az * rMat[2][0] - ax * rMat[2][2]);
-            ez = (ax * rMat[2][1] - ay * rMat[2][0]);
+        ax *= recipNorm;
+        ay *= recipNorm;
+        az *= recipNorm;
 
-            // Compute and apply integral feedback if enabled
-            if(imuRuntimeConfig->dcm_ki_acc > 0.0f) {
-                // Stop integrating if spinning beyond the certain limit
-                if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
-                    integralAccX += imuRuntimeConfig->dcm_ki_acc * ex * dt;    // integral error scaled by Ki
-                    integralAccY += imuRuntimeConfig->dcm_ki_acc * ey * dt;
-                    integralAccZ += imuRuntimeConfig->dcm_ki_acc * ez * dt;
+        float fAccWeightScaler = accWeight / (float)MAX_ACC_SQ_NEARNESS;
 
-                    gx += integralAccX;
-                    gy += integralAccY;
-                    gz += integralAccZ;
-                }
+        // Error is sum of cross product between estimated direction and measured direction of gravity
+        ex = (ay * rMat[2][2] - az * rMat[2][1]) * fAccWeightScaler;
+        ey = (az * rMat[2][0] - ax * rMat[2][2]) * fAccWeightScaler;
+        ez = (ax * rMat[2][1] - ay * rMat[2][0]) * fAccWeightScaler;
+
+        // Compute and apply integral feedback if enabled
+        if(imuRuntimeConfig->dcm_ki_acc > 0.0f) {
+            // Stop integrating if spinning beyond the certain limit
+            if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
+                integralAccX += imuRuntimeConfig->dcm_ki_acc * ex * dt;    // integral error scaled by Ki
+                integralAccY += imuRuntimeConfig->dcm_ki_acc * ey * dt;
+                integralAccZ += imuRuntimeConfig->dcm_ki_acc * ez * dt;
+
+                gx += integralAccX;
+                gy += integralAccY;
+                gz += integralAccZ;
             }
-
-            // Calculate kP gain and apply proportional feedback
-            gx += kpAcc * ex;
-            gy += kpAcc * ey;
-            gz += kpAcc * ez;
         }
+
+        // Calculate kP gain and apply proportional feedback
+        gx += kpAcc * ex;
+        gy += kpAcc * ey;
+        gz += kpAcc * ez;
     }
 
     // Integrate rate of change of quaternion
@@ -385,7 +378,8 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(void)
+// Idea by MasterZap
+static int imuCalculateAccelerometerConfidence(void)
 {
     int32_t axis;
     int32_t accMagnitude = 0;
@@ -394,10 +388,12 @@ static bool imuIsAccelerometerHealthy(void)
         accMagnitude += (int32_t)accADC[axis] * accADC[axis];
     }
 
+    // Magnitude^2 in percent of G^2
     accMagnitude = accMagnitude * 100 / ((int32_t)acc_1G * acc_1G);
 
-    // Accept accel readings only in range 0.90g - 1.10g
-    return (81 < accMagnitude) && (accMagnitude < 121);
+    int32_t nearness = ABS(100 - accMagnitude);
+
+    return (nearness > MAX_ACC_SQ_NEARNESS) ? 0 : MAX_ACC_SQ_NEARNESS - nearness;
 }
 
 static bool isMagnetometerHealthy(void)
@@ -407,16 +403,13 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(float dT)
 {
-    static bool isImuInitialized = false;
     float courseOverGround = 0;
 
-    bool useAcc = false;
+    int accWeight = 0;
     bool useMag = false;
     bool useCOG = false;
 
-    if (imuIsAccelerometerHealthy()) {
-        useAcc = true;
-    }
+    accWeight = imuCalculateAccelerometerConfidence();
 
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
@@ -437,7 +430,7 @@ static void imuCalculateEstimatedAttitude(float dT)
 #endif
 
     imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
-                        useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
+                        accWeight, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
                         useMag, magADC[X], magADC[Y], magADC[Z],
                         useCOG, courseOverGround);
 
