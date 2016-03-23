@@ -176,7 +176,7 @@ int32_t hcsr04_get_distance(void)
 
     // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
     if (distance > HCSR04_MAX_RANGE_CM)
-        distance = -1;
+        distance = SONAR_OUT_OF_RANGE;
 
     return distance;
 }

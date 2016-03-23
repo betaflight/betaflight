@@ -132,10 +132,7 @@ void sonarUpdate(void)
  */
 int32_t sonarRead(void)
 {
-    int32_t distance = hcsr04_get_distance();
-    if (distance > HCSR04_MAX_RANGE_CM)
-        distance = SONAR_OUT_OF_RANGE;
-    return distance;
+    return hcsr04_get_distance();
 }
 
 /**
