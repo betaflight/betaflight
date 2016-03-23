@@ -119,6 +119,7 @@
 #define MAG_HMC5883_ALIGN CW180_DEG
 
 #define SONAR
+#define USE_SONAR_SRF10
 #define BEEPER
 #define LED0
 #define LED1

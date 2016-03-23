@@ -122,8 +122,6 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
-void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -230,12 +228,11 @@ void init(void)
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
-    const sonarHardware_t *sonarHardware = NULL;
-
+    const sonarHardware_t *sonarHardware;
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
+        sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
         sonarGPIOConfig_t sonarGPIOConfig = {
-            .gpio = SONAR_GPIO,
+            .gpio = sonarHardware->echo_gpio,
             .triggerPin = sonarHardware->echo_pin,
             .echoPin = sonarHardware->trigger_pin,
         };

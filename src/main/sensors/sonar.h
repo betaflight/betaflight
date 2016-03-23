@@ -17,10 +17,35 @@
 
 #pragma once
 
-#define SONAR_OUT_OF_RANGE (-1)
+#include "drivers/sonar_hcsr04.h"
+#include "drivers/sonar.h"
+#include "io/rc_controls.h" // for throttleStatus_e required by battery.h
+#include "sensors/battery.h"
 
-void sonarUpdate(void);
-int32_t sonarRead(void);
+typedef enum {
+    SONAR_NONE = 0,
+    SONAR_HCSR04,
+    SONAR_SRF10
+} sonarHardwareType_e;
+
+typedef void (*sonarInitFunctionPtr)(sonarRange_t *sonarRange);
+typedef void (*sonarUpdateFunctionPtr)(void);
+typedef int32_t (*sonarReadFunctionPtr)(void);
+
+typedef struct sonarFunctionPointers_s {
+    sonarInitFunctionPtr init;
+    sonarUpdateFunctionPtr update;
+    sonarReadFunctionPtr read;
+} sonarFunctionPointers_t;
+
+extern int16_t sonarMaxRangeCm;
+extern int16_t sonarCfAltCm;
+extern int16_t sonarMaxAltWithTiltCm;
+
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
 int32_t sonarGetLatestAltitude(void);
+void sonarInit(const sonarHardware_t *sonarHardware);
+void sonarUpdate(void);
+int32_t sonarRead(void);
 

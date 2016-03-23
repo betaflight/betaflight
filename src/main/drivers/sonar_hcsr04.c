@@ -18,15 +18,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "build_config.h"
 
-#include "system.h"
-#include "gpio.h"
-#include "nvic.h"
+#include "drivers/system.h"
+#include "drivers/gpio.h"
+#include "drivers/nvic.h"
 
-#include "sonar_hcsr04.h"
-#include "sensors/sonar.h"
+#include "drivers/sonar.h"
+#include "drivers/sonar_hcsr04.h"
+
+#define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
+#define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
+#define HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES 450 // in practice 45 degrees seems to work well
+
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
@@ -38,8 +43,7 @@
  */
 
 #if defined(SONAR)
-STATIC_UNIT_TESTED volatile int32_t measurement = -1;
-static uint32_t lastMeasurementAt;
+STATIC_UNIT_TESTED volatile int32_t hcsr04SonarPulseTravelTime = 0;
 static sonarHardware_t const *sonarHardware;
 
 #if !defined(UNIT_TEST)
@@ -48,12 +52,12 @@ static void ECHO_EXTI_IRQHandler(void)
     static uint32_t timing_start;
     uint32_t timing_stop;
 
-    if (digitalIn(GPIOB, sonarHardware->echo_pin) != 0) {
+    if (digitalIn(sonarHardware->echo_gpio, sonarHardware->echo_pin) != 0) {
         timing_start = micros();
     } else {
         timing_stop = micros();
         if (timing_stop > timing_start) {
-            measurement = timing_stop - timing_start;
+            hcsr04SonarPulseTravelTime = timing_stop - timing_start;
         }
     }
 
@@ -76,16 +80,10 @@ void EXTI9_5_IRQHandler(void)
 }
 #endif
 
-void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sonarRange)
+void hcsr04_set_sonar_hardware(const sonarHardware_t *initialSonarHardware)
 {
-    sonarHardware = initialSonarHardware;
-    sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
-    sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
-    sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
-
 #if !defined(UNIT_TEST)
-    gpio_config_t gpio;
-    EXTI_InitTypeDef EXTIInit;
+    sonarHardware = initialSonarHardware;
 
 #ifdef STM32F10X
     // enable AFIO for EXTI support
@@ -99,16 +97,16 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
 
+    gpio_config_t gpio;
     // trigger pin
     gpio.pin = sonarHardware->trigger_pin;
     gpio.mode = Mode_Out_PP;
     gpio.speed = Speed_2MHz;
-    gpioInit(GPIOB, &gpio);
-
+    gpioInit(sonarHardware->trigger_gpio, &gpio);
     // echo pin
     gpio.pin = sonarHardware->echo_pin;
     gpio.mode = Mode_IN_FLOATING;
-    gpioInit(GPIOB, &gpio);
+    gpioInit(sonarHardware->echo_gpio, &gpio);
 
 #ifdef STM32F10X
     // setup external interrupt on echo pin
@@ -121,6 +119,7 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
 
     EXTI_ClearITPendingBit(sonarHardware->exti_line);
 
+    EXTI_InitTypeDef EXTIInit;
     EXTIInit.EXTI_Line = sonarHardware->exti_line;
     EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
@@ -128,37 +127,41 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
     EXTI_Init(&EXTIInit);
 
     NVIC_InitTypeDef NVIC_InitStructure;
-
     NVIC_InitStructure.NVIC_IRQChannel = sonarHardware->exti_irqn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SONAR_ECHO);
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SONAR_ECHO);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
-
-    lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
-#else
-    lastMeasurementAt = 0; // to avoid "unused" compiler warning
 #endif
 }
 
-// measurement reading is done asynchronously, using interrupt
+void hcsr04_init(sonarRange_t *sonarRange)
+{
+    sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
+    sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
+    sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
+}
+
+/*
+ * Start a range reading
+ * Called periodically by the scheduler
+ * Measurement reading is done asynchronously, using interrupt
+ */
 void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
-    uint32_t now = millis();
-
-    if (now < (lastMeasurementAt + 60)) {
-        // the repeat interval of trig signal should be greater than 60ms
-        // to avoid interference between connective measurements.
-        return;
+     static uint32_t timeOfLastMeasurementMs = 0;
+    // the firing interval of the trigger signal should be greater than 60ms
+    // to avoid interference between consecutive measurements.
+    #define HCSR04_MinimumFiringIntervalMs 60
+    const uint32_t timeNowMs = millis();
+    if (timeNowMs > timeOfLastMeasurementMs + HCSR04_MinimumFiringIntervalMs) {
+        timeOfLastMeasurementMs = timeNowMs;
+        digitalHi(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
+        //  The width of trigger signal must be greater than 10us, according to device spec
+        delayMicroseconds(11);
+        digitalLo(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
     }
-
-    lastMeasurementAt = now;
-
-    digitalHi(GPIOB, sonarHardware->trigger_pin);
-    //  The width of trig signal must be greater than 10us
-    delayMicroseconds(11);
-    digitalLo(GPIOB, sonarHardware->trigger_pin);
 #endif
 }
 
@@ -172,12 +175,10 @@ int32_t hcsr04_get_distance(void)
     // object we take half of the distance traveled.
     //
     // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
-    int32_t distance = measurement / 59;
-
-    // this sonar range is up to 4meter , but 3meter is the safe working range (+tilted and roll)
-    if (distance > HCSR04_MAX_RANGE_CM)
+    int32_t distance = hcsr04SonarPulseTravelTime / 59;
+    if (distance > HCSR04_MAX_RANGE_CM) {
         distance = SONAR_OUT_OF_RANGE;
-
+    }
     return distance;
 }
 #endif

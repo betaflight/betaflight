@@ -17,20 +17,12 @@
 
 #pragma once
 
-#include <platform.h>
-#include "drivers/sonar.h"
+#define SONAR_OUT_OF_RANGE (-1)
 
-typedef struct sonarHardware_s {
-    uint16_t trigger_pin;
-    GPIO_TypeDef* trigger_gpio;
-    uint16_t echo_pin;
-    GPIO_TypeDef* echo_gpio;
-    uint32_t exti_line;
-    uint8_t exti_pin_source;
-    IRQn_Type exti_irqn;
-} sonarHardware_t;
+typedef struct sonarRange_s {
+    int16_t maxRangeCm;
+    // these are full detection cone angles, maximum tilt is half of this
+    int16_t detectionConeDeciDegrees; // detection cone angle as in device spec
+    int16_t detectionConeExtendedDeciDegrees; // device spec is conservative, in practice have slightly larger detection cone
+} sonarRange_t;
 
-void hcsr04_set_sonar_hardware(const sonarHardware_t *initialSonarHardware);
-void hcsr04_init(sonarRange_t *sonarRange);
-void hcsr04_start_reading(void);
-int32_t hcsr04_get_distance(void);
