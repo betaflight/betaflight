@@ -117,7 +117,7 @@
 #define USE_SERVOS
 #define USE_CLI
 
-//#define SONAR
+#define SONAR
 #define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
 #define SONAR_TRIGGER_GPIO          GPIOB
 #define SONAR_ECHO_PIN              Pin_0   // (PB0) - only 3.3v ( add a 1K Ohms resistor )
