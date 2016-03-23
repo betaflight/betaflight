@@ -44,13 +44,9 @@ TEST(SonarUnittest, TestConstants)
 TEST(SonarUnittest, TestSonarInit)
 {
     sonarInit(0);
-    EXPECT_EQ(sonarMaxRangeCm, HCSR04_MAX_RANGE_CM);
     // Check against gross errors in max range values
-    EXPECT_GE(sonarMaxAltWithTiltCm, 100);
-    EXPECT_LE(sonarMaxAltWithTiltCm, sonarMaxRangeCm);
     EXPECT_GE(sonarCfAltCm, 100);
-    EXPECT_LE(sonarCfAltCm, sonarMaxRangeCm);
-    EXPECT_LE(sonarCfAltCm, sonarMaxAltWithTiltCm);
+    EXPECT_LE(sonarCfAltCm, HCSR04_MAX_RANGE_CM);
     // Check reasonable values for maximum tilt
     EXPECT_GE(sonarMaxTiltDeciDegrees, 0);
     EXPECT_LE(sonarMaxTiltDeciDegrees, 450);
@@ -102,9 +98,6 @@ TEST(SonarUnittest, TestAltitude)
     // distance 400, 22.4 degrees of roll, this corresponds to HC-SR04 effective max detection angle
     EXPECT_EQ(sonarCalculateAltitude(400, cosf(DECIDEGREES_TO_RADIANS(224))), 369);
     EXPECT_EQ(sonarGetLatestAltitude(), 369);
-    // max range, max tilt
-    EXPECT_EQ(sonarCalculateAltitude(sonarMaxRangeCm, cosf(DECIDEGREES_TO_RADIANS(sonarMaxTiltDeciDegrees))), sonarMaxAltWithTiltCm);
-    EXPECT_EQ(sonarGetLatestAltitude(), sonarMaxAltWithTiltCm);
 }
 
 // STUBS
