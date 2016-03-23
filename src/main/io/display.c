@@ -85,12 +85,9 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
 static const char* const pageTitles[] = {
-    FC_NAME
-    ,"ARMED"
-    ,"STATUS"
-#ifdef ENABLE_DEBUG_OLED_PAGE
-    ,"DEBUG"
-#endif
+    FC_NAME,
+    "ARMED",
+    "STATUS"
 };
 
 static const char* const gpsFixTypeText[] = {
@@ -99,34 +96,12 @@ static const char* const gpsFixTypeText[] = {
     "3D"
 };
 
-const pageId_e cyclePageIds[] = {
-    PAGE_STATUS
-#ifdef ENABLE_DEBUG_OLED_PAGE
-    ,PAGE_DEBUG
-#endif
-};
-
-#define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
-
 static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
-typedef enum {
-    PAGE_STATE_FLAG_NONE = 0,
-    PAGE_STATE_FLAG_CYCLE_ENABLED = (1 << 0),
-    PAGE_STATE_FLAG_FORCE_PAGE_CHANGE = (1 << 1)
-} pageFlags_e;
-
-typedef struct pageState_s {
-    bool pageChanging;
-    pageId_e pageId;
-    pageId_e pageIdBeforeArming;
-    uint8_t pageFlags;
-    uint8_t cycleIndex;
-    uint32_t nextPageAt;
-} pageState_t;
-
-static pageState_t pageState;
+static uint32_t nextPageAt;
+static bool forcePageChange;
+static pageId_e currentPageId;
 
 void resetDisplay(void) {
     displayPresent = ug2864hsweg01InitI2C();
@@ -231,7 +206,7 @@ void updateFailsafeStatus(void)
 void showTitle()
 {
     i2c_OLED_set_line(0);
-    i2c_OLED_send_string(pageTitles[pageState.pageId]);
+    i2c_OLED_send_string(pageTitles[currentPageId]);
 }
 
 void showWelcomePage(void)
@@ -252,7 +227,6 @@ void showArmedPage(void)
 
 void showStatusPage(void)
 {
-    
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     if (feature(FEATURE_VBAT)) {
@@ -323,27 +297,14 @@ void showStatusPage(void)
     
 }
 
-#ifdef ENABLE_DEBUG_OLED_PAGE
-
-void showDebugPage(void)
-{
-    uint8_t rowIndex;
-
-    for (rowIndex = 0; rowIndex < 4; rowIndex++) {
-        tfp_sprintf(lineBuffer, "%d = %5d", rowIndex, debug[rowIndex]);
-        padLineBuffer();
-        i2c_OLED_set_line(rowIndex + PAGE_TITLE_LINE_COUNT);
-        i2c_OLED_send_string(lineBuffer);
-    }
-}
-#endif
-
 void updateDisplay(void)
 {
     uint32_t now = micros();
     static uint8_t previousArmedState = 0;
 
+    bool pageChanging = false;
     bool updateNow = (int32_t)(now - nextDisplayUpdateAt) >= 0L;
+
     if (!updateNow) {
         return;
     }
@@ -358,38 +319,26 @@ void updateDisplay(void)
         if (!armedStateChanged) {
             return;
         }
-        pageState.pageIdBeforeArming = pageState.pageId;
-        pageState.pageId = PAGE_ARMED;
-        pageState.pageChanging = true;
+        currentPageId = PAGE_ARMED;
+        pageChanging = true;
     } else {
         if (armedStateChanged) {
-            pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-            pageState.pageId = pageState.pageIdBeforeArming;
+            currentPageId = PAGE_STATUS;
+            pageChanging = true;
         }
 
-        pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
-                
-        uint8_t prevCycleIndex = pageState.cycleIndex;
-        uint8_t pageId = pageState.pageId;
-                
-        if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
-            pageState.cycleIndex++;
-            pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
-            pageState.pageId = cyclePageIds[pageState.cycleIndex];
-            
-            if (prevCycleIndex == pageState.cycleIndex && pageId != PAGE_WELCOME) {
-                pageState.pageChanging = false;
-            }
-            
+        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(now - nextPageAt) >= 0L)) {
+            currentPageId = PAGE_STATUS;
+            pageChanging = true;
         }
-        
+
+        if (forcePageChange) {
+            pageChanging = true;
+            forcePageChange = false;
+        }
     }
 
-    if (pageState.pageChanging) {
-        pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-        pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
-
+    if (pageChanging) {
         // Some OLED displays do not respond on the first initialisation so refresh the display
         // when the page changes in the hopes the hardware responds.  This also allows the
         // user to power off/on the display or connect it while powered.
@@ -409,7 +358,7 @@ void updateDisplay(void)
         return;
     }
 
-    switch(pageState.pageId) {
+    switch(currentPageId) {
         case PAGE_WELCOME:
             showWelcomePage();
             break;
@@ -419,24 +368,19 @@ void updateDisplay(void)
         case PAGE_STATUS:
             showStatusPage();
             break;
-#ifdef ENABLE_DEBUG_OLED_PAGE
-        case PAGE_DEBUG:
-            showDebugPage();
-            break;
-#endif
     }
+
     if (!armedState) {
         updateFailsafeStatus();
         updateRxStatus();
         updateTicker();
     }
-
 }
 
-void displaySetPage(pageId_e pageId)
+void displaySetPage(pageId_e newPageId)
 {
-    pageState.pageId = pageId;
-    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+    currentPageId = newPageId;
+    forcePageChange = true;
 }
 
 void displayInit(rxConfig_t *rxConfigToUse)
@@ -447,39 +391,14 @@ void displayInit(rxConfig_t *rxConfigToUse)
 
     rxConfig = rxConfigToUse;
 
-    memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);
+    displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 
     updateDisplay();
-
-    displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
-}
-
-void displayShowFixedPage(pageId_e pageId)
-{
-    displaySetPage(pageId);
-    displayDisablePageCycling();
 }
 
 void displaySetNextPageChangeAt(uint32_t futureMicros)
 {
-    pageState.nextPageAt = futureMicros;
+    nextPageAt = futureMicros;
 }
-
-void displayEnablePageCycling(void)
-{
-    pageState.pageFlags |= PAGE_STATE_FLAG_CYCLE_ENABLED;
-}
-
-void displayResetPageCycling(void)
-{
-    pageState.cycleIndex = CYCLE_PAGE_ID_COUNT - 1; // start at first page
-
-}
-
-void displayDisablePageCycling(void)
-{
-    pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
-}
-
 #endif

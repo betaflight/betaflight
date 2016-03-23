@@ -15,22 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#define ENABLE_DEBUG_OLED_PAGE
-
 typedef enum {
-    PAGE_WELCOME
-    ,PAGE_ARMED
-    ,PAGE_STATUS
-#ifdef ENABLE_DEBUG_OLED_PAGE
-    ,PAGE_DEBUG
-#endif
+    PAGE_WELCOME,
+    PAGE_ARMED,
+    PAGE_STATUS
 } pageId_e;
 
 void updateDisplay(void);
 
-void displayShowFixedPage(pageId_e pageId);
-
-void displayEnablePageCycling(void);
-void displayDisablePageCycling(void);
-void displayResetPageCycling(void);
+void displaySetPage(pageId_e newPageId);
 void displaySetNextPageChangeAt(uint32_t futureMicros);
