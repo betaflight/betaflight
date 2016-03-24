@@ -67,6 +67,7 @@ GAlt : GPS altitude, sea level is zero.
 Tmp2 : number of sats. Every second, a number > 100 is sent to represent GPS signal quality.
 
 Cels : average cell value, vbat divided by cell number.
+
 > Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
 > ```
 > set telemetry_flvss_cells = OFF
@@ -209,7 +210,6 @@ Cels : average cell value, vbat divided by cell number.
 > - Cell Sensor: Cels _(pack total voltage, sum of all cells)_
 > - Cell Index: Lowest
 
-=======
 ### Integrate Cleanflight telemetry with FrSky Smartport sensors
 
 While Cleanflight telemetry brings a lot of valuable data to the radio, there are additional sensors, like Lipo cells sensor FLVSS, that can be a great addition for many aircrafts. Smartport sensors are designed to be daisy chained, and CF telemetry is no exception to that. To add an external sensor, just connect the "S" port of the FC and sensor(s) together, and ensure the sensor(s) are getting connected to GND and VCC either from the controler or the receiver
