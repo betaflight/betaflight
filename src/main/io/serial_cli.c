@@ -2470,7 +2470,7 @@ static void cliTasks(char *cmdline)
             const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
             const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
             const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
-            cliPrintf("%2d - %12s, %6d,  %5d,  %5d,%4d.%1d%%,%4d.%1d%%, %8d\r\n",
+            cliPrintf("%2d - %12s  %6d   %5d   %5d %4d.%1d%% %4d.%1d%%  %8d\r\n",
                     taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                     taskFrequency, maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
         }
