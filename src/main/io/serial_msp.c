@@ -368,6 +368,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 29 },
     { BOXHOMERESET, "HOME RESET;", 30 },
     { BOXGCSNAV, "GCS NAV;", 31 },
+    { BOXHEADINGLOCK, "HEADING LOCK;", 32 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -656,6 +657,7 @@ void mspInit(serialConfig_t *serialConfig)
     }
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    activeBoxIds[activeBoxIdCount++] = BOXHEADINGLOCK;
 
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
@@ -753,6 +755,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
+        IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {

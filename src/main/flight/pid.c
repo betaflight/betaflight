@@ -53,13 +53,23 @@ typedef struct {
     float kD;
     float kT;
 
+    float gyroRate;
     float rateTarget;
+
+    // Buffer for derivative calculation
     float rateErrorBuf[5];
+
+    // Rate integrator
     float errorGyroIf;
     float errorGyroIfLimit;
 
+    // Axis lock accumulator
+    float axisLockAccum;
+
+    // Used for ANGLE filtering
     filterStatePt1_t angleFilterState;
 
+    // Rate filtering
     biquad_t deltaBiQuadState;
     bool deltaFilterInit;
 } pidState_t;
@@ -132,10 +142,22 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
 
     // Set rateTarget for axis
     for (axis = 0; axis < 3; axis++) {
-        float rateTarget = pidState[axis].rateTarget;
-
         if (axis == FD_YAW) {
-            // Axis lock implementation from OpenPilot
+            // Heading lock mode is different from Heading hold using compass. 
+            // Heading lock attempts to keep heading at current value even if there is an external disturbance.
+            // If there is some external force that rotates the aircraft and Rate PIDs are unable to compensate,
+            // heading lock will bring heading back if disturbance is not too big
+            if (FLIGHT_MODE(HEADING_LOCK)) {
+                if (pidState[axis].rateTarget > 2) {
+                    // While getting strong commands act like rate mode
+                    pidState[axis].axisLockAccum = 0;
+                }
+                else {
+                    pidState[axis].axisLockAccum += (pidState[axis].rateTarget - pidState[axis].gyroRate) * dT;
+                    pidState[axis].axisLockAccum = constrainf(pidState[axis].axisLockAccum, -45, 45);
+                    pidState[axis].rateTarget = pidState[axis].axisLockAccum * 2.5f;//stabSettings.settings.AxisLockKp;
+                }
+            }
         }
         else {
             // This is ROLL/PITCH, run ANGLE/HORIZON controllers
@@ -145,10 +167,10 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
 
                 // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
                 if (FLIGHT_MODE(HORIZON_MODE)) {
-                    rateTarget += angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER) * horizonLevelStrength;
+                    pidState[axis].rateTarget += angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER) * horizonLevelStrength;
                 }
                 else {
-                    rateTarget = angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER);
+                    pidState[axis].rateTarget = angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER);
                 }
 
                 // Apply simple LPF to rateTarget to make response less jerky
@@ -162,21 +184,21 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
                 //     out self-leveling reaction
                 if (pidProfile->I8[PIDLEVEL]) {
                     // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
-                    rateTarget = filterApplyPt1(rateTarget, &pidState[axis].angleFilterState, pidProfile->I8[PIDLEVEL], dT);
+                    pidState[axis].rateTarget = filterApplyPt1(pidState[axis].rateTarget, &pidState[axis].angleFilterState, pidProfile->I8[PIDLEVEL], dT);
                 }
             }
         }
 
         // Limit desired rate to something gyro can measure reliably
-        pidState[axis].rateTarget = constrainf(rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
+        pidState[axis].rateTarget = constrainf(pidState[axis].rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
     }
 }
 
-static void pidApplyRateController(pidProfile_t *pidProfile, pidState_t *pidState, int axis, float gyroRate)
+static void pidApplyRateController(pidProfile_t *pidProfile, pidState_t *pidState, int axis)
 {
     int n;
 
-    float rateError = pidState->rateTarget - gyroRate;
+    float rateError = pidState->rateTarget - pidState->gyroRate;
 
     // Calculate new P-term
     float newPTerm = rateError * pidState->kP;
@@ -251,8 +273,7 @@ static void pidInnerLoop(pidProfile_t *pidProfile)
         /* Apply PID setpoint controller */
         pidApplyRateController(pidProfile,
                                &pidState[axis],
-                               axis,
-                               gyroADC[axis] * gyro.scale);     // scale gyro rate to DPS
+                               axis);     // scale gyro rate to DPS
     }
 }
 
@@ -260,25 +281,32 @@ static void pidInnerLoop(pidProfile_t *pidProfile)
 static void getRateTarget(controlRateConfig_t *controlRateConfig)
 {
     uint8_t axis;
-
     for (axis = 0; axis < 3; axis++) {
         pidState[axis].rateTarget = constrainf(pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]), -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
     }
 }
 
+static void getGyroRate(void)
+{
+    uint8_t axis;
+    for (axis = 0; axis < 3; axis++) {
+        pidState[axis].gyroRate = gyroADC[axis] * gyro.scale;
+    }
+}
+
 void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
 {
-    /* Step 1: Read sticks */
+    /* Step 1: Calculate gyro rates */
+    getGyroRate();
+
+    /* Step 2: Read sticks */
     getRateTarget(controlRateConfig);
 
-    /* 
-    Step 2: Run outer loop control for ANGLE and HORIZON
-    In any other case, it is not needed
-    */
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    /* Step 3: Run outer loop control for ANGLE and HORIZON */
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(HEADING_LOCK)) {
         pidOuterLoop(pidProfile, rxConfig);
     }
 
-    /* Step 2: Run gyro-driven inner loop control */
+    /* Step 4: Run gyro-driven inner loop control */
     pidInnerLoop(pidProfile);
 }

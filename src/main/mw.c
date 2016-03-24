@@ -446,6 +446,15 @@ void processRx(void)
         LED1_OFF;
     }
 
+    /* Heading lock mode */
+    if (IS_RC_MODE_ACTIVE(BOXHEADINGLOCK)) {
+        if (!FLIGHT_MODE(HEADING_LOCK)) {
+            ENABLE_FLIGHT_MODE(HEADING_LOCK);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(HEADING_LOCK);
+    }
+
 #if defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
