@@ -17,15 +17,27 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
+#include <stdint.h>
+#include <stdbool.h>
 
-typedef struct boardAlignment_s {
-    int16_t rollDegrees;
-    int16_t pitchDegrees;
-    int16_t yawDegrees;
-} PG_PACKED boardAlignment_t;
+// Streams data out to the EEPROM, padding to the write size as
+// needed, and updating the checksum as it goes.
 
-extern boardAlignment_t boardAlignment;
+typedef struct config_streamer_s {
+    uintptr_t address;
+    union {
+        uint8_t b[4];
+        uint32_t w;
+    } buffer;
+    int at;
+    int err;
+    uint8_t chk;
+    bool unlocked;
+} config_streamer_t;
 
-void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation);
-void initBoardAlignment(void);
+void config_streamer_init(config_streamer_t *c);
+
+void config_streamer_start(config_streamer_t *c, uintptr_t base);
+int config_streamer_write(config_streamer_t *c, const void *p, uint32_t size);
+uint8_t config_streamer_chk(config_streamer_t *c);
+int config_streamer_finish(config_streamer_t *c);

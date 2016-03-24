@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <platform.h>
 
@@ -70,6 +71,9 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_eeprom.h"
+#include "config/parameter_group.h"
+#include "config/config_streamer.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -83,56 +87,6 @@
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
-#if !defined(FLASH_SIZE)
-#error "Flash size not defined for target. (specify in KB)"
-#endif
-
-
-#ifndef FLASH_PAGE_SIZE
-    #ifdef STM32F303xC
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-#endif
-
-#if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-#endif
-
-#if defined(FLASH_SIZE)
-#define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
-#endif
-
-#if !defined(FLASH_PAGE_SIZE)
-#error "Flash page size not defined for target."
-#endif
-
-#if !defined(FLASH_PAGE_COUNT)
-#error "Flash page count not defined for target."
-#endif
-
-#if FLASH_SIZE <= 64
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800
-#else
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
-#endif
-
-// use the last flash pages for storage
-#define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 static uint32_t activeFeaturesLatch = 0;
@@ -140,7 +94,13 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 110;
+static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
+
+static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
+    .base = &masterConfig,
+    .size = sizeof(masterConfig),
+    .pgn = 0,
+};
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -312,6 +272,12 @@ static void resetMixerConfig(mixerConfig_t *mixerConfig) {
 #endif
 }
 
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    rollAndPitchTrims->values.roll = 0;
+    rollAndPitchTrims->values.pitch = 0;
+}
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -347,12 +313,12 @@ STATIC_UNIT_TESTED void resetConf(void)
 {
     int i;
 
-    // Clear all configuration
+    pgResetAll();
+
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
     setControlRateProfile(0);
 
-    masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
 #if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE)
@@ -463,10 +429,10 @@ STATIC_UNIT_TESTED void resetConf(void)
     currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
-    masterConfig.failsafeConfig.failsafe_off_delay = 200;         // 20sec
-    masterConfig.failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
-    masterConfig.failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
+    failsafeConfig.failsafe_delay = 10;              // 1sec
+    failsafeConfig.failsafe_off_delay = 200;         // 20sec
+    failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
+    failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
 
 #ifdef USE_SERVOS
     // servos
@@ -555,8 +521,8 @@ STATIC_UNIT_TESTED void resetConf(void)
     currentProfile->pidProfile.pidController = 3;
     currentProfile->pidProfile.P8[PIDROLL] = 36;
     currentProfile->pidProfile.P8[PIDPITCH] = 36;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
+    failsafeConfig.failsafe_delay = 2;
+    failsafeConfig.failsafe_off_delay = 0;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rates[ROLL] = 20;
     currentControlRateProfile->rates[PITCH] = 20;
@@ -627,38 +593,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     }
 }
 
-static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
-{
-    uint8_t checksum = 0;
-    const uint8_t *byteOffset;
-
-    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
-        checksum ^= *byteOffset;
-    return checksum;
-}
-
-static bool isEEPROMContentValid(void)
-{
-    const master_t *temp = (const master_t *) CONFIG_START_FLASH_ADDRESS;
-    uint8_t checksum = 0;
-
-    // check version number
-    if (EEPROM_CONF_VERSION != temp->version)
-        return false;
-
-    // check size and magic numbers
-    if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
-        return false;
-
-    // verify integrity of temporary copy
-    checksum = calculateChecksum((const uint8_t *) temp, sizeof(master_t));
-    if (checksum != 0)
-        return false;
-
-    // looks good, let's roll!
-    return true;
-}
-
 void activateControlRateConfig(void)
 {
     generatePitchRollCurve(currentControlRateProfile);
@@ -693,7 +627,7 @@ void activateConfig(void)
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    useFailsafeConfig();
     setAccelerationTrims(&masterConfig.accZero);
 
     mixerUseConfigs(
@@ -830,20 +764,16 @@ void validateAndFixConfig(void)
     }
 }
 
-void initEEPROM(void)
-{
-}
-
 void readEEPROM(void)
 {
-    // Sanity check
-    if (!isEEPROMContentValid())
-        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
-
     suspendRxSignal();
 
+    // Sanity check
     // Read flash
-    memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
+    if (!scanEEPROM(true)) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
 
     if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) // sanity check
         masterConfig.current_profile_index = 0;
@@ -868,65 +798,14 @@ void readEEPROMAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-#ifdef UNIT_TEST
-void writeEEPROM(void) {}
-#else
 void writeEEPROM(void)
 {
-    // Generate compile time error if the config does not fit in the reserved area of flash.
-    BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
-
-    FLASH_Status status = 0;
-    uint32_t wordOffset;
-    int8_t attemptsRemaining = 3;
-
     suspendRxSignal();
 
-    // prepare checksum/version constants
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.size = sizeof(master_t);
-    masterConfig.magic_be = 0xBE;
-    masterConfig.magic_ef = 0xEF;
-    masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
-
-    // write it
-    FLASH_Unlock();
-    while (attemptsRemaining--) {
-#ifdef STM32F303
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
-#endif
-#ifdef STM32F10X
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-#endif
-        for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
-            if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
-                if (status != FLASH_COMPLETE) {
-                    break;
-                }
-            }
-
-            status = FLASH_ProgramWord(CONFIG_START_FLASH_ADDRESS + wordOffset,
-                    *(uint32_t *) ((char *) &masterConfig + wordOffset));
-            if (status != FLASH_COMPLETE) {
-                break;
-            }
-        }
-        if (status == FLASH_COMPLETE) {
-            break;
-        }
-    }
-    FLASH_Lock();
-
-    // Flash write failed - just die now
-    if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
+    writeConfigToEEPROM();
 
     resumeRxSignal();
 }
-#endif
 
 void ensureEEPROMContainsValidData(void)
 {

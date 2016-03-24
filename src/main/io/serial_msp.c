@@ -55,6 +55,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/msp_protocol.h"
 
 #include "telemetry/telemetry.h"
 
@@ -82,6 +83,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/parameter_group.h"
 
 #include "version.h"
 #ifdef NAZE
@@ -101,7 +103,8 @@ extern void resetPidProfile(pidProfile_t *pidProfile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
-const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
@@ -244,14 +247,12 @@ static void tailSerialReply(void)
     serialEndWrite(mspSerialPort);
 }
 
-#ifdef USE_SERVOS
 static void s_struct(uint8_t *cb, uint8_t siz)
 {
     headSerialReply(siz);
     while (siz--)
         serialize8(*cb++);
 }
-#endif
 
 static void serializeNames(const char *s)
 {
@@ -595,6 +596,12 @@ static bool processOutCommand(uint8_t cmdMSP)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
 #endif
+    const pgRegistry_t *reg = pgFind(cmdMSP);
+
+    if (reg != NULL) {
+        s_struct(reg->base, reg->size);
+        return true;
+    }
 
     switch (cmdMSP) {
     case MSP_API_VERSION:
@@ -888,7 +895,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.escAndServoConfig.maxthrottle);
         serialize16(masterConfig.escAndServoConfig.mincommand);
 
-        serialize16(masterConfig.failsafeConfig.failsafe_throttle);
+        serialize16(failsafeConfig.failsafe_throttle);
 
 #ifdef GPS
         serialize8(masterConfig.gpsConfig.provider); // gps_type
@@ -992,13 +999,6 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(featureMask());
         break;
 
-    case MSP_BOARD_ALIGNMENT:
-        headSerialReply(6);
-        serialize16(masterConfig.boardAlignment.rollDegrees);
-        serialize16(masterConfig.boardAlignment.pitchDegrees);
-        serialize16(masterConfig.boardAlignment.yawDegrees);
-        break;
-
     case MSP_VOLTAGE_METER_CONFIG:
         headSerialReply(4);
         serialize8(masterConfig.batteryConfig.vbatscale);
@@ -1033,12 +1033,12 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_FAILSAFE_CONFIG:
         headSerialReply(8);
-        serialize8(masterConfig.failsafeConfig.failsafe_delay);
-        serialize8(masterConfig.failsafeConfig.failsafe_off_delay);
-        serialize16(masterConfig.failsafeConfig.failsafe_throttle);
-        serialize8(masterConfig.failsafeConfig.failsafe_kill_switch);
-        serialize16(masterConfig.failsafeConfig.failsafe_throttle_low_delay);
-        serialize8(masterConfig.failsafeConfig.failsafe_procedure);
+        serialize8(failsafeConfig.failsafe_delay);
+        serialize8(failsafeConfig.failsafe_off_delay);
+        serialize16(failsafeConfig.failsafe_throttle);
+        serialize8(failsafeConfig.failsafe_kill_switch);
+        serialize16(failsafeConfig.failsafe_throttle_low_delay);
+        serialize8(failsafeConfig.failsafe_procedure);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -1048,7 +1048,6 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
         }
         break;
-
     case MSP_RSSI_CONFIG:
         headSerialReply(1);
         serialize8(masterConfig.rxConfig.rssi_channel);
@@ -1068,9 +1067,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         serialize8(masterConfig.rxConfig.serialrx_provider);
 
-        serialize16(masterConfig.boardAlignment.rollDegrees);
-        serialize16(masterConfig.boardAlignment.pitchDegrees);
-        serialize16(masterConfig.boardAlignment.yawDegrees);
+        serialize16(boardAlignment.rollDegrees);
+        serialize16(boardAlignment.pitchDegrees);
+        serialize16(boardAlignment.yawDegrees);
 
         serialize16(masterConfig.batteryConfig.currentMeterScale);
         serialize16(masterConfig.batteryConfig.currentMeterOffset);
@@ -1210,6 +1209,14 @@ static bool processInCommand(void)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
+
+    const pgRegistry_t *reg = pgFindForSet(currentPort->cmdMSP);
+
+    if (reg != NULL) {
+        pgLoad(reg, currentPort->inBuf + currentPort->indRX, currentPort->dataSize);
+        headSerialReply(0);
+        return true;
+    }
 
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
@@ -1351,7 +1358,7 @@ static bool processInCommand(void)
         masterConfig.escAndServoConfig.maxthrottle = read16();
         masterConfig.escAndServoConfig.mincommand = read16();
 
-        masterConfig.failsafeConfig.failsafe_throttle = read16();
+        failsafeConfig.failsafe_throttle = read16();
 
 #ifdef GPS
         masterConfig.gpsConfig.provider = read8(); // gps_type
@@ -1543,12 +1550,6 @@ static bool processInCommand(void)
         featureSet(read32()); // features bitmap
         break;
 
-    case MSP_SET_BOARD_ALIGNMENT:
-        masterConfig.boardAlignment.rollDegrees = read16();
-        masterConfig.boardAlignment.pitchDegrees = read16();
-        masterConfig.boardAlignment.yawDegrees = read16();
-        break;
-
     case MSP_SET_VOLTAGE_METER_CONFIG:
         masterConfig.batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1582,12 +1583,12 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_FAILSAFE_CONFIG:
-        masterConfig.failsafeConfig.failsafe_delay = read8();
-        masterConfig.failsafeConfig.failsafe_off_delay = read8();
-        masterConfig.failsafeConfig.failsafe_throttle = read16();
-        masterConfig.failsafeConfig.failsafe_kill_switch = read8();
-        masterConfig.failsafeConfig.failsafe_throttle_low_delay = read16();
-        masterConfig.failsafeConfig.failsafe_procedure = read8();
+        failsafeConfig.failsafe_delay = read8();
+        failsafeConfig.failsafe_off_delay = read8();
+        failsafeConfig.failsafe_throttle = read16();
+        failsafeConfig.failsafe_kill_switch = read8();
+        failsafeConfig.failsafe_throttle_low_delay = read16();
+        failsafeConfig.failsafe_procedure = read8();
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
@@ -1623,9 +1624,9 @@ static bool processInCommand(void)
 
         masterConfig.rxConfig.serialrx_provider = read8(); // serialrx_type
 
-        masterConfig.boardAlignment.rollDegrees = read16(); // board_align_roll
-        masterConfig.boardAlignment.pitchDegrees = read16(); // board_align_pitch
-        masterConfig.boardAlignment.yawDegrees = read16(); // board_align_yaw
+        boardAlignment.rollDegrees = read16(); // board_align_roll
+        boardAlignment.pitchDegrees = read16(); // board_align_pitch
+        boardAlignment.yawDegrees = read16(); // board_align_yaw
 
         masterConfig.batteryConfig.currentMeterScale = read16();
         masterConfig.batteryConfig.currentMeterOffset = read16();

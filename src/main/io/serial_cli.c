@@ -566,9 +566,9 @@ const clivalue_t valueTable[] = {
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT } },
 
-    { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.rollDegrees, .config.minmax = { -180,  360 } },
-    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.pitchDegrees, .config.minmax = { -180,  360 } },
-    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.yawDegrees, .config.minmax = { -180,  360 } },
+    { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &boardAlignment.rollDegrees, .config.minmax = { -180,  360 } },
+    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &boardAlignment.pitchDegrees, .config.minmax = { -180,  360 } },
+    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment.yawDegrees, .config.minmax = { -180,  360 } },
 
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
 
@@ -593,6 +593,7 @@ const clivalue_t valueTable[] = {
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } },
 
+
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_freq",         VAR_FLOAT  | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
@@ -611,12 +612,12 @@ const clivalue_t valueTable[] = {
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
 
-    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } },
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
-    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
-    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_procedure, .config.minmax = { 0,  1 } },
+    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
+    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
+    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } },
+    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
+    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
+    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE,  &failsafeConfig.failsafe_procedure, .config.minmax = { 0,  1 } },
 
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },

@@ -61,6 +61,9 @@ extern "C" {
 extern "C" {
     void resetConf(void);
     extern master_t masterConfig;
+
+    failsafeConfig_t failsafeConfig;
+    boardAlignment_t boardAlignment;
 }
 
 /*
@@ -84,9 +87,9 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(ALIGN_DEFAULT, masterConfig.sensorAlignmentConfig.acc_align);
     EXPECT_EQ(ALIGN_DEFAULT, masterConfig.sensorAlignmentConfig.mag_align);
 
-    EXPECT_EQ(0, masterConfig.boardAlignment.rollDegrees);
-    EXPECT_EQ(0, masterConfig.boardAlignment.pitchDegrees);
-    EXPECT_EQ(0, masterConfig.boardAlignment.yawDegrees);
+    EXPECT_EQ(0, boardAlignment.rollDegrees);
+    EXPECT_EQ(0, boardAlignment.pitchDegrees);
+    EXPECT_EQ(0, boardAlignment.yawDegrees);
 
     EXPECT_EQ(ACC_DEFAULT, masterConfig.acc_hardware);   // default/autodetect
     EXPECT_EQ(MAG_DEFAULT, masterConfig.mag_hardware);   // default/autodetect
@@ -131,8 +134,8 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
         EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rates[axis]);
     }
 
-    EXPECT_EQ(0, masterConfig.failsafeConfig.failsafe_kill_switch); // default failsafe switch action is identical to rc link loss
-    EXPECT_EQ(0, masterConfig.failsafeConfig.failsafe_procedure);   // default full failsafe procedure is 0: auto-landing
+    EXPECT_EQ(0, failsafeConfig.failsafe_kill_switch); // default failsafe switch action is identical to rc link loss
+    EXPECT_EQ(0, failsafeConfig.failsafe_procedure);   // default full failsafe procedure is 0: auto-landing
 
     // custom mixer. clear by defaults.
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -150,13 +153,12 @@ void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}
 void useRcControlsConfig(modeActivationCondition_t *, escAndServoConfig_t *, pidProfile_t *) {}
 void useGyroConfig(gyroConfig_t *, float) {}
-void useFailsafeConfig(failsafeConfig_t *) {}
+void useFailsafeConfig(void) {}
 void useBarometerConfig(barometerConfig_t *) {}
 void telemetryUseConfig(telemetryConfig_t *) {}
 void suspendRxSignal(void) {}
 void setAccelerationTrims(flightDynamicsTrims_t *) {}
 void resumeRxSignal(void) {}
-void resetRollAndPitchTrims(rollAndPitchTrims_t *) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *) {}
 void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
@@ -176,6 +178,11 @@ void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
 void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *, escAndServoConfig_t *) {}
 void failureMode(uint8_t) {}
+void pgResetAll(void) {}
+bool scanEEPROM(bool) { return true; }
+void writeConfigToEEPROM(void) {}
+bool isEEPROMContentValid(void) { return true; }
+
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
@@ -198,4 +205,3 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #endif
 };
 }
-

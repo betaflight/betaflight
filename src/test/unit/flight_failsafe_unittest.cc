@@ -96,7 +96,7 @@ TEST(FlightFailsafeTest, TestFailsafeInitialState)
     DISABLE_ARMING_FLAG(ARMED);
 
     // when
-    useFailsafeConfig(&failsafeConfig);
+    useFailsafeConfig();
     failsafeInit(&rxConfig);
 
     // then
@@ -364,7 +364,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     configureFailsafe();
 
     // and
-    useFailsafeConfig(&failsafeConfig);
+    useFailsafeConfig();
     failsafeInit(&rxConfig);
 
     // and

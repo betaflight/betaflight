@@ -19,6 +19,8 @@
 #include <string.h>
 #include <math.h>
 
+//#define DEBUG_MSP
+
 extern "C" {
     #include <platform.h>
     #include "build_config.h"
@@ -45,6 +47,7 @@ extern "C" {
     #include "io/gps.h"
     #include "io/gimbal.h"
     #include "io/ledstrip.h"
+    #include "io/msp_protocol.h"
     #include "io/serial_msp.h"
     #include "io/escservo.h"
 
@@ -83,6 +86,27 @@ extern "C" {
     extern bufWriter_t *writer;
     extern mspPort_t mspPorts[];
     profile_t *currentProfile;
+
+    failsafeConfig_t failsafeConfig;
+    boardAlignment_t boardAlignment;
+
+    const pgRegistry_t __pg_registry[] =
+    {
+        {
+            .base = &boardAlignment,
+            .size = sizeof(boardAlignment),
+            .pgn = MSP_BOARD_ALIGNMENT,
+            .pgn_for_set = MSP_SET_BOARD_ALIGNMENT,
+            .format = 0
+        },
+        {
+            .base = nullptr,
+            .size = 0,
+            .pgn = 0,
+            .pgn_for_set = 0,
+            .format = 0
+        },
+    };
 }
 
 profile_t profile;
@@ -561,9 +585,15 @@ TEST_F(SerialMspUnitTest, TestMspOutMessageLengthsCommand)
         MSP_SERVO_MIX_RULES,     // 241    //out message         Returns servo mixer configuration
     };
     for (uint ii = 0; ii < sizeof(outMessages); ++ii) {
+
         serialWritePos = 0;
         serialReadPos = 0;
         currentPort->cmdMSP = outMessages[ii];
+
+#ifdef DEBUG_MSP
+        printf("parse iteration: %d, MSP message id: %d\n", ii, currentPort->cmdMSP);
+#endif
+
         mspProcessReceivedCommand();
         EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
         EXPECT_EQ('M', serialBuffer.mspResponse.header.m);

@@ -602,6 +602,7 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
 $(OBJECT_DIR)/version.o : \
 	$(USER_DIR)/version.c \
 	$(USER_DIR)/version.h \
@@ -639,10 +640,12 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/io/serial_msp.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
 	$(OBJECT_DIR)/serial_msp_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 $(OBJECT_DIR)/scheduler_tasks.o : \
 	$(USER_DIR)/scheduler_tasks.c \
@@ -677,6 +680,7 @@ $(OBJECT_DIR)/scheduler_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
 $(OBJECT_DIR)/config/config.o : \
 	$(USER_DIR)/config/config.c \
 	$(USER_DIR)/config/config.h \
@@ -697,6 +701,82 @@ $(OBJECT_DIR)/config_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/config/config.o \
 	$(OBJECT_DIR)/config_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/config/config_eeprom.o : \
+	$(USER_DIR)/config/config_eeprom.c \
+	$(USER_DIR)/config/config_eeprom.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config_eeprom.c -o $@
+
+
+$(OBJECT_DIR)/config/parameter_group.o : \
+	$(USER_DIR)/config/parameter_group.c \
+	$(USER_DIR)/config/parameter_group.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/parameter_group.c -o $@
+
+$(OBJECT_DIR)/config_eeprom_unittest.o : \
+	$(TEST_DIR)/config_eeprom_unittest.cc \
+	$(USER_DIR)/config/config_eeprom.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_eeprom_unittest.cc -o $@
+
+$(OBJECT_DIR)/mock/mock_flash.o : \
+	$(TEST_DIR)/../mock/mock_flash.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/../mock/mock_flash.cc -o $@
+
+$(OBJECT_DIR)/mock/mock_system.o : \
+	$(TEST_DIR)/../mock/mock_system.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/../mock/mock_system.cc -o $@
+
+$(OBJECT_DIR)/config_eeprom_unittest : \
+	$(OBJECT_DIR)/config/config_eeprom.o \
+	$(OBJECT_DIR)/mock/mock_flash.o \
+	$(OBJECT_DIR)/mock/mock_system.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/config/config.o \
+	$(OBJECT_DIR)/config/config_streamer.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
+	$(OBJECT_DIR)/config_eeprom_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/config/config_streamer.o : \
+	$(USER_DIR)/config/config_streamer.c \
+	$(USER_DIR)/config/config_streamer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config_streamer.c -o $@
+
+$(OBJECT_DIR)/config_streamer_unittest.o : \
+	$(TEST_DIR)/config_streamer_unittest.cc \
+	$(USER_DIR)/config/config.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_streamer_unittest.cc -o $@
+
+$(OBJECT_DIR)/config_streamer_unittest : \
+	$(OBJECT_DIR)/config/config_streamer.o \
+	$(OBJECT_DIR)/config_streamer_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

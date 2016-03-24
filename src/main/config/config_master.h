@@ -19,10 +19,6 @@
 
 // System-wide
 typedef struct master_t {
-    uint8_t version;
-    uint16_t size;
-    uint8_t magic_be;                       // magic number, should be 0xBE
-
     uint8_t mixerMode;
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
@@ -45,7 +41,6 @@ typedef struct master_t {
     // global sensor-related stuff
 
     sensorAlignmentConfig_t sensorAlignmentConfig;
-    boardAlignment_t boardAlignment;
 
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
@@ -68,8 +63,6 @@ typedef struct master_t {
 
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
-
-    failsafeConfig_t failsafeConfig;
 
     uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
@@ -109,9 +102,6 @@ typedef struct master_t {
     uint8_t blackbox_rate_denom;
     uint8_t blackbox_device;
 #endif
-
-    uint8_t magic_ef;                       // magic number, should be 0xEF
-    uint8_t chk;                            // XOR checksum
 } master_t;
 
 extern master_t masterConfig;

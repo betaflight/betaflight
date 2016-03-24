@@ -93,6 +93,7 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
 bool parseColor(uint8_t index, const char *colorConfig);
 void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);
 
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void ledStripEnable(void);
 void reevalulateLedConfig(void);
 
