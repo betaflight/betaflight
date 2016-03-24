@@ -221,5 +221,6 @@ TABS.cli.cleanup = function (callback) {
         GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
             if (callback) callback();
         }, 1000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
+        CONFIGURATOR.cliActive = false;
     });
 };
