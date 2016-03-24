@@ -690,9 +690,9 @@ STATIC_UNIT_TESTED void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = axisPID[ROLL];
-        input[INPUT_STABILIZED_PITCH] = axisPID[PITCH];
-        input[INPUT_STABILIZED_YAW] = axisPID[YAW];
+        input[INPUT_STABILIZED_ROLL] = axisPID[FD_ROLL];
+        input[INPUT_STABILIZED_PITCH] = axisPID[FD_PITCH];
+        input[INPUT_STABILIZED_YAW] = axisPID[FD_YAW];
 
         // Reverse yaw servo when inverted in 3D mode
         if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
@@ -769,7 +769,7 @@ void mixTable(void)
 
     if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
         // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+        axisPID[FD_YAW] = constrain(axisPID[FD_YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
@@ -781,9 +781,9 @@ void mixTable(void)
         // Find roll/pitch/yaw desired output
         for (i = 0; i < motorCount; i++) {
             rollPitchYawMix[i] =
-                axisPID[PITCH] * currentMixer[i].pitch +
-                axisPID[ROLL] * currentMixer[i].roll +
-                -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+                axisPID[FD_PITCH] * currentMixer[i].pitch +
+                axisPID[FD_ROLL] * currentMixer[i].roll +
+                -mixerConfig->yaw_motor_direction * axisPID[FD_YAW] * currentMixer[i].yaw;
 
             if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
             if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
@@ -858,9 +858,9 @@ void mixTable(void)
         for (i = 0; i < motorCount; i++) {
             motor[i] =
                 rcCommand[THROTTLE] * currentMixer[i].throttle +
-                axisPID[PITCH] * currentMixer[i].pitch +
-                axisPID[ROLL] * currentMixer[i].roll +
-                -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+                axisPID[FD_PITCH] * currentMixer[i].pitch +
+                axisPID[FD_ROLL] * currentMixer[i].roll +
+                -mixerConfig->yaw_motor_direction * axisPID[FD_YAW] * currentMixer[i].yaw;
         }
 
         // Find the maximum motor output.

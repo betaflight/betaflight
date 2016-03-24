@@ -78,11 +78,11 @@ pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controlle
 
 void pidResetErrorAngle(void)
 {
-    errorAngleI[ROLL] = 0;
-    errorAngleI[PITCH] = 0;
+    errorAngleI[AI_ROLL] = 0;
+    errorAngleI[AI_PITCH] = 0;
 
-    errorAngleIf[ROLL] = 0.0f;
-    errorAngleIf[PITCH] = 0.0f;
+    errorAngleIf[AI_ROLL] = 0.0f;
+    errorAngleIf[AI_PITCH] = 0.0f;
 }
 
 void pidResetErrorGyro(void)
@@ -148,8 +148,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
+        stickPosAil = getRcStickDeflection(ROLL, rxConfig->midrc);
+        stickPosEle = getRcStickDeflection(PITCH, rxConfig->midrc);
 
         if(ABS(stickPosAil) > ABS(stickPosEle)){
             mostDeflectedPos = ABS(stickPosAil);
@@ -380,7 +380,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     }
 
     //YAW
-    rc = (int32_t)rcCommand[FD_YAW] * (2 * controlRateConfig->rates[FD_YAW] + 30)  >> 5;
+    rc = (int32_t)rcCommand[YAW] * (2 * controlRateConfig->rates[YAW] + 30)  >> 5;
 #ifdef ALIENWII32
     error = rc - gyroADC[FD_YAW];
 #else
@@ -436,8 +436,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(FD_ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(FD_PITCH, rxConfig->midrc);
+        stickPosAil = getRcStickDeflection(ROLL, rxConfig->midrc);
+        stickPosEle = getRcStickDeflection(PITCH, rxConfig->midrc);
 
         if(ABS(stickPosAil) > ABS(stickPosEle)){
             mostDeflectedPos = ABS(stickPosAil);

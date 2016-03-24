@@ -127,7 +127,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].thrExpo8);
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].dynThrPID);
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rcYawExpo8);
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+    for (uint8_t axis = 0; axis < FD_INDEX_COUNT; axis++) {
         EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rates[axis]);
     }
 
