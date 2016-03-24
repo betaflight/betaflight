@@ -110,7 +110,7 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_RATE_D_MULTIPLIER    4000.0f
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f
 
-static void pidOuterLoop(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
 {
     int axis;
     float horizonLevelStrength = 1;
@@ -132,33 +132,38 @@ static void pidOuterLoop(pidProfile_t *pidProfile, controlRateConfig_t *controlR
 
     // Set rateTarget for axis
     for (axis = 0; axis < 3; axis++) {
-        // Rate setpoint for RATE and HORIZON modes
-        float rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
+        float rateTarget = pidState[axis].rateTarget;
 
-        if ((axis != FD_YAW) && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
-            float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination, +pidProfile->max_angle_inclination) - attitude.raw[axis]) / 10.0f;
+        if (axis == FD_YAW) {
+            // Axis lock implementation from OpenPilot
+        }
+        else {
+            // This is ROLL/PITCH, run ANGLE/HORIZON controllers
+            if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+                float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
+                float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination, +pidProfile->max_angle_inclination) - attitude.raw[axis]) / 10.0f;
 
-            // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
-            if (FLIGHT_MODE(HORIZON_MODE)) {
-                rateTarget += angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER) * horizonLevelStrength;
-            }
-            else {
-                rateTarget = angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER);
-            }
+                // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
+                if (FLIGHT_MODE(HORIZON_MODE)) {
+                    rateTarget += angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER) * horizonLevelStrength;
+                }
+                else {
+                    rateTarget = angleError * (pidProfile->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER);
+                }
 
-            // Apply simple LPF to rateTarget to make response less jerky
-            // Ideas behind this:
-            //  1) Attitude is updated at gyro rate, rateTarget for ANGLE mode is calculated from attitude
-            //  2) If this rateTarget is passed directly into gyro-base PID controller this effectively doubles the rateError. D-term that is calculated from error
-            //     tend to amplify this even more. Moreover, this tend to respond to every slightest change in attitude making self-leveling jittery
-            //  3) Lowering LEVEL P can make the effects of (2) less visible, but this also slows down self-leveling.
-            //  4) Human pilot response to attitude change in RATE mode is fairly slow and smooth, human pilot doesn't compensate for each slightest change
-            //  5) (2) and (4) lead to a simple idea of adding a low-pass filter on rateTarget for ANGLE mode damping response to rapid attitude changes and smoothing
-            //     out self-leveling reaction
-            if (pidProfile->I8[PIDLEVEL]) {
-                // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
-                rateTarget = filterApplyPt1(rateTarget, &pidState[axis].angleFilterState, pidProfile->I8[PIDLEVEL], dT);
+                // Apply simple LPF to rateTarget to make response less jerky
+                // Ideas behind this:
+                //  1) Attitude is updated at gyro rate, rateTarget for ANGLE mode is calculated from attitude
+                //  2) If this rateTarget is passed directly into gyro-base PID controller this effectively doubles the rateError. D-term that is calculated from error
+                //     tend to amplify this even more. Moreover, this tend to respond to every slightest change in attitude making self-leveling jittery
+                //  3) Lowering LEVEL P can make the effects of (2) less visible, but this also slows down self-leveling.
+                //  4) Human pilot response to attitude change in RATE mode is fairly slow and smooth, human pilot doesn't compensate for each slightest change
+                //  5) (2) and (4) lead to a simple idea of adding a low-pass filter on rateTarget for ANGLE mode damping response to rapid attitude changes and smoothing
+                //     out self-leveling reaction
+                if (pidProfile->I8[PIDLEVEL]) {
+                    // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
+                    rateTarget = filterApplyPt1(rateTarget, &pidState[axis].angleFilterState, pidProfile->I8[PIDLEVEL], dT);
+                }
             }
         }
 
@@ -247,14 +252,32 @@ static void pidInnerLoop(pidProfile_t *pidProfile)
         pidApplyRateController(pidProfile,
                                &pidState[axis],
                                axis,
-                               imuMeasuredRotationBF.A[axis]);      // gyro output scaled to dps
+                               gyroADC[axis] * gyro.scale);     // scale gyro rate to DPS
+    }
+}
+
+/* Read sticks input for each axis */
+static void getRateTarget(controlRateConfig_t *controlRateConfig)
+{
+    uint8_t axis;
+
+    for (axis = 0; axis < 3; axis++) {
+        pidState[axis].rateTarget = constrainf(pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]), -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
     }
 }
 
 void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
 {
-    /* Step 1: Run outer loop control */
-    pidOuterLoop(pidProfile, controlRateConfig, rxConfig);
+    /* Step 1: Read sticks */
+    getRateTarget(controlRateConfig);
+
+    /* 
+    Step 2: Run outer loop control for ANGLE and HORIZON
+    In any other case, it is not needed
+    */
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        pidOuterLoop(pidProfile, rxConfig);
+    }
 
     /* Step 2: Run gyro-driven inner loop control */
     pidInnerLoop(pidProfile);
