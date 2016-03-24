@@ -50,7 +50,7 @@ $(error FLASH_SIZE not configured for target)
 endif
 endif
 
-REVISION = $(shell git log -1 --format="%h")
+REVISION := $(shell git log -1 --format="%h")
 
 # Working directories
 ROOT		 := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
@@ -718,7 +718,7 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   $(DEBUG_FLAGS) \
 		   -std=gnu99 \
-		   -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
+		   -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion -Wundef \
 		   -ffunction-sections \
 		   -fdata-sections \
 		   $(DEVICE_FLAGS) \

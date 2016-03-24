@@ -758,6 +758,13 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM);
     }
 
+#ifdef STM32F10X
+    // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
+    if (masterConfig.gyroSync && masterConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
+        masterConfig.gyroSyncDenominator = 2;
+    }
+#endif
+
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0

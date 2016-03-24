@@ -54,12 +54,12 @@ The main section is the square part of the board with the 30.5mm mounting holes.
 
 ### Left Side IO (Front to Back)
 
-| Pin | Function       | Notes                                        |
-| --- | -------------- | -------------------------------------------- |
-| 1   | RX3            | Square Pad                                   |
-| 2   | TX3            | Round Pad                                    |
-| 3   | PWM8           | Square Pad                                   |
-| 4   | PWM7           | Square Pad                                   |
+| Pin | Function               | Notes                                        |
+| --- | ---------------------- | -------------------------------------------- |
+| 1   | RX3                    | Square Pad                                   |
+| 2   | TX3                    | Round Pad                                    |
+| 3   | PWM8 / SoftSerial 1 RX | Square Pad                                   |
+| 4   | PWM7 / SoftSerial 1 TX | Square Pad                                   |
 
 To the left of both PWM7 and PWM8 there are 2 more pins - left to right: GND, VIN, PWM7/8.
 To the right of RX3 there are two more though holes.  Use RX3 and the 2 holes to attach a JST-ZH connector for a Spektrum Satellite 3v receiver.
