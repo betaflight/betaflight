@@ -24,7 +24,6 @@
 
 #include "gpio.h"
 #include "timer.h"
-#include "drivers/bus_i2c.h"
 
 #include "pwm_output.h"
 #include "pwm_rx.h"
@@ -697,9 +696,9 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X
+#if defined(STM32F10X) && I2C_DEVICE == I2CDEV_1
         // skip I2C ports if device 1 is selected
-        if (I2C_DEVICE == I2CDEV_1 && timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
+        if (timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
             continue;
 #endif
 
