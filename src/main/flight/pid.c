@@ -47,6 +47,23 @@
 
 #include "config/runtime_config.h"
 
+typedef struct {
+    float kP;
+    float kI;
+    float kD;
+    float kT;
+
+    float rateTarget;
+    float rateErrorBuf[5];
+    float errorGyroIf;
+    float errorGyroIfLimit;
+
+    filterStatePt1_t angleFilterState;
+
+    biquad_t deltaBiQuadState;
+    bool deltaFilterInit;
+} pidState_t;
+
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
 extern bool motorLimitReached;
@@ -61,21 +78,16 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPID_Setpoint[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 1 = 100% scale means no PID reduction
 float PIDweight[3];
 
-static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
-static float errorGyroIfLimit[3] = { 0.0f, 0.0f, 0.0f };
+static pidState_t pidState[3];
 
 void pidResetErrorGyro(void)
 {
-    errorGyroIf[ROLL] = 0.0f;
-    errorGyroIf[PITCH] = 0.0f;
-    errorGyroIf[YAW] = 0.0f;
+    pidState[ROLL].errorGyroIf = 0.0f;
+    pidState[PITCH].errorGyroIf = 0.0f;
+    pidState[YAW].errorGyroIf = 0.0f;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
-
-static filterStatePt1_t angleFilterState[2];    // Only ROLL and PITCH
-static biquad_t deltaBiQuadState[3];
-static bool deltaFilterInit = false;
 
 float pidRcCommandToAngle(int16_t stick)
 {
@@ -98,13 +110,10 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_RATE_D_MULTIPLIER    4000.0f
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f
 
-void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+static void pidOuterLoop(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
 {
-    UNUSED(rxConfig);
-
+    int axis;
     float horizonLevelStrength = 1;
-    static float rateErrorBuf[3][5] = { { 0 } };
-    int axis, n;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -121,19 +130,11 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
         }
     }
 
+    // Set rateTarget for axis
     for (axis = 0; axis < 3; axis++) {
-        float kP = pidProfile->P8[axis] / FP_PID_RATE_P_MULTIPLIER * PIDweight[axis];
-        float kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
-        float kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER * PIDweight[axis];
+        // Rate setpoint for RATE and HORIZON modes
+        float rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
 
-        bool useIntegralComponent = (pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0);
-
-        float rateTarget;   // rotation rate target (dps)
-
-        // Rate setpoint for ACRO and HORIZON modes
-        rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
-
-        // Outer PID loop (ANGLE/HORIZON)
         if ((axis != FD_YAW) && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
             float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination, +pidProfile->max_angle_inclination) - attitude.raw[axis]) / 10.0f;
@@ -157,73 +158,104 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
             //     out self-leveling reaction
             if (pidProfile->I8[PIDLEVEL]) {
                 // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
-                rateTarget = filterApplyPt1(rateTarget, &angleFilterState[axis], pidProfile->I8[PIDLEVEL], dT);
+                rateTarget = filterApplyPt1(rateTarget, &pidState[axis].angleFilterState, pidProfile->I8[PIDLEVEL], dT);
             }
         }
 
         // Limit desired rate to something gyro can measure reliably
-        rateTarget = constrainf(rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
+        pidState[axis].rateTarget = constrainf(rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
+    }
+}
 
-        // Inner PID loop - gyro-based control to reach rateTarget
-        float gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
-        float rateError = rateTarget - gyroRate;
+static void pidApplyRateController(pidProfile_t *pidProfile, pidState_t *pidState, int axis, float gyroRate)
+{
+    int n;
 
-        // Calculate new P-term
-        float newPTerm = rateError * kP;
+    float rateError = pidState->rateTarget - gyroRate;
 
-        if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
-            newPTerm = constrain(newPTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+    // Calculate new P-term
+    float newPTerm = rateError * pidState->kP;
+
+    if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
+        newPTerm = constrain(newPTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+    }
+
+    // Calculate new D-term
+    // Shift old error values
+    for (n = 4; n > 0; n--) {
+        pidState->rateErrorBuf[n] = pidState->rateErrorBuf[n-1];
+    }
+
+    // Store new error value
+    pidState->rateErrorBuf[0] = rateError;
+
+    // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
+    float newDTerm = ((2 * (pidState->rateErrorBuf[1] - pidState->rateErrorBuf[3]) + (pidState->rateErrorBuf[0] - pidState->rateErrorBuf[4])) / (8 * dT)) * pidState->kD;
+
+    // Apply additional lowpass
+    if (pidProfile->dterm_lpf_hz) {
+        if (!pidState->deltaFilterInit) {
+            filterInitBiQuad(pidProfile->dterm_lpf_hz, &pidState->deltaBiQuadState, 0);
+            pidState->deltaFilterInit = true;
         }
 
-        // Calculate new D-term
-        // Shift old error values
-        for (n = 4; n > 0; n--) {
-            rateErrorBuf[axis][n] = rateErrorBuf[axis][n-1];
-        }
+        newDTerm = filterApplyBiQuad(newDTerm, &pidState->deltaBiQuadState);
+    }
 
-        // Store new error value
-        rateErrorBuf[axis][0] = rateError;
+    // TODO: Get feedback from mixer on available correction range for each axis
+    float newOutput = newPTerm + pidState->errorGyroIf + newDTerm;
+    float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
 
-        // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
-        float newDTerm = ((2 * (rateErrorBuf[axis][1] - rateErrorBuf[axis][3]) + (rateErrorBuf[axis][0] - rateErrorBuf[axis][4])) / (8 * dT)) * kD;
+    // Integrate only if we can do backtracking
+    pidState->errorGyroIf += (rateError * pidState->kI * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);
 
-        // Apply additional lowpass
-        if (pidProfile->dterm_lpf_hz) {
-            if (!deltaFilterInit) {
-                for (n = 0; n < 3; n++)
-                    filterInitBiQuad(pidProfile->dterm_lpf_hz, &deltaBiQuadState[n], 0);
-                deltaFilterInit = true;
-            }
+    // Don't grow I-term if motors are at their limit
+    if (STATE(ANTI_WINDUP) || motorLimitReached) {
+        pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidState->errorGyroIfLimit, pidState->errorGyroIfLimit);
+    } else {
+        pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
+    }
 
-            newDTerm = filterApplyBiQuad(newDTerm, &deltaBiQuadState[axis]);
-        }
-
-        // TODO: Get feedback from mixer on available correction range for each axis
-        float newOutput = newPTerm + errorGyroIf[axis] + newDTerm;
-        float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
-
-        // Integrate only if we can do backtracking
-        if (useIntegralComponent) {
-            float kT = 2.0f / ((kP / kI) + (kD / kP));
-            errorGyroIf[axis] += (rateError * kI * dT) + ((newOutputLimited - newOutput) * kT * dT);
-
-            // Don't grow I-term if motors are at their limit
-            if (STATE(ANTI_WINDUP) || motorLimitReached) {
-                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
-            } else {
-                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
-            }
-        } else {
-            errorGyroIf[axis] = 0;
-        }
-
-        axisPID[axis] = newOutputLimited;
+    axisPID[axis] = newOutputLimited;
 
 #ifdef BLACKBOX
-        axisPID_P[axis] = newPTerm;
-        axisPID_I[axis] = errorGyroIf[axis];
-        axisPID_D[axis] = newDTerm;
-        axisPID_Setpoint[axis] = rateTarget;
+    axisPID_P[axis] = newPTerm;
+    axisPID_I[axis] = pidState[axis].errorGyroIf;
+    axisPID_D[axis] = newDTerm;
+    axisPID_Setpoint[axis] = pidState->rateTarget;
 #endif
+}
+
+static void pidInnerLoop(pidProfile_t *pidProfile)
+{
+    int axis;
+
+    for (axis = 0; axis < 3; axis++) {
+        /* Calculate PID gains */
+        pidState[axis].kP = pidProfile->P8[axis] / FP_PID_RATE_P_MULTIPLIER * PIDweight[axis];
+        pidState[axis].kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
+        pidState[axis].kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER * PIDweight[axis];
+
+        if ((pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0)) {
+            pidState[axis].kT = 2.0f / ((pidState[axis].kP / pidState[axis].kI) + (pidState[axis].kD / pidState[axis].kP));
+        }
+        else {
+            pidState[axis].kT = 0;
+        }
+
+        /* Apply PID setpoint controller */
+        pidApplyRateController(pidProfile,
+                               &pidState[axis],
+                               axis,
+                               imuMeasuredRotationBF.A[axis]);      // gyro output scaled to dps
     }
+}
+
+void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+{
+    /* Step 1: Run outer loop control */
+    pidOuterLoop(pidProfile, controlRateConfig, rxConfig);
+
+    /* Step 2: Run gyro-driven inner loop control */
+    pidInnerLoop(pidProfile);
 }

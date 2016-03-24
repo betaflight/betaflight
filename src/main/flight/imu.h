@@ -23,7 +23,10 @@
 
 extern int16_t throttleAngleCorrection;
 extern int16_t smallAngle;
+
 extern t_fp_vector imuAccelInBodyFrame;
+extern t_fp_vector imuMeasuredGravityBF;
+extern t_fp_vector imuMeasuredRotationBF;
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
