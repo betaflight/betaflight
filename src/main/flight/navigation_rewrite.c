@@ -336,6 +336,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_INITIALIZE,      // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,
             [NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING] = NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
+            [NAV_FSM_EVENT_SWITCH_TO_RTH_3D_LANDING]    = NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
         }
     },
@@ -731,22 +732,29 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_INITIALIZE(navigationFSMState_t previousState)
 {
-    /* All good for RTH */
-    if (posControl.flags.hasValidPositionSensor) {
-        // If close to home - reset home position
-        if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
-            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
-        }
+    UNUSED(previousState);
 
-        return NAV_FSM_EVENT_SUCCESS;
+    if (STATE(FIXED_WING) && (posControl.homeDistance < posControl.navConfig->min_rth_distance)) {
+        // Prevent RTH from activating on airplanes if too close to home
+        return NAV_FSM_EVENT_SWITCH_TO_IDLE;
     }
-    /* Position sensor failure timeout - land */
-    else if (checkForPositionSensorTimeout()) {
-        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
-    }
-    /* No valid POS sensor but still within valid timeout - wait */
     else {
-        return NAV_FSM_EVENT_NONE;
+        if (posControl.flags.hasValidPositionSensor) {
+            // If close to home - reset home position
+            if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+            }
+
+            return NAV_FSM_EVENT_SUCCESS;
+        }
+        /* Position sensor failure timeout - land */
+        else if (checkForPositionSensorTimeout()) {
+            return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+        }
+        /* No valid POS sensor but still within valid timeout - wait */
+        else {
+            return NAV_FSM_EVENT_NONE;
+        }
     }
 }
 
@@ -809,36 +817,45 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_FINISHED(navigat
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navigationFSMState_t previousState)
 {
-    /* All good for RTH */
-    if (posControl.flags.hasValidPositionSensor) {
-        t_fp_vector targetHoldPos;
+    UNUSED(previousState);
 
-        // If close to home - reset home position
-        if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
-            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
-            targetHoldPos = posControl.actualState.pos;
-        }
-        else {
-            if (!STATE(FIXED_WING)) {
-                // Multicopter, hover and climb
-                calculateInitialHoldPosition(&targetHoldPos);
-            } else {
-                // Airplane - climbout before turning around
-                calculateFarAwayTarget(&targetHoldPos, posControl.actualState.yaw, 100000.0f);  // 1km away
+    if (STATE(FIXED_WING) && (posControl.homeDistance < posControl.navConfig->min_rth_distance)) {
+        // Prevent RTH from activating on airplanes if too close to home
+        return NAV_FSM_EVENT_SWITCH_TO_IDLE;
+    }
+    else {
+        if (posControl.flags.hasValidPositionSensor) {
+            // If close to home - reset home position and land
+            if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+                setDesiredPosition(&posControl.actualState.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z);
+
+                return NAV_FSM_EVENT_SWITCH_TO_RTH_3D_LANDING;   // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
+            }
+            else {
+                t_fp_vector targetHoldPos;
+
+                if (!STATE(FIXED_WING)) {
+                    // Multicopter, hover and climb
+                    calculateInitialHoldPosition(&targetHoldPos);
+                } else {
+                    // Airplane - climbout before turning around
+                    calculateFarAwayTarget(&targetHoldPos, posControl.actualState.yaw, 100000.0f);  // 1km away
+                }
+
+                setDesiredPosition(&targetHoldPos, 0, NAV_POS_UPDATE_XY);
+
+                return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT
             }
         }
-
-        setDesiredPosition(&targetHoldPos, 0, NAV_POS_UPDATE_XY);
-
-        return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT
-    }
-    /* Position sensor failure timeout - land */
-    else if (checkForPositionSensorTimeout()) {
-        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
-    }
-    /* No valid POS sensor but still within valid timeout - wait */
-    else {
-        return NAV_FSM_EVENT_NONE;
+        /* Position sensor failure timeout - land */
+        else if (checkForPositionSensorTimeout()) {
+            return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+        }
+        /* No valid POS sensor but still within valid timeout - wait */
+        else {
+            return NAV_FSM_EVENT_NONE;
+        }
     }
 }
 
