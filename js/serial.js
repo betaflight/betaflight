@@ -105,7 +105,11 @@ var serial = {
                             break;
                             
                         case 'device_lost':
-                            // TODO
+                            if (GUI.connected_to || GUI.connecting_to) {
+                                $('a.connect').click();
+                            } else {
+                                self.disconnect();
+                            }
                             break;
                             
                         case 'disconnected':
