@@ -219,8 +219,6 @@ void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateCon
 
         axisPID[axis] = newOutputLimited;
 
-        debug[axis] = rateTarget;
-
 #ifdef BLACKBOX
         axisPID_P[axis] = newPTerm;
         axisPID_I[axis] = errorGyroIf[axis];
