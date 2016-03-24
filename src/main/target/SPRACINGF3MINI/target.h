@@ -213,7 +213,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
+#define GTUNE
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
