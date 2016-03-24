@@ -385,12 +385,15 @@ void resetFixedWingHeadingController(void)
     magHold = CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw);
 }
 
+//#define NAV_FW_LIMIT_MIN_FLY_VELOCITY
+
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
 {
     if (navStateFlags & NAV_CTL_EMERG) {
         applyFixedWingEmergencyLandingController();
     }
     else {
+#ifdef NAV_FW_LIMIT_MIN_FLY_VELOCITY
         // Don't apply anything if ground speed is too low (<3m/s)
         float forwardVelocitySquared = sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y);
         if (forwardVelocitySquared > (300 * 300)) {
@@ -405,6 +408,13 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
             posControl.rcAdjustment[ROLL] = 0;
             posControl.rcAdjustment[THROTTLE] = 0;
         }
+#else
+        if (navStateFlags & NAV_CTL_ALT)
+            applyFixedWingAltitudeController(currentTime);
+
+        if (navStateFlags & NAV_CTL_POS)
+            applyFixedWingPositionController(currentTime);
+#endif
 
         //if (navStateFlags & NAV_CTL_YAW)
         if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS))
