@@ -334,9 +334,9 @@ void showProfilePage(void)
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "RR:%d PR:%d YR:%d",
-        controlRateConfig->rates[FD_ROLL],
-        controlRateConfig->rates[FD_PITCH],
-        controlRateConfig->rates[FD_YAW]
+        controlRateConfig->rates[ROLL],
+        controlRateConfig->rates[PITCH],
+        controlRateConfig->rates[YAW]
     );
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);

@@ -484,6 +484,95 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     EXPECT_EQ(H_sensitivity, currentProfile->pidProfile.H_sensitivity);
 }
 
+TEST_F(SerialMspUnitTest, TestMspOutMessageLengthsCommand)
+{
+    static const uint8_t outMessages[] = {
+        MSP_API_VERSION,                // 1    //out message
+        MSP_FC_VARIANT,                 // 2    //out message
+        MSP_FC_VERSION,                 // 3    //out message
+        MSP_BOARD_INFO,                 // 4    //out message
+        MSP_BUILD_INFO,                 // 5    //out message
+        // MSP commands for Cleanflight original features
+        MSP_MODE_RANGES,                // 34    //out message         Returns all mode ranges
+        MSP_FEATURE,                    // 36
+        MSP_BOARD_ALIGNMENT,            // 38
+        MSP_CURRENT_METER_CONFIG,       // 40
+        MSP_MIXER,                      // 42
+        MSP_RX_CONFIG,                  // 44
+        MSP_LED_COLORS,                 // 46
+        MSP_LED_STRIP_CONFIG,           // 48
+        MSP_RSSI_CONFIG,                // 50
+        MSP_ADJUSTMENT_RANGES,          // 52
+        // private - only to be used by the configurator, the commands are likely to change
+//!! not tested        MSP_CF_SERIAL_CONFIG,           // 54
+        MSP_VOLTAGE_METER_CONFIG,       // 56
+        MSP_SONAR_ALTITUDE,             // 58 //out message get sonar altitude [cm]
+        MSP_PID_CONTROLLER,             // 59
+        MSP_ARMING_CONFIG,              // 61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
+        MSP_DATAFLASH_SUMMARY,          // 70 //out message - get description of dataflash chip
+//!! not tested       MSP_DATAFLASH_READ,             // 71 //out message - get content of dataflash chip
+        MSP_LOOP_TIME,                  // 73 //out message         Returns FC cycle time i.e looptime parameter
+        MSP_FAILSAFE_CONFIG,            // 75 //out message         Returns FC Fail-Safe settings
+        MSP_RXFAIL_CONFIG,              // 77 //out message         Returns RXFAIL settings
+        MSP_SDCARD_SUMMARY,             // 79 //out message         Get the state of the SD card
+        MSP_BLACKBOX_CONFIG,            // 80 //out message         Get blackbox settings
+        MSP_TRANSPONDER_CONFIG,         // 82 //out message         Get transponder settings
+        // Baseflight MSP commands (if enabled they exist in Cleanflight)
+        MSP_RX_MAP,                     // 64 //out message get channel map (also returns number of channels total)
+        // DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+        MSP_BF_CONFIG,                  // 66 //out message baseflight-specific settings that aren't covered elsewhere
+        // DEPRECATED - Use MSP_BUILD_INFO instead
+        MSP_BF_BUILD_INFO,              // 69 //out message build date as well as some space for future expansion
+        // Multwii original MSP commands
+        // DEPRECATED - See MSP_API_VERSION and MSP_MIXER
+        MSP_IDENT,               // 100    //out message         mixerMode + multiwii version + protocol version + capability variable
+        MSP_STATUS,              // 101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
+        MSP_RAW_IMU,             // 102    //out message         9 DOF
+        MSP_SERVO,               // 103    //out message         servos
+        MSP_MOTOR,               // 104    //out message         motors
+        MSP_RC,                  // 105    //out message         rc channels and more
+        MSP_RAW_GPS,             // 106    //out message         fix, numsat, lat, lon, alt, speed, ground course
+        MSP_COMP_GPS,            // 107    //out message         distance home, direction home
+        MSP_ATTITUDE,            // 108    //out message         2 angles 1 heading
+        MSP_ALTITUDE,            // 109    //out message         altitude, variometer
+        MSP_ANALOG,              // 110    //out message         vbat, powermetersum, rssi if available on RX
+        MSP_RC_TUNING,           // 111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
+        MSP_PID,                 // 112    //out message         P I D coeff (9 are used currently)
+//!! not implemented in serial_msp.c      MSP_BOX,                 // 113    //out message         BOX setup (number is dependant of your setup)
+        MSP_MISC,                // 114    //out message         powermeter trig
+        MSP_MOTOR_PINS,          // 115    //out message         which pins are in use for motors & servos, for GUI
+        MSP_BOXNAMES,            // 116    //out message         the aux switch names
+        MSP_PIDNAMES,            // 117    //out message         the PID names
+        MSP_WP,                  // 118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
+        MSP_BOXIDS,              // 119    //out message         get the permanent IDs associated to BOXes
+        MSP_SERVO_CONFIGURATIONS,// 120    //out message         All servo configurations.
+//!! not implemented in serial_msp.c       MSP_NAV_STATUS,          // 121    //out message         Returns navigation status
+//!! not implemented in serial_msp.c       MSP_NAV_CONFIG,          // 122    //out message         Returns navigation parameters
+        MSP_3D,                  // 124    //out message         Settings needed for reversible ESCs
+        MSP_RC_DEADBAND,         // 125    //out message         deadbands for yaw alt pitch roll
+        MSP_SENSOR_ALIGNMENT,    // 126    //out message         orientation of acc,gyro,mag
+//!! not implemented in serial_msp.c       MSP_DEBUGMSG,            // 253    //out message         debug string buffer
+        MSP_DEBUG,               // 254    //out message         debug1,debug2,debug3,debug4
+        // Additional commands that are not compatible with MultiWii
+        MSP_STATUS_EX,           // 150    //out message         cycletime, errors_count, CPU load, sensor present etc
+        MSP_UID,                 // 160    //out message         Unique device ID
+        MSP_GPSSVINFO,           // 164    //out message         get Signal Strength (only U-Blox)
+        MSP_ACC_TRIM,            // 240    //out message         get acc angle trim values
+        MSP_SERVO_MIX_RULES,     // 241    //out message         Returns servo mixer configuration
+    };
+    for (uint ii = 0; ii < sizeof(outMessages); ++ii) {
+        serialWritePos = 0;
+        serialReadPos = 0;
+        currentPort->cmdMSP = outMessages[ii];
+        mspProcessReceivedCommand();
+        EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
+        EXPECT_EQ('M', serialBuffer.mspResponse.header.m);
+        EXPECT_EQ('>', serialBuffer.mspResponse.header.direction);
+        EXPECT_EQ(outMessages[ii], serialBuffer.mspResponse.header.type);
+        // serial buffer includes mspHeader, payload and 1 byte checksum
+        EXPECT_EQ(serialWritePos - sizeof(mspHeader_t) - 1, serialBuffer.mspResponse.header.size);
+    }
+}
 
 // STUBS
 extern "C" {
@@ -502,7 +591,8 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 int32_t magADC[XYZ_AXIS_COUNT];
 // from config.c
 master_t masterConfig;
-controlRateConfig_t *currentControlRateProfile;
+controlRateConfig_t controlRateProfile;
+controlRateConfig_t *currentControlRateProfile = &controlRateProfile;
 void resetPidProfile(pidProfile_t *pidProfile) {UNUSED(pidProfile);}
 void handleOneshotFeatureChangeOnRestart(void) {}
 void readEEPROM(void) {}
