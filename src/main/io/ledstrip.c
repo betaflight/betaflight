@@ -30,12 +30,14 @@
 #include <common/color.h>
 #include <common/maths.h>
 #include <common/typeconversion.h>
+#include <common/printf.h>
+
+#include "config/parameter_group.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include <common/printf.h>
 
 #include "io/rc_controls.h"
 

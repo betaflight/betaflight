@@ -20,37 +20,47 @@
 
 extern "C" {
     #include "platform.h"
+
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/color.h"
+
+    #include "config/parameter_group.h"
+
     #include "flight/pid.h"
+
     #include "drivers/sensor.h"
     #include "drivers/timer.h"
     #include "drivers/accgyro.h"
     #include "drivers/pwm_rx.h"
     #include "drivers/serial.h"
+
     #include "io/rc_controls.h"
     #include "io/escservo.h"
     #include "io/gimbal.h"
     #include "io/gps.h"
     #include "io/serial.h"
     #include "io/ledstrip.h"
+
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
     #include "sensors/gyro.h"
     #include "sensors/battery.h"
     #include "sensors/boardalignment.h"
+
     #include "flight/mixer.h"
     #include "flight/imu.h"
     #include "flight/navigation.h"
     #include "flight/failsafe.h"
+
     #include "telemetry/telemetry.h"
+
     #include "config/config.h"
     #include "config/config_eeprom.h"
     #include "config/config_profile.h"
     #include "config/config_master.h"
-    #include "config/parameter_group.h"
+
     #include "platform.h"
 
     failsafeConfig_t failsafeConfig;

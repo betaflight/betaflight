@@ -26,9 +26,13 @@ extern "C" {
     #include "build_config.h"
     #include "version.h"
     #include "debug.h"
+
     #include "common/axis.h"
     #include "common/color.h"
     #include "common/maths.h"
+
+    #include "config/parameter_group.h"
+
 
     #include "drivers/system.h"
     #include "drivers/sensor.h"

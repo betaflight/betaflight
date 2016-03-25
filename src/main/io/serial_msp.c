@@ -31,6 +31,8 @@
 #include "common/color.h"
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/system.h"
 
 #include "drivers/sensor.h"

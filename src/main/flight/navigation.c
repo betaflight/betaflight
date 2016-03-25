@@ -28,6 +28,8 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -51,7 +53,6 @@
 #include "flight/imu.h"
 
 #include "rx/rx.h"
-
 
 #include "config/config.h"
 #include "config/runtime_config.h"

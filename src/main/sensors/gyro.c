@@ -25,12 +25,17 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
+
 #include "sensors/sensors.h"
+
 #include "io/beeper.h"
 #include "io/statusindicator.h"
+
 #include "sensors/boardalignment.h"
 
 #include "sensors/gyro.h"

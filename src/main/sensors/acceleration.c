@@ -22,6 +22,8 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 

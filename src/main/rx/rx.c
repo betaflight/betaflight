@@ -25,13 +25,14 @@
 #include "build_config.h"
 #include "debug.h"
 
-
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
 #include "config/config.h"
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
+
 #include "io/serial.h"
 #include "io/rc_controls.h"
 
@@ -41,6 +42,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/system.h"
+
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"

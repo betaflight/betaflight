@@ -29,6 +29,8 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"

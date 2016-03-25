@@ -22,6 +22,8 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"

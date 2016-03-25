@@ -21,7 +21,11 @@
 
 extern "C" {
 #include "common/axis.h"
+
+#include "config/parameter_group.h"
+
 #include "sensors/boardalignment.h"
+
 #include "sensors/sensors.h"
 }
 
