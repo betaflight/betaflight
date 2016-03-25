@@ -98,42 +98,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
-const pgRegistry_t __pg_registry[] =
-{
-    {
-        .base = (uint8_t *)&masterConfig,
-        .ptr = 0,
-        .size = sizeof(masterConfig),
-        .pgn = PG_MASTER,
-        .format = 0,
-        .flags = PGC_SYSTEM
-    },
-    {
-        .base = (uint8_t *)&profileStorage,
-        .ptr = (uint8_t **)&currentProfile,
-        .size = sizeof(profileStorage[0]),
-        .pgn = PG_PROFILE,
-        .format = 0,
-        .flags = PGC_PROFILE
-    },
-    {
-        .base = (uint8_t *)&someProfileSpecificDataStorage,
-        .ptr = (uint8_t **)&someProfileSpecificData,
-        .size = sizeof(someProfileSpecificDataStorage[0]),
-        .pgn = 1,
-        .format = 0,
-        .flags = PGC_PROFILE
-    },
-    {
-        .base = nullptr,
-        .ptr = 0,
-        .size = 0,
-        .pgn = 0,
-        .format = 0,
-        .flags = 0
-    },
-};
+PG_REGISTER(masterConfig, 0, 0);
 
 TEST(configTest, resetEEPROM)
 {

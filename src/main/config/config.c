@@ -96,8 +96,6 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
     .base = (uint8_t *)&masterConfig,
@@ -613,20 +611,23 @@ STATIC_UNIT_TESTED void resetConf(void)
     customMotorMixer[7].yaw = -1.0f;
 #endif
 
-    // FIXME implement differently
-
     // copy first profile into remaining profile
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&profileStorage[i], &profileStorage[0], sizeof(profile_t));
+    PG_FOREACH_PROFILE(reg) {
+        for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
+            memcpy(reg->base + i * reg->size, reg->base, reg->size);
+        }
     }
+
+    // FIXME implement differently
 
     // copy first control rate config into remaining profile
     for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
         memcpy(&controlRateProfiles[i], &controlRateProfiles[0], sizeof(controlRateConfig_t));
     }
 
+    // TODO
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        profileStorage[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
+        currentProfileStorage[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
     }
 }
 

@@ -104,36 +104,8 @@ extern "C" {
     armingConfig_t armingConfig;
     transponderConfig_t transponderConfig;
 
-    pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
-    pidProfile_t *pidProfile = &testPidProfile[0];
-
-    const pgRegistry_t __pg_registry[] =
-    {
-        {
-            .base = (uint8_t *)&boardAlignment,
-            .ptr = 0,
-            .size = sizeof(boardAlignment),
-            .pgn = PG_BOARD_ALIGNMENT,
-            .format = 0,
-            .flags = PGC_SYSTEM,
-        },
-        {
-            .base = (uint8_t *)&failsafeConfig,
-            .ptr = 0,
-            .size = sizeof(failsafeConfig),
-            .pgn = PG_FAILSAFE_CONFIG,
-            .format = 0,
-            .flags = PGC_SYSTEM,
-        },
-        {
-            .base = nullptr,
-            .ptr = 0,
-            .size = 0,
-            .pgn = 0,
-            .format = 0,
-            .flags = PGC_SYSTEM
-        },
-    };
+    PG_REGISTER(boardAlignment, PG_BOARD_ALIGNMENT, 0);
+    PG_REGISTER(failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 }
 
 profile_t profile;
