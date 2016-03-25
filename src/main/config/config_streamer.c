@@ -21,18 +21,18 @@
 
 #include <string.h>
 
-#if defined(FLASH_PAGE_SIZE)
-// nothing to do
-#elif defined(STM32F303xC)
-#define FLASH_PAGE_SIZE                 (0x800)
-#elif defined(STM32F10X_MD)
-#define FLASH_PAGE_SIZE                 (0x400)
-#elif defined(STM32F10X_HD)
-#define FLASH_PAGE_SIZE                 (0x800)
-#elif defined(UNIT_TEST)
-#define FLASH_PAGE_SIZE                 (0x400)
-#else
-#error "Flash page size not defined for target."
+#if !defined(FLASH_PAGE_SIZE)
+# if defined(STM32F303xC)
+#  define FLASH_PAGE_SIZE                 (0x800)
+# elif defined(STM32F10X_MD)
+#  define FLASH_PAGE_SIZE                 (0x400)
+# elif defined(STM32F10X_HD)
+#  define FLASH_PAGE_SIZE                 (0x800)
+# elif defined(UNIT_TEST)
+#  define FLASH_PAGE_SIZE                 (0x400)
+# else
+#  error "Flash page size not defined for target."
+# endif
 #endif
 
 void config_streamer_init(config_streamer_t *c)
@@ -40,10 +40,11 @@ void config_streamer_init(config_streamer_t *c)
     memset(c, 0, sizeof(*c));
 }
 
-void config_streamer_start(config_streamer_t *c, uintptr_t base)
+void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 {
+    // base must start at FLASH_PAGE_SIZE boundary
     c->address = base;
-
+    c->size = size;
     if (!c->unlocked) {
         FLASH_Unlock();
         c->unlocked = true;
@@ -54,13 +55,14 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base)
 #elif defined(STM32F10X)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #elif defined(UNIT_TEST)
+    // NOP
 #else
-    #error
+# error "Unsupported CPU"
 #endif
     c->err = 0;
 }
 
-int write_word(config_streamer_t *c, uint32_t value)
+static int write_word(config_streamer_t *c, uint32_t value)
 {
     if (c->err != 0) {
         return c->err;
@@ -84,32 +86,26 @@ int write_word(config_streamer_t *c, uint32_t value)
 
 int config_streamer_write(config_streamer_t *c, const uint8_t *p, uint32_t size)
 {
-    const uint8_t *pat = p;
-    const uint8_t *pend = pat + size;
-
-    for (; pat != pend; pat++) {
+    for (const uint8_t *pat = p; pat != (uint8_t*)p + size; pat++) {
         c->buffer.b[c->at++] = *pat;
-        c->chk ^= *pat;
 
         if (c->at == sizeof(c->buffer)) {
             c->err = write_word(c, c->buffer.w);
-            // FIXME c->err is overwritten and not checked when size > sizeof(c->buffer)
             c->at = 0;
         }
     }
     return c->err;
 }
 
-uint8_t config_streamer_chk(config_streamer_t *c)
+int config_streamer_status(config_streamer_t *c)
 {
-    return c->chk;
+    return c->err;
 }
 
 int config_streamer_flush(config_streamer_t *c)
 {
     if (c->at != 0) {
-        // Flush what's left.  Don't worry about the garbage as it
-        // shouldn't be read.
+        memset(c->buffer.b + c->at, 0, sizeof(c->buffer) - c->at);
         c->err = write_word(c, c->buffer.w);
         c->at = 0;
     }

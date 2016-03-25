@@ -33,53 +33,8 @@
 
 static const uint8_t EEPROM_CONF_VERSION = 111;
 
-#if !defined(FLASH_SIZE)
-#error "Flash size not defined for target. (specify in KB)"
-#endif
-
-#ifndef FLASH_PAGE_SIZE
-    #ifdef STM32F303xC
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-#endif
-
-#if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-#endif
-
-#if defined(FLASH_SIZE)
-#define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
-#endif
-
-#if !defined(FLASH_PAGE_SIZE)
-#error "Flash page size not defined for target."
-#endif
-
-#if !defined(FLASH_PAGE_COUNT)
-#error "Flash page count not defined for target."
-#endif
-
-#if FLASH_SIZE <= 64
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800 // 2kb
-#else
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000 // 4KB
-#endif
-
-extern uint8_t __config_start; // configured via linker script when building binaries.
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
 
 typedef enum {
     CR_CLASSICATION_SYSTEM   = 0,
@@ -112,8 +67,8 @@ typedef struct {
 // Footer for the saved copy.
 typedef struct {
     uint16_t terminator;
-    uint8_t chk;
 } PG_PACKED configFooter_t;
+// checksum is appended just after footer. It is not included in footer to make checksum calculation consistent
 
 // Used to check the compiler packing at build time.
 typedef struct {
@@ -129,13 +84,8 @@ void initEEPROM(void)
     BUILD_BUG_ON(sizeof(packingTest_t) != 5);
 
     BUILD_BUG_ON(sizeof(configHeader_t) != 1);
-    BUILD_BUG_ON(sizeof(configFooter_t) != 3);
+    BUILD_BUG_ON(sizeof(configFooter_t) != 2);
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
-
-    // To save memory, the array is terminated by a single zero
-    // instead of a full pgRegistry_t.  This means that 'base' must be
-    // the first entry in the struct.
-    BUILD_BUG_ON(offsetof(pgRegistry_t, base) != 0);
 }
 
 static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
@@ -205,7 +155,7 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
             // Found the end.  Stop scanning.
             break;
         }
-        if (record->size >= FLASH_TO_RESERVE_FOR_CONFIG
+        if (p + record->size >= &__config_end
             || record->size < sizeof(*record)) {
             // Too big or too small.
             return false;
@@ -221,7 +171,9 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
 
     const configFooter_t *footer = (const configFooter_t *)p;
     chk = updateChecksum(chk, footer, sizeof(*footer));
-    return chk == 0xFF;
+    p += sizeof(*footer);
+    chk = ~chk;
+    return chk == *p;
 }
 
 
@@ -247,14 +199,15 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_t streamer;
     config_streamer_init(&streamer);
 
-    config_streamer_start(&streamer, (uintptr_t)&__config_start);
+    config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
+    uint8_t chk = 0;
 
     configHeader_t header = {
         .format = EEPROM_CONF_VERSION,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
-
+    chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
     PG_FOREACH(reg) {
         configRecord_t record = {
             .size = sizeof(configRecord_t) + reg->size,
@@ -268,28 +221,34 @@ static bool writeSettingsToEEPROM(void)
             // write the only instance
 	        record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
+            chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
             config_streamer_write(&streamer, reg->base, reg->size);
+            chk = updateChecksum(chk, reg->base, reg->size);
         } else {
-
             // write one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
                 record.flags = 0;
 
                 record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
                 config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
-
+                chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
                 const uint8_t *base = reg->base + (reg->size * profileIndex);
                 config_streamer_write(&streamer, base, reg->size);
+                chk = updateChecksum(chk, base, reg->size);
             }
         }
     }
 
     configFooter_t footer = {
         .terminator = 0,
-        .chk = ~config_streamer_chk(&streamer),
     };
 
     config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
+    chk = updateChecksum(chk, (uint8_t *)&footer, sizeof(footer));
+
+    // append checksum now
+    chk = ~chk;
+    config_streamer_write(&streamer, &chk, sizeof(chk));
 
     config_streamer_flush(&streamer);
 
@@ -303,12 +262,9 @@ void writeConfigToEEPROM(void)
     bool success = false;
     // write it
     for (int attempt = 0; attempt < 3 && !success; attempt++) {
-
-        if (!writeSettingsToEEPROM()) {
-            continue;
+        if (writeSettingsToEEPROM()) {
+            success = true;
         }
-
-        success = true;
     }
 
     if (success && isEEPROMContentValid()) {

@@ -104,7 +104,7 @@ config_streamer_t setup()
 
     config_streamer_t c;
     config_streamer_init(&c);
-    config_streamer_start(&c, 0x08000000);
+    config_streamer_start(&c, 0x08000000, 8192);
 
     return c;
 }
