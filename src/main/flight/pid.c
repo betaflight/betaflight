@@ -148,7 +148,7 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
             // If there is some external force that rotates the aircraft and Rate PIDs are unable to compensate,
             // heading lock will bring heading back if disturbance is not too big
             if (FLIGHT_MODE(HEADING_LOCK)) {
-                if (pidState[axis].rateTarget > 2) {
+                if (ABS(pidState[axis].rateTarget) > 2) {
                     // While getting strong commands act like rate mode
                     pidState[axis].axisLockAccum = 0;
                 }
@@ -260,15 +260,15 @@ static void pidInnerLoop(pidProfile_t *pidProfile)
         pidState[axis].kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
         pidState[axis].kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER * PIDweight[axis];
 
-        // Limit desired rate to something gyro can measure reliably
-        pidState[axis].rateTarget = constrainf(pidState[axis].rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
-
         if ((pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0)) {
             pidState[axis].kT = 2.0f / ((pidState[axis].kP / pidState[axis].kI) + (pidState[axis].kD / pidState[axis].kP));
         }
         else {
             pidState[axis].kT = 0;
         }
+
+        /* Limit desired rate to something gyro can measure reliably */
+        pidState[axis].rateTarget = constrainf(pidState[axis].rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
 
         /* Apply PID setpoint controller */
         pidApplyRateController(pidProfile,
