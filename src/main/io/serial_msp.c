@@ -27,6 +27,7 @@
 #include "scheduler.h"
 
 #include "common/axis.h"
+#include "common/utils.h"
 #include "common/color.h"
 #include "common/maths.h"
 
@@ -266,7 +267,7 @@ static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+    for (boxIndex = 0; boxIndex < ARRAYLEN(boxes); boxIndex++) {
         candidate = &boxes[boxIndex];
         if (candidate->boxId == activeBoxId) {
             return candidate;
@@ -279,7 +280,7 @@ static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
     uint8_t boxIndex;
     const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+    for (boxIndex = 0; boxIndex < ARRAYLEN(boxes); boxIndex++) {
         candidate = &boxes[boxIndex];
         if (candidate->permanentId == permenantId) {
             return candidate;
@@ -602,14 +603,12 @@ static const pgToMSPMapEntry_t pgToMSPMap[] =
     { PG_FAILSAFE_CONFIG, MSP_FAILSAFE_CONFIG, MSP_SET_FAILSAFE_CONFIG },
 };
 
-#define PG_TO_MSP_MAP_ENTRY_COUNT (sizeof(pgToMSPMap) / sizeof(pgToMSPMapEntry_t))
-
 uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria)
 {
     uint8_t index;
     uint8_t mspIdForSet = *(uint8_t *)criteria;
 
-    for (index = 0; index < PG_TO_MSP_MAP_ENTRY_COUNT; index++) {
+    for (index = 0; index < ARRAYLEN(pgToMSPMap); index++) {
         const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
         if (entry->pgn == candidate->pgn && entry->mspIdForSet == mspIdForSet) {
             return true;
@@ -623,7 +622,7 @@ uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria)
     uint8_t index;
     uint8_t mspId = *(uint8_t *)criteria;
 
-    for (index = 0; index < PG_TO_MSP_MAP_ENTRY_COUNT; index++) {
+    for (index = 0; index < ARRAYLEN(pgToMSPMap); index++) {
         const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
         if (entry->pgn == candidate->pgn && entry->mspId == mspId) {
             return true;
