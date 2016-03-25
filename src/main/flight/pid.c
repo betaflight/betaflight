@@ -188,9 +188,6 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
                 }
             }
         }
-
-        // Limit desired rate to something gyro can measure reliably
-        pidState[axis].rateTarget = constrainf(pidState[axis].rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
     }
 }
 
@@ -263,6 +260,9 @@ static void pidInnerLoop(pidProfile_t *pidProfile)
         pidState[axis].kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
         pidState[axis].kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER * PIDweight[axis];
 
+        // Limit desired rate to something gyro can measure reliably
+        pidState[axis].rateTarget = constrainf(pidState[axis].rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
+
         if ((pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0)) {
             pidState[axis].kT = 2.0f / ((pidState[axis].kP / pidState[axis].kI) + (pidState[axis].kD / pidState[axis].kP));
         }
@@ -282,7 +282,7 @@ static void getRateTarget(controlRateConfig_t *controlRateConfig)
 {
     uint8_t axis;
     for (axis = 0; axis < 3; axis++) {
-        pidState[axis].rateTarget = constrainf(pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]), -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
+        pidState[axis].rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
     }
 }
 
