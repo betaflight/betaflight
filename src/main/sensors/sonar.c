@@ -34,13 +34,9 @@
 #include "sensors/sonar.h"
 
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
-// Inclination is adjusted by imu
-    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
-    float baro_cf_alt;                      // apply CF to use ACC for height estimation
 
 #ifdef SONAR
-int16_t sonarMaxRangeCm;
-int16_t sonarMaxAltWithTiltCm;
+
 STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
 float sonarMaxTiltCos;
 
@@ -113,10 +109,8 @@ void sonarInit(const sonarHardware_t *sonarHardware)
 
     hcsr04_init(sonarHardware, &sonarRange);
     sensorsSet(SENSOR_SONAR);
-    sonarMaxRangeCm = sonarRange.maxRangeCm;
     sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
     sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
-    sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
     calculatedAltitude = SONAR_OUT_OF_RANGE;
 }
 
@@ -125,17 +119,12 @@ void sonarUpdate(void)
     hcsr04_start_reading();
 }
 
-#define SONAR_SAMPLES_MEDIAN 3
-
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, SONAR_OUT_OF_RANGE is returned.
  */
 int32_t sonarRead(void)
 {
-    int32_t distance = hcsr04_get_distance();
-    if (distance > HCSR04_MAX_RANGE_CM)
-        distance = SONAR_OUT_OF_RANGE;
-    return distance;
+    return hcsr04_get_distance();
 }
 
 /**
