@@ -32,10 +32,10 @@ const pgRegistry_t* pgFind(pgn_t pgn)
     return NULL;
 }
 
-const pgRegistry_t* pgFindForSet(pgn_t pgn)
+const pgRegistry_t* pgMatcher(pgMatcherFuncPtr func, const void *criteria)
 {
     PG_FOREACH(reg) {
-        if (reg->pgn_for_set == pgn) {
+        if (func(reg, criteria)) {
             return reg;
         }
     }

@@ -29,7 +29,7 @@
 #include "io/beeper.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
-#include "io/msp_protocol.h"
+#include "config/parameter_group_ids.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
 
@@ -54,8 +54,7 @@ static const pgRegistry_t failsafeConfigRegistry PG_REGISTRY_SECTION =
 {
     .base = &failsafeConfig,
     .size = sizeof(failsafeConfig),
-    .pgn = MSP_FAILSAFE_CONFIG,
-    .pgn_for_set = MSP_SET_FAILSAFE_CONFIG,
+    .pgn = PG_FAILSAFE_CONFIG
 };
 
 static rxConfig_t *rxConfig;

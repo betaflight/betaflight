@@ -69,6 +69,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/failsafe.h"
 
+    #include "config/parameter_group_ids.h"
     #include "config/runtime_config.h"
     #include "config/config.h"
     #include "config/config_profile.h"
@@ -95,15 +96,19 @@ extern "C" {
         {
             .base = &boardAlignment,
             .size = sizeof(boardAlignment),
-            .pgn = MSP_BOARD_ALIGNMENT,
-            .pgn_for_set = MSP_SET_BOARD_ALIGNMENT,
+            .pgn = PG_BOARD_ALIGNMENT,
+            .format = 0
+        },
+        {
+            .base = &failsafeConfig,
+            .size = sizeof(failsafeConfig),
+            .pgn = PG_FAILSAFE_CONFIG,
             .format = 0
         },
         {
             .base = nullptr,
             .size = 0,
             .pgn = 0,
-            .pgn_for_set = 0,
             .format = 0
         },
     };

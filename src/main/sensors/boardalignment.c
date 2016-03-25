@@ -22,7 +22,7 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
-#include "io/msp_protocol.h"
+#include "config/parameter_group_ids.h"
 
 #include "sensors.h"
 
@@ -34,8 +34,7 @@ static const pgRegistry_t boardAlignmentRegistry PG_REGISTRY_SECTION =
 {
     .base = &boardAlignment,
     .size = sizeof(boardAlignment),
-    .pgn = MSP_BOARD_ALIGNMENT,
-    .pgn_for_set = MSP_SET_BOARD_ALIGNMENT,
+    .pgn = PG_BOARD_ALIGNMENT
 };
 
 static bool standardBoardAlignment = true;     // board orientation correction

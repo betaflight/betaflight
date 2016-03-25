@@ -17,7 +17,7 @@
 
 #pragma once
 
-typedef uint8_t pgn_t;
+typedef uint16_t pgn_t;
 
 typedef struct pgRegistry_s {
     // Base of the group in RAM.
@@ -26,8 +26,6 @@ typedef struct pgRegistry_s {
     uint16_t size;
     // The parameter group number.
     pgn_t pgn;
-    // The MSP ID used when setting the parameter group.
-    pgn_t pgn_for_set;
     // The in-memory format number.  Bump when making incompatible
     // changes to the PG.
     uint8_t format;
@@ -44,8 +42,10 @@ extern const pgRegistry_t __pg_registry[];
 #define PG_FOREACH(_name) \
     for (const pgRegistry_t *(_name) = __pg_registry; (_name)->base != NULL; (_name)++)
 
+typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
+
 const pgRegistry_t* pgFind(pgn_t pgn);
-const pgRegistry_t* pgFindForSet(pgn_t pgn);
+const pgRegistry_t* pgMatcher(pgMatcherFuncPtr func, const void *criteria);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size);
 void pgResetAll(void);
 

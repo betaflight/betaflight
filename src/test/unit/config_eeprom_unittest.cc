@@ -65,14 +65,12 @@ const pgRegistry_t __pg_registry[] =
         .base = &masterConfig,
         .size = sizeof(masterConfig),
         .pgn = 0,
-        .pgn_for_set = 0,
         .format = 0
     },
     {
         .base = nullptr,
         .size = 0,
         .pgn = 0,
-        .pgn_for_set = 0,
         .format = 0
     },
 };

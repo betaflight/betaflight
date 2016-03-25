@@ -83,6 +83,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
 
 #include "version.h"
@@ -588,6 +589,49 @@ static uint32_t packFlightModeFlags(void)
     return junk;
 }
 
+
+typedef struct pgToMSPMapEntry_s {
+    pgn_t pgn;
+    uint8_t mspId;
+    uint8_t mspIdForSet;
+} pgToMSPMapEntry_t;
+
+static const pgToMSPMapEntry_t pgToMSPMap[] =
+{
+    { PG_BOARD_ALIGNMENT, MSP_BOARD_ALIGNMENT, MSP_SET_BOARD_ALIGNMENT },
+    { PG_FAILSAFE_CONFIG, MSP_FAILSAFE_CONFIG, MSP_SET_FAILSAFE_CONFIG },
+};
+
+#define PG_TO_MSP_MAP_ENTRY_COUNT (sizeof(pgToMSPMap) / sizeof(pgToMSPMapEntry_t))
+
+uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria)
+{
+    uint8_t index;
+    uint8_t mspIdForSet = *(uint8_t *)criteria;
+
+    for (index = 0; index < PG_TO_MSP_MAP_ENTRY_COUNT; index++) {
+        const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
+        if (entry->pgn == candidate->pgn && entry->mspIdForSet == mspIdForSet) {
+            return true;
+        }
+    }
+    return false;
+}
+
+uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria)
+{
+    uint8_t index;
+    uint8_t mspId = *(uint8_t *)criteria;
+
+    for (index = 0; index < PG_TO_MSP_MAP_ENTRY_COUNT; index++) {
+        const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
+        if (entry->pgn == candidate->pgn && entry->mspId == mspId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
@@ -596,7 +640,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
 #endif
-    const pgRegistry_t *reg = pgFind(cmdMSP);
+    const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)&cmdMSP);
 
     if (reg != NULL) {
         s_struct(reg->base, reg->size);
@@ -1031,16 +1075,6 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.rxConfig.rx_max_usec);
         break;
 
-    case MSP_FAILSAFE_CONFIG:
-        headSerialReply(8);
-        serialize8(failsafeConfig.failsafe_delay);
-        serialize8(failsafeConfig.failsafe_off_delay);
-        serialize16(failsafeConfig.failsafe_throttle);
-        serialize8(failsafeConfig.failsafe_kill_switch);
-        serialize16(failsafeConfig.failsafe_throttle_low_delay);
-        serialize8(failsafeConfig.failsafe_procedure);
-        break;
-
     case MSP_RXFAIL_CONFIG:
         headSerialReply(3 * (rxRuntimeConfig.channelCount));
         for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
@@ -1210,7 +1244,7 @@ static bool processInCommand(void)
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
 
-    const pgRegistry_t *reg = pgFindForSet(currentPort->cmdMSP);
+    const pgRegistry_t *reg = pgMatcher(pgMatcherForMSPSet, (void*)&currentPort->cmdMSP);
 
     if (reg != NULL) {
         pgLoad(reg, currentPort->inBuf + currentPort->indRX, currentPort->dataSize);
@@ -1580,15 +1614,6 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
-        break;
-
-    case MSP_SET_FAILSAFE_CONFIG:
-        failsafeConfig.failsafe_delay = read8();
-        failsafeConfig.failsafe_off_delay = read8();
-        failsafeConfig.failsafe_throttle = read16();
-        failsafeConfig.failsafe_kill_switch = read8();
-        failsafeConfig.failsafe_throttle_low_delay = read16();
-        failsafeConfig.failsafe_procedure = read8();
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
