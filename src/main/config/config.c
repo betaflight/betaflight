@@ -150,10 +150,10 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynam
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 56;
-    pidProfile->I8[ROLL] = 30;
+    pidProfile->I8[ROLL] = 60;
     pidProfile->D8[ROLL] = 80;
     pidProfile->P8[PITCH] = 56;
-    pidProfile->I8[PITCH] = 30;
+    pidProfile->I8[PITCH] = 60;
     pidProfile->D8[PITCH] = 80;
     pidProfile->P8[YAW] = 140;      // 3.5 * 40
     pidProfile->I8[YAW] = 40;      // 4.0 * 40
