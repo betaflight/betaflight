@@ -452,6 +452,7 @@ void init(void)
             &currentProfile->pidProfile,
             &currentProfile->rcControlsConfig,
             &masterConfig.rxConfig,
+            &masterConfig.flight3DConfig,
             &masterConfig.escAndServoConfig
         );
 #endif

@@ -35,6 +35,10 @@
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 
+#include "io/escservo.h"
+#include "io/rc_controls.h"
+#include "io/rc_curves.h"
+
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
@@ -55,6 +59,7 @@ extern int16_t magHold;
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
 static int16_t rcCommandAdjustedThrottle;
+static int16_t altHoldThrottleRCZero = 1500;
 static filterStatePt1_t altholdThrottleFilterState;
 
 /* Calculate global altitude setpoint based on surface setpoint */
@@ -99,10 +104,21 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
-    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - posControl.rxConfig->midrc;
+    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - altHoldThrottleRCZero;
     if (ABS(rcThrottleAdjustment) > posControl.rcControlsConfig->alt_hold_deadband) {
         // set velocity proportional to stick movement
-        float rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / 500;
+        float rcClimbRate;
+
+        // Make sure we can satisfy max_manual_climb_rate in both up and down directions
+        if (rcThrottleAdjustment > 0) {
+            // Scaling from altHoldThrottleRCZero to maxthrottle
+            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / (posControl.escAndServoConfig->maxthrottle - altHoldThrottleRCZero);
+        }
+        else {
+            // Scaling from minthrottle to altHoldThrottleRCZero
+            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / (altHoldThrottleRCZero - posControl.escAndServoConfig->minthrottle);
+        }
+
         updateAltitudeTargetFromClimbRate(rcClimbRate);
 
         return true;
@@ -120,6 +136,24 @@ bool adjustMulticopterAltitudeFromRCInput(void)
 void setupMulticopterAltitudeController(void)
 {
     // Nothing here
+    if (posControl.navConfig->flags.use_thr_mid_for_althold) {
+        altHoldThrottleRCZero = lookupThrottleRCMid;
+    }
+    else {
+        // If throttle status is THROTTLE_LOW - use Thr Mid anyway
+        throttleStatus_e throttleStatus = calculateThrottleStatus(posControl.rxConfig, posControl.flight3DConfig->deadband3d_throttle);
+        if (throttleStatus == THROTTLE_LOW) {
+            altHoldThrottleRCZero = lookupThrottleRCMid;
+        }
+        else {
+            altHoldThrottleRCZero = rcCommand[THROTTLE];
+        }
+    }
+
+    // Make sure we are able to satisfy the deadband
+    altHoldThrottleRCZero = constrain(altHoldThrottleRCZero,
+                                      posControl.escAndServoConfig->minthrottle + posControl.rcControlsConfig->alt_hold_deadband + 10, 
+                                      posControl.escAndServoConfig->maxthrottle - posControl.rcControlsConfig->alt_hold_deadband - 10);
 }
 
 void resetMulticopterAltitudeController()

@@ -26,6 +26,7 @@
 
 #include "flight/pid.h"
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
 
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;
@@ -68,7 +69,7 @@ enum {
 
 typedef struct navConfig_s {
     struct {
-        uint8_t __stub;                     // Don't remember throttle when althold was initiated, assume that throttle is at middle = zero climb rate
+        uint8_t use_thr_mid_for_althold;    // Don't remember throttle when althold was initiated, assume that throttle is at Thr Mid = zero climb rate
         uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
         uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
         uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
@@ -218,10 +219,12 @@ void navigationUseConfig(navConfig_t *navConfigToUse);
 void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig);
 void navigationUseRxConfig(rxConfig_t * initialRxConfig);
 void navigationUseEscAndServoConfig(escAndServoConfig_t * initialEscAndServoConfig);
+void navigationUseFlight3DConfig(flight3DConfig_t * initialFlight3DConfig);
 void navigationInit(navConfig_t *initialnavConfig,
                     pidProfile_t *initialPidProfile,
                     rcControlsConfig_t *initialRcControlsConfig,
                     rxConfig_t * initialRxConfig,
+                    flight3DConfig_t * initialFlight3DConfig,
                     escAndServoConfig_t * initialEscAndServoConfig);
 
 /* Navigation system updates */

@@ -62,6 +62,7 @@ typedef struct navigationFlags_s {
 
     // Behaviour modifiers
     bool isGCSAssistedNavigationEnabled;    // Does iNav accept WP#255 - follow-me etc.
+    //bool isTerrainFollowEnabled;            // Does iNav use sonar for terrain following (adjusting baro altitude target according to sonar readings)
 
     bool forcedRTHActivated;
 } navigationFlags_t;
@@ -259,6 +260,7 @@ typedef struct {
     rcControlsConfig_t *        rcControlsConfig;
     pidProfile_t *              pidProfile;
     rxConfig_t *                rxConfig;
+    flight3DConfig_t *          flight3DConfig;
     escAndServoConfig_t *       escAndServoConfig;
 } navigationPosControl_t;
 
