@@ -105,7 +105,7 @@ uint8_t config_streamer_chk(config_streamer_t *c)
     return c->chk;
 }
 
-int config_streamer_finish(config_streamer_t *c)
+int config_streamer_flush(config_streamer_t *c)
 {
     if (c->at != 0) {
         // Flush what's left.  Don't worry about the garbage as it
@@ -113,6 +113,11 @@ int config_streamer_finish(config_streamer_t *c)
         c->err = write_word(c, c->buffer.w);
         c->at = 0;
     }
+    return c-> err;
+}
+
+int config_streamer_finish(config_streamer_t *c)
+{
     if (c->unlocked) {
         FLASH_Lock();
         c->unlocked = false;

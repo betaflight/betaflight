@@ -40,4 +40,6 @@ void config_streamer_init(config_streamer_t *c);
 void config_streamer_start(config_streamer_t *c, uintptr_t base);
 int config_streamer_write(config_streamer_t *c, const void *p, uint32_t size);
 uint8_t config_streamer_chk(config_streamer_t *c);
+int config_streamer_flush(config_streamer_t *c);
+
 int config_streamer_finish(config_streamer_t *c);

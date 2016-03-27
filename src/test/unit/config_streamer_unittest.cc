@@ -123,6 +123,7 @@ TEST(configStreamerTest, TestWriteSmall)
 
     uint8_t ch = 0x12;
     EXPECT_EQ(0, config_streamer_write(&c, &ch, sizeof(ch)));
+    EXPECT_EQ(0, config_streamer_flush(&c));
     EXPECT_EQ(0, config_streamer_finish(&c));
     EXPECT_EQ(ch, mockFlash.data[0]);
 
@@ -137,6 +138,7 @@ TEST(configStreamerTest, TestWriteCrossWord)
 
     uint8_t data[] = { 1, 2, 3, 4, 5 };
     EXPECT_EQ(0, config_streamer_write(&c, data, sizeof(data)));
+    EXPECT_EQ(0, config_streamer_flush(&c));
     EXPECT_EQ(0, config_streamer_finish(&c));
     for (auto i = 0U; i < sizeof(data); i++) {
         EXPECT_EQ(data[i], mockFlash.data[i]);
@@ -153,6 +155,7 @@ TEST(configStreamerTest, TestWriteWordMultiple)
 
     uint8_t data[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
     EXPECT_EQ(0, config_streamer_write(&c, data, sizeof(data)));
+    EXPECT_EQ(0, config_streamer_flush(&c));
     EXPECT_EQ(0, config_streamer_finish(&c));
     for (auto i = 0U; i < sizeof(data); i++) {
         EXPECT_EQ(data[i], mockFlash.data[i]);
@@ -172,6 +175,7 @@ TEST(configStreamerTest, TestWriteThreeChunks)
     EXPECT_EQ(0, config_streamer_write(&c, data, sizeof(data)));
     EXPECT_EQ(0, config_streamer_write(&c, data, sizeof(data)));
     EXPECT_EQ(0, config_streamer_write(&c, data, sizeof(data)));
+    EXPECT_EQ(0, config_streamer_flush(&c));
     EXPECT_EQ(0, config_streamer_finish(&c));
 
     for (auto i = 0U; i < sizeof(data); i++) {
