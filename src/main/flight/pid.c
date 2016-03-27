@@ -90,11 +90,15 @@ float PIDweight[3];
 
 static pidState_t pidState[3];
 
-void pidResetErrorGyro(void)
+void pidResetErrorAccumulators(void)
 {
-    pidState[ROLL].errorGyroIf = 0.0f;
-    pidState[PITCH].errorGyroIf = 0.0f;
-    pidState[YAW].errorGyroIf = 0.0f;
+    /* Reset R/P/Y integrator*/
+    pidState[FD_ROLL].errorGyroIf = 0.0f;
+    pidState[FD_PITCH].errorGyroIf = 0.0f;
+    pidState[FD_YAW].errorGyroIf = 0.0f;
+
+    /* Reset Yaw heading lock accumulator */
+    pidState[FD_YAW].axisLockAccum = 0;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -148,8 +152,8 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
             // If there is some external force that rotates the aircraft and Rate PIDs are unable to compensate,
             // heading lock will bring heading back if disturbance is not too big
             if (FLIGHT_MODE(HEADING_LOCK)) {
-                if (ABS(pidState[axis].rateTarget) > 2) {
-                    // While getting strong commands act like rate mode
+                // Heading error is not integrated when stick input is significant or machine is disarmed.
+                if (ABS(pidState[axis].rateTarget) > 2 || !ARMING_FLAG(ARMED)) {
                     pidState[axis].axisLockAccum = 0;
                 }
                 else {
