@@ -64,24 +64,49 @@ extern "C" {
     #include "platform.h"
 
     failsafeConfig_t failsafeConfig;
+
+    gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
+    gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
+
+    typedef struct someProfileSpecificData_s {
+        uint8_t uint8;
+        uint16_t uint16;
+        uint32_t uint32;
+    } PG_PACKED someProfileSpecificData_t;
+
+    someProfileSpecificData_t someProfileSpecificDataStorage[MAX_PROFILE_COUNT];
+    someProfileSpecificData_t *someProfileSpecificData;
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+
 const pgRegistry_t __pg_registry[] =
 {
     {
-        .base = &masterConfig,
+        .base = (uint8_t *)&masterConfig,
+        .ptr = 0,
         .size = sizeof(masterConfig),
         .pgn = 0,
-        .format = 0
+        .format = 0,
+        .flags = PGC_SYSTEM
+    },
+    {
+        .base = (uint8_t *)&someProfileSpecificDataStorage,
+        .ptr = (uint8_t **)&someProfileSpecificData,
+        .size = sizeof(someProfileSpecificDataStorage[0]),
+        .pgn = 1,
+        .format = 0,
+        .flags = PGC_PROFILE
     },
     {
         .base = nullptr,
+        .ptr = 0,
         .size = 0,
         .pgn = 0,
-        .format = 0
+        .format = 0,
+        .flags = 0
     },
 };
 
@@ -99,9 +124,47 @@ TEST(configTest, modify)
 
     EXPECT_EQ(123, masterConfig.looptime);
 
+    // overwrite the values with something else before loading
     masterConfig.looptime = 456;
+
     readEEPROM();
     EXPECT_EQ(123, masterConfig.looptime);
+}
+
+TEST(configTest, modifyProfile)
+{
+    resetEEPROM();
+
+    // default profile is 0
+
+    someProfileSpecificData->uint32 = 1;
+    someProfileSpecificData->uint16 = 2;
+    someProfileSpecificData->uint8  = 3;
+    changeProfile(1); // changing saves the EEPROM
+
+    someProfileSpecificData->uint32 = 4;
+    someProfileSpecificData->uint16 = 5;
+    someProfileSpecificData->uint8  = 6;
+    changeProfile(2); // changing saves the EEPROM
+
+    someProfileSpecificData->uint32 = 7;
+    someProfileSpecificData->uint16 = 8;
+    someProfileSpecificData->uint8  = 9;
+    changeProfile(0);  // changing saves the EEPROM
+
+    EXPECT_EQ(1, someProfileSpecificData->uint32);
+    EXPECT_EQ(2, someProfileSpecificData->uint16);
+    EXPECT_EQ(3, someProfileSpecificData->uint8);
+
+    changeProfile(1); // changing saves the EEPROM
+    EXPECT_EQ(4, someProfileSpecificData->uint32);
+    EXPECT_EQ(5, someProfileSpecificData->uint16);
+    EXPECT_EQ(6, someProfileSpecificData->uint8);
+
+    changeProfile(2); // changing saves the EEPROM
+    EXPECT_EQ(7, someProfileSpecificData->uint32);
+    EXPECT_EQ(8, someProfileSpecificData->uint16);
+    EXPECT_EQ(9, someProfileSpecificData->uint8);
 }
 
 // STUBS
@@ -125,7 +188,7 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, gimbalConfig_t *, flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
 void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif

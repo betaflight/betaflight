@@ -99,9 +99,11 @@ controlRateConfig_t *currentControlRateProfile;
 static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
 
 static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
-    .base = &masterConfig,
+    .base = (uint8_t *)&masterConfig,
     .size = sizeof(masterConfig),
     .pgn = 0,
+    .flags = PGC_SYSTEM
+
 };
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -288,6 +290,7 @@ uint8_t getCurrentProfile(void)
 static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
+    activateProfile(profileIndex);
 }
 
 uint8_t getCurrentControlRateProfile(void)
@@ -315,7 +318,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 {
     int i;
 
-    pgResetAll();
+    pgResetAll(MAX_PROFILE_COUNT);
 
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
@@ -449,7 +452,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     }
 
     // gimbal
-    currentProfile->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+    gimbalConfig->mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS
@@ -635,7 +638,6 @@ void activateConfig(void)
     mixerUseConfigs(
 #ifdef USE_SERVOS
         currentProfile->servoConf,
-        &currentProfile->gimbalConfig,
 #endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
@@ -835,7 +837,6 @@ void changeProfile(uint8_t profileIndex)
     masterConfig.current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
-    beeperConfirmationBeeps(profileIndex + 1);
 }
 
 void changeControlRateProfile(uint8_t profileIndex)

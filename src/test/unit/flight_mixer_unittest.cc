@@ -51,6 +51,9 @@ extern "C" {
 
     void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
     void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
+
+    gimbalConfig_t testGimbalConfig;
+    gimbalConfig_t *gimbalConfig = &testGimbalConfig;
 }
 
 #include "unittest_macros.h"
@@ -221,7 +224,6 @@ protected:
     virtual void configureMixer(void) {
         mixerUseConfigs(
             servoConf,
-            &gimbalConfig,
             NULL,
             &escAndServoConfig,
             &mixerConfig,

@@ -27,6 +27,7 @@
 
 #include "drivers/system.h"
 
+#include "config/config.h"
 #include "config/parameter_group.h"
 #include "config/config_streamer.h"
 
@@ -73,12 +74,21 @@ static const uint8_t EEPROM_CONF_VERSION = 111;
 #endif
 
 #if FLASH_SIZE <= 64
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x0800 // 2kb
 #else
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
+#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000 // 4KB
 #endif
 
 extern uint8_t __config_start; // configured via linker script when building binaries.
+
+typedef enum {
+    CR_CLASSICATION_SYSTEM   = 0,
+    CR_CLASSICATION_PROFILE1 = 1,
+    CR_CLASSICATION_PROFILE2 = 2,
+    CR_CLASSICATION_PROFILE3 = 3
+} configRecordFlags_e;
+
+#define CR_CLASSIFICATION_MASK (0x3)
 
 // Header for the saved copy.
 typedef struct {
@@ -92,6 +102,10 @@ typedef struct {
     uint16_t size;
     uint8_t pgn;
     uint8_t format;
+
+    // lower 2 bits used to indicate system or profile number, see CR_CLASSIFICATION_MASK
+    uint8_t flags;
+
     uint8_t pg[];
 } PG_PACKED configRecord_t;
 
@@ -107,8 +121,6 @@ typedef struct {
     uint32_t word;
 } PG_PACKED packingTest_t;
 
-
-
 void initEEPROM(void)
 {
     // Verify that this architecture packs as expected.
@@ -118,7 +130,12 @@ void initEEPROM(void)
 
     BUILD_BUG_ON(sizeof(configHeader_t) != 1);
     BUILD_BUG_ON(sizeof(configFooter_t) != 3);
-    BUILD_BUG_ON(sizeof(configRecord_t) != 4);
+    BUILD_BUG_ON(sizeof(configRecord_t) != 5);
+
+    // To save memory, the array is terminated by a single zero
+    // instead of a full pgRegistry_t.  This means that 'base' must be
+    // the first entry in the struct.
+    BUILD_BUG_ON(offsetof(pgRegistry_t, base) != 0);
 }
 
 static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
@@ -132,34 +149,38 @@ static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
     return chk;
 }
 
-// Find a parameter group by PGN.  Returns NULL on not found.
-static const pgRegistry_t *findPGN(const configRecord_t *record)
+uint8_t pgMatcherForConfigRecord(const pgRegistry_t *candidate, const void *criteria)
 {
-    // To save memory, the array is terminated by a single zero
-    // instead of a full pgRegistry_t.  This means that 'base' must be
-    // the first entry in the struct.
-    BUILD_BUG_ON(offsetof(pgRegistry_t, base) != 0);
+    const configRecord_t *record = (const configRecord_t *)criteria;
 
-    PG_FOREACH(reg) {
-        if (reg->pgn == record->pgn && reg->format == record->format) {
-            return reg;
-        }
-    }
-    return NULL;
+    return (candidate->pgn == record->pgn && candidate->format == record->format);
 }
 
 // Load a PG into RAM, upgrading and downgrading as needed.
 static bool loadPG(const configRecord_t *record)
 {
-    const pgRegistry_t *reg = findPGN(record);
+    const pgRegistry_t *reg = pgMatcher(pgMatcherForConfigRecord, record);
 
     if (reg == NULL) {
         return false;
     }
 
     // Clear the in-memory copy.  Sets any ungraded fields to zero.
-    memset(reg->base, 0, reg->size);
-    memcpy(reg->base, record->pg, MIN(reg->size, record->size - sizeof(*record)));
+
+    if ((record->flags & CR_CLASSIFICATION_MASK) == CR_CLASSICATION_SYSTEM) {
+        memset(reg->base, 0, reg->size);
+        memcpy(reg->base, record->pg, MIN(reg->size, record->size - sizeof(*record)));
+        return true;
+    }
+
+    uint8_t profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
+
+    uint8_t *ptr = reg->base + (profileIndex * reg->size);
+
+    memset(ptr, 0, reg->size);
+    memcpy(ptr, record->pg, MIN(reg->size, record->size - sizeof(*record)));
+
+
     return true;
 }
 
@@ -203,49 +224,97 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
     return chk == 0xFF;
 }
 
+
+void activateProfile(uint8_t profileIndexToActivate)
+{
+    PG_FOREACH(reg) {
+        if ((reg->flags & PGRF_CLASSIFICATON_BIT) != PGC_PROFILE) {
+            continue;
+        }
+
+        uint8_t *ptr = reg->base + (profileIndexToActivate * reg->size);
+        *(reg->ptr) = ptr;
+    }
+}
+
 bool isEEPROMContentValid(void)
 {
     return scanEEPROM(false);
 }
 
-void writeConfigToEEPROM(void)
+static bool writeSettingsToEEPROM(void)
 {
     config_streamer_t streamer;
     config_streamer_init(&streamer);
 
-    // write it
-    for (int attempt = 0; attempt < 3; attempt++) {
-        config_streamer_start(&streamer, (uintptr_t)&__config_start);
+    config_streamer_start(&streamer, (uintptr_t)&__config_start);
 
-        configHeader_t header = {
-            .format = EEPROM_CONF_VERSION,
+    configHeader_t header = {
+        .format = EEPROM_CONF_VERSION,
+    };
+
+    config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
+
+    PG_FOREACH(reg) {
+        configRecord_t record = {
+            .size = sizeof(configRecord_t) + reg->size,
+            .pgn = reg->pgn,
+            .format = reg->format,
+            .flags = 0
         };
 
-        config_streamer_write(&streamer, &header, sizeof(header));
+        if ((reg->flags & PGRF_CLASSIFICATON_BIT) == PGC_SYSTEM) {
 
-        PG_FOREACH(reg) {
-            configRecord_t record = {
-                .size = sizeof(configRecord_t) + reg->size,
-                .pgn = reg->pgn,
-                .format = reg->format,
-            };
-
-            config_streamer_write(&streamer, &record, sizeof(record));
+            // write the only instance
+	        record.flags |= CR_CLASSICATION_SYSTEM;
+            config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
             config_streamer_write(&streamer, reg->base, reg->size);
+        } else {
+
+            // write one instance for each profile
+            for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
+                record.flags = 0;
+
+                record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
+                config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
+
+                const uint8_t *base = reg->base + (reg->size * profileIndex);
+                config_streamer_write(&streamer, base, reg->size);
+            }
+        }
+    }
+
+    configFooter_t footer = {
+        .terminator = 0,
+        .chk = ~config_streamer_chk(&streamer),
+    };
+
+    config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
+
+    config_streamer_flush(&streamer);
+
+    bool success = config_streamer_finish(&streamer) == 0;
+
+    return success;
+}
+
+void writeConfigToEEPROM(void)
+{
+    bool success = false;
+    // write it
+    for (int attempt = 0; attempt < 3 && !success; attempt++) {
+
+        if (!writeSettingsToEEPROM()) {
+            continue;
         }
 
-        configFooter_t footer = {
-            .terminator = 0,
-            .chk = ~config_streamer_chk(&streamer),
-        };
+        success = true;
+    }
 
-        if (config_streamer_write(&streamer, &footer, sizeof(footer)) == 0) {
-            break;
-        }
+    if (success && isEEPROMContentValid()) {
+        return;
     }
 
     // Flash write failed - just die now
-    if (config_streamer_finish(&streamer) != 0 || !isEEPROMContentValid()) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }

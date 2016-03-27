@@ -98,22 +98,28 @@ extern "C" {
     const pgRegistry_t __pg_registry[] =
     {
         {
-            .base = &boardAlignment,
+            .base = (uint8_t *)&boardAlignment,
+            .ptr = 0,
             .size = sizeof(boardAlignment),
             .pgn = PG_BOARD_ALIGNMENT,
-            .format = 0
+            .format = 0,
+            .flags = PGC_SYSTEM,
         },
         {
-            .base = &failsafeConfig,
+            .base = (uint8_t *)&failsafeConfig,
+            .ptr = 0,
             .size = sizeof(failsafeConfig),
             .pgn = PG_FAILSAFE_CONFIG,
-            .format = 0
+            .format = 0,
+            .flags = PGC_SYSTEM,
         },
         {
             .base = nullptr,
+            .ptr = 0,
             .size = 0,
             .pgn = 0,
-            .format = 0
+            .format = 0,
+            .flags = PGC_SYSTEM
         },
     };
 }
@@ -637,10 +643,14 @@ void handleOneshotFeatureChangeOnRestart(void) {}
 void readEEPROM(void) {}
 void resetEEPROM(void) {}
 void writeEEPROM(void) {}
+void changeProfile(uint8_t) {};
+void setProfile(uint8_t) {};
 bool feature(uint32_t mask) {UNUSED(mask);return false;}
 void featureSet(uint32_t mask) {UNUSED(mask);}
 void featureClearAll() {}
 uint32_t featureMask(void) {return 0;}
+// from config_eeprom.c
+void activateProfile(uint8_t) {};
 // from debug.c
 int16_t debug[DEBUG16_VALUE_COUNT];
 // from gps.c

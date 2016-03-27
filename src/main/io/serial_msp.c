@@ -1256,12 +1256,11 @@ static bool processInCommand(void)
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 2) {
-                masterConfig.current_profile_index = 0;
+            i = masterConfig.current_profile_index = read8();
+            if (i > 2) {
+                i = 0;
             }
-            writeEEPROM();
-            readEEPROM();
+            changeProfile(i);
         }
         break;
     case MSP_SET_HEAD:

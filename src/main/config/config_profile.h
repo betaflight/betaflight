@@ -52,8 +52,6 @@ typedef struct profile_s {
 #ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-    // gimbal-related configuration
-    gimbalConfig_t gimbalConfig;
 #endif
 
 #ifdef GPS

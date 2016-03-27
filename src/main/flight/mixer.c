@@ -78,7 +78,6 @@ static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
@@ -333,7 +332,6 @@ static motorMixer_t *customMixers;
 void mixerUseConfigs(
 #ifdef USE_SERVOS
         servoParam_t *servoConfToUse,
-        gimbalConfig_t *gimbalConfigToUse,
 #endif
         flight3DConfig_t *flight3DConfigToUse,
         escAndServoConfig_t *escAndServoConfigToUse,
@@ -343,7 +341,6 @@ void mixerUseConfigs(
 {
 #ifdef USE_SERVOS
     servoConf = servoConfToUse;
-    gimbalConfig = gimbalConfigToUse;
 #endif
     flight3DConfig = flight3DConfigToUse;
     escAndServoConfig = escAndServoConfigToUse;

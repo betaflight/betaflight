@@ -35,6 +35,7 @@
 #include "common/typeconversion.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 
@@ -447,6 +448,7 @@ typedef enum {
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     CONTROL_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    MIGRATED_PROFILE_VALUE = (3 << VALUE_SECTION_OFFSET), // FIXME delete this temporary define after we migrate to new configuration system
 
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
@@ -477,6 +479,9 @@ typedef struct {
     const uint8_t type; // see cliValueFlag_e
     void *ptr;
     const cliValueConfig_t config;
+
+    pgn_t pgn;
+    uint8_t offset;
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
@@ -625,7 +630,7 @@ const clivalue_t valueTable[] = {
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
 #ifdef USE_SERVOS
-    { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
+    { "gimbal_mode",                VAR_UINT8  | MIGRATED_PROFILE_VALUE | MODE_LOOKUP, 0, .config.lookup = { TABLE_GIMBAL_MODE }, PG_GIMBAL_CONFIG, offsetof(gimbalConfig_t, mode)},
 #endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX } },
@@ -1829,6 +1834,7 @@ static void cliDump(char *cmdline)
         printSectionBreak();
 
         dumpValues(PROFILE_VALUE);
+        dumpValues(MIGRATED_PROFILE_VALUE);
     }
 
     if (dumpMask & DUMP_CONTROL_RATE_PROFILE) {
@@ -2209,17 +2215,24 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
     int32_t value = 0;
     char buf[8];
 
-    void *ptr = var->ptr;
+    uint8_t *ptr = var->ptr;
     if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+        ptr = ptr + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
     if ((var->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+        ptr = ptr + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
+
+    if ((var->type & VALUE_SECTION_MASK) == MIGRATED_PROFILE_VALUE) {
+        const pgRegistry_t* rec = pgFind(var->pgn);
+
+        ptr = *rec->ptr + (rec->size * masterConfig.current_profile_index) + var->offset;
+    }
+
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
-            value = *(uint8_t *)ptr;
+            value = *ptr;
             break;
 
         case VAR_INT8:
@@ -2270,6 +2283,11 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
         ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
 
+    if ((var->type & VALUE_SECTION_MASK) == MIGRATED_PROFILE_VALUE) {
+        const pgRegistry_t* rec = pgFind(var->pgn);
+
+        ptr = *rec->ptr + (rec->size * masterConfig.current_profile_index) + var->offset;
+    }
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
         case VAR_INT8:

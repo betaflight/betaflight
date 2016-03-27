@@ -82,7 +82,7 @@ int write_word(config_streamer_t *c, uint32_t value)
     return 0;
 }
 
-int config_streamer_write(config_streamer_t *c, const void *p, uint32_t size)
+int config_streamer_write(config_streamer_t *c, const uint8_t *p, uint32_t size)
 {
     const uint8_t *pat = p;
     const uint8_t *pend = pat + size;

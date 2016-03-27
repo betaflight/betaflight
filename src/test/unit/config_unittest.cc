@@ -75,6 +75,9 @@ extern "C" {
 
     failsafeConfig_t failsafeConfig;
     boardAlignment_t boardAlignment;
+
+    gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
+    gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
 }
 
 /*
@@ -175,7 +178,7 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, gimbalConfig_t *, flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
 void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
@@ -189,11 +192,11 @@ void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
 void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *, escAndServoConfig_t *) {}
 void failureMode(uint8_t) {}
-void pgResetAll(void) {}
+void pgResetAll(uint8_t) {}
 bool scanEEPROM(bool) { return true; }
 void writeConfigToEEPROM(void) {}
 bool isEEPROMContentValid(void) { return true; }
-
+void activateProfile(uint8_t) {};
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP

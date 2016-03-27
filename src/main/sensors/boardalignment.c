@@ -34,10 +34,11 @@ boardAlignment_t boardAlignment;
 
 static const pgRegistry_t boardAlignmentRegistry PG_REGISTRY_SECTION =
 {
-    .base = &boardAlignment,
+    .base = (uint8_t *)&boardAlignment,
     .size = sizeof(boardAlignment),
     .pgn = PG_BOARD_ALIGNMENT,
-    .format = 1
+    .format = 0,
+    .flags = PGC_SYSTEM
 };
 
 static bool standardBoardAlignment = true;     // board orientation correction

@@ -19,9 +19,23 @@
 
 typedef uint16_t pgn_t;
 
+// parameter group registry flags
+typedef enum {
+    PGRF_NONE = 0,
+    PGRF_CLASSIFICATON_BIT = (1 << 0),
+} pgRegistryFlags_e;
+
+// parameter group classification
+typedef enum {
+    PGC_SYSTEM = 0,
+    PGC_PROFILE = 1,
+} pgClassification_e;
+
 typedef struct pgRegistry_s {
     // Base of the group in RAM.
-    void *base;
+    uint8_t *base;
+    // The pointer to update after loading the record into ram.
+    uint8_t **ptr;
     // Size of the group in RAM.
     uint16_t size;
     // The parameter group number.
@@ -29,6 +43,8 @@ typedef struct pgRegistry_s {
     // The in-memory format number.  Bump when making incompatible
     // changes to the PG.
     uint8_t format;
+    // see pgRegistryFlags_e
+    uint8_t flags;
 } pgRegistry_t;
 
 #define PG_REGISTRY_SECTION __attribute__((section(".pg_registry"), used))
@@ -45,7 +61,7 @@ extern const pgRegistry_t __pg_registry[];
 typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
 
 const pgRegistry_t* pgFind(pgn_t pgn);
-const pgRegistry_t* pgMatcher(pgMatcherFuncPtr func, const void *criteria);
+const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size);
-void pgResetAll(void);
+void pgResetAll(uint8_t profileCount);
 

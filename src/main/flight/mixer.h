@@ -208,7 +208,6 @@ struct rxConfig_s;
 void mixerUseConfigs(
 #ifdef USE_SERVOS
         servoParam_t *servoConfToUse,
-        struct gimbalConfig_s *gimbalConfigToUse,
 #endif
         flight3DConfig_t *flight3DConfigToUse,
         struct escAndServoConfig_s *escAndServoConfigToUse,

@@ -245,6 +245,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         i = 3;
     if (i) {
         changeProfile(i - 1);
+        beeperConfirmationBeeps(i);
         return;
     }
 
