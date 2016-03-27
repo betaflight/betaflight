@@ -71,6 +71,7 @@
 #define INVERTER
 #define BEEPER
 //#define DISPLAY
+//#define DISPLAY_ARMED_BITMAP
 
 #define USE_VCP
 #define USE_USART1

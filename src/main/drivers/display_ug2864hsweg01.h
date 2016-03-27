@@ -40,6 +40,7 @@ void i2c_OLED_set_xy(uint8_t col, uint8_t row);
 void i2c_OLED_set_line(uint8_t row);
 void i2c_OLED_send_char(unsigned char ascii);
 void i2c_OLED_send_string(const char *string);
+bool i2c_OLED_send_byte(uint8_t val);
 void i2c_OLED_clear_display(void);
 void i2c_OLED_clear_display_quick(void);
 

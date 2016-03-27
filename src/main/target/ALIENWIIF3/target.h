@@ -120,6 +120,7 @@
 
 #define GTUNE
 //#define DISPLAY
+//#define DISPLAY_ARMED_BITMAP
 #define USE_SERVOS
 #define USE_CLI
 
