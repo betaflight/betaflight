@@ -106,7 +106,7 @@ static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
     .flags = PGC_SYSTEM
 };
 
-profile_t profileStorage[MAX_PROFILE_COUNT];
+STATIC_UNIT_TESTED profile_t profileStorage[MAX_PROFILE_COUNT];
 profile_t *currentProfile;
 
 static const pgRegistry_t profileRegistry PG_REGISTRY_SECTION =

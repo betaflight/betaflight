@@ -26,6 +26,7 @@ extern "C" {
     #include "common/color.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "flight/pid.h"
 
@@ -65,6 +66,8 @@ extern "C" {
 
     failsafeConfig_t failsafeConfig;
 
+    extern profile_t profileStorage[MAX_PROFILE_COUNT];
+
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
 
@@ -88,9 +91,17 @@ const pgRegistry_t __pg_registry[] =
         .base = (uint8_t *)&masterConfig,
         .ptr = 0,
         .size = sizeof(masterConfig),
-        .pgn = 0,
+        .pgn = PG_MASTER,
         .format = 0,
         .flags = PGC_SYSTEM
+    },
+    {
+        .base = (uint8_t *)&profileStorage,
+        .ptr = (uint8_t **)&currentProfile,
+        .size = sizeof(profileStorage[0]),
+        .pgn = PG_PROFILE,
+        .format = 0,
+        .flags = PGC_PROFILE
     },
     {
         .base = (uint8_t *)&someProfileSpecificDataStorage,

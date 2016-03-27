@@ -73,19 +73,31 @@ extern "C" {
     void resetConf(void);
     extern master_t masterConfig;
 
+    profile_t testProfile;
+    profile_t *currentProfile = &testProfile;
     failsafeConfig_t failsafeConfig;
     boardAlignment_t boardAlignment;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
+
+    void pgResetAll(uint8_t) {
+        memset(&masterConfig, 0x00, sizeof(master_t));
+        memset(&boardAlignment, 0x00, sizeof(boardAlignment_t));
+    }
+
 }
 
 /*
  * Test that the config items whose default values are zero are indeed set to zero by resetConf().
+ *
  */
 TEST(ConfigUnittest, TestResetConfigZeroValues)
 {
+    //FIXME this needs updating since pgResetAll() is now what does the memset(), not resetConf()
+
     memset(&masterConfig, 0xa5, sizeof(master_t));
+    memset(&boardAlignment, 0xa5, sizeof(boardAlignment_t));
     resetConf();
 
     EXPECT_EQ(0, masterConfig.current_profile_index); // default profile
@@ -192,7 +204,6 @@ void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
 void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *, escAndServoConfig_t *) {}
 void failureMode(uint8_t) {}
-void pgResetAll(uint8_t) {}
 bool scanEEPROM(bool) { return true; }
 void writeConfigToEEPROM(void) {}
 bool isEEPROMContentValid(void) { return true; }
