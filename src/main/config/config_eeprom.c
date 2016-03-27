@@ -100,7 +100,7 @@ typedef struct {
     // TODO(michaelh): shrink to uint8_t once masterConfig has been
     // split up.
     uint16_t size;
-    uint8_t pgn;
+    pgn_t pgn;
     uint8_t format;
 
     // lower 2 bits used to indicate system or profile number, see CR_CLASSIFICATION_MASK
@@ -130,7 +130,7 @@ void initEEPROM(void)
 
     BUILD_BUG_ON(sizeof(configHeader_t) != 1);
     BUILD_BUG_ON(sizeof(configFooter_t) != 3);
-    BUILD_BUG_ON(sizeof(configRecord_t) != 5);
+    BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 
     // To save memory, the array is terminated by a single zero
     // instead of a full pgRegistry_t.  This means that 'base' must be

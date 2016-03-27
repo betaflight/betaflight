@@ -93,7 +93,6 @@ typedef struct master_t {
     uint8_t transponderData[6];
 #endif
 
-    profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 

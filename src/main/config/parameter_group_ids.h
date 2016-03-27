@@ -18,3 +18,7 @@
 #define PG_FAILSAFE_CONFIG 1
 #define PG_BOARD_ALIGNMENT 2
 #define PG_GIMBAL_CONFIG 3
+
+// FIXME remove/adjust after migration
+#define PG_PROFILE 254
+#define PG_MASTER 255

@@ -30,6 +30,7 @@
 #include "common/filter.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -89,8 +90,7 @@
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
-master_t masterConfig;                 // master config struct with data independent from profiles
-profile_t *currentProfile;
+
 static uint32_t activeFeaturesLatch = 0;
 
 static uint8_t currentControlRateProfileIndex = 0;
@@ -98,13 +98,27 @@ controlRateConfig_t *currentControlRateProfile;
 
 static const void *pg_registry_tail PG_REGISTRY_TAIL_SECTION;
 
+master_t masterConfig;                 // master config struct with data independent from profiles
 static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
     .base = (uint8_t *)&masterConfig,
     .size = sizeof(masterConfig),
-    .pgn = 0,
+    .pgn = PG_MASTER,
     .flags = PGC_SYSTEM
-
 };
+
+profile_t profileStorage[MAX_PROFILE_COUNT];
+profile_t *currentProfile;
+
+static const pgRegistry_t profileRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&profileStorage,
+    .ptr = (uint8_t **)&currentProfile,
+    .size = sizeof(profileStorage[0]),
+    .pgn = PG_PROFILE,
+    .format = 0,
+    .flags = PGC_PROFILE
+};
+
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -289,7 +303,6 @@ uint8_t getCurrentProfile(void)
 
 static void setProfile(uint8_t profileIndex)
 {
-    currentProfile = &masterConfig.profile[profileIndex];
     activateProfile(profileIndex);
 }
 
@@ -320,7 +333,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     pgResetAll(MAX_PROFILE_COUNT);
 
-    memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
     setControlRateProfile(0);
 
@@ -583,9 +595,11 @@ STATIC_UNIT_TESTED void resetConf(void)
     masterConfig.customMotorMixer[7].yaw = -1.0f;
 #endif
 
+    // FIXME implement differently
+
     // copy first profile into remaining profile
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
+        memcpy(&profileStorage[i], &profileStorage[0], sizeof(profile_t));
     }
 
     // copy first control rate config into remaining profile
@@ -594,7 +608,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     }
 
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        masterConfig.profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
+        profileStorage[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
     }
 }
 
