@@ -19,6 +19,8 @@
 
 #ifdef GPS
 
+#define GPS_HDOP_TO_EPH_MULTIPLIER      2   // empirical value
+
 typedef enum {
     GPS_UNKNOWN,                // 0
     GPS_INITIALIZING,           // 1
@@ -53,7 +55,9 @@ extern baudRate_e gpsToSerialBaudRate[GPS_BAUDRATE_COUNT];
 
 extern void gpsSetState(gpsState_e state);
 extern void gpsFinalizeChangeBaud(void);
+
 extern uint16_t gpsConstrainEPE(uint32_t epe);
+extern uint16_t gpsConstrainHDOP(uint32_t hdop);
 
 extern bool gpsHandleNMEA(void);
 extern bool gpsHandleUBLOX(void);

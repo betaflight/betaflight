@@ -97,7 +97,7 @@ typedef enum {
     NO_FIX = 0,
     FIX_2D = 2,
     FIX_3D = 3,
-    FIX_DGPS = 4 
+    FIX_DGPS = 4
 } fixType_t;
 
 // Receive buffer
@@ -170,7 +170,12 @@ static bool NAZA_parse_gps(void)
         //uint8_t r5 = _buffernaza.nav.reserved5 ^ mask;
         //uint8_t r6 = _buffernaza.nav.reserved6 ^ mask;
 
-        gpsSol.flags.fix3D = (fixType == FIX_3D) ? 1 : 0;
+        if (fixType == FIX_2D)
+            gpsSol.fixType = GPS_FIX_2D;
+        else if (fixType == FIX_3D)
+            gpsSol.fixType = GPS_FIX_3D;
+        else
+            gpsSol.fixType = GPS_NO_FIX;
 
         uint32_t h_acc = decodeLong(_buffernaza.nav.h_acc, mask); // mm
         uint32_t v_acc = decodeLong(_buffernaza.nav.v_acc, mask); // mm
@@ -181,13 +186,14 @@ static bool NAZA_parse_gps(void)
         gpsSol.velNED[2] = decodeLong(_buffernaza.nav.ned_down, mask);   // cm/s
 
 
-        //uint16_t pdop = decodeShort(_buffernaza.nav.pdop, mask); // pdop
+        uint16_t pdop = decodeShort(_buffernaza.nav.pdop, mask); // pdop
         //uint16_t vdop = decodeShort(_buffernaza.nav.vdop, mask); // vdop
         //uint16_t ndop = decodeShort(_buffernaza.nav.ndop, mask);
         //uint16_t edop = decodeShort(_buffernaza.nav.edop, mask);
         //gpsSol.hdop = sqrtf(powf(ndop,2)+powf(edop,2));
         //gpsSol.vdop = decodeShort(_buffernaza.nav.vdop, mask); // vdop
 
+        gpsSol.hdop = gpsConstrainEPE(pdop);        // PDOP
         gpsSol.eph = gpsConstrainEPE(h_acc / 10);   // hAcc in cm
         gpsSol.epv = gpsConstrainEPE(v_acc / 10);   // vAcc in cm
         gpsSol.numSat = _buffernaza.nav.satellites;
@@ -349,7 +355,7 @@ bool gpsHandleNAZA(void)
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        // No autoconfig, switch straight to receiving data 
+        // No autoconfig, switch straight to receiving data
         gpsSetState(GPS_RECEIVING_DATA);
         return false;
 

@@ -322,11 +322,12 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
+#define MSP_GPSSTATISTICS        166    //out message         get GPS debugging data
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough 
+#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough
 
 #define INBUF_SIZE 64
 
@@ -764,7 +765,7 @@ static uint32_t packFlightModeFlags(void)
         if (flag)
             junk |= 1 << i;
     }
-    
+
     return junk;
 }
 
@@ -971,7 +972,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ARMING_CONFIG:
         headSerialReply(2);
-        serialize8(masterConfig.auto_disarm_delay); 
+        serialize8(masterConfig.auto_disarm_delay);
         serialize8(masterConfig.disarm_kill_switch);
         break;
     case MSP_LOOP_TIME:
@@ -1108,7 +1109,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #ifdef GPS
     case MSP_RAW_GPS:
-        headSerialReply(16);
+        headSerialReply(18);
         serialize8(STATE(GPS_FIX));
         serialize8(gpsSol.numSat);
         serialize32(gpsSol.llh.lat);
@@ -1116,6 +1117,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(gpsSol.llh.alt/100); // meters
         serialize16(gpsSol.groundSpeed);
         serialize16(gpsSol.groundCourse);
+        serialize16(gpsSol.hdop);
         break;
     case MSP_COMP_GPS:
         headSerialReply(5);
@@ -1150,14 +1152,25 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
     case MSP_GPSSVINFO:
-        headSerialReply(1 + (gpsSol.numCh * 4));
-        serialize8(gpsSol.numCh);
-           for (i = 0; i < gpsSol.numCh; i++){
-               serialize8(gpsSol.svInfo[i].chn);
-               serialize8(gpsSol.svInfo[i].svid);
-               serialize8(gpsSol.svInfo[i].quality);
-               serialize8(gpsSol.svInfo[i].cno);
-           }
+        /* Compatibility stub - return zero SVs */
+        headSerialReply(1 + (1 * 4));
+        serialize8(1);
+
+        // HDOP
+        serialize8(0);
+        serialize8(0);
+        serialize8(gpsSol.hdop / 100);
+        serialize8(gpsSol.hdop / 100);
+        break;
+    case MSP_GPSSTATISTICS:
+        headSerialReply(32);
+        serialize16(gpsStats.lastMessageDt);
+        serialize32(gpsStats.errors);
+        serialize32(gpsStats.timeouts);
+        serialize32(gpsStats.packetCount);
+        serialize16(gpsSol.hdop);
+        serialize16(gpsSol.eph);
+        serialize16(gpsSol.epv);
         break;
 #endif
     case MSP_DEBUG:
@@ -1562,7 +1575,7 @@ static bool processInCommand(void)
         }
 #endif
         break;
-        
+
     case MSP_SET_SERVO_MIX_RULE:
 #ifdef USE_SERVOS
         i = read8();
@@ -1596,14 +1609,14 @@ static bool processInCommand(void)
 
     case MSP_SET_RESET_CURR_PID:
         resetPidProfile(&currentProfile->pidProfile);
-        break;    
+        break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
         masterConfig.sensorAlignmentConfig.gyro_align = read8();
         masterConfig.sensorAlignmentConfig.acc_align = read8();
         masterConfig.sensorAlignmentConfig.mag_align = read8();
         break;
-        
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
@@ -1870,7 +1883,7 @@ static bool processInCommand(void)
                 waitForSerialPortToFinishTransmitting(currentPort->port);
                 // Start to activate here
                 // motor 1 => index 0
-                
+
                 // search currentPort portIndex
                 /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
                 uint8_t portIndex;	
@@ -1889,7 +1902,7 @@ static bool processInCommand(void)
                 mspAllocateSerialPorts(&masterConfig.serialConfig);
                 /* restore currentPort and mspSerialPort
                 setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-                */ 
+                */
                 // former used MSP uart is active again
                 // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
                 currentPort->cmdMSP = MSP_SET_1WIRE;

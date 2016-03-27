@@ -249,12 +249,14 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 // GPS position/vel frame
 static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"time",              -1, UNSIGNED, PREDICT(LAST_MAIN_FRAME_TIME), ENCODING(UNSIGNED_VB), CONDITION(NOT_LOGGING_EVERY_FRAME)},
+    {"GPS_fixType",       -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_numSat",        -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_coord",          0, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_coord",          1, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_altitude",      -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_speed",         -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_hdop",          -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_eph",           -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
     {"GPS_epv",           -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
 };
@@ -970,12 +972,14 @@ static void writeGPSFrame()
         blackboxWriteUnsignedVB(currentTime - blackboxHistory[1]->time);
     }
 
+    blackboxWriteUnsignedVB(gpsSol.fixType);
     blackboxWriteUnsignedVB(gpsSol.numSat);
     blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[0]);
     blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[1]);
     blackboxWriteUnsignedVB(gpsSol.llh.alt / 100); // meters
     blackboxWriteUnsignedVB(gpsSol.groundSpeed);
     blackboxWriteUnsignedVB(gpsSol.groundCourse);
+    blackboxWriteUnsignedVB(gpsSol.hdop);
     blackboxWriteUnsignedVB(gpsSol.eph);
     blackboxWriteUnsignedVB(gpsSol.epv);
 

@@ -98,7 +98,11 @@ static const char* const pageTitles[] = {
 #endif
 };
 
-#define PAGE_COUNT (PAGE_RX + 1)
+static const char* const gpsFixTypeText[] = {
+    "NO",
+    "2D",
+    "3D"
+};
 
 const pageId_e cyclePageIds[] = {
     PAGE_PROFILE,
@@ -338,8 +342,6 @@ void showProfilePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 }
-#define SATELLITE_COUNT (sizeof(gpsSol.svInfo) / sizeof(gpsSol.svInfo[0]))
-#define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef GPS
 void showGpsPage() {
@@ -355,19 +357,13 @@ void showGpsPage() {
 
     i2c_OLED_set_xy(0, rowIndex);
     i2c_OLED_send_char(tickerCharacters[gpsTicker]);
+        
+    tfp_sprintf(lineBuffer, "Sats: %d Fix: %s", gpsSol.numSat, gpsFixTypeText[gpsSol.fixType]);
+    padLineBuffer();
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
 
-    i2c_OLED_set_xy(MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
-
-    uint32_t index;
-    for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
-        uint8_t bargraphOffset = ((uint16_t) gpsSol.svInfo[index].cno * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
-        bargraphOffset = MIN(bargraphOffset, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
-        i2c_OLED_send_char(VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphOffset);
-    }
-
-
-    char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
-    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", gpsSol.numSat, fixChar);
+    tfp_sprintf(lineBuffer, "HDOP: %d", gpsSol.hdop);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
