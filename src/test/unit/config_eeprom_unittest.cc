@@ -79,6 +79,8 @@ extern "C" {
 
     someProfileSpecificData_t someProfileSpecificDataStorage[MAX_PROFILE_COUNT];
     someProfileSpecificData_t *someProfileSpecificData;
+
+    escAndServoConfig_t escAndServoConfig;
 }
 
 #include "unittest_macros.h"
@@ -186,7 +188,7 @@ void applyDefaultColors(hsvColor_t *, uint8_t) {}
 void beeperConfirmationBeeps(uint8_t) {}
 void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}
-void useRcControlsConfig(modeActivationCondition_t *, escAndServoConfig_t *, pidProfile_t *) {}
+void useRcControlsConfig(modeActivationCondition_t *, pidProfile_t *) {}
 void useGyroConfig(gyroConfig_t *, float) {}
 void useFailsafeConfig(void) {}
 void useBarometerConfig(barometerConfig_t *) {}
@@ -199,7 +201,7 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
 void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
@@ -211,7 +213,7 @@ void generateYawCurve(controlRateConfig_t *) {}
 void generatePitchRollCurve(controlRateConfig_t *) {}
 void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
-void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *, escAndServoConfig_t *) {}
+void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *) {}
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP

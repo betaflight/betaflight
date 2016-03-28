@@ -42,15 +42,15 @@
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gps.h"
-#include "io/rc_controls.h"
-
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/gps_conversion.h"
 #include "flight/imu.h"
+
+#include "io/beeper.h"
+#include "io/serial.h"
+#include "io/gps.h"
+#include "io/rc_controls.h"
 
 #include "rx/rx.h"
 

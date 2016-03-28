@@ -44,7 +44,6 @@ typedef struct master_t {
 #endif
 
     // Motor/ESC/Servo configuration
-    escAndServoConfig_t escAndServoConfig;
     flight3DConfig_t flight3DConfig;
     // FIXME move these into escAndServoConfig_t
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)

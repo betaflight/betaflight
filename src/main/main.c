@@ -375,13 +375,13 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
+    pwm_params.servoCenterPulse = escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
-    pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.idlePulse = escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)

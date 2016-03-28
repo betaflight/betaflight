@@ -130,6 +130,8 @@ int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
 
+escAndServoConfig_t escAndServoConfig;
+
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

@@ -20,6 +20,7 @@
 #define PG_GIMBAL_CONFIG 3
 #define PG_MOTOR_MIXER 4
 #define PG_BLACKBOX_CONFIG 5
+#define PG_ESC_AND_SERVO_CONFIG 6
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254

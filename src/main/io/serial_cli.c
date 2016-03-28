@@ -502,10 +502,10 @@ const clivalue_t valueTable[] = {
     { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_OFF_ON } },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_throttle",               VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, minthrottle)},
+    { "max_throttle",               VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, maxthrottle)},
+    { "min_command",                VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, mincommand)},
+    { "servo_center_pulse",         VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, servoCenterPulse)},
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,

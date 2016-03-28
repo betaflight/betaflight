@@ -30,15 +30,19 @@ extern "C" {
     #include "common/maths.h"
 
     #include "sensors/sensors.h"
+
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "drivers/compass.h"
+
     #include "sensors/gyro.h"
     #include "sensors/compass.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
 
     #include "config/runtime_config.h"
+
+    #include "io/escservo.h"
 
     #include "rx/rx.h"
 
@@ -54,6 +58,9 @@ extern float q0, q1, q2, q3;
 extern "C" { 
 void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
+
+int16_t cycleTime = 2000;
+
 }
 
 void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
@@ -151,8 +158,8 @@ int32_t gyroADC[XYZ_AXIS_COUNT];
 int16_t GPS_speed;
 int16_t GPS_ground_course;
 int16_t GPS_numSat;
-int16_t cycleTime = 2000;
 
+escAndServoConfig_t escAndServoConfig;
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

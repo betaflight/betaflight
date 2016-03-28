@@ -15,20 +15,28 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "flight/pid.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "sensors/barometer.h"
+#include <platform.h>
 
-extern int32_t AltHold;
-extern int32_t vario;
+#include "debug.h"
 
-void calculateEstimatedAltitude(uint32_t currentTime);
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
-void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, rcControlsConfig_t *initialRcControlsConfig);
-void applyAltHold(airplaneConfig_t *airplaneConfig);
-void updateAltHoldState(void);
-void updateSonarAltHoldState(void);
+#include "io/gimbal.h"
 
-int32_t altitudeHoldGetEstimatedAltitude(void);
+#include "escservo.h"
+
+escAndServoConfig_t escAndServoConfig;
+
+static const pgRegistry_t escAndServoConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&escAndServoConfig,
+    .size = sizeof(escAndServoConfig),
+    .pgn = PG_ESC_AND_SERVO_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
+

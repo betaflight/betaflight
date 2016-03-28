@@ -105,7 +105,8 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+// from rc_controls.h
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse);
 
 static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -936,9 +937,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
         serialize16(masterConfig.rxConfig.midrc);
 
-        serialize16(masterConfig.escAndServoConfig.minthrottle);
-        serialize16(masterConfig.escAndServoConfig.maxthrottle);
-        serialize16(masterConfig.escAndServoConfig.mincommand);
+        serialize16(escAndServoConfig.minthrottle);
+        serialize16(escAndServoConfig.maxthrottle);
+        serialize16(escAndServoConfig.mincommand);
 
         serialize16(failsafeConfig.failsafe_throttle);
 
@@ -1335,7 +1336,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(currentProfile->modeActivationConditions, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1388,9 +1389,9 @@ static bool processInCommand(void)
         if (tmp < 1600 && tmp > 1400)
             masterConfig.rxConfig.midrc = tmp;
 
-        masterConfig.escAndServoConfig.minthrottle = read16();
-        masterConfig.escAndServoConfig.maxthrottle = read16();
-        masterConfig.escAndServoConfig.mincommand = read16();
+        escAndServoConfig.minthrottle = read16();
+        escAndServoConfig.maxthrottle = read16();
+        escAndServoConfig.mincommand = read16();
 
         failsafeConfig.failsafe_throttle = read16();
 

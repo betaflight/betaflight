@@ -39,14 +39,13 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "flight/pid.h"
+
+    void useRcControlsConfig(modeActivationCondition_t *, pidProfile_t *);
+
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
-extern "C" {
-extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
-}
 
 class RcControlsModesTest : public ::testing::Test {
 protected:
@@ -226,6 +225,8 @@ rxConfig_t rxConfig;
 extern uint8_t adjustmentStateMask;
 extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
+escAndServoConfig_t escAndServoConfig;
+
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
     controlRateConfig_t controlRateConfig = {
@@ -250,6 +251,8 @@ protected:
     virtual void SetUp() {
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
+
+        memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
 
         memset(&rxConfig, 0, sizeof (rxConfig));
         rxConfig.mincheck = DEFAULT_MIN_CHECK;
@@ -510,9 +513,6 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses inte
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    escAndServoConfig_t escAndServoConfig;
-    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
-
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
     pidProfile.pidController = 0;
@@ -609,7 +609,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses inte
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    useRcControlsConfig(modeActivationConditions, &pidProfile);
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
@@ -633,9 +633,6 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
-
-    escAndServoConfig_t escAndServoConfig;
-    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
 
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
@@ -733,7 +730,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    useRcControlsConfig(modeActivationConditions, &pidProfile);
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then

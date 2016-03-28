@@ -25,3 +25,5 @@ typedef struct escAndServoConfig_s {
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
     uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
 } escAndServoConfig_t;
+
+extern escAndServoConfig_t escAndServoConfig;
