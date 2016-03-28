@@ -62,23 +62,23 @@ static int16_t rcCommandAdjustedThrottle;
 static int16_t altHoldThrottleRCZero = 1500;
 static filterStatePt1_t altholdThrottleFilterState;
 
-#define SURFACE_TRACKING_GAIN       5.0f
+#define SURFACE_TRACKING_GAIN       25.0f
 
 /* Calculate global altitude setpoint based on surface setpoint */
 static void updateSurfaceTrackingAltitudeSetpoint_MC(uint32_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
-    if (posControl.flags.isTerrainFollowEnabled) {
-        if (posControl.desiredState.surface > 0 && (posControl.actualState.surface > 0 && posControl.flags.hasValidSurfaceSensor)) {
+    if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
+        if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
             float surfaceOffsetError = posControl.desiredState.surface - posControl.actualState.surface;
-            float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
             float trackingWeight = SURFACE_TRACKING_GAIN * US2S(deltaMicros);
 
-            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight + altitudeError * (1 - trackingWeight);
+            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight;
         }
-    }
-    else {
-        // TODO: We are possible above valid range, should we descend down to attempt to get back within range?
+        else {
+            // TODO: We are possible above valid range, should we descend down to attempt to get back within range?
+            updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
+        }
     }
 }
 
@@ -129,14 +129,14 @@ bool adjustMulticopterAltitudeFromRCInput(void)
             rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / (altHoldThrottleRCZero - posControl.escAndServoConfig->minthrottle);
         }
 
-        updateAltitudeTargetFromClimbRate(rcClimbRate);
+        updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
 
         return true;
     }
     else {
         // Adjusting finished - reset desired position to stay exactly where pilot released the stick
         if (posControl.flags.isAdjustingAltitude) {
-            updateAltitudeTargetFromClimbRate(0);
+            updateAltitudeTargetFromClimbRate(0, CLIMB_RATE_UPDATE_SURFACE_TARGET);
         }
 
         return false;
@@ -524,7 +524,7 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate);
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
                 updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }

@@ -47,6 +47,12 @@ typedef enum {
     NAV_POS_UPDATE_BEARING_TAIL_FIRST   = 1 << 4,
 } navSetWaypointFlags_t;
 
+typedef enum {
+    CLIMB_RATE_KEEP_SURFACE_TARGET,
+    CLIMB_RATE_RESET_SURFACE_TARGET,
+    CLIMB_RATE_UPDATE_SURFACE_TARGET,
+} navUpdateAltitudeFromRateMode_e;
+
 typedef struct navigationFlags_s {
     bool horizontalPositionNewData;
     bool verticalPositionNewData;
@@ -275,7 +281,7 @@ void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD);
 void navPInit(pController_t *p, float _kP);
 
 bool isThrustFacingDownwards(void);
-void updateAltitudeTargetFromClimbRate(float climbRate);
+void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode);
 uint32_t calculateDistanceToDestination(t_fp_vector * destinationPos);
 int32_t calculateBearingToDestination(t_fp_vector * destinationPos);
 void resetLandingDetector(void);

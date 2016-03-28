@@ -927,18 +927,18 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
         // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
         if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
             // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
-            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate);
+            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
         else {
             // Gradually reduce descent speed depending on actual altitude.
             if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
             else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
-                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
             else {
-                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
         }
 
@@ -949,7 +949,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -957,7 +957,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHED(navigat
 {
     // Stay in this state
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1593,19 +1593,24 @@ bool isLandingDetected(void)
 /*-----------------------------------------------------------
  * Z-position controller
  *-----------------------------------------------------------*/
-void updateAltitudeTargetFromClimbRate(float climbRate)
+void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode)
 {
     // FIXME: On FIXED_WING and multicopter this should work in a different way
     // Calculate new altitude target
 
     /* Move surface tracking setpoint if it is set */
-    if (posControl.flags.isTerrainFollowEnabled) {
-        if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor) {
-            posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SONAR_MAX_DISTANCE);
-        }
+    if (mode == CLIMB_RATE_RESET_SURFACE_TARGET) {
+        posControl.desiredState.surface = -1;
     }
     else {
-        posControl.desiredState.surface = -1;
+        if (posControl.flags.isTerrainFollowEnabled) {
+            if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
+                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SONAR_MAX_DISTANCE);
+            }
+        }
+        else {
+            posControl.desiredState.surface = -1;
+        }
     }
 
     posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (climbRate / posControl.pids.pos[Z].param.kP);
