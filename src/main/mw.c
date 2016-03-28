@@ -829,7 +829,7 @@ void taskProcessGPS(void)
 void taskUpdateCompass(void)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(&masterConfig.magZero);
+        updateCompass(&sensorTrims.magZero);
     }
 }
 #endif

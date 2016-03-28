@@ -46,20 +46,6 @@ typedef struct master_t {
     // Motor/ESC/Servo configuration
     flight3DConfig_t flight3DConfig;
 
-    // Sensor configuration
-    sensorAlignmentConfig_t sensorAlignmentConfig;
-
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
-    flightDynamicsTrims_t accZero;
-    flightDynamicsTrims_t magZero;
-
-
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    float soft_gyro_lpf_hz;                 // Software based gyro filter in hz
-    gyroConfig_t gyroConfig;
-
     batteryConfig_t batteryConfig;
 
     rxConfig_t rxConfig;

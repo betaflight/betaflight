@@ -662,15 +662,12 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 #endif
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
+bool sensorsAutodetect(
         int16_t magDeclinationFromConfig,
         uint32_t looptime, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
 
     int16_t deg, min;
 
-#ifndef MAG
-    UNUSED(magHardwareToUse);
-#endif
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -685,22 +682,22 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
     if (!detectGyro()) {
         return false;
     }
-    detectAcc(accHardwareToUse);
-    detectBaro(baroHardwareToUse);
+    detectAcc(sensorSelectionConfig.acc_hardware);
+    detectBaro(sensorSelectionConfig.baro_hardware);
 
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
-    gyro.init(gyroLpf);
+    gyroUpdateSampleRate(looptime, gyroConfig.gyro_lpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+    gyro.init(gyroConfig.gyro_lpf);
 
 #ifdef MAG
-    detectMag(magHardwareToUse);
+    detectMag(sensorSelectionConfig.mag_hardware);
 #endif
 
-    reconfigureAlignment(sensorAlignmentConfig);
+    reconfigureAlignment(&sensorAlignmentConfig);
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {

@@ -81,6 +81,8 @@ extern "C" {
     someProfileSpecificData_t *someProfileSpecificData;
 
     escAndServoConfig_t escAndServoConfig;
+    gyroConfig_t gyroConfig;
+    sensorTrims_t sensorTrims;
 }
 
 #include "unittest_macros.h"
@@ -189,7 +191,6 @@ void beeperConfirmationBeeps(uint8_t) {}
 void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}
 void useRcControlsConfig(modeActivationCondition_t *, pidProfile_t *) {}
-void useGyroConfig(gyroConfig_t *, float) {}
 void useFailsafeConfig(void) {}
 void useBarometerConfig(barometerConfig_t *) {}
 void telemetryUseConfig(telemetryConfig_t *) {}

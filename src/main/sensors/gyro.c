@@ -26,6 +26,7 @@
 #include "common/filter.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -45,26 +46,28 @@ int16_t gyroADCRaw[XYZ_AXIS_COUNT];
 int32_t gyroADC[XYZ_AXIS_COUNT];
 int32_t gyroZero[FD_INDEX_COUNT] = { 0, 0, 0 };
 
-static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
 static bool gyroFilterStateIsSet;
-static float gyroLpfCutFreq;
 int axis;
 
 gyro_t gyro;                      // gyro access functions
+gyroConfig_t gyroConfig;
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
+static const pgRegistry_t gyroConfigRegistry PG_REGISTRY_SECTION =
 {
-    gyroConfig = gyroConfigToUse;
-    gyroLpfCutFreq = gyro_lpf_hz;
-}
+    .base = (uint8_t *)&gyroConfig,
+    .size = sizeof(gyroConfig),
+    .pgn = PG_GYRO_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
 
 void initGyroFilterCoefficients(void) {
-    if (gyroLpfCutFreq) {
+    if (gyroConfig.soft_gyro_lpf_hz) {
         // Initialisation needs to happen once sampling rate is known
         for (axis = 0; axis < 3; axis++) {
-            BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
+            BiQuadNewLpf(gyroConfig.soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
         }
 
         gyroFilterStateIsSet = true;
@@ -153,7 +156,7 @@ void gyroUpdate(void)
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
-    if (gyroLpfCutFreq) {
+    if (gyroConfig.soft_gyro_lpf_hz) {
         if (!gyroFilterStateIsSet) {
             initGyroFilterCoefficients();
         }
@@ -166,7 +169,7 @@ void gyroUpdate(void)
     }
 
     if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
+        performAcclerationCalibration(gyroConfig.gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();

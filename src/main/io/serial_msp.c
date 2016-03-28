@@ -1225,9 +1225,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
-        serialize8(masterConfig.sensorAlignmentConfig.gyro_align);
-        serialize8(masterConfig.sensorAlignmentConfig.acc_align);
-        serialize8(masterConfig.sensorAlignmentConfig.mag_align);
+        serialize8(sensorAlignmentConfig.gyro_align);
+        serialize8(sensorAlignmentConfig.acc_align);
+        serialize8(sensorAlignmentConfig.mag_align);
         break;
 
     default:
@@ -1481,9 +1481,9 @@ static bool processInCommand(void)
         break;    
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        masterConfig.sensorAlignmentConfig.gyro_align = read8();
-        masterConfig.sensorAlignmentConfig.acc_align = read8();
-        masterConfig.sensorAlignmentConfig.mag_align = read8();
+        sensorAlignmentConfig.gyro_align = read8();
+        sensorAlignmentConfig.acc_align = read8();
+        sensorAlignmentConfig.mag_align = read8();
         break;
         
     case MSP_RESET_CONF:

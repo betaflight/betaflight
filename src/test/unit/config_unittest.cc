@@ -78,6 +78,10 @@ extern "C" {
     failsafeConfig_t failsafeConfig;
     boardAlignment_t boardAlignment;
     escAndServoConfig_t escAndServoConfig;
+    sensorSelectionConfig_t sensorSelectionConfig;
+    sensorAlignmentConfig_t sensorAlignmentConfig;
+    sensorTrims_t sensorTrims;
+    gyroConfig_t gyroConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -88,6 +92,10 @@ extern "C" {
         memset(&masterConfig, 0x00, sizeof(masterConfig));
         memset(&boardAlignment, 0x00, sizeof(boardAlignment));
         memset(&customMotorMixer, 0x00, sizeof(customMotorMixer));
+        memset(&gyroConfig, 0x00, sizeof(gyroConfig));
+        memset(&sensorTrims, 0x00, sizeof(sensorTrims));
+        memset(&sensorAlignmentConfig, 0x00, sizeof(sensorAlignmentConfig));
+        memset(&sensorSelectionConfig, 0x00, sizeof(sensorSelectionConfig));
     }
 
 }
@@ -107,23 +115,21 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(0, masterConfig.current_profile_index); // default profile
     EXPECT_EQ(0, masterConfig.dcm_ki); // 0.003 * 10000
 
-//resetAccelerometerTrims(&masterConfig.accZero);
-    EXPECT_EQ(0, masterConfig.accZero.values.pitch);
-    EXPECT_EQ(0, masterConfig.accZero.values.roll);
-    EXPECT_EQ(0, masterConfig.accZero.values.yaw);
+    EXPECT_EQ(0, sensorTrims.accZero.values.pitch);
+    EXPECT_EQ(0, sensorTrims.accZero.values.roll);
+    EXPECT_EQ(0, sensorTrims.accZero.values.yaw);
 
-//resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
-    EXPECT_EQ(ALIGN_DEFAULT, masterConfig.sensorAlignmentConfig.gyro_align);
-    EXPECT_EQ(ALIGN_DEFAULT, masterConfig.sensorAlignmentConfig.acc_align);
-    EXPECT_EQ(ALIGN_DEFAULT, masterConfig.sensorAlignmentConfig.mag_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.gyro_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.acc_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.mag_align);
 
     EXPECT_EQ(0, boardAlignment.rollDegrees);
     EXPECT_EQ(0, boardAlignment.pitchDegrees);
     EXPECT_EQ(0, boardAlignment.yawDegrees);
 
-    EXPECT_EQ(ACC_DEFAULT, masterConfig.acc_hardware);   // default/autodetect
-    EXPECT_EQ(MAG_DEFAULT, masterConfig.mag_hardware);   // default/autodetect
-    EXPECT_EQ(BARO_DEFAULT, masterConfig.baro_hardware); // default/autodetect
+    EXPECT_EQ(ACC_DEFAULT, sensorSelectionConfig.acc_hardware);   // default/autodetect
+    EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig.mag_hardware);   // default/autodetect
+    EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig.baro_hardware); // default/autodetect
 
     EXPECT_EQ(0, masterConfig.batteryConfig.currentMeterOffset);
     EXPECT_EQ(0, masterConfig.batteryConfig.batteryCapacity);
@@ -147,7 +153,6 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, masterConfig.retarded_arm);
 
-//    resetMixerConfig(&masterConfig.mixerConfig);
     EXPECT_EQ(0, masterConfig.mixerConfig.servo_lowpass_enable);
 
     EXPECT_EQ(GPS_NMEA, masterConfig.gpsConfig.provider);
@@ -156,7 +161,6 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, masterConfig.emf_avoidance);
 
-// resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].thrExpo8);
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].dynThrPID);
     EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rcYawExpo8);
@@ -182,7 +186,6 @@ void beeperConfirmationBeeps(uint8_t) {}
 void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}
 void useRcControlsConfig(modeActivationCondition_t *, pidProfile_t *) {}
-void useGyroConfig(gyroConfig_t *, float) {}
 void useFailsafeConfig(void) {}
 void useBarometerConfig(barometerConfig_t *) {}
 void telemetryUseConfig(telemetryConfig_t *) {}
