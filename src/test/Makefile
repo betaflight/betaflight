@@ -240,6 +240,29 @@ $(OBJECT_DIR)/gps_conversion_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/common/typeconversion.o : \
+	$(USER_DIR)/common/typeconversion.c \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/typeconversion.c -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest.o : \
+	$(TEST_DIR)/type_conversion_unittest.cc \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/type_conversion_unittest.cc -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest : \
+	$(OBJECT_DIR)/common/typeconversion.o \
+	$(OBJECT_DIR)/type_conversion_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 $(OBJECT_DIR)/telemetry/hott.o : \
 	$(USER_DIR)/telemetry/hott.c \
