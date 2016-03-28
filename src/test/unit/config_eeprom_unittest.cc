@@ -83,6 +83,7 @@ extern "C" {
     escAndServoConfig_t escAndServoConfig;
     gyroConfig_t gyroConfig;
     sensorTrims_t sensorTrims;
+    batteryConfig_t batteryConfig;
 }
 
 #include "unittest_macros.h"

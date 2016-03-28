@@ -82,6 +82,7 @@ extern "C" {
     sensorAlignmentConfig_t sensorAlignmentConfig;
     sensorTrims_t sensorTrims;
     gyroConfig_t gyroConfig;
+    batteryConfig_t batteryConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -96,6 +97,7 @@ extern "C" {
         memset(&sensorTrims, 0x00, sizeof(sensorTrims));
         memset(&sensorAlignmentConfig, 0x00, sizeof(sensorAlignmentConfig));
         memset(&sensorSelectionConfig, 0x00, sizeof(sensorSelectionConfig));
+        memset(&batteryConfig, 0x00, sizeof(batteryConfig));
     }
 
 }
@@ -131,8 +133,8 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig.mag_hardware);   // default/autodetect
     EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig.baro_hardware); // default/autodetect
 
-    EXPECT_EQ(0, masterConfig.batteryConfig.currentMeterOffset);
-    EXPECT_EQ(0, masterConfig.batteryConfig.batteryCapacity);
+    EXPECT_EQ(0, batteryConfig.currentMeterOffset);
+    EXPECT_EQ(0, batteryConfig.batteryCapacity);
 
     EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_inversion);
     EXPECT_EQ(0, masterConfig.telemetryConfig.telemetry_switch);

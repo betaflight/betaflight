@@ -46,8 +46,6 @@ typedef struct master_t {
     // Motor/ESC/Servo configuration
     flight3DConfig_t flight3DConfig;
 
-    batteryConfig_t batteryConfig;
-
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 

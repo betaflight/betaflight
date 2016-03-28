@@ -332,7 +332,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
+        sonarHardware = sonarGetHardwareConfiguration(&batteryConfig);
         sonarGPIOConfig_t sonarGPIOConfig = {
             .gpio = SONAR_GPIO,
             .triggerPin = sonarHardware->echo_pin,
@@ -363,8 +363,10 @@ void init(void)
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+    pwm_params.useCurrentMeterADC = (
+        feature(FEATURE_CURRENT_METER)
+        && batteryConfig.currentMeterType == CURRENT_SENSOR_ADC
+    );
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
@@ -627,7 +629,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(&masterConfig.batteryConfig);
+        batteryInit();
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {

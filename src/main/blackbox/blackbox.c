@@ -434,7 +434,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return feature(FEATURE_VBAT);
 
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+            return feature(FEATURE_CURRENT_METER) && batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -1158,14 +1158,14 @@ static bool blackboxWriteSysinfo()
         break;
         case 10:
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale:%u", masterConfig.batteryConfig.vbatscale);
+                blackboxPrintfHeaderLine("vbatscale:%u", batteryConfig.vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
         break;
         case 11:
-            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u", masterConfig.batteryConfig.vbatmincellvoltage,
-                masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
+            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u", batteryConfig.vbatmincellvoltage,
+                batteryConfig.vbatwarningcellvoltage, batteryConfig.vbatmaxcellvoltage);
         break;
         case 12:
             blackboxPrintfHeaderLine("vbatref:%u", vbatReference);
@@ -1173,7 +1173,7 @@ static bool blackboxWriteSysinfo()
         case 13:
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+                blackboxPrintfHeaderLine("currentMeter:%d,%d", batteryConfig.currentMeterOffset, batteryConfig.currentMeterScale);
             }
         break;
         default:

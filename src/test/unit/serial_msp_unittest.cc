@@ -96,6 +96,7 @@ extern "C" {
     boardAlignment_t boardAlignment;
     escAndServoConfig_t escAndServoConfig;
     sensorAlignmentConfig_t sensorAlignmentConfig;
+    batteryConfig_t batteryConfig;
 
     const pgRegistry_t __pg_registry[] =
     {

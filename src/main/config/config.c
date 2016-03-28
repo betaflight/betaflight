@@ -364,7 +364,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     masterConfig.yaw_control_direction = 1;
     gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    resetBatteryConfig(&masterConfig.batteryConfig);
+    resetBatteryConfig(&batteryConfig);
 
 #ifdef TELEMETRY
     masterConfig.telemetryConfig.hottAlarmSoundInterval = 5;

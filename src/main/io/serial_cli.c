@@ -565,15 +565,15 @@ const clivalue_t valueTable[] = {
     { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.hottAlarmSoundInterval, .config.minmax = { 0,  120 } },
 #endif
 
-    { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.batteryCapacity, .config.minmax = { 0,  20000 } },
-    { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatscale, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX } },
-    { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmaxcellvoltage, .config.minmax = { 10,  50 } },
-    { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmincellvoltage, .config.minmax = { 10,  50 } },
-    { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatwarningcellvoltage, .config.minmax = { 10,  50 } },
-    { "current_meter_scale",        VAR_INT16  | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterScale, .config.minmax = { -10000,  10000 } },
-    { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterOffset, .config.minmax = { 0,  3300 } },
-    { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
-    { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR } },
+    { "battery_capacity",           VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  20000 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity)},
+    { "vbat_scale",                 VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatscale)},
+    { "vbat_max_cell_voltage",      VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage)},
+    { "vbat_min_cell_voltage",      VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage)},
+    { "vbat_warning_cell_voltage",  VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage)},
+    { "current_meter_scale",        VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -10000,  10000 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterScale)},
+    { "current_meter_offset",       VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  3300 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterOffset)},
+    { "multiwii_current_meter_output", VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, multiwiiCurrentMeterOutput)},
+    { "current_meter_type",         VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_CURRENT_SENSOR } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterType)},
 
     { "align_gyro",                 VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, gyro_align)},
     { "align_acc",                  VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, acc_align)},
@@ -605,7 +605,6 @@ const clivalue_t valueTable[] = {
     { "airmode_saturation_limit",   VAR_UINT8  | MASTER_VALUE, &masterConfig.mixerConfig.airmode_saturation_limit, .config.minmax = { 0,  100 } },
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } },
-
 
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },

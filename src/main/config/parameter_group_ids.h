@@ -25,6 +25,7 @@
 #define PG_SENSOR_ALIGNMENT_CONFIG 8
 #define PG_SENSOR_TRIMS 9
 #define PG_GYRO_CONFIG 10
+#define PG_BATTERY_CONFIG 11
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254
