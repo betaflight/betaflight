@@ -526,7 +526,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_MOTOR_STOP);
 #ifdef ALIENWIIF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    masterConfig.batteryConfig.vbatscale = 20;
+    batteryConfig.vbatscale = 20;
 #else
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
