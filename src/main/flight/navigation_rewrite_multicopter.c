@@ -62,10 +62,10 @@ static int16_t rcCommandAdjustedThrottle;
 static int16_t altHoldThrottleRCZero = 1500;
 static filterStatePt1_t altholdThrottleFilterState;
 
-#define SURFACE_TRACKING_GAIN       25.0f
+#define SURFACE_TRACKING_GAIN       40.0f
 
 /* Calculate global altitude setpoint based on surface setpoint */
-static void updateSurfaceTrackingAltitudeSetpoint_MC(uint32_t deltaMicros)
+static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
@@ -76,7 +76,7 @@ static void updateSurfaceTrackingAltitudeSetpoint_MC(uint32_t deltaMicros)
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight;
         }
         else {
-            // TODO: We are possible above valid range, should we descend down to attempt to get back within range?
+            // TODO: We are possible above valid range, we now descend down to attempt to get back within range
             updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
         }
     }
@@ -197,7 +197,7 @@ static void applyMulticopterAltitudeController(uint32_t currentTime)
 
         // Check if last correction was too log ago - ignore this update
         if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-            updateSurfaceTrackingAltitudeSetpoint_MC(deltaMicrosPositionUpdate);
+            updateSurfaceTrackingAltitudeSetpoint(deltaMicrosPositionUpdate);
             updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
             updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
         }
