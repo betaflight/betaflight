@@ -532,8 +532,8 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.escAndServoConfig.minthrottle = 1000;
-    masterConfig.escAndServoConfig.maxthrottle = 2000;
+    escAndServoConfig.minthrottle = 1000;
+    escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.looptime = 2000;
     currentProfile->pidProfile.pidController = 3;
@@ -548,52 +548,52 @@ STATIC_UNIT_TESTED void resetConf(void)
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    masterConfig.customMotorMixer[0].throttle = 1.0f;
-    masterConfig.customMotorMixer[0].roll = -0.414178f;
-    masterConfig.customMotorMixer[0].pitch = 1.0f;
-    masterConfig.customMotorMixer[0].yaw = -1.0f;
+    customMotorMixer[0].throttle = 1.0f;
+    customMotorMixer[0].roll = -0.414178f;
+    customMotorMixer[0].pitch = 1.0f;
+    customMotorMixer[0].yaw = -1.0f;
 
     //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    masterConfig.customMotorMixer[1].throttle = 1.0f;
-    masterConfig.customMotorMixer[1].roll = -0.414178f;
-    masterConfig.customMotorMixer[1].pitch = -1.0f;
-    masterConfig.customMotorMixer[1].yaw = 1.0f;
+    customMotorMixer[1].throttle = 1.0f;
+    customMotorMixer[1].roll = -0.414178f;
+    customMotorMixer[1].pitch = -1.0f;
+    customMotorMixer[1].yaw = 1.0f;
 
     //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    masterConfig.customMotorMixer[2].throttle = 1.0f;
-    masterConfig.customMotorMixer[2].roll = 0.414178f;
-    masterConfig.customMotorMixer[2].pitch = 1.0f;
-    masterConfig.customMotorMixer[2].yaw = 1.0f;
+    customMotorMixer[2].throttle = 1.0f;
+    customMotorMixer[2].roll = 0.414178f;
+    customMotorMixer[2].pitch = 1.0f;
+    customMotorMixer[2].yaw = 1.0f;
 
     //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    masterConfig.customMotorMixer[3].throttle = 1.0f;
-    masterConfig.customMotorMixer[3].roll = 0.414178f;
-    masterConfig.customMotorMixer[3].pitch = -1.0f;
-    masterConfig.customMotorMixer[3].yaw = -1.0f;
+    customMotorMixer[3].throttle = 1.0f;
+    customMotorMixer[3].roll = 0.414178f;
+    customMotorMixer[3].pitch = -1.0f;
+    customMotorMixer[3].yaw = -1.0f;
 
     //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    masterConfig.customMotorMixer[4].throttle = 1.0f;
-    masterConfig.customMotorMixer[4].roll = -1.0f;
-    masterConfig.customMotorMixer[4].pitch = -0.414178f;
-    masterConfig.customMotorMixer[4].yaw = -1.0f;
+    customMotorMixer[4].throttle = 1.0f;
+    customMotorMixer[4].roll = -1.0f;
+    customMotorMixer[4].pitch = -0.414178f;
+    customMotorMixer[4].yaw = -1.0f;
 
     //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    masterConfig.customMotorMixer[5].throttle = 1.0f;
-    masterConfig.customMotorMixer[5].roll = 1.0f;
-    masterConfig.customMotorMixer[5].pitch = -0.414178f;
-    masterConfig.customMotorMixer[5].yaw = 1.0f;
+    customMotorMixer[5].throttle = 1.0f;
+    customMotorMixer[5].roll = 1.0f;
+    customMotorMixer[5].pitch = -0.414178f;
+    customMotorMixer[5].yaw = 1.0f;
 
     //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    masterConfig.customMotorMixer[6].throttle = 1.0f;
-    masterConfig.customMotorMixer[6].roll = -1.0f;
-    masterConfig.customMotorMixer[6].pitch = 0.414178f;
-    masterConfig.customMotorMixer[6].yaw = 1.0f;
+    customMotorMixer[6].throttle = 1.0f;
+    customMotorMixer[6].roll = -1.0f;
+    customMotorMixer[6].pitch = 0.414178f;
+    customMotorMixer[6].yaw = 1.0f;
 
     //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    masterConfig.customMotorMixer[7].throttle = 1.0f;
-    masterConfig.customMotorMixer[7].roll = 1.0f;
-    masterConfig.customMotorMixer[7].pitch = 0.414178f;
-    masterConfig.customMotorMixer[7].yaw = -1.0f;
+    customMotorMixer[7].throttle = 1.0f;
+    customMotorMixer[7].roll = 1.0f;
+    customMotorMixer[7].pitch = 0.414178f;
+    customMotorMixer[7].yaw = -1.0f;
 #endif
 
     // FIXME implement differently
