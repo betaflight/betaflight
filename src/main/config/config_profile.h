@@ -58,3 +58,5 @@ typedef struct profile_s {
     gpsProfile_t gpsProfile;
 #endif
 } profile_t;
+
+extern profile_t *currentProfile;
