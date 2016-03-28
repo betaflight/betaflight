@@ -29,6 +29,7 @@
 
 #include "build_config.h"
 
+#include "common/utils.h"
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/color.h"
@@ -726,9 +727,6 @@ const clivalue_t valueTable[] = {
     { "magzero_y",                  VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -32768,  32767 } , PG_SENSOR_TRIMS, offsetof(sensorTrims_t, magZero.raw[Y])},
     { "magzero_z",                  VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -32768,  32767 } , PG_SENSOR_TRIMS, offsetof(sensorTrims_t, magZero.raw[Z])},
 };
-
-#define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
-
 
 typedef union {
     int32_t int_value;
@@ -1657,7 +1655,7 @@ static void dumpValues(uint16_t valueSection)
 {
     uint32_t i;
     const clivalue_t *value;
-    for (i = 0; i < VALUE_COUNT; i++) {
+    for (i = 0; i < ARRAYLEN(valueTable); i++) {
         value = &valueTable[i];
 
         if ((value->type & VALUE_SECTION_MASK) != valueSection) {
@@ -2334,7 +2332,7 @@ static void cliSet(char *cmdline)
 
     if (len == 0 || (len == 1 && cmdline[0] == '*')) {
         cliPrint("Current settings: \r\n");
-        for (i = 0; i < VALUE_COUNT; i++) {
+        for (i = 0; i < ARRAYLEN(valueTable); i++) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
@@ -2355,7 +2353,7 @@ static void cliSet(char *cmdline)
             eqptr++;
         }
 
-        for (i = 0; i < VALUE_COUNT; i++) {
+        for (i = 0; i < ARRAYLEN(valueTable); i++) {
             val = &valueTable[i];
             // ensure exact match when setting to prevent setting variables with shorter names
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
@@ -2421,7 +2419,7 @@ static void cliGet(char *cmdline)
     const clivalue_t *val;
     int matchedCommands = 0;
 
-    for (i = 0; i < VALUE_COUNT; i++) {
+    for (i = 0; i < ARRAYLEN(valueTable); i++) {
         if (strstr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
