@@ -1098,7 +1098,7 @@ static void cliMotorMix(char *cmdline)
     int i, check = 0;
     int num_motors = 0;
     uint8_t len;
-    char buf[16];
+    char ftoaBuffer[FTOA_BUFFER_SIZE];
     char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -1108,10 +1108,10 @@ static void cliMotorMix(char *cmdline)
                 break;
             num_motors++;
             cliPrintf("#%d:\t", i);
-            cliPrintf("%s\t", ftoa(customMotorMixer[i].throttle, buf));
-            cliPrintf("%s\t", ftoa(customMotorMixer[i].roll, buf));
-            cliPrintf("%s\t", ftoa(customMotorMixer[i].pitch, buf));
-            cliPrintf("%s\r\n", ftoa(customMotorMixer[i].yaw, buf));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].throttle, ftoaBuffer));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].roll, ftoaBuffer));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].pitch, ftoaBuffer));
+            cliPrintf("%s\r\n", ftoa(customMotorMixer[i].yaw, ftoaBuffer));
         }
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
@@ -2219,7 +2219,7 @@ static void cliWrite(uint8_t ch)
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     int32_t value = 0;
-    char buf[8];
+    char ftoaBuffer[FTOA_BUFFER_SIZE];
 
     uint8_t *ptr = var->ptr;
     if ((var->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
@@ -2261,10 +2261,10 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
 
         case VAR_FLOAT:
-            cliPrintf("%s", ftoa(*(float *)ptr, buf));
+            cliPrintf("%s", ftoa(*(float *)ptr, ftoaBuffer));
             if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
-                cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
+                cliPrintf(" %s", ftoa((float)var->config.minmax.min, ftoaBuffer));
+                cliPrintf(" %s", ftoa((float)var->config.minmax.max, ftoaBuffer));
             }
             return; // return from case for float only
     }
