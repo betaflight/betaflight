@@ -485,7 +485,7 @@ typedef struct {
 
     pgn_t pgn;
     uint16_t offset;
-} clivalue_t;
+} __attribute__((packed)) clivalue_t;
 
 const clivalue_t valueTable[] = {
     { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.looptime, .config.minmax = {0, 9000} },
