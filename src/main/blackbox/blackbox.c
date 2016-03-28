@@ -29,6 +29,7 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
+#include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
 
 #include "drivers/gpio.h"
@@ -81,6 +82,17 @@
 
 #include "blackbox.h"
 #include "blackbox_io.h"
+
+blackboxConfig_t blackboxConfig;
+
+static const pgRegistry_t blackboxConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&blackboxConfig,
+    .size = sizeof(blackboxConfig),
+    .pgn = PG_BLACKBOX_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -373,7 +385,7 @@ bool blackboxMayEditConfig()
 }
 
 static bool blackboxIsOnlyLoggingIntraframes() {
-    return masterConfig.blackbox_rate_num == 1 && masterConfig.blackbox_rate_denom == 32;
+    return blackboxConfig.rate_num == 1 && blackboxConfig.rate_denom == 32;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -435,7 +447,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return masterConfig.rxConfig.rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
+            return blackboxConfig.rate_num < blackboxConfig.rate_denom;
 
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
@@ -784,22 +796,22 @@ static void validateBlackboxConfig()
 {
     int div;
 
-    if (masterConfig.blackbox_rate_num == 0 || masterConfig.blackbox_rate_denom == 0
-            || masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
-        masterConfig.blackbox_rate_num = 1;
-        masterConfig.blackbox_rate_denom = 1;
+    if (blackboxConfig.rate_num == 0 || blackboxConfig.rate_denom == 0
+            || blackboxConfig.rate_num >= blackboxConfig.rate_denom) {
+        blackboxConfig.rate_num = 1;
+        blackboxConfig.rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        div = gcd(blackboxConfig.rate_num, blackboxConfig.rate_denom);
 
-        masterConfig.blackbox_rate_num /= div;
-        masterConfig.blackbox_rate_denom /= div;
+        blackboxConfig.rate_num /= div;
+        blackboxConfig.rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
-    switch (masterConfig.blackbox_device) {
+    switch (blackboxConfig.device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
 #endif
@@ -811,7 +823,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -1124,7 +1136,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("Firmware date:%s %s", buildDate, buildTime);
         break;
         case 3:
-            blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+            blackboxPrintfHeaderLine("P interval:%d/%d", blackboxConfig.rate_num, blackboxConfig.rate_denom);
         break;
         case 4:
             blackboxPrintfHeaderLine("Device UID:0x%x%x%x", U_ID_0, U_ID_1, U_ID_2);
@@ -1236,10 +1248,10 @@ static void blackboxCheckAndLogArmingBeep()
  */
 static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 {
-    /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
+    /* Adding a magic shift of "blackboxConfig.rate_num - 1" in here creates a better spread of
      * recorded / skipped frames when the I frame's position is considered:
      */
-    return (pFrameIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num;
+    return (pFrameIndex + blackboxConfig.rate_num - 1) % blackboxConfig.rate_denom < blackboxConfig.rate_num;
 }
 
 static bool blackboxShouldLogIFrame() {

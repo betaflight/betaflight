@@ -29,12 +29,6 @@ typedef struct master_t {
 
     serialConfig_t serialConfig;
 
-#ifdef BLACKBOX
-    uint8_t blackbox_rate_num;
-    uint8_t blackbox_rate_denom;
-    uint8_t blackbox_device;
-#endif
-
     // IMU configuration
     uint16_t looptime;                      // imu loop time in us
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)

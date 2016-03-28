@@ -31,7 +31,7 @@
 #include "config/parameter_group.h"
 #include "config/config_streamer.h"
 
-static const uint8_t EEPROM_CONF_VERSION = 111;
+static const uint8_t EEPROM_CONF_VERSION = 112;
 
 #if !defined(FLASH_SIZE)
 #error "Flash size not defined for target. (specify in KB)"

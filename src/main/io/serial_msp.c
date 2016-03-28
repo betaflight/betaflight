@@ -1170,9 +1170,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
 #ifdef BLACKBOX
         serialize8(1); //Blackbox supported
-        serialize8(masterConfig.blackbox_device);
-        serialize8(masterConfig.blackbox_rate_num);
-        serialize8(masterConfig.blackbox_rate_denom);
+        serialize8(blackboxConfig.device);
+        serialize8(blackboxConfig.rate_num);
+        serialize8(blackboxConfig.rate_denom);
 #else
         serialize8(0); // Blackbox not supported
         serialize8(0);
@@ -1512,9 +1512,9 @@ static bool processInCommand(void)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            masterConfig.blackbox_device = read8();
-            masterConfig.blackbox_rate_num = read8();
-            masterConfig.blackbox_rate_denom = read8();
+            blackboxConfig.device = read8();
+            blackboxConfig.rate_num = read8();
+            blackboxConfig.rate_denom = read8();
         }
         break;
 #endif

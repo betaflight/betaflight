@@ -73,6 +73,8 @@
 #include "sensors/compass.h"
 #include "sensors/barometer.h"
 
+#include "blackbox/blackbox.h"
+
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -448,6 +450,7 @@ typedef enum {
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     CONTROL_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    MIGRATED_MASTER_VALUE = (3 << VALUE_SECTION_OFFSET),
 
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
@@ -714,9 +717,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef BLACKBOX
-    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },
-    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, .config.minmax = { 1,  32 } },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_device, .config.lookup = { TABLE_BLACKBOX_DEVICE } },
+    { "blackbox_rate_num",          VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 1,  32 } , PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_num)},
+    { "blackbox_rate_denom",        VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 1,  32 } , PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_denom)},
+    { "blackbox_device",            VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_BLACKBOX_DEVICE } , PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device)},
 #endif
 
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], .config.minmax = { -32768,  32767 } },
@@ -1794,6 +1797,7 @@ static void cliDump(char *cmdline)
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
+        dumpValues(MIGRATED_MASTER_VALUE);
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
@@ -2228,6 +2232,12 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         ptr = *rec->ptr + var->offset;
     }
 
+    if ((var->type & VALUE_SECTION_MASK) == MIGRATED_MASTER_VALUE) {
+        const pgRegistry_t* rec = pgFind(var->pgn);
+
+        ptr = rec->base + var->offset;
+    }
+
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
@@ -2284,6 +2294,13 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 
         ptr = *rec->ptr + var->offset;
     }
+
+    if ((var->type & VALUE_SECTION_MASK) == MIGRATED_MASTER_VALUE) {
+        const pgRegistry_t* rec = pgFind(var->pgn);
+
+        ptr = rec->base + var->offset;
+    }
+
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
