@@ -68,12 +68,17 @@ static filterStatePt1_t altholdThrottleFilterState;
 static void updateSurfaceTrackingAltitudeSetpoint_MC(uint32_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
-    if (posControl.desiredState.surface > 0 && (posControl.actualState.surface > 0 && posControl.flags.hasValidSurfaceSensor) && posControl.flags.isTerrainFollowEnabled) {
-        float surfaceOffsetError = posControl.desiredState.surface - posControl.actualState.surface;
-        float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
-        float trackingWeight = SURFACE_TRACKING_GAIN * US2S(deltaMicros);
+    if (posControl.flags.isTerrainFollowEnabled) {
+        if (posControl.desiredState.surface > 0 && (posControl.actualState.surface > 0 && posControl.flags.hasValidSurfaceSensor)) {
+            float surfaceOffsetError = posControl.desiredState.surface - posControl.actualState.surface;
+            float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
+            float trackingWeight = SURFACE_TRACKING_GAIN * US2S(deltaMicros);
 
-        posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight + altitudeError * (1 - trackingWeight);
+            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight + altitudeError * (1 - trackingWeight);
+        }
+    }
+    else {
+        // TODO: We are possible above valid range, should we descend down to attempt to get back within range?
     }
 }
 

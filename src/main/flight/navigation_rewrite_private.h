@@ -31,6 +31,8 @@
 #define NAV_DTERM_CUT_HZ                    10
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
+#define INAV_SONAR_MAX_DISTANCE             50      // Sonar is unreliable above 50cm due to noise from propellers
+
 #define HZ2US(hz)   (1000000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
 #define MS2US(ms)   ((ms) * 1000)

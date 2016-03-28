@@ -49,7 +49,7 @@ typedef enum {
     BOXAIRMODE,
     BOXHOMERESET,
     BOXGCSNAV,
-    BOXTERRAIN,
+    BOXSURFACE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

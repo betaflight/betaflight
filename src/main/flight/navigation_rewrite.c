@@ -614,16 +614,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
     if ((navGetStateFlags(previousState) & NAV_CTL_ALT) == 0) {
         resetAltitudeController();
         setupAltitudeController();
-
-        // If low enough and surface offset valid - enter surface tracking
-        if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled) {
-            setDesiredSurfaceOffset(posControl.actualState.surface);
-        }
-        else {
-            setDesiredSurfaceOffset(-1.0f);
-        }
-
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
     }
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -632,6 +623,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+
+    // If we enable terrain mode and surface offset is not set yet - do it
+    if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
+        setDesiredSurfaceOffset(posControl.actualState.surface);
+    }
+
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -672,15 +669,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
     }
 
     if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
-        // If low enough and surface offset valid - enter surface tracking
-        if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled) {
-            setDesiredSurfaceOffset(posControl.actualState.surface);
-        }
-        else {
-            setDesiredSurfaceOffset(-1.0f);
-        }
-
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
     }
 
     if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
@@ -695,6 +684,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+ 
+     // If we enable terrain mode and surface offset is not set yet - do it
+    if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
+        setDesiredSurfaceOffset(posControl.actualState.surface);
+    }
+
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1508,7 +1503,7 @@ void updateHomePosition(void)
 void setDesiredSurfaceOffset(float surfaceOffset)
 {
     if (surfaceOffset > 0) {
-        posControl.desiredState.surface = constrainf(surfaceOffset, 20.0f, 250.0f);
+        posControl.desiredState.surface = constrainf(surfaceOffset, 1.0f, INAV_SONAR_MAX_DISTANCE);
     }
     else {
         posControl.desiredState.surface = -1;
@@ -1605,8 +1600,8 @@ void updateAltitudeTargetFromClimbRate(float climbRate)
 
     /* Move surface tracking setpoint if it is set */
     if (posControl.flags.isTerrainFollowEnabled) {
-        if (posControl.desiredState.surface > 0.0f && posControl.actualState.surface > 0.0f && posControl.flags.hasValidSurfaceSensor) {
-            posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, 200.0f);
+        if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor) {
+            posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SONAR_MAX_DISTANCE);
         }
     }
     else {
@@ -2079,7 +2074,7 @@ static void updateReadyStatus(void)
 void updateFlightBehaviorModifiers(void)
 {
     posControl.flags.isGCSAssistedNavigationEnabled = IS_RC_MODE_ACTIVE(BOXGCSNAV);
-    posControl.flags.isTerrainFollowEnabled = IS_RC_MODE_ACTIVE(BOXTERRAIN);
+    posControl.flags.isTerrainFollowEnabled = IS_RC_MODE_ACTIVE(BOXSURFACE);
 }
 
 /**

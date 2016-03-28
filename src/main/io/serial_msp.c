@@ -368,7 +368,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 29 },
     { BOXHOMERESET, "HOME RESET;", 30 },
     { BOXGCSNAV, "GCS NAV;", 31 },
-    { BOXTERRAIN, "TERRAIN;", 33 },
+    { BOXSURFACE, "SURFACE;", 33 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -672,6 +672,7 @@ void mspInit(serialConfig_t *serialConfig)
 #ifdef GPS
     if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
+        activeBoxIds[activeBoxIdCount++] = BOXSURFACE;
     }
     if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
@@ -679,7 +680,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
         activeBoxIds[activeBoxIdCount++] = BOXHOMERESET;
         activeBoxIds[activeBoxIdCount++] = BOXGCSNAV;
-        activeBoxIds[activeBoxIdCount++] = BOXTERRAIN;
     }
 #endif
 
@@ -760,7 +760,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTERRAIN)) << BOXTERRAIN |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {
