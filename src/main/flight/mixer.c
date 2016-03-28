@@ -73,7 +73,16 @@ static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
 
 static mixerMode_e currentMixerMode;
+
+motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
+
+static const pgRegistry_t motorMixerRegistry PG_REGISTRY_SECTION = {
+    .base = (uint8_t *)&customMotorMixer,
+    .size = sizeof(customMotorMixer),
+    .pgn = PG_MOTOR_MIXER,
+    .flags = PGC_SYSTEM
+};
 
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;

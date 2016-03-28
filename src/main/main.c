@@ -321,9 +321,9 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
 
 #ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
+    mixerInit(masterConfig.mixerMode, customMotorMixer, masterConfig.customServoMixer);
 #else
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(masterConfig.mixerMode, customMotorMixer);
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));

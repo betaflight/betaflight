@@ -81,9 +81,12 @@ extern "C" {
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
 
+    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
+
     void pgResetAll(uint8_t) {
-        memset(&masterConfig, 0x00, sizeof(master_t));
-        memset(&boardAlignment, 0x00, sizeof(boardAlignment_t));
+        memset(&masterConfig, 0x00, sizeof(masterConfig));
+        memset(&boardAlignment, 0x00, sizeof(boardAlignment));
+        memset(&customMotorMixer, 0x00, sizeof(customMotorMixer));
     }
 
 }
@@ -165,7 +168,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     // custom mixer. clear by defaults.
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        EXPECT_EQ(0.0f, masterConfig.customMotorMixer[i].throttle);
+        EXPECT_EQ(0.0f, customMotorMixer[i].throttle);
     }
 }
 

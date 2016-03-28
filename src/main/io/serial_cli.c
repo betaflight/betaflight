@@ -1101,20 +1101,20 @@ static void cliMotorMix(char *cmdline)
     if (isEmpty(cmdline)) {
         cliPrint("Motor\tThr\tRoll\tPitch\tYaw\r\n");
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-            if (masterConfig.customMotorMixer[i].throttle == 0.0f)
+            if (customMotorMixer[i].throttle == 0.0f)
                 break;
             num_motors++;
             cliPrintf("#%d:\t", i);
-            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].throttle, buf));
-            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].roll, buf));
-            cliPrintf("%s\t", ftoa(masterConfig.customMotorMixer[i].pitch, buf));
-            cliPrintf("%s\r\n", ftoa(masterConfig.customMotorMixer[i].yaw, buf));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].throttle, buf));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].roll, buf));
+            cliPrintf("%s\t", ftoa(customMotorMixer[i].pitch, buf));
+            cliPrintf("%s\r\n", ftoa(customMotorMixer[i].yaw, buf));
         }
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-            masterConfig.customMotorMixer[i].throttle = 0.0f;
+            customMotorMixer[i].throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = strchr(cmdline, ' ');
         if (ptr) {
@@ -1125,7 +1125,7 @@ static void cliMotorMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    mixerLoadMix(i, masterConfig.customMotorMixer);
+                    mixerLoadMix(i, customMotorMixer);
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
                     break;
@@ -1138,22 +1138,22 @@ static void cliMotorMix(char *cmdline)
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                masterConfig.customMotorMixer[i].throttle = fastA2F(++ptr);
+                customMotorMixer[i].throttle = fastA2F(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                masterConfig.customMotorMixer[i].roll = fastA2F(++ptr);
+                customMotorMixer[i].roll = fastA2F(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                masterConfig.customMotorMixer[i].pitch = fastA2F(++ptr);
+                customMotorMixer[i].pitch = fastA2F(++ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-                masterConfig.customMotorMixer[i].yaw = fastA2F(++ptr);
+                customMotorMixer[i].yaw = fastA2F(++ptr);
                 check++;
             }
             if (check != 4) {
@@ -1715,12 +1715,12 @@ static void cliDump(char *cmdline)
         cliPrintf("mmix reset\r\n");
 
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-            if (masterConfig.customMotorMixer[i].throttle == 0.0f)
+            if (customMotorMixer[i].throttle == 0.0f)
                 break;
-            thr = masterConfig.customMotorMixer[i].throttle;
-            roll = masterConfig.customMotorMixer[i].roll;
-            pitch = masterConfig.customMotorMixer[i].pitch;
-            yaw = masterConfig.customMotorMixer[i].yaw;
+            thr = customMotorMixer[i].throttle;
+            roll = customMotorMixer[i].roll;
+            pitch = customMotorMixer[i].pitch;
+            yaw = customMotorMixer[i].yaw;
             cliPrintf("mmix %d", i);
             if (thr < 0)
                 cliWrite(' ');
