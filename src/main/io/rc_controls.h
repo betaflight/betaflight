@@ -104,8 +104,10 @@ typedef enum {
 #define CHANNEL_RANGE_MIN 900
 #define CHANNEL_RANGE_MAX 2100
 
-#define MODE_STEP_TO_CHANNEL_VALUE(step) (CHANNEL_RANGE_MIN + 25 * step)
-#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX) - CHANNEL_RANGE_MIN) / 25)
+#define CHANNEL_RANGE_WIDTH (CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN)
+
+#define MODE_STEP_TO_CHANNEL_VALUE(step) (CHANNEL_RANGE_MIN + 25 * (step))
+#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain((channelValue), CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX) - CHANNEL_RANGE_MIN) / 25)
 
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
@@ -126,6 +128,11 @@ typedef struct channelRange_s {
     uint8_t startStep;
     uint8_t endStep;
 } channelRange_t;
+
+typedef struct valueRange_s {
+    float min;
+    float max;
+} valueRange_t;
 
 typedef struct modeActivationCondition_s {
     boxId_e modeId;
@@ -159,10 +166,19 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
+#define PID_MIN      0
+#define PID_MAX      200
+#define PID_F_MIN    0
+#define PID_F_MAX    100
+#define RC_RATE_MIN  0
+#define RC_RATE_MAX  250
+#define EXPO_MIN     0
+#define EXPO_MAX     100
 
 typedef enum {
     ADJUSTMENT_NONE = 0,
@@ -186,14 +202,32 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+    ADJUSTMENT_ALT_P,
+    ADJUSTMENT_ALT_I,
+    ADJUSTMENT_ALT_D,
+    ADJUSTMENT_VEL_P,
+    ADJUSTMENT_VEL_I,
+    ADJUSTMENT_VEL_D,
+    ADJUSTMENT_MAG_P,
+    ADJUSTMENT_POS_P,
+    ADJUSTMENT_POS_I,
+    ADJUSTMENT_POSR_P,
+    ADJUSTMENT_POSR_I,
+    ADJUSTMENT_POSR_D,
+    ADJUSTMENT_NAVR_P,
+    ADJUSTMENT_NAVR_I,
+    ADJUSTMENT_NAVR_D,
+    ADJUSTMENT_LEVEL_P,
+    ADJUSTMENT_LEVEL_I,
+    ADJUSTMENT_LEVEL_D,
     ADJUSTMENT_FUNCTION_COUNT,
-
 } adjustmentFunction_e;
 
 
 typedef enum {
     ADJUSTMENT_MODE_STEP,
-    ADJUSTMENT_MODE_SELECT
+    ADJUSTMENT_MODE_SELECT,
+    ADJUSTMENT_MODE_DIRECT
 } adjustmentMode_e;
 
 typedef struct adjustmentStepConfig_s {
@@ -226,14 +260,15 @@ typedef struct adjustmentRange_s {
 
     // ... via slot
     uint8_t adjustmentIndex;
+    uint8_t enableDirectMode;
+    valueRange_t valueRange;
 } adjustmentRange_t;
-
-#define ADJUSTMENT_INDEX_OFFSET 1
 
 typedef struct adjustmentState_s {
     uint8_t auxChannelIndex;
-    const adjustmentConfig_t *config;
+    adjustmentConfig_t config;
     uint32_t timeoutAt;
+    adjustmentRange_t *range;
 } adjustmentState_t;
 
 
@@ -244,7 +279,7 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
+void configureAdjustmentState(adjustmentRange_t *adjustmentRange);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
@@ -252,4 +287,3 @@ bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
