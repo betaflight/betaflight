@@ -58,7 +58,6 @@ typedef struct master_t {
     // Flight config
     airplaneConfig_t airplaneConfig;
 
-    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
 

@@ -1142,7 +1142,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("Device UID:0x%x%x%x", U_ID_0, U_ID_1, U_ID_2);
         break;
         case 5:
-            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", controlRateProfiles[masterConfig.current_profile_index].rcRate8);
         break;
         case 6:
             blackboxPrintfHeaderLine("minthrottle:%d", escAndServoConfig.minthrottle);

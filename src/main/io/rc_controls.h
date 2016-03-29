@@ -139,8 +139,11 @@ typedef struct controlRateConfig_s {
     uint8_t rates[3];
     uint8_t dynThrPID;
     uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
+    uint16_t tpa_breakpoint;                // Breakpoint at which TPA is activated
 } controlRateConfig_t;
+
+#define MAX_CONTROL_RATE_PROFILE_COUNT 3
+extern controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
 extern int16_t rcCommand[4];
 

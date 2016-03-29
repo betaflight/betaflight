@@ -84,6 +84,7 @@ extern "C" {
     gyroConfig_t gyroConfig;
     sensorTrims_t sensorTrims;
     batteryConfig_t batteryConfig;
+    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 }
 
 #include "unittest_macros.h"

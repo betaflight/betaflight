@@ -83,6 +83,7 @@ extern "C" {
     sensorTrims_t sensorTrims;
     gyroConfig_t gyroConfig;
     batteryConfig_t batteryConfig;
+    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -98,6 +99,7 @@ extern "C" {
         memset(&sensorAlignmentConfig, 0x00, sizeof(sensorAlignmentConfig));
         memset(&sensorSelectionConfig, 0x00, sizeof(sensorSelectionConfig));
         memset(&batteryConfig, 0x00, sizeof(batteryConfig));
+        memset(&controlRateProfiles, 0x00, sizeof(controlRateProfiles));
     }
 
 }
@@ -163,11 +165,11 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, masterConfig.emf_avoidance);
 
-    EXPECT_EQ(0, masterConfig.controlRateProfiles[0].thrExpo8);
-    EXPECT_EQ(0, masterConfig.controlRateProfiles[0].dynThrPID);
-    EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rcYawExpo8);
+    EXPECT_EQ(0, controlRateProfiles[0].thrExpo8);
+    EXPECT_EQ(0, controlRateProfiles[0].dynThrPID);
+    EXPECT_EQ(0, controlRateProfiles[0].rcYawExpo8);
     for (uint8_t axis = 0; axis < FD_INDEX_COUNT; axis++) {
-        EXPECT_EQ(0, masterConfig.controlRateProfiles[0].rates[axis]);
+        EXPECT_EQ(0, controlRateProfiles[0].rates[axis]);
     }
 
     EXPECT_EQ(0, failsafeConfig.failsafe_kill_switch); // default failsafe switch action is identical to rc link loss

@@ -313,13 +313,13 @@ uint8_t getCurrentControlRateProfile(void)
 }
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.controlRateProfiles[profileIndex];
+    return &controlRateProfiles[profileIndex];
 }
 
 static void setControlRateProfile(uint8_t profileIndex)
 {
     currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
+    currentControlRateProfile = &controlRateProfiles[profileIndex];
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -420,7 +420,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     resetPidProfile(&currentProfile->pidProfile);
 
-    resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
+    resetControlRateConfig(&controlRateProfiles[0]);
 
     // for (i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
@@ -605,7 +605,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // copy first control rate config into remaining profile
     for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        memcpy(&masterConfig.controlRateProfiles[i], currentControlRateProfile, sizeof(controlRateConfig_t));
+        memcpy(&controlRateProfiles[i], &controlRateProfiles[0], sizeof(controlRateConfig_t));
     }
 
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
