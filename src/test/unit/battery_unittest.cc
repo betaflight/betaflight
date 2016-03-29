@@ -119,18 +119,24 @@ TEST(BatteryTest, BatteryState)
     batteryAdcToBatteryStateExpectation_t batteryAdcToBatteryStateExpectations[] = {
             {1420, 126, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             /* fall down to battery warning level */
-            {1185, 105, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* creep back up to battery ok */
+            {1195, 106, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1185, 105, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1195, 106, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1165, 103, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            /* creep back up to battery ok */
+            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1185, 105, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1195, 106, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1207, 107, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             /* fall down to battery critical level */
             {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* creep back up to battery warning */
             {1115, 99, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1130, 100, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1095, 97, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            /* creep back up to battery warning */
+            {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1115, 99, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            {1130, 100, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
             {1145, 101, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
 
     };
