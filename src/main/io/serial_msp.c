@@ -421,10 +421,8 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
     mspPortToReset->port = serialPort;
 }
 
-void mspAllocateSerialPorts(serialConfig_t *serialConfig)
+void mspAllocateSerialPorts(void)
 {
-    UNUSED(serialConfig);
-
     serialPort_t *serialPort;
 
     uint8_t portIndex = 0;
@@ -460,7 +458,7 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-void mspInit(serialConfig_t *serialConfig)
+void mspInit(void)
 {
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
@@ -545,7 +543,7 @@ void mspInit(serialConfig_t *serialConfig)
 #endif
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspAllocateSerialPorts(serialConfig);
+    mspAllocateSerialPorts();
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
@@ -1116,15 +1114,15 @@ static bool processOutCommand(uint8_t cmdMSP)
             ((sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4)) * serialGetAvailablePortCount())
         );
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+            if (!serialIsPortAvailable(serialConfig.portConfigs[i].identifier)) {
                 continue;
             };
-            serialize8(masterConfig.serialConfig.portConfigs[i].identifier);
-            serialize16(masterConfig.serialConfig.portConfigs[i].functionMask);
-            serialize8(masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex);
-            serialize8(masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex);
-            serialize8(masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex);
-            serialize8(masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex);
+            serialize8(serialConfig.portConfigs[i].identifier);
+            serialize16(serialConfig.portConfigs[i].functionMask);
+            serialize8(serialConfig.portConfigs[i].msp_baudrateIndex);
+            serialize8(serialConfig.portConfigs[i].gps_baudrateIndex);
+            serialize8(serialConfig.portConfigs[i].telemetry_baudrateIndex);
+            serialize8(serialConfig.portConfigs[i].blackbox_baudrateIndex);
         }
         break;
 
@@ -1779,7 +1777,7 @@ static bool processInCommand(void)
                 // 2ms will most likely do the job, but give some grace time
                 delay(10);
                 // rebuild/refill currentPort structure, does openSerialPort if marked UNUSED_PORT - used ports are skiped
-                mspAllocateSerialPorts(&masterConfig.serialConfig);
+                mspAllocateSerialPorts();
                 /* restore currentPort and mspSerialPort
                 setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
                 */ 

@@ -93,6 +93,7 @@ typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
 } serialConfig_t;
 
+extern serialConfig_t serialConfig;
 
 //
 // configuration

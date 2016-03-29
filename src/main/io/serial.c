@@ -26,6 +26,9 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -50,7 +53,17 @@
 #include "telemetry/telemetry.h"
 #endif
 
-static serialConfig_t *serialConfig;
+serialConfig_t serialConfig;
+
+static const pgRegistry_t serialConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&serialConfig,
+    .size = sizeof(serialConfig),
+    .pgn = PG_SERIAL_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
+
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -137,7 +150,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
 {
     while (findSerialPortConfigState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSerialPortConfigState.lastIndex++];
+        serialPortConfig_t *candidate = &serialConfig.portConfigs[findSerialPortConfigState.lastIndex++];
 
         if (candidate->functionMask & function) {
             return candidate;
@@ -175,7 +188,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
     while (findSharedSerialPortState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSharedSerialPortState.lastIndex++];
+        serialPortConfig_t *candidate = &serialConfig.portConfigs[findSharedSerialPortState.lastIndex++];
 
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
@@ -238,7 +251,7 @@ serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifie
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[index];
+        serialPortConfig_t *candidate = &serialConfig.portConfigs[index];
         if (candidate->identifier == identifier) {
             return candidate;
         }
@@ -349,11 +362,9 @@ void closeSerialPort(serialPort_t *serialPort) {
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled)
+void serialInit(bool softserialEnabled)
 {
     uint8_t index;
-
-    serialConfig = initialSerialConfig;
 
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
@@ -433,7 +444,7 @@ void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
         cliEnter(serialPort);
     }
 #endif
-    if (receivedChar == serialConfig->reboot_character) {
+    if (receivedChar == serialConfig.reboot_character) {
         systemResetToBootloader();
     }
 }

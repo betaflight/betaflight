@@ -98,7 +98,6 @@ uint32_t GPS_garbageByteCount = 0;
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
 
-static serialConfig_t *serialConfig;
 static serialPort_t *gpsPort;
 
 typedef struct gpsInitData_s {
@@ -205,11 +204,8 @@ static void gpsSetState(gpsState_e state)
     gpsData.messageState = GPS_MESSAGE_STATE_IDLE;
 }
 
-void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
+void gpsInit(gpsConfig_t *initialGpsConfig)
 {
-    serialConfig = initialSerialConfig;
-
-
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;

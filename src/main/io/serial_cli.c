@@ -523,7 +523,7 @@ const clivalue_t valueTable[] = {
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, .config.minmax = { -1,  1 } },
 
-    { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, .config.minmax = { 48,  126 } },
+    { "reboot_character",           VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 48,  126 } , PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character)},
 
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.provider, .config.lookup = { TABLE_GPS_PROVIDER } },
@@ -927,16 +927,16 @@ static void cliSerial(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+            if (!serialIsPortAvailable(serialConfig.portConfigs[i].identifier)) {
                 continue;
             };
             cliPrintf("serial %d %d %ld %ld %ld %ld\r\n" ,
-                masterConfig.serialConfig.portConfigs[i].identifier,
-                masterConfig.serialConfig.portConfigs[i].functionMask,
-                baudRates[masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex]
+                serialConfig.portConfigs[i].identifier,
+                serialConfig.portConfigs[i].functionMask,
+                baudRates[serialConfig.portConfigs[i].msp_baudrateIndex],
+                baudRates[serialConfig.portConfigs[i].gps_baudrateIndex],
+                baudRates[serialConfig.portConfigs[i].telemetry_baudrateIndex],
+                baudRates[serialConfig.portConfigs[i].blackbox_baudrateIndex]
             );
         }
         return;
@@ -2640,8 +2640,7 @@ void cliProcess(void)
     }
 }
 
-void cliInit(serialConfig_t *serialConfig)
+void cliInit()
 {
-    UNUSED(serialConfig);
 }
 #endif

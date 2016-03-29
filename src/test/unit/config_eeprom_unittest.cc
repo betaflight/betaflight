@@ -85,6 +85,7 @@ extern "C" {
     sensorTrims_t sensorTrims;
     batteryConfig_t batteryConfig;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
+    serialConfig_t serialConfig;
 }
 
 #include "unittest_macros.h"

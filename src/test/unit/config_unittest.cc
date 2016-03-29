@@ -84,6 +84,7 @@ extern "C" {
     gyroConfig_t gyroConfig;
     batteryConfig_t batteryConfig;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
+    serialConfig_t serialConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -100,6 +101,7 @@ extern "C" {
         memset(&sensorSelectionConfig, 0x00, sizeof(sensorSelectionConfig));
         memset(&batteryConfig, 0x00, sizeof(batteryConfig));
         memset(&controlRateProfiles, 0x00, sizeof(controlRateProfiles));
+        memset(&serialConfig, 0x00, sizeof(serialConfig));
     }
 
 }

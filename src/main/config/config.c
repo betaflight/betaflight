@@ -411,7 +411,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
 #endif
 
-    resetSerialConfig(&masterConfig.serialConfig);
+    resetSerialConfig(&serialConfig);
 
     masterConfig.looptime = 2000;
     masterConfig.i2c_highspeed = 1;
@@ -525,10 +525,10 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
 #ifdef ALIENWIIF3
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     batteryConfig.vbatscale = 20;
 #else
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
+    serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
@@ -763,18 +763,16 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(COLIBRI_RACE)
-    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
     if(featureConfigured(FEATURE_RX_SERIAL)) {
-        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+        serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
 
     useRxConfig(&masterConfig.rxConfig);
 
-    serialConfig_t *serialConfig = &masterConfig.serialConfig;
-
-    if (!isSerialConfigValid(serialConfig)) {
-        resetSerialConfig(serialConfig);
+    if (!isSerialConfigValid(&serialConfig)) {
+        resetSerialConfig(&serialConfig);
     }
 }
 

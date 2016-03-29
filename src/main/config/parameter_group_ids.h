@@ -27,6 +27,7 @@
 #define PG_GYRO_CONFIG 10
 #define PG_BATTERY_CONFIG 11
 #define PG_CONTROL_RATE_PROFILES 12
+#define PG_SERIAL_CONFIG 13
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254

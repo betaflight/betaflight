@@ -27,8 +27,6 @@ typedef struct master_t {
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
     uint8_t i2c_highspeed;                   // Overclock i2c Bus for faster IMU readings
 
-    serialConfig_t serialConfig;
-
     // IMU configuration
     uint16_t looptime;                      // imu loop time in us
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)

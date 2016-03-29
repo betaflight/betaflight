@@ -82,7 +82,7 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
-void mspInit(serialConfig_t *serialConfig);
+void mspInit(void);
 void mspProcess(void);
-void mspAllocateSerialPorts(serialConfig_t *serialConfig);
+void mspAllocateSerialPorts(void);
 void mspReleasePortIfAllocated(serialPort_t *serialPort);
