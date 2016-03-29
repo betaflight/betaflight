@@ -71,7 +71,6 @@ float magneticDeclination = 0.0f;       // calculated at startup from config
 static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
-static pidProfile_t *pidProfile;
 static accDeadband_t *accDeadband;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
@@ -109,14 +108,12 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
-    pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     float accz_lpf_cutoff,
     uint16_t throttle_correction_angle
 )
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
-    pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);

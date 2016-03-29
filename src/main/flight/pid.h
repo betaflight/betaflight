@@ -70,15 +70,10 @@ typedef struct pidProfile_s {
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     float dterm_cut_hz;                     // dterm filtering
     uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
-
-#ifdef GTUNE
-    uint8_t  gtune_lolimP[FD_INDEX_COUNT];  // [0..200] Lower limit of P during G tune
-    uint8_t  gtune_hilimP[FD_INDEX_COUNT];  // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
-    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
-    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
 } pidProfile_t;
+
+extern pidProfile_t *pidProfile;
+
 
 extern int16_t axisPID[FD_INDEX_COUNT];
 extern int32_t axisPID_P[FD_INDEX_COUNT], axisPID_I[FD_INDEX_COUNT], axisPID_D[FD_INDEX_COUNT];

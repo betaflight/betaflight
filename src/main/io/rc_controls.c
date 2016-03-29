@@ -63,8 +63,6 @@
 
 #define AIRMODE_DEADBAND 12
 
-static pidProfile_t *pidProfile;
-
 controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
 static const pgRegistry_t controlRateProfilesRegistry PG_REGISTRY_SECTION = {
@@ -645,10 +643,8 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
 {
-    pidProfile = pidProfileToUse;
-
     isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
 }
 

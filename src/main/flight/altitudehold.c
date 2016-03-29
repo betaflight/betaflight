@@ -58,16 +58,13 @@ int32_t vario = 0;                      // variometer in cm/s
 
 
 static barometerConfig_t *barometerConfig;
-static pidProfile_t *pidProfile;
 static rcControlsConfig_t *rcControlsConfig;
 
 void configureAltitudeHold(
-        pidProfile_t *initialPidProfile,
         barometerConfig_t *intialBarometerConfig,
         rcControlsConfig_t *initialRcControlsConfig
 )
 {
-    pidProfile = initialPidProfile;
     barometerConfig = intialBarometerConfig;
     rcControlsConfig = initialRcControlsConfig;
 }

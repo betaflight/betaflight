@@ -89,6 +89,9 @@ extern "C" {
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
 
+    pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
+    pidProfile_t *pidProfile = &testPidProfile[0];
+
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
 
     void pgResetAll(uint8_t) {
@@ -191,7 +194,7 @@ void applyDefaultColors(hsvColor_t *, uint8_t) {}
 void beeperConfirmationBeeps(uint8_t) {}
 void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}
-void useRcControlsConfig(modeActivationCondition_t *, pidProfile_t *) {}
+void useRcControlsConfig(modeActivationCondition_t *) {}
 void useFailsafeConfig(void) {}
 void useBarometerConfig(barometerConfig_t *) {}
 void telemetryUseConfig(telemetryConfig_t *) {}
@@ -208,7 +211,7 @@ void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, mixerConfig_t *, airpla
 void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
-void imuConfigure(imuRuntimeConfig_t *, pidProfile_t *,accDeadband_t *,float ,uint16_t) {}
+void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
 void gpsUseProfile(gpsProfile_t *) {}
 void gpsUsePIDs(pidProfile_t *) {}
 void generateYawCurve(controlRateConfig_t *) {}

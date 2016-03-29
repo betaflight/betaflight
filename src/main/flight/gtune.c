@@ -27,6 +27,9 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -44,6 +47,8 @@
 #include "io/rc_controls.h"
 
 #include "config/runtime_config.h"
+
+#include "gtune.h"
 
 extern uint16_t cycleTime;
 extern uint8_t motorCount;
@@ -90,7 +95,19 @@ extern uint8_t motorCount;
     pidProfile->gtune_average_cycles = 16;  [8..128] Number of looptime cycles used for gyro average calculation
 */
 
-static pidProfile_t *pidProfile;
+gtuneConfig_t gtuneConfigStorage[MAX_PROFILE_COUNT];
+gtuneConfig_t *gtuneConfig;
+
+static const pgRegistry_t gtuneConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&gtuneConfigStorage,
+    .ptr = (uint8_t **)&gtuneConfig,
+    .size = sizeof(gtuneConfigStorage[0]),
+    .pgn = PG_GTUNE_CONFIG,
+    .format = 0,
+    .flags = PGC_PROFILE
+};
+
 static int16_t delay_cycles;
 static int16_t time_skip[3];
 static int16_t OldError[3], result_P64[3];
@@ -99,14 +116,12 @@ static bool floatPID;
 
 void updateDelayCycles(void)
 {
-    delay_cycles = -(((int32_t)pidProfile->gtune_settle_time * 1000) / cycleTime);
+    delay_cycles = -(((int32_t)gtuneConfig->gtune_settle_time * 1000) / cycleTime);
 }
 
-void init_Gtune(pidProfile_t *pidProfileToTune)
+void init_Gtune(void)
 {
     uint8_t i;
-
-    pidProfile = pidProfileToTune;
 	if (pidProfile->pidController == 2) {
 	    floatPID = true;                                                        // LuxFloat is using float values for PID settings
 	} else {
@@ -114,17 +129,17 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
 	}
 	updateDelayCycles();
 	for (i = 0; i < 3; i++) {
-        if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
-            pidProfile->gtune_hilimP[i] = 0;                                    // Disable YAW tuning for everything below a quadcopter
+        if ((gtuneConfig->gtune_hilimP[i] && gtuneConfig->gtune_lolimP[i] > gtuneConfig->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
+            gtuneConfig->gtune_hilimP[i] = 0;                                    // Disable YAW tuning for everything below a quadcopter
         }
         if (floatPID) {
-            if((pidProfile->P_f[i] * 10.0f) < pidProfile->gtune_lolimP[i]) {
-                pidProfile->P_f[i] = (float)(pidProfile->gtune_lolimP[i] / 10.0f);
+            if((pidProfile->P_f[i] * 10.0f) < gtuneConfig->gtune_lolimP[i]) {
+                pidProfile->P_f[i] = (float)(gtuneConfig->gtune_lolimP[i] / 10.0f);
             }
             result_P64[i] = (int16_t)pidProfile->P_f[i] << 6;                   // 6 bit extra resolution for P.
         } else {
-            if(pidProfile->P8[i] < pidProfile->gtune_lolimP[i]) {
-                pidProfile->P8[i] = pidProfile->gtune_lolimP[i];
+            if(pidProfile->P8[i] < gtuneConfig->gtune_lolimP[i]) {
+                pidProfile->P8[i] = gtuneConfig->gtune_lolimP[i];
             }
             result_P64[i] = (int16_t)pidProfile->P8[i] << 6;                    // 6 bit extra resolution for P.
         }
@@ -150,7 +165,7 @@ void calculate_Gtune(uint8_t axis)
                 AvgGyro[axis] += 128 * ((int16_t)gyroADC[axis] / 128);         // Chop some jitter and average
             }
         }
-        if (time_skip[axis] == pidProfile->gtune_average_cycles) {              // Looptime cycles for gyro average calculation. default 16.
+        if (time_skip[axis] == gtuneConfig->gtune_average_cycles) {              // Looptime cycles for gyro average calculation. default 16.
             AvgGyro[axis] /= time_skip[axis];                                   // AvgGyro[axis] has now very clean gyrodata
             time_skip[axis] = 0;
             if (axis == FD_YAW) {
@@ -160,19 +175,19 @@ void calculate_Gtune(uint8_t axis)
                 threshP = 10;
                 error = AvgGyro[axis];
             }
-            if (pidProfile->gtune_hilimP[axis] && error && OldError[axis] && error != OldError[axis]) {  // Don't run when not needed or pointless to do so
+            if (gtuneConfig->gtune_hilimP[axis] && error && OldError[axis] && error != OldError[axis]) {  // Don't run when not needed or pointless to do so
                 diff_G = ABS(error) - ABS(OldError[axis]);
                 if ((error > 0 && OldError[axis] > 0) || (error < 0 && OldError[axis] < 0)) {
                     if (diff_G > threshP) {
                         if (axis == FD_YAW) {
-                            result_P64[axis] += 256 + pidProfile->gtune_pwr;    // YAW ends up at low limit on float PID, give it some more to work with.
+                            result_P64[axis] += 256 + gtuneConfig->gtune_pwr;    // YAW ends up at low limit on float PID, give it some more to work with.
                         } else {
-                            result_P64[axis] += 64 + pidProfile->gtune_pwr;     // Shift balance a little on the plus side.
+                            result_P64[axis] += 64 + gtuneConfig->gtune_pwr;     // Shift balance a little on the plus side.
                         }
                     } else {
                         if (diff_G < -threshP) {
                             if (axis == FD_YAW) {
-                                result_P64[axis] -= 64 + pidProfile->gtune_pwr;
+                                result_P64[axis] -= 64 + gtuneConfig->gtune_pwr;
                             } else {
                                 result_P64[axis] -= 32;
                             }
@@ -183,7 +198,7 @@ void calculate_Gtune(uint8_t axis)
                         result_P64[axis] -= 32;                                 // Don't use antiwobble for YAW
                     }
                 }
-                int16_t newP = constrain((result_P64[axis] >> 6), (int16_t)pidProfile->gtune_lolimP[axis], (int16_t)pidProfile->gtune_hilimP[axis]);
+                int16_t newP = constrain((result_P64[axis] >> 6), (int16_t)gtuneConfig->gtune_lolimP[axis], (int16_t)gtuneConfig->gtune_hilimP[axis]);
 
 #ifdef BLACKBOX
                 if (feature(FEATURE_BLACKBOX)) {

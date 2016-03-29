@@ -56,7 +56,6 @@ typedef struct imuRuntimeConfig_s {
 
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
-    pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     float accz_lpf_cutoff,
     uint16_t throttle_correction_angle

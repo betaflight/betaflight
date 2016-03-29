@@ -99,6 +99,9 @@ extern "C" {
     batteryConfig_t batteryConfig;
     serialConfig_t serialConfig;
 
+    pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
+    pidProfile_t *pidProfile = &testPidProfile[0];
+
     const pgRegistry_t __pg_registry[] =
     {
         {
@@ -279,7 +282,7 @@ TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
     serialWritePos = 0;
     serialReadPos = 0;
     currentProfile = &profile;
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     currentPort->cmdMSP = MSP_PID_CONTROLLER;
     mspProcessReceivedCommand();
     EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
@@ -296,7 +299,7 @@ TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
 {
     // Use the MSP to write out the PID values
     currentProfile = &profile;
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     serialWritePos = 0;
     serialReadPos = 0;
     currentPort->cmdMSP = MSP_PID_CONTROLLER;
@@ -304,7 +307,7 @@ TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
     EXPECT_EQ(PID_CONTROLLER_MWREWRITE, serialBuffer.mspResponse.payload[0]);
 
     // set the pidController to a different value so we can check if it gets read back properly
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_LUX_FLOAT;
+    pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
 
     // Now use the MSP to read back the picController and check if it is the same
     // spoof a change from the written MSP_PID_CONTROLLER to the readable MSP_SET_PID_CONTROLLER
@@ -322,7 +325,7 @@ TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
     mspProcessReceivedCommand();
 
     // check the pidController value has been read correctly
-    EXPECT_EQ(PID_CONTROLLER_MWREWRITE, currentProfile->pidProfile.pidController);
+    EXPECT_EQ(PID_CONTROLLER_MWREWRITE, pidProfile->pidController);
 }
 
 TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
@@ -360,35 +363,35 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     const int D8_PIDVEL = 7;
 
     currentProfile = &profile;
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_MWREWRITE;
-    currentProfile->pidProfile.P8[PIDROLL] = P8_ROLL;
-    currentProfile->pidProfile.I8[PIDROLL] = I8_ROLL;
-    currentProfile->pidProfile.D8[PIDROLL] = D8_ROLL;
-    currentProfile->pidProfile.P8[PIDPITCH] = P8_PITCH;
-    currentProfile->pidProfile.I8[PIDPITCH] = I8_PITCH;
-    currentProfile->pidProfile.D8[PIDPITCH] = D8_PITCH;
-    currentProfile->pidProfile.P8[PIDYAW] = P8_YAW;
-    currentProfile->pidProfile.I8[PIDYAW] = I8_YAW;
-    currentProfile->pidProfile.D8[PIDYAW] = D8_YAW;
-    currentProfile->pidProfile.P8[PIDALT] = P8_PIDALT;
-    currentProfile->pidProfile.I8[PIDALT] = I8_PIDALT;
-    currentProfile->pidProfile.D8[PIDALT] = D8_PIDALT;
-    currentProfile->pidProfile.P8[PIDPOS] = P8_PIDPOS;
-    currentProfile->pidProfile.I8[PIDPOS] = I8_PIDPOS;
-    currentProfile->pidProfile.D8[PIDPOS] = D8_PIDPOS;
-    currentProfile->pidProfile.P8[PIDPOSR] = P8_PIDPOSR;
-    currentProfile->pidProfile.I8[PIDPOSR] = I8_PIDPOSR;
-    currentProfile->pidProfile.D8[PIDPOSR] = D8_PIDPOSR;
-    currentProfile->pidProfile.P8[PIDNAVR] = P8_PIDNAVR;
-    currentProfile->pidProfile.I8[PIDNAVR] = I8_PIDNAVR;
-    currentProfile->pidProfile.D8[PIDNAVR] = D8_PIDNAVR;
-    currentProfile->pidProfile.P8[PIDLEVEL] = P8_PIDLEVEL;
-    currentProfile->pidProfile.I8[PIDLEVEL] = I8_PIDLEVEL;
-    currentProfile->pidProfile.D8[PIDLEVEL] = D8_PIDLEVEL;
-    currentProfile->pidProfile.P8[PIDMAG] = P8_PIDMAG;
-    currentProfile->pidProfile.P8[PIDVEL] = P8_PIDVEL;
-    currentProfile->pidProfile.I8[PIDVEL] = I8_PIDVEL;
-    currentProfile->pidProfile.D8[PIDVEL] = D8_PIDVEL;
+    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile->P8[PIDROLL] = P8_ROLL;
+    pidProfile->I8[PIDROLL] = I8_ROLL;
+    pidProfile->D8[PIDROLL] = D8_ROLL;
+    pidProfile->P8[PIDPITCH] = P8_PITCH;
+    pidProfile->I8[PIDPITCH] = I8_PITCH;
+    pidProfile->D8[PIDPITCH] = D8_PITCH;
+    pidProfile->P8[PIDYAW] = P8_YAW;
+    pidProfile->I8[PIDYAW] = I8_YAW;
+    pidProfile->D8[PIDYAW] = D8_YAW;
+    pidProfile->P8[PIDALT] = P8_PIDALT;
+    pidProfile->I8[PIDALT] = I8_PIDALT;
+    pidProfile->D8[PIDALT] = D8_PIDALT;
+    pidProfile->P8[PIDPOS] = P8_PIDPOS;
+    pidProfile->I8[PIDPOS] = I8_PIDPOS;
+    pidProfile->D8[PIDPOS] = D8_PIDPOS;
+    pidProfile->P8[PIDPOSR] = P8_PIDPOSR;
+    pidProfile->I8[PIDPOSR] = I8_PIDPOSR;
+    pidProfile->D8[PIDPOSR] = D8_PIDPOSR;
+    pidProfile->P8[PIDNAVR] = P8_PIDNAVR;
+    pidProfile->I8[PIDNAVR] = I8_PIDNAVR;
+    pidProfile->D8[PIDNAVR] = D8_PIDNAVR;
+    pidProfile->P8[PIDLEVEL] = P8_PIDLEVEL;
+    pidProfile->I8[PIDLEVEL] = I8_PIDLEVEL;
+    pidProfile->D8[PIDLEVEL] = D8_PIDLEVEL;
+    pidProfile->P8[PIDMAG] = P8_PIDMAG;
+    pidProfile->P8[PIDVEL] = P8_PIDVEL;
+    pidProfile->I8[PIDVEL] = I8_PIDVEL;
+    pidProfile->D8[PIDVEL] = D8_PIDVEL;
 
     // use the MSP to write out the PID values
     serialWritePos = 0;
@@ -402,7 +405,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     EXPECT_EQ(D8_YAW, serialBuffer.mspResponse.payload[8]);
 
     // reset test values to zero, so we can check if they get read properly
-    memset(&currentProfile->pidProfile, 0, sizeof(currentProfile->pidProfile));
+    memset(pidProfile, 0, sizeof(pidProfile_t));
 
     // now use the MSP to read back the PID values and check they are the same as written
     // spoof a change from the written MSP_PID to the readable MSP_SET_PID
@@ -420,34 +423,34 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     mspProcessReceivedCommand();
 
     // check the values are as expected
-    EXPECT_EQ(P8_ROLL, currentProfile->pidProfile.P8[PIDROLL]);
-    EXPECT_EQ(I8_ROLL, currentProfile->pidProfile.I8[PIDROLL]);
-    EXPECT_EQ(D8_ROLL, currentProfile->pidProfile.D8[PIDROLL]);
-    EXPECT_EQ(P8_PITCH, currentProfile->pidProfile.P8[PIDPITCH]);
-    EXPECT_EQ(I8_PITCH, currentProfile->pidProfile.I8[PIDPITCH]);
-    EXPECT_EQ(D8_PITCH, currentProfile->pidProfile.D8[PIDPITCH]);
-    EXPECT_EQ(P8_YAW, currentProfile->pidProfile.P8[PIDYAW]);
-    EXPECT_EQ(I8_YAW, currentProfile->pidProfile.I8[PIDYAW]);
-    EXPECT_EQ(D8_YAW, currentProfile->pidProfile.D8[PIDYAW]);
-    EXPECT_EQ(P8_PIDALT, currentProfile->pidProfile.P8[PIDALT]);
-    EXPECT_EQ(I8_PIDALT, currentProfile->pidProfile.I8[PIDALT]);
-    EXPECT_EQ(D8_PIDALT, currentProfile->pidProfile.D8[PIDALT]);
-    EXPECT_EQ(P8_PIDPOS, currentProfile->pidProfile.P8[PIDPOS]);
-    EXPECT_EQ(I8_PIDPOS, currentProfile->pidProfile.I8[PIDPOS]);
-    EXPECT_EQ(D8_PIDPOS, currentProfile->pidProfile.D8[PIDPOS]);
-    EXPECT_EQ(P8_PIDPOSR, currentProfile->pidProfile.P8[PIDPOSR]);
-    EXPECT_EQ(I8_PIDPOSR, currentProfile->pidProfile.I8[PIDPOSR]);
-    EXPECT_EQ(D8_PIDPOSR, currentProfile->pidProfile.D8[PIDPOSR]);
-    EXPECT_EQ(P8_PIDNAVR, currentProfile->pidProfile.P8[PIDNAVR]);
-    EXPECT_EQ(I8_PIDNAVR, currentProfile->pidProfile.I8[PIDNAVR]);
-    EXPECT_EQ(D8_PIDNAVR, currentProfile->pidProfile.D8[PIDNAVR]);
-    EXPECT_EQ(P8_PIDLEVEL, currentProfile->pidProfile.P8[PIDLEVEL]);
-    EXPECT_EQ(I8_PIDLEVEL, currentProfile->pidProfile.I8[PIDLEVEL]);
-    EXPECT_EQ(D8_PIDLEVEL, currentProfile->pidProfile.D8[PIDLEVEL]);
-    EXPECT_EQ(P8_PIDMAG, currentProfile->pidProfile.P8[PIDMAG]);
-    EXPECT_EQ(P8_PIDVEL, currentProfile->pidProfile.P8[PIDVEL]);
-    EXPECT_EQ(I8_PIDVEL, currentProfile->pidProfile.I8[PIDVEL]);
-    EXPECT_EQ(D8_PIDVEL, currentProfile->pidProfile.D8[PIDVEL]);
+    EXPECT_EQ(P8_ROLL, pidProfile->P8[PIDROLL]);
+    EXPECT_EQ(I8_ROLL, pidProfile->I8[PIDROLL]);
+    EXPECT_EQ(D8_ROLL, pidProfile->D8[PIDROLL]);
+    EXPECT_EQ(P8_PITCH, pidProfile->P8[PIDPITCH]);
+    EXPECT_EQ(I8_PITCH, pidProfile->I8[PIDPITCH]);
+    EXPECT_EQ(D8_PITCH, pidProfile->D8[PIDPITCH]);
+    EXPECT_EQ(P8_YAW, pidProfile->P8[PIDYAW]);
+    EXPECT_EQ(I8_YAW, pidProfile->I8[PIDYAW]);
+    EXPECT_EQ(D8_YAW, pidProfile->D8[PIDYAW]);
+    EXPECT_EQ(P8_PIDALT, pidProfile->P8[PIDALT]);
+    EXPECT_EQ(I8_PIDALT, pidProfile->I8[PIDALT]);
+    EXPECT_EQ(D8_PIDALT, pidProfile->D8[PIDALT]);
+    EXPECT_EQ(P8_PIDPOS, pidProfile->P8[PIDPOS]);
+    EXPECT_EQ(I8_PIDPOS, pidProfile->I8[PIDPOS]);
+    EXPECT_EQ(D8_PIDPOS, pidProfile->D8[PIDPOS]);
+    EXPECT_EQ(P8_PIDPOSR, pidProfile->P8[PIDPOSR]);
+    EXPECT_EQ(I8_PIDPOSR, pidProfile->I8[PIDPOSR]);
+    EXPECT_EQ(D8_PIDPOSR, pidProfile->D8[PIDPOSR]);
+    EXPECT_EQ(P8_PIDNAVR, pidProfile->P8[PIDNAVR]);
+    EXPECT_EQ(I8_PIDNAVR, pidProfile->I8[PIDNAVR]);
+    EXPECT_EQ(D8_PIDNAVR, pidProfile->D8[PIDNAVR]);
+    EXPECT_EQ(P8_PIDLEVEL, pidProfile->P8[PIDLEVEL]);
+    EXPECT_EQ(I8_PIDLEVEL, pidProfile->I8[PIDLEVEL]);
+    EXPECT_EQ(D8_PIDLEVEL, pidProfile->D8[PIDLEVEL]);
+    EXPECT_EQ(P8_PIDMAG, pidProfile->P8[PIDMAG]);
+    EXPECT_EQ(P8_PIDVEL, pidProfile->P8[PIDVEL]);
+    EXPECT_EQ(I8_PIDVEL, pidProfile->I8[PIDVEL]);
+    EXPECT_EQ(D8_PIDVEL, pidProfile->D8[PIDVEL]);
 }
 
 TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
@@ -470,19 +473,19 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     const float H_level = 3.0f;
     const uint8_t H_sensitivity = 75;
     currentProfile = &profile;
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_LUX_FLOAT;
-    currentProfile->pidProfile.P_f[PIDROLL] = Pf_ROLL;
-    currentProfile->pidProfile.I_f[PIDROLL] = If_ROLL;
-    currentProfile->pidProfile.D_f[PIDROLL] = Df_ROLL;
-    currentProfile->pidProfile.P_f[PIDPITCH] = Pf_PITCH;
-    currentProfile->pidProfile.I_f[PIDPITCH] = If_PITCH;
-    currentProfile->pidProfile.D_f[PIDPITCH] = Df_PITCH;
-    currentProfile->pidProfile.P_f[PIDYAW] = Pf_YAW;
-    currentProfile->pidProfile.I_f[PIDYAW] = If_YAW;
-    currentProfile->pidProfile.D_f[PIDYAW] = Df_YAW;
-    currentProfile->pidProfile.A_level = A_level;
-    currentProfile->pidProfile.H_level = H_level;
-    currentProfile->pidProfile.H_sensitivity = H_sensitivity;
+    pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
+    pidProfile->P_f[PIDROLL] = Pf_ROLL;
+    pidProfile->I_f[PIDROLL] = If_ROLL;
+    pidProfile->D_f[PIDROLL] = Df_ROLL;
+    pidProfile->P_f[PIDPITCH] = Pf_PITCH;
+    pidProfile->I_f[PIDPITCH] = If_PITCH;
+    pidProfile->D_f[PIDPITCH] = Df_PITCH;
+    pidProfile->P_f[PIDYAW] = Pf_YAW;
+    pidProfile->I_f[PIDYAW] = If_YAW;
+    pidProfile->D_f[PIDYAW] = Df_YAW;
+    pidProfile->A_level = A_level;
+    pidProfile->H_level = H_level;
+    pidProfile->H_sensitivity = H_sensitivity;
 
     // use the MSP to write out the PID values
     serialWritePos = 0;
@@ -492,7 +495,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     EXPECT_EQ(3 * PID_ITEM_COUNT, serialBuffer.mspResponse.header.size);
 
     // reset test values to zero, so we can check if they get read properly
-    memset(&currentProfile->pidProfile, 0, sizeof(currentProfile->pidProfile));
+    memset(pidProfile, 0, sizeof(pidProfile_t));
 
     // now use the MSP to read back the PID values and check they are the same
     // spoof a change from the written MSP_PID to the readable MSP_SET_PID
@@ -506,25 +509,25 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
 
     // need to reset the controller for values to be read back correctly
-    currentProfile->pidProfile.pidController = PID_CONTROLLER_LUX_FLOAT;
+    pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
 
     // set the offset into the payload
     currentPort->indRX = offsetof(struct mspResonse_s, payload);
     mspProcessReceivedCommand();
 
     // check the values are as expected
-    EXPECT_FLOAT_EQ(Pf_ROLL, currentProfile->pidProfile.P_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(If_ROLL, currentProfile->pidProfile.I_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(Df_ROLL, currentProfile->pidProfile.D_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(Pf_PITCH, currentProfile->pidProfile.P_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(If_PITCH, currentProfile->pidProfile.I_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(Df_PITCH, currentProfile->pidProfile.D_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(Pf_YAW, currentProfile->pidProfile.P_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(If_YAW, currentProfile->pidProfile.I_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(Df_YAW, currentProfile->pidProfile.D_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(A_level, currentProfile->pidProfile.A_level);
-    EXPECT_FLOAT_EQ(H_level, currentProfile->pidProfile.H_level);
-    EXPECT_EQ(H_sensitivity, currentProfile->pidProfile.H_sensitivity);
+    EXPECT_FLOAT_EQ(Pf_ROLL, pidProfile->P_f[PIDROLL]);
+    EXPECT_FLOAT_EQ(If_ROLL, pidProfile->I_f[PIDROLL]);
+    EXPECT_FLOAT_EQ(Df_ROLL, pidProfile->D_f[PIDROLL]);
+    EXPECT_FLOAT_EQ(Pf_PITCH, pidProfile->P_f[PIDPITCH]);
+    EXPECT_FLOAT_EQ(If_PITCH, pidProfile->I_f[PIDPITCH]);
+    EXPECT_FLOAT_EQ(Df_PITCH, pidProfile->D_f[PIDPITCH]);
+    EXPECT_FLOAT_EQ(Pf_YAW, pidProfile->P_f[PIDYAW]);
+    EXPECT_FLOAT_EQ(If_YAW, pidProfile->I_f[PIDYAW]);
+    EXPECT_FLOAT_EQ(Df_YAW, pidProfile->D_f[PIDYAW]);
+    EXPECT_FLOAT_EQ(A_level, pidProfile->A_level);
+    EXPECT_FLOAT_EQ(H_level, pidProfile->H_level);
+    EXPECT_EQ(H_sensitivity, pidProfile->H_sensitivity);
 }
 
 TEST_F(SerialMspUnitTest, TestMspOutMessageLengthsCommand)
@@ -684,7 +687,7 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 void stopMotors(void) {}
 void loadCustomServoMixer(void) {}
 // from msp.c
-void rxMspFrameReceive(uint16_t *frame, int channelCount) {UNUSED(frame);UNUSED(channelCount);}
+void rxMspFrameReceive(uint16_t *, int ) {}
 // from mw.c
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 int16_t magHold;
@@ -694,18 +697,17 @@ int32_t GPS_hold[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
-void GPS_set_next_wp(int32_t *lat, int32_t *lon) {UNUSED(lat);UNUSED(lon);}
+void GPS_set_next_wp(int32_t *, int32_t *) {}
 // from pid.c
-void pidSetController(pidControllerType_e type) {UNUSED(type);}
+void pidSetController(pidControllerType_e) {}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
-void useRcControlsConfig(void *modeActivationConditions, void *escAndServoConfigToUse, void *pidProfileToUse) {
-    UNUSED(modeActivationConditions);UNUSED(escAndServoConfigToUse);UNUSED(pidProfileToUse);}
+void useRcControlsConfig(modeActivationCondition_t *) {};
 // from runtime_config.c
 uint8_t armingFlags = 0;
 uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;
-uint16_t disableFlightMode(flightModeFlags_e mask) {UNUSED(mask);return 0;}
+uint16_t disableFlightMode(flightModeFlags_e) { return 0; }
 bool sensors(uint32_t mask) {UNUSED(mask);return 0;}
 // from rx.c
 uint16_t rssi = 0;                  // range: [0;1023]

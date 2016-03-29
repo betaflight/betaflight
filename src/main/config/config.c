@@ -68,6 +68,7 @@
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
@@ -81,9 +82,6 @@
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
-
-// from rc_controls.h
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse);
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -170,19 +168,22 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->A_level = 5.0f;
     pidProfile->H_level = 3.0f;
     pidProfile->H_sensitivity = 75;
+}
 
 #ifdef GTUNE
-    pidProfile->gtune_lolimP[FD_ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
-    pidProfile->gtune_lolimP[FD_PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
-    pidProfile->gtune_lolimP[FD_YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
-    pidProfile->gtune_hilimP[FD_ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[FD_PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[FD_YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_pwr = 0;                    // [0..10] Strength of adjustment
-    pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
-    pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
+void resetGTuneConfig(gtuneConfig_t *gtuneConfig)
+{
+    gtuneConfig->gtune_lolimP[FD_ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
+    gtuneConfig->gtune_lolimP[FD_PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
+    gtuneConfig->gtune_lolimP[FD_YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
+    gtuneConfig->gtune_hilimP[FD_ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+    gtuneConfig->gtune_hilimP[FD_PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+    gtuneConfig->gtune_hilimP[FD_YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+    gtuneConfig->gtune_pwr = 0;                    // [0..10] Strength of adjustment
+    gtuneConfig->gtune_settle_time = 450;          // [200..1000] Settle time in ms
+    gtuneConfig->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
 }
+#endif
 
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
@@ -418,7 +419,10 @@ STATIC_UNIT_TESTED void resetConf(void)
     masterConfig.gyroSync = 1;
     masterConfig.gyroSyncDenominator = 1;
 
-    resetPidProfile(&currentProfile->pidProfile);
+    resetPidProfile(pidProfile);
+#ifdef GTUNE
+    resetGTuneConfig(gtuneConfig);
+#endif
 
     resetControlRateConfig(&controlRateProfiles[0]);
 
@@ -503,7 +507,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 #if defined(COLIBRI_RACE)
     masterConfig.looptime = 1000;
 
-    currentProfile->pidProfile.pidController = 1;
+    pidProfile->pidController = 1;
 
     masterConfig.rxConfig.rcmap[0] = 1;
     masterConfig.rxConfig.rcmap[1] = 2;
@@ -536,9 +540,9 @@ STATIC_UNIT_TESTED void resetConf(void)
     escAndServoConfig.maxthrottle = 2000;
     escAndServoConfig.motor_pwm_rate = 32000;
     masterConfig.looptime = 2000;
-    currentProfile->pidProfile.pidController = 3;
-    currentProfile->pidProfile.P8[PIDROLL] = 36;
-    currentProfile->pidProfile.P8[PIDPITCH] = 36;
+    pidProfile->pidController = 3;
+    pidProfile->P8[PIDROLL] = 36;
+    pidProfile->P8[PIDPITCH] = 36;
     failsafeConfig.failsafe_delay = 2;
     failsafeConfig.failsafe_off_delay = 0;
     currentControlRateProfile->rcRate8 = 130;
@@ -629,19 +633,18 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        currentProfile->modeActivationConditions,
-        &currentProfile->pidProfile
+        currentProfile->modeActivationConditions
     );
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
 
-    pidSetController(currentProfile->pidProfile.pidController);
+    pidSetController(pidProfile->pidController);
 
 #ifdef GPS
     gpsUseProfile(&currentProfile->gpsProfile);
-    gpsUsePIDs(&currentProfile->pidProfile);
+    gpsUsePIDs(pidProfile);
 #endif
 
     useFailsafeConfig();
@@ -665,7 +668,6 @@ void activateConfig(void)
 
     imuConfigure(
         &imuRuntimeConfig,
-        &currentProfile->pidProfile,
         &currentProfile->accDeadband,
         currentProfile->accz_lpf_cutoff,
         currentProfile->throttle_correction_angle
@@ -673,7 +675,6 @@ void activateConfig(void)
 
 #if defined(BARO) || defined(SONAR)
     configureAltitudeHold(
-        &currentProfile->pidProfile,
         &currentProfile->barometerConfig,
         &currentProfile->rcControlsConfig
     );

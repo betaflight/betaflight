@@ -28,6 +28,8 @@
 #define PG_BATTERY_CONFIG 11
 #define PG_CONTROL_RATE_PROFILES 12
 #define PG_SERIAL_CONFIG 13
+#define PG_PID_PROFILE 14
+#define PG_GTUNE_CONFIG 15
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254

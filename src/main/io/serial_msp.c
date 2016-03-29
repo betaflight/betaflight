@@ -105,9 +105,6 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-// from rc_controls.h
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse);
-
 static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
@@ -855,28 +852,28 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+        if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile->P_f[i] * 10.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile->I_f[i] * 100.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile->D_f[i] * 1000.0f), 0, 255));
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile->A_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile->H_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile->H_sensitivity), 0, 255));
                 } else {
-                    serialize8(currentProfile->pidProfile.P8[i]);
-                    serialize8(currentProfile->pidProfile.I8[i]);
-                    serialize8(currentProfile->pidProfile.D8[i]);
+                    serialize8(pidProfile->P8[i]);
+                    serialize8(pidProfile->I8[i]);
+                    serialize8(pidProfile->D8[i]);
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                serialize8(currentProfile->pidProfile.P8[i]);
-                serialize8(currentProfile->pidProfile.I8[i]);
-                serialize8(currentProfile->pidProfile.D8[i]);
+                serialize8(pidProfile->P8[i]);
+                serialize8(pidProfile->I8[i]);
+                serialize8(pidProfile->D8[i]);
             }
         }
         break;
@@ -886,7 +883,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID_CONTROLLER:
         headSerialReply(1);
-        serialize8(currentProfile->pidProfile.pidController);
+        serialize8(pidProfile->pidController);
         break;
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
@@ -1293,32 +1290,32 @@ static bool processInCommand(void)
         masterConfig.looptime = read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = read8();
-        pidSetController(currentProfile->pidProfile.pidController);
+        pidProfile->pidController = read8();
+        pidSetController(pidProfile->pidController);
         break;
     case MSP_SET_PID:
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
+        if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
             for (i = 0; i < 3; i++) {
-                currentProfile->pidProfile.P_f[i] = (float)read8() / 10.0f;
-                currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
-                currentProfile->pidProfile.D_f[i] = (float)read8() / 1000.0f;
+                pidProfile->P_f[i] = (float)read8() / 10.0f;
+                pidProfile->I_f[i] = (float)read8() / 100.0f;
+                pidProfile->D_f[i] = (float)read8() / 1000.0f;
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_sensitivity = read8();
+                    pidProfile->A_level = (float)read8() / 10.0f;
+                    pidProfile->H_level = (float)read8() / 10.0f;
+                    pidProfile->H_sensitivity = read8();
                 } else {
-                    currentProfile->pidProfile.P8[i] = read8();
-                    currentProfile->pidProfile.I8[i] = read8();
-                    currentProfile->pidProfile.D8[i] = read8();
+                    pidProfile->P8[i] = read8();
+                    pidProfile->I8[i] = read8();
+                    pidProfile->D8[i] = read8();
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile->pidProfile.P8[i] = read8();
-                currentProfile->pidProfile.I8[i] = read8();
-                currentProfile->pidProfile.D8[i] = read8();
+                pidProfile->P8[i] = read8();
+                pidProfile->I8[i] = read8();
+                pidProfile->D8[i] = read8();
             }
         }
         break;
@@ -1334,7 +1331,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &currentProfile->pidProfile);
+                useRcControlsConfig(currentProfile->modeActivationConditions);
             } else {
                 headSerialError(0);
             }
@@ -1475,7 +1472,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(&currentProfile->pidProfile);
+        resetPidProfile(pidProfile);
         break;    
 
     case MSP_SET_SENSOR_ALIGNMENT:

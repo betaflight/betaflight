@@ -25,6 +25,9 @@
 
 #include "build_config.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
@@ -50,6 +53,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config_unittest.h"
+#include "config/config.h"
 
 extern uint8_t motorCount;
 extern float dT;
@@ -68,13 +72,27 @@ static float errorGyroIf[3], errorGyroIfLimit[3];
 static int32_t errorAngleI[2];
 static float errorAngleIf[2];
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+static void pidMultiWiiRewrite(controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
 
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+typedef void (*pidControllerFuncPtr)( controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using
+
+pidProfile_t pidProfileStorage[MAX_PROFILE_COUNT];
+pidProfile_t *pidProfile;
+
+static const pgRegistry_t pidProfileRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&pidProfileStorage,
+    .ptr = (uint8_t **)&pidProfile,
+    .size = sizeof(pidProfileStorage[0]),
+    .pgn = PG_PID_PROFILE,
+    .format = 0,
+    .flags = PGC_PROFILE
+};
+
 
 void pidResetErrorAngle(void)
 {
@@ -131,7 +149,7 @@ void filterIsSetCheck(pidProfile_t *pidProfile) {
     }
 }
 
-static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+static void pidLuxFloat(controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     float RateError, errorAngle, AngleRate, gyroRate;
@@ -272,7 +290,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     }
 }
 
-static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+static void pidMultiWii23(controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
             rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
@@ -415,7 +433,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 }
 
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+static void pidMultiWiiRewrite(controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);

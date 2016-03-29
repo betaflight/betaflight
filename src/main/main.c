@@ -526,7 +526,7 @@ void init(void)
         );
         navigationInit(
             &currentProfile->gpsProfile,
-            &currentProfile->pidProfile
+            pidProfile
         );
     }
 #endif

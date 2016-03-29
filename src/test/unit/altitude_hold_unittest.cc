@@ -51,6 +51,8 @@ extern "C" {
 
     #include "config/runtime_config.h"
 
+    pidProfile_t testPidProfile;
+    pidProfile_t *pidProfile = &testPidProfile;
 }
 
 #include "unittest_macros.h"

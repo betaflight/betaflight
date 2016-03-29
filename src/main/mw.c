@@ -122,7 +122,7 @@ static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
 uint16_t filteredCycleTime;
 
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+typedef void (*pidControllerFuncPtr)(controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
@@ -144,7 +144,7 @@ void updateGtuneState(void)
     if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
         if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             ENABLE_FLIGHT_MODE(GTUNE_MODE);
-            init_Gtune(&currentProfile->pidProfile);
+            init_Gtune();
             GTuneWasUsed = true;
         }
         if (!FLIGHT_MODE(GTUNE_MODE) && !ARMING_FLAG(ARMED) && GTuneWasUsed) {
@@ -216,9 +216,9 @@ void annexCode(void)
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
+        dynP8[axis] = (uint16_t)pidProfile->P8[axis] * prop1 / 100;
+        dynI8[axis] = (uint16_t)pidProfile->I8[axis] * prop1 / 100;
+        dynD8[axis] = (uint16_t)pidProfile->D8[axis] * prop1 / 100;
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
@@ -393,7 +393,7 @@ void updateMagHold(void)
             dif -= 360;
         dif *= -masterConfig.yaw_control_direction;
         if (STATE(SMALL_ANGLE))
-            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
+            rcCommand[YAW] -= dif * pidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
@@ -690,7 +690,6 @@ void taskMainPidLoop(void)
 
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
-        &currentProfile->pidProfile,
         currentControlRateProfile,
         masterConfig.max_angle_inclination,
         &currentProfile->accelerometerTrims,
