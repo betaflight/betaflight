@@ -1986,6 +1986,7 @@ void cliDumpProfile(uint8_t profileIndex) {
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
+        cliPrintf("################################################################################");
         printSectionBreak();
         dumpValues(PROFILE_VALUE);
         uint8_t currentRateIndex = currentProfile->activeRateProfile;
