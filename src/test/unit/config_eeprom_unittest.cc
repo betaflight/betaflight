@@ -20,7 +20,8 @@
 
 extern "C" {
     #include "platform.h"
-
+    #include "build_config.h"
+    
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/color.h"
@@ -62,15 +63,12 @@ extern "C" {
     #include "config/config_eeprom.h"
     #include "config/config_profile.h"
     #include "config/config_master.h"
+    #include "config/parameter_group_ids.h"
 
     #include "platform.h"
 
-    failsafeConfig_t failsafeConfig;
-
-    extern profile_t profileStorage[MAX_PROFILE_COUNT];
-
-    gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
-    gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+    PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
     pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
     pidProfile_t *pidProfile = &testPidProfile[0];
@@ -81,24 +79,24 @@ extern "C" {
         uint32_t uint32;
     } PG_PACKED someProfileSpecificData_t;
 
-    someProfileSpecificData_t someProfileSpecificDataStorage[MAX_PROFILE_COUNT];
-    someProfileSpecificData_t *someProfileSpecificData;
+    PG_REGISTER_PROFILE(someProfileSpecificData_t, someProfileSpecificData, 1, 0);
 
-    escAndServoConfig_t escAndServoConfig;
-    gyroConfig_t gyroConfig;
-    sensorTrims_t sensorTrims;
-    batteryConfig_t batteryConfig;
-    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
-    serialConfig_t serialConfig;
-    pwmRxConfig_t pwmRxConfig;
-    armingConfig_t armingConfig;
-    transponderConfig_t transponderConfig;
+    PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+    PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+    PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
+    PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+    PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+    
+    PG_REGISTER(master_t, masterConfig, 0, 0);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-PG_REGISTER(masterConfig, 0, 0);
 
 TEST(configTest, resetEEPROM)
 {

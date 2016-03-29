@@ -96,38 +96,12 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-master_t masterConfig;                 // master config struct with data independent from profiles
-static const pgRegistry_t masterRegistry PG_REGISTRY_SECTION = {
-    .base = (uint8_t *)&masterConfig,
-    .size = sizeof(masterConfig),
-    .pgn = PG_MASTER,
-    .flags = PGC_SYSTEM
-};
-
-STATIC_UNIT_TESTED profile_t profileStorage[MAX_PROFILE_COUNT];
-profile_t *currentProfile;
-
-static const pgRegistry_t profileRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&profileStorage,
-    .ptr = (uint8_t **)&currentProfile,
-    .size = sizeof(profileStorage[0]),
-    .pgn = PG_PROFILE,
-    .format = 0,
-    .flags = PGC_PROFILE
-};
-
+PG_REGISTER(master_t, masterConfig, 0, 0);
+PG_REGISTER_PROFILE(profile_t, currentProfile, PG_PROFILE, 0);
 
 // FIXME this should probably be defined in a separate file.  Drivers should be aware of parameter groups.
 
-static const pgRegistry_t pwmRxConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&pwmRxConfig,
-    .size = sizeof(pwmRxConfig),
-    .pgn = PG_DRIVER_PWM_RX_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {

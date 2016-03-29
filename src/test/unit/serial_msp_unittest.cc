@@ -32,7 +32,7 @@ extern "C" {
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
-
+    #include "config/config_eeprom.h"
 
     #include "drivers/system.h"
     #include "drivers/sensor.h"
@@ -95,8 +95,6 @@ extern "C" {
     extern mspPort_t mspPorts[];
     profile_t *currentProfile;
 
-    failsafeConfig_t failsafeConfig;
-    boardAlignment_t boardAlignment;
     escAndServoConfig_t escAndServoConfig;
     sensorAlignmentConfig_t sensorAlignmentConfig;
     batteryConfig_t batteryConfig;
@@ -104,8 +102,9 @@ extern "C" {
     armingConfig_t armingConfig;
     transponderConfig_t transponderConfig;
 
-    PG_REGISTER(boardAlignment, PG_BOARD_ALIGNMENT, 0);
-    PG_REGISTER(failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+    PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+    PG_REGISTER_PROFILE(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
 }
 
 profile_t profile;
@@ -259,6 +258,8 @@ TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
     serialWritePos = 0;
     serialReadPos = 0;
     currentProfile = &profile;
+    activateProfile(0);
+
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     currentPort->cmdMSP = MSP_PID_CONTROLLER;
     mspProcessReceivedCommand();
@@ -276,6 +277,8 @@ TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
 {
     // Use the MSP to write out the PID values
     currentProfile = &profile;
+    activateProfile(0);
+
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     serialWritePos = 0;
     serialReadPos = 0;
@@ -340,6 +343,8 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     const int D8_PIDVEL = 7;
 
     currentProfile = &profile;
+    activateProfile(0);
+
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     pidProfile->P8[PIDROLL] = P8_ROLL;
     pidProfile->I8[PIDROLL] = I8_ROLL;
@@ -450,6 +455,8 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     const float H_level = 3.0f;
     const uint8_t H_sensitivity = 75;
     currentProfile = &profile;
+    activateProfile(0);
+
     pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
     pidProfile->P_f[PIDROLL] = Pf_ROLL;
     pidProfile->I_f[PIDROLL] = If_ROLL;
@@ -688,7 +695,9 @@ void featureSet(uint32_t mask) {UNUSED(mask);}
 void featureClearAll() {}
 uint32_t featureMask(void) {return 0;}
 // from config_eeprom.c
-void activateProfile(uint8_t) {};
+void activateProfile(uint8_t p) {
+    pidProfile = &pidProfileStorage[p];
+};
 // from debug.c
 int16_t debug[DEBUG16_VALUE_COUNT];
 // from gps.c

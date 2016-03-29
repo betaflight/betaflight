@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <platform.h>
+#include "build_config.h"
 
 #include "debug.h"
 
@@ -31,16 +32,6 @@
 
 #ifdef USE_SERVOS
 
-gimbalConfig_t gimbalConfigStorage[MAX_PROFILE_COUNT];
-gimbalConfig_t *gimbalConfig;
+PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
-static const pgRegistry_t gimbalConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&gimbalConfigStorage,
-    .ptr = (uint8_t **)&gimbalConfig,
-    .size = sizeof(gimbalConfigStorage[0]),
-    .pgn = PG_GIMBAL_CONFIG,
-    .format = 0,
-    .flags = PGC_PROFILE
-};
 #endif

@@ -29,4 +29,4 @@ typedef struct escAndServoConfig_s {
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 } escAndServoConfig_t;
 
-extern escAndServoConfig_t escAndServoConfig;
+PG_DECLARE(escAndServoConfig_t, escAndServoConfig);

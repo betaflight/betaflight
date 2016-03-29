@@ -102,6 +102,7 @@ static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
 uint8_t pgMatcherForConfigRecord(const pgRegistry_t *candidate, const void *criteria)
 {
     const configRecord_t *record = (const configRecord_t *)criteria;
+
     return (candidate->pgn == record->pgn && candidate->format == record->format);
 }
 

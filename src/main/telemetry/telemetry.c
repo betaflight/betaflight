@@ -23,6 +23,10 @@
 
 #ifdef TELEMETRY
 
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/parameter_group.h"
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
@@ -31,9 +35,6 @@
 
 #include "rx/rx.h"
 #include "io/rc_controls.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"

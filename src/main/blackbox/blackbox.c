@@ -83,16 +83,7 @@
 #include "blackbox.h"
 #include "blackbox_io.h"
 
-blackboxConfig_t blackboxConfig;
-
-static const pgRegistry_t blackboxConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&blackboxConfig,
-    .size = sizeof(blackboxConfig),
-    .pgn = PG_BLACKBOX_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
