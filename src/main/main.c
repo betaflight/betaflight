@@ -725,7 +725,6 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 #ifdef USE_BST
-    setTaskEnabled(TASK_BST_READ_WRITE, true);
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 
