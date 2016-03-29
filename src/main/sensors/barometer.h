@@ -30,8 +30,7 @@ typedef enum {
 #define BARO_MAX BARO_FAKE
 
 typedef struct barometerConfig_s {
-    uint8_t baro_sample_count;              // size of baro filter array
-    float baro_noise_lpf;                   // additional LPF to reduce baro noise
+    uint8_t use_median_filtering;       // Use 3-point median filtering
 } barometerConfig_t;
 
 extern int32_t BaroAlt;

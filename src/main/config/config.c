@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 114;
+static const uint8_t EEPROM_CONF_VERSION = 115;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -231,10 +231,10 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.accz_unarmed_cal = 1;
     navConfig->inav.use_gps_velned = 0;         // "Disabled" is mandatory with gps_nav_model = LOW_G
 
-    navConfig->inav.w_z_baro_p = 1.0f;
+    navConfig->inav.w_z_baro_p = 0.35f;
 
-    navConfig->inav.w_z_gps_p = 0.3f;
-    navConfig->inav.w_z_gps_v = 0.3f;
+    navConfig->inav.w_z_gps_p = 0.2f;
+    navConfig->inav.w_z_gps_v = 0.2f;
 
     navConfig->inav.w_xy_gps_p = 1.0f;
     navConfig->inav.w_xy_gps_v = 2.0f;
@@ -277,8 +277,7 @@ void resetNavConfig(navConfig_t * navConfig)
 
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
-    barometerConfig->baro_sample_count = 7;
-    barometerConfig->baro_noise_lpf = 0.35f;
+    barometerConfig->use_median_filtering = 1;
 }
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
@@ -546,7 +545,7 @@ static void resetConf(void)
 
     currentProfile->mag_declination = 0;
 
-    resetBarometerConfig(&currentProfile->barometerConfig);
+    resetBarometerConfig(&masterConfig.barometerConfig);
 
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
@@ -808,7 +807,7 @@ void activateConfig(void)
 #endif
 
 #ifdef BARO
-    useBarometerConfig(&currentProfile->barometerConfig);
+    useBarometerConfig(&masterConfig.barometerConfig);
 #endif
 }
 

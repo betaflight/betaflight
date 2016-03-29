@@ -59,6 +59,8 @@ typedef struct master_t {
 
     gyroConfig_t gyroConfig;
 
+    barometerConfig_t barometerConfig;
+
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     uint8_t baro_hardware;                  // Barometer hardware to use
 
