@@ -119,6 +119,17 @@ static const pgRegistry_t profileRegistry PG_REGISTRY_SECTION =
 };
 
 
+// FIXME this should probably be defined in a separate file.  Drivers should be aware of parameter groups.
+
+static const pgRegistry_t pwmRxConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&pwmRxConfig,
+    .size = sizeof(pwmRxConfig),
+    .pgn = PG_DRIVER_PWM_RX_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
+
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;

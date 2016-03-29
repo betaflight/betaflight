@@ -502,7 +502,8 @@ const clivalue_t valueTable[] = {
     { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
     { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_OFF_ON } },
-    { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
+
+    { "input_filtering_mode",       VAR_INT8   | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_DRIVER_PWM_RX_CONFIG, offsetof(pwmRxConfig_t, inputFilteringMode)},
 
     { "min_throttle",               VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, minthrottle)},
     { "max_throttle",               VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_ESC_AND_SERVO_CONFIG, offsetof(escAndServoConfig_t, maxthrottle)},

@@ -50,7 +50,7 @@
 // TODO - change to timer clocks ticks
 #define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
 
-static inputFilteringMode_e inputFilteringMode;
+pwmRxConfig_t pwmRxConfig;
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
@@ -125,9 +125,8 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-void pwmRxInit(inputFilteringMode_e initialInputFilteringMode)
+void pwmRxInit(void)
 {
-    inputFilteringMode = initialInputFilteringMode;
 }
 
 #ifdef DEBUG_PPM_ISR
@@ -358,7 +357,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
     TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
 
-    if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
+    if (pwmRxConfig.inputFilteringMode == INPUT_FILTERING_ENABLED) {
         TIM_ICInitStructure.TIM_ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
     } else {
         TIM_ICInitStructure.TIM_ICFilter = 0x00;

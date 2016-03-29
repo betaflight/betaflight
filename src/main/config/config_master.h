@@ -45,7 +45,6 @@ typedef struct master_t {
     flight3DConfig_t flight3DConfig;
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
     // Arming configuration
     uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right

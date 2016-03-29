@@ -85,6 +85,7 @@ extern "C" {
     batteryConfig_t batteryConfig;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
     serialConfig_t serialConfig;
+    pwmRxConfig_t pwmRxConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -105,6 +106,7 @@ extern "C" {
         memset(&batteryConfig, 0x00, sizeof(batteryConfig));
         memset(&controlRateProfiles, 0x00, sizeof(controlRateProfiles));
         memset(&serialConfig, 0x00, sizeof(serialConfig));
+        memset(&pwmRxConfig, 0x00, sizeof(pwmRxConfig));
     }
 
 }
@@ -158,7 +160,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(0, masterConfig.rxConfig.rssi_ppm_invert);
     EXPECT_EQ(0, masterConfig.rxConfig.rcSmoothing);
 
-    EXPECT_EQ(INPUT_FILTERING_DISABLED, masterConfig.inputFilteringMode);
+    EXPECT_EQ(INPUT_FILTERING_DISABLED, pwmRxConfig.inputFilteringMode);
 
     EXPECT_EQ(0, masterConfig.retarded_arm);
 

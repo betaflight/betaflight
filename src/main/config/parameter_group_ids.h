@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// FC configuration
 #define PG_FAILSAFE_CONFIG 1
 #define PG_BOARD_ALIGNMENT 2
 #define PG_GIMBAL_CONFIG 3
@@ -30,6 +31,9 @@
 #define PG_SERIAL_CONFIG 13
 #define PG_PID_PROFILE 14
 #define PG_GTUNE_CONFIG 15
+
+// Driver configuration
+#define PG_DRIVER_PWM_RX_CONFIG 100
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254

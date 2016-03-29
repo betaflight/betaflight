@@ -89,6 +89,7 @@ extern "C" {
     batteryConfig_t batteryConfig;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
     serialConfig_t serialConfig;
+    pwmRxConfig_t pwmRxConfig;
 }
 
 #include "unittest_macros.h"
