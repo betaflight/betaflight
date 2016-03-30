@@ -225,30 +225,33 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = RateError - lastErrorForDelta[axis];
-            lastErrorForDelta[axis] = RateError;
+        if (axis == YAW) {
+            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            DTerm = 0;
         } else {
-            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = gyroRate;
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateError - lastErrorForDelta[axis];
+                lastErrorForDelta[axis] = RateError;
+            } else {
+                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = gyroRate;
+            }
+
+            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+            // would be scaled by different dt each time. Division by dT fixes that.
+            delta *= (1.0f / getdT());
+
+            // Filter delta
+            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+
+            // Apply moving average
+            if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]);
+
+            DTerm = constrainf(delta * (float)pidProfile->D8[axis] * 0.001f * tpaFactor, -300.0f, 300.0f);
         }
-
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta *= (1.0f / getdT());
-
-        // Filter delta
-        if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
-
-        // Apply moving average
-        if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]);
-
-        DTerm = constrainf(delta * (float)pidProfile->D8[axis] * 0.001f * tpaFactor, -300.0f, 300.0f);
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
-
-        if (pidProfile->yaw_lpf_hz && axis == YAW) axisPID[axis] = filterApplyPt1(axisPID[axis], &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
 
         if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
@@ -511,30 +514,33 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = RateError;
+        if (axis == YAW) {
+            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            DTerm = 0;
         } else {
-            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = gyroRate;
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = RateError;
+            } else {
+                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = gyroRate;
+            }
+
+            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+            // would be scaled by different dt each time. Division by dT fixes that.
+            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 6;
+
+            // Filter delta
+            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+
+            // Apply moving average
+            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
+
+            DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
         }
-        
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 6;
-
-        // Filter delta
-        if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
-
-        // Apply moving average
-        if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
-
-        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
-
-        if (pidProfile->yaw_lpf_hz && axis == YAW) axisPID[axis] = filterApplyPt1(axisPID[axis], &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
 
         if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
