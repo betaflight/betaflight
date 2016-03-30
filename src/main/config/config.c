@@ -179,8 +179,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 0.0f;
     pidProfile->dterm_average_count = 4;
-    pidProfile->rollPitchItermResetRate = 0;
-    pidProfile->yawItermResetRate = 0;
+    pidProfile->rollPitchItermResetRate = 200;
+    pidProfile->yawItermResetRate = 50;
     pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 

@@ -204,20 +204,18 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * getdT() * pidProfile->I8[axis] / 10.0f, -250.0f, 250.0f);
 
-        if (pidProfile->rollPitchItermResetRate && axis != YAW) {
-            if (ABS(gyroRate) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
-        }
-
-        if (pidProfile->yawItermResetRate && axis == YAW) {
-            if (ABS(gyroRate) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
-        }
-
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) {
+            if (axis == YAW) {
+                if (ABS(gyroRate) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
             } else {
-                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
+                if (ABS(gyroRate) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
             }
+        }
+
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+        } else {
+            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
         }
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
@@ -299,12 +297,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         }
 
         // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
-            } else {
-                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
-            }
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        } else {
+            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
@@ -495,20 +491,18 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        if (pidProfile->rollPitchItermResetRate && axis != YAW) {
-            if (ABS(gyroRate / 4) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
-        }
-
-        if (pidProfile->yawItermResetRate && axis == YAW) {
-            if (ABS(gyroRate / 4) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
-        }
-
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) {
+            if (axis == YAW) {
+                if (ABS(gyroRate / 4) >= pidProfile->yawItermResetRate) errorGyroI[axis] = 0;
             } else {
-                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+                if (ABS(gyroRate / 4) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = 0;
             }
+        }
+
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        } else {
+            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
 
         ITerm = errorGyroI[axis] >> 13;
