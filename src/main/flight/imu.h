@@ -72,3 +72,6 @@ int16_t imuCalculateHeading(t_fp_vector *vec);
 float getCosTiltAngle(void);
 
 void imuResetAccelerationSum(void);
+
+bool imuIsAircraftArmable(uint8_t arming_angle);
+

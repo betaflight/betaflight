@@ -100,6 +100,7 @@ extern "C" {
     sensorAlignmentConfig_t sensorAlignmentConfig;
     batteryConfig_t batteryConfig;
     serialConfig_t serialConfig;
+    armingConfig_t armingConfig;
 
     pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
     pidProfile_t *pidProfile = &testPidProfile[0];

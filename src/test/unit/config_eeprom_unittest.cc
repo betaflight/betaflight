@@ -90,6 +90,7 @@ extern "C" {
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
     serialConfig_t serialConfig;
     pwmRxConfig_t pwmRxConfig;
+    armingConfig_t armingConfig;
 }
 
 #include "unittest_macros.h"

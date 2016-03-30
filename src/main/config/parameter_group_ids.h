@@ -31,6 +31,7 @@
 #define PG_SERIAL_CONFIG 13
 #define PG_PID_PROFILE 14
 #define PG_GTUNE_CONFIG 15
+#define PG_ARMING_CONFIG 16
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

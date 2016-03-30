@@ -31,7 +31,7 @@
 #include "config/parameter_group.h"
 #include "config/config_streamer.h"
 
-static const uint8_t EEPROM_CONF_VERSION = 111;
+static const uint8_t EEPROM_CONF_VERSION = 112;
 
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;

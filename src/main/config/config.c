@@ -368,6 +368,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 
     // global settings
+    masterConfig.small_angle = 25;
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     gyroConfig.gyro_lpf = 1;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
     gyroConfig.soft_gyro_lpf_hz = 60;        // Software based lpf filter for gyro
@@ -399,9 +400,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
-    masterConfig.disarm_kill_switch = 1;
-    masterConfig.auto_disarm_delay = 5;
-    masterConfig.small_angle = 25;
+    armingConfig.disarm_kill_switch = 1;
+    armingConfig.auto_disarm_delay = 5;
+    armingConfig.max_arm_angle = 25;
 
     resetMixerConfig(&masterConfig.mixerConfig);
 
@@ -757,7 +758,7 @@ void validateAndFixConfig(void)
      * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
      * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
      */
-    if (masterConfig.retarded_arm && masterConfig.mixerConfig.pid_at_min_throttle) {
+    if (armingConfig.retarded_arm && masterConfig.mixerConfig.pid_at_min_throttle) {
         masterConfig.mixerConfig.pid_at_min_throttle = 0;
     }
 

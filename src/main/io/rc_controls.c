@@ -72,6 +72,15 @@ static const pgRegistry_t controlRateProfilesRegistry PG_REGISTRY_SECTION = {
     .flags = PGC_SYSTEM
 };
 
+armingConfig_t armingConfig;
+
+static const pgRegistry_t armingConfigRegistry PG_REGISTRY_SECTION = {
+    .base = (uint8_t *)&armingConfig,
+    .size = sizeof(armingConfig),
+    .pgn = PG_ARMING_CONFIG,
+    .flags = PGC_SYSTEM
+};
+
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 

@@ -518,9 +518,12 @@ const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "retarded_arm",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.retarded_arm, .config.lookup = { TABLE_OFF_ON } },
-    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
-    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, .config.minmax = { 0,  60 } },
+
+    { "retarded_arm",               VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_ARMING_CONFIG, offsetof(armingConfig_t, retarded_arm)},
+    { "disarm_kill_switch",         VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_ARMING_CONFIG, offsetof(armingConfig_t, disarm_kill_switch)},
+    { "auto_disarm_delay",          VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  60 } , PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay)},
+    { "max_arm_angle",              VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  180 } , PG_ARMING_CONFIG, offsetof(armingConfig_t, max_arm_angle)},
+
     { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.small_angle, .config.minmax = { 0,  180 } },
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, .config.minmax = { -1,  1 } },

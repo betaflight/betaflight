@@ -29,10 +29,11 @@ typedef struct master_t {
 
     // IMU configuration
     uint16_t looptime;                      // imu loop time in us
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t gyroSync;                       // Enable interrupt based loop
     uint8_t gyroSyncDenominator;            // Gyro sync Denominator
+    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
+    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint8_t small_angle;                    // Angle used for mag hold threshold.
 
     // Mixer configuration
     uint8_t mixerMode;
@@ -45,12 +46,6 @@ typedef struct master_t {
     flight3DConfig_t flight3DConfig;
 
     rxConfig_t rxConfig;
-
-    // Arming configuration
-    uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right
-    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
-    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
-    uint8_t small_angle;
 
     // Flight config
     airplaneConfig_t airplaneConfig;
