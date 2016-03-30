@@ -452,7 +452,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
-    masterConfig.rxConfig.superExpoFactor = 20;
+    masterConfig.rxConfig.superExpoFactor = 30;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
