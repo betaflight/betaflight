@@ -29,6 +29,9 @@
 #define LED1_PIN    Pin_4 // PB4 (LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_12 // PA12 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA

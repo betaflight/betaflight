@@ -58,6 +58,9 @@
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
