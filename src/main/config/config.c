@@ -145,15 +145,15 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->pidController = 2;
+    pidProfile->pidController = 1;
 
-    pidProfile->P8[ROLL] = 40;
+    pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 30;
     pidProfile->D8[ROLL] = 18;
-    pidProfile->P8[PITCH] = 40;
+    pidProfile->P8[PITCH] = 45;
     pidProfile->I8[PITCH] = 30;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 60;
+    pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 40;
     pidProfile->D8[YAW] = 0;
     pidProfile->P8[PIDALT] = 50;
@@ -172,9 +172,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDLEVEL] = 50;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 120;
-    pidProfile->I8[PIDVEL] = 45;
-    pidProfile->D8[PIDVEL] = 1;
+    pidProfile->P8[PIDVEL] = 55;
+    pidProfile->I8[PIDVEL] = 55;
+    pidProfile->D8[PIDVEL] = 0;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 0.0f;
