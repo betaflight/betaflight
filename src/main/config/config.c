@@ -177,7 +177,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 0;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_lpf_hz = 0.0f;
+    pidProfile->yaw_lpf_hz = 70.0f;
     pidProfile->dterm_average_count = 4;
     pidProfile->rollPitchItermResetRate = 200;
     pidProfile->yawItermResetRate = 50;
