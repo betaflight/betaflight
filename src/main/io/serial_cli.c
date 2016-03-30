@@ -1787,6 +1787,7 @@ typedef enum {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
     DUMP_RATES = (1 << 2),
+    DUMP_ALL = (1 << 3),
 } dumpFlags_e;
 
 
@@ -1815,7 +1816,11 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_RATES; 
     }
 
-    if (dumpMask & DUMP_MASTER) {
+    if (strcasecmp(cmdline, "all") == 0) {
+        dumpMask = DUMP_ALL;   // All profiles and rates
+    }
+
+    if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
 
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
@@ -1957,22 +1962,32 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
         
-        uint8_t activeProfile = masterConfig.current_profile_index;
-        uint8_t i;
-        for (i=0; i<MAX_PROFILE_COUNT;i++) 
-            cliDumpProfile(i);
-        
-        changeProfile(activeProfile);
-        
+        if (dumpMask & DUMP_ALL) {
+            uint8_t activeProfile = masterConfig.current_profile_index;
+            uint8_t currentRateIndex = currentProfile->activeRateProfile;
+            uint8_t profileCount;
+            uint8_t rateCount;
+            for (profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
+                cliDumpProfile(profileCount);
+                for (rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
+                    cliDumpRateProfile(rateCount);
+            }
+
+            changeProfile(activeProfile);
+            changeControlRateProfile(currentRateIndex);
+        } else {
+            cliDumpProfile(masterConfig.current_profile_index);
+            cliDumpRateProfile(currentProfile->activeRateProfile);
+        }
     }
 
     if (dumpMask & DUMP_PROFILE) {
         cliDumpProfile(masterConfig.current_profile_index);
-
     }
+
     if (dumpMask & DUMP_RATES) {				
         cliDumpRateProfile(currentProfile->activeRateProfile);
- }
+    }
     
 }
 
@@ -1983,16 +1998,11 @@ void cliDumpProfile(uint8_t profileIndex) {
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
-        cliPrintf("################################################################################");
+        cliPrintf("############################# PROFILE VALUES ####################################");
+        cliProfile("");
         printSectionBreak();
         dumpValues(PROFILE_VALUE);
-        uint8_t currentRateIndex = currentProfile->activeRateProfile;
-        uint8_t i;
-        for (i=0; i<MAX_RATEPROFILES; i++)
-            cliDumpRateProfile(i);
-        
-        changeControlRateProfile(currentRateIndex);
-        cliPrintf("\r\n# Active rateprofile for profile %d, \r\n", profileIndex);	// output rateprofile again to mark "active rateprofile" 
+
         cliRateProfile("");
 }
 void cliDumpRateProfile(uint8_t rateProfileIndex) {
