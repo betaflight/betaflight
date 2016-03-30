@@ -60,7 +60,6 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
-float tpaFactor;
 
 static int32_t errorGyroI[3], errorGyroILimit[3];
 static float errorGyroIf[3], errorGyroIfLimit[3];
@@ -136,6 +135,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float delta;
     int axis;
     float horizonLevelStrength = 1;
+
+    float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions

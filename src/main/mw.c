@@ -113,7 +113,6 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint32_t currentTime;
 extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
-extern float tpaFactor;
 extern bool antiWindupProtection;
 
 uint16_t filteredCycleTime;
@@ -233,7 +232,6 @@ void annexCode(void)
             prop2 = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
             prop2 = 100 - currentControlRateProfile->dynThrPID;
-            tpaFactor = prop2 / 100.0f;
         }
     }
 
