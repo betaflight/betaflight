@@ -17,6 +17,11 @@
 
 #pragma once
 
+typedef struct transponderConfig_s {
+    uint8_t data[6];
+} transponderConfig_t;
+
+extern transponderConfig_t transponderConfig;
 
 void transponderEnable(void);
 void transponderDisable(void);

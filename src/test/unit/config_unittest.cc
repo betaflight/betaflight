@@ -43,6 +43,7 @@ extern "C" {
     #include "io/ledstrip.h"
     #include "io/rc_controls.h"
     #include "io/serial.h"
+    #include "io/transponder_ir.h"
 
     #include "telemetry/telemetry.h"
 
@@ -87,6 +88,7 @@ extern "C" {
     serialConfig_t serialConfig;
     pwmRxConfig_t pwmRxConfig;
     armingConfig_t armingConfig;
+    transponderConfig_t transponderConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -108,6 +110,8 @@ extern "C" {
         memset(&controlRateProfiles, 0x00, sizeof(controlRateProfiles));
         memset(&serialConfig, 0x00, sizeof(serialConfig));
         memset(&pwmRxConfig, 0x00, sizeof(pwmRxConfig));
+        memset(&armingConfig, 0x00, sizeof(armingConfig));
+        memset(&transponderConfig, 0x00, sizeof(transponderConfig));
     }
 
 }

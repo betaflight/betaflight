@@ -65,10 +65,6 @@ typedef struct master_t {
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
 #endif
-
-#ifdef TRANSPONDER
-    uint8_t transponderData[6];
-#endif
 } master_t;
 
 extern master_t masterConfig;

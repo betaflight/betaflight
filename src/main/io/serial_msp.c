@@ -1183,12 +1183,12 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
-        headSerialReply(1 + sizeof(masterConfig.transponderData));
+        headSerialReply(1 + sizeof(transponderConfig.data));
 
         serialize8(1); //Transponder supported
 
-        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
-            serialize8(masterConfig.transponderData[i]);
+        for (i = 0; i < sizeof(transponderConfig.data); i++) {
+            serialize8(transponderConfig.data[i]);
         }
 #else
         headSerialReply(1);
@@ -1517,16 +1517,16 @@ static bool processInCommand(void)
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (currentPort->dataSize != sizeof(masterConfig.transponderData)) {
+        if (currentPort->dataSize != sizeof(transponderConfig.data)) {
             headSerialError(0);
             break;
         }
 
-        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
-            masterConfig.transponderData[i] = read8();
+        for (i = 0; i < sizeof(transponderConfig.data); i++) {
+            transponderConfig.data[i] = read8();
         }
 
-        transponderUpdateData(masterConfig.transponderData);
+        transponderUpdateData(transponderConfig.data);
         break;
 #endif
 

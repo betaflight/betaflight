@@ -54,6 +54,7 @@ extern "C" {
     #include "io/msp_protocol.h"
     #include "io/serial_msp.h"
     #include "io/escservo.h"
+    #include "io/transponder_ir.h"
 
     #include "telemetry/telemetry.h"
 
@@ -101,6 +102,7 @@ extern "C" {
     batteryConfig_t batteryConfig;
     serialConfig_t serialConfig;
     armingConfig_t armingConfig;
+    transponderConfig_t transponderConfig;
 
     pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
     pidProfile_t *pidProfile = &testPidProfile[0];

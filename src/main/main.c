@@ -557,7 +557,7 @@ void init(void)
 
 #ifdef TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
-        transponderInit(masterConfig.transponderData);
+        transponderInit(transponderConfig.data);
         transponderEnable();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;

@@ -42,6 +42,7 @@ extern "C" {
     #include "io/gps.h"
     #include "io/serial.h"
     #include "io/ledstrip.h"
+    #include "io/transponder_ir.h"
 
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
@@ -91,6 +92,7 @@ extern "C" {
     serialConfig_t serialConfig;
     pwmRxConfig_t pwmRxConfig;
     armingConfig_t armingConfig;
+    transponderConfig_t transponderConfig;
 }
 
 #include "unittest_macros.h"

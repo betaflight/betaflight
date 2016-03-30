@@ -25,6 +25,9 @@
 
 #include <build_config.h>
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
 
@@ -35,6 +38,17 @@
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
+
+transponderConfig_t transponderConfig;
+
+static const pgRegistry_t transponderConfigRegistry PG_REGISTRY_SECTION =
+{
+    .base = (uint8_t *)&transponderConfig,
+    .size = sizeof(transponderConfig),
+    .pgn = PG_TRANSPONDER_CONFIG,
+    .format = 0,
+    .flags = PGC_SYSTEM
+};
 
 // timers
 static uint32_t nextUpdateAt = 0;
