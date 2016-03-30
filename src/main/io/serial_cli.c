@@ -1999,7 +1999,7 @@ void cliDumpProfile(uint8_t profileIndex) {
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
-        cliPrintf("############################# PROFILE VALUES ####################################");
+        cliPrintf("############################# PROFILE VALUES ####################################\r\n");
         cliProfile("");
         printSectionBreak();
         dumpValues(PROFILE_VALUE);
