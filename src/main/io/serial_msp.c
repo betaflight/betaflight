@@ -219,7 +219,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOXACROPLUS, "ACRO PLUS;", 29 },
+    { BOXSUPEREXPO, "SUPER EXPO;", 29 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
@@ -547,7 +547,7 @@ void mspInit(serialConfig_t *serialConfig)
     }
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOXACROPLUS;
+    activeBoxIds[activeBoxIdCount++] = BOXSUPEREXPO;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
     if (sensors(SENSOR_BARO)) {
@@ -654,7 +654,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXACROPLUS)) << BOXACROPLUS;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) << BOXSUPEREXPO;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));

@@ -67,7 +67,9 @@ typedef struct pidProfile_s {
 
     float dterm_lpf_hz;                     // Delta Filter in hz
     float yaw_lpf_hz;                       // Additional yaw filter when yaw axis too noisy
-    uint8_t deltaMethod;                    // Alternative delta Calculation
+    uint8_t rollPitchItermResetRate;        // Experimental threshold for resetting iterm for pitch and roll on certain rates
+    uint16_t yawItermResetRate;              // Experimental threshold for resetting iterm for yaw on certain rates
+    uint16_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
 

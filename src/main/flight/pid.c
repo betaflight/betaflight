@@ -80,6 +80,14 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
 }
 
+float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
+	float propFactor;
+
+    propFactor = 1.0f - ((rxConfig->superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+
+	return propFactor;
+}
+
 void pidResetErrorAngle(void)
 {
     errorAngleI[ROLL] = 0;
@@ -111,31 +119,6 @@ float getdT (void) {
     if (!dT) dT = (float)targetPidLooptime * 0.000001f;
 
     return dT;
-}
-
-void scaleItermToRcInput(int axis, pidProfile_t *pidProfile) {
-    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
-    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
-    static float antiWindUpIncrement = 0;
-
-    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetPidLooptime;  // Calculate increment for 500ms period
-
-    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
-        /* Reset Iterm on high stick inputs. No scaling necessary here */
-        iTermScaler[axis] = 0.0f;
-        errorGyroI[axis] = 0;
-        errorGyroIf[axis] = 0.0f;
-    } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
-        if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
-            if (pidProfile->pidController != PID_CONTROLLER_LUX_FLOAT) {
-                errorGyroI[axis] *= iTermScaler[axis];
-            } else {
-                errorGyroIf[axis] *= iTermScaler[axis];
-            }
-        }
-    }
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -207,7 +190,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         RateError = AngleRate - gyroRate;
 
         // -----calculate P component
-        PTerm = RateError * (pidProfile->P8[axis] / 40.0f) * tpaFactor;
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            PTerm = (pidProfile->P8[axis] / 40.0f * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
+        } else {
+            PTerm = RateError * (pidProfile->P8[axis] / 40.0f) * tpaFactor;
+        }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -217,8 +204,15 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * getdT() * pidProfile->I8[axis] / 10.0f, -250.0f, 250.0f);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
+        if (pidProfile->rollPitchItermResetRate && axis != YAW) {
+            if (ABS(gyroRate) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (pidProfile->yawItermResetRate && axis == YAW) {
+            if (ABS(gyroRate) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
@@ -302,8 +296,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         }
 
         // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
@@ -477,7 +470,11 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         RateError = AngleRateTmp - gyroRate;
 
         // -----calculate P component
-        PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            PTerm = (pidProfile->P8[axis] * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
+        } else {
+            PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+        }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -495,8 +492,15 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
+        if (pidProfile->rollPitchItermResetRate && axis != YAW) {
+            if (ABS(gyroRate / 4) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (pidProfile->yawItermResetRate && axis == YAW) {
+            if (ABS(gyroRate / 4) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
             } else {
