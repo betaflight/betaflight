@@ -86,6 +86,8 @@ extern "C" {
 
 extern "C" {
     void setCurrentPort(mspPort_t *port);
+    uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria);
+    uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria);
     void mspProcessReceivedCommand();
     extern mspPort_t *currentPort;
     extern bufWriter_t *writer;
@@ -528,6 +530,60 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     EXPECT_FLOAT_EQ(A_level, pidProfile->A_level);
     EXPECT_FLOAT_EQ(H_level, pidProfile->H_level);
     EXPECT_EQ(H_sensitivity, pidProfile->H_sensitivity);
+}
+
+TEST_F(SerialMspUnitTest, Test_BoardAlignment)
+{
+    const uint8_t cmdMSP = MSP_BOARD_ALIGNMENT;
+    const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)&cmdMSP);
+    EXPECT_NE(static_cast<const pgRegistry_t*>(0), reg);
+    EXPECT_EQ(reinterpret_cast<boardAlignment_t*>(reg->base), &boardAlignment);
+
+    const boardAlignment_t testBoardAlignment = {295, 147, -202};
+
+    memcpy(&boardAlignment, &testBoardAlignment, sizeof(boardAlignment_t));
+    // use the MSP to write out the test values
+    serialWritePos = 0;
+    serialReadPos = 0;
+    currentPort->cmdMSP = MSP_BOARD_ALIGNMENT;
+    mspProcessReceivedCommand();
+    EXPECT_EQ('$', serialBuffer.mspResponse.header.dollar);
+    EXPECT_EQ('M', serialBuffer.mspResponse.header.m);
+    EXPECT_EQ('>', serialBuffer.mspResponse.header.direction);
+    EXPECT_EQ(sizeof(boardAlignment_t), serialBuffer.mspResponse.header.size);
+    EXPECT_EQ(MSP_BOARD_ALIGNMENT, serialBuffer.mspResponse.header.type);
+    EXPECT_EQ(testBoardAlignment.rollDegrees & 0xff, serialBuffer.mspResponse.payload[0]);
+    EXPECT_EQ(testBoardAlignment.rollDegrees >> 8, serialBuffer.mspResponse.payload[1]);
+
+
+    // reset test values to zero, so we can check if they get read properly
+    memset(&boardAlignment, 0, sizeof(boardAlignment_t));
+
+    // now use the MSP to read back the values and check they are the same
+    // spoof a change from the written MSP_BOARD_ALIGNMENT to the readable MSP_SET_BOARD_ALIGNMENT
+    currentPort->cmdMSP = MSP_SET_BOARD_ALIGNMENT;
+    serialBuffer.mspResponse.header.direction = '<';
+    serialBuffer.mspResponse.header.type = currentPort->cmdMSP;
+    // force the checksum
+    serialBuffer.mspResponse.payload[serialBuffer.mspResponse.header.size] ^= MSP_BOARD_ALIGNMENT;
+    serialBuffer.mspResponse.payload[serialBuffer.mspResponse.header.size] ^= MSP_SET_BOARD_ALIGNMENT;
+    // copy the command data into the current port inBuf so it can be processed
+    memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
+
+
+    // set the offset into the payload
+    currentPort->indRX = offsetof(struct mspResonse_s, payload);
+    currentPort->dataSize = serialBuffer.mspResponse.header.size;
+    const pgRegistry_t *regSet = pgMatcher(pgMatcherForMSPSet, (void*)&currentPort->cmdMSP);
+    EXPECT_NE(static_cast<const pgRegistry_t*>(0), regSet);
+
+    mspProcessReceivedCommand();
+    EXPECT_EQ(reg->base, regSet->base);
+
+    // check the values are as expected
+    EXPECT_FLOAT_EQ(testBoardAlignment.rollDegrees, boardAlignment.rollDegrees);
+    EXPECT_FLOAT_EQ(testBoardAlignment.pitchDegrees, boardAlignment.pitchDegrees);
+    EXPECT_FLOAT_EQ(testBoardAlignment.yawDegrees, boardAlignment.yawDegrees);
 }
 
 TEST_F(SerialMspUnitTest, TestMspOutMessageLengthsCommand)

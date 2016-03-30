@@ -47,8 +47,13 @@ typedef struct pgRegistry_s {
     uint8_t flags;
 } pgRegistry_t;
 
+#ifdef UNIT_TEST
+#define PG_REGISTRY_SECTION
+#define PG_REGISTRY_TAIL_SECTION
+#else
 #define PG_REGISTRY_SECTION __attribute__((section(".pg_registry"), used))
 #define PG_REGISTRY_TAIL_SECTION __attribute__((section(".pg_registry_tail"), used))
+#endif
 
 #define PG_PACKED __attribute__((packed))
 
