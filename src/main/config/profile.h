@@ -17,29 +17,11 @@
 
 #pragma once
 
-// System-wide
-typedef struct master_t {
-    // Motor/ESC/Servo configuration
-    flight3DConfig_t flight3DConfig;
+typedef struct profileSelection_s {
+    uint8_t current_profile_index;
+} profileSelection_t;
 
-    rxConfig_t rxConfig;
+PG_DECLARE(profileSelection_t, profileSelection);
 
-    // Flight config
-    airplaneConfig_t airplaneConfig;
-
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
-
-#ifdef TELEMETRY
-    telemetryConfig_t telemetryConfig;
-#endif
-
-#ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
-#endif
-} master_t;
-
-PG_DECLARE(master_t, masterConfig);
-extern controlRateConfig_t *currentControlRateProfile;
+uint8_t getCurrentProfile(void);
+void setProfile(uint8_t profileIndex);

@@ -80,6 +80,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/profile.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"
@@ -1134,7 +1135,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("Device UID:0x%x%x%x", U_ID_0, U_ID_1, U_ID_2);
         break;
         case 5:
-            blackboxPrintfHeaderLine("rcRate:%d", controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", controlRateProfiles[getCurrentProfile()].rcRate8);
         break;
         case 6:
             blackboxPrintfHeaderLine("minthrottle:%d", escAndServoConfig.minthrottle);

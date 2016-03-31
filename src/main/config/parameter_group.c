@@ -69,3 +69,16 @@ void pgResetAll(uint8_t profileCount)
         }
     }
 }
+
+void pgActivateProfile(uint8_t profileIndexToActivate)
+{
+    PG_FOREACH(reg) {
+        if ((reg->flags & PGRF_CLASSIFICATON_BIT) != PGC_PROFILE) {
+            continue;
+        }
+
+        uint8_t *ptr = reg->base + (profileIndexToActivate * reg->size);
+        *(reg->ptr) = ptr;
+    }
+}
+

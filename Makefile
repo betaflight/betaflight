@@ -231,6 +231,7 @@ COMMON_SRC = build_config.c \
 		   config/config_eeprom.c \
 		   config/parameter_group.c \
 		   config/feature.c \
+		   config/profile.c \
 		   common/maths.c \
 		   common/printf.c \
 		   common/typeconversion.c \

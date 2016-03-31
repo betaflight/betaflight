@@ -38,6 +38,7 @@
 #define PG_MIXER_CONFIG 20
 #define PG_SERVO_MIXER 21
 #define PG_IMU_CONFIG 22
+#define PG_PROFILE_SELECTION 23
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

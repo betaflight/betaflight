@@ -53,12 +53,10 @@ void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 void initEEPROM(void);
 void resetEEPROM(void);
 void readEEPROM(void);
-void readEEPROMAndNotify(void);
 void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
 
-uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);

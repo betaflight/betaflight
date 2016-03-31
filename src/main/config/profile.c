@@ -15,31 +15,32 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-// System-wide
-typedef struct master_t {
-    // Motor/ESC/Servo configuration
-    flight3DConfig_t flight3DConfig;
+#include <platform.h>
 
-    rxConfig_t rxConfig;
+#include "build_config.h"
 
-    // Flight config
-    airplaneConfig_t airplaneConfig;
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
+#include "config/config.h"
 
-#ifdef TELEMETRY
-    telemetryConfig_t telemetryConfig;
-#endif
+#include "config/profile.h"
 
-#ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
-#endif
-} master_t;
+PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
-PG_DECLARE(master_t, masterConfig);
-extern controlRateConfig_t *currentControlRateProfile;
+uint8_t getCurrentProfile(void)
+{
+    return profileSelection.current_profile_index;
+}
+
+void setProfile(uint8_t profileIndex)
+{
+    if (profileIndex >= MAX_PROFILE_COUNT) // sanity check
+        profileIndex = 0;
+
+    profileSelection.current_profile_index = profileIndex;
+}
+

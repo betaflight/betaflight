@@ -125,4 +125,4 @@ const pgRegistry_t* pgFind(pgn_t pgn);
 const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size);
 void pgResetAll(uint8_t profileCount);
-
+void pgActivateProfile(uint8_t profileIndexToActivate);

@@ -92,6 +92,7 @@
 #include "config/config_master.h"
 #include "config/config_system.h"
 #include "config/feature.h"
+#include "config/profile.h"
 
 #include "common/printf.h"
 
@@ -2146,9 +2147,7 @@ static void cliProfile(char *cmdline)
     } else {
         i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            masterConfig.current_profile_index = i;
-            writeEEPROM();
-            readEEPROM();
+            changeProfile(i);
             cliProfile("");
         }
     }

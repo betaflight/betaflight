@@ -176,19 +176,6 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
     return chk == *p;
 }
 
-
-void activateProfile(uint8_t profileIndexToActivate)
-{
-    PG_FOREACH(reg) {
-        if ((reg->flags & PGRF_CLASSIFICATON_BIT) != PGC_PROFILE) {
-            continue;
-        }
-
-        uint8_t *ptr = reg->base + (profileIndexToActivate * reg->size);
-        *(reg->ptr) = ptr;
-    }
-}
-
 bool isEEPROMContentValid(void)
 {
     return scanEEPROM(false);

@@ -67,6 +67,7 @@ extern "C" {
     #include "config/config_master.h"
     #include "config/config_system.h"
     #include "config/feature.h"
+    #include "config/profile.h"
 }
 
 #include "unittest_macros.h"
@@ -94,6 +95,7 @@ extern "C" {
     systemConfig_t systemConfig;
     mixerConfig_t mixerConfig;
     imuConfig_t imuConfig;
+    profileSelection_t profileSelection;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -120,7 +122,12 @@ extern "C" {
         memset(&systemConfig, 0x00, sizeof(systemConfig));
         memset(&mixerConfig, 0x00, sizeof(mixerConfig));
         memset(&imuConfig, 0x00, sizeof(imuConfig));
+        memset(&profileSelection, 0x00, sizeof(profileSelection));
     }
+
+    void pgActivateProfile(uint8_t) {
+    };
+
 
 }
 
@@ -136,7 +143,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     memset(&boardAlignment, 0xa5, sizeof(boardAlignment_t));
     resetConf();
 
-    EXPECT_EQ(0, masterConfig.current_profile_index); // default profile
+    EXPECT_EQ(0, profileSelection.current_profile_index); // default profile
     EXPECT_EQ(0, imuConfig.dcm_ki); // 0.003 * 10000
 
     EXPECT_EQ(0, sensorTrims.accZero.values.pitch);
@@ -238,7 +245,6 @@ void failureMode(uint8_t) {}
 bool scanEEPROM(bool) { return true; }
 void writeConfigToEEPROM(void) {}
 bool isEEPROMContentValid(void) { return true; }
-void activateProfile(uint8_t) {};
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP

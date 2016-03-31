@@ -262,7 +262,7 @@ TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
     serialWritePos = 0;
     serialReadPos = 0;
     currentProfile = &profile;
-    activateProfile(0);
+    pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     currentPort->cmdMSP = MSP_PID_CONTROLLER;
@@ -281,7 +281,7 @@ TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
 {
     // Use the MSP to write out the PID values
     currentProfile = &profile;
-    activateProfile(0);
+    pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     serialWritePos = 0;
@@ -347,7 +347,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     const int D8_PIDVEL = 7;
 
     currentProfile = &profile;
-    activateProfile(0);
+    pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
     pidProfile->P8[PIDROLL] = P8_ROLL;
@@ -459,7 +459,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     const float H_level = 3.0f;
     const uint8_t H_sensitivity = 75;
     currentProfile = &profile;
-    activateProfile(0);
+    pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
     pidProfile->P_f[PIDROLL] = Pf_ROLL;
@@ -694,14 +694,11 @@ void resetEEPROM(void) {}
 void writeEEPROM(void) {}
 void changeProfile(uint8_t) {};
 void setProfile(uint8_t) {};
+uint8_t getCurrentProfile(void) { return 0; };
 bool feature(uint32_t mask) {UNUSED(mask);return false;}
 void featureSet(uint32_t mask) {UNUSED(mask);}
 void featureClearAll() {}
 uint32_t featureMask(void) {return 0;}
-// from config_eeprom.c
-void activateProfile(uint8_t p) {
-    pidProfile = &pidProfileStorage[p];
-};
 // from debug.c
 int16_t debug[DEBUG16_VALUE_COUNT];
 // from gps.c
