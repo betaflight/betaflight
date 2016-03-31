@@ -56,7 +56,7 @@ typedef struct {
     // split up.
     uint16_t size;
     pgn_t pgn;
-    uint8_t format;
+    uint8_t version;
 
     // lower 2 bits used to indicate system or profile number, see CR_CLASSIFICATION_MASK
     uint8_t flags;
@@ -103,7 +103,7 @@ uint8_t pgMatcherForConfigRecord(const pgRegistry_t *candidate, const void *crit
 {
     const configRecord_t *record = (const configRecord_t *)criteria;
 
-    return (candidate->pgn == record->pgn && candidate->format == record->format);
+    return (candidate->pgn == record->pgn && candidate->version == record->version);
 }
 
 // Load a PG into RAM, upgrading and downgrading as needed.
@@ -118,14 +118,14 @@ static bool loadPG(const configRecord_t *record)
     // Clear the in-memory copy.  Sets any ungraded fields to zero.
 
     if ((record->flags & CR_CLASSIFICATION_MASK) == CR_CLASSICATION_SYSTEM) {
-        memset(reg->base, 0, reg->size);
-        memcpy(reg->base, record->pg, MIN(reg->size, record->size - sizeof(*record)));
+        memset(reg->address, 0, reg->size);
+        memcpy(reg->address, record->pg, MIN(reg->size, record->size - sizeof(*record)));
         return true;
     }
 
     uint8_t profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
 
-    uint8_t *ptr = reg->base + (profileIndex * reg->size);
+    uint8_t *ptr = reg->address + (profileIndex * reg->size);
 
     memset(ptr, 0, reg->size);
     memcpy(ptr, record->pg, MIN(reg->size, record->size - sizeof(*record)));
@@ -199,7 +199,7 @@ static bool writeSettingsToEEPROM(void)
         configRecord_t record = {
             .size = sizeof(configRecord_t) + reg->size,
             .pgn = reg->pgn,
-            .format = reg->format,
+            .version = reg->version,
             .flags = 0
         };
 
@@ -209,8 +209,8 @@ static bool writeSettingsToEEPROM(void)
 	        record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
             chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
-            config_streamer_write(&streamer, reg->base, reg->size);
-            chk = updateChecksum(chk, reg->base, reg->size);
+            config_streamer_write(&streamer, reg->address, reg->size);
+            chk = updateChecksum(chk, reg->address, reg->size);
         } else {
             // write one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
@@ -219,9 +219,9 @@ static bool writeSettingsToEEPROM(void)
                 record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
                 config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
                 chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
-                const uint8_t *base = reg->base + (reg->size * profileIndex);
-                config_streamer_write(&streamer, base, reg->size);
-                chk = updateChecksum(chk, base, reg->size);
+                const uint8_t *address = reg->address + (reg->size * profileIndex);
+                config_streamer_write(&streamer, address, reg->size);
+                chk = updateChecksum(chk, address, reg->size);
             }
         }
     }

@@ -523,7 +523,7 @@ TEST_F(SerialMspUnitTest, Test_BoardAlignment)
     const uint8_t cmdMSP = MSP_BOARD_ALIGNMENT;
     const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)&cmdMSP);
     EXPECT_NE(static_cast<const pgRegistry_t*>(0), reg);
-    EXPECT_EQ(reinterpret_cast<boardAlignment_t*>(reg->base), &boardAlignment);
+    EXPECT_EQ(reinterpret_cast<boardAlignment_t*>(reg->address), &boardAlignment);
 
     const boardAlignment_t testBoardAlignment = {295, 147, -202};
 
@@ -562,9 +562,9 @@ TEST_F(SerialMspUnitTest, Test_BoardAlignment)
     currentPort->dataSize = serialBuffer.mspResponse.header.size;
     const pgRegistry_t *regSet = pgMatcher(pgMatcherForMSPSet, (void*)&currentPort->cmdMSP);
     EXPECT_NE(static_cast<const pgRegistry_t*>(0), regSet);
+    EXPECT_EQ(reg->address, regSet->address);
 
     mspProcessReceivedCommand();
-    EXPECT_EQ(reg->base, regSet->base);
 
     // check the values are as expected
     EXPECT_FLOAT_EQ(testBoardAlignment.rollDegrees, boardAlignment.rollDegrees);
