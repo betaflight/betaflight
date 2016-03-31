@@ -18,8 +18,5 @@
 #pragma once
 
 bool sensorsAutodetect(
-    int16_t magDeclinationFromConfig,
-    uint32_t looptime,
-    uint8_t gyroSync,
-    uint8_t gyroSyncDenominator
+    int16_t magDeclinationFromConfig
 );

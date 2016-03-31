@@ -93,6 +93,7 @@ extern "C" {
     transponderConfig_t transponderConfig;
     systemConfig_t systemConfig;
     mixerConfig_t mixerConfig;
+    imuConfig_t imuConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -116,6 +117,9 @@ extern "C" {
         memset(&pwmRxConfig, 0x00, sizeof(pwmRxConfig));
         memset(&armingConfig, 0x00, sizeof(armingConfig));
         memset(&transponderConfig, 0x00, sizeof(transponderConfig));
+        memset(&systemConfig, 0x00, sizeof(systemConfig));
+        memset(&mixerConfig, 0x00, sizeof(mixerConfig));
+        memset(&imuConfig, 0x00, sizeof(imuConfig));
     }
 
 }
@@ -133,7 +137,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     resetConf();
 
     EXPECT_EQ(0, masterConfig.current_profile_index); // default profile
-    EXPECT_EQ(0, masterConfig.dcm_ki); // 0.003 * 10000
+    EXPECT_EQ(0, imuConfig.dcm_ki); // 0.003 * 10000
 
     EXPECT_EQ(0, sensorTrims.accZero.values.pitch);
     EXPECT_EQ(0, sensorTrims.accZero.values.roll);

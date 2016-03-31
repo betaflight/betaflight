@@ -728,7 +728,7 @@ void taskMainPidLoopChecker(void) {
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
-    if (masterConfig.gyroSync) {
+    if (imuConfig.gyroSync) {
         while (1) {
             if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
                 break;

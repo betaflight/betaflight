@@ -46,6 +46,18 @@ typedef struct accDeadband_s {
     uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
 } accDeadband_t;
 
+typedef struct imuConfig_s {
+    // IMU configuration
+    uint16_t looptime;                      // imu loop time in us
+    uint8_t gyroSync;                       // Enable interrupt based loop
+    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
+    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
+    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint8_t small_angle;                    // Angle used for mag hold threshold.
+} imuConfig_t;
+
+PG_DECLARE(imuConfig_t, imuConfig);
+
 typedef struct imuRuntimeConfig_s {
     uint8_t acc_cut_hz;
     uint8_t acc_unarmedcal;

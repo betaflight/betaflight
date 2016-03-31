@@ -340,9 +340,13 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     featureSet(FEATURE_FAILSAFE);
 
-    // global settings
-    masterConfig.small_angle = 25;
-    masterConfig.dcm_kp = 2500;                // 1.0 * 10000
+    // imu settings
+    imuConfig.small_angle = 25;
+    imuConfig.dcm_kp = 2500;                // 1.0 * 10000
+    imuConfig.looptime = 2000;
+    imuConfig.gyroSync = 1;
+    imuConfig.gyroSyncDenominator = 1;
+
     gyroConfig.gyro_lpf = 1;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
     gyroConfig.soft_gyro_lpf_hz = 60;        // Software based lpf filter for gyro
 
@@ -396,10 +400,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
     resetSerialConfig(&serialConfig);
-
-    masterConfig.looptime = 2000;
-    masterConfig.gyroSync = 1;
-    masterConfig.gyroSyncDenominator = 1;
 
     systemConfig.i2c_highspeed = 1;
 
@@ -648,11 +648,11 @@ void activateConfig(void)
         &masterConfig.rxConfig
     );
 
-    imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
-    imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
+    imuRuntimeConfig.dcm_kp = imuConfig.dcm_kp / 10000.0f;
+    imuRuntimeConfig.dcm_ki = imuConfig.dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_cut_hz = currentProfile->acc_cut_hz;
     imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;
-    imuRuntimeConfig.small_angle = masterConfig.small_angle;
+    imuRuntimeConfig.small_angle = imuConfig.small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,

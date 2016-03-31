@@ -94,6 +94,7 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+    PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     
     PG_REGISTER(master_t, masterConfig, 0, 0);
 }
@@ -111,16 +112,16 @@ TEST(configTest, modify)
 {
     resetEEPROM();
 
-    masterConfig.looptime = 123;
+    imuConfig.looptime = 123;
     writeEEPROM();
 
-    EXPECT_EQ(123, masterConfig.looptime);
+    EXPECT_EQ(123, imuConfig.looptime);
 
     // overwrite the values with something else before loading
-    masterConfig.looptime = 456;
+    imuConfig.looptime = 456;
 
     readEEPROM();
-    EXPECT_EQ(123, masterConfig.looptime);
+    EXPECT_EQ(123, imuConfig.looptime);
 }
 
 TEST(configTest, modifyProfile)

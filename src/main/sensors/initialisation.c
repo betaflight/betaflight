@@ -664,8 +664,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 }
 
 bool sensorsAutodetect(
-        int16_t magDeclinationFromConfig,
-        uint32_t looptime, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
+        int16_t magDeclinationFromConfig) {
 
     int16_t deg, min;
 
@@ -691,7 +690,6 @@ bool sensorsAutodetect(
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(looptime, gyroConfig.gyro_lpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
     gyro.init(gyroConfig.gyro_lpf);
 
 #ifdef MAG

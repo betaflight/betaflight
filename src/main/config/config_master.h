@@ -22,14 +22,6 @@ typedef struct master_t {
     // Profile configuration
     uint8_t current_profile_index;
 
-    // IMU configuration
-    uint16_t looptime;                      // imu loop time in us
-    uint8_t gyroSync;                       // Enable interrupt based loop
-    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
-    uint8_t small_angle;                    // Angle used for mag hold threshold.
-
     // Motor/ESC/Servo configuration
     flight3DConfig_t flight3DConfig;
 
