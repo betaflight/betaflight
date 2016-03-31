@@ -781,11 +781,7 @@ $(OBJECT_DIR)/config_eeprom_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-ifeq ($(UNAME), Darwin)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_eeprom_unittest.cc -o $@
-else
-	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
-endif
 
 $(OBJECT_DIR)/mock/mock_flash.o : \
 	$(TEST_DIR)/../mock/mock_flash.cc \
