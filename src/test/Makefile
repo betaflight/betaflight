@@ -42,6 +42,9 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Determine the OS
+UNAME := $(shell uname)
+#
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -667,7 +670,11 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 	$(OBJECT_DIR)/serial_msp_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
+ifeq ($(UNAME), Darwin)
+	$(CXX) $(CXX_FLAGS) -Wl,$(TEST_DIR)/parameter_group.ld $^ -o $(OBJECT_DIR)/$@
+else
 	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld $^ -o $(OBJECT_DIR)/$@
+endif
 
 
 $(OBJECT_DIR)/scheduler_tasks.o : \
@@ -744,7 +751,12 @@ $(OBJECT_DIR)/config_unittest : \
 	$(OBJECT_DIR)/config_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
+	@mkdir -p $(dir $@)
+ifeq ($(UNAME), Darwin)
+	$(CXX) $(CXX_FLAGS) -Wl,-no_pie -Wl,-map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
+else
 	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld $^ -o $(OBJECT_DIR)/$@
+endif
 
 $(OBJECT_DIR)/config/config_eeprom.o : \
 	$(USER_DIR)/config/config_eeprom.c \
@@ -769,7 +781,11 @@ $(OBJECT_DIR)/config_eeprom_unittest.o : \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
+ifeq ($(UNAME), Darwin)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_eeprom_unittest.cc -o $@
+else
+	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
+endif
 
 $(OBJECT_DIR)/mock/mock_flash.o : \
 	$(TEST_DIR)/../mock/mock_flash.cc \
@@ -798,7 +814,11 @@ $(OBJECT_DIR)/config_eeprom_unittest : \
 	$(OBJECT_DIR)/config_eeprom_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
+ifeq ($(UNAME), Darwin)
+	$(CXX) $(CXX_FLAGS) -Wl,-no_pie -Wl,-map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
+else
 	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
+endif
 
 
 $(OBJECT_DIR)/config/config_streamer.o : \
