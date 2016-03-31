@@ -182,7 +182,7 @@ void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
 void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
