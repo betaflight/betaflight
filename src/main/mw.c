@@ -366,8 +366,11 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
-    if (!ARMING_FLAG(WAS_EVER_ARMED) && masterConfig.gyro_cal_on_first_arm) {
-	    gyroSetCalibrationCycles(calculateCalibratingCycles());
+    static bool armingCalibrationWasInitialisedOnce;
+
+    if (masterConfig.gyro_cal_on_first_arm && !armingCalibrationWasInitialisedOnce) {
+        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        armingCalibrationWasInitialisedOnce = true;
     }
 
     if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
