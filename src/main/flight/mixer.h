@@ -89,12 +89,14 @@ typedef struct mixerConfig_s {
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
 
-typedef struct flight3DConfig_s {
+typedef struct motor3DConfig_s {
     uint16_t deadband3d_low;                // min 3d value
     uint16_t deadband3d_high;               // max 3d value
     uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
-} flight3DConfig_t;
+} motor3DConfig_t;
+
+PG_DECLARE(motor3DConfig_t, motor3DConfig);
+
 
 typedef struct airplaneConfig_s {
     int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
@@ -212,7 +214,6 @@ void mixerUseConfigs(
 #ifdef USE_SERVOS
         servoParam_t *servoConfToUse,
 #endif
-        flight3DConfig_t *flight3DConfigToUse,
         airplaneConfig_t *airplaneConfigToUse
 );
 

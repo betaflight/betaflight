@@ -201,12 +201,11 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->servoCenterPulse = 1500;
 }
 
-void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
+void resetMotor3DConfig(motor3DConfig_t *motor3DConfig)
 {
-    flight3DConfig->deadband3d_low = 1406;
-    flight3DConfig->deadband3d_high = 1514;
-    flight3DConfig->neutral3d = 1460;
-    flight3DConfig->deadband3d_throttle = 50;
+    motor3DConfig->deadband3d_low = 1406;
+    motor3DConfig->deadband3d_high = 1514;
+    motor3DConfig->neutral3d = 1460;
 }
 
 static void resetBatteryConfig(batteryConfig_t *batteryConfig)
@@ -265,7 +264,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
     rcControlsConfig->yaw_control_direction = 1;
-
+    rcControlsConfig->deadband3d_throttle = 50;
 }
 
 static void resetMixerConfig(mixerConfig_t *mixerConfig) {
@@ -381,7 +380,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // Motor/ESC/Servo
     resetEscAndServoConfig(&escAndServoConfig);
-    resetFlight3DConfig(&masterConfig.flight3DConfig);
+    resetMotor3DConfig(&motor3DConfig);
 
 #ifdef BRUSHED_MOTORS
     escAndServoConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
@@ -424,7 +423,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // Radio
 
-    resetRcControlsConfig(&currentProfile->rcControlsConfig);
+    resetRcControlsConfig(rcControlsConfig);
 
     currentProfile->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
@@ -631,7 +630,6 @@ void activateConfig(void)
 #ifdef USE_SERVOS
         currentProfile->servoConf,
 #endif
-        &masterConfig.flight3DConfig,
         &masterConfig.airplaneConfig
     );
 
@@ -650,8 +648,7 @@ void activateConfig(void)
 
 #if defined(BARO) || defined(SONAR)
     configureAltitudeHold(
-        &currentProfile->barometerConfig,
-        &currentProfile->rcControlsConfig
+        &currentProfile->barometerConfig
     );
 #endif
 

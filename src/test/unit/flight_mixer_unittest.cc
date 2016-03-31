@@ -228,7 +228,6 @@ protected:
         mixerConfig.mixerMode = mixerMode;
         mixerUseConfigs(
             servoConf,
-            NULL,
             NULL
         );
     }

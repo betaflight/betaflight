@@ -40,9 +40,13 @@
 #define PG_IMU_CONFIG 22
 #define PG_PROFILE_SELECTION 23
 #define PG_RX_CONFIG 24
+#define PG_RC_CONTROLS_CONFIG 25
+#define PG_MOTOR_3D_CONFIG 26
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100
+
+#define PG_RESERVED_FOR_TESTING_1 253
 
 // FIXME remove/adjust after migration
 #define PG_PROFILE 254

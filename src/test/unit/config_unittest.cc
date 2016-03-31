@@ -79,6 +79,10 @@ extern "C" {
 
     profile_t testProfile;
     profile_t *currentProfile = &testProfile;
+
+    rcControlsConfig_t testRcControlsConfig;
+    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig;
+
     failsafeConfig_t failsafeConfig;
     boardAlignment_t boardAlignment;
     escAndServoConfig_t escAndServoConfig;
@@ -98,6 +102,8 @@ extern "C" {
     profileSelection_t profileSelection;
     rxConfig_t rxConfig;
 
+    motor3DConfig_t motor3DConfig;
+
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
 
@@ -107,6 +113,9 @@ extern "C" {
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
 
     void pgResetAll(uint8_t) {
+        memset(&testProfile, 0x00, sizeof(testProfile));
+        memset(&testRcControlsConfig, 0x00, sizeof(testRcControlsConfig));
+
         memset(&masterConfig, 0x00, sizeof(masterConfig));
         memset(&boardAlignment, 0x00, sizeof(boardAlignment));
         memset(&customMotorMixer, 0x00, sizeof(customMotorMixer));
@@ -141,8 +150,6 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 {
     //FIXME this needs updating since pgResetAll() is now what does the memset(), not resetConf()
 
-    memset(&masterConfig, 0xa5, sizeof(master_t));
-    memset(&boardAlignment, 0xa5, sizeof(boardAlignment_t));
     resetConf();
 
     EXPECT_EQ(0, profileSelection.current_profile_index); // default profile
@@ -230,9 +237,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, airplaneConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(escAndServoConfig_t *, airplaneConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
@@ -242,7 +249,7 @@ void generateYawCurve(controlRateConfig_t *) {}
 void generatePitchRollCurve(controlRateConfig_t *) {}
 void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
-void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *) {}
+void configureAltitudeHold(barometerConfig_t *) {}
 void failureMode(uint8_t) {}
 bool scanEEPROM(bool) { return true; }
 void writeConfigToEEPROM(void) {}

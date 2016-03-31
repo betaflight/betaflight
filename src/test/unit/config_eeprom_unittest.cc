@@ -70,6 +70,7 @@ extern "C" {
 
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
     PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
     pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
     pidProfile_t *pidProfile = &testPidProfile[0];
@@ -97,6 +98,7 @@ extern "C" {
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
     
 }
 
@@ -181,9 +183,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, airplaneConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(airplaneConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
@@ -193,7 +195,7 @@ void generateYawCurve(controlRateConfig_t *) {}
 void generatePitchRollCurve(controlRateConfig_t *) {}
 void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
-void configureAltitudeHold(pidProfile_t *, barometerConfig_t *, rcControlsConfig_t *) {}
+void configureAltitudeHold(barometerConfig_t *) {}
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP

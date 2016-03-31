@@ -116,7 +116,7 @@ void telemetryInit(void);
 void serialInit(bool softserialEnabled);
 void mspInit(void);
 void cliInit(void);
-void failsafeInit(uint16_t deadband3d_throttle);
+void failsafeInit(void);
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
 #ifdef USE_SERVOS
 void mixerInit(motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
@@ -390,7 +390,7 @@ void init(void)
     pwm_params.motorPwmRate = escAndServoConfig.motor_pwm_rate;
     pwm_params.idlePulse = escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+        pwm_params.idlePulse = motor3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 
@@ -519,7 +519,7 @@ void init(void)
     cliInit();
 #endif
 
-    failsafeInit(masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit();
 
     rxInit(currentProfile->modeActivationConditions);
 

@@ -22,6 +22,8 @@
 
 #include <platform.h>
 
+#include "build_config.h"
+
 //#define DEBUG_ALTITUDE_HOLD
 
 #define BARO
@@ -32,6 +34,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
 
+    #include "config/parameter_group_ids.h"
     #include "config/parameter_group.h"
 
     #include "drivers/sensor.h"
@@ -52,9 +55,12 @@ extern "C" {
     #include "flight/altitudehold.h"
 
     #include "config/runtime_config.h"
+    #include "config/config.h"
 
     pidProfile_t testPidProfile;
     pidProfile_t *pidProfile = &testPidProfile;
+
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

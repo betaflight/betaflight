@@ -19,9 +19,6 @@
 
 // System-wide
 typedef struct master_t {
-    // Motor/ESC/Servo configuration
-    flight3DConfig_t flight3DConfig;
-
     // Flight config
     airplaneConfig_t airplaneConfig;
 

@@ -67,7 +67,6 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 bool motorLimitReached;
 
-static flight3DConfig_t *flight3DConfig;
 static airplaneConfig_t *airplaneConfig;
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -84,6 +83,9 @@ static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
+
+motor3DConfig_t motor3DConfig;
+PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
 servoMixer_t customServoMixer[MAX_SERVO_RULES];
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
@@ -337,13 +339,11 @@ void mixerUseConfigs(
 #ifdef USE_SERVOS
         servoParam_t *servoConfToUse,
 #endif
-        flight3DConfig_t *flight3DConfigToUse,
         airplaneConfig_t *airplaneConfigToUse)
 {
 #ifdef USE_SERVOS
     servoConf = servoConfToUse;
 #endif
-    flight3DConfig = flight3DConfigToUse;
     airplaneConfig = airplaneConfigToUse;
 
 }
@@ -549,7 +549,7 @@ void mixerResetDisarmedMotors(void)
     int i;
     // set disarmed motor values
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig.mincommand;
+        motor_disarmed[i] = feature(FEATURE_3D) ? motor3DConfig.neutral3d : escAndServoConfig.mincommand;
 }
 
 #ifdef USE_SERVOS
@@ -661,7 +661,7 @@ void writeAllMotors(int16_t mc)
 
 void stopMotors(void)
 {
-    writeAllMotors(feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig.mincommand);
+    writeAllMotors(feature(FEATURE_3D) ? motor3DConfig.neutral3d : escAndServoConfig.mincommand);
 
     delay(50); // give the timers and ESCs a chance to react.
 }
@@ -795,20 +795,20 @@ void mixTable(void)
         if (feature(FEATURE_3D)) {
             if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig.midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
 
-            if ((rcData[THROTTLE] <= (rxConfig.midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
-                throttleMax = flight3DConfig->deadband3d_low;
+            if ((rcData[THROTTLE] <= (rxConfig.midrc - rcControlsConfig->deadband3d_throttle))) { // Out of band handling
+                throttleMax = motor3DConfig.deadband3d_low;
                 throttleMin = escAndServoConfig.minthrottle;
                 throttlePrevious = throttle = rcData[THROTTLE];
-            } else if (rcData[THROTTLE] >= (rxConfig.midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
+            } else if (rcData[THROTTLE] >= (rxConfig.midrc + rcControlsConfig->deadband3d_throttle)) { // Positive handling
                 throttleMax = escAndServoConfig.maxthrottle;
-                throttleMin = flight3DConfig->deadband3d_high;
+                throttleMin = motor3DConfig.deadband3d_high;
                 throttlePrevious = throttle = rcData[THROTTLE];
-            } else if ((throttlePrevious <= (rxConfig.midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
-                throttle = throttleMax = flight3DConfig->deadband3d_low;
+            } else if ((throttlePrevious <= (rxConfig.midrc - rcControlsConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
+                throttle = throttleMax = motor3DConfig.deadband3d_low;
                 throttleMin = escAndServoConfig.minthrottle;
             } else {  // Deadband handling from positive to negative
                 throttleMax = escAndServoConfig.maxthrottle;
-                throttle = throttleMin = flight3DConfig->deadband3d_high;
+                throttle = throttleMin = motor3DConfig.deadband3d_high;
             }
         } else {
             throttle = rcCommand[THROTTLE];
@@ -840,10 +840,10 @@ void mixTable(void)
             if (isFailsafeActive) {
                 motor[i] = mixConstrainMotorForFailsafeCondition(i);
             } else if (feature(FEATURE_3D)) {
-                if (throttlePrevious <= (rxConfig.midrc - flight3DConfig->deadband3d_throttle)) {
-                    motor[i] = constrain(motor[i], escAndServoConfig.minthrottle, flight3DConfig->deadband3d_low);
+                if (throttlePrevious <= (rxConfig.midrc - rcControlsConfig->deadband3d_throttle)) {
+                    motor[i] = constrain(motor[i], escAndServoConfig.minthrottle, motor3DConfig.deadband3d_low);
                 } else {
-                    motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig.maxthrottle);
+                    motor[i] = constrain(motor[i], motor3DConfig.deadband3d_high, escAndServoConfig.maxthrottle);
                 }
             } else {
                 motor[i] = constrain(motor[i], escAndServoConfig.minthrottle, escAndServoConfig.maxthrottle);
@@ -881,18 +881,18 @@ void mixTable(void)
 
             if (feature(FEATURE_3D)) {
                 if (mixerConfig.pid_at_min_throttle
-                        || rcData[THROTTLE] <= rxConfig.midrc - flight3DConfig->deadband3d_throttle
-                        || rcData[THROTTLE] >= rxConfig.midrc + flight3DConfig->deadband3d_throttle) {
+                        || rcData[THROTTLE] <= rxConfig.midrc - rcControlsConfig->deadband3d_throttle
+                        || rcData[THROTTLE] >= rxConfig.midrc + rcControlsConfig->deadband3d_throttle) {
                     if (rcData[THROTTLE] > rxConfig.midrc) {
-                        motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig.maxthrottle);
+                        motor[i] = constrain(motor[i], motor3DConfig.deadband3d_high, escAndServoConfig.maxthrottle);
                     } else {
-                        motor[i] = constrain(motor[i], escAndServoConfig.mincommand, flight3DConfig->deadband3d_low);
+                        motor[i] = constrain(motor[i], escAndServoConfig.mincommand, motor3DConfig.deadband3d_low);
                     }
                 } else {
                     if (rcData[THROTTLE] > rxConfig.midrc) {
-                        motor[i] = flight3DConfig->deadband3d_high;
+                        motor[i] = motor3DConfig.deadband3d_high;
                     } else {
-                        motor[i] = flight3DConfig->deadband3d_low;
+                        motor[i] = motor3DConfig.deadband3d_low;
                     }
                 }
             } else {

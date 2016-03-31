@@ -59,15 +59,12 @@ int32_t vario = 0;                      // variometer in cm/s
 
 
 static barometerConfig_t *barometerConfig;
-static rcControlsConfig_t *rcControlsConfig;
 
 void configureAltitudeHold(
-        barometerConfig_t *intialBarometerConfig,
-        rcControlsConfig_t *initialRcControlsConfig
+        barometerConfig_t *intialBarometerConfig
 )
 {
     barometerConfig = intialBarometerConfig;
-    rcControlsConfig = initialRcControlsConfig;
 }
 
 #if defined(BARO) || defined(SONAR)

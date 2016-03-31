@@ -1207,18 +1207,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_3D:
-        headSerialReply(2 * 4);
-        serialize16(masterConfig.flight3DConfig.deadband3d_low);
-        serialize16(masterConfig.flight3DConfig.deadband3d_high);
-        serialize16(masterConfig.flight3DConfig.neutral3d);
-        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
+        headSerialReply(2 * 3);
+        serialize16(motor3DConfig.deadband3d_low);
+        serialize16(motor3DConfig.deadband3d_high);
+        serialize16(motor3DConfig.neutral3d);
         break;
 
     case MSP_RC_DEADBAND:
-        headSerialReply(3);
-        serialize8(currentProfile->rcControlsConfig.deadband);
-        serialize8(currentProfile->rcControlsConfig.yaw_deadband);
-        serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        headSerialReply(5);
+        serialize8(rcControlsConfig->deadband);
+        serialize8(rcControlsConfig->yaw_deadband);
+        serialize8(rcControlsConfig->alt_hold_deadband);
+        serialize16(rcControlsConfig->deadband3d_throttle);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
@@ -1458,16 +1458,16 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_3D:
-        masterConfig.flight3DConfig.deadband3d_low = read16();
-        masterConfig.flight3DConfig.deadband3d_high = read16();
-        masterConfig.flight3DConfig.neutral3d = read16();
-        masterConfig.flight3DConfig.deadband3d_throttle = read16();
+        motor3DConfig.deadband3d_low = read16();
+        motor3DConfig.deadband3d_high = read16();
+        motor3DConfig.neutral3d = read16();
         break;
 
     case MSP_SET_RC_DEADBAND:
-        currentProfile->rcControlsConfig.deadband = read8();
-        currentProfile->rcControlsConfig.yaw_deadband = read8();
-        currentProfile->rcControlsConfig.alt_hold_deadband = read8();
+        rcControlsConfig->deadband = read8();
+        rcControlsConfig->yaw_deadband = read8();
+        rcControlsConfig->alt_hold_deadband = read8();
+        rcControlsConfig->deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RESET_CURR_PID:
