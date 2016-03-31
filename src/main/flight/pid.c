@@ -439,7 +439,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[YAW]) >> 5;
+            AngleRateTmp = ((int32_t)(rate + 47) * rcCommand[YAW]) >> 5;
         } else {
             AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
             if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
