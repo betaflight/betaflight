@@ -40,4 +40,3 @@ typedef struct master_t {
 } master_t;
 
 PG_DECLARE(master_t, masterConfig);
-extern controlRateConfig_t *currentControlRateProfile;

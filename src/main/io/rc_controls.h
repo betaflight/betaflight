@@ -145,6 +145,8 @@ typedef struct controlRateConfig_s {
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3
 PG_DECLARE_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
 
+extern controlRateConfig_t *currentControlRateProfile;
+
 extern int16_t rcCommand[4];
 
 typedef struct rcControlsConfig_s {
