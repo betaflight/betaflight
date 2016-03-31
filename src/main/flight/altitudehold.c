@@ -29,6 +29,9 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/runtime_config.h"
+#include "config/parameter_group.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/sonar_hcsr04.h"
@@ -46,8 +49,6 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-
-#include "config/runtime_config.h"
 
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;

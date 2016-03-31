@@ -29,33 +29,6 @@
 
 #include "sensors/sensors.h"
 
-sensorSelectionConfig_t sensorSelectionConfig;
-sensorAlignmentConfig_t sensorAlignmentConfig;
-sensorTrims_t sensorTrims;
-
-static const pgRegistry_t sensorSelectionConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&sensorSelectionConfig,
-    .size = sizeof(sensorSelectionConfig),
-    .pgn = PG_SENSOR_SELECTION_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
-
-static const pgRegistry_t sensorAlignmentConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&sensorAlignmentConfig,
-    .size = sizeof(sensorAlignmentConfig),
-    .pgn = PG_SENSOR_ALIGNMENT_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
-
-static const pgRegistry_t sensorTrimsRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&sensorTrims,
-    .size = sizeof(sensorTrims),
-    .pgn = PG_SENSOR_TRIMS,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(sensorSelectionConfig_t, sensorSelectionConfig, PG_SENSOR_SELECTION_CONFIG, 0);
+PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
+PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);

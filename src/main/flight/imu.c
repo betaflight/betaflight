@@ -30,6 +30,9 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "config/runtime_config.h"
+#include "config/parameter_group.h"
+
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -47,8 +50,6 @@
 #include "flight/imu.h"
 
 #include "io/gps.h"
-
-#include "config/runtime_config.h"
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'

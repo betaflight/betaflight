@@ -64,13 +64,14 @@
 
 #include "common/axis.h"
 
+#include "config/runtime_config.h"
+#include "config/parameter_group.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "io/rc_controls.h"
-
-#include "config/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"

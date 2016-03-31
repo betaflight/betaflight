@@ -53,16 +53,7 @@ uint16_t amperageLatestADC = 0;     // most recent raw reading from current ADC
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
-batteryConfig_t batteryConfig;
-
-static const pgRegistry_t batteryRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&batteryConfig,
-    .size = sizeof(batteryConfig),
-    .pgn = PG_BATTERY_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 
 static batteryState_e batteryState;
 static biquad_t vbatFilterState;

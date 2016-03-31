@@ -24,11 +24,15 @@
 
 #ifdef GTUNE
 
+#include "build_config.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -41,12 +45,9 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/config.h"
 #include "blackbox/blackbox.h"
 
 #include "io/rc_controls.h"
-
-#include "config/runtime_config.h"
 
 #include "gtune.h"
 
@@ -95,18 +96,7 @@ extern uint8_t motorCount;
     pidProfile->gtune_average_cycles = 16;  [8..128] Number of looptime cycles used for gyro average calculation
 */
 
-gtuneConfig_t gtuneConfigStorage[MAX_PROFILE_COUNT];
-gtuneConfig_t *gtuneConfig;
-
-static const pgRegistry_t gtuneConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&gtuneConfigStorage,
-    .ptr = (uint8_t **)&gtuneConfig,
-    .size = sizeof(gtuneConfigStorage[0]),
-    .pgn = PG_GTUNE_CONFIG,
-    .format = 0,
-    .flags = PGC_PROFILE
-};
+PG_REGISTER_PROFILE(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
 
 static int16_t delay_cycles;
 static int16_t time_skip[3];

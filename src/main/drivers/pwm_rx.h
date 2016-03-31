@@ -26,7 +26,7 @@ typedef struct pwmRxConfig_s {
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 } pwmRxConfig_t;
 
-extern pwmRxConfig_t pwmRxConfig;
+PG_DECLARE(pwmRxConfig_t, pwmRxConfig);
 
 #define PPM_RCVR_TIMEOUT            0
 

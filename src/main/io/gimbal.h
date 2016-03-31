@@ -28,4 +28,4 @@ typedef struct gimbalConfig_s {
     uint8_t mode;
 } gimbalConfig_t;
 
-extern gimbalConfig_t *gimbalConfig;
+PG_DECLARE_PROFILE(gimbalConfig_t, gimbalConfig);

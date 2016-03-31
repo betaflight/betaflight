@@ -32,6 +32,11 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/runtime_config.h"
+#include "config/config_unittest.h"
+#include "config/parameter_group.h"
+#include "config/config.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
@@ -50,10 +55,6 @@
 #include "flight/navigation.h"
 #include "flight/gtune.h"
 #include "flight/mixer.h"
-
-#include "config/runtime_config.h"
-#include "config/config_unittest.h"
-#include "config/config.h"
 
 extern uint8_t motorCount;
 extern float dT;
@@ -80,19 +81,7 @@ typedef void (*pidControllerFuncPtr)( controlRateConfig_t *controlRateConfig,
 
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using
 
-pidProfile_t pidProfileStorage[MAX_PROFILE_COUNT];
-pidProfile_t *pidProfile;
-
-static const pgRegistry_t pidProfileRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&pidProfileStorage,
-    .ptr = (uint8_t **)&pidProfile,
-    .size = sizeof(pidProfileStorage[0]),
-    .pgn = PG_PID_PROFILE,
-    .format = 0,
-    .flags = PGC_PROFILE
-};
-
+PG_REGISTER_PROFILE(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
 
 void pidResetErrorAngle(void)
 {

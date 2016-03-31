@@ -63,23 +63,8 @@
 
 #define AIRMODE_DEADBAND 12
 
-controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
-
-static const pgRegistry_t controlRateProfilesRegistry PG_REGISTRY_SECTION = {
-    .base = (uint8_t *)&controlRateProfiles,
-    .size = sizeof(controlRateProfiles),
-    .pgn = PG_CONTROL_RATE_PROFILES,
-    .flags = PGC_SYSTEM
-};
-
-armingConfig_t armingConfig;
-
-static const pgRegistry_t armingConfigRegistry PG_REGISTRY_SECTION = {
-    .base = (uint8_t *)&armingConfig,
-    .size = sizeof(armingConfig),
-    .pgn = PG_ARMING_CONFIG,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;

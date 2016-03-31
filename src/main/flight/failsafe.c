@@ -53,16 +53,7 @@
 
 static failsafeState_t failsafeState;
 
-failsafeConfig_t failsafeConfig;
-
-static const pgRegistry_t failsafeConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&failsafeConfig,
-    .size = sizeof(failsafeConfig),
-    .pgn = PG_FAILSAFE_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
 static rxConfig_t *rxConfig;
 

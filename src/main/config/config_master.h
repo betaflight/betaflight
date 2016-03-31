@@ -67,5 +67,5 @@ typedef struct master_t {
 #endif
 } master_t;
 
-extern master_t masterConfig;
+PG_DECLARE(master_t, masterConfig);
 extern controlRateConfig_t *currentControlRateProfile;

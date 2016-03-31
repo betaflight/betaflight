@@ -25,6 +25,10 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
 
+    #include "config/runtime_config.h"
+    #include "config/config_unittest.h"
+    #include "config/parameter_group.h"
+
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "sensors/sensors.h"
@@ -35,9 +39,6 @@ extern "C" {
 
     #include "flight/pid.h"
     #include "flight/imu.h"
-
-    #include "config/runtime_config.h"
-    #include "config/config_unittest.h"
 
     pidProfile_t testPidProfile;
 }

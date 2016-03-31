@@ -59,6 +59,7 @@
 #include "drivers/sonar_hcsr04.h"
 
 #include "config/runtime_config.h"
+#include "config/parameter_group.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

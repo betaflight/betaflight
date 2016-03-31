@@ -51,17 +51,8 @@ static bool gyroFilterStateIsSet;
 int axis;
 
 gyro_t gyro;                      // gyro access functions
-gyroConfig_t gyroConfig;
+PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 sensor_align_e gyroAlign = 0;
-
-static const pgRegistry_t gyroConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&gyroConfig,
-    .size = sizeof(gyroConfig),
-    .pgn = PG_GYRO_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
 
 void initGyroFilterCoefficients(void) {
     if (gyroConfig.soft_gyro_lpf_hz) {

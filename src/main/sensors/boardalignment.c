@@ -30,16 +30,7 @@
 
 #include "boardalignment.h"
 
-boardAlignment_t boardAlignment;
-
-static const pgRegistry_t boardAlignmentRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&boardAlignment,
-    .size = sizeof(boardAlignment),
-    .pgn = PG_BOARD_ALIGNMENT,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 1);
 
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix

@@ -23,6 +23,8 @@
 extern "C" {
     #include <platform.h>
 
+    #include "config/parameter_group.h"
+
     #include "rx/rx.h"
     #include "io/rc_controls.h"
     #include "common/maths.h"

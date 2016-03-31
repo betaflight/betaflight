@@ -26,6 +26,8 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+
 #include "system.h"
 
 #include "nvic.h"
@@ -49,8 +51,6 @@
 
 // TODO - change to timer clocks ticks
 #define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
-
-pwmRxConfig_t pwmRxConfig;
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 

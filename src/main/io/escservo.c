@@ -29,14 +29,5 @@
 
 #include "escservo.h"
 
-escAndServoConfig_t escAndServoConfig;
-
-static const pgRegistry_t escAndServoConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&escAndServoConfig,
-    .size = sizeof(escAndServoConfig),
-    .pgn = PG_ESC_AND_SERVO_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);
 

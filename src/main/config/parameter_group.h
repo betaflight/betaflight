@@ -47,21 +47,77 @@ typedef struct pgRegistry_s {
     uint8_t flags;
 } pgRegistry_t;
 
-#ifdef UNIT_TEST
-#define PG_REGISTRY_SECTION
-#define PG_REGISTRY_TAIL_SECTION
-#else
-#define PG_REGISTRY_SECTION __attribute__((section(".pg_registry"), used))
-#define PG_REGISTRY_TAIL_SECTION __attribute__((section(".pg_registry_tail"), used))
-#endif
 
 #define PG_PACKED __attribute__((packed))
 
-extern const pgRegistry_t __pg_registry[];
+extern const pgRegistry_t __pg_registry_start[];
+extern const pgRegistry_t __pg_registry_end[];
 
 // Helper to iterate over the PG register.  Cheaper than a visitor style callback.
 #define PG_FOREACH(_name) \
-    for (const pgRegistry_t *(_name) = __pg_registry; (_name)->base != NULL; (_name)++)
+    for (const pgRegistry_t *(_name) = __pg_registry_start; (_name) < __pg_registry_end; (_name)++)
+
+#define PG_FOREACH_PROFILE(_name)                                    \
+    PG_FOREACH(_name)                                                \
+        if(((_name)->flags & PGRF_CLASSIFICATON_BIT) != PGC_PROFILE) \
+            continue;                                                \
+        else                                                         \
+            /**/
+
+#define PG_DECLARE(_type, _name)                \
+    extern _type _name                          \
+    /**/
+
+#define PG_DECLARE_ARR(_type, _size, _name)     \
+    extern _type _name[_size]                   \
+    /**/
+
+#define PG_DECLARE_PROFILE(_type, _name)        \
+    extern _type *_name                         \
+    /**/
+
+#define PG_REGISTER_ATTRIBUTES __attribute__ ((section(".pg_registry"), used, aligned(4)))
+
+// Register config
+#define PG_REGISTER(_type, _name, _pgn, _format)                        \
+    _type _name;                                                        \
+    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .base = (uint8_t*)&_name,                                       \
+        .ptr = 0,                                                       \
+        .size = sizeof(_name),                                          \
+        .pgn = _pgn,                                                    \
+        .format = _format,                                              \
+        .flags = PGC_SYSTEM,                                            \
+    }                                                                   \
+    /**/
+
+// Register config
+#define PG_REGISTER_ARR(_type, _size, _name, _pgn, _format)             \
+    _type _name[_size];                                                 \
+    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .base = (uint8_t*)&_name,                                       \
+        .ptr = 0,                                                       \
+        .size = sizeof(_name),                                          \
+        .pgn = _pgn,                                                    \
+        .format = _format,                                              \
+        .flags = PGC_SYSTEM,                                            \
+    }                                                                   \
+    /**/
+
+
+#define PG_REGISTER_PROFILE(_type, _name, _pgn, _format)                \
+    STATIC_UNIT_TESTED _type _name##Storage[MAX_PROFILE_COUNT];         \
+    _type *_name;                                                       \
+    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .base = (uint8_t*)&_name##Storage,                              \
+        .ptr = (uint8_t **)&_name,                                      \
+        .size = sizeof(_type),                                          \
+        .pgn = _pgn,                                                    \
+        .format = _format,                                              \
+        .flags = PGC_PROFILE,                                           \
+    }                                                                   \
+    /**/
+
 
 typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
 

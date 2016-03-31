@@ -48,21 +48,13 @@
 #include "serial_msp.h"
 
 #include "config/config.h"
+#include "config/parameter_group.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
-serialConfig_t serialConfig;
-
-static const pgRegistry_t serialConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&serialConfig,
-    .size = sizeof(serialConfig),
-    .pgn = PG_SERIAL_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 

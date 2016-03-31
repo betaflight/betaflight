@@ -143,7 +143,7 @@ typedef struct controlRateConfig_s {
 } controlRateConfig_t;
 
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3
-extern controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
+PG_DECLARE_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
 
 extern int16_t rcCommand[4];
 
@@ -162,7 +162,7 @@ typedef struct armingConfig_s {
     uint8_t max_arm_angle;                  // specifies the maximum angle allow arming at.
 } armingConfig_t;
 
-extern armingConfig_t armingConfig;
+PG_DECLARE(armingConfig_t, armingConfig);
 
 bool areUsingSticksToArm(void);
 

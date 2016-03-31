@@ -30,6 +30,10 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/config.h"
+#include "config/runtime_config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -45,9 +49,6 @@
 #include "flight/gps_conversion.h"
 #include "flight/pid.h"
 #include "flight/navigation.h"
-
-#include "config/config.h"
-#include "config/runtime_config.h"
 
 
 #ifdef GPS

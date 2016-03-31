@@ -39,16 +39,7 @@
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
 
-transponderConfig_t transponderConfig;
-
-static const pgRegistry_t transponderConfigRegistry PG_REGISTRY_SECTION =
-{
-    .base = (uint8_t *)&transponderConfig,
-    .size = sizeof(transponderConfig),
-    .pgn = PG_TRANSPONDER_CONFIG,
-    .format = 0,
-    .flags = PGC_SYSTEM
-};
+PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
 
 // timers
 static uint32_t nextUpdateAt = 0;
