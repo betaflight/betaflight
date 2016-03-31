@@ -525,7 +525,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     escAndServoConfig.minthrottle = 1000;
     escAndServoConfig.maxthrottle = 2000;
     escAndServoConfig.motor_pwm_rate = 32000;
-    masterConfig.looptime = 2000;
+    imuConfig.looptime = 2000;
     pidProfile->pidController = 3;
     pidProfile->P8[PIDROLL] = 36;
     pidProfile->P8[PIDPITCH] = 36;
@@ -697,8 +697,8 @@ void validateAndFixConfig(void)
 
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (masterConfig.gyroSync && masterConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        masterConfig.gyroSyncDenominator = 2;
+    if (imuConfig.gyroSync && imuConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
+        imuConfig.gyroSyncDenominator = 2;
     }
 #endif
 
