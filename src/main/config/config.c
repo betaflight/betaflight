@@ -491,7 +491,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
-    masterConfig.looptime = 1000;
+    imuConfig.looptime = 1000;
 
     pidProfile->pidController = 1;
 
