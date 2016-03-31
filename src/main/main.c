@@ -598,7 +598,7 @@ void init(void)
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
+    gyroSetCalibrationCycles(calculateCalibratingCycles());
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
@@ -725,7 +725,6 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 #ifdef USE_BST
-    setTaskEnabled(TASK_BST_READ_WRITE, true);
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 

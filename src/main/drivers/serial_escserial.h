@@ -17,14 +17,20 @@
 
 #pragma once
 
-#include "drivers/bus_bst.h"
+#define ESCSERIAL_BUFFER_SIZE 1024
 
-void bstProcessInCommand(void);
-void bstSlaveProcessInCommand(void);
-void taskBstMasterProcess(void);
+typedef enum {
+    ESCSERIAL1 = 0,
+    ESCSERIAL2
+} escSerialPortIndex_e;
 
-bool writeGpsPositionPrameToBST(void);
-bool writeRollPitchYawToBST(void);
-bool writeRCChannelToBST(void);
-bool writeFCModeToBST(void);
+serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_t options, uint8_t mode);
 
+// serialPort API
+void escSerialWriteByte(serialPort_t *instance, uint8_t ch);
+uint8_t escSerialTotalBytesWaiting(serialPort_t *instance);
+uint8_t escSerialReadByte(serialPort_t *instance);
+void escSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
+bool isEscSerialTransmitBufferEmpty(serialPort_t *s);
+void escSerialInitialize();
+void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uint8_t mode);

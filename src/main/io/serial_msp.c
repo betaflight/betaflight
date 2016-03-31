@@ -44,6 +44,7 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
+#include "drivers/serial_escserial.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -94,6 +95,9 @@
 
 #ifdef USE_SERIAL_1WIRE
 #include "io/serial_1wire.h"
+#endif
+#ifdef USE_ESCSERIAL
+#include "drivers/serial_escserial.h"
 #endif
 static serialPort_t *mspSerialPort;
 
@@ -216,7 +220,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOXACROPLUS, "ACRO PLUS;", 29 },
+    { BOXSUPEREXPO, "SUPER EXPO;", 29 },
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -543,8 +548,8 @@ void mspInit(serialConfig_t *serialConfig)
     }
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOXACROPLUS;
-
+    activeBoxIds[activeBoxIdCount++] = BOXSUPEREXPO;
+    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
@@ -650,7 +655,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXACROPLUS)) << BOXACROPLUS;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) << BOXSUPEREXPO;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));
@@ -875,29 +880,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
-            for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 255));
-                serialize8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 255));
-            }
-            for (i = 3; i < PID_ITEM_COUNT; i++) {
-                if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 255));
-                } else {
-                    serialize8(currentProfile->pidProfile.P8[i]);
-                    serialize8(currentProfile->pidProfile.I8[i]);
-                    serialize8(currentProfile->pidProfile.D8[i]);
-                }
-            }
-        } else {
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                serialize8(currentProfile->pidProfile.P8[i]);
-                serialize8(currentProfile->pidProfile.I8[i]);
-                serialize8(currentProfile->pidProfile.D8[i]);
-            }
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            serialize8(currentProfile->pidProfile.P8[i]);
+            serialize8(currentProfile->pidProfile.I8[i]);
+            serialize8(currentProfile->pidProfile.D8[i]);
         }
         break;
     case MSP_PIDNAMES:
@@ -1331,29 +1317,10 @@ static bool processInCommand(void)
         if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
     case MSP_SET_PID:
-        if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
-            for (i = 0; i < 3; i++) {
-                currentProfile->pidProfile.P_f[i] = (float)read8() / 10.0f;
-                currentProfile->pidProfile.I_f[i] = (float)read8() / 100.0f;
-                currentProfile->pidProfile.D_f[i] = (float)read8() / 1000.0f;
-            }
-            for (i = 3; i < PID_ITEM_COUNT; i++) {
-                if (i == PIDLEVEL) {
-                    currentProfile->pidProfile.A_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_level = (float)read8() / 10.0f;
-                    currentProfile->pidProfile.H_sensitivity = read8();
-                } else {
-                    currentProfile->pidProfile.P8[i] = read8();
-                    currentProfile->pidProfile.I8[i] = read8();
-                    currentProfile->pidProfile.D8[i] = read8();
-                }
-            }
-        } else {
-            for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile->pidProfile.P8[i] = read8();
-                currentProfile->pidProfile.I8[i] = read8();
-                currentProfile->pidProfile.D8[i] = read8();
-            }
+        for (i = 0; i < PID_ITEM_COUNT; i++) {
+            currentProfile->pidProfile.P8[i] = read8();
+            currentProfile->pidProfile.I8[i] = read8();
+            currentProfile->pidProfile.D8[i] = read8();
         }
         break;
     case MSP_SET_MODE_RANGE:
@@ -1840,6 +1807,50 @@ static bool processInCommand(void)
         }
         break;
 #endif
+
+#ifdef USE_ESCSERIAL
+    case MSP_SET_ESCSERIAL:
+        // get channel number
+        i = read8();
+        // we do not give any data back, assume channel number is transmitted OK
+        if (i == 0xFF) {
+            // 0xFF -> preinitialize the Passthrough
+            // switch all motor lines HI
+            escSerialInitialize();
+
+            // and come back right afterwards
+            // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
+            // bootloader mode before try to connect any ESC
+        }
+        else {
+            // Check for channel number 1..USABLE_TIMER_CHANNEL_COUNT-1
+            if ((i > 0) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
+                // because we do not come back after calling escEnablePassthrough
+                // proceed with a success reply first
+                headSerialReply(0);
+                tailSerialReply();
+			 // flush the transmit buffer
+			 bufWriterFlush(writer);
+                // wait for all data to send
+                while (!isSerialTransmitBufferEmpty(mspSerialPort)) {
+                    delay(50);
+                }
+                // Start to activate here
+                // motor 1 => index 0
+                escEnablePassthrough(mspSerialPort,i,0); //sk blmode
+                // MPS uart is active again
+            } else {
+                // ESC channel higher than max. allowed
+                // rem: BLHeliSuite will not support more than 8
+                headSerialError(0);
+            }
+            // proceed as usual with MSP commands
+            // and wait to switch to next channel
+            // rem: App needs to call MSP_BOOT to deinitialize Passthrough
+        }
+        break;
+#endif
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;

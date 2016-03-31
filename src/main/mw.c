@@ -103,8 +103,6 @@ enum {
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
-float dT;
-
 int16_t magHold;
 int16_t headFreeModeHold;
 
@@ -204,10 +202,21 @@ void filterRc(void){
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
+    //recalculate sin/cos only when masterConfig.rxConfig.fpvCamAngleDegrees changed
+    static uint8_t lastFpvCamAngleDegrees = 0;
+    static float cosFactor = 1.0;
+    static float sinFactor = 0.0;
+
+    if (lastFpvCamAngleDegrees != masterConfig.rxConfig.fpvCamAngleDegrees){
+        lastFpvCamAngleDegrees = masterConfig.rxConfig.fpvCamAngleDegrees;
+        cosFactor = cos_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+        sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+    }
+
     int16_t roll = rcCommand[ROLL];
     int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll - sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
-    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
+    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
 void annexCode(void)
@@ -270,10 +279,20 @@ void annexCode(void)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-    tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
+    if (feature(FEATURE_3D)) {
+        tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
+    } else {
+        tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
+        tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
+    }
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+
+    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
+        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+        rcCommand[THROTTLE] = masterConfig.rxConfig.midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - masterConfig.rxConfig.midrc);
+    }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
@@ -347,6 +366,15 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
+    static bool armingCalibrationWasInitialisedOnce;
+
+    if (masterConfig.gyro_cal_on_first_arm && !armingCalibrationWasInitialisedOnce) {
+        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        armingCalibrationWasInitialisedOnce = true;
+    }
+
+    if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
+
     if (ARMING_FLAG(OK_TO_ARM)) {
         if (ARMING_FLAG(ARMED)) {
             return;
@@ -356,6 +384,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
+            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
@@ -534,7 +563,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -741,6 +770,14 @@ void taskMotorUpdate(void) {
     }
 }
 
+uint8_t setPidUpdateCountDown(void) {
+    if (masterConfig.gyro_soft_lpf_hz) {
+	    return masterConfig.pid_process_denom - 1;
+    } else {
+        return 1;
+    }
+}
+
 // Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
 bool shouldUpdateMotorsAfterPIDLoop(void) {
     if (targetPidLooptime > 375 ) {
@@ -782,7 +819,7 @@ void taskMainPidLoopCheck(void) {
             if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
             } else {
-                pidUpdateCountdown = masterConfig.pid_process_denom - 1;
+                pidUpdateCountdown = setPidUpdateCountDown();
                 taskMainPidLoop();
                 if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
                 runTaskMainSubprocesses = true;

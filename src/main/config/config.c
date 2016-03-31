@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 129;
+static const uint8_t EEPROM_CONF_VERSION = 131;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -147,14 +147,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
-    pidProfile->P8[ROLL] = 42;
-    pidProfile->I8[ROLL] = 40;
+    pidProfile->P8[ROLL] = 45;
+    pidProfile->I8[ROLL] = 30;
     pidProfile->D8[ROLL] = 18;
-    pidProfile->P8[PITCH] = 54;
-    pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 22;
+    pidProfile->P8[PITCH] = 45;
+    pidProfile->I8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 90;
-    pidProfile->I8[YAW] = 50;
+    pidProfile->I8[YAW] = 40;
     pidProfile->D8[YAW] = 0;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
@@ -168,30 +168,22 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 30;
-    pidProfile->I8[PIDLEVEL] = 30;
+    pidProfile->P8[PIDLEVEL] = 50;
+    pidProfile->I8[PIDLEVEL] = 50;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 120;
-    pidProfile->I8[PIDVEL] = 45;
-    pidProfile->D8[PIDVEL] = 1;
+    pidProfile->P8[PIDVEL] = 55;
+    pidProfile->I8[PIDVEL] = 55;
+    pidProfile->D8[PIDVEL] = 0;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
+    pidProfile->yaw_lpf_hz = 70.0f;
     pidProfile->dterm_average_count = 4;
-    pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
+    pidProfile->rollPitchItermResetRate = 200;
+    pidProfile->yawItermResetRate = 50;
+    pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 
-    pidProfile->P_f[ROLL] = 1.1f;
-    pidProfile->I_f[ROLL] = 0.4f;
-    pidProfile->D_f[ROLL] = 0.01f;
-    pidProfile->P_f[PITCH] = 1.4f;
-    pidProfile->I_f[PITCH] = 0.4f;
-    pidProfile->D_f[PITCH] = 0.01f;
-    pidProfile->P_f[YAW] = 4.0f;
-    pidProfile->I_f[YAW] = 0.4f;
-    pidProfile->D_f[YAW] = 0.00f;
-    pidProfile->A_level = 4.0f;
-    pidProfile->H_level = 4.0f;
     pidProfile->H_sensitivity = 75;
 
 #ifdef GTUNE
@@ -272,6 +264,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmaxcellvoltage = 43;
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
+    batteryConfig->vbathysteresis = 1;
     batteryConfig->vbatPidCompensation = 0;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
@@ -312,7 +305,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcExpo8 = 70;
+    controlRateConfig->rcExpo8 = 60;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
@@ -320,7 +313,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->tpa_breakpoint = 1500;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 0;
+        controlRateConfig->rates[axis] = 50;
     }
 
 }
@@ -410,7 +403,7 @@ static void resetConf(void)
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 0;                 // 256HZ default
     masterConfig.gyro_sync_denom = 8;
-    masterConfig.gyro_soft_lpf_hz = 60;
+    masterConfig.gyro_soft_lpf_hz = 80.0f;
 
     masterConfig.pid_process_denom = 1;
 
@@ -459,14 +452,13 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
-    masterConfig.rxConfig.acroPlusFactor = 30;
-    masterConfig.rxConfig.acroPlusOffset = 40;
+    masterConfig.rxConfig.superExpoFactor = 30;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.retarded_arm = 0;  // TODO - Cleanup retarded arm support
+    masterConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
