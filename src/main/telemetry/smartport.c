@@ -5,14 +5,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include <platform.h>
 
 #ifdef TELEMETRY
 
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
@@ -20,14 +18,7 @@
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -37,20 +28,14 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
-#include "io/ledstrip.h"
 
-#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/gyro.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
@@ -59,8 +44,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+
 #include "config/feature.h"
 
 enum
