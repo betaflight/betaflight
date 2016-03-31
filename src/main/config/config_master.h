@@ -22,11 +22,6 @@ typedef struct master_t {
     // Profile configuration
     uint8_t current_profile_index;
 
-    // System Configuration
-    uint32_t enabledFeatures;
-    uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
-    uint8_t i2c_highspeed;                   // Overclock i2c Bus for faster IMU readings
-
     // IMU configuration
     uint16_t looptime;                      // imu loop time in us
     uint8_t gyroSync;                       // Enable interrupt based loop

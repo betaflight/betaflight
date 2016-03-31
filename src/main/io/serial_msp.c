@@ -88,6 +88,7 @@
 #include "config/config_master.h"
 #include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
+#include "config/feature.h"
 
 #include "version.h"
 #ifdef NAZE

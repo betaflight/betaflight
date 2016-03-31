@@ -29,6 +29,7 @@
 
 #include "config/parameter_group.h"
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"

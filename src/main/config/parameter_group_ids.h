@@ -33,6 +33,8 @@
 #define PG_GTUNE_CONFIG 15
 #define PG_ARMING_CONFIG 16
 #define PG_TRANSPONDER_CONFIG 17
+#define PG_SYSTEM_CONFIG 18
+#define PG_FEATURE_CONFIG 19
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

@@ -63,7 +63,8 @@ extern "C" {
     #include "config/config_eeprom.h"
     #include "config/config_profile.h"
     #include "config/config_master.h"
-    #include "config/parameter_group_ids.h"
+    #include "config/config_system.h"
+    #include "config/feature.h"
 
     #include "platform.h"
 
@@ -90,6 +91,8 @@ extern "C" {
     PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+    PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     
     PG_REGISTER(master_t, masterConfig, 0, 0);
 }

@@ -36,6 +36,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "sensors/acceleration.h"
 

@@ -65,6 +65,8 @@ extern "C" {
 
     #include "config/config_profile.h"
     #include "config/config_master.h"
+    #include "config/config_system.h"
+    #include "config/feature.h"
 }
 
 #include "unittest_macros.h"
@@ -89,6 +91,7 @@ extern "C" {
     pwmRxConfig_t pwmRxConfig;
     armingConfig_t armingConfig;
     transponderConfig_t transponderConfig;
+    systemConfig_t systemConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -175,7 +178,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(SBAS_AUTO, masterConfig.gpsConfig.sbasMode);
     EXPECT_EQ(GPS_AUTOBAUD_OFF, masterConfig.gpsConfig.autoBaud);
 
-    EXPECT_EQ(0, masterConfig.emf_avoidance);
+    EXPECT_EQ(0, systemConfig.emf_avoidance);
 
     EXPECT_EQ(0, controlRateProfiles[0].thrExpo8);
     EXPECT_EQ(0, controlRateProfiles[0].dynThrPID);

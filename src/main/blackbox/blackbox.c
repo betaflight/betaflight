@@ -79,6 +79,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"
@@ -368,7 +369,7 @@ static blackboxMainState_t* blackboxHistory[3];
 static bool blackboxModeActivationConditionPresent = false;
 
 /**
- * Return true if it is safe to edit the Blackbox configuration in the emasterConfig.
+ * Return true if it is safe to edit the Blackbox configuration in the masterConfig.
  */
 bool blackboxMayEditConfig()
 {

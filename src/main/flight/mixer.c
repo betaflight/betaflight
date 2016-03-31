@@ -56,6 +56,7 @@
 #include "config/parameter_group_ids.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/feature.h"
 
 //#define MIXER_DEBUG
 

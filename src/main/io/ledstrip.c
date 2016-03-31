@@ -48,9 +48,9 @@
 
 #include "io/ledstrip.h"
 
-
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/feature.h"
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;

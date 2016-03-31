@@ -80,9 +80,11 @@
 #include "config/config_eeprom.h"
 #include "config/parameter_group.h"
 #include "config/config_streamer.h"
+#include "config/feature.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/config_system.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -90,8 +92,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
-
-static uint32_t activeFeaturesLatch = 0;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
@@ -400,9 +400,10 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetSerialConfig(&serialConfig);
 
     masterConfig.looptime = 2000;
-    masterConfig.i2c_highspeed = 1;
     masterConfig.gyroSync = 1;
     masterConfig.gyroSyncDenominator = 1;
+
+    systemConfig.i2c_highspeed = 1;
 
     resetPidProfile(pidProfile);
 #ifdef GTUNE
@@ -854,39 +855,4 @@ void handleOneshotFeatureChangeOnRestart(void)
     if (feature(FEATURE_ONESHOT125) && !featureConfigured(FEATURE_ONESHOT125)) {
         delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
     }
-}
-
-void latchActiveFeatures()
-{
-    activeFeaturesLatch = masterConfig.enabledFeatures;
-}
-
-bool featureConfigured(uint32_t mask)
-{
-    return masterConfig.enabledFeatures & mask;
-}
-
-bool feature(uint32_t mask)
-{
-    return activeFeaturesLatch & mask;
-}
-
-void featureSet(uint32_t mask)
-{
-    masterConfig.enabledFeatures |= mask;
-}
-
-void featureClear(uint32_t mask)
-{
-    masterConfig.enabledFeatures &= ~(mask);
-}
-
-void featureClearAll()
-{
-    masterConfig.enabledFeatures = 0;
-}
-
-uint32_t featureMask(void)
-{
-    return masterConfig.enabledFeatures;
 }
