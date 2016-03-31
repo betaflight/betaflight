@@ -609,15 +609,15 @@ const clivalue_t valueTable[] = {
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
 
-    { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.pid_at_min_throttle, .config.lookup = { TABLE_OFF_ON } },
-    { "airmode_saturation_limit",   VAR_UINT8  | MASTER_VALUE, &masterConfig.mixerConfig.airmode_saturation_limit, .config.minmax = { 0,  100 } },
-    { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
-    { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } },
+    { "pid_at_min_throttle",        VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, pid_at_min_throttle)},
+    { "airmode_saturation_limit",   VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  100 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, airmode_saturation_limit)},
+    { "yaw_motor_direction",        VAR_INT8   | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -1,  1 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_motor_direction)},
+    { "yaw_jump_prevention_limit",  VAR_UINT16 | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_jump_prevention_limit)},
 
 #ifdef USE_SERVOS
-    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
-    { "servo_lowpass_freq",         VAR_FLOAT  | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
-    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "tri_unarmed_servo",          VAR_INT8   | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, tri_unarmed_servo)},
+    { "servo_lowpass_freq",         VAR_FLOAT  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 10,  400} , PG_MIXER_CONFIG, offsetof(mixerConfig_t, servo_lowpass_freq)},
+    { "servo_lowpass_enable",       VAR_INT8   | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, servo_lowpass_enable)},
 #endif
 
     { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE , 0,  .config.minmax = { 0,  MAX_CONTROL_RATE_PROFILE_COUNT - 1 } , PG_PROFILE, offsetof(profile_t, defaultRateProfileIndex)},
@@ -1383,25 +1383,25 @@ static void cliServoMix(char *cmdline)
         cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
 
         for (i = 0; i < MAX_SERVO_RULES; i++) {
-            if (masterConfig.customServoMixer[i].rate == 0)
+            if (customServoMixer[i].rate == 0)
                 break;
 
             cliPrintf("#%d:\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
                 i,
-                masterConfig.customServoMixer[i].targetChannel,
-                masterConfig.customServoMixer[i].inputSource,
-                masterConfig.customServoMixer[i].rate,
-                masterConfig.customServoMixer[i].speed,
-                masterConfig.customServoMixer[i].min,
-                masterConfig.customServoMixer[i].max,
-                masterConfig.customServoMixer[i].box
+                customServoMixer[i].targetChannel,
+                customServoMixer[i].inputSource,
+                customServoMixer[i].rate,
+                customServoMixer[i].speed,
+                customServoMixer[i].min,
+                customServoMixer[i].max,
+                customServoMixer[i].box
             );
         }
         cliPrintf("\r\n");
         return;
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
-        memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
+        memset(customServoMixer, 0, sizeof(customServoMixer));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             currentProfile->servoConf[i].reversedSources = 0;
         }
@@ -1415,7 +1415,7 @@ static void cliServoMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    servoMixerLoadMix(i, masterConfig.customServoMixer);
+                    servoMixerLoadMix(i, customServoMixer);
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliServoMix("");
                     break;
@@ -1487,13 +1487,13 @@ static void cliServoMix(char *cmdline)
             args[MIN] >= 0 && args[MIN] <= 100 &&
             args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX] &&
             args[BOX] >= 0 && args[BOX] <= MAX_SERVO_BOXES) {
-            masterConfig.customServoMixer[i].targetChannel = args[TARGET];
-            masterConfig.customServoMixer[i].inputSource = args[INPUT];
-            masterConfig.customServoMixer[i].rate = args[RATE];
-            masterConfig.customServoMixer[i].speed = args[SPEED];
-            masterConfig.customServoMixer[i].min = args[MIN];
-            masterConfig.customServoMixer[i].max = args[MAX];
-            masterConfig.customServoMixer[i].box = args[BOX];
+            customServoMixer[i].targetChannel = args[TARGET];
+            customServoMixer[i].inputSource = args[INPUT];
+            customServoMixer[i].rate = args[RATE];
+            customServoMixer[i].speed = args[SPEED];
+            customServoMixer[i].min = args[MIN];
+            customServoMixer[i].max = args[MAX];
+            customServoMixer[i].box = args[BOX];
             cliServoMix("");
         } else {
             cliShowParseError();
@@ -1719,7 +1719,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
-        cliPrintf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("mixer %s\r\n", mixerNames[mixerConfig.mixerMode - 1]);
 
         cliPrintf("mmix reset\r\n");
 
@@ -1751,18 +1751,18 @@ static void cliDump(char *cmdline)
 
         for (i = 0; i < MAX_SERVO_RULES; i++) {
 
-            if (masterConfig.customServoMixer[i].rate == 0)
+            if (customServoMixer[i].rate == 0)
                 break;
 
             cliPrintf("smix %d %d %d %d %d %d %d %d\r\n",
                 i,
-                masterConfig.customServoMixer[i].targetChannel,
-                masterConfig.customServoMixer[i].inputSource,
-                masterConfig.customServoMixer[i].rate,
-                masterConfig.customServoMixer[i].speed,
-                masterConfig.customServoMixer[i].min,
-                masterConfig.customServoMixer[i].max,
-                masterConfig.customServoMixer[i].box
+                customServoMixer[i].targetChannel,
+                customServoMixer[i].inputSource,
+                customServoMixer[i].rate,
+                customServoMixer[i].speed,
+                customServoMixer[i].min,
+                customServoMixer[i].max,
+                customServoMixer[i].box
             );
         }
 
@@ -2027,7 +2027,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        cliPrintf("Mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("Mixer: %s\r\n", mixerNames[mixerConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -2046,7 +2046,7 @@ static void cliMixer(char *cmdline)
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            masterConfig.mixerMode = i + 1;
+            mixerConfig.mixerMode = i + 1;
             break;
         }
     }

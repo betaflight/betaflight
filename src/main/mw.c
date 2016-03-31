@@ -570,7 +570,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (mixerConfig.mixerMode == MIXER_FLYING_WING || mixerConfig.mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
@@ -671,10 +671,10 @@ void taskMainPidLoop(void)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-                && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+                && !((mixerConfig.mixerMode == MIXER_TRI || mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && mixerConfig.tri_unarmed_servo)
 #endif
-                && masterConfig.mixerMode != MIXER_AIRPLANE
-                && masterConfig.mixerMode != MIXER_FLYING_WING
+                && mixerConfig.mixerMode != MIXER_AIRPLANE
+                && mixerConfig.mixerMode != MIXER_FLYING_WING
 #endif
     ) {
         rcCommand[YAW] = 0;

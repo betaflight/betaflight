@@ -95,14 +95,16 @@ extern "C" {
     extern mspPort_t mspPorts[];
     profile_t *currentProfile;
 
-    escAndServoConfig_t escAndServoConfig;
-    sensorAlignmentConfig_t sensorAlignmentConfig;
-    batteryConfig_t batteryConfig;
-    serialConfig_t serialConfig;
-    armingConfig_t armingConfig;
-    transponderConfig_t transponderConfig;
 
+    PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+    PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+    PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+    PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
+    PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
     PG_REGISTER_PROFILE(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
 }

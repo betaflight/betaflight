@@ -30,13 +30,6 @@ typedef struct master_t {
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t small_angle;                    // Angle used for mag hold threshold.
 
-    // Mixer configuration
-    uint8_t mixerMode;
-    mixerConfig_t mixerConfig;
-#ifdef USE_SERVOS
-    servoMixer_t customServoMixer[MAX_SERVO_RULES];
-#endif
-
     // Motor/ESC/Servo configuration
     flight3DConfig_t flight3DConfig;
 

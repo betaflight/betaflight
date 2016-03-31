@@ -92,6 +92,7 @@ extern "C" {
     armingConfig_t armingConfig;
     transponderConfig_t transponderConfig;
     systemConfig_t systemConfig;
+    mixerConfig_t mixerConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -172,7 +173,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, armingConfig.retarded_arm);
 
-    EXPECT_EQ(0, masterConfig.mixerConfig.servo_lowpass_enable);
+    EXPECT_EQ(0, mixerConfig.servo_lowpass_enable);
 
     EXPECT_EQ(GPS_NMEA, masterConfig.gpsConfig.provider);
     EXPECT_EQ(SBAS_AUTO, masterConfig.gpsConfig.sbasMode);
@@ -216,9 +217,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}

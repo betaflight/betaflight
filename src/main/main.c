@@ -119,9 +119,9 @@ void cliInit(void);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
 #ifdef USE_SERVOS
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
+void mixerInit(motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
 #else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+void mixerInit(motorMixer_t *customMotorMixers);
 #endif
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
@@ -326,9 +326,9 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL));
 
 #ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, customMotorMixer, masterConfig.customServoMixer);
+    mixerInit(customMotorMixer, customServoMixer);
 #else
-    mixerInit(masterConfig.mixerMode, customMotorMixer);
+    mixerInit(customMotorMixer);
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -348,7 +348,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig.mixerMode == MIXER_AIRPLANE || mixerConfig.mixerMode == MIXER_FLYING_WING || mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -606,7 +606,7 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (masterConfig.mixerMode == MIXER_GIMBAL) {
+    if (mixerConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);

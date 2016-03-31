@@ -266,6 +266,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 }
 
 static void resetMixerConfig(mixerConfig_t *mixerConfig) {
+    mixerConfig->mixerMode = MIXER_QUADX;
     mixerConfig->pid_at_min_throttle = 1;
     mixerConfig->airmode_saturation_limit = 50;
     mixerConfig->yaw_motor_direction = 1;
@@ -322,7 +323,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     setProfile(0);
     setControlRateProfile(0);
 
-    masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
 #if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE)
     featureSet(FEATURE_RX_PPM);
@@ -376,8 +376,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     armingConfig.disarm_kill_switch = 1;
     armingConfig.auto_disarm_delay = 5;
     armingConfig.max_arm_angle = 25;
-
-    resetMixerConfig(&masterConfig.mixerConfig);
 
     masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
 
@@ -441,6 +439,8 @@ STATIC_UNIT_TESTED void resetConf(void)
     failsafeConfig.failsafe_off_delay = 200;         // 20sec
     failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
     failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
+
+    resetMixerConfig(&mixerConfig);
 
 #ifdef USE_SERVOS
     // servos
@@ -644,7 +644,6 @@ void activateConfig(void)
         currentProfile->servoConf,
 #endif
         &masterConfig.flight3DConfig,
-        &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
     );
@@ -735,8 +734,8 @@ void validateAndFixConfig(void)
      * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
      * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
      */
-    if (armingConfig.retarded_arm && masterConfig.mixerConfig.pid_at_min_throttle) {
-        masterConfig.mixerConfig.pid_at_min_throttle = 0;
+    if (armingConfig.retarded_arm && mixerConfig.pid_at_min_throttle) {
+        mixerConfig.pid_at_min_throttle = 0;
     }
 
 #if defined(LED_STRIP) && defined(TRANSPONDER) && !defined(UNIT_TEST)

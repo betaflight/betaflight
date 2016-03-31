@@ -93,6 +93,7 @@ extern "C" {
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+    PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     
     PG_REGISTER(master_t, masterConfig, 0, 0);
 }
@@ -178,9 +179,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, mixerConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
