@@ -15,73 +15,34 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 
-#include "blackbox_io.h"
+#include <platform.h>
 
-#include "version.h"
 #include "build_config.h"
 
 #include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
 #include "common/encoding.h"
 
 #include "config/parameter_group.h"
 
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
-#include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
 #include "drivers/gyro_sync.h"
 
 #include "io/rc_controls.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
-#include "io/display.h"
-#include "io/escservo.h"
-
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/serial_msp.h"
-#include "io/statusindicator.h"
-#include "rx/msp.h"
-#include "telemetry/telemetry.h"
 #include "common/printf.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #include "io/flashfs.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 
 #include "blackbox.h"
+#include "blackbox_io.h"
 
 #ifdef BLACKBOX
 
