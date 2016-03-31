@@ -32,6 +32,7 @@
 #include "io/serial_1wire.h"
 #include "io/beeper.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/pwm_output.h"
 #include "flight/mixer.h"
 
 uint8_t escCount; // we detect the hardware dynamically
@@ -42,7 +43,7 @@ static void gpio_set_mode(GPIO_TypeDef* gpio, uint16_t pin, GPIO_Mode mode) {
     gpio_config_t cfg;
     cfg.pin = pin;
     cfg.mode = mode;
-    cfg.speed = Speed_10MHz;
+    cfg.speed = Speed_2MHz;
     gpioInit(gpio, &cfg);
 }
 
@@ -51,8 +52,7 @@ static uint32_t GetPinPos(uint32_t pin) {
     for (pinPos = 0; pinPos < 16; pinPos++) {
         uint32_t pinMask = (0x1 << pinPos);
         if (pin & pinMask) {
-        // pos found
-        return pinPos;
+            return pinPos;
         }
     }
     return 0;
@@ -61,11 +61,12 @@ static uint32_t GetPinPos(uint32_t pin) {
 void usb1WireInitialize()
 {
     escCount = 0;
+    pwmDisableMotors();
     memset(&escHardware,0,sizeof(escHardware));
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
     for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
         if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
-            if(motor[pwmOutputConfiguration->portConfigurations[i].index] >0 ) {
+            if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
                 escHardware[escCount].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
                 escHardware[escCount].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
                 escHardware[escCount].pinpos = GetPinPos(escHardware[escCount].pin);
@@ -76,29 +77,37 @@ void usb1WireInitialize()
     }
 }
 
+void usb1WireDeInitialize(void){
+    for (uint8_t selected_esc = 0; selected_esc < (escCount); selected_esc++) {
+        gpio_set_mode(escHardware[selected_esc].gpio,escHardware[selected_esc].pin, Mode_AF_PP); //GPIO_Mode_IPU
+    }
+    escCount = 0;
+    pwmEnableMotors();
+}
+
 #ifdef STM32F10X
 static volatile uint32_t in_cr_mask, out_cr_mask;
 
 static __IO uint32_t *cr;
 static void gpio_prep_vars(uint32_t escIndex)
 {
-     GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
-     uint32_t pinpos = escHardware[escIndex].pinpos;
-     // mask out extra bits from pinmode, leaving just CNF+MODE
-     uint32_t inmode = Mode_IPU & 0x0F;
-     uint32_t outmode = (Mode_Out_PP & 0x0F) | Speed_10MHz;
-     // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
-     cr = &gpio->CRL + (pinpos / 8);
-     // offset to CNF and MODE portions of CRx register
-     uint32_t shift = (pinpos % 8) * 4;
-     // Read out current CRx value
-     in_cr_mask = out_cr_mask = *cr;
-     // Mask out 4 bits
-     in_cr_mask &= ~(0xF << shift);
-     out_cr_mask &= ~(0xF << shift);
-     // save current pinmode
-     in_cr_mask |= inmode << shift;
-     out_cr_mask |= outmode << shift;
+    GPIO_TypeDef *gpio = escHardware[escIndex].gpio;
+    uint32_t pinpos = escHardware[escIndex].pinpos;
+    // mask out extra bits from pinmode, leaving just CNF+MODE
+    uint32_t inmode = Mode_IPU & 0x0F;
+    uint32_t outmode = (Mode_Out_PP & 0x0F) | Speed_10MHz;
+    // reference CRL or CRH, depending whether pin number is 0..7 or 8..15
+    cr = &gpio->CRL + (pinpos / 8);
+    // offset to CNF and MODE portions of CRx register
+    uint32_t shift = (pinpos % 8) * 4;
+    // Read out current CRx value
+    in_cr_mask = out_cr_mask = *cr;
+    // Mask out 4 bits
+    in_cr_mask &= ~(0xF << shift);
+    out_cr_mask &= ~(0xF << shift);
+    // save current pinmode
+    in_cr_mask |= inmode << shift;
+    out_cr_mask |= outmode << shift;
 }
 
 static void gpioSetOne(uint32_t escIndex, GPIO_Mode mode) {
@@ -153,7 +162,7 @@ void usb1WirePassthrough(uint8_t escIndex)
     GPIO_ResetBits(S1W_RX_GPIO, S1W_RX_PIN);
     GPIO_ResetBits(S1W_TX_GPIO, S1W_TX_PIN);
     // configure gpio
-    gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
+    //gpio_set_mode(S1W_RX_GPIO, S1W_RX_PIN, Mode_IPU);
     gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_Out_PP);
 
 #ifdef STM32F10X
@@ -209,6 +218,8 @@ void usb1WirePassthrough(uint8_t escIndex)
     // we get here in case ct reached zero
     TX_SET_HIGH;
     RX_LED_OFF;
+    // reactivate serial port
+    gpio_set_mode(S1W_TX_GPIO, S1W_TX_PIN, Mode_AF_PP);
     // Enable all irq (for Hardware UART)
     __enable_irq();
     return;

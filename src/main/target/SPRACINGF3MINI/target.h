@@ -234,9 +234,15 @@
 #define BINDPLUG_PORT  BUTTON_B_PORT
 #define BINDPLUG_PIN   BUTTON_B_PIN
 
+#ifdef USE_VCP
+#define USE_SERIAL_1WIRE_VCP
+#else
 #define USE_SERIAL_1WIRE
+#endif
 
+#ifdef USE_SERIAL_1WIRE
 #define S1W_TX_GPIO         UART1_GPIO
 #define S1W_TX_PIN          UART1_TX_PIN
 #define S1W_RX_GPIO         UART1_GPIO
 #define S1W_RX_PIN          UART1_RX_PIN
+#endif
