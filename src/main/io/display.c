@@ -84,8 +84,6 @@ static uint32_t nextDisplayUpdateAt = 0;
 
 static bool displayPresent = false;
 
-static rxConfig_t *rxConfig;
-
 #define PAGE_TITLE_LINE_COUNT 1
 
 static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
@@ -655,13 +653,11 @@ void displaySetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void displayInit(rxConfig_t *rxConfigToUse)
+void displayInit(void)
 {
     delay(200);
     resetDisplay();
     delay(200);
-
-    rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);

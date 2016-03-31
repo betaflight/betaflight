@@ -31,11 +31,13 @@ extern "C" {
 
     uint32_t rcModeActivationMask;
 
-    void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
+    void rxInit(modeActivationCondition_t *modeActivationConditions);
     void rxResetFlightChannelStatus(void);
     bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
+
+    rxConfig_t rxConfig;
 }
 
 #include "unittest_macros.h"
@@ -57,7 +59,6 @@ TEST(RxTest, TestValidFlightChannels)
     rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
 
     // and
-    rxConfig_t rxConfig;
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
     memset(&rxConfig, 0, sizeof(rxConfig));
@@ -71,7 +72,7 @@ TEST(RxTest, TestValidFlightChannels)
     modeActivationConditions[0].range.endStep = CHANNEL_VALUE_TO_STEP(1600);
 
     // when
-    rxInit(&rxConfig, modeActivationConditions);
+    rxInit(modeActivationConditions);
 
     // then (ARM channel should be positioned just 1 step above active range to init to OFF)
     EXPECT_EQ(1625, rcData[modeActivationConditions[0].auxChannelIndex +  NON_AUX_CHANNEL_COUNT]);
@@ -95,7 +96,6 @@ TEST(RxTest, TestInvalidFlightChannels)
     memset(&testData, 0, sizeof(testData));
 
     // and
-    rxConfig_t rxConfig;
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
     memset(&rxConfig, 0, sizeof(rxConfig));
@@ -113,7 +113,7 @@ TEST(RxTest, TestInvalidFlightChannels)
     memset(&channelPulses, 1500, sizeof(channelPulses));
 
     // and
-    rxInit(&rxConfig, modeActivationConditions);
+    rxInit(modeActivationConditions);
 
     // then (ARM channel should be positioned just 1 step below active range to init to OFF)
     EXPECT_EQ(1375, rcData[modeActivationConditions[0].auxChannelIndex +  NON_AUX_CHANNEL_COUNT]);
@@ -187,7 +187,7 @@ extern "C" {
 
     bool rxMspFrameComplete(void) { return false; }
 
-    void rxMspInit(rxConfig_t *, rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
+    void rxMspInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 
     void rxPwmInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 }

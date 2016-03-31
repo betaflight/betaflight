@@ -19,4 +19,4 @@
 
 bool rxMspFrameComplete(void);
 void rxMspFrameReceive(uint16_t *frame, int channelCount);
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+void rxMspInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);

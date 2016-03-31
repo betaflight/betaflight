@@ -96,6 +96,7 @@ extern "C" {
     mixerConfig_t mixerConfig;
     imuConfig_t imuConfig;
     profileSelection_t profileSelection;
+    rxConfig_t rxConfig;
 
     gimbalConfig_t testGimbalConfig[MAX_PROFILE_COUNT];
     gimbalConfig_t *gimbalConfig = &testGimbalConfig[0];
@@ -123,6 +124,7 @@ extern "C" {
         memset(&mixerConfig, 0x00, sizeof(mixerConfig));
         memset(&imuConfig, 0x00, sizeof(imuConfig));
         memset(&profileSelection, 0x00, sizeof(profileSelection));
+        memset(&rxConfig, 0x00, sizeof(rxConfig));
     }
 
     void pgActivateProfile(uint8_t) {
@@ -173,12 +175,12 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(FRSKY_UNIT_METRICS, masterConfig.telemetryConfig.frsky_unit);
     EXPECT_EQ(0, masterConfig.telemetryConfig.frsky_vfas_precision);
 
-    EXPECT_EQ(0, masterConfig.rxConfig.serialrx_provider);
-    EXPECT_EQ(0, masterConfig.rxConfig.spektrum_sat_bind);
+    EXPECT_EQ(0, rxConfig.serialrx_provider);
+    EXPECT_EQ(0, rxConfig.spektrum_sat_bind);
 
-    EXPECT_EQ(0, masterConfig.rxConfig.rssi_channel);
-    EXPECT_EQ(0, masterConfig.rxConfig.rssi_ppm_invert);
-    EXPECT_EQ(0, masterConfig.rxConfig.rcSmoothing);
+    EXPECT_EQ(0, rxConfig.rssi_channel);
+    EXPECT_EQ(0, rxConfig.rssi_ppm_invert);
+    EXPECT_EQ(0, rxConfig.rcSmoothing);
 
     EXPECT_EQ(INPUT_FILTERING_DISABLED, pwmRxConfig.inputFilteringMode);
 
@@ -228,9 +230,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(flight3DConfig_t *, escAndServoConfig_t *, airplaneConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}

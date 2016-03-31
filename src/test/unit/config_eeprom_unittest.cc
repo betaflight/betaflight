@@ -80,6 +80,7 @@ extern "C" {
         uint32_t uint32;
     } PG_PACKED someProfileSpecificData_t;
 
+    PG_REGISTER(master_t, masterConfig, 0, 0);
     PG_REGISTER_PROFILE(someProfileSpecificData_t, someProfileSpecificData, 1, 0);
 
     PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);
@@ -95,8 +96,8 @@ extern "C" {
     PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     
-    PG_REGISTER(master_t, masterConfig, 0, 0);
 }
 
 #include "unittest_macros.h"
@@ -180,9 +181,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(servoParam_t *, flight3DConfig_t *, airplaneConfig_t *) {}
 #else
-void mixerUseConfigs(flight3DConfig_t *, airplaneConfig_t *, rxConfig_t *) {}
+void mixerUseConfigs(flight3DConfig_t *, airplaneConfig_t *) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}

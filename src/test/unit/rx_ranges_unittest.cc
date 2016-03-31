@@ -111,41 +111,36 @@ void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
     UNUSED(callback);
 }
 
-bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sbusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(initialRxConfig);
     UNUSED(rxRuntimeConfig);
     UNUSED(callback);
     return true;
 }
 
-bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
     UNUSED(rxRuntimeConfig);
     UNUSED(callback);
     return true;
 }
 
-bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sumdInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
     UNUSED(rxRuntimeConfig);
     UNUSED(callback);
     return true;
 }
 
-bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sumhInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
     UNUSED(rxRuntimeConfig);
     UNUSED(callback);
     return true;
 }
 
-bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxMspInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
     UNUSED(rxRuntimeConfig);
     UNUSED(callback);
     return true;

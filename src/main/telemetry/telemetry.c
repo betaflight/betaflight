@@ -81,9 +81,9 @@ void telemetryCheckState(void)
     checkLtmTelemetryState();
 }
 
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint16_t deadband3d_throttle)
 {
-    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+    handleFrSkyTelemetry(deadband3d_throttle);
     handleHoTTTelemetry();
     handleSmartPortTelemetry();
     handleLtmTelemetry();

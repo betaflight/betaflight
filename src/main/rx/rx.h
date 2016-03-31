@@ -128,6 +128,8 @@ typedef struct rxConfig_s {
     rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
+PG_DECLARE(rxConfig_t, rxConfig);
+
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
 typedef struct rxRuntimeConfig_s {
@@ -135,8 +137,6 @@ typedef struct rxRuntimeConfig_s {
 } rxRuntimeConfig_t;
 
 PG_DECLARE(rxRuntimeConfig_t,rxRuntimeConfig);
-
-void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
@@ -147,7 +147,7 @@ bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
+uint8_t serialRxFrameStatus();
 
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);

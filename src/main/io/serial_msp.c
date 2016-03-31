@@ -932,7 +932,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_MISC:
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
-        serialize16(masterConfig.rxConfig.midrc);
+        serialize16(rxConfig.midrc);
 
         serialize16(escAndServoConfig.minthrottle);
         serialize16(escAndServoConfig.maxthrottle);
@@ -950,7 +950,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(0); // gps_ubx_sbas
 #endif
         serialize8(batteryConfig.multiwiiCurrentMeterOutput);
-        serialize8(masterConfig.rxConfig.rssi_channel);
+        serialize8(rxConfig.rssi_channel);
         serialize8(0);
 
         serialize16(currentProfile->mag_declination / 10);
@@ -1065,31 +1065,31 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_RX_CONFIG:
         headSerialReply(12);
-        serialize8(masterConfig.rxConfig.serialrx_provider);
-        serialize16(masterConfig.rxConfig.maxcheck);
-        serialize16(masterConfig.rxConfig.midrc);
-        serialize16(masterConfig.rxConfig.mincheck);
-        serialize8(masterConfig.rxConfig.spektrum_sat_bind);
-        serialize16(masterConfig.rxConfig.rx_min_usec);
-        serialize16(masterConfig.rxConfig.rx_max_usec);
+        serialize8(rxConfig.serialrx_provider);
+        serialize16(rxConfig.maxcheck);
+        serialize16(rxConfig.midrc);
+        serialize16(rxConfig.mincheck);
+        serialize8(rxConfig.spektrum_sat_bind);
+        serialize16(rxConfig.rx_min_usec);
+        serialize16(rxConfig.rx_max_usec);
         break;
 
     case MSP_RXFAIL_CONFIG:
         headSerialReply(3 * (rxRuntimeConfig.channelCount));
         for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            serialize8(masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
-            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
+            serialize8(rxConfig.failsafe_channel_configurations[i].mode);
+            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig.failsafe_channel_configurations[i].step));
         }
         break;
     case MSP_RSSI_CONFIG:
         headSerialReply(1);
-        serialize8(masterConfig.rxConfig.rssi_channel);
+        serialize8(rxConfig.rssi_channel);
         break;
 
     case MSP_RX_MAP:
         headSerialReply(MAX_MAPPABLE_RX_INPUTS);
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
-            serialize8(masterConfig.rxConfig.rcmap[i]);
+            serialize8(rxConfig.rcmap[i]);
         break;
 
     case MSP_BF_CONFIG:
@@ -1098,7 +1098,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         serialize32(featureMask());
 
-        serialize8(masterConfig.rxConfig.serialrx_provider);
+        serialize8(rxConfig.serialrx_provider);
 
         serialize16(boardAlignment.rollDegrees);
         serialize16(boardAlignment.pitchDegrees);
@@ -1381,7 +1381,7 @@ static bool processInCommand(void)
     case MSP_SET_MISC:
         tmp = read16();
         if (tmp < 1600 && tmp > 1400)
-            masterConfig.rxConfig.midrc = tmp;
+            rxConfig.midrc = tmp;
 
         escAndServoConfig.minthrottle = read16();
         escAndServoConfig.maxthrottle = read16();
@@ -1399,7 +1399,7 @@ static bool processInCommand(void)
         read8(); // gps_ubx_sbas
 #endif
         batteryConfig.multiwiiCurrentMeterOutput = read8();
-        masterConfig.rxConfig.rssi_channel = read8();
+        rxConfig.rssi_channel = read8();
         read8();
 
         currentProfile->mag_declination = read16() * 10;
@@ -1600,34 +1600,34 @@ static bool processInCommand(void)
 #endif
 
     case MSP_SET_RX_CONFIG:
-        masterConfig.rxConfig.serialrx_provider = read8();
-        masterConfig.rxConfig.maxcheck = read16();
-        masterConfig.rxConfig.midrc = read16();
-        masterConfig.rxConfig.mincheck = read16();
-        masterConfig.rxConfig.spektrum_sat_bind = read8();
+        rxConfig.serialrx_provider = read8();
+        rxConfig.maxcheck = read16();
+        rxConfig.midrc = read16();
+        rxConfig.mincheck = read16();
+        rxConfig.spektrum_sat_bind = read8();
         if (currentPort->dataSize > 8) {
-            masterConfig.rxConfig.rx_min_usec = read16();
-            masterConfig.rxConfig.rx_max_usec = read16();
+            rxConfig.rx_min_usec = read16();
+            rxConfig.rx_max_usec = read16();
         }
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
         i = read8();
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            masterConfig.rxConfig.failsafe_channel_configurations[i].mode = read8();
-            masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+            rxConfig.failsafe_channel_configurations[i].mode = read8();
+            rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
         } else {
             headSerialError(0);
         }
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        masterConfig.rxConfig.rssi_channel = read8();
+        rxConfig.rssi_channel = read8();
         break;
 
     case MSP_SET_RX_MAP:
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            masterConfig.rxConfig.rcmap[i] = read8();
+            rxConfig.rcmap[i] = read8();
         }
         break;
 
@@ -1642,7 +1642,7 @@ static bool processInCommand(void)
         featureClearAll();
         featureSet(read32()); // features bitmap
 
-        masterConfig.rxConfig.serialrx_provider = read8(); // serialrx_type
+        rxConfig.serialrx_provider = read8(); // serialrx_type
 
         boardAlignment.rollDegrees = read16(); // board_align_roll
         boardAlignment.pitchDegrees = read16(); // board_align_pitch
