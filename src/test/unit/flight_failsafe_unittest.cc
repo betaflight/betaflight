@@ -25,12 +25,16 @@ extern "C" {
 
     #include <platform.h>
 
+    #include "build_config.h"
+
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "config/runtime_config.h"
+    #include "config/config.h"
 
     #include "io/beeper.h"
     #include "io/rc_controls.h"
@@ -39,6 +43,9 @@ extern "C" {
     #include "flight/failsafe.h"
 
     failsafeState_t* failsafeInit(rxConfig_t *intialRxConfig);
+
+    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
+    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 }
 
 #include "unittest_macros.h"

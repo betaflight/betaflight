@@ -48,6 +48,8 @@ extern "C" {
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
 
+    #include "config/config.h"
+
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
@@ -63,6 +65,8 @@ extern "C" {
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 
+    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
+    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 }
 
 #include "unittest_macros.h"

@@ -46,6 +46,7 @@ extern "C" {
     #include "config/config.h"
 
     #include "io/escservo.h"
+    #include "io/rc_controls.h"
 
     #include "rx/rx.h"
 
@@ -55,6 +56,9 @@ extern "C" {
 
     pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
     pidProfile_t *pidProfile = &testPidProfile[0];
+
+    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
+    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 
 }
 
