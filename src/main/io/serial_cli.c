@@ -587,11 +587,11 @@ const clivalue_t valueTable[] = {
     { "align_acc",                  VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, acc_align)},
     { "align_mag",                  VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, mag_align)},
 
-    { "align_board_roll",           VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDegrees)},
-    { "align_board_pitch",          VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
-    { "align_board_yaw",            VAR_INT16  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
+    { "align_board_roll",           VAR_INT16  | MIGRATED_MASTER_VALUE, 0, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDegrees)},
+    { "align_board_pitch",          VAR_INT16  | MIGRATED_MASTER_VALUE, 0, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
+    { "align_board_yaw",            VAR_INT16  | MIGRATED_MASTER_VALUE, 0, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
 
-    { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
+    { "max_angle_inclination",      VAR_UINT16 | MIGRATED_MASTER_VALUE, 0, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
 
     { "gyro_lpf",                   VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
     { "gyro_soft_lpf",              VAR_FLOAT  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
@@ -607,7 +607,7 @@ const clivalue_t valueTable[] = {
     { "throttle_correction_value",  VAR_UINT8  | PROFILE_VALUE, 0,  .config.minmax = { 0,  150 } , PG_PROFILE, offsetof(profile_t, throttle_correction_value)},
     { "throttle_correction_angle",  VAR_UINT16 | PROFILE_VALUE, 0,  .config.minmax = { 1,  900 } , PG_PROFILE, offsetof(profile_t, throttle_correction_angle)},
 
-    { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
+    { "yaw_control_direction",      VAR_INT8   | PROFILE_VALUE, 0,  .config.minmax = { -1,  1 } , PG_PROFILE, offsetof(profile_t, rcControlsConfig.yaw_control_direction) },
 
     { "pid_at_min_throttle",        VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0,  .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, pid_at_min_throttle)},
     { "airmode_saturation_limit",   VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  100 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, airmode_saturation_limit)},

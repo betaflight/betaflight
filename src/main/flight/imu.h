@@ -54,6 +54,7 @@ typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t small_angle;                    // Angle used for mag hold threshold.
+    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

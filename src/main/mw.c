@@ -213,7 +213,7 @@ void annexCode(void)
                 }
             }
             tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -currentProfile->rcControlsConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
@@ -395,7 +395,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -masterConfig.yaw_control_direction;
+        dif *= -currentProfile->rcControlsConfig.yaw_control_direction;
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * pidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
@@ -695,7 +695,7 @@ void taskMainPidLoop(void)
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         currentControlRateProfile,
-        masterConfig.max_angle_inclination,
+        imuConfig.max_angle_inclination,
         &currentProfile->accelerometerTrims,
         &masterConfig.rxConfig
     );

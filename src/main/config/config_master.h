@@ -30,9 +30,6 @@ typedef struct master_t {
     // Flight config
     airplaneConfig_t airplaneConfig;
 
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
-
 #ifdef GPS
     gpsConfig_t gpsConfig;
 #endif

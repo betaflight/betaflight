@@ -263,6 +263,8 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->yaw_deadband = 0;
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
+    rcControlsConfig->yaw_control_direction = 1;
+
 }
 
 static void resetMixerConfig(mixerConfig_t *mixerConfig) {
@@ -341,17 +343,16 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 
     // imu settings
-    imuConfig.small_angle = 25;
     imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     imuConfig.looptime = 2000;
     imuConfig.gyroSync = 1;
     imuConfig.gyroSyncDenominator = 1;
+    imuConfig.small_angle = 25;
+    imuConfig.max_angle_inclination = 500;    // 50 degrees
 
     gyroConfig.gyro_lpf = 1;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
     gyroConfig.soft_gyro_lpf_hz = 60;        // Software based lpf filter for gyro
 
-    masterConfig.max_angle_inclination = 500;    // 50 degrees
-    masterConfig.yaw_control_direction = 1;
     gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     resetBatteryConfig(&batteryConfig);
