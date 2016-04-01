@@ -13,26 +13,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+ * Author: 4712
+*/
 #pragma once
 
-#include "serial.h"
+uint8_t Stk_SignOn(void);
+uint8_t Stk_ConnectEx(uint8_32_u *pDeviceInfo);
+uint8_t Stk_ReadEEprom(ioMem_t *pMem);
+uint8_t Stk_WriteEEprom(ioMem_t *pMem);
+uint8_t Stk_ReadFlash(ioMem_t *pMem);
+uint8_t Stk_WriteFlash(ioMem_t *pMem);
+uint8_t Stk_Chip_Erase(void);
 
-typedef struct {
-    serialPort_t port;
-
-    // Buffer used during bulk writes.
-    uint8_t txBuf[20];
-    uint8_t txAt;
-    // Set if the port is in bulk write mode and can buffer.
-    bool buffering;
-} vcpPort_t;
-
-serialPort_t *usbVcpOpen(void);
-
-uint8_t usbVcpAvailable(serialPort_t *instance);
-
-uint8_t usbVcpRead(serialPort_t *instance);
-
-uint32_t usbVcpGetBaudRate(serialPort_t *instance);

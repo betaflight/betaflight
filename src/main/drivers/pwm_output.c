@@ -50,6 +50,7 @@ static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 
 static uint8_t allocatedOutputPortCount = 0;
 
+static bool pwmMotorsEnabled = true;
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
@@ -137,7 +138,7 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (motors[index] && index < MAX_MOTORS)
+    if (motors[index] && index < MAX_MOTORS && pwmMotorsEnabled)
         motors[index]->pwmWritePtr(index, value);
 }
 
@@ -149,6 +150,16 @@ void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         *motors[index]->ccr = 0;
     }
+}
+
+void pwmDisableMotors(void)
+{
+    pwmMotorsEnabled = false;
+}
+
+void pwmEnableMotors(void)
+{
+    pwmMotorsEnabled = true;
 }
 
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)

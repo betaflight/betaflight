@@ -23,10 +23,30 @@
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
 #define MAX_MSP_PORT_COUNT 2
 
-void mspInit(serialConfig_t *serialConfig);
+typedef enum {
+    IDLE,
+    HEADER_START,
+    HEADER_M,
+    HEADER_ARROW,
+    HEADER_SIZE,
+    HEADER_CMD,
+    COMMAND_RECEIVED
+} mspState_e;
 
+#define MSP_PORT_INBUF_SIZE 64
+
+typedef struct mspPort_s {
+    serialPort_t *port; // null when port unused.
+    uint8_t offset;
+    uint8_t dataSize;
+    uint8_t checksum;
+    uint8_t indRX;
+    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
+    mspState_e c_state;
+    uint8_t cmdMSP;
+} mspPort_t;
+
+void mspInit(void);
 void mspProcess(void);
-void sendMspTelemetry(void);
-void mspSetTelemetryPort(serialPort_t *mspTelemetryPort);
-void mspAllocateSerialPorts(serialConfig_t *serialConfig);
+void mspAllocateSerialPorts(void);
 void mspReleasePortIfAllocated(serialPort_t *serialPort);
