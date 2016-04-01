@@ -399,8 +399,8 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     resetRcControlsConfig(rcControlsConfig);
 
-    currentProfile->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    currentProfile->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+    throttleCorrectionConfig->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    throttleCorrectionConfig->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
     failsafeConfig.failsafe_delay = 10;              // 1sec
@@ -604,7 +604,7 @@ void activateConfig(void)
         &imuRuntimeConfig,
         &accelerometerConfig->accDeadband,
         accelerometerConfig->accz_lpf_cutoff,
-        currentProfile->throttle_correction_angle
+        throttleCorrectionConfig->throttle_correction_angle
     );
 }
 

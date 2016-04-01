@@ -33,6 +33,7 @@
 #include "config/runtime_config.h"
 #include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
+#include "config/config.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -76,6 +77,7 @@ static imuRuntimeConfig_t *imuRuntimeConfig;
 static accDeadband_t *accDeadband;
 
 PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_PROFILE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
