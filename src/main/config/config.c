@@ -103,11 +103,24 @@ PG_REGISTER_PROFILE(profile_t, currentProfile, PG_PROFILE, 0);
 
 PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
+#define RESET_CONFIG(_type, _name, ...)                 \
+    static const _type _name ## _reset = {               \
+        __VA_ARGS__                                     \
+    };                                                  \
+    memcpy(_name, &_name ## _reset, sizeof(*_name));    \
+    /**/
+
+#define RESET_CONFIG_2(_type, _name, ...)                  \
+    *_name = (_type) {                                    \
+        __VA_ARGS__                                       \
+    };                                                    \
+    /**/
+
+
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    static const pidProfile_t pidProfile_Reset = {
-        .pidController = 1,
-
+    RESET_CONFIG(pidProfile_t, pidProfile,
+        .pidController = PID_CONTROLLER_MWREWRITE,
         .P8[PIDROLL] = 40,
         .I8[PIDROLL] = 30,
         .D8[PIDROLL] = 23,
@@ -153,73 +166,83 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .A_level = 5.0f,
         .H_level = 3.0f,
         .H_sensitivity = 75,
-    };
-    memcpy(pidProfile, &pidProfile_Reset, sizeof(*pidProfile));
+    );
 }
 
 #ifdef GTUNE
-void resetGTuneConfig(gtuneConfig_t *gtuneConfig)
-{
-    gtuneConfig->gtune_lolimP[FD_ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
-    gtuneConfig->gtune_lolimP[FD_PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
-    gtuneConfig->gtune_lolimP[FD_YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
-    gtuneConfig->gtune_hilimP[FD_ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-    gtuneConfig->gtune_hilimP[FD_PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-    gtuneConfig->gtune_hilimP[FD_YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-    gtuneConfig->gtune_pwr = 0;                    // [0..10] Strength of adjustment
-    gtuneConfig->gtune_settle_time = 450;          // [200..1000] Settle time in ms
-    gtuneConfig->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
+void resetGTuneConfig(gtuneConfig_t * gtuneConfig) {
+    RESET_CONFIG(gtuneConfig_t, gtuneConfig,
+        .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
+        .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
+        .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
+        .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+        .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+        .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+        .gtune_pwr = 0,                       // [0..10] Strength of adjustment
+        .gtune_settle_time = 450,             // [200..1000] Settle time in ms
+        .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
+    );
 }
 #endif
 
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
 {
-    gpsProfile->gps_wp_radius = 200;
-    gpsProfile->gps_lpf = 20;
-    gpsProfile->nav_slew_rate = 30;
-    gpsProfile->nav_controls_heading = 1;
-    gpsProfile->nav_speed_min = 100;
-    gpsProfile->nav_speed_max = 300;
-    gpsProfile->ap_mode = 40;
+    RESET_CONFIG(gpsProfile_t, gpsProfile,
+        .gps_wp_radius = 200,
+        .gps_lpf = 20,
+        .nav_slew_rate = 30,
+        .nav_controls_heading = 1,
+        .nav_speed_min = 100,
+        .nav_speed_max = 300,
+        .ap_mode = 40,
+    );
 }
 #endif
 
 #ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
-    barometerConfig->baro_sample_count = 21;
-    barometerConfig->baro_noise_lpf = 0.6f;
-    barometerConfig->baro_cf_vel = 0.985f;
-    barometerConfig->baro_cf_alt = 0.965f;
-}
-#endif
+    RESET_CONFIG_2(barometerConfig_t, barometerConfig,
+        .baro_sample_count = 21,
+        .baro_noise_lpf = 0.6f,
+        .baro_cf_vel = 0.985f,
+        .baro_cf_alt = 0.965f,
+     );
+ }
+ #endif
 
 void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
-    escAndServoConfig->minthrottle = 1150;
-    escAndServoConfig->maxthrottle = 1850;
-    escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
+    RESET_CONFIG(escAndServoConfig_t, escAndServoConfig,
+        .minthrottle = 1150,
+        .maxthrottle = 1850,
+        .mincommand = 1000,
+        .servoCenterPulse = 1500,
+    );
 }
 
 void resetMotor3DConfig(motor3DConfig_t *motor3DConfig)
 {
-    motor3DConfig->deadband3d_low = 1406;
-    motor3DConfig->deadband3d_high = 1514;
-    motor3DConfig->neutral3d = 1460;
+    RESET_CONFIG(motor3DConfig_t, motor3DConfig,
+        .deadband3d_low = 1406,
+        .deadband3d_high = 1514,
+        .neutral3d = 1460,
+    );
 }
 
 static void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
-    batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
-    batteryConfig->vbatresdivval = VBAT_RESDIVVAL_DEFAULT;
-    batteryConfig->vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT;
-    batteryConfig->vbatmaxcellvoltage = 43;
-    batteryConfig->vbatmincellvoltage = 33;
-    batteryConfig->vbatwarningcellvoltage = 35;
-    batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
-    batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
+    RESET_CONFIG(batteryConfig_t, batteryConfig,
+        .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+        .currentMeterType = CURRENT_SENSOR_ADC,
+    );
 }
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
@@ -232,15 +255,18 @@ static void resetBatteryConfig(batteryConfig_t *batteryConfig)
 
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
-    uint8_t index;
     memset(serialConfig, 0, sizeof(serialConfig_t));
 
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
-        serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
-        serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
-        serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
+    serialPortConfig_t portConfig_Reset = {
+        .msp_baudrateIndex = BAUD_115200,
+        .gps_baudrateIndex = BAUD_57600,
+        .telemetry_baudrateIndex = BAUD_AUTO,
+        .blackbox_baudrateIndex = BAUD_115200,
+    };
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
@@ -254,37 +280,54 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 }
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
-    controlRateConfig->rcRate8 = 90;
-    controlRateConfig->rcExpo8 = 65;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->tpa_breakpoint = 1500;
+    RESET_CONFIG(controlRateConfig_t, controlRateConfig,
+        .rcRate8 = 90,
+        .rcExpo8 = 65,
+        .thrMid8 = 50,
+        .tpa_breakpoint = 1500,
+    );
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
-    rcControlsConfig->deadband = 0;
-    rcControlsConfig->yaw_deadband = 0;
-    rcControlsConfig->alt_hold_deadband = 40;
-    rcControlsConfig->alt_hold_fast_change = 1;
-    rcControlsConfig->yaw_control_direction = 1;
-    rcControlsConfig->deadband3d_throttle = 50;
+    RESET_CONFIG_2(rcControlsConfig_t, rcControlsConfig,
+        .deadband = 0,
+        .yaw_deadband = 0,
+        .alt_hold_deadband = 40,
+        .alt_hold_fast_change = 1,
+        .yaw_control_direction = 1,
+        .deadband3d_throttle = 50,
+    );
 }
 
 static void resetMixerConfig(mixerConfig_t *mixerConfig) {
-    mixerConfig->mixerMode = MIXER_QUADX;
-    mixerConfig->pid_at_min_throttle = 1;
-    mixerConfig->airmode_saturation_limit = 50;
-    mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
-    mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400.0f;
+    RESET_CONFIG(mixerConfig_t, mixerConfig,
+        .mixerMode = MIXER_QUADX,
+        .pid_at_min_throttle = 1,
+        .airmode_saturation_limit = 50,
+        .yaw_motor_direction = 1,
+        .yaw_jump_prevention_limit = 200,
+
+        .tri_unarmed_servo = 1,
+        .servo_lowpass_freq = 400.0f,
+    );
+#else
+    RESET_CONFIG(mixerConfig_t, mixerConfig,
+        .mixerMode = MIXER_QUADX,
+        .pid_at_min_throttle = 1,
+        .airmode_saturation_limit = 50,
+        .yaw_motor_direction = 1,
+        .yaw_jump_prevention_limit = 200,
+    );
 #endif
 }
 
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
 }
 
 uint8_t getCurrentControlRateProfile(void)
@@ -487,7 +530,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 #if defined(COLIBRI_RACE)
     imuConfig.looptime = 1000;
 
-    pidProfile->pidController = 1;
+    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
 
     parseRcChannels("TAER1234", &rxConfig);
 
