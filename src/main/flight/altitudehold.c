@@ -62,15 +62,6 @@ int32_t vario = 0;                      // variometer in cm/s
 
 PG_REGISTER(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_ALT_HOLD_CONFIG, 0);
 
-static barometerConfig_t *barometerConfig;
-
-void configureAltitudeHold(
-        barometerConfig_t *intialBarometerConfig
-)
-{
-    barometerConfig = intialBarometerConfig;
-}
-
 #if defined(BARO) || defined(SONAR)
 
 static int16_t initialThrottleHold;

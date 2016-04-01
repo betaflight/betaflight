@@ -32,7 +32,6 @@ PG_DECLARE(airplaneConfig_t, airplaneConfig);
 
 void calculateEstimatedAltitude(uint32_t currentTime);
 
-void configureAltitudeHold(barometerConfig_t *intialBarometerConfig);
 void applyAltHold(void);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);

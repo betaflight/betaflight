@@ -35,11 +35,12 @@ typedef struct barometerConfig_s {
     float baro_cf_alt;                      // apply CF to use ACC for height estimation
 } barometerConfig_t;
 
+PG_DECLARE_PROFILE(barometerConfig_t, barometerConfig);
+
 extern int32_t BaroAlt;
 extern int32_t baroTemperature;             // Use temperature for telemetry
 
 #ifdef BARO
-void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t baroUpdate(void);

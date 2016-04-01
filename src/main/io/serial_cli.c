@@ -659,10 +659,11 @@ const clivalue_t valueTable[] = {
     { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, .config.minmax = { -300,  300 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.roll)},
 
 #ifdef BARO
-    { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } , PG_PROFILE, offsetof(profile_t, barometerConfig.baro_sample_count)},
-    { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_PROFILE, offsetof(profile_t, barometerConfig.baro_noise_lpf)},
-    { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_PROFILE, offsetof(profile_t, barometerConfig.baro_cf_vel)},
-    { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_PROFILE, offsetof(profile_t, barometerConfig.baro_cf_alt)},
+    { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } , PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_sample_count)},
+    { "baro_noise_lpf",             VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_noise_lpf)},
+    { "baro_cf_vel",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_vel)},
+    { "baro_cf_alt",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0 , 1 } , PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_alt)},
+
     { "baro_hardware",              VAR_UINT8  | MIGRATED_MASTER_VALUE, .config.minmax = { 0,  BARO_MAX } , PG_SENSOR_SELECTION_CONFIG, offsetof(sensorSelectionConfig_t, baro_hardware)},
 #endif
 

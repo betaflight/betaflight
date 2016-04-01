@@ -24,12 +24,15 @@
 #define BARO
 
 extern "C" {
+    #include <platform.h>
+    #include "build_config.h"
     #include "debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "sensors/sensors.h"
 
@@ -60,6 +63,7 @@ extern "C" {
     rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
     rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 
+    PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

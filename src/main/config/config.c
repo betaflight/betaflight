@@ -392,7 +392,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     accelerometerConfig->acc_unarmedcal = 1;
 
 #ifdef BARO
-    resetBarometerConfig(&currentProfile->barometerConfig);
+    resetBarometerConfig(barometerConfig);
 #endif
 
     // Radio
@@ -606,16 +606,6 @@ void activateConfig(void)
         accelerometerConfig->accz_lpf_cutoff,
         currentProfile->throttle_correction_angle
     );
-
-#if defined(BARO) || defined(SONAR)
-    configureAltitudeHold(
-        &currentProfile->barometerConfig
-    );
-#endif
-
-#ifdef BARO
-    useBarometerConfig(&currentProfile->barometerConfig);
-#endif
 }
 
 void validateAndFixConfig(void)

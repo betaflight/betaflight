@@ -61,6 +61,7 @@ extern "C" {
     pidProfile_t *pidProfile = &testPidProfile;
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+    PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
