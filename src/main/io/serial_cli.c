@@ -887,7 +887,7 @@ static void cliAux(char *cmdline)
     if (isEmpty(cmdline)) {
         // print out aux channel settings
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
             cliPrintf("aux %u %u %u %u %u\r\n",
                 i,
                 mac->modeId,
@@ -900,7 +900,7 @@ static void cliAux(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = strchr(ptr, ' ');
             if (ptr) {

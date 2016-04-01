@@ -503,7 +503,7 @@ void init(void)
 
     failsafeInit();
 
-    rxInit(currentProfile->modeActivationConditions);
+    rxInit(modeActivationProfile->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {

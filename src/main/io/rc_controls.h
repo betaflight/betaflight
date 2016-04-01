@@ -131,6 +131,12 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
+typedef struct modeActivationProfile_s {
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+} modeActivationProfile_t;
+
+PG_DECLARE_PROFILE(modeActivationProfile_t, modeActivationProfile);
+
 extern int16_t rcCommand[4];
 
 typedef struct rcControlsConfig_s {

@@ -19,10 +19,6 @@
 
 typedef struct profile_s {
 
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-
-    // Radio/ESC-related configuration
-
 #ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration

@@ -497,7 +497,7 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(currentProfile->modeActivationConditions);
+    updateActivatedModes(modeActivationProfile->modeActivationConditions);
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile->adjustmentRanges);

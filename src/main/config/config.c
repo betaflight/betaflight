@@ -576,7 +576,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        currentProfile->modeActivationConditions
+            modeActivationProfile->modeActivationConditions
     );
 
     pidSetController(pidProfile->pidController);
