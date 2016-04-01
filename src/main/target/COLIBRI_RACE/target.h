@@ -174,8 +174,14 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#ifdef USE_VCP
+#define USE_SERIAL_1WIRE_VCP
+#else
 #define USE_SERIAL_1WIRE
+#endif
+#ifdef USE_SERIAL_1WIRE
 #define S1W_TX_GPIO         GPIOB
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
+#endif

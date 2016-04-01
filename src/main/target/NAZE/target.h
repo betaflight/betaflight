@@ -188,14 +188,20 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
+#ifdef USE_VCP
+#define USE_SERIAL_1WIRE_VCP
+#else
 #define USE_SERIAL_1WIRE
+#endif
 
+#ifdef USE_SERIAL_1WIRE
 // STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
 #define S1W_TX_GPIO         GPIOA
 #define S1W_TX_PIN          GPIO_Pin_9
 // STM32F103CBT6-LQFP48 Pin31 (PA10) RX - PC1 to onboard CP2102 TX
 #define S1W_RX_GPIO         GPIOA
 #define S1W_RX_PIN          GPIO_Pin_10
+#endif
 
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32

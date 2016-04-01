@@ -253,6 +253,7 @@ COMMON_SRC = build_config.c \
 		   io/rc_curves.c \
 		   io/serial.c \
 		   io/serial_1wire.c \
+		   io/serial_1wire_vcp.c \
 		   io/serial_cli.c \
 		   io/serial_msp.c \
 		   io/statusindicator.c \
