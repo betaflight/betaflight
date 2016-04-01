@@ -45,6 +45,7 @@
 #define PG_LED_STRIP_CONFIG 27
 #define PG_COLOR_CONFIG 28
 #define PG_AIRPLANE_ALT_HOLD_CONFIG 29
+#define PG_GPS_CONFIG 30
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

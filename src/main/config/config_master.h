@@ -19,9 +19,6 @@
 
 // System-wide
 typedef struct master_t {
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
 
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;

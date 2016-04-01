@@ -103,6 +103,7 @@ extern "C" {
     profileSelection_t profileSelection;
     rxConfig_t rxConfig;
     airplaneConfig_t airplaneConfig;
+    gpsConfig_t gpsConfig;
 
     motor3DConfig_t motor3DConfig;
 
@@ -137,6 +138,7 @@ extern "C" {
         memset(&profileSelection, 0x00, sizeof(profileSelection));
         memset(&rxConfig, 0x00, sizeof(rxConfig));
         memset(&airplaneConfig, 0x00, sizeof(airplaneConfig));
+        memset(&gpsConfig, 0x00, sizeof(gpsConfig));
     }
 
     void pgActivateProfile(uint8_t) {
@@ -198,9 +200,9 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, mixerConfig.servo_lowpass_enable);
 
-    EXPECT_EQ(GPS_NMEA, masterConfig.gpsConfig.provider);
-    EXPECT_EQ(SBAS_AUTO, masterConfig.gpsConfig.sbasMode);
-    EXPECT_EQ(GPS_AUTOBAUD_OFF, masterConfig.gpsConfig.autoBaud);
+    EXPECT_EQ(GPS_NMEA, gpsConfig.provider);
+    EXPECT_EQ(SBAS_AUTO, gpsConfig.sbasMode);
+    EXPECT_EQ(GPS_AUTOBAUD_OFF, gpsConfig.autoBaud);
 
     EXPECT_EQ(0, systemConfig.emf_avoidance);
 

@@ -125,7 +125,7 @@ void mixerInit(motorMixer_t *customMotorMixers);
 #endif
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
-void gpsInit(gpsConfig_t *initialGpsConfig);
+void gpsInit(void);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 void imuInit(void);
 void displayInit(void);
@@ -525,9 +525,7 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            &masterConfig.gpsConfig
-        );
+        gpsInit();
         navigationInit(
             &currentProfile->gpsProfile,
             pidProfile

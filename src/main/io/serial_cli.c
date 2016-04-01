@@ -538,10 +538,10 @@ const clivalue_t valueTable[] = {
     { "reboot_character",           VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 48,  126 } , PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character)},
 
 #ifdef GPS
-    { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.provider, .config.lookup = { TABLE_GPS_PROVIDER } },
-    { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE } },
-    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoConfig, .config.lookup = { TABLE_OFF_ON } },
-    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoBaud, .config.lookup = { TABLE_OFF_ON } },
+    { "gps_provider",               VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0, .config.lookup = { TABLE_GPS_PROVIDER }, PG_GPS_CONFIG, offsetof(gpsConfig_t, provider)},
+    { "gps_sbas_mode",              VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0, .config.lookup = { TABLE_GPS_SBAS_MODE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, sbasMode)},
+    { "gps_auto_config",            VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig)},
+    { "gps_auto_baud",              VAR_UINT8  | MIGRATED_MASTER_VALUE | MODE_LOOKUP, 0, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoBaud)},
 
     { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, 0, .config.minmax = { 0,  200 }, PG_PID_PROFILE, offsetof(pidProfile_t, P8[PIDPOS]) },
     { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, 0, .config.minmax = { 0,  200 }, PG_PID_PROFILE, offsetof(pidProfile_t, I8[PIDPOS]) },

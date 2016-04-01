@@ -391,7 +391,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
 #ifdef GPS
     // gps/nav stuff
-    masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
+    gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
 #endif
 
     resetSerialConfig(&serialConfig);
