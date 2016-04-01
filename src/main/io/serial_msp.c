@@ -351,6 +351,7 @@ static void serializeSDCardSummaryReply(void)
             break;
             case AFATFS_FILESYSTEM_STATE_FATAL:
             case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+            default:
                 state = MSP_SDCARD_STATE_FATAL;
             break;
         }
