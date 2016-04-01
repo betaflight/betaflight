@@ -298,6 +298,21 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/io/rate_profile.o : \
+	$(USER_DIR)/io/rate_profile.c \
+	$(USER_DIR)/io/rate_profile.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+
+$(OBJECT_DIR)/io/rc_adjustments.o : \
+	$(USER_DIR)/io/rc_adjustments.c \
+	$(USER_DIR)/io/rc_adjustments.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_adjustments.c -o $@
 
 $(OBJECT_DIR)/io/rc_controls.o : \
 	$(USER_DIR)/io/rc_controls.c \
@@ -318,6 +333,7 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 $(OBJECT_DIR)/rc_controls_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/io/rc_controls.o \
+	$(OBJECT_DIR)/io/rc_adjustments.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

@@ -36,6 +36,7 @@
 #include "drivers/compass.h"
 #include "drivers/accgyro.h"
 
+#include "io/rate_profile.h"
 #include "io/rc_controls.h"
 
 #include "sensors/sensors.h"

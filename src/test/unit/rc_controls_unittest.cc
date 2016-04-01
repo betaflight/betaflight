@@ -37,6 +37,8 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/escservo.h"
     #include "io/rc_controls.h"
+    #include "io/rate_profile.h"
+    #include "io/rc_adjustments.h"
 
     #include "rx/rx.h"
 

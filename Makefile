@@ -256,6 +256,8 @@ COMMON_SRC = build_config.c \
 		   io/beeper.c \
 		   io/gimbal.c \
 		   io/escservo.c \
+		   io/rate_profile.c \
+		   io/rc_adjustments.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \

@@ -45,6 +45,8 @@
 #include "drivers/gyro_sync.h"
 
 #include "io/rc_controls.h"
+#include "io/rate_profile.h"
+#include "io/rc_adjustments.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -498,7 +500,7 @@ void processRx(void)
     updateActivatedModes(currentProfile->modeActivationConditions);
 
     if (!cliMode) {
-        updateAdjustmentStates(currentProfile->adjustmentRanges);
+        updateAdjustmentStates(adjustmentProfile->adjustmentRanges);
         processRcAdjustments(currentControlRateProfile, &rxConfig);
     }
 

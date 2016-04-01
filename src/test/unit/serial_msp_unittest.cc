@@ -45,6 +45,8 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "io/rc_controls.h"
+    #include "io/rate_profile.h"
+    #include "io/rc_adjustments.h"
     #include "io/gps.h"
     #include "io/gimbal.h"
     #include "io/ledstrip.h"
@@ -110,6 +112,7 @@ extern "C" {
     PG_REGISTER_PROFILE(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER_PROFILE(adjustmentProfile_t, adjustmentProfile, PG_ADJUSTMENT_PROFILE, 0);
 }
 
 profile_t profile;

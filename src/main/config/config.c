@@ -41,7 +41,9 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 
+#include "io/rate_profile.h"
 #include "io/rc_controls.h"
+#include "io/rc_adjustments.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -93,9 +95,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
-
-static uint8_t currentControlRateProfileIndex = 0;
-controlRateConfig_t *currentControlRateProfile;
 
 PG_REGISTER_PROFILE(profile_t, currentProfile, PG_PROFILE, 0);
 
@@ -250,13 +249,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
-    controlRateConfig->rcRate8 = 90;
-    controlRateConfig->rcExpo8 = 65;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->tpa_breakpoint = 1500;
-}
-
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->deadband = 0;
     rcControlsConfig->yaw_deadband = 0;
@@ -282,21 +274,6 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     rollAndPitchTrims->values.roll = 0;
     rollAndPitchTrims->values.pitch = 0;
-}
-
-uint8_t getCurrentControlRateProfile(void)
-{
-    return currentControlRateProfileIndex;
-}
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &controlRateProfiles[profileIndex];
-}
-
-static void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &controlRateProfiles[profileIndex];
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -586,15 +563,8 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // TODO
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
-        currentProfileStorage[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
+        configureRateProfileSelection(i, i % MAX_CONTROL_RATE_PROFILE_COUNT);
     }
-}
-
-void activateControlRateConfig(void)
-{
-    generatePitchRollCurve(currentControlRateProfile);
-    generateYawCurve(currentControlRateProfile);
-    generateThrottleCurve(currentControlRateProfile, &escAndServoConfig);
 }
 
 void activateConfig(void)
@@ -750,10 +720,10 @@ void readEEPROM(void)
 
     pgActivateProfile(getCurrentProfile());
 
-    if (currentProfile->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        currentProfile->defaultRateProfileIndex = 0;
+    if (rateProfileSelection->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
+        rateProfileSelection->defaultRateProfileIndex = 0;
 
-    setControlRateProfile(currentProfile->defaultRateProfileIndex);
+    setControlRateProfile(rateProfileSelection->defaultRateProfileIndex);
 
     validateAndFixConfig();
     activateConfig();
@@ -797,15 +767,6 @@ void changeProfile(uint8_t profileIndex)
     setProfile(profileIndex);
     writeEEPROM();
     readEEPROM();
-}
-
-void changeControlRateProfile(uint8_t profileIndex)
-{
-    if (profileIndex > MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
-    }
-    setControlRateProfile(profileIndex);
-    activateControlRateConfig();
 }
 
 void handleOneshotFeatureChangeOnRestart(void)

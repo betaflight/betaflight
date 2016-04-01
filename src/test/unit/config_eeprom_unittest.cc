@@ -39,6 +39,8 @@ extern "C" {
     #include "drivers/serial.h"
 
     #include "io/rc_controls.h"
+    #include "io/rate_profile.h"
+    #include "io/rc_adjustments.h"
     #include "io/escservo.h"
     #include "io/gimbal.h"
     #include "io/gps.h"
@@ -78,6 +80,7 @@ extern "C" {
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER_PROFILE(rateProfileSelection_t, rateProfileSelection, PG_RATE_PROFILE_SELECTION, 0);
 
     typedef struct someProfileSpecificData_s {
         uint8_t uint8;
@@ -284,6 +287,11 @@ void generatePitchRollCurve(controlRateConfig_t *) {}
 void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
 void configureAltitudeHold(barometerConfig_t *) {}
+
+void setControlRateProfile(uint8_t) {}
+void resetControlRateConfig(controlRateConfig_t *) {}
+void configureRateProfileSelection(uint8_t, uint8_t) {}
+void activateControlRateConfig() {}
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
