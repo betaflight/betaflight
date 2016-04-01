@@ -88,6 +88,8 @@ static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 servoMixer_t customServoMixer[MAX_SERVO_RULES];
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
+
+PG_REGISTER_PROFILE(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
 #endif
 
 static const motorMixer_t mixerQuadX[] = {

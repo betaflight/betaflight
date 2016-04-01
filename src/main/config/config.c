@@ -413,13 +413,13 @@ STATIC_UNIT_TESTED void resetConf(void)
 #ifdef USE_SERVOS
     // servos
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        currentProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
-        currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
-        currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        currentProfile->servoConf[i].rate = 100;
-        currentProfile->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        currentProfile->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        currentProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        servoProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
+        servoProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
+        servoProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
+        servoProfile->servoConf[i].rate = 100;
+        servoProfile->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
+        servoProfile->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
+        servoProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
     // gimbal
@@ -590,7 +590,7 @@ void activateConfig(void)
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
-        currentProfile->servoConf
+            servoProfile->servoConf
 #endif
     );
 

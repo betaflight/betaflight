@@ -190,6 +190,12 @@ typedef struct servoParam_s {
     uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
 } __attribute__ ((__packed__)) servoParam_t;
 
+typedef struct servoProfile_s {
+    servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
+} servoProfile_t;
+
+PG_DECLARE_PROFILE(servoProfile_t, servoProfile);
+
 struct gimbalConfig_s;
 struct escAndServoConfig_s;
 struct rxConfig_s;

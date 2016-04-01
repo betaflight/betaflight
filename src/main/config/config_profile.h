@@ -19,11 +19,6 @@
 
 typedef struct profile_s {
 
-#ifdef USE_SERVOS
-    // Servo-related stuff
-    servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-#endif
-
 } profile_t;
 
 extern profile_t *currentProfile;

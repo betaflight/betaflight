@@ -765,14 +765,14 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO_CONFIGURATIONS:
         headSerialReply(MAX_SUPPORTED_SERVOS * sizeof(servoParam_t));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize16(currentProfile->servoConf[i].min);
-            serialize16(currentProfile->servoConf[i].max);
-            serialize16(currentProfile->servoConf[i].middle);
-            serialize8(currentProfile->servoConf[i].rate);
-            serialize8(currentProfile->servoConf[i].angleAtMin);
-            serialize8(currentProfile->servoConf[i].angleAtMax);
-            serialize8(currentProfile->servoConf[i].forwardFromChannel);
-            serialize32(currentProfile->servoConf[i].reversedSources);
+            serialize16(servoProfile->servoConf[i].min);
+            serialize16(servoProfile->servoConf[i].max);
+            serialize16(servoProfile->servoConf[i].middle);
+            serialize8(servoProfile->servoConf[i].rate);
+            serialize8(servoProfile->servoConf[i].angleAtMin);
+            serialize8(servoProfile->servoConf[i].angleAtMax);
+            serialize8(servoProfile->servoConf[i].forwardFromChannel);
+            serialize32(servoProfile->servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -1429,14 +1429,14 @@ static bool processInCommand(void)
         if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
         } else {
-            currentProfile->servoConf[i].min = read16();
-            currentProfile->servoConf[i].max = read16();
-            currentProfile->servoConf[i].middle = read16();
-            currentProfile->servoConf[i].rate = read8();
-            currentProfile->servoConf[i].angleAtMin = read8();
-            currentProfile->servoConf[i].angleAtMax = read8();
-            currentProfile->servoConf[i].forwardFromChannel = read8();
-            currentProfile->servoConf[i].reversedSources = read32();
+            servoProfile->servoConf[i].min = read16();
+            servoProfile->servoConf[i].max = read16();
+            servoProfile->servoConf[i].middle = read16();
+            servoProfile->servoConf[i].rate = read8();
+            servoProfile->servoConf[i].angleAtMin = read8();
+            servoProfile->servoConf[i].angleAtMax = read8();
+            servoProfile->servoConf[i].forwardFromChannel = read8();
+            servoProfile->servoConf[i].reversedSources = read32();
         }
 #endif
         break;
