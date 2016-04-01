@@ -1129,7 +1129,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_LED_COLORS:
         headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.colors[i];
+            hsvColor_t *color = &colors[i];
             serialize16(color->h);
             serialize8(color->s);
             serialize8(color->v);
@@ -1139,7 +1139,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_LED_STRIP_CONFIG:
         headSerialReply(MAX_LED_STRIP_LENGTH * 7);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &ledConfigs[i];
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
             serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
             serialize8(GET_LED_X(ledConfig));
@@ -1685,7 +1685,7 @@ static bool processInCommand(void)
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.colors[i];
+            hsvColor_t *color = &colors[i];
             color->h = read16();
             color->s = read8();
             color->v = read8();
@@ -1699,7 +1699,7 @@ static bool processInCommand(void)
                 headSerialError(0);
                 break;
             }
-            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &ledConfigs[i];
             uint16_t mask;
             // currently we're storing directions and functions in a uint16 (flags)
             // the msp uses 2 x uint16_t to cater for future expansion

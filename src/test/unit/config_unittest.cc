@@ -220,8 +220,8 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 // STUBS
 extern "C" {
 
-void applyDefaultLedStripConfig(ledConfig_t *) {}
-void applyDefaultColors(hsvColor_t *, uint8_t) {}
+void applyDefaultLedStripConfig(void) {}
+void applyDefaultColors(void) {}
 void beeperConfirmationBeeps(uint8_t) {}
 void StopPwmAllMotors(void) {}
 void useRxConfig(rxConfig_t *) {}

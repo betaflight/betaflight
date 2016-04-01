@@ -30,10 +30,6 @@ typedef struct master_t {
     telemetryConfig_t telemetryConfig;
 #endif
 
-#ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
-#endif
 } master_t;
 
 PG_DECLARE(master_t, masterConfig);

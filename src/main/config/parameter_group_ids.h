@@ -42,6 +42,8 @@
 #define PG_RX_CONFIG 24
 #define PG_RC_CONTROLS_CONFIG 25
 #define PG_MOTOR_3D_CONFIG 26
+#define PG_LED_STRIP_CONFIG 27
+#define PG_COLOR_CONFIG 28
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

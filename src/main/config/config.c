@@ -457,8 +457,8 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
 #ifdef LED_STRIP
-    applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
-    applyDefaultLedStripConfig(masterConfig.ledConfigs);
+    applyDefaultColors();
+    applyDefaultLedStripConfig();
 #endif
 
 #ifdef TRANSPONDER

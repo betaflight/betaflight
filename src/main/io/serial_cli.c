@@ -1255,9 +1255,9 @@ static void cliColor(char *cmdline)
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
             cliPrintf("color %u %d,%u,%u\r\n",
                 i,
-                masterConfig.colors[i].h,
-                masterConfig.colors[i].s,
-                masterConfig.colors[i].v
+                colors[i].h,
+                colors[i].s,
+                colors[i].v
             );
         }
     } else {

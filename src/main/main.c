@@ -129,7 +129,7 @@ void gpsInit(gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 void imuInit(void);
 void displayInit(void);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
+void ledStripInit(void);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
@@ -542,7 +542,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors);
+    ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

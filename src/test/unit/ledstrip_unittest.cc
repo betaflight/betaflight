@@ -43,7 +43,6 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
-    extern ledConfig_t *ledConfigs;
     extern uint8_t highestYValueForNorth;
     extern uint8_t lowestYValueForSouth;
     extern uint8_t highestXValueForWest;
@@ -53,8 +52,6 @@ extern "C" {
 
     void determineLedStripDimensions(void);
     void determineOrientationLimits(void);
-
-    ledConfig_t systemLedConfigs[MAX_LED_STRIP_LENGTH];
 }
 
 TEST(LedStripTest, parseLedStripConfig)
@@ -148,8 +145,7 @@ TEST(LedStripTest, parseLedStripConfig)
             "7,8::R:15"
     };
     // and
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(&ledConfigs, 0, sizeof(ledConfigs));
 
     // and
     bool ok = false;
@@ -189,8 +185,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(&ledConfigs, 0, sizeof(ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -203,7 +198,7 @@ TEST(LedStripTest, smallestGridWithCenter)
         { CALCULATE_LED_XY( 0,  2), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
         { CALCULATE_LED_XY( 1,  2), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING }
     };
-    memcpy(&systemLedConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     determineLedStripDimensions();
@@ -225,8 +220,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(&ledConfigs, 0, sizeof(ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -235,7 +229,7 @@ TEST(LedStripTest, smallestGrid)
         { CALCULATE_LED_XY( 0,  0), 0, LED_DIRECTION_NORTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_FLIGHT_MODE },
         { CALCULATE_LED_XY( 0,  1), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_FLIGHT_MODE },
     };
-    memcpy(&systemLedConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     determineLedStripDimensions();
@@ -299,15 +293,12 @@ TEST(LedStripTest, smallestGrid)
 
 hsvColor_t testColors[CONFIGURABLE_COLOR_COUNT];
 
-extern hsvColor_t *colors;
-
 #define TEST_COLOR_COUNT 4
 
 TEST(ColorTest, parseColor)
 {
     // given
-    colors = testColors;
-    memset(colors, 0, sizeof(*colors) * CONFIGURABLE_COLOR_COUNT);
+    memset(&colors, 0, sizeof(colors));
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
