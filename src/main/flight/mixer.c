@@ -67,8 +67,6 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 bool motorLimitReached;
 
-static airplaneConfig_t *airplaneConfig;
-
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
@@ -337,15 +335,15 @@ static motorMixer_t *customMixers;
 
 void mixerUseConfigs(
 #ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
+        servoParam_t *servoConfToUse
+#else
+        void
 #endif
-        airplaneConfig_t *airplaneConfigToUse)
+)
 {
 #ifdef USE_SERVOS
     servoConf = servoConfToUse;
 #endif
-    airplaneConfig = airplaneConfigToUse;
-
 }
 
 #ifdef USE_SERVOS

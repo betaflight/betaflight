@@ -659,7 +659,7 @@ void taskMainPidLoop(void)
 #if defined(BARO) || defined(SONAR)
         if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
             if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                applyAltHold(&masterConfig.airplaneConfig);
+                applyAltHold();
             }
         }
 #endif

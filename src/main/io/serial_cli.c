@@ -82,6 +82,7 @@
 #include "flight/mixer.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
+#include "flight/altitudehold.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
@@ -532,7 +533,7 @@ const clivalue_t valueTable[] = {
 
     { "small_angle",                VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 0,  180 } , PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle)},
 
-    { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, .config.minmax = { -1,  1 } },
+    { "fixedwing_althold_dir",      VAR_INT8   | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { -1,  1 }, PG_AIRPLANE_ALT_HOLD_CONFIG, offsetof( airplaneConfig_t, fixedwing_althold_dir) },
 
     { "reboot_character",           VAR_UINT8  | MIGRATED_MASTER_VALUE, 0,  .config.minmax = { 48,  126 } , PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character)},
 

@@ -231,8 +231,7 @@ protected:
     virtual void configureMixer(uint8_t mixerMode) {
         mixerConfig.mixerMode = mixerMode;
         mixerUseConfigs(
-            servoConf,
-            NULL
+            servoConf
         );
     }
 };

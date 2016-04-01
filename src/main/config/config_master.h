@@ -19,9 +19,6 @@
 
 // System-wide
 typedef struct master_t {
-    // Flight config
-    airplaneConfig_t airplaneConfig;
-
 #ifdef GPS
     gpsConfig_t gpsConfig;
 #endif

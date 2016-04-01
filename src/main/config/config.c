@@ -376,7 +376,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     armingConfig.auto_disarm_delay = 5;
     armingConfig.max_arm_angle = 25;
 
-    masterConfig.airplaneConfig.fixedwing_althold_dir = 1;
+    airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
     resetEscAndServoConfig(&escAndServoConfig);
@@ -628,9 +628,8 @@ void activateConfig(void)
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
-        currentProfile->servoConf,
+        currentProfile->servoConf
 #endif
-        &masterConfig.airplaneConfig
     );
 
     imuRuntimeConfig.dcm_kp = imuConfig.dcm_kp / 10000.0f;

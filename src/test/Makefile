@@ -200,17 +200,17 @@ $(OBJECT_DIR)/flight/altitudehold.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
 
-$(OBJECT_DIR)/altitude_hold_unittest.o : \
-	$(TEST_DIR)/altitude_hold_unittest.cc \
+$(OBJECT_DIR)/flight_altitudehold_unittest.o : \
+	$(TEST_DIR)/flight_altitudehold_unittest.cc \
 	$(USER_DIR)/flight/altitudehold.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_altitudehold_unittest.cc -o $@
 
-$(OBJECT_DIR)/altitude_hold_unittest : \
+$(OBJECT_DIR)/flight_altitudehold_unittest : \
 	$(OBJECT_DIR)/flight/altitudehold.o \
-	$(OBJECT_DIR)/altitude_hold_unittest.o \
+	$(OBJECT_DIR)/flight_altitudehold_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

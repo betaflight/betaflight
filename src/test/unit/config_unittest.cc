@@ -60,6 +60,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/navigation.h"
+    #include "flight/altitudehold.h"
 
     #include "rx/rx.h"
 
@@ -101,6 +102,7 @@ extern "C" {
     imuConfig_t imuConfig;
     profileSelection_t profileSelection;
     rxConfig_t rxConfig;
+    airplaneConfig_t airplaneConfig;
 
     motor3DConfig_t motor3DConfig;
 
@@ -134,6 +136,7 @@ extern "C" {
         memset(&imuConfig, 0x00, sizeof(imuConfig));
         memset(&profileSelection, 0x00, sizeof(profileSelection));
         memset(&rxConfig, 0x00, sizeof(rxConfig));
+        memset(&airplaneConfig, 0x00, sizeof(airplaneConfig));
     }
 
     void pgActivateProfile(uint8_t) {
@@ -237,9 +240,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(servoParam_t *) {}
 #else
-void mixerUseConfigs(escAndServoConfig_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(void) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}

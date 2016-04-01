@@ -31,6 +31,7 @@
 
 #include "config/runtime_config.h"
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -50,6 +51,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
+#include "flight/altitudehold.h"
+
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;
 int32_t errorVelocityI = 0;
@@ -57,6 +60,7 @@ int32_t altHoldThrottleAdjustment = 0;
 int32_t AltHold;
 int32_t vario = 0;                      // variometer in cm/s
 
+PG_REGISTER(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_ALT_HOLD_CONFIG, 0);
 
 static barometerConfig_t *barometerConfig;
 
@@ -110,19 +114,19 @@ static void applyMultirotorAltHold(void)
     }
 }
 
-static void applyFixedWingAltHold(airplaneConfig_t *airplaneConfig)
+static void applyFixedWingAltHold(void)
 {
     // handle fixedwing-related althold. UNTESTED! and probably wrong
     // most likely need to check changes on pitch channel and 'reset' althold similar to
     // how throttle does it on multirotor
 
-    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig->fixedwing_althold_dir;
+    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig.fixedwing_althold_dir;
 }
 
-void applyAltHold(airplaneConfig_t *airplaneConfig)
+void applyAltHold(void)
 {
     if (STATE(FIXED_WING)) {
-        applyFixedWingAltHold(airplaneConfig);
+        applyFixedWingAltHold();
     } else {
         applyMultirotorAltHold();
     }

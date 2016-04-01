@@ -97,11 +97,6 @@ typedef struct motor3DConfig_s {
 
 PG_DECLARE(motor3DConfig_t, motor3DConfig);
 
-
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
-
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 #ifdef USE_SERVOS
@@ -212,9 +207,10 @@ extern bool motorLimitReached;
 
 void mixerUseConfigs(
 #ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
+        servoParam_t *servoConfToUse
+#else
+        void
 #endif
-        airplaneConfig_t *airplaneConfigToUse
 );
 
 void writeAllMotors(int16_t mc);

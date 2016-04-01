@@ -56,6 +56,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/navigation.h"
     #include "flight/failsafe.h"
+    #include "flight/altitudehold.h"
 
     #include "telemetry/telemetry.h"
 
@@ -99,7 +100,7 @@ extern "C" {
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
-    
+    PG_REGISTER(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_ALT_HOLD_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -183,9 +184,9 @@ void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
-void mixerUseConfigs(servoParam_t *, airplaneConfig_t *) {}
+void mixerUseConfigs(servoParam_t *) {}
 #else
-void mixerUseConfigs(airplaneConfig_t *) {}
+void mixerUseConfigs(void) {}
 #endif
 bool isSerialConfigValid(serialConfig_t *) {return true;}
 void imuConfigure(imuRuntimeConfig_t *, accDeadband_t *,float ,uint16_t) {}
