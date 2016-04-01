@@ -73,6 +73,10 @@ PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_M
 mixerConfig_t mixerConfig;
 PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
+motor3DConfig_t motor3DConfig;
+PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
+
+
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
@@ -81,9 +85,6 @@ static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
-
-motor3DConfig_t motor3DConfig;
-PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
 servoMixer_t customServoMixer[MAX_SERVO_RULES];
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
@@ -397,9 +398,8 @@ void mixerInit(motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCust
     }
 }
 #else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
+void mixerInit(motorMixer_t *initialCustomMixers)
 {
-    mixerConfig.mixerMode = mixerMode;
     customMixers = initialCustomMixers;
 }
 #endif

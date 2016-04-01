@@ -67,6 +67,8 @@ typedef struct imuRuntimeConfig_s {
     uint8_t small_angle;
 } imuRuntimeConfig_t;
 
+void imuInit(void);
+
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
     accDeadband_t *initialAccDeadband,

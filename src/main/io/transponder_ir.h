@@ -23,6 +23,8 @@ typedef struct transponderConfig_s {
 
 extern transponderConfig_t transponderConfig;
 
+void transponderInit(uint8_t* transponderCode);
+
 void transponderEnable(void);
 void transponderDisable(void);
 void updateTransponder(void);

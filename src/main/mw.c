@@ -87,7 +87,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 
 // June 2013     V2.2-dev

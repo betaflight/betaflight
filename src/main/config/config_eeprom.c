@@ -52,7 +52,6 @@ typedef struct {
 
 // Header for each stored PG.
 typedef struct {
-    // TODO(michaelh): shrink to uint8_t once masterConfig has been
     // split up.
     uint16_t size;
     pgn_t pgn;

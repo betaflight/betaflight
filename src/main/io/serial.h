@@ -64,9 +64,12 @@ typedef enum {
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
+void serialInit(bool softserialEnabled);
+
 //
 // runtime
 //
+
 typedef struct serialPortUsage_s {
     serialPortIdentifier_e identifier;
     serialPort_t *serialPort;

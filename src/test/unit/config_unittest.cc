@@ -67,7 +67,6 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "config/config_profile.h"
-    #include "config/config_master.h"
     #include "config/config_system.h"
     #include "config/feature.h"
     #include "config/profile.h"
@@ -78,7 +77,6 @@ extern "C" {
 
 extern "C" {
     void resetConf(void);
-    extern master_t masterConfig;
 
     profile_t testProfile;
     profile_t *currentProfile = &testProfile;
@@ -124,7 +122,6 @@ extern "C" {
         memset(&testProfile, 0x00, sizeof(testProfile));
         memset(&testRcControlsConfig, 0x00, sizeof(testRcControlsConfig));
 
-        memset(&masterConfig, 0x00, sizeof(masterConfig));
         memset(&boardAlignment, 0x00, sizeof(boardAlignment));
         memset(&customMotorMixer, 0x00, sizeof(customMotorMixer));
         memset(&gyroConfig, 0x00, sizeof(gyroConfig));

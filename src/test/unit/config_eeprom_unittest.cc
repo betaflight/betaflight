@@ -65,7 +65,6 @@ extern "C" {
     #include "config/config.h"
     #include "config/config_eeprom.h"
     #include "config/config_profile.h"
-    #include "config/config_master.h"
     #include "config/config_system.h"
     #include "config/feature.h"
 
@@ -84,7 +83,6 @@ extern "C" {
         uint32_t uint32;
     } PG_PACKED someProfileSpecificData_t;
 
-    PG_REGISTER(master_t, masterConfig, 0, 0);
     PG_REGISTER_PROFILE(someProfileSpecificData_t, someProfileSpecificData, 1, 0);
 
     PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);

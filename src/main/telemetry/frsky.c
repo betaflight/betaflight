@@ -54,7 +54,7 @@
 #include "io/serial.h"
 #include "io/gps.h"
 
-#include "flight/mixer.h"
+//#include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"

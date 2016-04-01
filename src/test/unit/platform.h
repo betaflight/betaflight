@@ -28,7 +28,11 @@
 #define LED_STRIP
 #define USE_SERVOS
 
-#define SERIAL_PORT_COUNT 4
+#define USART1              ((USART_TypeDef *) 1)
+#define USART2              ((USART_TypeDef *) 2)
+#define USART3              ((USART_TypeDef *) 3)
+#define UART4              ((USART_TypeDef *) 4)
+#define UART5              ((USART_TypeDef *) 5)
 
 typedef enum
 {

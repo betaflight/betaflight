@@ -15,16 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * telemetry.h
- *
- *  Created on: 6 Apr 2014
- *      Author: Hydra
- */
-#include "rx/rx.h"
-
-#ifndef TELEMETRY_COMMON_H_
-#define TELEMETRY_COMMON_H_
+#pragma once
 
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
@@ -43,6 +34,8 @@ typedef struct telemetryConfig_s {
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
+void telemetryInit(void);
+
 void telemetryCheckState(void);
 void telemetryProcess(uint16_t deadband3d_throttle);
 
@@ -50,4 +43,3 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
 
-#endif /* TELEMETRY_COMMON_H_ */

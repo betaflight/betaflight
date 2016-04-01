@@ -53,6 +53,8 @@ typedef struct pgRegistry_s {
 extern const pgRegistry_t __pg_registry_start[];
 extern const pgRegistry_t __pg_registry_end[];
 
+#define PG_REGISTRY_SIZE (__pg_registry_end - __pg_registry_end)
+
 // Helper to iterate over the PG register.  Cheaper than a visitor style callback.
 #define PG_FOREACH(_name) \
     for (const pgRegistry_t *(_name) = __pg_registry_start; (_name) < __pg_registry_end; (_name)++)

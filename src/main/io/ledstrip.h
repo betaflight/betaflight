@@ -84,6 +84,8 @@ extern uint8_t ledsInRingCount;
 PG_DECLARE_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs);
 PG_DECLARE_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors);
 
+void ledStripInit(void);
+
 bool parseLedStripConfig(uint8_t ledIndex, const char *config);
 void updateLedStrip(void);
 void updateLedRing(void);

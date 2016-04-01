@@ -85,7 +85,6 @@
 #include "config/profile.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/config_system.h"
 
 #ifndef DEFAULT_RX_FEATURE
@@ -98,7 +97,6 @@
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-PG_REGISTER(master_t, masterConfig, 0, 0);
 PG_REGISTER_PROFILE(profile_t, currentProfile, PG_PROFILE, 0);
 
 // FIXME this should probably be defined in a separate file.  Drivers should be aware of parameter groups.

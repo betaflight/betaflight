@@ -121,6 +121,7 @@ extern uint32_t GPS_garbageByteCount;
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
+void gpsInit(void);
 
 void gpsThread(void);
 bool gpsNewFrame(uint8_t c);

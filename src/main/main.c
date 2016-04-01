@@ -27,6 +27,7 @@
 #include "common/color.h"
 #include "common/atomic.h"
 #include "common/maths.h"
+#include "common/printf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -59,6 +60,7 @@
 #include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -70,6 +72,8 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/serial_msp.h"
+#include "io/serial_cli.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -93,7 +97,6 @@
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/config_system.h"
 #include "config/feature.h"
 
@@ -110,30 +113,12 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
-void printfSupportInit(void);
-void timerInit(void);
-void telemetryInit(void);
-void serialInit(bool softserialEnabled);
-void mspInit(void);
-void cliInit(void);
-void failsafeInit(void);
-pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
-#ifdef USE_SERVOS
-void mixerInit(motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
-#else
-void mixerInit(motorMixer_t *customMotorMixers);
-#endif
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
-void gpsInit(void);
+
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-void imuInit(void);
-void displayInit(void);
-void ledStripInit(void);
-void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
-void transponderInit(uint8_t* transponderCode);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c

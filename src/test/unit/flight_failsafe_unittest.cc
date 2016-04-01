@@ -42,8 +42,6 @@ extern "C" {
     #include "rx/rx.h"
     #include "flight/failsafe.h"
 
-    failsafeState_t* failsafeInit(rxConfig_t *intialRxConfig);
-
     rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
     rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 }
@@ -106,7 +104,7 @@ TEST(FlightFailsafeTest, TestFailsafeInitialState)
 
     // when
     useFailsafeConfig();
-    failsafeInit(&rxConfig);
+    failsafeInit();
 
     // then
     EXPECT_EQ(false, failsafeIsMonitoring());
@@ -374,7 +372,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
 
     // and
     useFailsafeConfig();
-    failsafeInit(&rxConfig);
+    failsafeInit();
 
     // and
     DISABLE_ARMING_FLAG(ARMED);

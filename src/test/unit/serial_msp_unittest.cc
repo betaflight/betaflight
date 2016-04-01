@@ -39,10 +39,7 @@ extern "C" {
     #include "drivers/accgyro.h"
     #include "drivers/compass.h"
     #include "drivers/serial.h"
-    #include "drivers/bus_i2c.h"
-    #include "drivers/gpio.h"
-    #include "drivers/timer.h"
-    #include "drivers/pwm_rx.h"
+    #include "drivers/serial_softserial.h"
     #include "drivers/buf_writer.h"
 
     #include "rx/rx.h"
@@ -61,13 +58,9 @@ extern "C" {
 
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
-    #include "sensors/sensors.h"
     #include "sensors/battery.h"
-    #include "sensors/sonar.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
-    #include "sensors/compass.h"
-    #include "sensors/gyro.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -79,7 +72,6 @@ extern "C" {
     #include "config/runtime_config.h"
     #include "config/config.h"
     #include "config/config_profile.h"
-    #include "config/config_master.h"
 }
 
 #include "unittest_macros.h"
@@ -693,7 +685,6 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 // from compass.c
 int32_t magADC[XYZ_AXIS_COUNT];
 // from config.c
-master_t masterConfig;
 controlRateConfig_t controlRateProfile;
 controlRateConfig_t *currentControlRateProfile = &controlRateProfile;
 void resetPidProfile(pidProfile_t *pidProfile) {UNUSED(pidProfile);}
@@ -772,5 +763,11 @@ void systemResetToBootloader(void) {}
 uint16_t averageSystemLoadPercent = 0;
 // from transponder_ir.c
 void transponderUpdateData(uint8_t*) {}
+// from serial port drivers
+serialPort_t *usbVcpOpen(void) { return NULL; }
+serialPort_t *uartOpen(USART_TypeDef *, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) { return NULL; }
+serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portOptions_t) { return NULL; }
+void serialSetMode(serialPort_t *, portMode_t) {}
+
 }
 
