@@ -641,7 +641,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)&cmdMSP);
 
     if (reg != NULL) {
-        s_struct(reg->base, reg->size);
+        s_struct(reg->address, reg->size);
         return true;
     }
 
