@@ -444,8 +444,11 @@ var MSP = {
                 _3D.deadband3d_high = data.getUint16(offset, 1);
                 offset += 2;
                 _3D.neutral3d = data.getUint16(offset, 1);
-                offset += 2;
-                _3D.deadband3d_throttle = data.getUint16(offset, 1);
+                
+                if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                    offset += 2;
+                    _3D.deadband3d_throttle = data.getUint16(offset, 1);
+                }
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -1330,8 +1333,10 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.deadband3d_high));
             buffer.push(lowByte(_3D.neutral3d));
             buffer.push(highByte(_3D.neutral3d));
-            buffer.push(lowByte(_3D.deadband3d_throttle));
-            buffer.push(highByte(_3D.deadband3d_throttle));
+            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                buffer.push(lowByte(_3D.deadband3d_throttle));
+                buffer.push(highByte(_3D.deadband3d_throttle));
+            }
             break;    
 
         case MSP_codes.MSP_SET_RC_DEADBAND:

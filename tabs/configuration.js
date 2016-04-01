@@ -407,7 +407,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('input[name="3ddeadbandlow"]').val(_3D.deadband3d_low);
             $('input[name="3ddeadbandhigh"]').val(_3D.deadband3d_high);
             $('input[name="3dneutral"]').val(_3D.neutral3d);
-            $('input[name="3ddeadbandthrottle"]').val(_3D.deadband3d_throttle);
+            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                $('input[name="3ddeadbandthrottle"]').val(_3D.deadband3d_throttle);
+            } else {
+                $('.3ddeadbandthrottle').hide();
+            }
         }
 
         // UI hooks
@@ -487,7 +491,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             _3D.deadband3d_low = parseInt($('input[name="3ddeadbandlow"]').val());
             _3D.deadband3d_high = parseInt($('input[name="3ddeadbandhigh"]').val());
             _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
-            _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
+            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
+            }
 
 
             SENSOR_ALIGNMENT.align_gyro = parseInt(orientation_gyro_e.val());
