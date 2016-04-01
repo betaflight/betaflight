@@ -160,7 +160,7 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
                 else {
                     pidState[axis].axisLockAccum += (pidState[axis].rateTarget - pidState[axis].gyroRate) * dT;
                     pidState[axis].axisLockAccum = constrainf(pidState[axis].axisLockAccum, -45, 45);
-                    pidState[axis].rateTarget = pidState[axis].axisLockAccum * (pidProfile->P8[PIDMAG] / FP_PID_YAWHOLD_P_MULTIPLIER)
+                    pidState[axis].rateTarget = pidState[axis].axisLockAccum * (pidProfile->P8[PIDMAG] / FP_PID_YAWHOLD_P_MULTIPLIER);
                 }
             }
         }
