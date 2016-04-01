@@ -68,7 +68,6 @@ extern "C" {
 
     #include "config/config.h"
     #include "config/config_eeprom.h"
-    #include "config/config_profile.h"
     #include "config/config_system.h"
     #include "config/feature.h"
     #include "config/profile.h"

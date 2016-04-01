@@ -36,9 +36,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 
 #include "io/rate_profile.h"
@@ -78,15 +75,11 @@
 #include "flight/altitudehold.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_eeprom.h"
-#include "config/parameter_group.h"
-#include "config/config_streamer.h"
 #include "config/feature.h"
 #include "config/profile.h"
 
-#include "config/config_profile.h"
 #include "config/config_system.h"
 
 #ifndef DEFAULT_RX_FEATURE
@@ -96,11 +89,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-PG_REGISTER_PROFILE(profile_t, currentProfile, PG_PROFILE, 0);
-
-// FIXME this should probably be defined in a separate file.  Drivers should NOT be aware of parameter groups.
-
-PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {

@@ -40,8 +40,6 @@
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 
 #include "io/rc_controls.h"
@@ -49,19 +47,15 @@
 #include "io/rc_adjustments.h"
 
 #include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
 #include "io/rc_curves.h"
-#include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
@@ -88,7 +82,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 
 // June 2013     V2.2-dev

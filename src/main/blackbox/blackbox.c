@@ -61,9 +61,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
-#include "config/profile.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"

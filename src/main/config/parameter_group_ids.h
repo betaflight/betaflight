@@ -64,6 +64,3 @@
 
 #define PG_RESERVED_FOR_TESTING_1 253
 
-// FIXME remove/adjust after migration
-#define PG_PROFILE 254
-#define PG_MASTER 255

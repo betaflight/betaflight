@@ -74,7 +74,6 @@ extern "C" {
     #include "config/parameter_group_ids.h"
     #include "config/runtime_config.h"
     #include "config/config.h"
-    #include "config/config_profile.h"
 }
 
 #include "unittest_macros.h"
@@ -89,7 +88,6 @@ extern "C" {
     extern mspPort_t *currentPort;
     extern bufWriter_t *writer;
     extern mspPort_t mspPorts[];
-    profile_t *currentProfile;
 
     PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_BATTERY_CONFIG, 0);
@@ -118,8 +116,6 @@ extern "C" {
     PG_REGISTER_PROFILE(modeActivationProfile_t, modeActivationProfile, PG_MODE_ACTIVATION_PROFILE, 0);
     PG_REGISTER_PROFILE(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
 }
-
-profile_t profile;
 
 typedef struct mspHeader_s {
     uint8_t dollar;
@@ -269,7 +265,6 @@ TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
     // check the MSP_PID_CONTROLLER is written out correctly
     serialWritePos = 0;
     serialReadPos = 0;
-    currentProfile = &profile;
     pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
@@ -288,7 +283,6 @@ TEST_F(SerialMspUnitTest, TestMspProcessReceivedCommand)
 TEST_F(SerialMspUnitTest, Test_PID_CONTROLLER)
 {
     // Use the MSP to write out the PID values
-    currentProfile = &profile;
     pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
@@ -354,7 +348,6 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     const int I8_PIDVEL = 45;
     const int D8_PIDVEL = 7;
 
-    currentProfile = &profile;
     pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
@@ -466,7 +459,6 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     const float A_level = 5.0f;
     const float H_level = 3.0f;
     const uint8_t H_sensitivity = 75;
-    currentProfile = &profile;
     pgActivateProfile(0);
 
     pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;

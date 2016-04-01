@@ -21,7 +21,9 @@
 #include <string.h>
 
 #include <platform.h>
-#include "scheduler.h"
+
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -96,7 +98,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
 #include "config/config_system.h"
 #include "config/feature.h"
 
@@ -104,8 +105,7 @@
 #include "hardware_revision.h"
 #endif
 
-#include "build_config.h"
-#include "debug.h"
+#include "scheduler.h"
 
 extern uint8_t motorControlEnable;
 
@@ -130,6 +130,7 @@ void SetSysClock(bool overclock);
 #endif
 
 PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING        = 0,

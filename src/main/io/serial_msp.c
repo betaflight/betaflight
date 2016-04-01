@@ -32,6 +32,7 @@
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 
@@ -41,9 +42,6 @@
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "rx/rx.h"
@@ -86,9 +84,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/parameter_group_ids.h"
-#include "config/parameter_group.h"
 #include "config/feature.h"
 #include "config/profile.h"
 
