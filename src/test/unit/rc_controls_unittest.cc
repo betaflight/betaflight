@@ -35,7 +35,7 @@ extern "C" {
     #include "sensors/acceleration.h"
 
     #include "io/beeper.h"
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/rc_controls.h"
     #include "io/rate_profile.h"
     #include "io/rc_adjustments.h"
@@ -233,7 +233,7 @@ rxConfig_t rxConfig;
 extern uint8_t adjustmentStateMask;
 extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-escAndServoConfig_t escAndServoConfig;
+motorAndServoConfig_t motorAndServoConfig;
 
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
@@ -260,7 +260,7 @@ protected:
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+        memset(&motorAndServoConfig, 0, sizeof (motorAndServoConfig));
 
         memset(&rxConfig, 0, sizeof (rxConfig));
         rxConfig.mincheck = DEFAULT_MIN_CHECK;
@@ -758,7 +758,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
 
 extern "C" {
 void saveConfigAndNotify(void) {}
-void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
+void generateThrottleCurve(controlRateConfig_t *, motorAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}

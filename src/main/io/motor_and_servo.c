@@ -27,7 +27,7 @@
 
 #include "io/gimbal.h"
 
-#include "escservo.h"
+#include "motor_and_servo.h"
 
-PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);
+PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 

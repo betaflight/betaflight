@@ -44,7 +44,7 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
 
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/rc_controls.h"
 
     #include "rx/rx.h"
@@ -141,7 +141,7 @@ int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
 
-escAndServoConfig_t escAndServoConfig;
+motorAndServoConfig_t motorAndServoConfig;
 
 
 uint16_t enableFlightMode(flightModeFlags_e mask)

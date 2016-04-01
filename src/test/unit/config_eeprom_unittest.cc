@@ -41,7 +41,7 @@ extern "C" {
     #include "io/rc_controls.h"
     #include "io/rate_profile.h"
     #include "io/rc_adjustments.h"
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
     #include "io/gps.h"
     #include "io/serial.h"
@@ -87,7 +87,7 @@ extern "C" {
     PG_REGISTER_PROFILE(modeActivationProfile_t, modeActivationProfile, PG_MODE_ACTIVATION_PROFILE, 0);
     PG_REGISTER_PROFILE(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
 
-    PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_ESC_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);

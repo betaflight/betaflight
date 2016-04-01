@@ -44,7 +44,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/mixer.h"
 
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
 
@@ -59,7 +59,7 @@ extern "C" {
     gimbalConfig_t testGimbalConfig;
     gimbalConfig_t *gimbalConfig = &testGimbalConfig;
 
-    escAndServoConfig_t escAndServoConfig;
+    motorAndServoConfig_t motorAndServoConfig;
     rxConfig_t rxConfig;
 
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
@@ -210,7 +210,7 @@ protected:
 
         memset(&mixerConfig, 0, sizeof(mixerConfig));
         memset(&rxConfig, 0, sizeof(rxConfig));
-        memset(&escAndServoConfig, 0, sizeof(escAndServoConfig));
+        memset(&motorAndServoConfig, 0, sizeof(motorAndServoConfig));
         memset(&servoConf, 0, sizeof(servoConf));
 
         memset(rcData, 0, sizeof(rcData));
@@ -220,8 +220,8 @@ protected:
         memset(&customMotorMixer, 0, sizeof(customMotorMixer));
     }
 
-    virtual void withDefaultEscAndServoConfiguration(void) {
-        escAndServoConfig.mincommand = TEST_MIN_COMMAND;
+    virtual void withDefaultmotorAndServoConfiguration(void) {
+        motorAndServoConfig.mincommand = TEST_MIN_COMMAND;
     }
 
     virtual void withDefaultRxConfig(void) {
@@ -243,7 +243,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 
     mixerConfig.tri_unarmed_servo = 1;
 
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
     withDefaultRxConfig();
 
     servoConf[5].min = DEFAULT_SERVO_MIN;
@@ -283,7 +283,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 {
     // given
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
 
     configureMixer(MIXER_QUADX);
 
@@ -339,7 +339,7 @@ protected:
             servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
         }
 
-        withDefaultEscAndServoConfiguration();
+        withDefaultmotorAndServoConfiguration();
         withDefaultRxConfig();
 
         configureMixer(MIXER_QUADX);

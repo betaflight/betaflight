@@ -53,7 +53,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motor_and_servo.h"
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/transponder_ir.h"
@@ -179,12 +179,12 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
 }
 #endif
 
-void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
+void resetmotorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
 {
-    escAndServoConfig->minthrottle = 1150;
-    escAndServoConfig->maxthrottle = 1850;
-    escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
+    motorAndServoConfig->minthrottle = 1150;
+    motorAndServoConfig->maxthrottle = 1850;
+    motorAndServoConfig->mincommand = 1000;
+    motorAndServoConfig->servoCenterPulse = 1500;
 }
 
 void resetMotor3DConfig(motor3DConfig_t *motor3DConfig)
@@ -266,7 +266,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return escAndServoConfig.minthrottle;
+    return motorAndServoConfig.minthrottle;
 }
 
 // Default settings
@@ -343,15 +343,15 @@ STATIC_UNIT_TESTED void resetConf(void)
     airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-    resetEscAndServoConfig(&escAndServoConfig);
+    resetmotorAndServoConfig(&motorAndServoConfig);
     resetMotor3DConfig(&motor3DConfig);
 
 #ifdef BRUSHED_MOTORS
-    escAndServoConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+    motorAndServoConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
 #else
-    escAndServoConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorAndServoConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
-    escAndServoConfig.servo_pwm_rate = 50;
+    motorAndServoConfig.servo_pwm_rate = 50;
 
 #ifdef GPS
     // gps/nav stuff
@@ -471,9 +471,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
     rxConfig.serialrx_provider = 1;
     rxConfig.spektrum_sat_bind = 5;
-    escAndServoConfig.minthrottle = 1000;
-    escAndServoConfig.maxthrottle = 2000;
-    escAndServoConfig.motor_pwm_rate = 32000;
+    motorAndServoConfig.minthrottle = 1000;
+    motorAndServoConfig.maxthrottle = 2000;
+    motorAndServoConfig.motor_pwm_rate = 32000;
     imuConfig.looptime = 2000;
     pidProfile->pidController = 3;
     pidProfile->P8[PIDROLL] = 36;

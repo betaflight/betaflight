@@ -48,7 +48,7 @@ extern "C" {
     #include "config/runtime_config.h"
     #include "config/config.h"
 
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/rc_controls.h"
 
     #include "rx/rx.h"
@@ -177,7 +177,7 @@ int16_t GPS_numSat;
 
 float magneticDeclination = 0.0f;
 
-escAndServoConfig_t escAndServoConfig;
+motorAndServoConfig_t motorAndServoConfig;
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

@@ -47,7 +47,7 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "io/escservo.h"
+#include "io/motor_and_servo.h"
 #include "io/rate_profile.h"
 #include "io/rc_controls.h"
 #include "io/rc_adjustments.h"
@@ -931,9 +931,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
         serialize16(rxConfig.midrc);
 
-        serialize16(escAndServoConfig.minthrottle);
-        serialize16(escAndServoConfig.maxthrottle);
-        serialize16(escAndServoConfig.mincommand);
+        serialize16(motorAndServoConfig.minthrottle);
+        serialize16(motorAndServoConfig.maxthrottle);
+        serialize16(motorAndServoConfig.mincommand);
 
         serialize16(failsafeConfig.failsafe_throttle);
 
@@ -1380,9 +1380,9 @@ static bool processInCommand(void)
         if (tmp < 1600 && tmp > 1400)
             rxConfig.midrc = tmp;
 
-        escAndServoConfig.minthrottle = read16();
-        escAndServoConfig.maxthrottle = read16();
-        escAndServoConfig.mincommand = read16();
+        motorAndServoConfig.minthrottle = read16();
+        motorAndServoConfig.maxthrottle = read16();
+        motorAndServoConfig.mincommand = read16();
 
         failsafeConfig.failsafe_throttle = read16();
 

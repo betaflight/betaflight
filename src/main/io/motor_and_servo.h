@@ -17,7 +17,7 @@
 
 #pragma once
 
-typedef struct escAndServoConfig_s {
+typedef struct motorAndServoConfig_s {
 
     // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
@@ -27,6 +27,6 @@ typedef struct escAndServoConfig_s {
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-} escAndServoConfig_t;
+} motorAndServoConfig_t;
 
-PG_DECLARE(escAndServoConfig_t, escAndServoConfig);
+PG_DECLARE(motorAndServoConfig_t, motorAndServoConfig);

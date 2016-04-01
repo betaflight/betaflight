@@ -52,7 +52,7 @@ extern "C" {
     #include "io/ledstrip.h"
     #include "io/msp_protocol.h"
     #include "io/serial_msp.h"
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/transponder_ir.h"
 
     #include "telemetry/telemetry.h"
@@ -89,7 +89,7 @@ extern "C" {
     extern bufWriter_t *writer;
     extern mspPort_t mspPorts[];
 
-    PG_REGISTER(escAndServoConfig_t, escAndServoConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
