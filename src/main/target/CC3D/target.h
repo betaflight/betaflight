@@ -126,8 +126,13 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#ifdef USE_VCP
+#define USE_SERIAL_1WIRE_VCP
+#else
 #define USE_SERIAL_1WIRE
+#endif
 
+#ifdef USE_SERIAL_1WIRE
 // FlexPort (pin 21/22, TX/RX respectively):
 // Note, FlexPort has 10k pullups on both TX and RX
 // JST Pin3 TX - connect to external UART/USB RX
@@ -136,6 +141,7 @@
 // JST Pin4 RX - connect to external UART/USB TX
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
+#endif
 
 #undef DISPLAY
 #undef SONAR

@@ -33,4 +33,5 @@ typedef struct {
 
 void usb1WireInitialize();
 void usb1WirePassthrough(uint8_t escIndex);
+void usb1WireDeInitialize(void);
 #endif
