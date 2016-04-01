@@ -62,24 +62,25 @@ static int16_t rcCommandAdjustedThrottle;
 static int16_t altHoldThrottleRCZero = 1500;
 static filterStatePt1_t altholdThrottleFilterState;
 
-#define SURFACE_TRACKING_GAIN       40.0f
-
 /* Calculate global altitude setpoint based on surface setpoint */
 static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
         if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
-            float surfaceOffsetError = posControl.desiredState.surface - posControl.actualState.surface;
-            float trackingWeight = SURFACE_TRACKING_GAIN * US2S(deltaMicros);
-
-            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError * trackingWeight;
+            float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -25.0f, +25.0f, false);
+            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {
             // TODO: We are possible above valid range, we now descend down to attempt to get back within range
-            updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            //updateAltitudeTargetFromClimbRate(-0.10f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            updateAltitudeTargetFromClimbRate(-20.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
         }
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+#endif
 }
 
 // Position to velocity controller for Z axis
@@ -169,6 +170,7 @@ void setupMulticopterAltitudeController(void)
 void resetMulticopterAltitudeController()
 {
     navPidReset(&posControl.pids.vel[Z]);
+    navPidReset(&posControl.pids.surface);
     filterResetPt1(&altholdThrottleFilterState, 0.0f);
     posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;

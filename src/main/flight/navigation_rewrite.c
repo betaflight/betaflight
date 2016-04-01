@@ -66,6 +66,8 @@ int16_t navDesiredHeading;
 int16_t navTargetPosition[3];
 int32_t navLatestActualPosition[3];
 int16_t navDebug[4];
+int16_t navTargetSurface;
+int16_t navActualSurface;
 uint16_t navFlags;
 #endif
 
@@ -1359,6 +1361,10 @@ void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, flo
     else {
         posControl.flags.surfaceDistanceNewData = 0;
     }
+
+#if defined(NAV_BLACKBOX)
+    navActualSurface = surfaceDistance;
+#endif
 }
 
 /*-----------------------------------------------------------
@@ -1503,11 +1509,15 @@ void updateHomePosition(void)
 void setDesiredSurfaceOffset(float surfaceOffset)
 {
     if (surfaceOffset > 0) {
-        posControl.desiredState.surface = constrainf(surfaceOffset, 1.0f, INAV_SONAR_MAX_DISTANCE);
+        posControl.desiredState.surface = constrainf(surfaceOffset, 1.0f, INAV_SURFACE_MAX_DISTANCE);
     }
     else {
         posControl.desiredState.surface = -1;
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
+#endif
 }
 
 /*-----------------------------------------------------------
@@ -1556,6 +1566,7 @@ void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t us
     navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
     navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
     navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
 #endif
 }
 
@@ -1605,7 +1616,7 @@ void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRat
     else {
         if (posControl.flags.isTerrainFollowEnabled) {
             if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
-                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SONAR_MAX_DISTANCE);
+                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SURFACE_MAX_DISTANCE);
             }
         }
         else {
@@ -1617,6 +1628,7 @@ void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRat
 
 #if defined(NAV_BLACKBOX)
     navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
 #endif
 }
 
@@ -2166,6 +2178,11 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
     navPidInit(&posControl.pids.vel[Z], (float)posControl.pidProfile->P8[PIDVEL] / 100.0f,
                                         (float)posControl.pidProfile->I8[PIDVEL] / 100.0f,
                                         (float)posControl.pidProfile->D8[PIDVEL] / 100.0f);
+
+    // Initialize surface tracking PID
+    navPidInit(&posControl.pids.surface, 1.0f,
+                                         0.25f,
+                                         0.0f);
 
     // Initialize fixed wing PID controllers
     navPidInit(&posControl.pids.fw_nav, (float)posControl.pidProfile->P8[PIDNAVR] / 100.0f,

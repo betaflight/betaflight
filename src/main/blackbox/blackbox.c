@@ -238,6 +238,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"navTgtPos",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtPos",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtPos",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navSurf",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navTgtSurf", 0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navDebug",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navDebug",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navDebug",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -329,6 +331,8 @@ typedef struct blackboxMainState_s {
     int16_t navTargetPos[XYZ_AXIS_COUNT];
     int16_t navHeading;
     int16_t navTargetHeading;
+    int16_t navSurface;
+    int16_t navTargetSurface;
     int16_t navDebug[4];
 #endif
 } blackboxMainState_t;
@@ -625,6 +629,9 @@ static void writeIntraframe(void)
         blackboxWriteSignedVB(blackboxCurrent->navTargetPos[x]);
     }
 
+    blackboxWriteSignedVB(blackboxCurrent->navSurface);
+    blackboxWriteSignedVB(blackboxCurrent->navTargetSurface);
+
     for (x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x]);
     }
@@ -769,6 +776,9 @@ static void writeInterframe(void)
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navTargetPos[x] - (blackboxHistory[1]->navTargetPos[x] + blackboxHistory[2]->navTargetPos[x]) / 2);
     }
+
+    blackboxWriteSignedVB(blackboxCurrent->navSurface - blackboxLast->navSurface);
+    blackboxWriteSignedVB(blackboxCurrent->navTargetSurface - blackboxLast->navTargetSurface);
 
     for (x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x] - blackboxLast->navDebug[x]);
@@ -1063,6 +1073,8 @@ static void loadMainState(void)
         blackboxCurrent->navTargetVel[i] = navDesiredVelocity[i];
         blackboxCurrent->navTargetPos[i] = navTargetPosition[i];
     }
+    blackboxCurrent->navSurface = navActualSurface;
+    blackboxCurrent->navTargetSurface = navTargetSurface;
     for (i = 0; i < 4; i++) {
         blackboxCurrent->navDebug[i] = navDebug[i];
     }
