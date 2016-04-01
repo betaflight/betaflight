@@ -28,6 +28,8 @@
 #include "config/parameter_group_ids.h"
 
 #include "config/config.h"
+#include "config/config_reset.h"
+
 #include "io/rc_curves.h"
 #include "io/rate_profile.h"
 
@@ -37,12 +39,13 @@ PG_REGISTER_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRate
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcRate8 = 90;
-    controlRateConfig->rcExpo8 = 65;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->tpa_breakpoint = 1500;
+void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
+    RESET_CONFIG(controlRateConfig_t, controlRateConfig,
+        .rcRate8 = 90,
+        .rcExpo8 = 65,
+        .thrMid8 = 50,
+        .tpa_breakpoint = 1500,
+    );
 }
 
 uint8_t getCurrentControlRateProfile(void)
