@@ -129,8 +129,8 @@ extern pidControllerFuncPtr pid_controller;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    currentProfile->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    currentProfile->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfig->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfig->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -695,7 +695,7 @@ void taskMainPidLoop(void)
     pid_controller(
         currentControlRateProfile,
         imuConfig.max_angle_inclination,
-        &currentProfile->accelerometerTrims,
+        &accelerometerConfig->accelerometerTrims,
         &rxConfig
     );
 
@@ -740,7 +740,7 @@ void taskMainPidLoopChecker(void) {
 
 void taskUpdateAccelerometer(void)
 {
-    imuUpdateAccelerometer(&currentProfile->accelerometerTrims);
+    imuUpdateAccelerometer(&accelerometerConfig->accelerometerTrims);
 }
 
 void taskHandleSerial(void)

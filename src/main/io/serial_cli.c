@@ -649,13 +649,13 @@ const clivalue_t valueTable[] = {
 
     { "acc_hardware",               VAR_UINT8  | MIGRATED_MASTER_VALUE, .config.minmax = { 0,  ACC_MAX } , PG_SENSOR_SELECTION_CONFIG, offsetof(sensorSelectionConfig_t, acc_hardware)},
 
-    { "acc_cut_hz",                 VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  200 } , PG_PROFILE, offsetof(profile_t, acc_cut_hz)},
-    { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 } , PG_PROFILE, offsetof(profile_t, accDeadband.xy)},
-    { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 } , PG_PROFILE, offsetof(profile_t, accDeadband.z)},
-    { "accz_lpf_cutoff",            VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 1,  20 } , PG_PROFILE, offsetof(profile_t, accz_lpf_cutoff)},
-    { "acc_unarmedcal",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_PROFILE, offsetof(profile_t, acc_unarmedcal)},
-    { "acc_trim_pitch",             VAR_INT16  | PROFILE_VALUE, .config.minmax = { -300,  300 } , PG_PROFILE, offsetof(profile_t, accelerometerTrims.values.pitch)},
-    { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, .config.minmax = { -300,  300 } , PG_PROFILE, offsetof(profile_t, accelerometerTrims.values.roll)},
+    { "acc_cut_hz",                 VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  200 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_cut_hz)},
+    { "accxy_deadband",             VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accDeadband.xy)},
+    { "accz_deadband",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accDeadband.z)},
+    { "accz_lpf_cutoff",            VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 1,  20 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accz_lpf_cutoff)},
+    { "acc_unarmedcal",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_unarmedcal)},
+    { "acc_trim_pitch",             VAR_INT16  | PROFILE_VALUE, .config.minmax = { -300,  300 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.pitch)},
+    { "acc_trim_roll",              VAR_INT16  | PROFILE_VALUE, .config.minmax = { -300,  300 } , PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.roll)},
 
 #ifdef BARO
     { "baro_tab_size",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } , PG_PROFILE, offsetof(profile_t, barometerConfig.baro_sample_count)},

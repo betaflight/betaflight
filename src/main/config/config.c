@@ -404,17 +404,15 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     resetControlRateConfig(&controlRateProfiles[0]);
 
-    // for (i = 0; i < CHECKBOXITEMS; i++)
-    //     cfg.activate[i] = 0;
-
-    resetRollAndPitchTrims(&currentProfile->accelerometerTrims);
-
     currentProfile->mag_declination = 0;
-    currentProfile->acc_cut_hz = 15;
-    currentProfile->accz_lpf_cutoff = 5.0f;
-    currentProfile->accDeadband.xy = 40;
-    currentProfile->accDeadband.z = 40;
-    currentProfile->acc_unarmedcal = 1;
+
+    resetRollAndPitchTrims(&accelerometerConfig->accelerometerTrims);
+
+    accelerometerConfig->acc_cut_hz = 15;
+    accelerometerConfig->accz_lpf_cutoff = 5.0f;
+    accelerometerConfig->accDeadband.xy = 40;
+    accelerometerConfig->accDeadband.z = 40;
+    accelerometerConfig->acc_unarmedcal = 1;
 
 #ifdef BARO
     resetBarometerConfig(&currentProfile->barometerConfig);
@@ -628,14 +626,14 @@ void activateConfig(void)
 
     imuRuntimeConfig.dcm_kp = imuConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = currentProfile->acc_cut_hz;
-    imuRuntimeConfig.acc_unarmedcal = currentProfile->acc_unarmedcal;
+    imuRuntimeConfig.acc_cut_hz = accelerometerConfig->acc_cut_hz;
+    imuRuntimeConfig.acc_unarmedcal = accelerometerConfig->acc_unarmedcal;
     imuRuntimeConfig.small_angle = imuConfig.small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,
-        &currentProfile->accDeadband,
-        currentProfile->accz_lpf_cutoff,
+        &accelerometerConfig->accDeadband,
+        accelerometerConfig->accz_lpf_cutoff,
         currentProfile->throttle_correction_angle
     );
 

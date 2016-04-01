@@ -41,11 +41,6 @@ typedef union {
 
 extern attitudeEulerAngles_t attitude;
 
-typedef struct accDeadband_s {
-    uint8_t xy;                 // set the acc deadband for xy-Axis
-    uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
-} accDeadband_t;
-
 typedef struct imuConfig_s {
     // IMU configuration
     uint16_t looptime;                      // imu loop time in us

@@ -20,9 +20,12 @@
 
 #include <platform.h>
 
+#include "build_config.h"
+
 #include "common/axis.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -39,6 +42,8 @@
 #include "config/feature.h"
 
 #include "sensors/acceleration.h"
+
+PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
 int32_t accADC[XYZ_AXIS_COUNT];
 

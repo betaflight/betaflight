@@ -23,18 +23,10 @@ typedef struct profile_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-
-    // sensor-related stuff
-    uint8_t acc_cut_hz;                     // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
-    float accz_lpf_cutoff;                  // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
-    accDeadband_t accDeadband;
-
 #ifdef BARO
     barometerConfig_t barometerConfig;
 #endif
 
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 

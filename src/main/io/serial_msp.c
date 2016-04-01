@@ -1026,8 +1026,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(currentProfile->accelerometerTrims.values.pitch);
-        serialize16(currentProfile->accelerometerTrims.values.roll);
+        serialize16(accelerometerConfig->accelerometerTrims.values.pitch);
+        serialize16(accelerometerConfig->accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1278,8 +1278,8 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_ACC_TRIM:
-        currentProfile->accelerometerTrims.values.pitch = read16();
-        currentProfile->accelerometerTrims.values.roll  = read16();
+        accelerometerConfig->accelerometerTrims.values.pitch = read16();
+        accelerometerConfig->accelerometerTrims.values.roll  = read16();
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig.auto_disarm_delay = read8();
