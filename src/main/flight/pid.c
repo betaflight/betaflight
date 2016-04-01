@@ -123,6 +123,7 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_RATE_I_MULTIPLIER    10.0f
 #define FP_PID_RATE_D_MULTIPLIER    4000.0f
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f
+#define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
 static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
 {
@@ -159,7 +160,7 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
                 else {
                     pidState[axis].axisLockAccum += (pidState[axis].rateTarget - pidState[axis].gyroRate) * dT;
                     pidState[axis].axisLockAccum = constrainf(pidState[axis].axisLockAccum, -45, 45);
-                    pidState[axis].rateTarget = pidState[axis].axisLockAccum * 2.5f;//stabSettings.settings.AxisLockKp;
+                    pidState[axis].rateTarget = pidState[axis].axisLockAccum * (pidProfile->P8[PIDMAG] / FP_PID_YAWHOLD_P_MULTIPLIER)
                 }
             }
         }
