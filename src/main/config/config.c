@@ -538,7 +538,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     // copy first profile into remaining profile
     PG_FOREACH_PROFILE(reg) {
         for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-            memcpy(reg->address + i * reg->size, reg->address, reg->size);
+            memcpy(reg->address + i * pgSize(reg), reg->address, pgSize(reg));
         }
     }
 
