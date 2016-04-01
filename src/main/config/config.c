@@ -105,53 +105,56 @@ PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->pidController = 1;
+    static const pidProfile_t pidProfile_Reset = {
+        .pidController = 1,
 
-    pidProfile->P8[PIDROLL] = 40;
-    pidProfile->I8[PIDROLL] = 30;
-    pidProfile->D8[PIDROLL] = 23;
-    pidProfile->P8[PIDPITCH] = 40;
-    pidProfile->I8[PIDPITCH] = 30;
-    pidProfile->D8[PIDPITCH] = 23;
-    pidProfile->P8[PIDYAW] = 85;
-    pidProfile->I8[PIDYAW] = 45;
-    pidProfile->D8[PIDYAW] = 0;
-    pidProfile->P8[PIDALT] = 50;
-    pidProfile->I8[PIDALT] = 0;
-    pidProfile->D8[PIDALT] = 0;
-    pidProfile->P8[PIDPOS] = 15; // POSHOLD_P * 100;
-    pidProfile->I8[PIDPOS] = 0; // POSHOLD_I * 100;
-    pidProfile->D8[PIDPOS] = 0;
-    pidProfile->P8[PIDPOSR] = 34; // POSHOLD_RATE_P * 10;
-    pidProfile->I8[PIDPOSR] = 14; // POSHOLD_RATE_I * 100;
-    pidProfile->D8[PIDPOSR] = 53; // POSHOLD_RATE_D * 1000;
-    pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
-    pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
-    pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 20;
-    pidProfile->I8[PIDLEVEL] = 10;
-    pidProfile->D8[PIDLEVEL] = 100;
-    pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 120;
-    pidProfile->I8[PIDVEL] = 45;
-    pidProfile->D8[PIDVEL] = 1;
+        .P8[PIDROLL] = 40,
+        .I8[PIDROLL] = 30,
+        .D8[PIDROLL] = 23,
+        .P8[PIDPITCH] = 40,
+        .I8[PIDPITCH] = 30,
+        .D8[PIDPITCH] = 23,
+        .P8[PIDYAW] = 85,
+        .I8[PIDYAW] = 45,
+        .D8[PIDYAW] = 0,
+        .P8[PIDALT] = 50,
+        .I8[PIDALT] = 0,
+        .D8[PIDALT] = 0,
+        .P8[PIDPOS] = 15, // POSHOLD_P * 100
+        .I8[PIDPOS] = 0, // POSHOLD_I * 100
+        .D8[PIDPOS] = 0,
+        .P8[PIDPOSR] = 34, // POSHOLD_RATE_P * 10
+        .I8[PIDPOSR] = 14, // POSHOLD_RATE_I * 100
+        .D8[PIDPOSR] = 53, // POSHOLD_RATE_D * 1000
+        .P8[PIDNAVR] = 25, // NAV_P * 10
+        .I8[PIDNAVR] = 33, // NAV_I * 100
+        .D8[PIDNAVR] = 83, // NAV_D * 1000
+        .P8[PIDLEVEL] = 20,
+        .I8[PIDLEVEL] = 10,
+        .D8[PIDLEVEL] = 100,
+        .P8[PIDMAG] = 40,
+        .P8[PIDVEL] = 120,
+        .I8[PIDVEL] = 45,
+        .D8[PIDVEL] = 1,
 
-    pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->dterm_cut_hz = 0;
-    pidProfile->deltaMethod = 1;
+        .yaw_p_limit = YAW_P_LIMIT_MAX,
+        .dterm_cut_hz = 0,
+        .deltaMethod = 1,
 
-    pidProfile->P_f[FD_ROLL] = 1.4f;     // new PID with preliminary defaults test carefully
-    pidProfile->I_f[FD_ROLL] = 0.4f;
-    pidProfile->D_f[FD_ROLL] = 0.03f;
-    pidProfile->P_f[FD_PITCH] = 1.4f;
-    pidProfile->I_f[FD_PITCH] = 0.4f;
-    pidProfile->D_f[FD_PITCH] = 0.03f;
-    pidProfile->P_f[FD_YAW] = 3.5f;
-    pidProfile->I_f[FD_YAW] = 0.4f;
-    pidProfile->D_f[FD_YAW] = 0.01f;
-    pidProfile->A_level = 5.0f;
-    pidProfile->H_level = 3.0f;
-    pidProfile->H_sensitivity = 75;
+        .P_f[FD_ROLL] = 1.4f,     // new PID with preliminary defaults test carefully
+        .I_f[FD_ROLL] = 0.4f,
+        .D_f[FD_ROLL] = 0.03f,
+        .P_f[FD_PITCH] = 1.4f,
+        .I_f[FD_PITCH] = 0.4f,
+        .D_f[FD_PITCH] = 0.03f,
+        .P_f[FD_YAW] = 3.5f,
+        .I_f[FD_YAW] = 0.4f,
+        .D_f[FD_YAW] = 0.01f,
+        .A_level = 5.0f,
+        .H_level = 3.0f,
+        .H_sensitivity = 75,
+    };
+    memcpy(pidProfile, &pidProfile_Reset, sizeof(*pidProfile));
 }
 
 #ifdef GTUNE
