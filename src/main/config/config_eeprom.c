@@ -102,7 +102,7 @@ uint8_t pgMatcherForConfigRecord(const pgRegistry_t *candidate, const void *crit
 {
     const configRecord_t *record = (const configRecord_t *)criteria;
 
-    return (candidate->pgn == record->pgn && candidate->version == record->version);
+    return (pgN(candidate) == record->pgn && pgVersion(candidate) == record->version);
 }
 
 // Load a PG into RAM, upgrading and downgrading as needed.
@@ -114,22 +114,17 @@ static bool loadPG(const configRecord_t *record)
         return false;
     }
 
-    // Clear the in-memory copy.  Sets any ungraded fields to zero.
-
+    uint8_t *ptr;
+    const uint16_t regSize = pgSize(reg);
     if ((record->flags & CR_CLASSIFICATION_MASK) == CR_CLASSICATION_SYSTEM) {
-        memset(reg->address, 0, reg->size);
-        memcpy(reg->address, record->pg, MIN(reg->size, record->size - sizeof(*record)));
-        return true;
+        ptr = reg->address;
+    } else {
+        const uint8_t profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
+        ptr = reg->address + (profileIndex * regSize);
     }
-
-    uint8_t profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
-
-    uint8_t *ptr = reg->address + (profileIndex * reg->size);
-
-    memset(ptr, 0, reg->size);
-    memcpy(ptr, record->pg, MIN(reg->size, record->size - sizeof(*record)));
-
-
+    // Clear the in-memory copy.  Sets any ungraded fields to zero.
+    memset(ptr, 0, regSize);
+    memcpy(ptr, record->pg, MIN(regSize, record->size - sizeof(*record)));
     return true;
 }
 
@@ -195,21 +190,21 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
     chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
     PG_FOREACH(reg) {
+        const uint16_t regSize = pgSize(reg);
         configRecord_t record = {
-            .size = sizeof(configRecord_t) + reg->size,
-            .pgn = reg->pgn,
-            .version = reg->version,
+            .size = sizeof(configRecord_t) + regSize,
+            .pgn = pgN(reg),
+            .version = pgVersion(reg),
             .flags = 0
         };
 
-        if ((reg->flags & PGRF_CLASSIFICATON_BIT) == PGC_SYSTEM) {
-
+        if (pgIsSystem(reg)) {
             // write the only instance
-	        record.flags |= CR_CLASSICATION_SYSTEM;
+            record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
             chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
-            config_streamer_write(&streamer, reg->address, reg->size);
-            chk = updateChecksum(chk, reg->address, reg->size);
+            config_streamer_write(&streamer, reg->address, regSize);
+            chk = updateChecksum(chk, reg->address, regSize);
         } else {
             // write one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
@@ -218,9 +213,9 @@ static bool writeSettingsToEEPROM(void)
                 record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
                 config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
                 chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
-                const uint8_t *address = reg->address + (reg->size * profileIndex);
-                config_streamer_write(&streamer, address, reg->size);
-                chk = updateChecksum(chk, address, reg->size);
+                const uint8_t *address = reg->address + (regSize * profileIndex);
+                config_streamer_write(&streamer, address, regSize);
+                chk = updateChecksum(chk, address, regSize);
             }
         }
     }

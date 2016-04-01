@@ -610,7 +610,7 @@ uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria)
 
     for (index = 0; index < ARRAYLEN(pgToMSPMap); index++) {
         const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
-        if (entry->pgn == candidate->pgn && entry->mspIdForSet == mspIdForSet) {
+        if (entry->pgn == pgN(candidate) && entry->mspIdForSet == mspIdForSet) {
             return true;
         }
     }
@@ -624,7 +624,7 @@ uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria)
 
     for (index = 0; index < ARRAYLEN(pgToMSPMap); index++) {
         const pgToMSPMapEntry_t *entry = &pgToMSPMap[index];
-        if (entry->pgn == candidate->pgn && entry->mspId == mspId) {
+        if (entry->pgn == pgN(candidate) && entry->mspId == mspId) {
             return true;
         }
     }
@@ -642,7 +642,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)&cmdMSP);
 
     if (reg != NULL) {
-        s_struct(reg->address, reg->size);
+        s_struct(reg->address, pgSize(reg));
         return true;
     }
 
