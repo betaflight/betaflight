@@ -42,6 +42,15 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Determine the OS and set up the parameter group linker flags accordingly
+UNAME := $(shell uname -s)
+ifeq ($(UNAME), Darwin)
+PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
+else
+PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+endif
+
+#
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -667,7 +676,7 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 	$(OBJECT_DIR)/serial_msp_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
 $(OBJECT_DIR)/scheduler_tasks.o : \
@@ -744,7 +753,8 @@ $(OBJECT_DIR)/config_unittest : \
 	$(OBJECT_DIR)/config_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld $^ -o $(OBJECT_DIR)/$@
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 $(OBJECT_DIR)/config/config_eeprom.o : \
 	$(USER_DIR)/config/config_eeprom.c \
@@ -798,7 +808,7 @@ $(OBJECT_DIR)/config_eeprom_unittest : \
 	$(OBJECT_DIR)/config_eeprom_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
 $(OBJECT_DIR)/config/config_streamer.o : \
