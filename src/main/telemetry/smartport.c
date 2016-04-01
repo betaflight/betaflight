@@ -128,7 +128,6 @@ const uint16_t frSkyDataIdTable[] = {
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
 
@@ -192,9 +191,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
 }
 
-void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initSmartPortTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
     smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }
@@ -218,7 +216,7 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions = SERIAL_BIDIR;
 
-    if (telemetryConfig->telemetry_inversion) {
+    if (telemetryConfig.telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
 

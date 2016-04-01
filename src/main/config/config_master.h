@@ -20,10 +20,6 @@
 // System-wide
 typedef struct master_t {
 
-#ifdef TELEMETRY
-    telemetryConfig_t telemetryConfig;
-#endif
-
 } master_t;
 
 PG_DECLARE(master_t, masterConfig);

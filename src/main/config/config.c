@@ -66,6 +66,7 @@
 #include "blackbox/blackbox.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/hott.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -350,7 +351,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetBatteryConfig(&batteryConfig);
 
 #ifdef TELEMETRY
-    masterConfig.telemetryConfig.hottAlarmSoundInterval = 5;
+    hottTelemetryConfig.hottAlarmSoundInterval = 5;
 #endif
 
     rxConfig.sbus_inversion = 1;
@@ -612,10 +613,6 @@ void activateConfig(void)
         currentProfile->modeActivationConditions
     );
 
-#ifdef TELEMETRY
-    telemetryUseConfig(&masterConfig.telemetryConfig);
-#endif
-
     pidSetController(pidProfile->pidController);
 
 #ifdef GPS
@@ -709,7 +706,7 @@ void validateAndFixConfig(void)
 #ifdef STM32F303xC
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
 #ifdef TELEMETRY
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
+    telemetryConfig.telemetry_inversion = 1;
 #endif
 #endif
 

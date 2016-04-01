@@ -57,6 +57,7 @@ extern "C" {
     #include "io/transponder_ir.h"
 
     #include "telemetry/telemetry.h"
+    #include "telemetry/frsky.h"
 
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
@@ -111,6 +112,8 @@ extern "C" {
     PG_REGISTER_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
     PG_REGISTER_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
 
     PG_REGISTER_PROFILE(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
