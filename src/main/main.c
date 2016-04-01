@@ -116,7 +116,7 @@ serialPort_t *loopbackPort;
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
-void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
+void navigationInit(pidProfile_t *pidProfile);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
@@ -512,7 +512,6 @@ void init(void)
     if (feature(FEATURE_GPS)) {
         gpsInit();
         navigationInit(
-            &currentProfile->gpsProfile,
             pidProfile
         );
     }

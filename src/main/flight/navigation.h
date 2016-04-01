@@ -36,6 +36,8 @@ typedef struct gpsProfile_s {
     uint16_t ap_mode;                       // Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks, creating a deadspan for GPS
 } gpsProfile_t;
 
+PG_DECLARE_PROFILE(gpsProfile_t, gpsProfile);
+
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 
 extern int32_t GPS_home[2];
@@ -49,7 +51,6 @@ extern navigationMode_e nav_mode;          // Navigation mode
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
-void gpsUseProfile(gpsProfile_t *gpsProfileToUse);
 void gpsUsePIDs(pidProfile_t *pidProfile);
 void updateGpsStateForHomeAndHoldMode(void);
 void updateGpsWaypointsAndMode(void);

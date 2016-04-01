@@ -452,7 +452,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
 #ifdef GPS
-    resetGpsProfile(&currentProfile->gpsProfile);
+    resetGpsProfile(gpsProfile);
 #endif
 
 #ifdef LED_STRIP
@@ -614,7 +614,6 @@ void activateConfig(void)
     pidSetController(pidProfile->pidController);
 
 #ifdef GPS
-    gpsUseProfile(&currentProfile->gpsProfile);
     gpsUsePIDs(pidProfile);
 #endif
 

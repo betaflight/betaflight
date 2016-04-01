@@ -23,12 +23,15 @@
 #include <math.h>
 
 #include <platform.h>
+
+#include "build_config.h"
 #include "debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -77,17 +80,11 @@ static int16_t nav[2];
 static int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
-static gpsProfile_t *gpsProfile;
-
-void gpsUseProfile(gpsProfile_t *gpsProfileToUse)
-{
-    gpsProfile = gpsProfileToUse;
-}
+PG_REGISTER_PROFILE(gpsProfile_t, gpsProfile, PG_NAVIGATION_CONFIG, 0);
 
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
-void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile)
+void navigationInit(pidProfile_t *pidProfile)
 {
-    gpsUseProfile(initialGpsProfile);
     gpsUsePIDs(pidProfile);
 }
 

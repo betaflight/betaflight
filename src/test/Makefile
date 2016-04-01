@@ -737,25 +737,6 @@ $(OBJECT_DIR)/config/config.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config.c -o $@
 
-$(OBJECT_DIR)/config_unittest.o : \
-	$(TEST_DIR)/config_unittest.cc \
-	$(USER_DIR)/config/config.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_unittest.cc -o $@
-
-$(OBJECT_DIR)/config_unittest : \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/config/feature.o \
-	$(OBJECT_DIR)/config/profile.o \
-	$(OBJECT_DIR)/config/config.o \
-	$(OBJECT_DIR)/config_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
 $(OBJECT_DIR)/config/config_eeprom.o : \
 	$(USER_DIR)/config/config_eeprom.c \
 	$(USER_DIR)/config/config_eeprom.h \

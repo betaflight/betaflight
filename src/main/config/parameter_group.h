@@ -105,9 +105,17 @@ extern const pgRegistry_t __pg_registry_end[];
     /**/
 
 
+#ifdef UNIT_TEST
+#define PG_ASSIGN(_type, _name)                                         \
+    _type *_name = &_name##Storage[0];
+#else
+#define PG_ASSIGN(_type, _name)                                         \
+    _type *_name;
+#endif
+
 #define PG_REGISTER_PROFILE(_type, _name, _pgn, _version)               \
     STATIC_UNIT_TESTED _type _name##Storage[MAX_PROFILE_COUNT];         \
-    _type *_name;                                                       \
+    PG_ASSIGN(_type, _name)                                             \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
         .address = (uint8_t*)&_name##Storage,                           \
         .ptr = (uint8_t **)&_name,                                      \
@@ -117,7 +125,6 @@ extern const pgRegistry_t __pg_registry_end[];
         .flags = PGC_PROFILE,                                           \
     }                                                                   \
     /**/
-
 
 typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
 

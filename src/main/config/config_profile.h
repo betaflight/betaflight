@@ -50,9 +50,6 @@ typedef struct profile_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
 #endif
 
-#ifdef GPS
-    gpsProfile_t gpsProfile;
-#endif
 } profile_t;
 
 extern profile_t *currentProfile;
