@@ -44,9 +44,9 @@ const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria)
 
 void pgLoad(const pgRegistry_t* reg, const void *from, int size)
 {
-    memset(reg->base, 0, reg->size);
+    memset(reg->address, 0, reg->size);
     int take = MIN(size, reg->size);
-    memcpy(reg->base, from, take);
+    memcpy(reg->address, from, take);
 }
 
 void pgResetAll(uint8_t profileCount)
@@ -56,13 +56,13 @@ void pgResetAll(uint8_t profileCount)
         // FIXME this assumes that all defaults should be 0, but this is not the case.
 
         if ((reg->flags & PGRF_CLASSIFICATON_BIT) == PGC_SYSTEM) {
-            memset(reg->base, 0, reg->size);
+            memset(reg->address, 0, reg->size);
         } else {
 
             // reset one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < profileCount; profileIndex++) {
 
-                uint8_t *base = reg->base + (reg->size * profileIndex);
+                uint8_t *base = reg->address + (reg->size * profileIndex);
 
                 memset(base, 0, reg->size);
             }
@@ -77,7 +77,7 @@ void pgActivateProfile(uint8_t profileIndexToActivate)
             continue;
         }
 
-        uint8_t *ptr = reg->base + (profileIndexToActivate * reg->size);
+        uint8_t *ptr = reg->address + (profileIndexToActivate * reg->size);
         *(reg->ptr) = ptr;
     }
 }

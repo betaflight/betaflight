@@ -32,19 +32,12 @@ typedef enum {
 } pgClassification_e;
 
 typedef struct pgRegistry_s {
-    // Base of the group in RAM.
-    uint8_t *base;
-    // The pointer to update after loading the record into ram.
-    uint8_t **ptr;
-    // Size of the group in RAM.
-    uint16_t size;
-    // The parameter group number.
-    pgn_t pgn;
-    // The in-memory format number.  Bump when making incompatible
-    // changes to the PG.
-    uint8_t format;
-    // see pgRegistryFlags_e
-    uint8_t flags;
+    uint8_t *address;   // Address of the group in RAM.
+    uint8_t **ptr;      // The pointer to update after loading the record into ram.
+    uint16_t size;      // Size of the group in RAM.
+    pgn_t pgn;          // The parameter group number.
+    uint8_t version;    // The in-memory version number.  Bump when making incompatible changes to the PG.
+    uint8_t flags;      // see pgRegistryFlags_e
 } pgRegistry_t;
 
 
@@ -86,41 +79,41 @@ extern const pgRegistry_t __pg_registry_end[];
     /**/
 
 // Register config
-#define PG_REGISTER(_type, _name, _pgn, _format)                        \
+#define PG_REGISTER(_type, _name, _pgn, _version)                       \
     _type _name;                                                        \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
-        .base = (uint8_t*)&_name,                                       \
+        .address = (uint8_t*)&_name,                                    \
         .ptr = 0,                                                       \
         .size = sizeof(_name),                                          \
         .pgn = _pgn,                                                    \
-        .format = _format,                                              \
+        .version = _version,                                            \
         .flags = PGC_SYSTEM,                                            \
     }                                                                   \
     /**/
 
 // Register config
-#define PG_REGISTER_ARR(_type, _size, _name, _pgn, _format)             \
+#define PG_REGISTER_ARR(_type, _size, _name, _pgn, _version)            \
     _type _name[_size];                                                 \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
-        .base = (uint8_t*)&_name,                                       \
+        .address = (uint8_t*)&_name,                                    \
         .ptr = 0,                                                       \
         .size = sizeof(_name),                                          \
         .pgn = _pgn,                                                    \
-        .format = _format,                                              \
+        .version = _version,                                            \
         .flags = PGC_SYSTEM,                                            \
     }                                                                   \
     /**/
 
 
-#define PG_REGISTER_PROFILE(_type, _name, _pgn, _format)                \
+#define PG_REGISTER_PROFILE(_type, _name, _pgn, _version)               \
     STATIC_UNIT_TESTED _type _name##Storage[MAX_PROFILE_COUNT];         \
     _type *_name;                                                       \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
-        .base = (uint8_t*)&_name##Storage,                              \
+        .address = (uint8_t*)&_name##Storage,                           \
         .ptr = (uint8_t **)&_name,                                      \
         .size = sizeof(_type),                                          \
         .pgn = _pgn,                                                    \
-        .format = _format,                                              \
+        .version = _version,                                            \
         .flags = PGC_PROFILE,                                           \
     }                                                                   \
     /**/
