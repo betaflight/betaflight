@@ -197,27 +197,43 @@ static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
 }
 
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
-static bool detectGPSGlitch(t_fp_vector * newLocalPos, float dT)
+static bool detectGPSGlitch(uint32_t currentTime)
 {
-    t_fp_vector predictedGpsPosition;
-    float gpsDistance;
+    static uint32_t previousTime = 0;
+    static t_fp_vector lastKnownGoodPosition;
+    static t_fp_vector lastKnownGoodVelocity;
 
-    /* We predict new position based on previous GPS velocity and position */
-    predictedGpsPosition.V.X = posEstimator.gps.pos.V.X + posEstimator.gps.vel.V.X * dT;
-    predictedGpsPosition.V.Y = posEstimator.gps.pos.V.Y + posEstimator.gps.vel.V.Y * dT;
+    bool isGlitching = false;
 
-    /* Calculate position error */
-    gpsDistance = sqrtf(sq(predictedGpsPosition.V.X - newLocalPos->V.X) + sq(predictedGpsPosition.V.Y - newLocalPos->V.Y));
+    if (previousTime == 0) {
+        isGlitching = false;
+    }
+    else {
+        t_fp_vector predictedGpsPosition;
+        float gpsDistance;
+        float dT = US2S(currentTime - previousTime);
 
-    /* Condition 1: New pos is within predefined radius of predicted pos */
-    if (gpsDistance > INAV_GPS_GLITCH_RADIUS)
-        return true;
+        /* We predict new position based on previous GPS velocity and position */
+        predictedGpsPosition.V.X = lastKnownGoodPosition.V.X + lastKnownGoodVelocity.V.X * dT;
+        predictedGpsPosition.V.Y = lastKnownGoodPosition.V.Y + lastKnownGoodVelocity.V.Y * dT;
 
-    /* Condition 2: New position must be reachable within INAV_GPS_GLITCH_ACCEL * dt * dt from previous position */
-    if (gpsDistance > (0.5f * INAV_GPS_GLITCH_ACCEL * dT * dT))
-        return true;
+        /* New pos is within predefined radius of predicted pos, radius is expanded exponentially */
+        gpsDistance = sqrtf(sq(predictedGpsPosition.V.X - lastKnownGoodPosition.V.X) + sq(predictedGpsPosition.V.Y - lastKnownGoodPosition.V.Y));
+        if (gpsDistance <= (INAV_GPS_GLITCH_RADIUS + 0.5f * INAV_GPS_GLITCH_ACCEL * dT * dT)) {
+            isGlitching = false;
+        }
+        else {
+            isGlitching = true;
+        }
+    }
+    
+    if (!isGlitching) {
+        previousTime = currentTime;
+        lastKnownGoodPosition = posEstimator.gps.pos;
+        lastKnownGoodVelocity = posEstimator.gps.vel;
+    }
 
-    return false;
+    return isGlitching;
 }
 #endif
 
@@ -263,28 +279,11 @@ void onNewGPSData(void)
         // FIXME: use HDOP here
         if ((posControl.gpsOrigin.valid) || (gpsSol.numSat >= posControl.navConfig->inav.gps_min_sats)) {
             /* Convert LLH position to local coordinates */
-            t_fp_vector newLocalPos;
-            geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, &newLocalPos, GEO_ALT_ABSOLUTE);
+            geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, & posEstimator.gps.pos, GEO_ALT_ABSOLUTE);
 
             /* If not the first update - calculate velocities */
             if (!isFirstGPSUpdate) {
                 float dT = US2S(getGPSDeltaTimeFilter(currentTime - lastGPSNewDataTime));
-
-#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
-                /* GPS glitch protection */
-                if (detectGPSGlitch(&newLocalPos, dT)) {
-                    posEstimator.gps.glitchRecovery = false;
-                    posEstimator.gps.glitchDetected = true;
-                }
-                else {
-                    /* Store previous glitch flag in glitchRecovery to indicate a valid reading after a glitch */
-                    posEstimator.gps.glitchRecovery = posEstimator.gps.glitchDetected;
-                    posEstimator.gps.glitchDetected = false;
-                }
-#endif
-
-                /* Even if GPS glitch is detected we continue to update GPS position and velocity to always have a previous reading */
-                posEstimator.gps.pos = newLocalPos;
 
                 /* Use VELNED provided by GPS if available, calculate from coordinates otherwise */
                 float gpsScaleLonDown = constrainf(cos_approx((ABS(gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
@@ -303,6 +302,19 @@ void onNewGPSData(void)
                 else {
                     posEstimator.gps.vel.V.Z = (posEstimator.gps.vel.V.Z + (gpsSol.llh.alt - previousAlt) / dT) / 2.0f;
                 }
+
+#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+                /* GPS glitch protection. We have local coordinates and local velocity for current GPS update. Check if they are sane */
+                if (detectGPSGlitch(currentTime)) {
+                    posEstimator.gps.glitchRecovery = false;
+                    posEstimator.gps.glitchDetected = true;
+                }
+                else {
+                    /* Store previous glitch flag in glitchRecovery to indicate a valid reading after a glitch */
+                    posEstimator.gps.glitchRecovery = posEstimator.gps.glitchDetected;
+                    posEstimator.gps.glitchDetected = false;
+                }
+#endif
 
                 /* FIXME: use HDOP/VDOP */
                 posEstimator.gps.eph = INAV_GPS_EPH;
