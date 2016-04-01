@@ -17,6 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(
-    int16_t magDeclinationFromConfig
-);
+bool sensorsAutodetect(void);

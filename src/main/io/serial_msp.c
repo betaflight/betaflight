@@ -955,7 +955,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(rxConfig.rssi_channel);
         serialize8(0);
 
-        serialize16(currentProfile->mag_declination / 10);
+        serialize16(compassConfig->mag_declination / 10);
 
         serialize8(batteryConfig.vbatscale);
         serialize8(batteryConfig.vbatmincellvoltage);
@@ -1404,7 +1404,7 @@ static bool processInCommand(void)
         rxConfig.rssi_channel = read8();
         read8();
 
-        currentProfile->mag_declination = read16() * 10;
+        compassConfig->mag_declination = read16() * 10;
 
         batteryConfig.vbatscale = read8();           // actual vbatscale as intended
         batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI

@@ -73,8 +73,6 @@
 #include "hardware_revision.h"
 #endif
 
-extern float magneticDeclination;
-
 extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
@@ -663,11 +661,8 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 #endif
 }
 
-bool sensorsAutodetect(
-        int16_t magDeclinationFromConfig) {
-
-    int16_t deg, min;
-
+bool sensorsAutodetect(void)
+{
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -697,17 +692,6 @@ bool sensorsAutodetect(
 #endif
 
     reconfigureAlignment(&sensorAlignmentConfig);
-
-    // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (sensors(SENSOR_MAG)) {
-        // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
-        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
-    } else {
-        magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
-    }
 
     return true;
 }

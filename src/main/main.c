@@ -475,10 +475,7 @@ void init(void)
 
     gyroUpdateSampleRate(imuConfig.looptime, gyroConfig.gyro_lpf, imuConfig.gyroSync, imuConfig.gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
 
-    if (!sensorsAutodetect(
-            currentProfile->mag_declination)
-    ) {
-
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }

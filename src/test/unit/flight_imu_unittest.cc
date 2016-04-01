@@ -64,6 +64,7 @@ extern "C" {
     rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
 
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+    PG_REGISTER_PROFILE(compassConfig_t, compassConfig, PG_COMPASS_CONFIGURATION, 0);
 }
 
 #include "unittest_macros.h"
@@ -173,6 +174,8 @@ int32_t gyroADC[XYZ_AXIS_COUNT];
 int16_t GPS_speed;
 int16_t GPS_ground_course;
 int16_t GPS_numSat;
+
+float magneticDeclination = 0.0f;
 
 escAndServoConfig_t escAndServoConfig;
 

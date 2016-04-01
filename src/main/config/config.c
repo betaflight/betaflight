@@ -381,7 +381,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     resetControlRateConfig(&controlRateProfiles[0]);
 
-    currentProfile->mag_declination = 0;
+    compassConfig->mag_declination = 0;
 
     resetRollAndPitchTrims(&accelerometerConfig->accelerometerTrims);
 
@@ -593,6 +593,9 @@ void activateConfig(void)
         currentProfile->servoConf
 #endif
     );
+
+    recalculateMagneticDeclination();
+
 
     imuRuntimeConfig.dcm_kp = imuConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig.dcm_ki / 10000.0f;

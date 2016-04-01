@@ -70,7 +70,6 @@ float throttleAngleScale;
 float fc_acc;
 float smallAngleCosZ = 0;
 
-float magneticDeclination = 0.0f;       // calculated at startup from config
 static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
