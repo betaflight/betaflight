@@ -25,21 +25,25 @@ typedef enum {
     PGRF_CLASSIFICATON_BIT = (1 << 0),
 } pgRegistryFlags_e;
 
-// parameter group classification
 typedef enum {
-    PGC_SYSTEM = 0,
-    PGC_PROFILE = 1,
-} pgClassification_e;
+    PGR_PGN_MASK =          0x0fff,
+    PGR_PGN_VERSION_MASK =  0xf000,
+    PGR_SIZE_MASK =         0x0fff,
+    PGR_SIZE_SYSTEM_FLAG =  0x0000, // documentary
+    PGR_SIZE_PROFILE_FLAG = 0x8000, // start using flags from the top bit down
+} pgRegistryInternal_e;
 
 typedef struct pgRegistry_s {
+    pgn_t pgn;          // The parameter group number, the top 4 bits are reserved for version
+    uint16_t size;      // Size of the group in RAM, the top 4 bits are reserved for flags
     uint8_t *address;   // Address of the group in RAM.
     uint8_t **ptr;      // The pointer to update after loading the record into ram.
-    uint16_t size;      // Size of the group in RAM.
-    pgn_t pgn;          // The parameter group number.
-    uint8_t version;    // The in-memory version number.  Bump when making incompatible changes to the PG.
-    uint8_t flags;      // see pgRegistryFlags_e
 } pgRegistry_t;
 
+static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
+static inline uint8_t pgVersion(const pgRegistry_t* reg) {return reg->pgn >> 12;}
+static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
+static inline uint16_t pgIsSystem(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == 0;}
 
 #define PG_PACKED __attribute__((packed))
 
@@ -57,11 +61,11 @@ extern const pgRegistry_t __pg_registry_end[];
 
 // Helper to iterate over the PG register.  Cheaper than a visitor style callback.
 #define PG_FOREACH(_name) \
-    for (const pgRegistry_t *(_name) = __pg_registry_start; (_name) < __pg_registry_end; (_name)++)
+    for (const pgRegistry_t *(_name) = __pg_registry_start; (_name) < __pg_registry_end; _name++)
 
 #define PG_FOREACH_PROFILE(_name)                                    \
     PG_FOREACH(_name)                                                \
-        if(((_name)->flags & PGRF_CLASSIFICATON_BIT) != PGC_PROFILE) \
+        if(pgIsSystem(_name)) \
             continue;                                                \
         else                                                         \
             /**/
@@ -82,12 +86,10 @@ extern const pgRegistry_t __pg_registry_end[];
 #define PG_REGISTER(_type, _name, _pgn, _version)                       \
     _type _name;                                                        \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
+        .size = sizeof(_name) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name,                                    \
         .ptr = 0,                                                       \
-        .size = sizeof(_name),                                          \
-        .pgn = _pgn,                                                    \
-        .version = _version,                                            \
-        .flags = PGC_SYSTEM,                                            \
     }                                                                   \
     /**/
 
@@ -95,12 +97,10 @@ extern const pgRegistry_t __pg_registry_end[];
 #define PG_REGISTER_ARR(_type, _size, _name, _pgn, _version)            \
     _type _name[_size];                                                 \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
+        .size = sizeof(_name) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name,                                    \
         .ptr = 0,                                                       \
-        .size = sizeof(_name),                                          \
-        .pgn = _pgn,                                                    \
-        .version = _version,                                            \
-        .flags = PGC_SYSTEM,                                            \
     }                                                                   \
     /**/
 
@@ -117,12 +117,10 @@ extern const pgRegistry_t __pg_registry_end[];
     STATIC_UNIT_TESTED _type _name##Storage[MAX_PROFILE_COUNT];         \
     PG_ASSIGN(_type, _name)                                             \
     static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
+        .size = sizeof(_type) | PGR_SIZE_PROFILE_FLAG,                  \
         .address = (uint8_t*)&_name##Storage,                           \
         .ptr = (uint8_t **)&_name,                                      \
-        .size = sizeof(_type),                                          \
-        .pgn = _pgn,                                                    \
-        .version = _version,                                            \
-        .flags = PGC_PROFILE,                                           \
     }                                                                   \
     /**/
 
