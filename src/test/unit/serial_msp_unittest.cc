@@ -89,8 +89,8 @@ extern "C" {
     extern bufWriter_t *writer;
     extern mspPort_t mspPorts[];
 
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_BATTERY_CONFIG, 0);
-    PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);

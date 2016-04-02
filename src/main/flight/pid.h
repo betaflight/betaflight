@@ -72,7 +72,7 @@ typedef struct pidProfile_s {
     uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
 } pidProfile_t;
 
-extern pidProfile_t *pidProfile;
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 
 
 extern int16_t axisPID[FD_INDEX_COUNT];

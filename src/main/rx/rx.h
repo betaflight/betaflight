@@ -136,7 +136,8 @@ typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver
 } rxRuntimeConfig_t;
 
-PG_DECLARE(rxRuntimeConfig_t,rxRuntimeConfig);
+// TODO - easily confused with config
+extern rxRuntimeConfig_t rxRuntimeConfig;
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 

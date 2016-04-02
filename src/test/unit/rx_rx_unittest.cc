@@ -24,6 +24,7 @@ extern "C" {
     #include <platform.h>
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "rx/rx.h"
     #include "io/rc_controls.h"
@@ -37,7 +38,7 @@ extern "C" {
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
 
-    rxConfig_t rxConfig;
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

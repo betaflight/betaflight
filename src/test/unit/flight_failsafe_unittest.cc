@@ -42,8 +42,7 @@ extern "C" {
     #include "rx/rx.h"
     #include "flight/failsafe.h"
 
-    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
-    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -72,8 +71,8 @@ void resetCallCounters(void) {
 #define PERIOD_OF_10_SCONDS 10000
 #define DE_ACTIVATE_ALL_BOXES 0
 
-rxConfig_t rxConfig;
-failsafeConfig_t failsafeConfig;
+PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 uint32_t sysTickUptime;
 
 void configureFailsafe(void)

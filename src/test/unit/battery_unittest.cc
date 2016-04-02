@@ -22,11 +22,14 @@
 
 extern "C" {
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "io/rc_controls.h"
 
     #include "sensors/battery.h"
     #include "io/beeper.h"
+
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

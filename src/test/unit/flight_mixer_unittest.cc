@@ -24,12 +24,14 @@ extern "C" {
     #include "debug.h"
 
     #include <platform.h>
+    #include "build_config.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/filter.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
@@ -56,17 +58,13 @@ extern "C" {
     void mixerInit(motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
     void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 
-    gimbalConfig_t testGimbalConfig;
-    gimbalConfig_t *gimbalConfig = &testGimbalConfig;
+    PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 
-    motorAndServoConfig_t motorAndServoConfig;
-    rxConfig_t rxConfig;
-
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    servoMixer_t customServoMixer[MAX_SERVO_RULES];
-
-    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
-    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
+    PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
+    PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
