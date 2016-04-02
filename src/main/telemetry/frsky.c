@@ -197,12 +197,12 @@ static void sendThrottleOrBatterySizeAsRpm(uint16_t deadband3d_throttle)
     uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
     sendDataHead(ID_RPM);
     if (ARMING_FLAG(ARMED)) {
-        throttleStatus_e throttleStatus = calculateThrottleStatus(&rxConfig, deadband3d_throttle);
+        throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), deadband3d_throttle);
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
     } else {
-        serialize16((batteryConfig.batteryCapacity / BLADE_NUMBER_DIVIDER));
+        serialize16((batteryConfig()->batteryCapacity / BLADE_NUMBER_DIVIDER));
     }
 
 }
@@ -226,7 +226,7 @@ static void sendSatalliteSignalQualityAsTemperature2(void)
     }
     sendDataHead(ID_TEMPRATURE2);
 
-    if (frskyTelemetryConfig.frsky_unit == FRSKY_UNIT_METRICS) {
+    if (frskyTelemetryConfig()->frsky_unit == FRSKY_UNIT_METRICS) {
         serialize16(satellite);
     } else {
         float tmp = (satellite - 32) / 1.8f;
@@ -272,7 +272,7 @@ static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
     absgps = (absgps - deg * GPS_DEGREES_DIVIDER) * 60;        // absgps = Minutes left * 10^7
     min    = absgps / GPS_DEGREES_DIVIDER;                     // minutes left
 
-    if (frskyTelemetryConfig.frsky_coordinate_format == FRSKY_FORMAT_DMS) {
+    if (frskyTelemetryConfig()->frsky_coordinate_format == FRSKY_FORMAT_DMS) {
         result->dddmm = deg * 100 + min;
     } else {
         result->dddmm = deg * 60 + min;
@@ -307,8 +307,8 @@ static void sendFakeLatLong(void)
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
 
-    coord[LAT] = (frskyTelemetryConfig.gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
-    coord[LON] = (frskyTelemetryConfig.gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
+    coord[LAT] = (frskyTelemetryConfig()->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
+    coord[LON] = (frskyTelemetryConfig()->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
 
     sendLatLong(coord);
 }
@@ -397,7 +397,7 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
-    if (frskyTelemetryConfig.frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
+    if (frskyTelemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         /*
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */
@@ -423,7 +423,7 @@ static void sendFuelLevel(void)
 {
     sendDataHead(ID_FUEL_LEVEL);
 
-    if (batteryConfig.batteryCapacity > 0) {
+    if (batteryConfig()->batteryCapacity > 0) {
         serialize16((uint16_t)calculateBatteryCapacityRemainingPercentage());
     } else {
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
@@ -457,7 +457,7 @@ void configureFrSkyTelemetryPort(void)
         return;
     }
 
-    frskyPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig.telemetry_inversion ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
+    frskyPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inversion ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
     if (!frskyPort) {
         return;
     }

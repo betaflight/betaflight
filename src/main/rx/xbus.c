@@ -90,7 +90,7 @@ bool xBusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     uint32_t baudRate;
 
-    switch (rxConfig.serialrx_provider) {
+    switch (rxConfig()->serialrx_provider) {
         case SERIALRX_XBUS_MODE_B:
             rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
             xBusFrameReceived = false;

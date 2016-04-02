@@ -165,7 +165,7 @@ static int32_t get_D(int32_t input, float *dt, PID *pid, PID_PARAM *pid_param)
 
     // Low pass filter cut frequency for derivative calculation
     // Set to  "1 / ( 2 * PI * gps_lpf )
-    float pidFilter = (1.0f / (2.0f * M_PIf * (float)gpsProfile->gps_lpf));
+    float pidFilter = (1.0f / (2.0f * M_PIf * (float)gpsProfile()->gps_lpf));
     // discrete low pass filter, cuts out the
     // high frequency noise that can drive the controller crazy
     pid->derivative = pid->last_derivative + (*dt / (pidFilter + *dt)) * (pid->derivative - pid->last_derivative);
@@ -329,13 +329,13 @@ void onGpsNewData(void)
             break;
 
         case NAV_MODE_WP:
-            speed = GPS_calc_desired_speed(gpsProfile->nav_speed_max, NAV_SLOW_NAV);    // slow navigation
+            speed = GPS_calc_desired_speed(gpsProfile()->nav_speed_max, NAV_SLOW_NAV);    // slow navigation
             // use error as the desired rate towards the target
             // Desired output is in nav_lat and nav_lon where 1deg inclination is 100
             GPS_calc_nav_rate(speed);
 
             // Tail control
-            if (gpsProfile->nav_controls_heading) {
+            if (gpsProfile()->nav_controls_heading) {
                 if (NAV_TAIL_FIRST) {
                     magHold = wrap_18000(nav_bearing - 18000) / 100;
                 } else {
@@ -343,7 +343,7 @@ void onGpsNewData(void)
                 }
             }
             // Are we there yet ?(within x meters of the destination)
-            if ((wp_distance <= gpsProfile->gps_wp_radius) || check_missed_wp()) {      // if yes switch to poshold mode
+            if ((wp_distance <= gpsProfile()->gps_wp_radius) || check_missed_wp()) {      // if yes switch to poshold mode
                 nav_mode = NAV_MODE_POSHOLD;
                 if (NAV_SET_TAKEOFF_HEADING) {
                     magHold = nav_takeoff_bearing;
@@ -433,7 +433,7 @@ void GPS_set_next_wp(int32_t *lat, int32_t *lon)
     nav_bearing = target_bearing;
     GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
     original_target_bearing = target_bearing;
-    waypoint_speed_gov = gpsProfile->nav_speed_min;
+    waypoint_speed_gov = gpsProfile()->nav_speed_min;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -612,7 +612,7 @@ static uint16_t GPS_calc_desired_speed(uint16_t max_speed, bool _slow)
         max_speed = MIN(max_speed, wp_distance / 2);
     } else {
         max_speed = MIN(max_speed, wp_distance);
-        max_speed = MAX(max_speed, gpsProfile->nav_speed_min);      // go at least 100cm/s
+        max_speed = MAX(max_speed, gpsProfile()->nav_speed_min);      // go at least 100cm/s
     }
 
     // limit the ramp up of the speed
@@ -649,9 +649,9 @@ void updateGpsStateForHomeAndHoldMode(void)
 {
     float sin_yaw_y = sin_approx(DECIDEGREES_TO_DEGREES(attitude.values.yaw) * 0.0174532925f);
     float cos_yaw_x = cos_approx(DECIDEGREES_TO_DEGREES(attitude.values.yaw) * 0.0174532925f);
-    if (gpsProfile->nav_slew_rate) {
-        nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate); // TODO check this on uint8
-        nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate);
+    if (gpsProfile()->nav_slew_rate) {
+        nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -gpsProfile()->nav_slew_rate, gpsProfile()->nav_slew_rate); // TODO check this on uint8
+        nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -gpsProfile()->nav_slew_rate, gpsProfile()->nav_slew_rate);
         GPS_angle[AI_ROLL] = (nav_rated[LON] * cos_yaw_x - nav_rated[LAT] * sin_yaw_y) / 10;
         GPS_angle[AI_PITCH] = (nav_rated[LON] * sin_yaw_y + nav_rated[LAT] * cos_yaw_x) / 10;
     } else {
@@ -695,7 +695,7 @@ void updateGpsWaypointsAndMode(void)
             // process HOLD mode
             //
 
-            if (IS_RC_MODE_ACTIVE(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile->ap_mode)) {
+            if (IS_RC_MODE_ACTIVE(BOXGPSHOLD) && areSticksInApModePosition(gpsProfile()->ap_mode)) {
                 if (!FLIGHT_MODE(GPS_HOLD_MODE)) {
 
                     // Transition to HOLD mode

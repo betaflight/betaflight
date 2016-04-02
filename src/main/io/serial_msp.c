@@ -491,7 +491,7 @@ void mspInit(void)
     }
 #endif
 
-    if (mixerConfig.mixerMode == MIXER_FLYING_WING || mixerConfig.mixerMode == MIXER_AIRPLANE || mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE)
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
@@ -508,7 +508,7 @@ void mspInit(void)
     activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
 #ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && telemetryConfig.telemetry_switch)
+    if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
 #endif
 
@@ -517,7 +517,7 @@ void mspInit(void)
     }
 
 #ifdef USE_SERVOS
-    if (mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
@@ -709,7 +709,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_IDENT:
         headSerialReply(7);
         serialize8(MW_VERSION);
-        serialize8(mixerConfig.mixerMode);
+        serialize8(mixerConfig()->mixerMode);
         serialize8(MSP_PROTOCOL_VERSION);
         serialize32(CAP_DYNBALANCE); // "capability"
         break;
@@ -760,26 +760,26 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SERVO_CONFIGURATIONS:
         headSerialReply(MAX_SUPPORTED_SERVOS * sizeof(servoParam_t));
         for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            serialize16(servoProfile->servoConf[i].min);
-            serialize16(servoProfile->servoConf[i].max);
-            serialize16(servoProfile->servoConf[i].middle);
-            serialize8(servoProfile->servoConf[i].rate);
-            serialize8(servoProfile->servoConf[i].angleAtMin);
-            serialize8(servoProfile->servoConf[i].angleAtMax);
-            serialize8(servoProfile->servoConf[i].forwardFromChannel);
-            serialize32(servoProfile->servoConf[i].reversedSources);
+            serialize16(servoProfile()->servoConf[i].min);
+            serialize16(servoProfile()->servoConf[i].max);
+            serialize16(servoProfile()->servoConf[i].middle);
+            serialize8(servoProfile()->servoConf[i].rate);
+            serialize8(servoProfile()->servoConf[i].angleAtMin);
+            serialize8(servoProfile()->servoConf[i].angleAtMax);
+            serialize8(servoProfile()->servoConf[i].forwardFromChannel);
+            serialize32(servoProfile()->servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
         headSerialReply(MAX_SERVO_RULES * sizeof(servoMixer_t));
         for (i = 0; i < MAX_SERVO_RULES; i++) {
-            serialize8(customServoMixer[i].targetChannel);
-            serialize8(customServoMixer[i].inputSource);
-            serialize8(customServoMixer[i].rate);
-            serialize8(customServoMixer[i].speed);
-            serialize8(customServoMixer[i].min);
-            serialize8(customServoMixer[i].max);
-            serialize8(customServoMixer[i].box);
+            serialize8(customServoMixer(i)->targetChannel);
+            serialize8(customServoMixer(i)->inputSource);
+            serialize8(customServoMixer(i)->rate);
+            serialize8(customServoMixer(i)->speed);
+            serialize8(customServoMixer(i)->min);
+            serialize8(customServoMixer(i)->max);
+            serialize8(customServoMixer(i)->box);
         }
         break;
 #endif
@@ -822,19 +822,19 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8((uint8_t)constrain(vbat, 0, 255));
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         serialize16(rssi);
-        if(batteryConfig.multiwiiCurrentMeterOutput) {
+        if(batteryConfig()->multiwiiCurrentMeterOutput) {
             serialize16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
         } else
             serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
     case MSP_ARMING_CONFIG:
         headSerialReply(2);
-        serialize8(armingConfig.auto_disarm_delay);
-        serialize8(armingConfig.disarm_kill_switch);
+        serialize8(armingConfig()->auto_disarm_delay);
+        serialize8(armingConfig()->disarm_kill_switch);
         break;
     case MSP_LOOP_TIME:
         headSerialReply(2);
-        serialize16(imuConfig.looptime);
+        serialize16(imuConfig()->looptime);
         break;
     case MSP_RC_TUNING:
         headSerialReply(11);
@@ -851,28 +851,28 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
-        if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
+        if (IS_PID_CONTROLLER_FP_BASED(pidProfile()->pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
             for (i = 0; i < 3; i++) {
-                serialize8(constrain(lrintf(pidProfile->P_f[i] * 10.0f), 0, 255));
-                serialize8(constrain(lrintf(pidProfile->I_f[i] * 100.0f), 0, 255));
-                serialize8(constrain(lrintf(pidProfile->D_f[i] * 1000.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile()->P_f[i] * 10.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile()->I_f[i] * 100.0f), 0, 255));
+                serialize8(constrain(lrintf(pidProfile()->D_f[i] * 1000.0f), 0, 255));
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    serialize8(constrain(lrintf(pidProfile->A_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(pidProfile->H_level * 10.0f), 0, 255));
-                    serialize8(constrain(lrintf(pidProfile->H_sensitivity), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile()->A_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile()->H_level * 10.0f), 0, 255));
+                    serialize8(constrain(lrintf(pidProfile()->H_sensitivity), 0, 255));
                 } else {
-                    serialize8(pidProfile->P8[i]);
-                    serialize8(pidProfile->I8[i]);
-                    serialize8(pidProfile->D8[i]);
+                    serialize8(pidProfile()->P8[i]);
+                    serialize8(pidProfile()->I8[i]);
+                    serialize8(pidProfile()->D8[i]);
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                serialize8(pidProfile->P8[i]);
-                serialize8(pidProfile->I8[i]);
-                serialize8(pidProfile->D8[i]);
+                serialize8(pidProfile()->P8[i]);
+                serialize8(pidProfile()->I8[i]);
+                serialize8(pidProfile()->D8[i]);
             }
         }
         break;
@@ -882,12 +882,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_PID_CONTROLLER:
         headSerialReply(1);
-        serialize8(pidProfile->pidController);
+        serialize8(pidProfile()->pidController);
         break;
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             serialize8(box->permanentId);
             serialize8(mac->auxChannelIndex);
@@ -905,7 +905,7 @@ static bool processOutCommand(uint8_t cmdMSP)
                 1   // aux switch channel index
         ));
         for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &adjustmentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             serialize8(adjRange->adjustmentIndex);
             serialize8(adjRange->auxChannelIndex);
             serialize8(adjRange->range.startStep);
@@ -929,33 +929,33 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_MISC:
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
-        serialize16(rxConfig.midrc);
+        serialize16(rxConfig()->midrc);
 
-        serialize16(motorAndServoConfig.minthrottle);
-        serialize16(motorAndServoConfig.maxthrottle);
-        serialize16(motorAndServoConfig.mincommand);
+        serialize16(motorAndServoConfig()->minthrottle);
+        serialize16(motorAndServoConfig()->maxthrottle);
+        serialize16(motorAndServoConfig()->mincommand);
 
-        serialize16(failsafeConfig.failsafe_throttle);
+        serialize16(failsafeConfig()->failsafe_throttle);
 
 #ifdef GPS
-        serialize8(gpsConfig.provider); // gps_type
+        serialize8(gpsConfig()->provider); // gps_type
         serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-        serialize8(gpsConfig.sbasMode); // gps_ubx_sbas
+        serialize8(gpsConfig()->sbasMode); // gps_ubx_sbas
 #else
         serialize8(0); // gps_type
         serialize8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
         serialize8(0); // gps_ubx_sbas
 #endif
-        serialize8(batteryConfig.multiwiiCurrentMeterOutput);
-        serialize8(rxConfig.rssi_channel);
+        serialize8(batteryConfig()->multiwiiCurrentMeterOutput);
+        serialize8(rxConfig()->rssi_channel);
         serialize8(0);
 
-        serialize16(compassConfig->mag_declination / 10);
+        serialize16(compassConfig()->mag_declination / 10);
 
-        serialize8(batteryConfig.vbatscale);
-        serialize8(batteryConfig.vbatmincellvoltage);
-        serialize8(batteryConfig.vbatmaxcellvoltage);
-        serialize8(batteryConfig.vbatwarningcellvoltage);
+        serialize8(batteryConfig()->vbatscale);
+        serialize8(batteryConfig()->vbatmincellvoltage);
+        serialize8(batteryConfig()->vbatmaxcellvoltage);
+        serialize8(batteryConfig()->vbatwarningcellvoltage);
         break;
 
     case MSP_MOTOR_PINS:
@@ -1023,8 +1023,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         headSerialReply(4);
-        serialize16(accelerometerConfig->accelerometerTrims.values.pitch);
-        serialize16(accelerometerConfig->accelerometerTrims.values.roll);
+        serialize16(accelerometerConfig()->accelerometerTrims.values.pitch);
+        serialize16(accelerometerConfig()->accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1041,68 +1041,68 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_VOLTAGE_METER_CONFIG:
         headSerialReply(4);
-        serialize8(batteryConfig.vbatscale);
-        serialize8(batteryConfig.vbatmincellvoltage);
-        serialize8(batteryConfig.vbatmaxcellvoltage);
-        serialize8(batteryConfig.vbatwarningcellvoltage);
+        serialize8(batteryConfig()->vbatscale);
+        serialize8(batteryConfig()->vbatmincellvoltage);
+        serialize8(batteryConfig()->vbatmaxcellvoltage);
+        serialize8(batteryConfig()->vbatwarningcellvoltage);
         break;
 
     case MSP_CURRENT_METER_CONFIG:
         headSerialReply(7);
-        serialize16(batteryConfig.currentMeterScale);
-        serialize16(batteryConfig.currentMeterOffset);
-        serialize8(batteryConfig.currentMeterType);
-        serialize16(batteryConfig.batteryCapacity);
+        serialize16(batteryConfig()->currentMeterScale);
+        serialize16(batteryConfig()->currentMeterOffset);
+        serialize8(batteryConfig()->currentMeterType);
+        serialize16(batteryConfig()->batteryCapacity);
         break;
 
     case MSP_MIXER:
         headSerialReply(1);
-        serialize8(mixerConfig.mixerMode);
+        serialize8(mixerConfig()->mixerMode);
         break;
 
     case MSP_RX_CONFIG:
         headSerialReply(12);
-        serialize8(rxConfig.serialrx_provider);
-        serialize16(rxConfig.maxcheck);
-        serialize16(rxConfig.midrc);
-        serialize16(rxConfig.mincheck);
-        serialize8(rxConfig.spektrum_sat_bind);
-        serialize16(rxConfig.rx_min_usec);
-        serialize16(rxConfig.rx_max_usec);
+        serialize8(rxConfig()->serialrx_provider);
+        serialize16(rxConfig()->maxcheck);
+        serialize16(rxConfig()->midrc);
+        serialize16(rxConfig()->mincheck);
+        serialize8(rxConfig()->spektrum_sat_bind);
+        serialize16(rxConfig()->rx_min_usec);
+        serialize16(rxConfig()->rx_max_usec);
         break;
 
     case MSP_RXFAIL_CONFIG:
         headSerialReply(3 * (rxRuntimeConfig.channelCount));
         for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            serialize8(rxConfig.failsafe_channel_configurations[i].mode);
-            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig.failsafe_channel_configurations[i].step));
+            serialize8(rxConfig()->failsafe_channel_configurations[i].mode);
+            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
         }
         break;
     case MSP_RSSI_CONFIG:
         headSerialReply(1);
-        serialize8(rxConfig.rssi_channel);
+        serialize8(rxConfig()->rssi_channel);
         break;
 
     case MSP_RX_MAP:
         headSerialReply(MAX_MAPPABLE_RX_INPUTS);
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
-            serialize8(rxConfig.rcmap[i]);
+            serialize8(rxConfig()->rcmap[i]);
         break;
 
     case MSP_BF_CONFIG:
         headSerialReply(1 + 4 + 1 + 2 + 2 + 2 + 2 + 2);
-        serialize8(mixerConfig.mixerMode);
+        serialize8(mixerConfig()->mixerMode);
 
         serialize32(featureMask());
 
-        serialize8(rxConfig.serialrx_provider);
+        serialize8(rxConfig()->serialrx_provider);
 
-        serialize16(boardAlignment.rollDegrees);
-        serialize16(boardAlignment.pitchDegrees);
-        serialize16(boardAlignment.yawDegrees);
+        serialize16(boardAlignment()->rollDegrees);
+        serialize16(boardAlignment()->pitchDegrees);
+        serialize16(boardAlignment()->yawDegrees);
 
-        serialize16(batteryConfig.currentMeterScale);
-        serialize16(batteryConfig.currentMeterOffset);
+        serialize16(batteryConfig()->currentMeterScale);
+        serialize16(batteryConfig()->currentMeterOffset);
         break;
 
     case MSP_CF_SERIAL_CONFIG:
@@ -1110,15 +1110,15 @@ static bool processOutCommand(uint8_t cmdMSP)
             ((sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4)) * serialGetAvailablePortCount())
         );
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(serialConfig.portConfigs[i].identifier)) {
+            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            serialize8(serialConfig.portConfigs[i].identifier);
-            serialize16(serialConfig.portConfigs[i].functionMask);
-            serialize8(serialConfig.portConfigs[i].msp_baudrateIndex);
-            serialize8(serialConfig.portConfigs[i].gps_baudrateIndex);
-            serialize8(serialConfig.portConfigs[i].telemetry_baudrateIndex);
-            serialize8(serialConfig.portConfigs[i].blackbox_baudrateIndex);
+            serialize8(serialConfig()->portConfigs[i].identifier);
+            serialize16(serialConfig()->portConfigs[i].functionMask);
+            serialize8(serialConfig()->portConfigs[i].msp_baudrateIndex);
+            serialize8(serialConfig()->portConfigs[i].gps_baudrateIndex);
+            serialize8(serialConfig()->portConfigs[i].telemetry_baudrateIndex);
+            serialize8(serialConfig()->portConfigs[i].blackbox_baudrateIndex);
         }
         break;
 
@@ -1126,7 +1126,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_LED_COLORS:
         headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &colors[i];
+            hsvColor_t *color = colors(i);
             serialize16(color->h);
             serialize8(color->s);
             serialize8(color->v);
@@ -1136,7 +1136,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_LED_STRIP_CONFIG:
         headSerialReply(MAX_LED_STRIP_LENGTH * 7);
         for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &ledConfigs[i];
+            ledConfig_t *ledConfig = ledConfigs(i);
             serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
             serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
             serialize8(GET_LED_X(ledConfig));
@@ -1165,9 +1165,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
 #ifdef BLACKBOX
         serialize8(1); //Blackbox supported
-        serialize8(blackboxConfig.device);
-        serialize8(blackboxConfig.rate_num);
-        serialize8(blackboxConfig.rate_denom);
+        serialize8(blackboxConfig()->device);
+        serialize8(blackboxConfig()->rate_num);
+        serialize8(blackboxConfig()->rate_denom);
 #else
         serialize8(0); // Blackbox not supported
         serialize8(0);
@@ -1182,12 +1182,12 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
-        headSerialReply(1 + sizeof(transponderConfig.data));
+        headSerialReply(1 + sizeof(transponderConfig()->data));
 
         serialize8(1); //Transponder supported
 
-        for (i = 0; i < sizeof(transponderConfig.data); i++) {
-            serialize8(transponderConfig.data[i]);
+        for (i = 0; i < sizeof(transponderConfig()->data); i++) {
+            serialize8(transponderConfig()->data[i]);
         }
 #else
         headSerialReply(1);
@@ -1205,23 +1205,23 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_3D:
         headSerialReply(2 * 3);
-        serialize16(motor3DConfig.deadband3d_low);
-        serialize16(motor3DConfig.deadband3d_high);
-        serialize16(motor3DConfig.neutral3d);
+        serialize16(motor3DConfig()->deadband3d_low);
+        serialize16(motor3DConfig()->deadband3d_high);
+        serialize16(motor3DConfig()->neutral3d);
         break;
 
     case MSP_RC_DEADBAND:
         headSerialReply(5);
-        serialize8(rcControlsConfig->deadband);
-        serialize8(rcControlsConfig->yaw_deadband);
-        serialize8(rcControlsConfig->alt_hold_deadband);
-        serialize16(rcControlsConfig->deadband3d_throttle);
+        serialize8(rcControlsConfig()->deadband);
+        serialize8(rcControlsConfig()->yaw_deadband);
+        serialize8(rcControlsConfig()->alt_hold_deadband);
+        serialize16(rcControlsConfig()->deadband3d_throttle);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
-        serialize8(sensorAlignmentConfig.gyro_align);
-        serialize8(sensorAlignmentConfig.acc_align);
-        serialize8(sensorAlignmentConfig.mag_align);
+        serialize8(sensorAlignmentConfig()->gyro_align);
+        serialize8(sensorAlignmentConfig()->acc_align);
+        serialize8(sensorAlignmentConfig()->mag_align);
         break;
 
     default:
@@ -1275,50 +1275,50 @@ static bool processInCommand(void)
         }
         break;
     case MSP_SET_ACC_TRIM:
-        accelerometerConfig->accelerometerTrims.values.pitch = read16();
-        accelerometerConfig->accelerometerTrims.values.roll  = read16();
+        accelerometerConfig()->accelerometerTrims.values.pitch = read16();
+        accelerometerConfig()->accelerometerTrims.values.roll  = read16();
         break;
     case MSP_SET_ARMING_CONFIG:
-        armingConfig.auto_disarm_delay = read8();
-        armingConfig.disarm_kill_switch = read8();
+        armingConfig()->auto_disarm_delay = read8();
+        armingConfig()->disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        imuConfig.looptime = read16();
+        imuConfig()->looptime = read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        pidProfile->pidController = read8();
-        pidSetController(pidProfile->pidController);
+        pidProfile()->pidController = read8();
+        pidSetController(pidProfile()->pidController);
         break;
     case MSP_SET_PID:
-        if (IS_PID_CONTROLLER_FP_BASED(pidProfile->pidController)) {
+        if (IS_PID_CONTROLLER_FP_BASED(pidProfile()->pidController)) {
             for (i = 0; i < 3; i++) {
-                pidProfile->P_f[i] = (float)read8() / 10.0f;
-                pidProfile->I_f[i] = (float)read8() / 100.0f;
-                pidProfile->D_f[i] = (float)read8() / 1000.0f;
+                pidProfile()->P_f[i] = (float)read8() / 10.0f;
+                pidProfile()->I_f[i] = (float)read8() / 100.0f;
+                pidProfile()->D_f[i] = (float)read8() / 1000.0f;
             }
             for (i = 3; i < PID_ITEM_COUNT; i++) {
                 if (i == PIDLEVEL) {
-                    pidProfile->A_level = (float)read8() / 10.0f;
-                    pidProfile->H_level = (float)read8() / 10.0f;
-                    pidProfile->H_sensitivity = read8();
+                    pidProfile()->A_level = (float)read8() / 10.0f;
+                    pidProfile()->H_level = (float)read8() / 10.0f;
+                    pidProfile()->H_sensitivity = read8();
                 } else {
-                    pidProfile->P8[i] = read8();
-                    pidProfile->I8[i] = read8();
-                    pidProfile->D8[i] = read8();
+                    pidProfile()->P8[i] = read8();
+                    pidProfile()->I8[i] = read8();
+                    pidProfile()->D8[i] = read8();
                 }
             }
         } else {
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                pidProfile->P8[i] = read8();
-                pidProfile->I8[i] = read8();
-                pidProfile->D8[i] = read8();
+                pidProfile()->P8[i] = read8();
+                pidProfile()->I8[i] = read8();
+                pidProfile()->D8[i] = read8();
             }
         }
         break;
     case MSP_SET_MODE_RANGE:
         i = read8();
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             i = read8();
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1327,7 +1327,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(modeActivationProfile->modeActivationConditions);
+                useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
             } else {
                 headSerialError(0);
             }
@@ -1338,7 +1338,7 @@ static bool processInCommand(void)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = read8();
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &adjustmentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             i = read8();
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1378,33 +1378,33 @@ static bool processInCommand(void)
     case MSP_SET_MISC:
         tmp = read16();
         if (tmp < 1600 && tmp > 1400)
-            rxConfig.midrc = tmp;
+            rxConfig()->midrc = tmp;
 
-        motorAndServoConfig.minthrottle = read16();
-        motorAndServoConfig.maxthrottle = read16();
-        motorAndServoConfig.mincommand = read16();
+        motorAndServoConfig()->minthrottle = read16();
+        motorAndServoConfig()->maxthrottle = read16();
+        motorAndServoConfig()->mincommand = read16();
 
-        failsafeConfig.failsafe_throttle = read16();
+        failsafeConfig()->failsafe_throttle = read16();
 
 #ifdef GPS
-        gpsConfig.provider = read8(); // gps_type
+        gpsConfig()->provider = read8(); // gps_type
         read8(); // gps_baudrate
-        gpsConfig.sbasMode = read8(); // gps_ubx_sbas
+        gpsConfig()->sbasMode = read8(); // gps_ubx_sbas
 #else
         read8(); // gps_type
         read8(); // gps_baudrate
         read8(); // gps_ubx_sbas
 #endif
-        batteryConfig.multiwiiCurrentMeterOutput = read8();
-        rxConfig.rssi_channel = read8();
+        batteryConfig()->multiwiiCurrentMeterOutput = read8();
+        rxConfig()->rssi_channel = read8();
         read8();
 
-        compassConfig->mag_declination = read16() * 10;
+        compassConfig()->mag_declination = read16() * 10;
 
-        batteryConfig.vbatscale = read8();           // actual vbatscale as intended
-        batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
+        batteryConfig()->vbatscale = read8();           // actual vbatscale as intended
+        batteryConfig()->vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfig()->vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfig()->vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
         break;
     case MSP_SET_MOTOR:
         for (i = 0; i < 8; i++) {
@@ -1424,14 +1424,14 @@ static bool processInCommand(void)
         if (i >= MAX_SUPPORTED_SERVOS) {
             headSerialError(0);
         } else {
-            servoProfile->servoConf[i].min = read16();
-            servoProfile->servoConf[i].max = read16();
-            servoProfile->servoConf[i].middle = read16();
-            servoProfile->servoConf[i].rate = read8();
-            servoProfile->servoConf[i].angleAtMin = read8();
-            servoProfile->servoConf[i].angleAtMax = read8();
-            servoProfile->servoConf[i].forwardFromChannel = read8();
-            servoProfile->servoConf[i].reversedSources = read32();
+            servoProfile()->servoConf[i].min = read16();
+            servoProfile()->servoConf[i].max = read16();
+            servoProfile()->servoConf[i].middle = read16();
+            servoProfile()->servoConf[i].rate = read8();
+            servoProfile()->servoConf[i].angleAtMin = read8();
+            servoProfile()->servoConf[i].angleAtMax = read8();
+            servoProfile()->servoConf[i].forwardFromChannel = read8();
+            servoProfile()->servoConf[i].reversedSources = read32();
         }
 #endif
         break;
@@ -1442,39 +1442,39 @@ static bool processInCommand(void)
         if (i >= MAX_SERVO_RULES) {
             headSerialError(0);
         } else {
-            customServoMixer[i].targetChannel = read8();
-            customServoMixer[i].inputSource = read8();
-            customServoMixer[i].rate = read8();
-            customServoMixer[i].speed = read8();
-            customServoMixer[i].min = read8();
-            customServoMixer[i].max = read8();
-            customServoMixer[i].box = read8();
+            customServoMixer(i)->targetChannel = read8();
+            customServoMixer(i)->inputSource = read8();
+            customServoMixer(i)->rate = read8();
+            customServoMixer(i)->speed = read8();
+            customServoMixer(i)->min = read8();
+            customServoMixer(i)->max = read8();
+            customServoMixer(i)->box = read8();
             loadCustomServoMixer();
         }
 #endif
         break;
 
     case MSP_SET_3D:
-        motor3DConfig.deadband3d_low = read16();
-        motor3DConfig.deadband3d_high = read16();
-        motor3DConfig.neutral3d = read16();
+        motor3DConfig()->deadband3d_low = read16();
+        motor3DConfig()->deadband3d_high = read16();
+        motor3DConfig()->neutral3d = read16();
         break;
 
     case MSP_SET_RC_DEADBAND:
-        rcControlsConfig->deadband = read8();
-        rcControlsConfig->yaw_deadband = read8();
-        rcControlsConfig->alt_hold_deadband = read8();
-        rcControlsConfig->deadband3d_throttle = read16();
+        rcControlsConfig()->deadband = read8();
+        rcControlsConfig()->yaw_deadband = read8();
+        rcControlsConfig()->alt_hold_deadband = read8();
+        rcControlsConfig()->deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(pidProfile);
+        resetPidProfile(pidProfile());
         break;    
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        sensorAlignmentConfig.gyro_align = read8();
-        sensorAlignmentConfig.acc_align = read8();
-        sensorAlignmentConfig.mag_align = read8();
+        sensorAlignmentConfig()->gyro_align = read8();
+        sensorAlignmentConfig()->acc_align = read8();
+        sensorAlignmentConfig()->mag_align = read8();
         break;
         
     case MSP_RESET_CONF:
@@ -1504,25 +1504,25 @@ static bool processInCommand(void)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfig.device = read8();
-            blackboxConfig.rate_num = read8();
-            blackboxConfig.rate_denom = read8();
+            blackboxConfig()->device = read8();
+            blackboxConfig()->rate_num = read8();
+            blackboxConfig()->rate_denom = read8();
         }
         break;
 #endif
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (currentPort->dataSize != sizeof(transponderConfig.data)) {
+        if (currentPort->dataSize != sizeof(transponderConfig()->data)) {
             headSerialError(0);
             break;
         }
 
-        for (i = 0; i < sizeof(transponderConfig.data); i++) {
-            transponderConfig.data[i] = read8();
+        for (i = 0; i < sizeof(transponderConfig()->data); i++) {
+            transponderConfig()->data[i] = read8();
         }
 
-        transponderUpdateData(transponderConfig.data);
+        transponderUpdateData(transponderConfig()->data);
         break;
 #endif
 
@@ -1577,54 +1577,54 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG:
-        batteryConfig.vbatscale = read8();           // actual vbatscale as intended
-        batteryConfig.vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
+        batteryConfig()->vbatscale = read8();           // actual vbatscale as intended
+        batteryConfig()->vbatmincellvoltage = read8();  // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfig()->vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfig()->vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:
-        batteryConfig.currentMeterScale = read16();
-        batteryConfig.currentMeterOffset = read16();
-        batteryConfig.currentMeterType = read8();
-        batteryConfig.batteryCapacity = read16();
+        batteryConfig()->currentMeterScale = read16();
+        batteryConfig()->currentMeterOffset = read16();
+        batteryConfig()->currentMeterType = read8();
+        batteryConfig()->batteryCapacity = read16();
         break;
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        mixerConfig.mixerMode = read8();
+        mixerConfig()->mixerMode = read8();
         break;
 #endif
 
     case MSP_SET_RX_CONFIG:
-        rxConfig.serialrx_provider = read8();
-        rxConfig.maxcheck = read16();
-        rxConfig.midrc = read16();
-        rxConfig.mincheck = read16();
-        rxConfig.spektrum_sat_bind = read8();
+        rxConfig()->serialrx_provider = read8();
+        rxConfig()->maxcheck = read16();
+        rxConfig()->midrc = read16();
+        rxConfig()->mincheck = read16();
+        rxConfig()->spektrum_sat_bind = read8();
         if (currentPort->dataSize > 8) {
-            rxConfig.rx_min_usec = read16();
-            rxConfig.rx_max_usec = read16();
+            rxConfig()->rx_min_usec = read16();
+            rxConfig()->rx_max_usec = read16();
         }
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
         i = read8();
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfig.failsafe_channel_configurations[i].mode = read8();
-            rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+            rxConfig()->failsafe_channel_configurations[i].mode = read8();
+            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
         } else {
             headSerialError(0);
         }
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        rxConfig.rssi_channel = read8();
+        rxConfig()->rssi_channel = read8();
         break;
 
     case MSP_SET_RX_MAP:
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            rxConfig.rcmap[i] = read8();
+            rxConfig()->rcmap[i] = read8();
         }
         break;
 
@@ -1633,20 +1633,20 @@ static bool processInCommand(void)
 #ifdef USE_QUAD_MIXER_ONLY
         read8(); // mixerMode ignored
 #else
-        mixerConfig.mixerMode = read8(); // mixerMode
+        mixerConfig()->mixerMode = read8(); // mixerMode
 #endif
 
         featureClearAll();
         featureSet(read32()); // features bitmap
 
-        rxConfig.serialrx_provider = read8(); // serialrx_type
+        rxConfig()->serialrx_provider = read8(); // serialrx_type
 
-        boardAlignment.rollDegrees = read16(); // board_align_roll
-        boardAlignment.pitchDegrees = read16(); // board_align_pitch
-        boardAlignment.yawDegrees = read16(); // board_align_yaw
+        boardAlignment()->rollDegrees = read16(); // board_align_roll
+        boardAlignment()->pitchDegrees = read16(); // board_align_pitch
+        boardAlignment()->yawDegrees = read16(); // board_align_yaw
 
-        batteryConfig.currentMeterScale = read16();
-        batteryConfig.currentMeterOffset = read16();
+        batteryConfig()->currentMeterScale = read16();
+        batteryConfig()->currentMeterOffset = read16();
         break;
 
     case MSP_SET_CF_SERIAL_CONFIG:
@@ -1682,7 +1682,7 @@ static bool processInCommand(void)
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &colors[i];
+            hsvColor_t *color = colors(i);
             color->h = read16();
             color->s = read8();
             color->v = read8();
@@ -1696,7 +1696,7 @@ static bool processInCommand(void)
                 headSerialError(0);
                 break;
             }
-            ledConfig_t *ledConfig = &ledConfigs[i];
+            ledConfig_t *ledConfig = ledConfigs(i);
             uint16_t mask;
             // currently we're storing directions and functions in a uint16 (flags)
             // the msp uses 2 x uint16_t to cater for future expansion

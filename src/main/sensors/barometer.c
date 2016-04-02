@@ -84,7 +84,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
         return newPressureReading;
 }
 
-#define PRESSURE_SAMPLE_COUNT (barometerConfig->baro_sample_count - 1)
+#define PRESSURE_SAMPLE_COUNT (barometerConfig()->baro_sample_count - 1)
 
 static uint32_t recalculateBarometerTotal(uint8_t baroSampleCount, uint32_t pressureTotal, int32_t newPressureReading)
 {
@@ -137,7 +137,7 @@ uint32_t baroUpdate(void)
             baro.get_up();
             baro.start_ut();
             baro.calculate(&baroPressure, &baroTemperature);
-            baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
+            baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.ut_delay;
         break;
@@ -152,7 +152,7 @@ int32_t baroCalculateAltitude(void)
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
     BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
     BaroAlt_tmp -= baroGroundAltitude;
-    BaroAlt = lrintf((float)BaroAlt * barometerConfig->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig->baro_noise_lpf)); // additional LPF to reduce baro noise
+    BaroAlt = lrintf((float)BaroAlt * barometerConfig()->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig()->baro_noise_lpf)); // additional LPF to reduce baro noise
 
     return BaroAlt;
 }

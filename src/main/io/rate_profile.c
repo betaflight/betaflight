@@ -55,13 +55,13 @@ uint8_t getCurrentControlRateProfile(void)
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
 {
-    return &controlRateProfiles[profileIndex];
+    return controlRateProfiles(profileIndex);
 }
 
 void setControlRateProfile(uint8_t profileIndex)
 {
     currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &controlRateProfiles[profileIndex];
+    currentControlRateProfile = controlRateProfiles(profileIndex);
 }
 
 void activateControlRateConfig(void)
@@ -82,5 +82,5 @@ void changeControlRateProfile(uint8_t profileIndex)
 
 void configureRateProfileSelection(uint8_t profileIndex, uint8_t rateProfileIndex)
 {
-    rateProfileSelectionStorage[profileIndex].defaultRateProfileIndex = rateProfileIndex % MAX_CONTROL_RATE_PROFILE_COUNT;
+    rateProfileSelection_Storage[profileIndex].defaultRateProfileIndex = rateProfileIndex % MAX_CONTROL_RATE_PROFILE_COUNT;
 }

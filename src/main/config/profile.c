@@ -33,7 +33,7 @@ PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
 uint8_t getCurrentProfile(void)
 {
-    return profileSelection.current_profile_index;
+    return profileSelection()->current_profile_index;
 }
 
 void setProfile(uint8_t profileIndex)
@@ -41,6 +41,6 @@ void setProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) // sanity check
         profileIndex = 0;
 
-    profileSelection.current_profile_index = profileIndex;
+    profileSelection()->current_profile_index = profileIndex;
 }
 

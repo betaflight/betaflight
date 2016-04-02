@@ -216,7 +216,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
 static bool shouldTriggerBatteryAlarmNow(void)
 {
-    return ((millis() - lastHottAlarmSoundTime) >= (hottTelemetryConfig.hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
+    return ((millis() - lastHottAlarmSoundTime) >= (hottTelemetryConfig()->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
 }
 
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)

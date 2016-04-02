@@ -260,12 +260,12 @@ protected:
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        memset(&motorAndServoConfig, 0, sizeof (motorAndServoConfig));
+        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
 
-        memset(&rxConfig, 0, sizeof (rxConfig));
-        rxConfig.mincheck = DEFAULT_MIN_CHECK;
-        rxConfig.maxcheck = DEFAULT_MAX_CHECK;
-        rxConfig.midrc = 1500;
+        memset(rxConfig(), 0, sizeof(*rxConfig()));
+        rxConfig()->mincheck = DEFAULT_MIN_CHECK;
+        rxConfig()->maxcheck = DEFAULT_MAX_CHECK;
+        rxConfig()->midrc = 1500;
 
         controlRateConfig.rcRate8 = 90;
         controlRateConfig.rcExpo8 = 0;
@@ -300,7 +300,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
     resetMillis();
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 90);
@@ -324,10 +324,10 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     };
 
     // and
-    memset(&rxConfig, 0, sizeof (rxConfig));
-    rxConfig.mincheck = DEFAULT_MIN_CHECK;
-    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
-    rxConfig.midrc = 1500;
+    memset(rxConfig(), 0, sizeof (*rxConfig()));
+    rxConfig()->mincheck = DEFAULT_MIN_CHECK;
+    rxConfig()->maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig()->midrc = 1500;
 
     // and
     adjustmentStateMask = 0;
@@ -359,7 +359,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 496;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
@@ -376,7 +376,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 497;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -398,7 +398,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
             ~(1 << 0);
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -418,7 +418,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 499;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -435,7 +435,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 500;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -449,7 +449,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 997;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -465,7 +465,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 998;
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 93);
@@ -507,7 +507,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
             (1 << adjustmentIndex);
 
     // when
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 1);
@@ -521,17 +521,17 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses inte
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    memset(pidProfile, 0, sizeof (pidProfile_t));
-    pidProfile->pidController = 0;
-    pidProfile->P8[PIDPITCH] = 0;
-    pidProfile->P8[PIDROLL] = 5;
-    pidProfile->P8[YAW] = 7;
-    pidProfile->I8[PIDPITCH] = 10;
-    pidProfile->I8[PIDROLL] = 15;
-    pidProfile->I8[YAW] = 17;
-    pidProfile->D8[PIDPITCH] = 20;
-    pidProfile->D8[PIDROLL] = 25;
-    pidProfile->D8[YAW] = 27;
+    memset(pidProfile(), 0, sizeof (*pidProfile()));
+    pidProfile()->pidController = 0;
+    pidProfile()->P8[PIDPITCH] = 0;
+    pidProfile()->P8[PIDROLL] = 5;
+    pidProfile()->P8[YAW] = 7;
+    pidProfile()->I8[PIDPITCH] = 10;
+    pidProfile()->I8[PIDROLL] = 15;
+    pidProfile()->I8[YAW] = 17;
+    pidProfile()->D8[PIDPITCH] = 20;
+    pidProfile()->D8[PIDROLL] = 25;
+    pidProfile()->D8[YAW] = 27;
 
     // and
     controlRateConfig_t controlRateConfig;
@@ -617,22 +617,22 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses inte
 
     // when
     useRcControlsConfig(modeActivationConditions);
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(1, pidProfile->P8[PIDPITCH]);
-    EXPECT_EQ(6, pidProfile->P8[PIDROLL]);
-    EXPECT_EQ(8, pidProfile->P8[YAW]);
-    EXPECT_EQ(11, pidProfile->I8[PIDPITCH]);
-    EXPECT_EQ(16, pidProfile->I8[PIDROLL]);
-    EXPECT_EQ(18, pidProfile->I8[YAW]);
-    EXPECT_EQ(21, pidProfile->D8[PIDPITCH]);
-    EXPECT_EQ(26, pidProfile->D8[PIDROLL]);
-    EXPECT_EQ(28, pidProfile->D8[YAW]);
+    EXPECT_EQ(1, pidProfile()->P8[PIDPITCH]);
+    EXPECT_EQ(6, pidProfile()->P8[PIDROLL]);
+    EXPECT_EQ(8, pidProfile()->P8[YAW]);
+    EXPECT_EQ(11, pidProfile()->I8[PIDPITCH]);
+    EXPECT_EQ(16, pidProfile()->I8[PIDROLL]);
+    EXPECT_EQ(18, pidProfile()->I8[YAW]);
+    EXPECT_EQ(21, pidProfile()->D8[PIDPITCH]);
+    EXPECT_EQ(26, pidProfile()->D8[PIDROLL]);
+    EXPECT_EQ(28, pidProfile()->D8[YAW]);
 }
 
 TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floats
@@ -641,17 +641,17 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    memset(pidProfile, 0, sizeof (pidProfile_t));
-    pidProfile->pidController = 2;
-    pidProfile->P_f[PIDPITCH] = 0.0f;
-    pidProfile->P_f[PIDROLL] = 5.0f;
-    pidProfile->P_f[PIDYAW] = 7.0f;
-    pidProfile->I_f[PIDPITCH] = 10.0f;
-    pidProfile->I_f[PIDROLL] = 15.0f;
-    pidProfile->I_f[PIDYAW] = 17.0f;
-    pidProfile->D_f[PIDPITCH] = 20.0f;
-    pidProfile->D_f[PIDROLL] = 25.0f;
-    pidProfile->D_f[PIDYAW] = 27.0f;
+    memset(pidProfile(), 0, sizeof (*pidProfile()));
+    pidProfile()->pidController = 2;
+    pidProfile()->P_f[PIDPITCH] = 0.0f;
+    pidProfile()->P_f[PIDROLL] = 5.0f;
+    pidProfile()->P_f[PIDYAW] = 7.0f;
+    pidProfile()->I_f[PIDPITCH] = 10.0f;
+    pidProfile()->I_f[PIDROLL] = 15.0f;
+    pidProfile()->I_f[PIDYAW] = 17.0f;
+    pidProfile()->D_f[PIDPITCH] = 20.0f;
+    pidProfile()->D_f[PIDROLL] = 25.0f;
+    pidProfile()->D_f[PIDYAW] = 27.0f;
 
     // and
     controlRateConfig_t controlRateConfig;
@@ -737,22 +737,22 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
 
     // when
     useRcControlsConfig(modeActivationConditions);
-    processRcAdjustments(&controlRateConfig, &rxConfig);
+    processRcAdjustments(&controlRateConfig, rxConfig());
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(0.1f, pidProfile->P_f[PIDPITCH]);
-    EXPECT_EQ(5.1f, pidProfile->P_f[PIDROLL]);
-    EXPECT_EQ(7.1f, pidProfile->P_f[PIDYAW]);
-    EXPECT_EQ(10.01f, pidProfile->I_f[PIDPITCH]);
-    EXPECT_EQ(15.01f, pidProfile->I_f[PIDROLL]);
-    EXPECT_EQ(17.01f, pidProfile->I_f[PIDYAW]);
-    EXPECT_EQ(20.001f, pidProfile->D_f[PIDPITCH]);
-    EXPECT_EQ(25.001f, pidProfile->D_f[PIDROLL]);
-    EXPECT_EQ(27.001f, pidProfile->D_f[PIDYAW]);
+    EXPECT_EQ(0.1f, pidProfile()->P_f[PIDPITCH]);
+    EXPECT_EQ(5.1f, pidProfile()->P_f[PIDROLL]);
+    EXPECT_EQ(7.1f, pidProfile()->P_f[PIDYAW]);
+    EXPECT_EQ(10.01f, pidProfile()->I_f[PIDPITCH]);
+    EXPECT_EQ(15.01f, pidProfile()->I_f[PIDROLL]);
+    EXPECT_EQ(17.01f, pidProfile()->I_f[PIDYAW]);
+    EXPECT_EQ(20.001f, pidProfile()->D_f[PIDPITCH]);
+    EXPECT_EQ(25.001f, pidProfile()->D_f[PIDROLL]);
+    EXPECT_EQ(27.001f, pidProfile()->D_f[PIDYAW]);
 
 }
 

@@ -241,9 +241,9 @@ void init(void)
 #ifdef STM32F10X
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(systemConfig.emf_avoidance);
+    SetSysClock(systemConfig()->emf_avoidance);
 #endif
-    i2cSetOverclock(systemConfig.i2c_highspeed);
+    i2cSetOverclock(systemConfig()->i2c_highspeed);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
@@ -290,13 +290,13 @@ void init(void)
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
-        switch (rxConfig.serialrx_provider) {
+        switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 // Spektrum satellite binding if enabled on startup.
                 // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
                 // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(&rxConfig);
+                spektrumBind(rxConfig());
                 break;
         }
     }
@@ -312,9 +312,9 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL));
 
 #ifdef USE_SERVOS
-    mixerInit(customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 #else
-    mixerInit(customMotorMixer);
+    mixerInit(customMotorMixer(0));
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -323,7 +323,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&batteryConfig);
+        sonarHardware = sonarGetHardwareConfiguration(batteryConfig());
         sonarGPIOConfig_t sonarGPIOConfig = {
             .gpio = SONAR_GPIO,
             .triggerPin = sonarHardware->echo_pin,
@@ -334,7 +334,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (mixerConfig.mixerMode == MIXER_AIRPLANE || mixerConfig.mixerMode == MIXER_FLYING_WING || mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -356,7 +356,7 @@ void init(void)
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.useCurrentMeterADC = (
         feature(FEATURE_CURRENT_METER)
-        && batteryConfig.currentMeterType == CURRENT_SENSOR_ADC
+        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC
     );
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
@@ -368,15 +368,15 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = motorAndServoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = motorAndServoConfig.servo_pwm_rate;
+    pwm_params.servoCenterPulse = motorAndServoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = motorAndServoConfig()->servo_pwm_rate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = motorAndServoConfig.motor_pwm_rate;
-    pwm_params.idlePulse = motorAndServoConfig.mincommand;
+    pwm_params.motorPwmRate = motorAndServoConfig()->motor_pwm_rate;
+    pwm_params.idlePulse = motorAndServoConfig()->mincommand;
     if (feature(FEATURE_3D))
-        pwm_params.idlePulse = motor3DConfig.neutral3d;
+        pwm_params.idlePulse = motor3DConfig()->neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 
@@ -474,7 +474,7 @@ void init(void)
     }
 #endif
 
-    gyroUpdateSampleRate(imuConfig.looptime, gyroConfig.gyro_lpf, imuConfig.gyroSync, imuConfig.gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+    gyroUpdateSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
@@ -504,14 +504,12 @@ void init(void)
 
     failsafeInit();
 
-    rxInit(modeActivationProfile->modeActivationConditions);
+    rxInit(modeActivationProfile()->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
-        navigationInit(
-            pidProfile
-        );
+        navigationInit(pidProfile());
     }
 #endif
 
@@ -541,7 +539,7 @@ void init(void)
 
 #ifdef TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
-        transponderInit(transponderConfig.data);
+        transponderInit(transponderConfig()->data);
         transponderEnable();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
@@ -585,7 +583,7 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (mixerConfig.mixerMode == MIXER_GIMBAL) {
+    if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
@@ -654,7 +652,7 @@ int main(void) {
     init();
 
     /* Setup scheduler */
-    if (imuConfig.gyroSync) {
+    if (imuConfig()->gyroSync) {
         rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
     }
     else {

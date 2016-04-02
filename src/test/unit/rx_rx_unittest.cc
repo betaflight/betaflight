@@ -62,9 +62,9 @@ TEST(RxTest, TestValidFlightChannels)
     // and
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.rx_min_usec = 1000;
-    rxConfig.rx_max_usec = 2000;
+    memset(rxConfig(), 0, sizeof(*rxConfig()));
+    rxConfig()->rx_min_usec = 1000;
+    rxConfig()->rx_max_usec = 2000;
 
     memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
     modeActivationConditions[0].auxChannelIndex = 0;
@@ -99,9 +99,9 @@ TEST(RxTest, TestInvalidFlightChannels)
     // and
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.rx_min_usec = 1000;
-    rxConfig.rx_max_usec = 2000;
+    memset(rxConfig(), 0, sizeof(*rxConfig()));
+    rxConfig()->rx_min_usec = 1000;
+    rxConfig()->rx_max_usec = 2000;
 
     memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
     modeActivationConditions[0].auxChannelIndex = 0;
@@ -126,9 +126,9 @@ TEST(RxTest, TestInvalidFlightChannels)
         rxResetFlightChannelStatus();
 
         for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
-            channelPulses[otherStickChannelIndex] = rxConfig.rx_min_usec;
+            channelPulses[otherStickChannelIndex] = rxConfig()->rx_min_usec;
         }
-        channelPulses[stickChannelIndex] = rxConfig.rx_min_usec - 1;
+        channelPulses[stickChannelIndex] = rxConfig()->rx_min_usec - 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
@@ -143,9 +143,9 @@ TEST(RxTest, TestInvalidFlightChannels)
         rxResetFlightChannelStatus();
 
         for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
-            channelPulses[otherStickChannelIndex] = rxConfig.rx_max_usec;
+            channelPulses[otherStickChannelIndex] = rxConfig()->rx_max_usec;
         }
-        channelPulses[stickChannelIndex] = rxConfig.rx_max_usec + 1;
+        channelPulses[stickChannelIndex] = rxConfig()->rx_max_usec + 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {

@@ -295,7 +295,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return motorAndServoConfig.minthrottle;
+    return motorAndServoConfig()->minthrottle;
 }
 
 // Default settings
@@ -328,123 +328,131 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 
     // imu settings
-    imuConfig.dcm_kp = 2500;                // 1.0 * 10000
-    imuConfig.looptime = 2000;
-    imuConfig.gyroSync = 1;
-    imuConfig.gyroSyncDenominator = 1;
-    imuConfig.small_angle = 25;
-    imuConfig.max_angle_inclination = 500;    // 50 degrees
+    RESET_CONFIG(imuConfig_t, imuConfig(),
+        .dcm_kp = 2500,                // 1.0 * 10000
+        .looptime = 2000,
+        .gyroSync = 1,
+        .gyroSyncDenominator = 1,
+        .small_angle = 25,
+        .max_angle_inclination = 500,    // 50 degrees
+    );
 
-    gyroConfig.gyro_lpf = 1;                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-    gyroConfig.soft_gyro_lpf_hz = 60;        // Software based lpf filter for gyro
+    RESET_CONFIG(gyroConfig_t, gyroConfig(),
+        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
 
-    gyroConfig.gyroMovementCalibrationThreshold = 32;
-
-    resetBatteryConfig(&batteryConfig);
+        .gyroMovementCalibrationThreshold = 32,
+    );
+    resetBatteryConfig(batteryConfig());
 
 #ifdef TELEMETRY
-    hottTelemetryConfig.hottAlarmSoundInterval = 5;
+    hottTelemetryConfig()->hottAlarmSoundInterval = 5;
 #endif
 
-    rxConfig.sbus_inversion = 1;
-    rxConfig.midrc = 1500;
-    rxConfig.mincheck = 1100;
-    rxConfig.maxcheck = 1900;
-    rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
-    rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
-
+    RESET_CONFIG(rxConfig_t, rxConfig(),
+        .sbus_inversion = 1,
+        .midrc = 1500,
+        .mincheck = 1100,
+        .maxcheck = 1900,
+        .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
+        .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
+        .rssi_scale = RSSI_SCALE_DEFAULT,
+    );
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig.failsafe_channel_configurations[i];
+        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[i];
         channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig.midrc);
+        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
     }
 
-    rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
+    resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
 
-    resetAllRxChannelRangeConfigurations(rxConfig.channelRanges);
+    parseRcChannels("AETR1234", rxConfig());
 
-    parseRcChannels("AETR1234", &rxConfig);
-
-    armingConfig.disarm_kill_switch = 1;
-    armingConfig.auto_disarm_delay = 5;
-    armingConfig.max_arm_angle = 25;
-
-    airplaneConfig.fixedwing_althold_dir = 1;
+    RESET_CONFIG(armingConfig_t, armingConfig(),
+         .disarm_kill_switch = 1,
+         .auto_disarm_delay = 5,
+         .max_arm_angle = 25,
+    );
+    airplaneConfig()->fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-    resetmotorAndServoConfig(&motorAndServoConfig);
-    resetMotor3DConfig(&motor3DConfig);
+    resetmotorAndServoConfig(motorAndServoConfig());
+    resetMotor3DConfig(motor3DConfig());
 
 #ifdef BRUSHED_MOTORS
-    motorAndServoConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+    motorAndServoConfig()->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
 #else
-    motorAndServoConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorAndServoConfig()->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
-    motorAndServoConfig.servo_pwm_rate = 50;
+    motorAndServoConfig()->servo_pwm_rate = 50;
 
 #ifdef GPS
     // gps/nav stuff
-    gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
+    gpsConfig()->autoConfig = GPS_AUTOCONFIG_ON;
 #endif
 
-    resetSerialConfig(&serialConfig);
+    resetSerialConfig(serialConfig());
 
-    systemConfig.i2c_highspeed = 1;
+    systemConfig()->i2c_highspeed = 1;
 
-    resetPidProfile(pidProfile);
+    resetPidProfile(pidProfile());
 #ifdef GTUNE
-    resetGTuneConfig(gtuneConfig);
+    resetGTuneConfig(gtuneConfig());
 #endif
 
-    resetControlRateConfig(&controlRateProfiles[0]);
+    resetControlRateConfig(controlRateProfiles(0));
 
-    compassConfig->mag_declination = 0;
+    compassConfig()->mag_declination = 0;
 
-    resetRollAndPitchTrims(&accelerometerConfig->accelerometerTrims);
-
-    accelerometerConfig->acc_cut_hz = 15;
-    accelerometerConfig->accz_lpf_cutoff = 5.0f;
-    accelerometerConfig->accDeadband.xy = 40;
-    accelerometerConfig->accDeadband.z = 40;
-    accelerometerConfig->acc_unarmedcal = 1;
+    RESET_CONFIG_2(accelerometerConfig_t, accelerometerConfig(),
+        .acc_cut_hz = 15,
+        .accz_lpf_cutoff = 5.0f,
+        .accDeadband.z = 40,
+        .accDeadband.xy = 40,
+        .acc_unarmedcal = 1,
+    );
+    resetRollAndPitchTrims(&accelerometerConfig()->accelerometerTrims);
 
 #ifdef BARO
-    resetBarometerConfig(barometerConfig);
+    resetBarometerConfig(barometerConfig());
 #endif
 
     // Radio
 
-    resetRcControlsConfig(rcControlsConfig);
+    resetRcControlsConfig(rcControlsConfig());
 
-    throttleCorrectionConfig->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    throttleCorrectionConfig->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+    throttleCorrectionConfig()->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    throttleCorrectionConfig()->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    failsafeConfig.failsafe_delay = 10;              // 1sec
-    failsafeConfig.failsafe_off_delay = 200;         // 20sec
-    failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
-    failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
-
-    resetMixerConfig(&mixerConfig);
+    RESET_CONFIG(failsafeConfig_t, failsafeConfig(),
+        .failsafe_delay = 10,              // 1sec
+        .failsafe_off_delay = 200,         // 20sec
+        .failsafe_throttle = 1000,         // default throttle off.
+        .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
+    );
+    resetMixerConfig(mixerConfig());
 
 #ifdef USE_SERVOS
     // servos
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servoProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
-        servoProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
-        servoProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        servoProfile->servoConf[i].rate = 100;
-        servoProfile->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        servoProfile->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        servoProfile->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        RESET_CONFIG(servoParam_t, &servoProfile()->servoConf[i],
+            .min = DEFAULT_SERVO_MIN,
+            .max = DEFAULT_SERVO_MAX,
+            .middle = DEFAULT_SERVO_MIDDLE,
+            .rate = 100,
+            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
+            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
+            .forwardFromChannel = CHANNEL_FORWARDING_DISABLED,
+        );
     }
 
     // gimbal
-    gimbalConfig->mode = GIMBAL_MODE_NORMAL;
+    gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS
-    resetGpsProfile(gpsProfile);
+    resetGpsProfile(gpsProfile());
 #endif
 
 #ifdef LED_STRIP
@@ -455,32 +463,32 @@ STATIC_UNIT_TESTED void resetConf(void)
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
 
-    memcpy(&transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
+    memcpy(&transponderConfig()->data, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
 
 #ifdef BLACKBOX
 
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);
-    blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
+    blackboxConfig()->device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);
-    blackboxConfig.device = BLACKBOX_DEVICE_SDCARD;
+    blackboxConfig()->device = BLACKBOX_DEVICE_SDCARD;
 #else
-    blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
+    blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
 #endif
 
-    blackboxConfig.rate_num = 1;
-    blackboxConfig.rate_denom = 1;
+    blackboxConfig()->rate_num = 1;
+    blackboxConfig()->rate_denom = 1;
 #endif
 
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
-    imuConfig.looptime = 1000;
+    imuConfig()->looptime = 1000;
 
-    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
 
-    parseRcChannels("TAER1234", &rxConfig);
+    parseRcChannels("TAER1234", rxConfig());
 
     featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_VBAT);
@@ -492,76 +500,76 @@ STATIC_UNIT_TESTED void resetConf(void)
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-#ifdef ALIENWIIF3
-    serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    batteryConfig.vbatscale = 20;
-#else
-    serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-#endif
-    rxConfig.serialrx_provider = 1;
-    rxConfig.spektrum_sat_bind = 5;
-    motorAndServoConfig.minthrottle = 1000;
-    motorAndServoConfig.maxthrottle = 2000;
-    motorAndServoConfig.motor_pwm_rate = 32000;
-    imuConfig.looptime = 2000;
-    pidProfile->pidController = 3;
-    pidProfile->P8[PIDROLL] = 36;
-    pidProfile->P8[PIDPITCH] = 36;
-    failsafeConfig.failsafe_delay = 2;
-    failsafeConfig.failsafe_off_delay = 0;
+# ifdef ALIENWIIF3
+    serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    batteryConfig()->vbatscale = 20;
+# else
+    serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
+# endif
+    rxConfig()->serialrx_provider = 1;
+    rxConfig()->spektrum_sat_bind = 5;
+    motorAndServoConfig()->minthrottle = 1000;
+    motorAndServoConfig()->maxthrottle = 2000;
+    motorAndServoConfig()->motor_pwm_rate = 32000;
+    imuConfig()->looptime = 2000;
+    pidProfile()->pidController = 3;
+    pidProfile()->P8[PIDROLL] = 36;
+    pidProfile()->P8[PIDPITCH] = 36;
+    failsafeConfig()->failsafe_delay = 2;
+    failsafeConfig()->failsafe_off_delay = 0;
     currentControlRateProfile->rcRate8 = 130;
     currentControlRateProfile->rates[ROLL] = 20;
     currentControlRateProfile->rates[PITCH] = 20;
     currentControlRateProfile->rates[YAW] = 100;
-    parseRcChannels("TAER1234", &rxConfig);
+    parseRcChannels("TAER1234", rxConfig());
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    customMotorMixer[0].throttle = 1.0f;
-    customMotorMixer[0].roll = -0.414178f;
-    customMotorMixer[0].pitch = 1.0f;
-    customMotorMixer[0].yaw = -1.0f;
+    customMotorMixer(0)->throttle = 1.0f;
+    customMotorMixer(0)->roll = -0.414178f;
+    customMotorMixer(0)->pitch = 1.0f;
+    customMotorMixer(0)->yaw = -1.0f;
 
     //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    customMotorMixer[1].throttle = 1.0f;
-    customMotorMixer[1].roll = -0.414178f;
-    customMotorMixer[1].pitch = -1.0f;
-    customMotorMixer[1].yaw = 1.0f;
+    customMotorMixer(1)->throttle = 1.0f;
+    customMotorMixer(1)->roll = -0.414178f;
+    customMotorMixer(1)->pitch = -1.0f;
+    customMotorMixer(1)->yaw = 1.0f;
 
     //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    customMotorMixer[2].throttle = 1.0f;
-    customMotorMixer[2].roll = 0.414178f;
-    customMotorMixer[2].pitch = 1.0f;
-    customMotorMixer[2].yaw = 1.0f;
+    customMotorMixer(2)->throttle = 1.0f;
+    customMotorMixer(2)->roll = 0.414178f;
+    customMotorMixer(2)->pitch = 1.0f;
+    customMotorMixer(2)->yaw = 1.0f;
 
     //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    customMotorMixer[3].throttle = 1.0f;
-    customMotorMixer[3].roll = 0.414178f;
-    customMotorMixer[3].pitch = -1.0f;
-    customMotorMixer[3].yaw = -1.0f;
+    customMotorMixer(3)->throttle = 1.0f;
+    customMotorMixer(3)->roll = 0.414178f;
+    customMotorMixer(3)->pitch = -1.0f;
+    customMotorMixer(3)->yaw = -1.0f;
 
     //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    customMotorMixer[4].throttle = 1.0f;
-    customMotorMixer[4].roll = -1.0f;
-    customMotorMixer[4].pitch = -0.414178f;
-    customMotorMixer[4].yaw = -1.0f;
+    customMotorMixer(4)->throttle = 1.0f;
+    customMotorMixer(4)->roll = -1.0f;
+    customMotorMixer(4)->pitch = -0.414178f;
+    customMotorMixer(4)->yaw = -1.0f;
 
     //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    customMotorMixer[5].throttle = 1.0f;
-    customMotorMixer[5].roll = 1.0f;
-    customMotorMixer[5].pitch = -0.414178f;
-    customMotorMixer[5].yaw = 1.0f;
+    customMotorMixer(5)->throttle = 1.0f;
+    customMotorMixer(5)->roll = 1.0f;
+    customMotorMixer(5)->pitch = -0.414178f;
+    customMotorMixer(5)->yaw = 1.0f;
 
     //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    customMotorMixer[6].throttle = 1.0f;
-    customMotorMixer[6].roll = -1.0f;
-    customMotorMixer[6].pitch = 0.414178f;
-    customMotorMixer[6].yaw = 1.0f;
+    customMotorMixer(6)->throttle = 1.0f;
+    customMotorMixer(6)->roll = -1.0f;
+    customMotorMixer(6)->pitch = 0.414178f;
+    customMotorMixer(6)->yaw = 1.0f;
 
     //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    customMotorMixer[7].throttle = 1.0f;
-    customMotorMixer[7].roll = 1.0f;
-    customMotorMixer[7].pitch = 0.414178f;
-    customMotorMixer[7].yaw = -1.0f;
+    customMotorMixer(7)->throttle = 1.0f;
+    customMotorMixer(7)->roll = 1.0f;
+    customMotorMixer(7)->pitch = 0.414178f;
+    customMotorMixer(7)->yaw = -1.0f;
 #endif
 
     // copy first profile into remaining profile
@@ -575,7 +583,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // copy first control rate config into remaining profile
     for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        memcpy(&controlRateProfiles[i], &controlRateProfiles[0], sizeof(controlRateConfig_t));
+        memcpy(controlRateProfiles(i), controlRateProfiles(0), sizeof(controlRateConfig_t));
     }
 
     // TODO
@@ -593,38 +601,38 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-            modeActivationProfile->modeActivationConditions
+        modeActivationProfile()->modeActivationConditions
     );
 
-    pidSetController(pidProfile->pidController);
+    pidSetController(pidProfile()->pidController);
 
 #ifdef GPS
-    gpsUsePIDs(pidProfile);
+    gpsUsePIDs(pidProfile());
 #endif
 
     useFailsafeConfig();
-    setAccelerationTrims(&sensorTrims.accZero);
+    setAccelerationTrims(&sensorTrims()->accZero);
 
     mixerUseConfigs(
 #ifdef USE_SERVOS
-            servoProfile->servoConf
+        servoProfile()->servoConf
 #endif
     );
 
     recalculateMagneticDeclination();
 
 
-    imuRuntimeConfig.dcm_kp = imuConfig.dcm_kp / 10000.0f;
-    imuRuntimeConfig.dcm_ki = imuConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_cut_hz = accelerometerConfig->acc_cut_hz;
-    imuRuntimeConfig.acc_unarmedcal = accelerometerConfig->acc_unarmedcal;
-    imuRuntimeConfig.small_angle = imuConfig.small_angle;
+    imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
+    imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
+    imuRuntimeConfig.acc_cut_hz = accelerometerConfig()->acc_cut_hz;
+    imuRuntimeConfig.acc_unarmedcal = accelerometerConfig()->acc_unarmedcal;
+    imuRuntimeConfig.small_angle = imuConfig()->small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,
-        &accelerometerConfig->accDeadband,
-        accelerometerConfig->accz_lpf_cutoff,
-        throttleCorrectionConfig->throttle_correction_angle
+        &accelerometerConfig()->accDeadband,
+        accelerometerConfig()->accz_lpf_cutoff,
+        throttleCorrectionConfig()->throttle_correction_angle
     );
 }
 
@@ -652,8 +660,8 @@ void validateAndFixConfig(void)
 
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (imuConfig.gyroSync && imuConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        imuConfig.gyroSyncDenominator = 2;
+    if (imuConfig()->gyroSync && imuConfig()->gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
+        imuConfig()->gyroSyncDenominator = 2;
     }
 #endif
 
@@ -681,7 +689,7 @@ void validateAndFixConfig(void)
 #ifdef STM32F303xC
     // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
 #ifdef TELEMETRY
-    telemetryConfig.telemetry_inversion = 1;
+    telemetryConfig()->telemetry_inversion = 1;
 #endif
 #endif
 
@@ -689,8 +697,8 @@ void validateAndFixConfig(void)
      * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
      * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
      */
-    if (armingConfig.retarded_arm && mixerConfig.pid_at_min_throttle) {
-        mixerConfig.pid_at_min_throttle = 0;
+    if (armingConfig()->retarded_arm && mixerConfig()->pid_at_min_throttle) {
+        mixerConfig()->pid_at_min_throttle = 0;
     }
 
 #if defined(LED_STRIP) && defined(TRANSPONDER) && !defined(UNIT_TEST)
@@ -707,14 +715,14 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(COLIBRI_RACE)
-    serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
     if(featureConfigured(FEATURE_RX_SERIAL)) {
-        serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+        serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
 
-    if (!isSerialConfigValid(&serialConfig)) {
-        resetSerialConfig(&serialConfig);
+    if (!isSerialConfigValid(serialConfig())) {
+        resetSerialConfig(serialConfig());
     }
 }
 
@@ -730,10 +738,10 @@ void readEEPROM(void)
 
     pgActivateProfile(getCurrentProfile());
 
-    if (rateProfileSelection->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        rateProfileSelection->defaultRateProfileIndex = 0;
+    if (rateProfileSelection()->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
+        rateProfileSelection()->defaultRateProfileIndex = 0;
 
-    setControlRateProfile(rateProfileSelection->defaultRateProfileIndex);
+    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
     validateAndFixConfig();
     activateConfig();

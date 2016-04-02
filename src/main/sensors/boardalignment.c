@@ -42,16 +42,16 @@ static bool isBoardAlignmentStandard(boardAlignment_t *boardAlignment)
 
 void initBoardAlignment(void)
 {
-    if (isBoardAlignmentStandard(&boardAlignment)) {
+    if (isBoardAlignmentStandard(boardAlignment())) {
         return;
     }
 
     standardBoardAlignment = false;
 
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll = degreesToRadians(boardAlignment.rollDegrees);
-    rotationAngles.angles.pitch = degreesToRadians(boardAlignment.pitchDegrees);
-    rotationAngles.angles.yaw = degreesToRadians(boardAlignment.yawDegrees);
+    rotationAngles.angles.roll = degreesToRadians(boardAlignment()->rollDegrees);
+    rotationAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
+    rotationAngles.angles.yaw = degreesToRadians(boardAlignment()->yawDegrees);
 
     buildRotationMatrix(&rotationAngles, boardRotation);
 }

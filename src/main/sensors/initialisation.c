@@ -677,21 +677,21 @@ bool sensorsAutodetect(void)
     if (!detectGyro()) {
         return false;
     }
-    detectAcc(sensorSelectionConfig.acc_hardware);
-    detectBaro(sensorSelectionConfig.baro_hardware);
+    detectAcc(sensorSelectionConfig()->acc_hardware);
+    detectBaro(sensorSelectionConfig()->baro_hardware);
 
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.init(gyroConfig.gyro_lpf);
+    gyro.init(gyroConfig()->gyro_lpf);
 
 #ifdef MAG
-    detectMag(sensorSelectionConfig.mag_hardware);
+    detectMag(sensorSelectionConfig()->mag_hardware);
 #endif
 
-    reconfigureAlignment(&sensorAlignmentConfig);
+    reconfigureAlignment(sensorAlignmentConfig());
 
     return true;
 }

@@ -60,7 +60,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig.telemetry_switch)
+        if (telemetryConfig()->telemetry_switch)
             enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);

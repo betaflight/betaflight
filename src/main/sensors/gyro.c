@@ -55,10 +55,10 @@ PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 sensor_align_e gyroAlign = 0;
 
 void initGyroFilterCoefficients(void) {
-    if (gyroConfig.soft_gyro_lpf_hz) {
+    if (gyroConfig()->soft_gyro_lpf_hz) {
         // Initialisation needs to happen once sampling rate is known
         for (axis = 0; axis < 3; axis++) {
-            BiQuadNewLpf(gyroConfig.soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
+            BiQuadNewLpf(gyroConfig()->soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
         }
 
         gyroFilterStateIsSet = true;
@@ -147,7 +147,7 @@ void gyroUpdate(void)
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
-    if (gyroConfig.soft_gyro_lpf_hz) {
+    if (gyroConfig()->soft_gyro_lpf_hz) {
         if (!gyroFilterStateIsSet) {
             initGyroFilterCoefficients();
         }
@@ -160,7 +160,7 @@ void gyroUpdate(void)
     }
 
     if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig.gyroMovementCalibrationThreshold);
+        performAcclerationCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();

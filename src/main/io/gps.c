@@ -236,7 +236,7 @@ void gpsInit(void)
 
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
-    if (gpsConfig.provider == GPS_NMEA)
+    if (gpsConfig()->provider == GPS_NMEA)
 	    mode &= ~MODE_TX;
 
     // no callback - buffer will be consumed in gpsThread()
@@ -305,7 +305,7 @@ void gpsInitUblox(void)
         case GPS_CONFIGURE:
 
             // Either use specific config file for GPS or let dynamically upload config
-            if( gpsConfig.autoConfig == GPS_AUTOCONFIG_OFF ) {
+            if( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
                 gpsSetState(GPS_RECEIVING_DATA);
                 break;
             }
@@ -327,7 +327,7 @@ void gpsInitUblox(void)
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
                 if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[gpsConfig.sbasMode].message[gpsData.state_position]);
+                    serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position]);
                     gpsData.state_position++;
                 } else {
                     gpsData.messageState++;
@@ -344,7 +344,7 @@ void gpsInitUblox(void)
 
 void gpsInitHardware(void)
 {
-    switch (gpsConfig.provider) {
+    switch (gpsConfig()->provider) {
         case GPS_NMEA:
             gpsInitNmea();
             break;
@@ -375,7 +375,7 @@ void gpsThread(void)
 
         case GPS_LOST_COMMUNICATION:
             gpsData.timeouts++;
-            if (gpsConfig.autoBaud) {
+            if (gpsConfig()->autoBaud) {
                 // try another rate
                 gpsData.baudrateIndex++;
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
@@ -423,7 +423,7 @@ static void gpsNewData(uint16_t c)
 
 bool gpsNewFrame(uint8_t c)
 {
-    switch (gpsConfig.provider) {
+    switch (gpsConfig()->provider) {
         case GPS_NMEA:          // NMEA
             return gpsNewFrameNMEA(c);
         case GPS_UBLOX:         // UBX binary

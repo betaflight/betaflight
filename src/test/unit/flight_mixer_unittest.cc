@@ -206,28 +206,27 @@ protected:
         updatedServoCount = 0;
         updatedMotorCount = 0;
 
-        memset(&mixerConfig, 0, sizeof(mixerConfig));
-        memset(&rxConfig, 0, sizeof(rxConfig));
-        memset(&motorAndServoConfig, 0, sizeof(motorAndServoConfig));
-        memset(&servoConf, 0, sizeof(servoConf));
+        memset(mixerConfig(), 0, sizeof(*mixerConfig()));
+        memset(rxConfig(), 0, sizeof(*rxConfig()));
+        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
+        memset(servoProfile(), 0, sizeof(*servoProfile()));
 
         memset(rcData, 0, sizeof(rcData));
         memset(rcCommand, 0, sizeof(rcCommand));
         memset(axisPID, 0, sizeof(axisPID));
-
-        memset(&customMotorMixer, 0, sizeof(customMotorMixer));
+        memset(customMotorMixer_arr(), 0, sizeof(*customMotorMixer_arr()));
     }
 
     virtual void withDefaultmotorAndServoConfiguration(void) {
-        motorAndServoConfig.mincommand = TEST_MIN_COMMAND;
+        motorAndServoConfig()->mincommand = TEST_MIN_COMMAND;
     }
 
     virtual void withDefaultRxConfig(void) {
-        rxConfig.midrc = 1500;
+        rxConfig()->midrc = 1500;
     }
 
     virtual void configureMixer(uint8_t mixerMode) {
-        mixerConfig.mixerMode = mixerMode;
+        mixerConfig()->mixerMode = mixerMode;
         mixerUseConfigs(
             servoConf
         );
@@ -237,9 +236,9 @@ protected:
 TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 {
     // given
-    rxConfig.midrc = 1500;
+    rxConfig()->midrc = 1500;
 
-    mixerConfig.tri_unarmed_servo = 1;
+    mixerConfig()->tri_unarmed_servo = 1;
 
     withDefaultmotorAndServoConfiguration();
     withDefaultRxConfig();
@@ -252,7 +251,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 
     configureMixer(MIXER_TRI);
 
-    mixerInit(customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -285,7 +284,7 @@ TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 
     configureMixer(MIXER_QUADX);
 
-    mixerInit(customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -342,8 +341,8 @@ protected:
 
         configureMixer(MIXER_QUADX);
 
-        memset(&customMotorMixer, 0, sizeof(customMotorMixer));
-        memset(&customServoMixer, 0, sizeof(customServoMixer));
+        memset(*customMotorMixer_arr(), 0, sizeof(*customMotorMixer_arr()));
+        memset(*customServoMixer_arr(), 0, sizeof(*customServoMixer_arr()));
     }
 };
 
@@ -364,17 +363,17 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
         { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
         { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
     };
-    memcpy(customServoMixer, testServoMixer, sizeof(testServoMixer));
+    memcpy(customServoMixer_arr(), testServoMixer, sizeof(testServoMixer));
 
     static const motorMixer_t testMotorMixer[EXPECTED_MOTORS_TO_MIX_COUNT] = {
         { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
         { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
     };
-    memcpy(customMotorMixer, testMotorMixer, sizeof(testMotorMixer));
+    memcpy(customMotorMixer_arr(), testMotorMixer, sizeof(testMotorMixer));
 
     configureMixer(MIXER_CUSTOM_AIRPLANE);
 
-    mixerInit(customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 6,

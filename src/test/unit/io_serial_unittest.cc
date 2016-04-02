@@ -44,7 +44,7 @@ extern uint8_t serialPortCount;
 TEST(IoSerialTest, TestSoftSerialPortsEnabled)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(true);
@@ -56,7 +56,7 @@ TEST(IoSerialTest, TestSoftSerialPortsEnabled)
 TEST(IoSerialTest, TestSoftSerialPortsDisabled)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(false);
@@ -67,7 +67,7 @@ TEST(IoSerialTest, TestSoftSerialPortsDisabled)
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(true);

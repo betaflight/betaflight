@@ -76,22 +76,22 @@ static void applyMultirotorAltHold(void)
 {
     static uint8_t isAltHoldChanged = 0;
     // multirotor alt hold
-    if (rcControlsConfig->alt_hold_fast_change) {
+    if (rcControlsConfig()->alt_hold_fast_change) {
         // rapid alt changes
-        if (ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband) {
+        if (ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig()->alt_hold_deadband) {
             errorVelocityI = 0;
             isAltHoldChanged = 1;
-            rcCommand[THROTTLE] += (rcData[THROTTLE] > initialThrottleHold) ? -rcControlsConfig->alt_hold_deadband : rcControlsConfig->alt_hold_deadband;
+            rcCommand[THROTTLE] += (rcData[THROTTLE] > initialThrottleHold) ? -rcControlsConfig()->alt_hold_deadband : rcControlsConfig()->alt_hold_deadband;
         } else {
             if (isAltHoldChanged) {
                 AltHold = EstAlt;
                 isAltHoldChanged = 0;
             }
-            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig.minthrottle, motorAndServoConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig()->minthrottle, motorAndServoConfig()->maxthrottle);
         }
     } else {
         // slow alt changes, mostly used for aerial photography
-        if (ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband) {
+        if (ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig()->alt_hold_deadband) {
             // set velocity proportional to stick movement +100 throttle gives ~ +50 cm/s
             setVelocity = (rcData[THROTTLE] - initialThrottleHold) / 2;
             velocityControl = 1;
@@ -101,7 +101,7 @@ static void applyMultirotorAltHold(void)
             velocityControl = 0;
             isAltHoldChanged = 0;
         }
-        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig.minthrottle, motorAndServoConfig.maxthrottle);
+        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig()->minthrottle, motorAndServoConfig()->maxthrottle);
     }
 }
 
@@ -111,7 +111,7 @@ static void applyFixedWingAltHold(void)
     // most likely need to check changes on pitch channel and 'reset' althold similar to
     // how throttle does it on multirotor
 
-    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig.fixedwing_althold_dir;
+    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig()->fixedwing_althold_dir;
 }
 
 void applyAltHold(void)
@@ -177,7 +177,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     if (!velocityControl) {
         error = constrain(AltHold - EstAlt, -500, 500);
         error = applyDeadband(error, 10); // remove small P parameter to reduce noise near zero position
-        setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+        setVel = constrain((pidProfile()->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
     } else {
         setVel = setVelocity;
     }
@@ -185,15 +185,15 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 
     // P
     error = setVel - vel_tmp;
-    result = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
+    result = constrain((pidProfile()->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorVelocityI += (pidProfile->I8[PIDVEL] * error);
+    errorVelocityI += (pidProfile()->I8[PIDVEL] * error);
     errorVelocityI = constrain(errorVelocityI, -(8192 * 200), (8192 * 200));
     result += errorVelocityI / 8192;     // I in range +/-200
 
     // D
-    result -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
+    result -= constrain(pidProfile()->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
 
     return result;
 }
@@ -266,7 +266,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                                                 // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * barometerConfig->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
+    accAlt = accAlt * barometerConfig()->baro_cf_alt + (float)BaroAlt * (1.0f - barometerConfig()->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
     vel += vel_acc;
 
 #ifdef DEBUG_ALT_HOLD
@@ -302,7 +302,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * barometerConfig->baro_cf_vel + baroVel * (1.0f - barometerConfig->baro_cf_vel);
+    vel = vel * barometerConfig()->baro_cf_vel + baroVel * (1.0f - barometerConfig()->baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario
