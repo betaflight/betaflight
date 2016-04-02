@@ -104,70 +104,57 @@ void usb1WireDeInitializeVcp(void){
 #define START_BIT_TIME (BIT_TIME_HALVE + 1)
 #define STOP_BIT_TIME ((BIT_TIME * 9) + BIT_TIME_HALVE)
 
-static void suart_putc_(uint8_t tx_b)
+static void suart_putc_(uint8_t *tx_b)
 {
-    uint32_t btime;
-    ESC_SET_LO; // 0 = start bit
-    btime = BIT_TIME + micros();
-    while (micros() < btime);
-    for(uint8_t bit = 0; bit <8; bit++)
-    {
-        if(tx_b & 1)
-        {
+    // shift out stopbit first
+    uint16_t bitmask = (*tx_b << 2) | 1 | (1 << 10);
+    uint32_t btime = micros();
+    while(1) {
+        if(bitmask & 1) {
             ESC_SET_HI; // 1
-        }
-        else
-        {
+        } else {
             ESC_SET_LO; // 0
         }
         btime = btime + BIT_TIME;
-        tx_b = (tx_b >> 1);
+        bitmask = (bitmask >> 1);
+        if (bitmask == 0) break; // stopbit shifted out - but don't wait
         while (micros() < btime);
     }
-    ESC_SET_HI; // 1 = stop bit
-    btime = btime + BIT_TIME;
-    while (micros() < btime);
 }
-
 
 static uint8_t suart_getc_(uint8_t *bt)
 {
     uint32_t btime;
     uint32_t start_time;
-    uint32_t stop_time;
-    uint32_t wait_start;
 
-    *bt = 0;
-
-    wait_start = millis() + START_BIT_TIMEOUT_MS;
+    uint32_t wait_time = millis() + START_BIT_TIMEOUT_MS;
     while (ESC_IS_HI) {
-        // check for start bit begin
-        if (millis() > wait_start) {
+        // check for startbit begin
+        if (millis() >= wait_time) {
             return 0;
         }
     }
     // start bit
     start_time = micros();
     btime = start_time + START_BIT_TIME;
-    stop_time = start_time + STOP_BIT_TIME;
-
+    uint16_t bitmask = 0;
+    uint8_t bit = 0;
     while (micros() < btime);
-
-    if (ESC_IS_HI) return 0; // check start bit
-    for (uint8_t bit=0;bit<8;bit++)
-    {
-        btime = btime + BIT_TIME;
-        while (micros() < btime);
-        if (ESC_IS_HI)
-        {
-             *bt |= (1 << bit); // 1 else 0
+    while(1) {
+        if (ESC_IS_HI) {
+            bitmask |= (1 << bit);
         }
+        btime = btime + BIT_TIME;
+        bit++;
+        if (bit == 10) break;
+        while (micros() < btime);
     }
-    while (micros() < stop_time);
-
-    if (ESC_IS_LO) return 0;  // check stop bit
-
-    return 1; // OK
+    // check start bit and stop bit
+    if ((bitmask & 1) || (!(bitmask & (1 << 9)))) {
+        return 0;
+    }
+    *bt = bitmask >> 1;
+    return 1;
 }
 #define USE_TXRX_LED
 
@@ -224,7 +211,7 @@ void usb1WirePassthroughVcp(mspPort_t *mspPort, bufWriter_t *bufwriter, uint8_t 
             TX_LED_ON;
             do {
                 bt = serialRead(mspPort->port);
-                suart_putc_(bt);
+                suart_putc_(&bt);
             }  while(serialRxBytesWaiting(mspPort->port));
             ESC_INPUT;
             TX_LED_OFF;

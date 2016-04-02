@@ -254,6 +254,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough
+#define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
 #define MAX_MSP_PORT_COUNT 2

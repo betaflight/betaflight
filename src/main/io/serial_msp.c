@@ -96,6 +96,9 @@
 #ifdef USE_SERIAL_1WIRE_VCP
 #include "io/serial_1wire_vcp.h"
 #endif
+#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#include "io/serial_4way.h"
+#endif
 static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
@@ -1815,6 +1818,28 @@ static bool processInCommand(void)
             headSerialError(0);
         }
     break;
+#endif
+#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+    case MSP_SET_4WAY_IF:
+        // get channel number
+        // switch all motor lines HI
+        // reply the count of ESC found
+        headSerialReply(1);
+        serialize8(Initialize4WayInterface());
+        // because we do not come back after calling Process4WayInterface
+        // proceed with a success reply first
+        tailSerialReply();
+        // flush the transmit buffer
+        bufWriterFlush(writer);
+        // wait for all data to send
+        waitForSerialPortToFinishTransmitting(currentPort->port);
+        // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
+        // bootloader mode before try to connect any ESC
+        // Start to activate here
+        Process4WayInterface(currentPort, writer);
+        // former used MSP uart is still active
+        // proceed as usual with MSP commands
+        break;
 #endif
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
