@@ -201,34 +201,40 @@ static void pidApplyRateController(pidProfile_t *pidProfile, pidState_t *pidStat
     int n;
 
     float rateError = pidState->rateTarget - pidState->gyroRate;
+    float newDTerm;
 
     // Calculate new P-term
     float newPTerm = rateError * pidState->kP;
 
-    if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
+    if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == FD_YAW) {
         newPTerm = constrain(newPTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
     // Calculate new D-term
-    // Shift old error values
-    for (n = 4; n > 0; n--) {
-        pidState->rateErrorBuf[n] = pidState->rateErrorBuf[n-1];
+    if (axis == FD_YAW) {
+        newDTerm = 0;
     }
-
-    // Store new error value
-    pidState->rateErrorBuf[0] = rateError;
-
-    // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
-    float newDTerm = ((2 * (pidState->rateErrorBuf[1] - pidState->rateErrorBuf[3]) + (pidState->rateErrorBuf[0] - pidState->rateErrorBuf[4])) / (8 * dT)) * pidState->kD;
-
-    // Apply additional lowpass
-    if (pidProfile->dterm_lpf_hz) {
-        if (!pidState->deltaFilterInit) {
-            filterInitBiQuad(pidProfile->dterm_lpf_hz, &pidState->deltaBiQuadState, 0);
-            pidState->deltaFilterInit = true;
+    else {
+        // Shift old error values
+        for (n = 4; n > 0; n--) {
+            pidState->rateErrorBuf[n] = pidState->rateErrorBuf[n-1];
         }
 
-        newDTerm = filterApplyBiQuad(newDTerm, &pidState->deltaBiQuadState);
+        // Store new error value
+        pidState->rateErrorBuf[0] = rateError;
+
+        // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
+        newDTerm = ((2 * (pidState->rateErrorBuf[1] - pidState->rateErrorBuf[3]) + (pidState->rateErrorBuf[0] - pidState->rateErrorBuf[4])) / (8 * dT)) * pidState->kD;
+
+        // Apply additional lowpass
+        if (pidProfile->dterm_lpf_hz) {
+            if (!pidState->deltaFilterInit) {
+                filterInitBiQuad(pidProfile->dterm_lpf_hz, &pidState->deltaBiQuadState, 0);
+                pidState->deltaFilterInit = true;
+            }
+
+            newDTerm = filterApplyBiQuad(newDTerm, &pidState->deltaBiQuadState);
+        }
     }
 
     // TODO: Get feedback from mixer on available correction range for each axis
