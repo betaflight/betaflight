@@ -21,7 +21,8 @@
 typedef enum {
     OK_TO_ARM       = (1 << 0),
     PREVENT_ARMING  = (1 << 1),
-    ARMED           = (1 << 2)
+    ARMED           = (1 << 2),
+    WAS_EVER_ARMED  = (1 << 3)
 } armingFlag_e;
 
 extern uint8_t armingFlags;
