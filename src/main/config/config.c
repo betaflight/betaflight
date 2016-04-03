@@ -47,7 +47,6 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
-#include "sensors/battery.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -81,20 +80,6 @@
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
-
-static void resetBatteryConfig(batteryConfig_t *batteryConfig)
-{
-    RESET_CONFIG(batteryConfig_t, batteryConfig,
-        .vbatscale = VBAT_SCALE_DEFAULT,
-        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
-        .vbatmaxcellvoltage = 43,
-        .vbatmincellvoltage = 33,
-        .vbatwarningcellvoltage = 35,
-        .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
-        .currentMeterType = CURRENT_SENSOR_ADC,
-    );
-}
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
@@ -222,7 +207,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 
         .gyroMovementCalibrationThreshold = 32,
     );
-    resetBatteryConfig(batteryConfig());
 
 #ifdef TELEMETRY
     hottTelemetryConfig()->hottAlarmSoundInterval = 5;

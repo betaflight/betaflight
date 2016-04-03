@@ -17,6 +17,7 @@
 
 #include "stdbool.h"
 #include "stdint.h"
+#include "string.h"
 
 #include <platform.h>
 
@@ -31,6 +32,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_reset.h"
 #include "config/feature.h"
 
 #include "io/rc_controls.h"
@@ -54,10 +56,24 @@ uint16_t amperageLatestADC = 0;     // most recent raw reading from current ADC
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
-PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
-
 static batteryState_e batteryState;
 static biquad_t vbatFilterState;
+
+PG_REGISTER_WITH_RESET(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+
+void pgReset_batteryConfig(batteryConfig_t *batteryConfig)
+{
+    RESET_CONFIG(batteryConfig_t, batteryConfig,
+        .vbatscale = VBAT_SCALE_DEFAULT,
+        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+        .vbatmaxcellvoltage = 43,
+        .vbatmincellvoltage = 33,
+        .vbatwarningcellvoltage = 35,
+        .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+        .currentMeterType = CURRENT_SENSOR_ADC,
+    );
+}
 
 
 uint16_t batteryAdcToVoltage(uint16_t src)
