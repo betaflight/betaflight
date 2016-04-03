@@ -23,9 +23,14 @@
 extern "C" {
     #include <platform.h>
 
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
     #include "drivers/serial.h"
     #include "drivers/serial_softserial.h"
     #include "io/serial.h"
+
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -39,7 +44,7 @@ extern uint8_t serialPortCount;
 TEST(IoSerialTest, TestSoftSerialPortsEnabled)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(true);
@@ -51,7 +56,7 @@ TEST(IoSerialTest, TestSoftSerialPortsEnabled)
 TEST(IoSerialTest, TestSoftSerialPortsDisabled)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(false);
@@ -62,7 +67,7 @@ TEST(IoSerialTest, TestSoftSerialPortsDisabled)
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    memset(serialConfig(), 0, sizeof(*serialConfig()));
 
     // when
     serialInit(true);

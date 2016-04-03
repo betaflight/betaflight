@@ -57,21 +57,19 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
 
-    pidProfile_t testPidProfile[MAX_PROFILE_COUNT];
-    pidProfile_t *pidProfile = &testPidProfile[0];
-
-    rcControlsConfig_t testRcControlsConfig[MAX_PROFILE_COUNT];
-    rcControlsConfig_t *rcControlsConfig = &testRcControlsConfig[0];
-
+    PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER_PROFILE(compassConfig_t, compassConfig, PG_COMPASS_CONFIGURATION, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 extern float q0, q1, q2, q3;
-extern "C" { 
+extern "C" {
 void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
 
@@ -176,8 +174,6 @@ int16_t GPS_ground_course;
 int16_t GPS_numSat;
 
 float magneticDeclination = 0.0f;
-
-motorAndServoConfig_t motorAndServoConfig;
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

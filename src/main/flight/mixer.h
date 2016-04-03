@@ -65,7 +65,7 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
-extern motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
+PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
 
 // Custom mixer configuration
 typedef struct mixer_s {
@@ -171,7 +171,7 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
-extern servoMixer_t customServoMixer[MAX_SERVO_RULES];
+PG_DECLARE_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer);
 
 // Custom mixer configuration
 typedef struct mixerRules_s {

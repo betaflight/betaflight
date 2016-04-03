@@ -120,6 +120,7 @@ extern "C" {
         uint32_t uint32;
     } PG_PACKED someProfileSpecificData_t;
 
+    PG_DECLARE_PROFILE(someProfileSpecificData_t, someProfileSpecificData);
     PG_REGISTER_PROFILE(someProfileSpecificData_t, someProfileSpecificData, PG_RESERVED_FOR_TESTING_1, 0);
 
 }
@@ -137,16 +138,16 @@ TEST(configTest, modify)
 {
     resetEEPROM();
 
-    imuConfig.looptime = 123;
+    imuConfig()->looptime = 123;
     writeEEPROM();
 
-    EXPECT_EQ(123, imuConfig.looptime);
+    EXPECT_EQ(123, imuConfig()->looptime);
 
     // overwrite the values with something else before loading
-    imuConfig.looptime = 456;
+    imuConfig()->looptime = 456;
 
     readEEPROM();
-    EXPECT_EQ(123, imuConfig.looptime);
+    EXPECT_EQ(123, imuConfig()->looptime);
 }
 
 TEST(configTest, modifyProfile)
@@ -155,34 +156,34 @@ TEST(configTest, modifyProfile)
 
     // default profile is 0
 
-    someProfileSpecificData->uint32 = 1;
-    someProfileSpecificData->uint16 = 2;
-    someProfileSpecificData->uint8  = 3;
+    someProfileSpecificData()->uint32 = 1;
+    someProfileSpecificData()->uint16 = 2;
+    someProfileSpecificData()->uint8  = 3;
     changeProfile(1); // changing saves the EEPROM
 
-    someProfileSpecificData->uint32 = 4;
-    someProfileSpecificData->uint16 = 5;
-    someProfileSpecificData->uint8  = 6;
+    someProfileSpecificData()->uint32 = 4;
+    someProfileSpecificData()->uint16 = 5;
+    someProfileSpecificData()->uint8  = 6;
     changeProfile(2); // changing saves the EEPROM
 
-    someProfileSpecificData->uint32 = 7;
-    someProfileSpecificData->uint16 = 8;
-    someProfileSpecificData->uint8  = 9;
+    someProfileSpecificData()->uint32 = 7;
+    someProfileSpecificData()->uint16 = 8;
+    someProfileSpecificData()->uint8  = 9;
     changeProfile(0);  // changing saves the EEPROM
 
-    EXPECT_EQ(1, someProfileSpecificData->uint32);
-    EXPECT_EQ(2, someProfileSpecificData->uint16);
-    EXPECT_EQ(3, someProfileSpecificData->uint8);
+    EXPECT_EQ(1, someProfileSpecificData()->uint32);
+    EXPECT_EQ(2, someProfileSpecificData()->uint16);
+    EXPECT_EQ(3, someProfileSpecificData()->uint8);
 
     changeProfile(1); // changing saves the EEPROM
-    EXPECT_EQ(4, someProfileSpecificData->uint32);
-    EXPECT_EQ(5, someProfileSpecificData->uint16);
-    EXPECT_EQ(6, someProfileSpecificData->uint8);
+    EXPECT_EQ(4, someProfileSpecificData()->uint32);
+    EXPECT_EQ(5, someProfileSpecificData()->uint16);
+    EXPECT_EQ(6, someProfileSpecificData()->uint8);
 
     changeProfile(2); // changing saves the EEPROM
-    EXPECT_EQ(7, someProfileSpecificData->uint32);
-    EXPECT_EQ(8, someProfileSpecificData->uint16);
-    EXPECT_EQ(9, someProfileSpecificData->uint8);
+    EXPECT_EQ(7, someProfileSpecificData()->uint32);
+    EXPECT_EQ(8, someProfileSpecificData()->uint16);
+    EXPECT_EQ(9, someProfileSpecificData()->uint8);
 }
 
 
@@ -194,69 +195,69 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 {
     resetEEPROM();
 
-    EXPECT_EQ(0, profileSelection.current_profile_index); // default profile
-    EXPECT_EQ(0, imuConfig.dcm_ki); // 0.003 * 10000
+    EXPECT_EQ(0, profileSelection()->current_profile_index); // default profile
+    EXPECT_EQ(0, imuConfig()->dcm_ki); // 0.003 * 10000
 
-    EXPECT_EQ(0, sensorTrims.accZero.values.pitch);
-    EXPECT_EQ(0, sensorTrims.accZero.values.roll);
-    EXPECT_EQ(0, sensorTrims.accZero.values.yaw);
+    EXPECT_EQ(0, sensorTrims()->accZero.values.pitch);
+    EXPECT_EQ(0, sensorTrims()->accZero.values.roll);
+    EXPECT_EQ(0, sensorTrims()->accZero.values.yaw);
 
-    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.gyro_align);
-    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.acc_align);
-    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig.mag_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig()->gyro_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig()->acc_align);
+    EXPECT_EQ(ALIGN_DEFAULT, sensorAlignmentConfig()->mag_align);
 
-    EXPECT_EQ(0, boardAlignment.rollDegrees);
-    EXPECT_EQ(0, boardAlignment.pitchDegrees);
-    EXPECT_EQ(0, boardAlignment.yawDegrees);
+    EXPECT_EQ(0, boardAlignment()->rollDegrees);
+    EXPECT_EQ(0, boardAlignment()->pitchDegrees);
+    EXPECT_EQ(0, boardAlignment()->yawDegrees);
 
-    EXPECT_EQ(ACC_DEFAULT, sensorSelectionConfig.acc_hardware);   // default/autodetect
-    EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig.mag_hardware);   // default/autodetect
-    EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig.baro_hardware); // default/autodetect
+    EXPECT_EQ(ACC_DEFAULT, sensorSelectionConfig()->acc_hardware);   // default/autodetect
+    EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig()->mag_hardware);   // default/autodetect
+    EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig()->baro_hardware); // default/autodetect
 
-    EXPECT_EQ(0, batteryConfig.currentMeterOffset);
-    EXPECT_EQ(0, batteryConfig.batteryCapacity);
+    EXPECT_EQ(0, batteryConfig()->currentMeterOffset);
+    EXPECT_EQ(0, batteryConfig()->batteryCapacity);
 
-    EXPECT_EQ(0, telemetryConfig.telemetry_inversion);
-    EXPECT_EQ(0, telemetryConfig.telemetry_switch);
+    EXPECT_EQ(0, telemetryConfig()->telemetry_inversion);
+    EXPECT_EQ(0, telemetryConfig()->telemetry_switch);
 
-    EXPECT_EQ(0, frskyTelemetryConfig.gpsNoFixLatitude);
-    EXPECT_EQ(0, frskyTelemetryConfig.gpsNoFixLongitude);
-    EXPECT_EQ(FRSKY_FORMAT_DMS, frskyTelemetryConfig.frsky_coordinate_format);
-    EXPECT_EQ(FRSKY_UNIT_METRICS, frskyTelemetryConfig.frsky_unit);
-    EXPECT_EQ(0, frskyTelemetryConfig.frsky_vfas_precision);
+    EXPECT_EQ(0, frskyTelemetryConfig()->gpsNoFixLatitude);
+    EXPECT_EQ(0, frskyTelemetryConfig()->gpsNoFixLongitude);
+    EXPECT_EQ(FRSKY_FORMAT_DMS, frskyTelemetryConfig()->frsky_coordinate_format);
+    EXPECT_EQ(FRSKY_UNIT_METRICS, frskyTelemetryConfig()->frsky_unit);
+    EXPECT_EQ(0, frskyTelemetryConfig()->frsky_vfas_precision);
 
-    EXPECT_EQ(0, rxConfig.serialrx_provider);
-    EXPECT_EQ(0, rxConfig.spektrum_sat_bind);
+    EXPECT_EQ(0, rxConfig()->serialrx_provider);
+    EXPECT_EQ(0, rxConfig()->spektrum_sat_bind);
 
-    EXPECT_EQ(0, rxConfig.rssi_channel);
-    EXPECT_EQ(0, rxConfig.rssi_ppm_invert);
-    EXPECT_EQ(0, rxConfig.rcSmoothing);
+    EXPECT_EQ(0, rxConfig()->rssi_channel);
+    EXPECT_EQ(0, rxConfig()->rssi_ppm_invert);
+    EXPECT_EQ(0, rxConfig()->rcSmoothing);
 
-    EXPECT_EQ(INPUT_FILTERING_DISABLED, pwmRxConfig.inputFilteringMode);
+    EXPECT_EQ(INPUT_FILTERING_DISABLED, pwmRxConfig()->inputFilteringMode);
 
-    EXPECT_EQ(0, armingConfig.retarded_arm);
+    EXPECT_EQ(0, armingConfig()->retarded_arm);
 
-    EXPECT_EQ(0, mixerConfig.servo_lowpass_enable);
+    EXPECT_EQ(0, mixerConfig()->servo_lowpass_enable);
 
-    EXPECT_EQ(GPS_NMEA, gpsConfig.provider);
-    EXPECT_EQ(SBAS_AUTO, gpsConfig.sbasMode);
-    EXPECT_EQ(GPS_AUTOBAUD_OFF, gpsConfig.autoBaud);
+    EXPECT_EQ(GPS_NMEA, gpsConfig()->provider);
+    EXPECT_EQ(SBAS_AUTO, gpsConfig()->sbasMode);
+    EXPECT_EQ(GPS_AUTOBAUD_OFF, gpsConfig()->autoBaud);
 
-    EXPECT_EQ(0, systemConfig.emf_avoidance);
+    EXPECT_EQ(0, systemConfig()->emf_avoidance);
 
-    EXPECT_EQ(0, controlRateProfiles[0].thrExpo8);
-    EXPECT_EQ(0, controlRateProfiles[0].dynThrPID);
-    EXPECT_EQ(0, controlRateProfiles[0].rcYawExpo8);
+    EXPECT_EQ(0, controlRateProfiles(0)->thrExpo8);
+    EXPECT_EQ(0, controlRateProfiles(0)->dynThrPID);
+    EXPECT_EQ(0, controlRateProfiles(0)->rcYawExpo8);
     for (uint8_t axis = 0; axis < FD_INDEX_COUNT; axis++) {
-        EXPECT_EQ(0, controlRateProfiles[0].rates[axis]);
+        EXPECT_EQ(0, controlRateProfiles(0)->rates[axis]);
     }
 
-    EXPECT_EQ(0, failsafeConfig.failsafe_kill_switch); // default failsafe switch action is identical to rc link loss
-    EXPECT_EQ(0, failsafeConfig.failsafe_procedure);   // default full failsafe procedure is 0: auto-landing
+    EXPECT_EQ(0, failsafeConfig()->failsafe_kill_switch); // default failsafe switch action is identical to rc link loss
+    EXPECT_EQ(0, failsafeConfig()->failsafe_procedure);   // default full failsafe procedure is 0: auto-landing
 
     // custom mixer. clear by defaults.
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        EXPECT_EQ(0.0f, customMotorMixer[i].throttle);
+        EXPECT_EQ(0.0f, customMotorMixer(i)->throttle);
     }
 }
 

@@ -22,11 +22,14 @@
 
 extern "C" {
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "io/rc_controls.h"
 
     #include "sensors/battery.h"
     #include "io/beeper.h"
+
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -56,7 +59,7 @@ TEST(BatteryTest, BatteryADCToVoltage)
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
     };
-    memcpy(&batteryConfig, &testBatteryConfig, sizeof(batteryConfig));
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
     batteryInit();
 
@@ -76,7 +79,7 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToVoltageExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToVoltageExpectation->scale;
 #ifdef DEBUG_BATTERY
         printf("adcReading: %d, vbatscale: %d\n",
                 batteryAdcToVoltageExpectation->adcReading,
@@ -117,7 +120,7 @@ TEST(BatteryTest, BatteryState)
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
     };
-    memcpy(&batteryConfig, &testBatteryConfig, sizeof(batteryConfig));
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
     batteryInit();
 
@@ -144,7 +147,7 @@ TEST(BatteryTest, BatteryState)
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToBatteryStateExpectation_t *batteryAdcToBatteryStateExpectation = &batteryAdcToBatteryStateExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToBatteryStateExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToBatteryStateExpectation->scale;
         currentADCReading = batteryAdcToBatteryStateExpectation->adcReading;
         updateBattery( );
         batteryState_e batteryState = getBatteryState();
@@ -178,7 +181,7 @@ TEST(BatteryTest, CellCount)
         .batteryCapacity = 2200,
     };
 
-    memcpy(&batteryConfig, &testBatteryConfig, sizeof(batteryConfig));
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
     batteryInit();
 
@@ -191,7 +194,7 @@ TEST(BatteryTest, CellCount)
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToCellCountExpectation_t *batteryAdcToCellCountExpectation = &batteryAdcToCellCountExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToCellCountExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToCellCountExpectation->scale;
         currentADCReading = batteryAdcToCellCountExpectation->adcReading;
         updateBattery( );
         EXPECT_EQ(batteryAdcToCellCountExpectation->cellCount, batteryCellCount);

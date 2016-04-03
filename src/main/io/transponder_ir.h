@@ -21,7 +21,7 @@ typedef struct transponderConfig_s {
     uint8_t data[6];
 } transponderConfig_t;
 
-extern transponderConfig_t transponderConfig;
+PG_DECLARE(transponderConfig_t, transponderConfig);
 
 void transponderInit(uint8_t* transponderCode);
 

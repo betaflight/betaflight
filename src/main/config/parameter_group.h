@@ -70,57 +70,64 @@ extern const pgRegistry_t __pg_registry_end[];
         else                                                         \
             /**/
 
-#define PG_DECLARE(_type, _name)                \
-    extern _type _name                          \
+#define PG_DECLARE(_type, _name)                                        \
+    extern _type _name ## _System;                                      \
+    static inline _type* _name(void) { return &_name ## _System; }      \
+    struct _dummy                                                        \
     /**/
 
-#define PG_DECLARE_ARR(_type, _size, _name)     \
-    extern _type _name[_size]                   \
+#define PG_DECLARE_ARR(_type, _size, _name)                             \
+    extern _type _name ## _SystemArray[_size];                          \
+    static inline _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
+    static inline _type (* _name ## _arr(void))[_size] { return &_name ## _SystemArray; } \
+    struct _dummy                                                        \
     /**/
 
-#define PG_DECLARE_PROFILE(_type, _name)        \
-    extern _type *_name                         \
+#define PG_DECLARE_PROFILE(_type, _name)                                \
+    extern _type *_name ## _ProfileCurrent;                             \
+    static inline _type* _name(void) { return _name ## _ProfileCurrent; } \
+    struct _dummy                                                        \
     /**/
 
 // Register config
 #define PG_REGISTER(_type, _name, _pgn, _version)                       \
-    _type _name;                                                        \
-    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+    _type _name ## _System;                                             \
+    static const pgRegistry_t _name ##_Registry PG_REGISTER_ATTRIBUTES = { \
         .pgn = _pgn | (_version << 12),                                 \
-        .size = sizeof(_name) | PGR_SIZE_SYSTEM_FLAG,                   \
-        .address = (uint8_t*)&_name,                                    \
+        .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
+        .address = (uint8_t*)&_name ## _System,                         \
         .ptr = 0,                                                       \
     }                                                                   \
     /**/
 
 // Register config
 #define PG_REGISTER_ARR(_type, _size, _name, _pgn, _version)            \
-    _type _name[_size];                                                 \
-    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+    _type _name ## _SystemArray[_size];                                 \
+    static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
         .pgn = _pgn | (_version << 12),                                 \
-        .size = sizeof(_name) | PGR_SIZE_SYSTEM_FLAG,                   \
-        .address = (uint8_t*)&_name,                                    \
+        .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
+        .address = (uint8_t*)&_name ## _SystemArray,                    \
         .ptr = 0,                                                       \
     }                                                                   \
     /**/
 
 
 #ifdef UNIT_TEST
-#define PG_ASSIGN(_type, _name)                                         \
-    _type *_name = &_name##Storage[0];
+# define PG_ASSIGN(_type, _name)                \
+    _type *_name ## _ProfileCurrent = &_name ## _Storage[0];
 #else
-#define PG_ASSIGN(_type, _name)                                         \
-    _type *_name;
+# define PG_ASSIGN(_type, _name)                \
+    _type *_name ## _ProfileCurrent;
 #endif
 
 #define PG_REGISTER_PROFILE(_type, _name, _pgn, _version)               \
-    STATIC_UNIT_TESTED _type _name##Storage[MAX_PROFILE_COUNT];         \
+    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT];      \
     PG_ASSIGN(_type, _name)                                             \
-    static const pgRegistry_t _name##Registry PG_REGISTER_ATTRIBUTES = { \
+    static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
         .pgn = _pgn | (_version << 12),                                 \
         .size = sizeof(_type) | PGR_SIZE_PROFILE_FLAG,                  \
-        .address = (uint8_t*)&_name##Storage,                           \
-        .ptr = (uint8_t **)&_name,                                      \
+        .address = (uint8_t*)&_name ## _Storage,                        \
+        .ptr = (uint8_t **)&_name ## _ProfileCurrent,                   \
     }                                                                   \
     /**/
 

@@ -57,9 +57,7 @@ extern "C" {
     #include "config/runtime_config.h"
     #include "config/config.h"
 
-    pidProfile_t testPidProfile;
-    pidProfile_t *pidProfile = &testPidProfile;
-
+    PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 }
@@ -141,7 +139,7 @@ int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
 
-motorAndServoConfig_t motorAndServoConfig;
+PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
 
 uint16_t enableFlightMode(flightModeFlags_e mask)

@@ -64,7 +64,7 @@ bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
-    switch (rxConfig.serialrx_provider) {
+    switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
             spek_chan_shift = 3;

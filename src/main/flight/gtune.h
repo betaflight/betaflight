@@ -26,7 +26,7 @@ typedef struct gtuneConfig_s {
     uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
 } gtuneConfig_t;
 
-extern gtuneConfig_t *gtuneConfig;
+PG_DECLARE_PROFILE(gtuneConfig_t, gtuneConfig);
 
 void init_Gtune(void);
 void calculate_Gtune(uint8_t axis);
