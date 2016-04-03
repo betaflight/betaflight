@@ -60,8 +60,8 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t profileIndex)
     uint8_t *base = pgOffset(reg, profileIndex);
 
     memset(base, 0, regSize);
-    if (reg->resetCallbackFunc) {
-        reg->resetCallbackFunc(base);
+    if (reg->resetFunc) {
+        reg->resetFunc(base);
     }
 }
 
