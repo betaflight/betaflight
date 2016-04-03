@@ -266,17 +266,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         rcDelayCommand = 10;
         return;
     }
-
-#ifdef DISPLAY
-    if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
-        displayDisablePageCycling();
-    }
-
-    if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
-        displayEnablePageCycling();
-    }
-#endif
-
 }
 
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId)

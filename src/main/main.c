@@ -522,17 +522,6 @@ void init(void)
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit(&masterConfig.batteryConfig);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-#ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
-        displayShowFixedPage(PAGE_GPS);
-#else
-        displayResetPageCycling();
-        displayEnablePageCycling();
-#endif
-    }
-#endif
-
 #ifdef CJMCU
     LED2_ON;
 #endif

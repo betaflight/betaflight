@@ -119,7 +119,10 @@
 #define GPS_PROTO_NAZA
 
 #define GTUNE
+
 #define DISPLAY
+#define DISPLAY_ARMED_BITMAP
+
 #define SERIAL_RX
 #define TELEMETRY
 #define TELEMETRY_FRSKY
