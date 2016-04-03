@@ -43,7 +43,6 @@
 #include "io/rc_adjustments.h"
 
 #include "sensors/sensors.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
@@ -123,13 +122,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
     featureSet(FEATURE_FAILSAFE);
-
-    RESET_CONFIG(gyroConfig_t, gyroConfig(),
-        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
-
-        .gyroMovementCalibrationThreshold = 32,
-    );
 
 #ifdef TELEMETRY
     hottTelemetryConfig()->hottAlarmSoundInterval = 5;

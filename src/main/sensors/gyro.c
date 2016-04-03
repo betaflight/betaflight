@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include <platform.h>
@@ -27,6 +28,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -51,8 +53,19 @@ static bool gyroFilterStateIsSet;
 int axis;
 
 gyro_t gyro;                      // gyro access functions
-PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 sensor_align_e gyroAlign = 0;
+
+PG_REGISTER_WITH_RESET(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+
+void pgReset_gyroConfig(gyroConfig_t *instance)
+{
+    RESET_CONFIG(gyroConfig_t, instance,
+        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
+
+        .gyroMovementCalibrationThreshold = 32,
+    );
+}
 
 void initGyroFilterCoefficients(void) {
     if (gyroConfig()->soft_gyro_lpf_hz) {
