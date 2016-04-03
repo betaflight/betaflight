@@ -44,7 +44,6 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
-#include "drivers/serial_escserial.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 

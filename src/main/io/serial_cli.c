@@ -47,7 +47,6 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
 #include "drivers/gyro_sync.h"
-#include "drivers/serial_escserial.h"
 
 #include "drivers/buf_writer.h"
 
