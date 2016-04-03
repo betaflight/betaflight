@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
@@ -37,6 +38,7 @@
 #include "config/parameter_group_ids.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_reset.h"
 
 #include "flight/failsafe.h"
 
@@ -53,7 +55,18 @@
 
 static failsafeState_t failsafeState;
 
-PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+PG_REGISTER_WITH_RESET(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+
+void pgReset_failsafeConfig(failsafeConfig_t *instance)
+{
+    // Failsafe Variables
+    RESET_CONFIG(failsafeConfig_t, instance,
+        .failsafe_delay = 10,              // 1sec
+        .failsafe_off_delay = 200,         // 20sec
+        .failsafe_throttle = 1000,         // default throttle off.
+        .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
+    );
+}
 
 static void failsafeReset(void)
 {

@@ -55,7 +55,12 @@
 
 #ifdef GPS
 
-PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+PG_REGISTER_WITH_RESET(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+
+void pgReset_gpsConfig(gpsConfig_t *instance)
+{
+    instance->autoConfig = GPS_AUTOCONFIG_ON;
+}
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'

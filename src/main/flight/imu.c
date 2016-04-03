@@ -78,7 +78,7 @@ static imuRuntimeConfig_t *imuRuntimeConfig;
 static accDeadband_t *accDeadband;
 
 PG_REGISTER_WITH_RESET(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
-PG_REGISTER_PROFILE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
 void pgReset_imuConfig(imuConfig_t *instance)
 {
@@ -91,6 +91,12 @@ void pgReset_imuConfig(imuConfig_t *instance)
         .small_angle = 25,
         .max_angle_inclination = 500,    // 50 degrees
     );
+}
+
+void pgReset_throttleCorrectionConfig(throttleCorrectionConfig_t *instance)
+{
+    instance->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    instance->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 }
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame

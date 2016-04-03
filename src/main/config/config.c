@@ -129,36 +129,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     parseRcChannels("AETR1234", rxConfig());
 
-    RESET_CONFIG(armingConfig_t, armingConfig(),
-         .disarm_kill_switch = 1,
-         .auto_disarm_delay = 5,
-         .max_arm_angle = 25,
-    );
-    airplaneConfig()->fixedwing_althold_dir = 1;
-
-#ifdef GPS
-    // gps/nav stuff
-    gpsConfig()->autoConfig = GPS_AUTOCONFIG_ON;
-#endif
-
-    systemConfig()->i2c_highspeed = 1;
-
-    resetControlRateConfig(controlRateProfiles(0));
-
-    compassConfig()->mag_declination = 0;
-
     // Radio
-
-    throttleCorrectionConfig()->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    throttleCorrectionConfig()->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
-
-    // Failsafe Variables
-    RESET_CONFIG(failsafeConfig_t, failsafeConfig(),
-        .failsafe_delay = 10,              // 1sec
-        .failsafe_off_delay = 200,         // 20sec
-        .failsafe_throttle = 1000,         // default throttle off.
-        .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
-    );
 
 #ifdef USE_SERVOS
     // gimbal
@@ -289,14 +260,6 @@ STATIC_UNIT_TESTED void resetConf(void)
         }
     }
 
-    // FIXME implement differently
-
-    // copy first control rate config into remaining profile
-    for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        memcpy(controlRateProfiles(i), controlRateProfiles(0), sizeof(controlRateConfig_t));
-    }
-
-    // TODO
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
         configureRateProfileSelection(i, i % MAX_CONTROL_RATE_PROFILE_COUNT);
     }

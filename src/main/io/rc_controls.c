@@ -63,7 +63,7 @@
 
 #define AIRMODE_DEADBAND 12
 
-PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+PG_REGISTER_WITH_RESET(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
 
 PG_REGISTER_PROFILE_WITH_RESET(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 PG_REGISTER_PROFILE(modeActivationProfile_t, modeActivationProfile, PG_MODE_ACTIVATION_PROFILE, 0);
@@ -75,7 +75,8 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
-void pgReset_rcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
+void pgReset_rcControlsConfig(rcControlsConfig_t *rcControlsConfig)
+{
     RESET_CONFIG_2(rcControlsConfig_t, rcControlsConfig,
         .deadband = 0,
         .yaw_deadband = 0,
@@ -83,6 +84,15 @@ void pgReset_rcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
         .alt_hold_fast_change = 1,
         .yaw_control_direction = 1,
         .deadband3d_throttle = 50,
+    );
+}
+
+void pgReset_armingConfig(armingConfig_t *instance)
+{
+    RESET_CONFIG(armingConfig_t, instance,
+         .disarm_kill_switch = 1,
+         .auto_disarm_delay = 5,
+         .max_arm_angle = 25,
     );
 }
 
