@@ -1163,7 +1163,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(gpsSol.hdop / 100);
         break;
     case MSP_GPSSTATISTICS:
-        headSerialReply(32);
+        headSerialReply(20);
         serialize16(gpsStats.lastMessageDt);
         serialize32(gpsStats.errors);
         serialize32(gpsStats.timeouts);
