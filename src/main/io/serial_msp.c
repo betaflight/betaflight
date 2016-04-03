@@ -1469,7 +1469,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(pidProfile());
+        pgReset_pidProfile(pidProfile());
         break;    
 
     case MSP_SET_SENSOR_ALIGNMENT:
