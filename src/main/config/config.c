@@ -89,17 +89,6 @@
 #define SECOND_PORT_INDEX 1
 #endif
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
-    RESET_CONFIG_2(rcControlsConfig_t, rcControlsConfig,
-        .deadband = 0,
-        .yaw_deadband = 0,
-        .alt_hold_deadband = 40,
-        .alt_hold_fast_change = 1,
-        .yaw_control_direction = 1,
-        .deadband3d_throttle = 50,
-    );
-}
-
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
@@ -210,8 +199,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetRollAndPitchTrims(&accelerometerConfig()->accelerometerTrims);
 
     // Radio
-
-    resetRcControlsConfig(rcControlsConfig());
 
     throttleCorrectionConfig()->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     throttleCorrectionConfig()->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
