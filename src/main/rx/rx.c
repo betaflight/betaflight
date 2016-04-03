@@ -26,6 +26,7 @@
 #include "debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -471,7 +472,7 @@ static void readRxChannelsApplyRanges(void)
 
     for (channel = 0; channel < rxRuntimeConfig.channelCount; channel++) {
 
-        uint8_t rawChannel = calculateChannelRemapping(rxConfig()->rcmap, REMAPPABLE_CHANNEL_COUNT, channel);
+        uint8_t rawChannel = calculateChannelRemapping(rxConfig()->rcmap, ARRAYLEN(rxConfig()->rcmap), channel);
 
         // sample the channel
         uint16_t sample = rcReadRawFunc(&rxRuntimeConfig, rawChannel);
