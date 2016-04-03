@@ -42,26 +42,47 @@ const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria)
     return NULL;
 }
 
-void pgLoad(const pgRegistry_t* reg, const void *from, int size)
+static uint8_t *pgOffset(const pgRegistry_t* reg, uint8_t profileIndex)
 {
-    memset(reg->address, 0, pgSize(reg));
+    const uint16_t regSize = pgSize(reg);
+
+    uint8_t *base = reg->address;
+    if (!pgIsSystem(reg)) {
+        base += (regSize * profileIndex);
+    }
+    return base;
+}
+
+static void pgResetInstance(const pgRegistry_t *reg, uint8_t profileIndex)
+{
+    const uint16_t regSize = pgSize(reg);
+
+    uint8_t *base = pgOffset(reg, profileIndex);
+
+    memset(base, 0, regSize);
+    if (reg->resetCallbackFunc) {
+        reg->resetCallbackFunc(base);
+    }
+}
+
+
+void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex)
+{
+    pgResetInstance(reg, profileIndex);
+
     const int take = MIN(size, pgSize(reg));
-    memcpy(reg->address, from, take);
+    memcpy(pgOffset(reg, profileIndex), from, take);
 }
 
 void pgResetAll(uint8_t profileCount)
 {
-    // Clear all configuration
     PG_FOREACH(reg) {
-        // FIXME this assumes that all defaults should be 0, but this is not the case.
-        const uint16_t regSize = pgSize(reg);
         if (pgIsSystem(reg)) {
-            memset(reg->address, 0, regSize);
+            pgResetInstance(reg, 0);
         } else {
             // reset one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < profileCount; profileIndex++) {
-                uint8_t *base = reg->address + (regSize * profileIndex);
-                memset(base, 0, regSize);
+                pgResetInstance(reg, profileIndex);
             }
         }
     }
@@ -71,7 +92,7 @@ void pgActivateProfile(uint8_t profileIndexToActivate)
 {
     PG_FOREACH(reg) {
         if (!pgIsSystem(reg)) {
-            uint8_t *ptr = reg->address + (profileIndexToActivate * pgSize(reg));
+            uint8_t *ptr = pgOffset(reg, profileIndexToActivate);
             *(reg->ptr) = ptr;
         }
     }

@@ -114,17 +114,13 @@ static bool loadPG(const configRecord_t *record)
         return false;
     }
 
-    uint8_t *ptr;
-    const uint16_t regSize = pgSize(reg);
-    if ((record->flags & CR_CLASSIFICATION_MASK) == CR_CLASSICATION_SYSTEM) {
-        ptr = reg->address;
-    } else {
-        const uint8_t profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
-        ptr = reg->address + (profileIndex * regSize);
+    uint8_t profileIndex = 0;
+
+    if (!pgIsSystem(reg)) {
+        profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
     }
-    // Clear the in-memory copy.  Sets any ungraded fields to zero.
-    memset(ptr, 0, regSize);
-    memcpy(ptr, record->pg, MIN(regSize, record->size - sizeof(*record)));
+
+    pgLoad(reg, record->pg, record->size, profileIndex);
     return true;
 }
 

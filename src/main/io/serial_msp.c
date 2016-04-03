@@ -1243,7 +1243,8 @@ static bool processInCommand(void)
     const pgRegistry_t *reg = pgMatcher(pgMatcherForMSPSet, (void*)&currentPort->cmdMSP);
 
     if (reg != NULL) {
-        pgLoad(reg, currentPort->inBuf + currentPort->indRX, currentPort->dataSize);
+        // this works for system and profile settings as the profile index will be ignored by pgLoad if the reg is a system registration.
+        pgLoad(reg, currentPort->inBuf + currentPort->indRX, currentPort->dataSize, getCurrentProfile());
         headSerialReply(0);
         return true;
     }

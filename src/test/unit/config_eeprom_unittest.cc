@@ -25,6 +25,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/color.h"
+    #include "common/utils.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -114,6 +115,45 @@ extern "C" {
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
+    typedef struct someSystemData_s {
+        uint32_t uint32;
+        uint16_t uint16;
+        uint8_t uint8;
+    }  PG_PACKED someSystemData_t;
+
+    PG_DECLARE(someSystemData_t, someSystemData);
+
+    void pgReset_someSystemData(someSystemData_t *instance)
+    {
+        instance->uint32 = 0xFFFFFFFF;
+        instance->uint16 = 0xAAAA;
+        instance->uint8 = 0x88;
+    }
+
+    PG_REGISTER_WITH_RESET(someSystemData_t, someSystemData, PG_RESERVED_FOR_TESTING_1, 0);
+
+    typedef struct someSystemArrayItem_s {
+        uint16_t uint16;
+        uint32_t uint32;
+        uint8_t uint8;
+    }  PG_PACKED someSystemArrayItem_t;
+
+    PG_DECLARE_ARR(someSystemArrayItem_t, 10, someSystemArray);
+
+    void pgReset_someSystemArray(someSystemArrayItem_t *instance)
+    {
+        for (int i = 0; i < 10; i++) {
+            instance->uint16 = 0xFFFF;
+            instance->uint32 = 0xAAAAAAAA;
+            instance->uint8 = 0x88;
+
+            instance++;
+        }
+    }
+
+    PG_REGISTER_ARR_WITH_RESET(someSystemArrayItem_t, 10, someSystemArray, PG_RESERVED_FOR_TESTING_2, 0);
+
+
     typedef struct someProfileSpecificData_s {
         uint8_t uint8;
         uint16_t uint16;
@@ -121,17 +161,72 @@ extern "C" {
     } PG_PACKED someProfileSpecificData_t;
 
     PG_DECLARE_PROFILE(someProfileSpecificData_t, someProfileSpecificData);
-    PG_REGISTER_PROFILE(someProfileSpecificData_t, someProfileSpecificData, PG_RESERVED_FOR_TESTING_1, 0);
 
+    void pgReset_someProfileSpecificData(someProfileSpecificData_t *instance)
+    {
+        instance->uint8 = 0xFF;
+        instance->uint16 = 0xAAAA;
+        instance->uint32 = 0x88888888;
+    }
+
+    PG_REGISTER_PROFILE_WITH_RESET(someProfileSpecificData_t, someProfileSpecificData, PG_RESERVED_FOR_TESTING_3, 0);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 
+//#define DEBUG_PG_INSTANCES
+
 TEST(configTest, resetEEPROM)
 {
+    // when
+
     resetEEPROM();
+
+    // then
+
+    //
+    // check system settings
+    //
+
+    EXPECT_EQ(0xFFFFFFFF, someSystemData()->uint32);
+    EXPECT_EQ(0xAAAA, someSystemData()->uint16);
+    EXPECT_EQ(0x88, someSystemData()->uint8);
+
+    for (int i = 0; i < 10; i++) {
+        someSystemArrayItem_t *item = someSystemArray(i);
+
+#ifdef DEBUG_PG_INSTANCES
+        printf("iteration: %d\n", i);
+#endif
+        EXPECT_EQ(0xFFFF, item->uint16);
+        EXPECT_EQ(0xAAAAAAAA, item->uint32);
+        EXPECT_EQ(0x88, item->uint8);
+    }
+
+
+    //
+    // check each profile
+    //
+
+    EXPECT_EQ(0xFF, someProfileSpecificData()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
+
+    // and
+
+    changeProfile(1);
+    EXPECT_EQ(0xFF, someProfileSpecificData()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
+
+    // and
+
+    changeProfile(2);
+    EXPECT_EQ(0xFF, someProfileSpecificData()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
 }
 
 TEST(configTest, modify)
@@ -150,7 +245,7 @@ TEST(configTest, modify)
     EXPECT_EQ(123, imuConfig()->looptime);
 }
 
-TEST(configTest, modifyProfile)
+TEST(configTest, modifyProfiles)
 {
     resetEEPROM();
 

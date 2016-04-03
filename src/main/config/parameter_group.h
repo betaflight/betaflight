@@ -33,11 +33,14 @@ typedef enum {
     PGR_SIZE_PROFILE_FLAG = 0x8000, // start using flags from the top bit down
 } pgRegistryInternal_e;
 
+typedef void (*pgResetCallbackFunc)(void *);
+
 typedef struct pgRegistry_s {
     pgn_t pgn;          // The parameter group number, the top 4 bits are reserved for version
     uint16_t size;      // Size of the group in RAM, the top 4 bits are reserved for flags
     uint8_t *address;   // Address of the group in RAM.
     uint8_t **ptr;      // The pointer to update after loading the record into ram.
+    pgResetCallbackFunc resetCallbackFunc;  // Pointer to a function that resets a single parameter group instance
 } pgRegistry_t;
 
 static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
@@ -72,12 +75,14 @@ extern const pgRegistry_t __pg_registry_end[];
 
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
+    void pgReset_##_name(_type *);                                      \
     static inline _type* _name(void) { return &_name ## _System; }      \
     struct _dummy                                                        \
     /**/
 
 #define PG_DECLARE_ARR(_type, _size, _name)                             \
     extern _type _name ## _SystemArray[_size];                          \
+    void pgReset_##_name(_type *);                                      \
     static inline _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type (* _name ## _arr(void))[_size] { return &_name ## _SystemArray; } \
     struct _dummy                                                        \
@@ -85,6 +90,7 @@ extern const pgRegistry_t __pg_registry_end[];
 
 #define PG_DECLARE_PROFILE(_type, _name)                                \
     extern _type *_name ## _ProfileCurrent;                             \
+    void pgReset_##_name(_type *);                                      \
     static inline _type* _name(void) { return _name ## _ProfileCurrent; } \
     struct _dummy                                                        \
     /**/
@@ -97,7 +103,21 @@ extern const pgRegistry_t __pg_registry_end[];
         .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name ## _System,                         \
         .ptr = 0,                                                       \
+        .resetCallbackFunc = 0                                          \
     }                                                                   \
+    /**/
+
+// Register config
+#define PG_REGISTER_WITH_RESET(_type, _name, _pgn, _version)            \
+    _type _name ## _System;                                             \
+    static const pgRegistry_t _name ##_Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
+        .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
+        .address = (uint8_t*)&_name ## _System,                         \
+        .ptr = 0,                                                       \
+        .resetCallbackFunc = (pgResetCallbackFunc)pgReset_##_name       \
+    }                                                                   \
+
     /**/
 
 // Register config
@@ -105,9 +125,22 @@ extern const pgRegistry_t __pg_registry_end[];
     _type _name ## _SystemArray[_size];                                 \
     static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
         .pgn = _pgn | (_version << 12),                                 \
+        .size = (sizeof(_type) * _size) | PGR_SIZE_SYSTEM_FLAG, \
+        .address = (uint8_t*)&_name ## _SystemArray,                    \
+        .ptr = 0,                                                       \
+        .resetCallbackFunc = 0                                          \
+    }                                                                   \
+    /**/
+
+// Register config
+#define PG_REGISTER_ARR_WITH_RESET(_type, _size, _name, _pgn, _version) \
+    _type _name ## _SystemArray[_size];                                 \
+    static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
         .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name ## _SystemArray,                    \
         .ptr = 0,                                                       \
+        .resetCallbackFunc = (pgResetCallbackFunc)pgReset_##_name       \
     }                                                                   \
     /**/
 
@@ -128,6 +161,19 @@ extern const pgRegistry_t __pg_registry_end[];
         .size = sizeof(_type) | PGR_SIZE_PROFILE_FLAG,                  \
         .address = (uint8_t*)&_name ## _Storage,                        \
         .ptr = (uint8_t **)&_name ## _ProfileCurrent,                   \
+        .resetCallbackFunc = 0                                          \
+    }                                                                   \
+    /**/
+
+#define PG_REGISTER_PROFILE_WITH_RESET(_type, _name, _pgn, _version)    \
+    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT];      \
+    PG_ASSIGN(_type, _name)                                             \
+    static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
+        .pgn = _pgn | (_version << 12),                                 \
+        .size = sizeof(_type) | PGR_SIZE_PROFILE_FLAG,                  \
+        .address = (uint8_t*)&_name ## _Storage,                        \
+        .ptr = (uint8_t **)&_name ## _ProfileCurrent,                   \
+        .resetCallbackFunc = (pgResetCallbackFunc)pgReset_##_name       \
     }                                                                   \
     /**/
 
@@ -135,6 +181,6 @@ typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *c
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
-void pgLoad(const pgRegistry_t* reg, const void *from, int size);
+void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex);
 void pgResetAll(uint8_t profileCount);
 void pgActivateProfile(uint8_t profileIndexToActivate);
