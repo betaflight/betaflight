@@ -461,7 +461,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,
+    TABLE_BLACKBOX_DEVICE,  
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -781,6 +781,7 @@ typedef union {
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
+static void cliPrintVarRange(const clivalue_t *var);
 static void cliPrint(const char *str);
 static void cliPrintf(const char *fmt, ...);
 static void cliWrite(uint8_t ch);
@@ -2557,7 +2558,27 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-
+static void cliPrintVarRange(const clivalue_t *var) 
+{
+    switch (var->type & VALUE_MODE_MASK) {
+        case (MODE_DIRECT): {
+            cliPrintf("Allowed range: %d - %d\n", var->config.minmax.min, var->config.minmax.max);
+        }
+        break;
+        case (MODE_LOOKUP): {
+            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
+            cliPrint("Allowed values:");
+            uint8_t i;
+            for (i = 0; i < tableEntry->valueCount ; i++) {
+                if (i > 0) 
+                    cliPrint(",");
+                cliPrintf(" %s", tableEntry->values[i]);
+            }
+            cliPrint("\n");
+        }
+        break;
+    }
+}
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
     void *ptr = var->ptr;
@@ -2669,6 +2690,7 @@ static void cliSet(char *cmdline)
                     cliPrintVar(val, 0);
                 } else {
                     cliPrint("Invalid value\r\n");
+                    cliPrintVarRange(val);
                 }
 
                 return;
@@ -2692,6 +2714,8 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
+            cliPrint("\n");
+            cliPrintVarRange(val);
             cliPrint("\r\n");
 
             matchedCommands++;
