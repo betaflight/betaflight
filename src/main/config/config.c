@@ -52,7 +52,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motor_and_servo.h"
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/transponder_ir.h"
@@ -85,16 +84,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
-
-void resetmotorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
-{
-    RESET_CONFIG(motorAndServoConfig_t, motorAndServoConfig,
-        .minthrottle = 1150,
-        .maxthrottle = 1850,
-        .mincommand = 1000,
-        .servoCenterPulse = 1500,
-    );
-}
 
 void resetMotor3DConfig(motor3DConfig_t *motor3DConfig)
 {
@@ -278,15 +267,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     airplaneConfig()->fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-    resetmotorAndServoConfig(motorAndServoConfig());
     resetMotor3DConfig(motor3DConfig());
-
-#ifdef BRUSHED_MOTORS
-    motorAndServoConfig()->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-#else
-    motorAndServoConfig()->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-#endif
-    motorAndServoConfig()->servo_pwm_rate = 50;
 
 #ifdef GPS
     // gps/nav stuff

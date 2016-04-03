@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
@@ -24,10 +25,25 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "io/gimbal.h"
+#include "config/config_reset.h"
 
 #include "motor_and_servo.h"
 
-PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+PG_REGISTER_WITH_RESET(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
+void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
+{
+    RESET_CONFIG(motorAndServoConfig_t, motorAndServoConfig,
+        .minthrottle = 1150,
+        .maxthrottle = 1850,
+        .mincommand = 1000,
+        .servoCenterPulse = 1500,
+#ifdef BRUSHED_MOTORS
+        .motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+#else
+        .motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+#endif
+        .servo_pwm_rate = 50;
+    );
+
+}
