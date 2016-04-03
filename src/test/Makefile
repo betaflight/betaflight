@@ -31,7 +31,6 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
-	-save-temps=obj \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
 
