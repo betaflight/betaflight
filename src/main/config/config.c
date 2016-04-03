@@ -87,22 +87,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-
-#ifdef GPS
-void resetGpsProfile(gpsProfile_t *gpsProfile)
-{
-    RESET_CONFIG(gpsProfile_t, gpsProfile,
-        .gps_wp_radius = 200,
-        .gps_lpf = 20,
-        .nav_slew_rate = 30,
-        .nav_controls_heading = 1,
-        .nav_speed_min = 100,
-        .nav_speed_max = 300,
-        .ap_mode = 40,
-    );
-}
-#endif
-
 #ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
@@ -375,10 +359,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     // gimbal
     gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
-#endif
-
-#ifdef GPS
-    resetGpsProfile(gpsProfile());
 #endif
 
 #ifdef LED_STRIP
