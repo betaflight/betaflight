@@ -32,6 +32,12 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
+#ifdef BRUSHED_MOTORS
+#define DEFAULT_PWM_RATE BRUSHED_MOTORS_PWM_RATE
+#else
+#define DEFAULT_PWM_RATE BRUSHLESS_MOTORS_PWM_RATE
+#endif
+
 PG_REGISTER_WITH_RESET(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
 void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
@@ -41,11 +47,7 @@ void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
         .maxthrottle = 1850,
         .mincommand = 1000,
         .servoCenterPulse = 1500,
-#ifdef BRUSHED_MOTORS
-        .motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE,
-#else
-        .motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE,
-#endif
+        .motor_pwm_rate = DEFAULT_PWM_RATE,
         .servo_pwm_rate = 50,
     );
 
