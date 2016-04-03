@@ -100,7 +100,7 @@ PG_REGISTER_ARR_WITH_RESET(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT,
 
 void pgReset_rxConfig(rxConfig_t *instance)
 {
-    RESET_CONFIG_2(rxConfig_t, instance,
+    RESET_CONFIG(rxConfig_t, instance,
         .sbus_inversion = 1,
         .midrc = 1500,
         .mincheck = 1100,
