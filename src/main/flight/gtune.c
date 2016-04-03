@@ -100,7 +100,8 @@ extern uint8_t motorCount;
 
 PG_REGISTER_PROFILE_WITH_RESET(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
 
-void pgReset_gtuneConfig(gtuneConfig_t * gtuneConfig) {
+void pgReset_gtuneConfig(gtuneConfig_t * gtuneConfig)
+{
     RESET_CONFIG(gtuneConfig_t, gtuneConfig,
         .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
         .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
