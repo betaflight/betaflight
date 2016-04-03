@@ -89,14 +89,6 @@
 #define SECOND_PORT_INDEX 1
 #endif
 
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
-        .values.roll = 0,
-        .values.pitch = 0,
-    );
-}
-
 uint16_t getCurrentMinthrottle(void)
 {
     return motorAndServoConfig()->minthrottle;
@@ -188,15 +180,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetControlRateConfig(controlRateProfiles(0));
 
     compassConfig()->mag_declination = 0;
-
-    RESET_CONFIG_2(accelerometerConfig_t, accelerometerConfig(),
-        .acc_cut_hz = 15,
-        .accz_lpf_cutoff = 5.0f,
-        .accDeadband.z = 40,
-        .accDeadband.xy = 40,
-        .acc_unarmedcal = 1,
-    );
-    resetRollAndPitchTrims(&accelerometerConfig()->accelerometerTrims);
 
     // Radio
 

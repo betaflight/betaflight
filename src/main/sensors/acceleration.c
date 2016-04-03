@@ -39,11 +39,31 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_reset.h"
 #include "config/feature.h"
 
 #include "sensors/acceleration.h"
 
-PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
+}
+
+void pgReset_accelerometerConfig(accelerometerConfig_t *instance) {
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_cut_hz = 15,
+        .accz_lpf_cutoff = 5.0f,
+        .accDeadband.z = 40,
+        .accDeadband.xy = 40,
+        .acc_unarmedcal = 1,
+    );
+    resetRollAndPitchTrims(&instance->accelerometerTrims);
+}
 
 int32_t accADC[XYZ_AXIS_COUNT];
 
