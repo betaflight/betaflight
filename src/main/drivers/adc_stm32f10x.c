@@ -23,6 +23,8 @@
 
 #include "build_config.h"
 
+#include "config/parameter_group.h"
+
 #include "system.h"
 
 #include "sensors/sensors.h" // FIXME dependency into the main code

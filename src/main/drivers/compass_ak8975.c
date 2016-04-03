@@ -27,11 +27,12 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
+
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
 
-#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 
 #include "sensor.h"

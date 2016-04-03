@@ -51,7 +51,7 @@ void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint
             gyroSamplePeriod = 1000;
         }
 
-        mpuDividerDrops  = gyroSyncDenominator - 1;
+        mpuDividerDrops = gyroSyncDenominator - 1;
         targetLooptime = (mpuDividerDrops + 1) * gyroSamplePeriod;
     } else {
     	mpuDividerDrops = 0;

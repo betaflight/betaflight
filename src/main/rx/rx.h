@@ -101,7 +101,7 @@ typedef enum {
 typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
-} rxFailsafeChannelConfiguration_t;
+} rxFailsafeChannelConfig_t;
 
 typedef struct rxChannelRangeConfiguration_s {
     uint16_t min;
@@ -123,10 +123,13 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+}  rxConfig_t;
 
-    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
-} rxConfig_t;
+PG_DECLARE(rxConfig_t, rxConfig);
+
+PG_DECLARE_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs);
+PG_DECLARE_ARR(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges);
+
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
@@ -135,8 +138,6 @@ typedef struct rxRuntimeConfig_s {
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
-
-void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
@@ -147,7 +148,7 @@ bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
+uint8_t serialRxFrameStatus();
 
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);

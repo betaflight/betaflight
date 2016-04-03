@@ -30,12 +30,19 @@
 #include <common/color.h>
 #include <common/maths.h>
 #include <common/typeconversion.h>
+#include <common/printf.h>
+#include <common/axis.h>
+#include <common/utils.h>
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include <common/printf.h>
+#include "flight/pid.h"
+#include "flight/failsafe.h"
 
 #include "io/rc_controls.h"
 
@@ -43,17 +50,19 @@
 
 #include "io/ledstrip.h"
 
-#include "flight/failsafe.h"
-
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/feature.h"
+
+PG_REGISTER_ARR_WITH_RESET(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 
 static void ledStripDisable(void);
 
-//#define USE_LED_ANIMATION
+#define USE_LED_ANIMATION
 //#define USE_LED_RING_DEFAULT_CONFIG
 
 // timers
@@ -226,10 +235,6 @@ uint8_t ledGridHeight;
 uint8_t ledCount;
 uint8_t ledsInRingCount;
 
-ledConfig_t *ledConfigs;
-hsvColor_t *colors;
-
-
 #ifdef USE_LED_RING_DEFAULT_CONFIG
 const ledConfig_t defaultLedStripConfig[] = {
     { CALCULATE_LED_XY( 2,  2), 3, LED_FUNCTION_THRUST_RING},
@@ -289,6 +294,10 @@ const ledConfig_t defaultLedStripConfig[] = {
 #endif
 
 
+void pgReset_ledConfigs(ledConfig_t *instance)
+{
+    memcpy(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
+}
 
 /*
  * 6 coords @nn,nn
@@ -350,7 +359,7 @@ void determineLedStripDimensions(void)
     const ledConfig_t *ledConfig;
 
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if (GET_LED_X(ledConfig) >= ledGridWidth) {
             ledGridWidth = GET_LED_X(ledConfig) + 1;
@@ -381,13 +390,9 @@ void updateLedCount(void)
     ledCount = 0;
     ledsInRingCount = 0;
 
-    if( ledConfigs == 0 ){
-        return;
-    }
-
     for (ledIndex = 0; ledIndex < MAX_LED_STRIP_LENGTH; ledIndex++) {
 
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if (ledConfig->flags == 0 && ledConfig->xy == 0) {
             break;
@@ -426,7 +431,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         return !ok;
     }
 
-    ledConfig_t *ledConfig = &ledConfigs[ledIndex];
+    ledConfig_t *ledConfig = ledConfigs(ledIndex);
     memset(ledConfig, 0, sizeof(ledConfig_t));
 
     while (ok) {
@@ -507,7 +512,7 @@ void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSiz
     uint8_t index;
     uint8_t mappingIndex;
 
-    ledConfig_t *ledConfig = &ledConfigs[ledIndex];
+    ledConfig_t *ledConfig = ledConfigs(ledIndex);
 
     memset(ledConfigBuffer, 0, bufferSize);
     memset(&functions, 0, sizeof(functions));
@@ -532,28 +537,28 @@ void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledCon
 {
     // apply up/down colors regardless of quadrant.
     if ((ledConfig->flags & LED_DIRECTION_UP)) {
-        setLedHsv(ledIndex, &colors[modeColors->up]);
+        setLedHsv(ledIndex, colors(modeColors->up));
     }
 
     if ((ledConfig->flags & LED_DIRECTION_DOWN)) {
-        setLedHsv(ledIndex, &colors[modeColors->down]);
+        setLedHsv(ledIndex, colors(modeColors->down));
     }
 
     // override with n/e/s/w colors to each n/s e/w half - bail at first match.
     if ((ledConfig->flags & LED_DIRECTION_WEST) && GET_LED_X(ledConfig) <= highestXValueForWest) {
-        setLedHsv(ledIndex, &colors[modeColors->west]);
+        setLedHsv(ledIndex, colors(modeColors->west));
     }
 
     if ((ledConfig->flags & LED_DIRECTION_EAST) && GET_LED_X(ledConfig) >= lowestXValueForEast) {
-        setLedHsv(ledIndex, &colors[modeColors->east]);
+        setLedHsv(ledIndex, colors(modeColors->east));
     }
 
     if ((ledConfig->flags & LED_DIRECTION_NORTH) && GET_LED_Y(ledConfig) <= highestYValueForNorth) {
-        setLedHsv(ledIndex, &colors[modeColors->north]);
+        setLedHsv(ledIndex, colors(modeColors->north));
     }
 
     if ((ledConfig->flags & LED_DIRECTION_SOUTH) && GET_LED_Y(ledConfig) >= lowestYValueForSouth) {
-        setLedHsv(ledIndex, &colors[modeColors->south]);
+        setLedHsv(ledIndex, colors(modeColors->south));
     }
 
 }
@@ -601,11 +606,11 @@ void applyLedModeLayer(void)
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if (!(ledConfig->flags & LED_FUNCTION_THRUST_RING)) {
             if (ledConfig->flags & LED_FUNCTION_COLOR) {
-                setLedHsv(ledIndex, &colors[ledConfig->color]);
+                setLedHsv(ledIndex, colors(ledConfig->color));
             } else {
                 setLedHsv(ledIndex, &hsv_black);
             }
@@ -691,7 +696,7 @@ void applyLedWarningLayer(uint8_t updateNow)
 
         for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
-            ledConfig = &ledConfigs[ledIndex];
+            ledConfig = ledConfigs(ledIndex);
 
             if (!(ledConfig->flags & LED_FUNCTION_WARNING)) {
                 continue;
@@ -729,7 +734,7 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if (!(ledConfig->flags & LED_FUNCTION_INDICATOR)) {
             continue;
@@ -764,7 +769,7 @@ void applyLedThrottleLayer()
 
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
         if (!(ledConfig->flags & LED_FUNCTION_THROTTLE)) {
             continue;
         }
@@ -797,7 +802,7 @@ void applyLedThrustRingLayer(void)
     uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if ((ledConfig->flags & LED_FUNCTION_THRUST_RING) == 0) {
             continue;
@@ -816,7 +821,7 @@ void applyLedThrustRingLayer(void)
         }
 
         if (applyColor) {
-            ringColor = colors[ledConfig->color];
+            ringColor = *colors(ledConfig->color);
         } else {
             ringColor = hsv_black;
         }
@@ -881,7 +886,7 @@ static void applyLedAnimationLayer(void)
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
-        ledConfig = &ledConfigs[ledIndex];
+        ledConfig = ledConfigs(ledIndex);
 
         if (GET_LED_Y(ledConfig) == previousRow) {
             setLedHsv(ledIndex, &hsv_white);
@@ -995,7 +1000,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
 {
     const char *remainingCharacters = colorConfig;
 
-    hsvColor_t *color = &colors[index];
+    hsvColor_t *color = colors(index);
 
     bool ok = true;
 
@@ -1009,21 +1014,21 @@ bool parseColor(uint8_t index, const char *colorConfig)
                     continue;
 
                 }
-                colors[index].h = val;
+                colors(index)->h = val;
                 break;
             case HSV_SATURATION:
                 if (val > HSV_SATURATION_MAX) {
                     ok = false;
                     continue;
                 }
-                colors[index].s = (uint8_t)val;
+                colors(index)->s = (uint8_t)val;
                 break;
             case HSV_VALUE:
                 if (val > HSV_VALUE_MAX) {
                     ok = false;
                     continue;
                 }
-                colors[index].v = (uint8_t)val;
+                colors(index)->v = (uint8_t)val;
                 break;
         }
         remainingCharacters = strstr(remainingCharacters, ",");
@@ -1043,26 +1048,17 @@ bool parseColor(uint8_t index, const char *colorConfig)
     return ok;
 }
 
-void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)
+void pgReset_colors(hsvColor_t *instance)
 {
-    memset(colors, 0, colorCount * sizeof(hsvColor_t));
-    for (uint8_t colorIndex = 0; colorIndex < colorCount && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
-        *colors++ = *defaultColors[colorIndex];
+    BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
+
+    for (uint8_t colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
+        *instance++ = *defaultColors[colorIndex];
     }
 }
 
-void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
+void ledStripInit(void)
 {
-    memset(ledConfigs, 0, MAX_LED_STRIP_LENGTH * sizeof(ledConfig_t));
-    memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-
-    reevalulateLedConfig();
-}
-
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
-{
-    ledConfigs = ledConfigsToUse;
-    colors = colorsToUse;
     ledStripInitialised = false;
 }
 

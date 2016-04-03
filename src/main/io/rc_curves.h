@@ -24,6 +24,6 @@ extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for exp
 extern int16_t lookupYawRC[YAW_LOOKUP_LENGTH];     // lookup table for expo & RC rate YAW
 extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
 
-void generatePitchRollCurve(controlRateConfig_t *controlRateConfig);
-void generateYawCurve(controlRateConfig_t *controlRateConfig);
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
+void generatePitchRollCurve();
+void generateYawCurve();
+void generateThrottleCurve();

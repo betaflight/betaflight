@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include <platform.h>
@@ -25,12 +26,19 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
+
 #include "sensors/sensors.h"
+
 #include "io/beeper.h"
 #include "io/statusindicator.h"
+
 #include "sensors/boardalignment.h"
 
 #include "sensors/gyro.h"
@@ -40,26 +48,30 @@ int16_t gyroADCRaw[XYZ_AXIS_COUNT];
 int32_t gyroADC[XYZ_AXIS_COUNT];
 int32_t gyroZero[FD_INDEX_COUNT] = { 0, 0, 0 };
 
-static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
 static bool gyroFilterStateIsSet;
-static float gyroLpfCutFreq;
 int axis;
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
+PG_REGISTER_WITH_RESET(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+
+void pgReset_gyroConfig(gyroConfig_t *instance)
 {
-    gyroConfig = gyroConfigToUse;
-    gyroLpfCutFreq = gyro_lpf_hz;
+    RESET_CONFIG(gyroConfig_t, instance,
+        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
+
+        .gyroMovementCalibrationThreshold = 32,
+    );
 }
 
 void initGyroFilterCoefficients(void) {
-    if (gyroLpfCutFreq) {
+    if (gyroConfig()->soft_gyro_lpf_hz) {
         // Initialisation needs to happen once sampling rate is known
         for (axis = 0; axis < 3; axis++) {
-            BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
+            BiQuadNewLpf(gyroConfig()->soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
         }
 
         gyroFilterStateIsSet = true;
@@ -148,7 +160,7 @@ void gyroUpdate(void)
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
-    if (gyroLpfCutFreq) {
+    if (gyroConfig()->soft_gyro_lpf_hz) {
         if (!gyroFilterStateIsSet) {
             initGyroFilterCoefficients();
         }
@@ -161,7 +173,7 @@ void gyroUpdate(void)
     }
 
     if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
+        performAcclerationCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();
