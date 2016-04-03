@@ -111,10 +111,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_RX_PPM);
 #endif
 
-//#if defined(SPRACINGF3MINI)
-//    featureSet(FEATURE_DISPLAY);
-//#endif
-
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
