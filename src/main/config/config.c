@@ -100,29 +100,6 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     );
 }
 
-static void resetMixerConfig(mixerConfig_t *mixerConfig) {
-#ifdef USE_SERVOS
-    RESET_CONFIG(mixerConfig_t, mixerConfig,
-        .mixerMode = MIXER_QUADX,
-        .pid_at_min_throttle = 1,
-        .airmode_saturation_limit = 50,
-        .yaw_motor_direction = 1,
-        .yaw_jump_prevention_limit = 200,
-
-        .tri_unarmed_servo = 1,
-        .servo_lowpass_freq = 400.0f,
-    );
-#else
-    RESET_CONFIG(mixerConfig_t, mixerConfig,
-        .mixerMode = MIXER_QUADX,
-        .pid_at_min_throttle = 1,
-        .airmode_saturation_limit = 50,
-        .yaw_motor_direction = 1,
-        .yaw_jump_prevention_limit = 200,
-    );
-#endif
-}
-
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
@@ -246,7 +223,6 @@ STATIC_UNIT_TESTED void resetConf(void)
         .failsafe_throttle = 1000,         // default throttle off.
         .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
     );
-    resetMixerConfig(mixerConfig());
 
 #ifdef USE_SERVOS
     // gimbal
