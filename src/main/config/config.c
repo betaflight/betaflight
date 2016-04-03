@@ -349,7 +349,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     hottTelemetryConfig()->hottAlarmSoundInterval = 5;
 #endif
 
-    RESET_CONFIG(rxConfig_t, rxConfig(),
+    RESET_CONFIG_2(rxConfig_t, rxConfig(),
         .sbus_inversion = 1,
         .midrc = 1500,
         .mincheck = 1100,
