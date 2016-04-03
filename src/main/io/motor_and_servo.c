@@ -29,6 +29,9 @@
 
 #include "motor_and_servo.h"
 
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 400
+
 PG_REGISTER_WITH_RESET(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
 void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
@@ -39,11 +42,11 @@ void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
         .mincommand = 1000,
         .servoCenterPulse = 1500,
 #ifdef BRUSHED_MOTORS
-        .motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+        .motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE,
 #else
-        .motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+        .motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE,
 #endif
-        .servo_pwm_rate = 50;
+        .servo_pwm_rate = 50,
     );
 
 }

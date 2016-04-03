@@ -82,18 +82,6 @@
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 400
-
-void resetMotor3DConfig(motor3DConfig_t *motor3DConfig)
-{
-    RESET_CONFIG(motor3DConfig_t, motor3DConfig,
-        .deadband3d_low = 1406,
-        .deadband3d_high = 1514,
-        .neutral3d = 1460,
-    );
-}
-
 static void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
     RESET_CONFIG(batteryConfig_t, batteryConfig,
@@ -266,9 +254,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     );
     airplaneConfig()->fixedwing_althold_dir = 1;
 
-    // Motor/ESC/Servo
-    resetMotor3DConfig(motor3DConfig());
-
 #ifdef GPS
     // gps/nav stuff
     gpsConfig()->autoConfig = GPS_AUTOCONFIG_ON;
@@ -308,19 +293,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetMixerConfig(mixerConfig());
 
 #ifdef USE_SERVOS
-    // servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        RESET_CONFIG(servoParam_t, &servoProfile()->servoConf[i],
-            .min = DEFAULT_SERVO_MIN,
-            .max = DEFAULT_SERVO_MAX,
-            .middle = DEFAULT_SERVO_MIDDLE,
-            .rate = 100,
-            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
-            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
-            .forwardFromChannel = CHANNEL_FORWARDING_DISABLED,
-        );
-    }
-
     // gimbal
     gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
 #endif
