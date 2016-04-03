@@ -1074,8 +1074,8 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_RXFAIL_CONFIG:
         headSerialReply(3 * (rxRuntimeConfig.channelCount));
         for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            serialize8(rxConfig()->failsafe_channel_configurations[i].mode);
-            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
+            serialize8(failsafeChannelConfigs(i)->mode);
+            serialize16(RXFAIL_STEP_TO_CHANNEL_VALUE(failsafeChannelConfigs(i)->step));
         }
         break;
     case MSP_RSSI_CONFIG:
@@ -1612,8 +1612,8 @@ static bool processInCommand(void)
     case MSP_SET_RXFAIL_CONFIG:
         i = read8();
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfig()->failsafe_channel_configurations[i].mode = read8();
-            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
+            failsafeChannelConfigs(i)->mode = read8();
+            failsafeChannelConfigs(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(read16());
         } else {
             headSerialError(0);
         }

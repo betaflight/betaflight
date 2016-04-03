@@ -32,6 +32,7 @@
 
 #include "config/config.h"
 #include "config/feature.h"
+#include "config/config_reset.h"
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
@@ -88,11 +89,46 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define SKIP_RC_ON_SUSPEND_PERIOD 1500000           // 1.5 second period in usec (call frequency independent)
 #define SKIP_RC_SAMPLES_ON_RESUME  2                // flush 2 samples to drop wrong measurements (timing independent)
 
+static uint8_t rcSampleIndex = 0;
+
 rxRuntimeConfig_t rxRuntimeConfig;
 
-PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER_WITH_RESET(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 
-static uint8_t rcSampleIndex = 0;
+PG_REGISTER_ARR_WITH_RESET(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs, PG_FAILSAFE_CHANNEL_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges, PG_CHANNEL_RANGE_CONFIG, 0);
+
+void pgReset_rxConfig(rxConfig_t *instance)
+{
+    RESET_CONFIG_2(rxConfig_t, instance,
+        .sbus_inversion = 1,
+        .midrc = 1500,
+        .mincheck = 1100,
+        .maxcheck = 1900,
+        .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
+        .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
+        .rssi_scale = RSSI_SCALE_DEFAULT,
+    );
+}
+
+void pgReset_channelRanges(rxChannelRangeConfiguration_t *instance) {
+    // set default calibration to full range and 1:1 mapping
+    for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
+        instance->min = PWM_RANGE_MIN;
+        instance->max = PWM_RANGE_MAX;
+        instance++;
+    }
+}
+
+void pgReset_failsafeChannelConfigs(rxFailsafeChannelConfig_t *instance)
+{
+    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+        instance->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        instance->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
+
+        instance++;
+    }
+}
 
 static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
     UNUSED(rxRuntimeConfig);
@@ -131,15 +167,6 @@ STATIC_UNIT_TESTED void rxUpdateFlightChannelStatus(uint8_t channel, bool valid)
     if (channel < NON_AUX_CHANNEL_COUNT && !valid) {
         // if signal is invalid - mark channel as BAD
         validFlightChannelMask &= ~(1 << channel);
-    }
-}
-
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration) {
-    // set default calibration to full range and 1:1 mapping
-    for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        rxChannelRangeConfiguration->min = PWM_RANGE_MIN;
-        rxChannelRangeConfiguration->max = PWM_RANGE_MAX;
-        rxChannelRangeConfiguration++;
     }
 }
 
@@ -391,8 +418,8 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 
 static uint16_t getRxfailValue(uint8_t channel)
 {
-    rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
-    uint8_t mode = channelFailsafeConfiguration->mode;
+    rxFailsafeChannelConfig_t *failsafeChannelConfig = failsafeChannelConfigs(channel);
+    uint8_t mode = failsafeChannelConfig->mode;
 
     // force auto mode to prevent fly away when failsafe stage 2 is disabled
     if ( channel < NON_AUX_CHANNEL_COUNT && (!feature(FEATURE_FAILSAFE)) ) {
@@ -421,18 +448,18 @@ static uint16_t getRxfailValue(uint8_t channel)
             return rcData[channel];
 
         case RX_FAILSAFE_MODE_SET:
-            return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step);
+            return RXFAIL_STEP_TO_CHANNEL_VALUE(failsafeChannelConfig->step);
     }
 }
 
-STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range)
+STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t *range)
 {
     // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
     if (sample == PPM_RCVR_TIMEOUT) {
         return PPM_RCVR_TIMEOUT;
     }
 
-    sample = scaleRange(sample, range.min, range.max, PWM_RANGE_MIN, PWM_RANGE_MAX);
+    sample = scaleRange(sample, range->min, range->max, PWM_RANGE_MIN, PWM_RANGE_MAX);
     sample = MIN(MAX(PWM_PULSE_MIN, sample), PWM_PULSE_MAX);
 
     return sample;
@@ -451,7 +478,7 @@ static void readRxChannelsApplyRanges(void)
 
         // apply the rx calibration
         if (channel < NON_AUX_CHANNEL_COUNT) {
-            sample = applyRxChannelRangeConfiguraton(sample, rxConfig()->channelRanges[channel]);
+            sample = applyRxChannelRangeConfiguraton(sample, channelRanges(channel));
         }
 
         rcRaw[channel] = sample;

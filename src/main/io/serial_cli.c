@@ -808,12 +808,12 @@ static void cliRxFail(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfig_t *failsafeChannelConfig = failsafeChannelConfigs(channel);
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
-            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
-            bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+            rxFailsafeChannelMode_e mode = failsafeChannelConfig->mode;
+            bool requireValue = failsafeChannelConfig->mode == RX_FAILSAFE_MODE_SET;
 
             ptr = strchr(ptr, ' ');
             if (ptr) {
@@ -844,16 +844,16 @@ static void cliRxFail(char *cmdline)
                         return;
                     }
 
-                    channelFailsafeConfiguration->step = value;
+                    failsafeChannelConfig->step = value;
                 } else if (requireValue) {
                     cliShowParseError();
                     return;
                 }
-                channelFailsafeConfiguration->mode = mode;
+                failsafeChannelConfig->mode = mode;
 
             }
 
-            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
+            char modeCharacter = rxFailsafeModeCharacters[failsafeChannelConfig->mode];
 
             // triple use of cliPrintf below
             // 1. acknowledge interpretation on command,
@@ -864,7 +864,7 @@ static void cliRxFail(char *cmdline)
                 cliPrintf("rxfail %u %c %d\r\n",
                     channel,
                     modeCharacter,
-                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(failsafeChannelConfig->step)
                 );
             } else {
                 cliPrintf("rxfail %u %c\r\n",
@@ -1185,11 +1185,11 @@ static void cliRxRange(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-            rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
+            rxChannelRangeConfiguration_t *channelRangeConfiguration = channelRanges(i);
             cliPrintf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
         }
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
+        pgReset_channelRanges(channelRanges(0));
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -1213,7 +1213,7 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
+                rxChannelRangeConfiguration_t *channelRangeConfiguration = channelRanges(i);
                 channelRangeConfiguration->min = rangeMin;
                 channelRangeConfiguration->max = rangeMax;
             }

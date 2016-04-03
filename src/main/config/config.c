@@ -127,23 +127,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     hottTelemetryConfig()->hottAlarmSoundInterval = 5;
 #endif
 
-    RESET_CONFIG_2(rxConfig_t, rxConfig(),
-        .sbus_inversion = 1,
-        .midrc = 1500,
-        .mincheck = 1100,
-        .maxcheck = 1900,
-        .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
-        .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_scale = RSSI_SCALE_DEFAULT,
-    );
-    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
-    }
-
-    resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
-
     parseRcChannels("AETR1234", rxConfig());
 
     RESET_CONFIG(armingConfig_t, armingConfig(),
