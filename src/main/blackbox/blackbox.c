@@ -63,11 +63,29 @@
 #include "config/config.h"
 #include "config/feature.h"
 #include "config/profile.h"
+#include "config/config_reset.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"
 
-PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
+#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SDCARD
+#else
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
+#endif
+
+PG_REGISTER_WITH_RESET(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+
+void pgReset_blackboxConfig(blackboxConfig_t *instance)
+{
+    RESET_CONFIG(blackboxConfig_t, instance,
+        .device = DEFAULT_BLACKBOX_DEVICE,
+        .rate_num = 1,
+        .rate_denom = 1,
+    );
+}
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200

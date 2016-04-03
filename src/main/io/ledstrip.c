@@ -54,8 +54,8 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-PG_REGISTER_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
-PG_REGISTER_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -294,6 +294,10 @@ const ledConfig_t defaultLedStripConfig[] = {
 #endif
 
 
+void pgReset_ledConfigs(ledConfig_t *instance)
+{
+    memcpy(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
+}
 
 /*
  * 6 coords @nn,nn
@@ -1044,24 +1048,13 @@ bool parseColor(uint8_t index, const char *colorConfig)
     return ok;
 }
 
-void applyDefaultColors(void)
+void pgReset_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
 
-    memset(colors_arr(), 0, sizeof(*colors_arr()));
-
-    hsvColor_t *color = colors(0);
     for (uint8_t colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
-        *color++ = *defaultColors[colorIndex];
+        *instance++ = *defaultColors[colorIndex];
     }
-}
-
-void applyDefaultLedStripConfig(void)
-{
-    memset(ledConfigs_arr(), 0, sizeof(*ledConfigs_arr()));
-    memcpy(ledConfigs_arr(), &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-
-    reevalulateLedConfig();
 }
 
 void ledStripInit(void)

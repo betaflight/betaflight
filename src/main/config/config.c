@@ -27,7 +27,6 @@
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
-#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -45,23 +44,15 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/rc_curves.h"
 #include "io/ledstrip.h"
-#include "io/transponder_ir.h"
-#include "io/gps.h"
-
-#include "rx/rx.h"
 
 #include "blackbox/blackbox_io.h"
 #include "blackbox/blackbox.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/hott.h"
 
 #include "flight/mixer.h"
 #include "flight/imu.h"
@@ -123,45 +114,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     featureSet(FEATURE_FAILSAFE);
 
-#ifdef TELEMETRY
-    hottTelemetryConfig()->hottAlarmSoundInterval = 5;
-#endif
-
     parseRcChannels("AETR1234", rxConfig());
 
-    // Radio
-
-#ifdef USE_SERVOS
-    // gimbal
-    gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
-#endif
-
-#ifdef LED_STRIP
-    applyDefaultColors();
-    applyDefaultLedStripConfig();
-#endif
-
-#ifdef TRANSPONDER
-    static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
-
-    memcpy(&transponderConfig()->data, &defaultTransponderData, sizeof(defaultTransponderData));
-#endif
-
-#ifdef BLACKBOX
-
-#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);
-    blackboxConfig()->device = BLACKBOX_DEVICE_FLASH;
-#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    featureSet(FEATURE_BLACKBOX);
-    blackboxConfig()->device = BLACKBOX_DEVICE_SDCARD;
-#else
-    blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
-#endif
-
-    blackboxConfig()->rate_num = 1;
-    blackboxConfig()->rate_denom = 1;
-#endif
 
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
