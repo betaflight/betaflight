@@ -137,7 +137,7 @@ extern const pgRegistry_t __pg_registry_end[];
     _type _name ## _SystemArray[_size];                                 \
     static const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = { \
         .pgn = _pgn | (_version << 12),                                 \
-        .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
+        .size = (sizeof(_type) * _size) | PGR_SIZE_SYSTEM_FLAG,         \
         .address = (uint8_t*)&_name ## _SystemArray,                    \
         .ptr = 0,                                                       \
         .resetCallbackFunc = (pgResetCallbackFunc)pgReset_##_name       \
