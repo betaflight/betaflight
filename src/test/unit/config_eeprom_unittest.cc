@@ -284,8 +284,10 @@ TEST(configTest, modifyProfiles)
 
 /*
  * Test that the config items whose default values are zero are indeed set to zero by resetConf().
- *
  */
+
+// FIXME delete this test and any stubs when migration to parameter groups is complete as it will be redundant.
+
 TEST(ConfigUnittest, TestResetConfigZeroValues)
 {
     resetEEPROM();
@@ -393,6 +395,8 @@ void configureRateProfileSelection(uint8_t, uint8_t) {}
 void activateControlRateConfig() {}
 
 void recalculateMagneticDeclination(void) {}
+
+void pgReset_serialConfig(serialConfig_t *) {}
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP

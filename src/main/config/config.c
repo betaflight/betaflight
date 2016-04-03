@@ -89,32 +89,6 @@
 #define SECOND_PORT_INDEX 1
 #endif
 
-void resetSerialConfig(serialConfig_t *serialConfig)
-{
-    memset(serialConfig, 0, sizeof(serialConfig_t));
-
-    serialPortConfig_t portConfig_Reset = {
-        .msp_baudrateIndex = BAUD_115200,
-        .gps_baudrateIndex = BAUD_57600,
-        .telemetry_baudrateIndex = BAUD_AUTO,
-        .blackbox_baudrateIndex = BAUD_115200,
-    };
-
-    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
-        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
-    }
-
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-
-#if defined(USE_VCP)
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
-
-    serialConfig->reboot_character = 'R';
-}
-
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     RESET_CONFIG_2(rcControlsConfig_t, rcControlsConfig,
         .deadband = 0,
@@ -242,8 +216,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     // gps/nav stuff
     gpsConfig()->autoConfig = GPS_AUTOCONFIG_ON;
 #endif
-
-    resetSerialConfig(serialConfig());
 
     systemConfig()->i2c_highspeed = 1;
 
@@ -548,7 +520,7 @@ void validateAndFixConfig(void)
 #endif
 
     if (!isSerialConfigValid(serialConfig())) {
-        resetSerialConfig(serialConfig());
+        pgReset_serialConfig(serialConfig());
     }
 }
 

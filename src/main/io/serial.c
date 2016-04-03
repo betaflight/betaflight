@@ -54,7 +54,33 @@
 #include "telemetry/telemetry.h"
 #endif
 
-PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+PG_REGISTER_WITH_RESET(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+void pgReset_serialConfig(serialConfig_t *serialConfig)
+{
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    serialPortConfig_t portConfig_Reset = {
+        .msp_baudrateIndex = BAUD_115200,
+        .gps_baudrateIndex = BAUD_57600,
+        .telemetry_baudrateIndex = BAUD_AUTO,
+        .blackbox_baudrateIndex = BAUD_115200,
+    };
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+
+#if defined(USE_VCP)
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+#endif
+
+    serialConfig->reboot_character = 'R';
+}
 
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
