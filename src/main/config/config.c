@@ -77,6 +77,11 @@
 #include "config/config_reset.h"
 #include "config/config_system.h"
 
+// FIXME remove the includes below when target specific configuration is moved out of this file
+#include "sensors/battery.h"
+
+
+
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
