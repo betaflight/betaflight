@@ -46,7 +46,6 @@
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
 
@@ -86,18 +85,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
-
-#ifdef BARO
-void resetBarometerConfig(barometerConfig_t *barometerConfig)
-{
-    RESET_CONFIG_2(barometerConfig_t, barometerConfig,
-        .baro_sample_count = 21,
-        .baro_noise_lpf = 0.6f,
-        .baro_cf_vel = 0.985f,
-        .baro_cf_alt = 0.965f,
-     );
- }
- #endif
 
 void resetmotorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
 {
@@ -322,10 +309,6 @@ STATIC_UNIT_TESTED void resetConf(void)
         .acc_unarmedcal = 1,
     );
     resetRollAndPitchTrims(&accelerometerConfig()->accelerometerTrims);
-
-#ifdef BARO
-    resetBarometerConfig(barometerConfig());
-#endif
 
     // Radio
 

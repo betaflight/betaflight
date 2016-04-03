@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include <platform.h>
@@ -30,11 +31,13 @@
 
 #include "drivers/barometer.h"
 #include "drivers/system.h"
+
 #include "config/config.h"
+#include "config/config_reset.h"
 
 #include "sensors/barometer.h"
 
-PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
 baro_t baro;                        // barometer access functions
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
@@ -47,6 +50,16 @@ int32_t BaroAlt = 0;
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
+
+void pgReset_barometerConfig(barometerConfig_t *barometerConfig)
+{
+    RESET_CONFIG_2(barometerConfig_t, barometerConfig,
+        .baro_sample_count = 21,
+        .baro_noise_lpf = 0.6f,
+        .baro_cf_vel = 0.985f,
+        .baro_cf_alt = 0.965f,
+     );
+ }
 
 bool isBaroCalibrationComplete(void)
 {
