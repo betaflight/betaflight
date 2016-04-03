@@ -119,16 +119,6 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     featureSet(FEATURE_FAILSAFE);
 
-    // imu settings
-    RESET_CONFIG(imuConfig_t, imuConfig(),
-        .dcm_kp = 2500,                // 1.0 * 10000
-        .looptime = 2000,
-        .gyroSync = 1,
-        .gyroSyncDenominator = 1,
-        .small_angle = 25,
-        .max_angle_inclination = 500,    // 50 degrees
-    );
-
     RESET_CONFIG(gyroConfig_t, gyroConfig(),
         .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
         .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
