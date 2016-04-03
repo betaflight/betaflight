@@ -68,7 +68,6 @@
 #include "telemetry/hott.h"
 
 #include "flight/mixer.h"
-#include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
@@ -88,22 +87,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-
-#ifdef GTUNE
-void resetGTuneConfig(gtuneConfig_t * gtuneConfig) {
-    RESET_CONFIG(gtuneConfig_t, gtuneConfig,
-        .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
-        .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
-        .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
-        .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-        .gtune_pwr = 0,                       // [0..10] Strength of adjustment
-        .gtune_settle_time = 450,             // [200..1000] Settle time in ms
-        .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
-    );
-}
-#endif
 
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
@@ -342,11 +325,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     resetSerialConfig(serialConfig());
 
     systemConfig()->i2c_highspeed = 1;
-
-    //resetPidProfile(pidProfile());
-#ifdef GTUNE
-    resetGTuneConfig(gtuneConfig());
-#endif
 
     resetControlRateConfig(controlRateProfiles(0));
 
