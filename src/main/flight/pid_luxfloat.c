@@ -65,14 +65,77 @@ extern uint8_t PIDweight[3];
 extern biquad_t deltaFilterState[3];
 
 
+STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate)
+{
+    static float lastErrorForDelta[3];
+    static float delta1[3], delta2[3];
+
+    SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
+
+    const float RateError = AngleRate - gyroRate;
+
+    // -----calculate P component
+    const float PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+
+    // -----calculate I component
+    errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
+
+    // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
+    // I coefficient (I8) moved before integration to make limiting independent from PID settings
+
+    // Anti windup protection
+    if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        errorGyroIf[axis] = errorGyroIf[axis] * pidScaleItermToRcInput(axis);
+        if (STATE(ANTI_WINDUP) || motorLimitReached) {
+            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+        } else {
+            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
+        }
+    }
+
+    const float ITerm = errorGyroIf[axis];
+
+    // -----calculate D component
+    float delta;
+    if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+        delta = RateError - lastErrorForDelta[axis];
+        lastErrorForDelta[axis] = RateError;
+    } else {                                         /* Delta from measurement */
+        delta = -(gyroRate - lastErrorForDelta[axis]);
+        lastErrorForDelta[axis] = gyroRate;
+    }
+
+    // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+    // would be scaled by different dt each time. Division by dT fixes that.
+    delta *= (1.0f / dT);
+
+    float deltaSum;
+    if (pidProfile->dterm_cut_hz) {
+        // Dterm low pass
+        delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
+    } else {
+        // When dterm filter disabled apply moving average to reduce noise
+        deltaSum = delta1[axis] + delta2[axis] + delta;
+        delta2[axis] = delta1[axis];
+        delta1[axis] = delta;
+        delta = deltaSum / 3.0f;
+    }
+
+    const float DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
+
+#ifdef BLACKBOX
+    axisPID_P[axis] = PTerm;
+    axisPID_I[axis] = ITerm;
+    axisPID_D[axis] = DTerm;
+#endif
+    GET_PID_LUX_FLOAT_CORE_LOCALS(axis);
+    // -----calculate total PID output
+    return constrain(lrintf(PTerm + ITerm + DTerm), -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
+}
+
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float RateError, AngleRate, gyroRate;
-    float ITerm,PTerm,DTerm;
-    static float lastErrorForDelta[3];
-    static float delta1[3], delta2[3];
-    float delta, deltaSum;
     float horizonLevelStrength = 1;
 
     pidFilterIsSetCheck(pidProfile);
@@ -95,20 +158,20 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 
     // ----------PID controller----------
     for (int axis = 0; axis < 3; axis++) {
-        SET_PID_LUX_FLOAT_LOCALS(axis);
         // -----Get the desired angle rate depending on flight mode
-        uint8_t rate = controlRateConfig->rates[axis];
+        const uint8_t rate = controlRateConfig->rates[axis];
 
+        float AngleRate;
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
          } else {
             // calculate error and limit the angle to the max inclination
 #ifdef GPS
-             const int32_t errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+             const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
-             const int32_t errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
+             const float errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
 
@@ -125,76 +188,19 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
             }
         }
 
-        gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
+        const float gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = AngleRate - gyroRate;
-
-        // -----calculate P component
-        PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
-
-        // -----calculate I component.
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
-
-        // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
-        // I coefficient (I8) moved before integration to make limiting independent from PID settings
-
-        // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            errorGyroIf[axis] = errorGyroIf[axis] * pidScaleItermToRcInput(axis);
-            if (STATE(ANTI_WINDUP) || motorLimitReached) {
-                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
-            } else {
-                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
-            }
-        }
-
-        ITerm = errorGyroIf[axis];
-
-        //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = RateError - lastErrorForDelta[axis];
-            lastErrorForDelta[axis] = RateError;
-        } else {                                         /* Delta from measurement */
-            delta = -(gyroRate - lastErrorForDelta[axis]);
-            lastErrorForDelta[axis] = gyroRate;
-        }
-
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta *= (1.0f / dT);
-
-        if (pidProfile->dterm_cut_hz) {
-            // Dterm low pass
-            delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
-        } else {
-            // When dterm filter disabled apply moving average to reduce noise
-            deltaSum = delta1[axis] + delta2[axis] + delta;
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
-            delta = deltaSum / 3.0f;
-        }
-
-        DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
-
-        // -----calculate total PID output
-        axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
+        axisPID[axis] = pidLuxFloatCore(axis, pidProfile, gyroRate, AngleRate);
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             calculate_Gtune(axis);
         }
 #endif
-
-#ifdef BLACKBOX
-        axisPID_P[axis] = PTerm;
-        axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
-#endif
-        GET_PID_LUX_FLOAT_LOCALS(axis);
     }
 }
 
