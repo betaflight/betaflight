@@ -72,10 +72,6 @@ extern biquad_t deltaFilterState[3];
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    UNUSED(rxConfig);
-
-    int32_t errorAngle;
-    int axis;
     int32_t delta, deltaSum;
     static int32_t delta1[3], delta2[3];
     int32_t PTerm, ITerm, DTerm;
@@ -83,22 +79,15 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
-    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
 
     pidFilterIsSetCheck(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(PITCH, rxConfig->midrc);
-
-        if(ABS(stickPosAil) > ABS(stickPosEle)){
-            mostDeflectedPos = ABS(stickPosAil);
-        }
-        else {
-            mostDeflectedPos = ABS(stickPosEle);
-        }
+        const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
+        const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
+        const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
 
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (500 - mostDeflectedPos) / 5;  // 100 at centre stick, 0 = max stick deflection
@@ -109,7 +98,7 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
     }
 
     // ----------PID controller----------
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         SET_PID_MULTI_WII_REWRITE_LOCALS(axis);
         uint8_t rate = controlRateConfig->rates[axis];
 
@@ -119,10 +108,10 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
         } else {
             // calculate error and limit the angle to max configured inclination
 #ifdef GPS
-            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #else
-            errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
 

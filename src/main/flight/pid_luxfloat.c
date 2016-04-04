@@ -72,13 +72,11 @@ extern biquad_t deltaFilterState[3];
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float RateError, errorAngle, AngleRate, gyroRate;
+    float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    int32_t stickPosAil, stickPosEle, mostDeflectedPos;
     static float lastErrorForDelta[3];
     static float delta1[3], delta2[3];
     float delta, deltaSum;
-    int axis;
     float horizonLevelStrength = 1;
 
     pidFilterIsSetCheck(pidProfile);
@@ -86,15 +84,9 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
         // Figure out the raw stick positions
-        stickPosAil = getRcStickDeflection(ROLL, rxConfig->midrc);
-        stickPosEle = getRcStickDeflection(PITCH, rxConfig->midrc);
-
-        if(ABS(stickPosAil) > ABS(stickPosEle)){
-            mostDeflectedPos = ABS(stickPosAil);
-        }
-        else {
-            mostDeflectedPos = ABS(stickPosEle);
-        }
+        const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
+        const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
+        const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
 
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
@@ -106,7 +98,7 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
     }
 
     // ----------PID controller----------
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         SET_PID_LUX_FLOAT_LOCALS(axis);
         // -----Get the desired angle rate depending on flight mode
         uint8_t rate = controlRateConfig->rates[axis];
@@ -117,10 +109,10 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
          } else {
             // calculate error and limit the angle to the max inclination
 #ifdef GPS
-            errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+             const int32_t errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
-            errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
+             const int32_t errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
 
