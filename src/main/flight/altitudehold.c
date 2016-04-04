@@ -66,12 +66,11 @@ int32_t vario = 0;                      // variometer in cm/s
 static int16_t initialThrottleHold;
 static int32_t EstAlt;                // in cm
 
-PG_REGISTER_WITH_RESET(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_ALT_HOLD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_ALT_HOLD_CONFIG, 0);
 
-void pgReset_airplaneConfig(airplaneConfig_t *instance)
-{
-    instance->fixedwing_althold_dir = 1;
-}
+PG_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig,
+    .fixedwing_althold_dir = 1,
+);
 
 // 40hz update rate (20hz LPF on acc)
 #define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)

@@ -55,17 +55,14 @@ int axis;
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-PG_REGISTER_WITH_RESET(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
-void pgReset_gyroConfig(gyroConfig_t *instance)
-{
-    RESET_CONFIG(gyroConfig_t, instance,
-        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
+PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
+    .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
 
-        .gyroMovementCalibrationThreshold = 32,
-    );
-}
+    .gyroMovementCalibrationThreshold = 32,
+);
 
 void initGyroFilterCoefficients(void) {
     if (gyroConfig()->soft_gyro_lpf_hz) {

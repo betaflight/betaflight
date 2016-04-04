@@ -98,22 +98,19 @@ extern uint8_t motorCount;
     pidProfile->gtune_average_cycles = 16;  [8..128] Number of looptime cycles used for gyro average calculation
 */
 
-PG_REGISTER_PROFILE_WITH_RESET(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
 
-void pgReset_gtuneConfig(gtuneConfig_t * gtuneConfig)
-{
-    RESET_CONFIG(gtuneConfig_t, gtuneConfig,
-        .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
-        .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
-        .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
-        .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-        .gtune_pwr = 0,                       // [0..10] Strength of adjustment
-        .gtune_settle_time = 450,             // [200..1000] Settle time in ms
-        .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
-    );
-}
+PG_RESET_TEMPLATE(gtuneConfig_t, gtuneConfig,
+    .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
+    .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
+    .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
+    .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+    .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+    .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+    .gtune_pwr = 0,                       // [0..10] Strength of adjustment
+    .gtune_settle_time = 450,             // [200..1000] Settle time in ms
+    .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
+);
 
 static int16_t delay_cycles;
 static int16_t time_skip[3];
