@@ -24,7 +24,7 @@
 
 void BL_SendBootInit(void);
 uint8_t BL_ConnectEx(void);
-uint8_t BL_SendCMDKeepAlive(void); 
+uint8_t BL_SendCMDKeepAlive(void);
 uint8_t BL_PageErase(void);
 uint8_t BL_ReadEEprom(void); 
 uint8_t BL_WriteEEprom(void); 
