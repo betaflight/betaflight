@@ -50,7 +50,7 @@ bool unittest_outsideRealtimeGuardInterval;
 #endif
 
 
-#ifdef SRC_MAIN_FLIGHT_PID_C_
+#ifdef SRC_MAIN_FLIGHT_PID_LUXFLOAT_C_
 #ifdef UNIT_TEST
 
 float unittest_pidLuxFloat_lastErrorForDelta[3];
@@ -77,6 +77,18 @@ float unittest_pidLuxFloat_DTerm[3];
         unittest_pidLuxFloat_DTerm[axis] = DTerm; \
     }
 
+#else
+
+#define SET_PID_LUX_FLOAT_LOCALS(axis) {}
+#define GET_PID_LUX_FLOAT_LOCALS(axis) {}
+
+#endif // UNIT_TEST
+#endif // SRC_MAIN_FLIGHT_PID_LUXFLOAT_C_
+
+
+#ifdef SRC_MAIN_FLIGHT_PID_MWREWRITE_C_
+#ifdef UNIT_TEST
+
 int32_t unittest_pidMultiWiiRewrite_lastErrorForDelta[3];
 int32_t unittest_pidMultiWiiRewrite_PTerm[3];
 int32_t unittest_pidMultiWiiRewrite_ITerm[3];
@@ -97,11 +109,9 @@ int32_t unittest_pidMultiWiiRewrite_DTerm[3];
 
 #else
 
-#define SET_PID_LUX_FLOAT_LOCALS(axis) {}
-#define GET_PID_LUX_FLOAT_LOCALS(axis) {}
 #define SET_PID_MULTI_WII_REWRITE_LOCALS(axis) {}
 #define GET_PID_MULTI_WII_REWRITE_LOCALS(axis) {}
 
 #endif // UNIT_TEST
-#endif // SRC_MAIN_FLIGHT_PID_C_
+#endif // SRC_MAIN_FLIGHT_PID_MWREWRITE_C_
 
