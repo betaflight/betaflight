@@ -109,8 +109,8 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
 
-    PG_REGISTER_PROFILE_WITH_RESET(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
-    void pgReset_pidProfile(pidProfile_t *) {}
+    PG_REGISTER_PROFILE_WITH_RESET_FN(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+    void pgResetFn_pidProfile(pidProfile_t *) {}
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
