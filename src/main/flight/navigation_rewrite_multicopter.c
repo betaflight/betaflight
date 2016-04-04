@@ -68,7 +68,8 @@ static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
         if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
-            float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -25.0f, +25.0f, false);
+            // We better overshoot a little bit than undershoot
+            float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -5.0f, +35.0f, false);
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {

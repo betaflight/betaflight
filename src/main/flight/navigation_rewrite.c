@@ -1616,7 +1616,7 @@ void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRat
     else {
         if (posControl.flags.isTerrainFollowEnabled) {
             if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
-                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, INAV_SURFACE_MAX_DISTANCE);
+                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / (posControl.pids.pos[Z].param.kP * posControl.pids.surface.param.kP)), 1.0f, INAV_SURFACE_MAX_DISTANCE);
             }
         }
         else {
@@ -2180,8 +2180,8 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
                                         (float)posControl.pidProfile->D8[PIDVEL] / 100.0f);
 
     // Initialize surface tracking PID
-    navPidInit(&posControl.pids.surface, 1.0f,
-                                         0.25f,
+    navPidInit(&posControl.pids.surface, 2.0f,
+                                         1.0f,
                                          0.0f);
 
     // Initialize fixed wing PID controllers
