@@ -57,7 +57,7 @@ typedef struct {
     float rateTarget;
 
     // Buffer for derivative calculation
-    float rateErrorBuf[5];
+    float dTermBuf[5];
 
     // Rate integrator
     float errorGyroIf;
@@ -217,14 +217,14 @@ static void pidApplyRateController(pidProfile_t *pidProfile, pidState_t *pidStat
     else {
         // Shift old error values
         for (n = 4; n > 0; n--) {
-            pidState->rateErrorBuf[n] = pidState->rateErrorBuf[n-1];
+            pidState->dTermBuf[n] = pidState->dTermBuf[n-1];
         }
 
         // Store new error value
-        pidState->rateErrorBuf[0] = rateError;
+        pidState->dTermBuf[0] = pidState->gyroRate;
 
         // Calculate derivative using 5-point noise-robust differentiator by Pavel Holoborodko
-        newDTerm = ((2 * (pidState->rateErrorBuf[1] - pidState->rateErrorBuf[3]) + (pidState->rateErrorBuf[0] - pidState->rateErrorBuf[4])) / (8 * dT)) * pidState->kD;
+        newDTerm = -((2 * (pidState->dTermBuf[1] - pidState->dTermBuf[3]) + (pidState->dTermBuf[0] - pidState->dTermBuf[4])) / (8 * dT)) * pidState->kD;
 
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
