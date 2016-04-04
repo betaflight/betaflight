@@ -24,16 +24,13 @@
 
 #include "build_config.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "config/runtime_config.h"
-#include "config/config_unittest.h"
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_reset.h"
 
@@ -42,7 +39,6 @@
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
-#include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
 #include "rx/rx.h"
@@ -51,10 +47,6 @@
 #include "io/rate_profile.h"
 
 #include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-#include "flight/gtune.h"
-#include "flight/mixer.h"
 
 int16_t axisPID[3];
 

@@ -26,18 +26,13 @@
 
 #include "build_config.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
 #include "config/runtime_config.h"
 #include "config/config_unittest.h"
-#include "config/parameter_group.h"
-#include "config/config.h"
-#include "config/config_reset.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
