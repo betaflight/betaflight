@@ -1189,7 +1189,7 @@ static void cliRxRange(char *cmdline)
             cliPrintf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
         }
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        pgReset_channelRanges(channelRanges(0));
+        PG_RESET_CURRENT(channelRanges);
     } else {
         ptr = cmdline;
         i = atoi(ptr);

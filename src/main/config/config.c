@@ -357,7 +357,7 @@ void validateAndFixConfig(void)
 #endif
 
     if (!isSerialConfigValid(serialConfig())) {
-        pgReset_serialConfig(serialConfig());
+        PG_RESET_CURRENT(serialConfig);
     }
 
 #if defined(USE_VCP)
