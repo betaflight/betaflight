@@ -47,7 +47,6 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
 #include "drivers/gyro_sync.h"
-#include "drivers/serial_escserial.h"
 
 #include "drivers/buf_writer.h"
 
@@ -141,9 +140,6 @@ static void cliRxRange(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
-#endif
-#ifdef USE_ESCSERIAL
-static void cliEscPassthrough(char *cmdline);
 #endif
 
 static void cliHelp(char *cmdline);
@@ -275,9 +271,6 @@ const clicmd_t cmdTable[] = {
             "[name]", cliGet),
 #ifdef GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
-#endif
-#ifdef USE_ESCSERIAL
-    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl]> <index>", cliEscPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef LED_STRIP
@@ -461,7 +454,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,
+    TABLE_BLACKBOX_DEVICE,  
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -781,6 +774,7 @@ typedef union {
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
+static void cliPrintVarRange(const clivalue_t *var);
 static void cliPrint(const char *str);
 static void cliPrintf(const char *fmt, ...);
 static void cliWrite(uint8_t ch);
@@ -2201,56 +2195,6 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
-#ifdef USE_ESCSERIAL
-static void cliEscPassthrough(char *cmdline)
-{
-    uint8_t mode = 0;
-    int index = 0;
-    int i = 0;
-    char *pch = NULL;
-    char *saveptr;
-
-    if (isEmpty(cmdline)) {
-        cliShowParseError();
-        return;
-    }
-
-    pch = strtok_r(cmdline, " ", &saveptr);
-    while (pch != NULL) {
-        switch (i) {
-            case 0:
-            	if(strncasecmp(pch, "sk", strlen(pch)) == 0)
-            	{
-            		mode = 0;
-            	}
-            	else if(strncasecmp(pch, "bl", strlen(pch)) == 0)
-            	{
-            		mode = 1;
-            	}
-            	else
-            	{
-                    cliShowParseError();
-                    return;
-            	}
-                break;
-            case 1:
-            	index = atoi(pch);
-                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                    printf("passthru at pwm output %d enabled\r\n", index);
-                }
-                else {
-                    printf("invalid pwm output, valid range: 0 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                    return;
-                }
-                break;
-        }
-        i++;
-        pch = strtok_r(NULL, " ", &saveptr);
-    }
-    escEnablePassthrough(cliPort,index,mode);
-}
-#endif
-
 static void cliHelp(char *cmdline)
 {
     uint32_t i = 0;
@@ -2557,7 +2501,27 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-
+static void cliPrintVarRange(const clivalue_t *var) 
+{
+    switch (var->type & VALUE_MODE_MASK) {
+        case (MODE_DIRECT): {
+            cliPrintf("Allowed range: %d - %d\n", var->config.minmax.min, var->config.minmax.max);
+        }
+        break;
+        case (MODE_LOOKUP): {
+            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
+            cliPrint("Allowed values:");
+            uint8_t i;
+            for (i = 0; i < tableEntry->valueCount ; i++) {
+                if (i > 0) 
+                    cliPrint(",");
+                cliPrintf(" %s", tableEntry->values[i]);
+            }
+            cliPrint("\n");
+        }
+        break;
+    }
+}
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
     void *ptr = var->ptr;
@@ -2669,6 +2633,7 @@ static void cliSet(char *cmdline)
                     cliPrintVar(val, 0);
                 } else {
                     cliPrint("Invalid value\r\n");
+                    cliPrintVarRange(val);
                 }
 
                 return;
@@ -2692,6 +2657,8 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
+            cliPrint("\n");
+            cliPrintVarRange(val);
             cliPrint("\r\n");
 
             matchedCommands++;

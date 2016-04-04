@@ -29,9 +29,6 @@
 #define LED1_PIN    Pin_4 // PB4 (LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
-
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_12 // PA12 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
@@ -191,10 +188,15 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
+#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#define USE_SERIAL_4WAY_SK_BOOTLOADER
+
+#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
 #ifdef USE_VCP
 #define USE_SERIAL_1WIRE_VCP
 #else
 #define USE_SERIAL_1WIRE
+#endif
 #endif
 
 #ifdef USE_SERIAL_1WIRE
