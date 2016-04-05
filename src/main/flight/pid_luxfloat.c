@@ -63,7 +63,6 @@ extern biquad_t deltaFilterState[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
-
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate)
 {
     static float lastErrorForDelta[3];
@@ -74,10 +73,10 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     const float RateError = AngleRate - gyroRate;
 
     // -----calculate P component
-    const float PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+    const float PTerm = RateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
 
     // -----calculate I component
-    float ITerm = lastITermf[axis] + RateError * dT * pidProfile->I_f[axis] * 10;
+    float ITerm = lastITermf[axis] + RateError * dT * pidProfile->I8[axis] * 10;
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
@@ -116,7 +115,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         delta1[axis] = delta;
         delta = deltaSum / 3.0f;
     }
-    const float DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
+    const float DTerm = constrainf(delta * pidProfile->D8[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
 
 #ifdef BLACKBOX
     axisPID_P[axis] = PTerm;
@@ -144,10 +143,10 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
-        if(pidProfile->H_sensitivity == 0){
+        if(pidProfile->D8[PIDLEVEL] == 0){
             horizonLevelStrength = 0;
         } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
         }
     }
 
@@ -174,11 +173,11 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 #endif
                 if (FLIGHT_MODE(ANGLE_MODE)) {
                     // ANGLE mode - control is angle based, so control loop is needed
-                    AngleRate = errorAngle * pidProfile->A_level;
+                    AngleRate = errorAngle * pidProfile->P8[PIDLEVEL];
                 } else {
                     // HORIZON mode - direct sticks control is applied to rate PID
                     // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
+                    AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength;
                 }
             }
         }

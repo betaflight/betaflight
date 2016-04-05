@@ -108,19 +108,6 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .yaw_p_limit = YAW_P_LIMIT_MAX,
     .dterm_cut_hz = 0,
     .deltaMethod = 1,
-
-    .P_f[FD_ROLL] = 1.4f,     // new PID with preliminary defaults test carefully
-    .I_f[FD_ROLL] = 0.4f,
-    .D_f[FD_ROLL] = 0.03f,
-    .P_f[FD_PITCH] = 1.4f,
-    .I_f[FD_PITCH] = 0.4f,
-    .D_f[FD_PITCH] = 0.03f,
-    .P_f[FD_YAW] = 3.5f,
-    .I_f[FD_YAW] = 0.4f,
-    .D_f[FD_YAW] = 0.01f,
-    .A_level = 5.0f,
-    .H_level = 3.0f,
-    .H_sensitivity = 75,
 );
 
 void pidResetITerm(void)

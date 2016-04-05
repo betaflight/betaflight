@@ -685,20 +685,6 @@ const clivalue_t valueTable[] = {
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[FD_YAW])},
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D8[FD_YAW])},
 
-    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_PITCH])},
-    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_PITCH])},
-    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_PITCH])},
-    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_ROLL])},
-    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_ROLL])},
-    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_ROLL])},
-    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_YAW])},
-    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_YAW])},
-    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_YAW])},
-
-    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_level)},
-    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, A_level)},
-    { "sensitivity_horizon",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  250 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_sensitivity)},
-
     { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[PIDALT])},
     { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[PIDALT])},
     { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D8[PIDALT])},

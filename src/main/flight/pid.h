@@ -60,13 +60,6 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[FD_INDEX_COUNT];              // float p i and d factors for lux float pid controller
-    float I_f[FD_INDEX_COUNT];
-    float D_f[FD_INDEX_COUNT];
-    float A_level;
-    float H_level;
-    uint8_t H_sensitivity;
-
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     float dterm_cut_hz;                     // dterm filtering
     uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
