@@ -131,8 +131,8 @@ void pidControllerInitLuxFloat(controlRateConfig_t *controlRate, uint16_t max_an
     deltaTotalSamples = 3;
     resetPidProfile(&testPidProfile);
     resetRollAndPitchTrims(rollAndPitchTrims);
-    pidResetErrorAngle();
-    pidResetErrorGyro();
+    pidResetITermAngle();
+    pidResetITerm();
     dT = 0.1f;
     // set up the PIDWeights to 100%, so they are neutral in the tests
     PIDweight[FD_ROLL] = 100;
@@ -510,8 +510,8 @@ void pidControllerInitMultiWiiRewrite(controlRateConfig_t *controlRate, uint16_t
     resetPidProfile(&testPidProfile);
     targetLooptime = 2048; // normalised targetLooptime for pidMultiWiiRewrite
     resetRollAndPitchTrims(rollAndPitchTrims);
-    pidResetErrorAngle();
-    pidResetErrorGyro();
+    pidResetITermAngle();
+    pidResetITerm();
     // set up the PIDWeights to 100%, so they are neutral in the tests
     PIDweight[FD_ROLL] = 100;
     PIDweight[FD_PITCH] = 100;

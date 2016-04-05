@@ -57,8 +57,8 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
 
-int32_t errorGyroI[3], errorGyroILimit[3];
-float errorGyroIf[3], errorGyroIfLimit[3];
+int32_t lastITerm[3], ITermLimit[3];
+float lastITermf[3], ITermLimitf[3];
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
@@ -123,11 +123,11 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .H_sensitivity = 75,
 );
 
-void pidResetErrorGyro(void)
+void pidResetITerm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        errorGyroI[axis] = 0;
-        errorGyroIf[axis] = 0.0f;
+        lastITerm[axis] = 0;
+        lastITermf[axis] = 0.0f;
     }
 }
 

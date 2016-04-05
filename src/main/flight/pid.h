@@ -82,6 +82,6 @@ float pidScaleItermToRcInput(int axis);
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorAngle(void);
-void pidResetErrorGyro(void);
+void pidResetITermAngle(void);
+void pidResetITerm(void);
 

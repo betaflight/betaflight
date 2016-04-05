@@ -430,8 +430,8 @@ void processRx(void)
                 DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
-            pidResetErrorAngle();
-            pidResetErrorGyro();
+            pidResetITermAngle();
+            pidResetITerm();
         }
     } else {
         DISABLE_STATE(ANTI_WINDUP);
@@ -501,7 +501,7 @@ void processRx(void)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            pidResetErrorAngle();
+            pidResetITermAngle();
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -513,7 +513,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            pidResetErrorAngle();
+            pidResetITermAngle();
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {

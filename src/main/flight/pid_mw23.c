@@ -51,26 +51,24 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
-static int32_t errorAngleI[2];
+static int32_t ITermAngle[2];
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 extern uint8_t motorCount;
 
-extern int32_t errorAngleI[2];
-
 #ifdef BLACKBOX
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
-extern int32_t errorGyroI[3], errorGyroILimit[3];
+extern int32_t lastITerm[3], ITermLimit[3];
 
 extern biquad_t deltaFilterState[3];
 
 
-void pidResetErrorAngle(void)
+void pidResetITermAngle(void)
 {
-    errorAngleI[AI_ROLL] = 0;
-    errorAngleI[AI_PITCH] = 0;
+    ITermAngle[AI_ROLL] = 0;
+    ITermAngle[AI_PITCH] = 0;
 }
 
 void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
@@ -98,23 +96,23 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         gyroError = gyroADC[axis] / 4;
 
         error = rc - gyroError;
-        errorGyroI[axis]  = constrain(errorGyroI[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
+        lastITerm[axis]  = constrain(lastITerm[axis] + error, -16000, +16000);   // WindUp   16 bits is ok here
 
         if (ABS(gyroADC[axis]) > (640 * 4)) {
-            errorGyroI[axis] = 0;
+            lastITerm[axis] = 0;
         }
 
         // Anti windup protection
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * pidScaleItermToRcInput(axis));
+            lastITerm[axis] = (int32_t) (lastITerm[axis] * pidScaleItermToRcInput(axis));
             if (STATE(ANTI_WINDUP) || motorLimitReached) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+                lastITerm[axis] = constrain(lastITerm[axis], -ITermLimit[axis], ITermLimit[axis]);
             } else {
-                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+                ITermLimit[axis] = ABS(lastITerm[axis]);
             }
         }
 
-        ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
+        ITerm = (lastITerm[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
         PTerm = (int32_t)rc * pidProfile->P8[axis] >> 6;
 
@@ -128,14 +126,14 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
                 +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
 
-            errorAngleI[axis]  = constrain(errorAngleI[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
+            ITermAngle[axis]  = constrain(ITermAngle[axis] + errorAngle, -10000, +10000);                                                // WindUp     //16 bits is ok here
 
             PTermACC = ((int32_t)errorAngle * pidProfile->P8[PIDLEVEL]) >> 7;   // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
 
             int16_t limit = pidProfile->D8[PIDLEVEL] * 5;
             PTermACC = constrain(PTermACC, -limit, +limit);
 
-            ITermACC = ((int32_t)errorAngleI[axis] * pidProfile->I8[PIDLEVEL]) >> 12;  // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+            ITermACC = ((int32_t)ITermAngle[axis] * pidProfile->I8[PIDLEVEL]) >> 12;  // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
 
             ITerm = ITermACC + ((ITerm - ITermACC) * prop >> 9);
             PTerm = PTermACC + ((PTerm - PTermACC) * prop >> 9);
@@ -187,9 +185,9 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 #else
     error = rc - (gyroADC[FD_YAW] / 4);
 #endif
-    errorGyroI[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
-    errorGyroI[FD_YAW]  = constrain(errorGyroI[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
-    if (ABS(rc) > 50) errorGyroI[FD_YAW] = 0;
+    lastITerm[FD_YAW]  += (int32_t)error * pidProfile->I8[FD_YAW];
+    lastITerm[FD_YAW]  = constrain(lastITerm[FD_YAW], 2 - ((int32_t)1 << 28), -2 + ((int32_t)1 << 28));
+    if (ABS(rc) > 50) lastITerm[FD_YAW] = 0;
 
     PTerm = (int32_t)error * pidProfile->P8[FD_YAW] >> 6; // TODO: Bitwise shift on a signed integer is not recommended
 
@@ -198,7 +196,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
-    ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+    ITerm = constrain((int16_t)(lastITerm[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] =  PTerm + ITerm;
 
