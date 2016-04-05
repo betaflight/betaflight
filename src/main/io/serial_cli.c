@@ -589,7 +589,7 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
-    { "gyro_soft_lpf",              VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
+    { "gyro_soft_lpf",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  128 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold)},
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_kp)},
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_ki)},

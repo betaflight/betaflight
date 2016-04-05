@@ -480,7 +480,7 @@ void init(void)
     }
 #endif
 
-    gyroUpdateSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+    gyroSetSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
