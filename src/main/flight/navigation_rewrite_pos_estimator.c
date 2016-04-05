@@ -512,9 +512,6 @@ static void updateEstimatedTopic(uint32_t currentTime)
                                         ((isSonarValid && posEstimator.sonar.alt < 20.0f && posEstimator.state.isBaroGroundValid) ||
                                          (isBaroValid && posEstimator.state.isBaroGroundValid && posEstimator.baro.alt < posEstimator.state.baroGroundAlt));
 
-    debug[0] = isAirCushionEffectDetected;
-    debug[1] = posEstimator.state.isBaroGroundValid;
-    debug[2] = posEstimator.state.baroGroundAlt;
 #if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
 #endif
