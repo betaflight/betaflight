@@ -77,20 +77,20 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     const float PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
 
     // -----calculate I component
-    errorGyroIf[axis] = errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10;
+    float ITerm = errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10;
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    errorGyroIf[axis] = constrainf(errorGyroIf[axis], -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
+    ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        errorGyroIf[axis] = errorGyroIf[axis] * pidScaleItermToRcInput(axis);
+        ITerm = ITerm * pidScaleItermToRcInput(axis);
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
-            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+            ITerm = constrainf(ITerm, -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
         } else {
-            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
+            errorGyroIfLimit[axis] = ABS(ITerm);
         }
     }
-    const float ITerm = errorGyroIf[axis];
+    errorGyroIf[axis] = ITerm;
 
     // -----calculate D component
     float delta;

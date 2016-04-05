@@ -81,20 +81,21 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator (Q19.13 format) is used.
     // Time correction (to avoid different I scaling for different builds based on average cycle time)
     // is normalized to cycle time = 2048 (2^11).
-    errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
+    int32_t ITerm = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t)(-GYRO_I_MAX << 13), (int32_t)(GYRO_I_MAX << 13));
+    ITerm = constrain(ITerm, (int32_t)(-GYRO_I_MAX << 13), (int32_t)(GYRO_I_MAX << 13));
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        errorGyroI[axis] = (int32_t)(errorGyroI[axis] * pidScaleItermToRcInput(axis));
+        ITerm = (int32_t)(ITerm * pidScaleItermToRcInput(axis));
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
-            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+            ITerm = constrain(ITerm, -errorGyroILimit[axis], errorGyroILimit[axis]);
         } else {
-            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+            errorGyroILimit[axis] = ABS(ITerm);
         }
     }
-    const int32_t ITerm = errorGyroI[axis] >> 13; // take integer part of Q18.13 value
+    errorGyroI[axis] = ITerm;
+    ITerm = ITerm >> 13; // take integer part of Q18.13 value
 
     // -----calculate D component
     int32_t delta;
