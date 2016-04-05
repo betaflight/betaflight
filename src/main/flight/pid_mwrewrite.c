@@ -53,23 +53,25 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
-#ifdef BLACKBOX
-extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
-#endif
+
 extern uint8_t PIDweight[3];
 extern int32_t errorGyroI[3], errorGyroILimit[3];
 
 extern biquad_t deltaFilterState[3];
 
+#ifdef BLACKBOX
+extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+#endif
 
-STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRateTmp)
+
+STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate)
 {
-    static int32_t delta1[3], delta2[3];
     static int32_t lastErrorForDelta[3];
+    static int32_t delta1[3], delta2[3];
 
     SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis);
 
-    const int32_t RateError = AngleRateTmp - gyroRate;
+    const int32_t RateError = AngleRate - gyroRate;
 
     // -----calculate P component
     const int32_t PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -80,21 +82,18 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // Time correction (to avoid different I scaling for different builds based on average cycle time)
     // is normalized to cycle time = 2048.
     errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
-
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
-
+    errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t)(-GYRO_I_MAX << 13), (int32_t)(GYRO_I_MAX << 13));
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        errorGyroI[axis] = (int32_t) (errorGyroI[axis] * pidScaleItermToRcInput(axis));
+        errorGyroI[axis] = (int32_t)(errorGyroI[axis] * pidScaleItermToRcInput(axis));
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
         } else {
             errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
     }
-
     const int32_t ITerm = errorGyroI[axis] >> 13;
 
     // -----calculate D component
@@ -107,24 +106,21 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         delta = -(gyroRate - lastErrorForDelta[axis]);
         lastErrorForDelta[axis] = gyroRate;
     }
-
     // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
     // would be scaled by different dt each time. Division by dT fixes that.
-    delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
-
+    delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
     int32_t deltaSum;
     if (pidProfile->dterm_cut_hz) {
         // Dterm delta low pass
-        deltaSum = delta;
-        deltaSum = lrintf(applyBiQuadFilter((float) deltaSum, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
+        delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
     } else {
         // When dterm filter disabled apply moving average to reduce noise
         deltaSum = delta1[axis] + delta2[axis] + delta;
         delta2[axis] = delta1[axis];
         delta1[axis] = delta;
+        delta = deltaSum;
     }
-
-    const int32_t DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+    const int32_t DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
 #ifdef BLACKBOX
     axisPID_P[axis] = PTerm;
@@ -162,29 +158,30 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
     for (int axis = 0; axis < 3; axis++) {
         const uint8_t rate = controlRateConfig->rates[axis];
 
-        int32_t AngleRateTmp;
+        int32_t AngleRate;
         // -----Get the desired angle rate depending on flight mode
-        if (axis == FD_YAW) { // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t)(rate + 27) * rcCommand[YAW]) >> 5);
+        if (axis == FD_YAW) {
+            // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
+            AngleRate = (((int32_t)(rate + 27) * rcCommand[YAW]) >> 5);
         } else {
-            // calculate error and limit the angle to max configured inclination
+            // calculate error and limit the angle to the max inclination
 #ifdef GPS
-            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
+                    - attitude.raw[axis] + angleTrim->raw[axis];
 #else
-            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int)max_angle_inclination), max_angle_inclination)
+                    - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
 
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // it's ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+                AngleRate = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
             } else {
-                //control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
-                AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
+                // control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
+                AngleRate = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
-                    // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
-                    AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
+                    // mix up angle error to desired AngleRate to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
+                    AngleRate += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
             }
         }
@@ -194,7 +191,7 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         const int32_t gyroRate = gyroADC[axis] / 4;
-        axisPID[axis] = pidMultiWiiRewriteCore(axis, pidProfile, gyroRate, AngleRateTmp);
+        axisPID[axis] = pidMultiWiiRewriteCore(axis, pidProfile, gyroRate, AngleRate);
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
