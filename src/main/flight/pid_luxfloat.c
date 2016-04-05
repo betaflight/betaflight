@@ -161,22 +161,22 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
         } else {
-            // calculate error and limit the angle to the max inclination
+            // control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
+            AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max roll/pitch rate
+            if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+               // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-            const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
-                    - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+                const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
+                        - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
 #else
-            const float errorAngle = (constrain(rcCommand[axis], -((int)max_angle_inclination), max_angle_inclination)
-                    - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+                const float errorAngle = (constrain(rcCommand[axis], -((int)max_angle_inclination), max_angle_inclination)
+                        - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
 #endif
-
-            if (FLIGHT_MODE(ANGLE_MODE)) {
-                // it's ANGLE mode - control is angle based, so control loop is needed
-                AngleRate = errorAngle * pidProfile->A_level;
-            } else {
-                // control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max roll/pitch rate
-                if (FLIGHT_MODE(HORIZON_MODE)) {
+                if (FLIGHT_MODE(ANGLE_MODE)) {
+                    // ANGLE mode - control is angle based, so control loop is needed
+                    AngleRate = errorAngle * pidProfile->A_level;
+                } else {
+                    // HORIZON mode - direct sticks control is applied to rate PID
                     // mix up angle error to desired AngleRate to add a little auto-level feel
                     AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
                 }

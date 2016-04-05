@@ -77,10 +77,10 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     const int32_t PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
 
     // -----calculate I component
-    // there should be no division before accumulating the error to integrator, because the precision would be reduced.
-    // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
+    // There should be no division before accumulating the error to integrator, because the precision would be reduced.
+    // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator (Q19.13 format) is used.
     // Time correction (to avoid different I scaling for different builds based on average cycle time)
-    // is normalized to cycle time = 2048.
+    // is normalized to cycle time = 2048 (2^11).
     errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -94,7 +94,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
             errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
     }
-    const int32_t ITerm = errorGyroI[axis] >> 13;
+    const int32_t ITerm = errorGyroI[axis] >> 13; // take integer part of Q18.13 value
 
     // -----calculate D component
     int32_t delta;
@@ -164,22 +164,22 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
             AngleRate = (((int32_t)(rate + 27) * rcCommand[YAW]) >> 5);
         } else {
-            // calculate error and limit the angle to the max inclination
+            // control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
+            AngleRate = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
+            if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+                // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
-                    - attitude.raw[axis] + angleTrim->raw[axis];
+                const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
+                        - attitude.raw[axis] + angleTrim->raw[axis];
 #else
-            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int)max_angle_inclination), max_angle_inclination)
-                    - attitude.raw[axis] + angleTrim->raw[axis];
+                const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int)max_angle_inclination), max_angle_inclination)
+                        - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
-
-            if (FLIGHT_MODE(ANGLE_MODE)) {
-                // it's ANGLE mode - control is angle based, so control loop is needed
-                AngleRate = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
-            } else {
-                // control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
-                AngleRate = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
-                if (FLIGHT_MODE(HORIZON_MODE)) {
+                if (FLIGHT_MODE(ANGLE_MODE)) {
+                    // ANGLE mode - control is angle based, so control loop is needed
+                    AngleRate = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+                } else {
+                    // HORIZON mode - direct sticks control is applied to rate PID
                     // mix up angle error to desired AngleRate to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
                     AngleRate += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
