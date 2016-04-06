@@ -22,6 +22,12 @@ typedef enum {
     INPUT_FILTERING_ENABLED
 } inputFilteringMode_e;
 
+typedef struct pwmRxConfig_s {
+    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
+} pwmRxConfig_t;
+
+PG_DECLARE(pwmRxConfig_t, pwmRxConfig);
+
 #define PPM_RCVR_TIMEOUT            0
 
 
@@ -35,6 +41,6 @@ uint16_t ppmRead(uint8_t channel);
 bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
 
-void pwmRxInit(inputFilteringMode_e initialInputFilteringMode);
+void pwmRxInit(void);
 
 bool isPWMDataBeingReceived(void);

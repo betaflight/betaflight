@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "common/maths.h"
@@ -29,6 +30,12 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
+
+#include "config/runtime_config.h"
+#include "config/parameter_group_ids.h"
+#include "config/parameter_group.h"
+#include "config/config.h"
+#include "config/config_reset.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -48,8 +55,6 @@
 
 #include "io/gps.h"
 
-#include "config/runtime_config.h"
-
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
@@ -67,12 +72,32 @@ float throttleAngleScale;
 float fc_acc;
 float smallAngleCosZ = 0;
 
-float magneticDeclination = 0.0f;       // calculated at startup from config
 static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
-static pidProfile_t *pidProfile;
 static accDeadband_t *accDeadband;
+
+PG_REGISTER_WITH_RESET(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+
+void pgReset_imuConfig(imuConfig_t *instance)
+{
+    // imu settings
+    RESET_CONFIG(imuConfig_t, instance,
+        .dcm_kp = 2500,                // 1.0 * 10000
+        .looptime = 2000,
+        .gyroSync = 1,
+        .gyroSyncDenominator = 1,
+        .small_angle = 25,
+        .max_angle_inclination = 500,    // 50 degrees
+    );
+}
+
+void pgReset_throttleCorrectionConfig(throttleCorrectionConfig_t *instance)
+{
+    instance->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    instance->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+}
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
@@ -109,14 +134,12 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
-    pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     float accz_lpf_cutoff,
     uint16_t throttle_correction_angle
 )
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
-    pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
@@ -353,6 +376,15 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     } else {
         DISABLE_STATE(SMALL_ANGLE);
     }
+}
+
+bool imuIsAircraftArmable(uint8_t arming_angle)
+{
+    /* Update small angle state */
+    
+    float armingAngleCosZ = cos_approx(degreesToRadians(arming_angle));
+    
+    return (rMat[2][2] > armingAngleCosZ);
 }
 
 static bool imuIsAccelerometerHealthy(void)

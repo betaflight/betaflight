@@ -27,11 +27,13 @@ extern "C" {
     #include "common/color.h"
     #include "common/axis.h"
 
+    #include "config/parameter_group.h"
+    #include "config/runtime_config.h"
+    #include "config/config.h"
+
     #include "io/rc_controls.h"
 
     #include "sensors/battery.h"
-    #include "config/runtime_config.h"
-    #include "config/config.h"
 
     #include "drivers/light_ws2811strip.h"
     #include "io/ledstrip.h"
@@ -41,7 +43,6 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
-    extern ledConfig_t *ledConfigs;
     extern uint8_t highestYValueForNorth;
     extern uint8_t lowestYValueForSouth;
     extern uint8_t highestXValueForWest;
@@ -51,8 +52,6 @@ extern "C" {
 
     void determineLedStripDimensions(void);
     void determineOrientationLimits(void);
-
-    ledConfig_t systemLedConfigs[MAX_LED_STRIP_LENGTH];
 }
 
 TEST(LedStripTest, parseLedStripConfig)
@@ -146,8 +145,7 @@ TEST(LedStripTest, parseLedStripConfig)
             "7,8::R:15"
     };
     // and
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(ledConfigs_arr(), 0, sizeof(*ledConfigs_arr()));
 
     // and
     bool ok = false;
@@ -168,9 +166,9 @@ TEST(LedStripTest, parseLedStripConfig)
 #ifdef DEBUG_LEDSTRIP
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(expectedLedStripConfig[index].xy, ledConfigs[index].xy);
-        EXPECT_EQ(expectedLedStripConfig[index].flags, ledConfigs[index].flags);
-        EXPECT_EQ(expectedLedStripConfig[index].color, ledConfigs[index].color);
+        EXPECT_EQ(expectedLedStripConfig[index].xy, ledConfigs(index)->xy);
+        EXPECT_EQ(expectedLedStripConfig[index].flags, ledConfigs(index)->flags);
+        EXPECT_EQ(expectedLedStripConfig[index].color, ledConfigs(index)->color);
     }
 
     // then
@@ -187,8 +185,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(ledConfigs_arr(), 0, sizeof(*ledConfigs_arr()));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -201,7 +198,7 @@ TEST(LedStripTest, smallestGridWithCenter)
         { CALCULATE_LED_XY( 0,  2), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
         { CALCULATE_LED_XY( 1,  2), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING }
     };
-    memcpy(&systemLedConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(ledConfigs_arr(), &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     determineLedStripDimensions();
@@ -223,8 +220,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&systemLedConfigs, 0, sizeof(systemLedConfigs));
-    ledConfigs = systemLedConfigs;
+    memset(ledConfigs_arr(), 0, sizeof(*ledConfigs_arr()));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -233,7 +229,7 @@ TEST(LedStripTest, smallestGrid)
         { CALCULATE_LED_XY( 0,  0), 0, LED_DIRECTION_NORTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_FLIGHT_MODE },
         { CALCULATE_LED_XY( 0,  1), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_FLIGHT_MODE },
     };
-    memcpy(&systemLedConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(ledConfigs_arr(), &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     determineLedStripDimensions();
@@ -297,15 +293,12 @@ TEST(LedStripTest, smallestGrid)
 
 hsvColor_t testColors[CONFIGURABLE_COLOR_COUNT];
 
-extern hsvColor_t *colors;
-
 #define TEST_COLOR_COUNT 4
 
 TEST(ColorTest, parseColor)
 {
     // given
-    colors = testColors;
-    memset(colors, 0, sizeof(colors) * CONFIGURABLE_COLOR_COUNT);
+    memset(colors_arr(), 0, sizeof(*colors_arr()));
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
@@ -339,9 +332,9 @@ TEST(ColorTest, parseColor)
         printf("iteration: %d\n", index);
 #endif
 
-        EXPECT_EQ(expectedColors[index].h, colors[index].h);
-        EXPECT_EQ(expectedColors[index].s, colors[index].s);
-        EXPECT_EQ(expectedColors[index].v, colors[index].v);
+        EXPECT_EQ(expectedColors[index].h, colors(index)->h);
+        EXPECT_EQ(expectedColors[index].s, colors(index)->s);
+        EXPECT_EQ(expectedColors[index].v, colors(index)->v);
     }
 }
 

@@ -20,22 +20,16 @@
 #ifdef SRC_MAIN_SCHEDULER_C_
 #ifdef UNIT_TEST
 
-uint8_t unittest_scheduler_taskId;
-uint8_t unittest_scheduler_selectedTaskId;
-uint8_t unittest_scheduler_selectedTaskDynPrio;
+cfTask_t *unittest_scheduler_selectedTask;
+uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 uint16_t unittest_scheduler_waitingTasks;
 uint32_t unittest_scheduler_timeToNextRealtimeTask;
 bool unittest_outsideRealtimeGuardInterval;
 
-#define SET_SCHEDULER_LOCALS() \
-    { \
-    }
-
 #define GET_SCHEDULER_LOCALS() \
     { \
-    unittest_scheduler_taskId = taskId; \
-    unittest_scheduler_selectedTaskId = selectedTaskId; \
-    unittest_scheduler_selectedTaskDynPrio = selectedTaskDynPrio; \
+    unittest_scheduler_selectedTask = selectedTask; \
+    unittest_scheduler_selectedTaskDynamicPriority = selectedTaskDynamicPriority; \
     unittest_scheduler_waitingTasks = waitingTasks; \
     unittest_scheduler_timeToNextRealtimeTask = timeToNextRealtimeTask; \
     unittest_outsideRealtimeGuardInterval = outsideRealtimeGuardInterval; \
@@ -43,14 +37,13 @@ bool unittest_outsideRealtimeGuardInterval;
 
 #else
 
-#define SET_SCHEDULER_LOCALS() {}
 #define GET_SCHEDULER_LOCALS() {}
 
 #endif
 #endif
 
 
-#ifdef SRC_MAIN_FLIGHT_PID_C_
+#ifdef SRC_MAIN_FLIGHT_PID_LUXFLOAT_C_
 #ifdef UNIT_TEST
 
 float unittest_pidLuxFloat_lastErrorForDelta[3];
@@ -77,6 +70,18 @@ float unittest_pidLuxFloat_DTerm[3];
         unittest_pidLuxFloat_DTerm[axis] = DTerm; \
     }
 
+#else
+
+#define SET_PID_LUX_FLOAT_LOCALS(axis) {}
+#define GET_PID_LUX_FLOAT_LOCALS(axis) {}
+
+#endif // UNIT_TEST
+#endif // SRC_MAIN_FLIGHT_PID_LUXFLOAT_C_
+
+
+#ifdef SRC_MAIN_FLIGHT_PID_MWREWRITE_C_
+#ifdef UNIT_TEST
+
 int32_t unittest_pidMultiWiiRewrite_lastErrorForDelta[3];
 int32_t unittest_pidMultiWiiRewrite_PTerm[3];
 int32_t unittest_pidMultiWiiRewrite_ITerm[3];
@@ -97,11 +102,9 @@ int32_t unittest_pidMultiWiiRewrite_DTerm[3];
 
 #else
 
-#define SET_PID_LUX_FLOAT_LOCALS(axis) {}
-#define GET_PID_LUX_FLOAT_LOCALS(axis) {}
 #define SET_PID_MULTI_WII_REWRITE_LOCALS(axis) {}
 #define GET_PID_MULTI_WII_REWRITE_LOCALS(axis) {}
 
 #endif // UNIT_TEST
-#endif // SRC_MAIN_FLIGHT_PID_C_
+#endif // SRC_MAIN_FLIGHT_PID_MWREWRITE_C_
 

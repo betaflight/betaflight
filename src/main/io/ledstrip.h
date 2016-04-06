@@ -81,18 +81,22 @@ typedef struct ledConfig_s {
 extern uint8_t ledCount;
 extern uint8_t ledsInRingCount;
 
+PG_DECLARE_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs);
+PG_DECLARE_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors);
 
+void ledStripInit(void);
 
 bool parseLedStripConfig(uint8_t ledIndex, const char *config);
 void updateLedStrip(void);
 void updateLedRing(void);
 
-void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
+void applyDefaultLedStripConfig(void);
 void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize);
 
 bool parseColor(uint8_t index, const char *colorConfig);
-void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);
+void applyDefaultColors(void);
 
+void ledStripInit(void);
 void ledStripEnable(void);
 void reevalulateLedConfig(void);
 

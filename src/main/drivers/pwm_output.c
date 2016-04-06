@@ -25,8 +25,6 @@
 #include "gpio.h"
 #include "timer.h"
 
-#include "flight/failsafe.h" // FIXME dependency into the main code from a driver
-
 #include "pwm_mapping.h"
 
 #include "pwm_output.h"

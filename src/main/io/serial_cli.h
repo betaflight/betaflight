@@ -15,12 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CLI_H_
-#define CLI_H_
+#pragma once
 
 extern uint8_t cliMode;
 
+void cliInit(void);
 void cliProcess(void);
 bool cliIsActiveOnPort(serialPort_t *serialPort);
-
-#endif /* CLI_H_ */

@@ -131,16 +131,11 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rates[3];
-    uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-} controlRateConfig_t;
+typedef struct modeActivationProfile_s {
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+} modeActivationProfile_t;
+
+PG_DECLARE_PROFILE(modeActivationProfile_t, modeActivationProfile);
 
 extern int16_t rcCommand[4];
 
@@ -149,7 +144,21 @@ typedef struct rcControlsConfig_s {
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t alt_hold_deadband;              // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_deadband; when enabled, altitude changes slowly proportional to stick movement
+    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
+    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
 } rcControlsConfig_t;
+
+PG_DECLARE_PROFILE(rcControlsConfig_t, rcControlsConfig);
+
+typedef struct armingConfig_s {
+    // Arming configuration
+    uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right
+    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
+    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
+    uint8_t max_arm_angle;                  // specifies the maximum angle allow arming at.
+} armingConfig_t;
+
+PG_DECLARE(armingConfig_t, armingConfig);
 
 bool areUsingSticksToArm(void);
 
@@ -160,119 +169,12 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
-#define PID_MIN      0
-#define PID_MAX      200
-#define PID_F_MIN    0
-#define PID_F_MAX    100
-#define RC_RATE_MIN  0
-#define RC_RATE_MAX  250
-#define EXPO_MIN     0
-#define EXPO_MAX     100
-
-typedef enum {
-    ADJUSTMENT_NONE = 0,
-    ADJUSTMENT_RC_RATE,
-    ADJUSTMENT_RC_EXPO,
-    ADJUSTMENT_THROTTLE_EXPO,
-    ADJUSTMENT_PITCH_ROLL_RATE,
-    ADJUSTMENT_YAW_RATE,
-    ADJUSTMENT_PITCH_ROLL_P,
-    ADJUSTMENT_PITCH_ROLL_I,
-    ADJUSTMENT_PITCH_ROLL_D,
-    ADJUSTMENT_YAW_P,
-    ADJUSTMENT_YAW_I,
-    ADJUSTMENT_YAW_D,
-    ADJUSTMENT_RATE_PROFILE,
-    ADJUSTMENT_PITCH_RATE,
-    ADJUSTMENT_ROLL_RATE,
-    ADJUSTMENT_PITCH_P,
-    ADJUSTMENT_PITCH_I,
-    ADJUSTMENT_PITCH_D,
-    ADJUSTMENT_ROLL_P,
-    ADJUSTMENT_ROLL_I,
-    ADJUSTMENT_ROLL_D,
-    ADJUSTMENT_ALT_P,
-    ADJUSTMENT_ALT_I,
-    ADJUSTMENT_ALT_D,
-    ADJUSTMENT_VEL_P,
-    ADJUSTMENT_VEL_I,
-    ADJUSTMENT_VEL_D,
-    ADJUSTMENT_MAG_P,
-    ADJUSTMENT_POS_P,
-    ADJUSTMENT_POS_I,
-    ADJUSTMENT_POSR_P,
-    ADJUSTMENT_POSR_I,
-    ADJUSTMENT_POSR_D,
-    ADJUSTMENT_NAVR_P,
-    ADJUSTMENT_NAVR_I,
-    ADJUSTMENT_NAVR_D,
-    ADJUSTMENT_LEVEL_P,
-    ADJUSTMENT_LEVEL_I,
-    ADJUSTMENT_LEVEL_D,
-
-} adjustmentFunction_e;
-
-#define ADJUSTMENT_FUNCTION_COUNT 39
-
-typedef enum {
-    ADJUSTMENT_MODE_STEP,
-    ADJUSTMENT_MODE_SELECT
-} adjustmentMode_e;
-
-typedef struct adjustmentStepConfig_s {
-    uint8_t step;
-} adjustmentStepConfig_t;
-
-typedef struct adjustmentSelectConfig_s {
-    uint8_t switchPositions;
-} adjustmentSelectConfig_t;
-
-typedef union adjustmentConfig_u {
-    adjustmentStepConfig_t stepConfig;
-    adjustmentSelectConfig_t selectConfig;
-} adjustmentData_t;
-
-typedef struct adjustmentConfig_s {
-    uint8_t adjustmentFunction;
-    uint8_t mode;
-    adjustmentData_t data;
-} adjustmentConfig_t;
-
-typedef struct adjustmentRange_s {
-    // when aux channel is in range...
-    uint8_t auxChannelIndex;
-    channelRange_t range;
-
-    // ..then apply the adjustment function to the auxSwitchChannel ...
-    uint8_t adjustmentFunction;
-    uint8_t auxSwitchChannelIndex;
-
-    // ... via slot
-    uint8_t adjustmentIndex;
-} adjustmentRange_t;
-
-#define ADJUSTMENT_INDEX_OFFSET 1
-
-typedef struct adjustmentState_s {
-    uint8_t auxChannelIndex;
-    adjustmentConfig_t config;
-    uint32_t timeoutAt;
-    adjustmentRange_t *range;
-} adjustmentState_t;
-
-
-#ifndef MAX_SIMULTANEOUS_ADJUSTMENT_COUNT
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
-#endif
-
-#define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
-
-void resetAdjustmentStates(void);
-void configureAdjustmentState(adjustmentRange_t *adjustmentRange);
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
+
+bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);

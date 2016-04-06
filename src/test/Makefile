@@ -42,6 +42,15 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Determine the OS and set up the parameter group linker flags accordingly
+UNAME := $(shell uname -s)
+ifeq ($(UNAME), Darwin)
+PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
+else
+PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+endif
+
+#
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -200,17 +209,17 @@ $(OBJECT_DIR)/flight/altitudehold.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/altitudehold.c -o $@
 
-$(OBJECT_DIR)/altitude_hold_unittest.o : \
-	$(TEST_DIR)/altitude_hold_unittest.cc \
+$(OBJECT_DIR)/flight_altitudehold_unittest.o : \
+	$(TEST_DIR)/flight_altitudehold_unittest.cc \
 	$(USER_DIR)/flight/altitudehold.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/altitude_hold_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_altitudehold_unittest.cc -o $@
 
-$(OBJECT_DIR)/altitude_hold_unittest : \
+$(OBJECT_DIR)/flight_altitudehold_unittest : \
 	$(OBJECT_DIR)/flight/altitudehold.o \
-	$(OBJECT_DIR)/altitude_hold_unittest.o \
+	$(OBJECT_DIR)/flight_altitudehold_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -289,6 +298,21 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/io/rate_profile.o : \
+	$(USER_DIR)/io/rate_profile.c \
+	$(USER_DIR)/io/rate_profile.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+
+$(OBJECT_DIR)/io/rc_adjustments.o : \
+	$(USER_DIR)/io/rc_adjustments.c \
+	$(USER_DIR)/io/rc_adjustments.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_adjustments.c -o $@
 
 $(OBJECT_DIR)/io/rc_controls.o : \
 	$(USER_DIR)/io/rc_controls.c \
@@ -309,6 +333,7 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 $(OBJECT_DIR)/rc_controls_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/io/rc_controls.o \
+	$(OBJECT_DIR)/io/rc_adjustments.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -584,6 +609,30 @@ $(OBJECT_DIR)/flight/pid.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid.c -o $@
 
+$(OBJECT_DIR)/flight/pid_luxfloat.o : \
+	$(USER_DIR)/flight/pid_luxfloat.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_luxfloat.c -o $@
+
+$(OBJECT_DIR)/flight/pid_mwrewrite.o : \
+	$(USER_DIR)/flight/pid_mwrewrite.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mwrewrite.c -o $@
+
+$(OBJECT_DIR)/flight/pid_mw23.o : \
+	$(USER_DIR)/flight/pid_mw23.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mw23.c -o $@
+
 $(OBJECT_DIR)/pid_unittest.o : \
 	$(TEST_DIR)/pid_unittest.cc \
 	$(USER_DIR)/flight/pid.h \
@@ -596,6 +645,9 @@ $(OBJECT_DIR)/pid_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/filter.o \
 	$(OBJECT_DIR)/flight/pid.o \
+	$(OBJECT_DIR)/flight/pid_luxfloat.o \
+	$(OBJECT_DIR)/flight/pid_mwrewrite.o \
+	$(OBJECT_DIR)/flight/pid_mw23.o \
 	$(OBJECT_DIR)/pid_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -624,6 +676,7 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 $(OBJECT_DIR)/version.o : \
 	$(USER_DIR)/version.c \
@@ -662,10 +715,12 @@ $(OBJECT_DIR)/serial_msp_unittest : \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/io/serial_msp.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
 	$(OBJECT_DIR)/serial_msp_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 $(OBJECT_DIR)/scheduler_tasks.o : \
 	$(USER_DIR)/scheduler_tasks.c \
@@ -700,6 +755,23 @@ $(OBJECT_DIR)/scheduler_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
+$(OBJECT_DIR)/config/feature.o : \
+	$(USER_DIR)/config/feature.c \
+	$(USER_DIR)/config/feature.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/feature.c -o $@
+
+$(OBJECT_DIR)/config/profile.o : \
+	$(USER_DIR)/config/profile.c \
+	$(USER_DIR)/config/profile.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/profile.c -o $@
+
 $(OBJECT_DIR)/config/config.o : \
 	$(USER_DIR)/config/config.c \
 	$(USER_DIR)/config/config.h \
@@ -708,18 +780,80 @@ $(OBJECT_DIR)/config/config.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config.c -o $@
 
-$(OBJECT_DIR)/config_unittest.o : \
-	$(TEST_DIR)/config_unittest.cc \
+$(OBJECT_DIR)/config/config_eeprom.o : \
+	$(USER_DIR)/config/config_eeprom.c \
+	$(USER_DIR)/config/config_eeprom.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config_eeprom.c -o $@
+
+
+$(OBJECT_DIR)/config/parameter_group.o : \
+	$(USER_DIR)/config/parameter_group.c \
+	$(USER_DIR)/config/parameter_group.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/parameter_group.c -o $@
+
+$(OBJECT_DIR)/config_eeprom_unittest.o : \
+	$(TEST_DIR)/config_eeprom_unittest.cc \
+	$(USER_DIR)/config/config_eeprom.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_eeprom_unittest.cc -o $@
+
+$(OBJECT_DIR)/mock/mock_flash.o : \
+	$(TEST_DIR)/../mock/mock_flash.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/../mock/mock_flash.cc -o $@
+
+$(OBJECT_DIR)/mock/mock_system.o : \
+	$(TEST_DIR)/../mock/mock_system.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/../mock/mock_system.cc -o $@
+
+$(OBJECT_DIR)/config_eeprom_unittest : \
+	$(OBJECT_DIR)/config/config_eeprom.o \
+	$(OBJECT_DIR)/mock/mock_flash.o \
+	$(OBJECT_DIR)/mock/mock_system.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/config/config.o \
+	$(OBJECT_DIR)/config/config_streamer.o \
+	$(OBJECT_DIR)/config/feature.o \
+	$(OBJECT_DIR)/config/profile.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
+	$(OBJECT_DIR)/config_eeprom_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/config/config_streamer.o : \
+	$(USER_DIR)/config/config_streamer.c \
+	$(USER_DIR)/config/config_streamer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config_streamer.c -o $@
+
+$(OBJECT_DIR)/config_streamer_unittest.o : \
+	$(TEST_DIR)/config_streamer_unittest.cc \
 	$(USER_DIR)/config/config.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/config_streamer_unittest.cc -o $@
 
-$(OBJECT_DIR)/config_unittest : \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/config/config.o \
-	$(OBJECT_DIR)/config_unittest.o \
+$(OBJECT_DIR)/config_streamer_unittest : \
+	$(OBJECT_DIR)/config/config_streamer.o \
+	$(OBJECT_DIR)/config_streamer_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

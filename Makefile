@@ -227,6 +227,11 @@ COMMON_SRC = build_config.c \
 		   $(TARGET_SRC) \
 		   config/config.c \
 		   config/runtime_config.c \
+		   config/config_streamer.c \
+		   config/config_eeprom.c \
+		   config/parameter_group.c \
+		   config/feature.c \
+		   config/profile.c \
 		   common/maths.c \
 		   common/printf.c \
 		   common/typeconversion.c \
@@ -239,6 +244,9 @@ COMMON_SRC = build_config.c \
 		   flight/altitudehold.c \
 		   flight/failsafe.c \
 		   flight/pid.c \
+		   flight/pid_luxfloat.c \
+		   flight/pid_mwrewrite.c \
+		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
 		   drivers/bus_i2c_soft.c \
@@ -249,6 +257,10 @@ COMMON_SRC = build_config.c \
 		   drivers/buf_writer.c \
 		   drivers/gyro_sync.c \
 		   io/beeper.c \
+		   io/gimbal.c \
+		   io/motor_and_servo.c \
+		   io/rate_profile.c \
+		   io/rc_adjustments.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \
@@ -265,6 +277,7 @@ COMMON_SRC = build_config.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \

@@ -5,50 +5,37 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include <platform.h>
 
 #ifdef TELEMETRY
 
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/maths.h"
+
+#include "config/parameter_group.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "io/escservo.h"
+#include "io/motor_and_servo.h"
 #include "io/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
-#include "io/ledstrip.h"
 
-#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/gyro.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
@@ -57,8 +44,8 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+
+#include "config/feature.h"
 
 enum
 {
@@ -141,11 +128,8 @@ const uint16_t frSkyDataIdTable[] = {
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
-
-extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
 
 char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
@@ -205,9 +189,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
 }
 
-void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initSmartPortTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
     smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }
@@ -231,7 +214,7 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions = SERIAL_BIDIR;
 
-    if (telemetryConfig->telemetry_inversion) {
+    if (telemetryConfig()->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
 
