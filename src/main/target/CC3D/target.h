@@ -153,6 +153,9 @@
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
+//Disables uncommon predefined mixer settings like BiCopter, H6 and similar exotics
+#define DISABLE_UNCOMMON_MIXERS
+
 // DEBUG
 //#define HIL
 //#define USE_FAKE_MAG

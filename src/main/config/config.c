@@ -921,6 +921,13 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+
+    /*
+     * If provided predefined mixer setup is disabled, fallback to default one
+     */
+     if (!isMixerEnabled(masterConfig.mixerMode)) {
+         masterConfig.mixerMode = DEFAULT_MIXER;
+     }
 }
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)

@@ -95,6 +95,7 @@ static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
 };
 
+#ifndef DISABLE_UNCOMMON_MIXERS
 static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
     { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
@@ -105,6 +106,34 @@ static const motorMixer_t mixerQuadP[] = {
 static const motorMixer_t mixerBicopter[] = {
     { 1.0f,  1.0f,  0.0f,  0.0f },          // LEFT
     { 1.0f, -1.0f,  0.0f,  0.0f },          // RIGHT
+};
+
+static const motorMixer_t mixerVtail4[] = {
+    { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
+    { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
+    { 1.0f,  0.58f,  0.58f, -1.0f },        // REAR_L
+    { 1.0f,  0.46f, -0.39f, 0.5f },         // FRONT_L
+};
+
+static const motorMixer_t mixerAtail4[] = {
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
+};
+
+static const motorMixer_t mixerDualcopter[] = {
+    { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
+    { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
+};
+
+static const motorMixer_t mixerHex6H[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
+    { 1.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
+    { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
 };
 
 static const motorMixer_t mixerY6[] = {
@@ -132,26 +161,6 @@ static const motorMixer_t mixerY4[] = {
     { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
 };
 
-static const motorMixer_t mixerHex6X[] = {
-    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
-    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
-    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
-    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
-    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
-    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
-};
-
-static const motorMixer_t mixerOctoX8[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
-    { 1.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
-    { 1.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
-    { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
-    { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
-};
-
 static const motorMixer_t mixerOctoFlatP[] = {
     { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
     { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
@@ -174,32 +183,26 @@ static const motorMixer_t mixerOctoFlatX[] = {
     { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
 };
 
-static const motorMixer_t mixerVtail4[] = {
-    { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
-    { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
-    { 1.0f,  0.58f,  0.58f, -1.0f },        // REAR_L
-    { 1.0f,  0.46f, -0.39f, 0.5f },         // FRONT_L
+#endif
+
+static const motorMixer_t mixerHex6X[] = {
+    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
+    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
+    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
+    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
+    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
+    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
 };
 
-static const motorMixer_t mixerAtail4[] = {
-    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_R
-    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_L
-    { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
-};
-
-static const motorMixer_t mixerHex6H[] = {
-    { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
-    { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
-    { 1.0f,  1.0f,  1.0f,  1.0f },     // REAR_L
-    { 1.0f,  1.0f, -1.0f, -1.0f },     // FRONT_L
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // RIGHT
-    { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
-};
-
-static const motorMixer_t mixerDualcopter[] = {
-    { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
-    { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
+static const motorMixer_t mixerOctoX8[] = {
+    { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
+    { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
+    { 1.0f, -1.0f,  1.0f,  1.0f },          // UNDER_REAR_R
+    { 1.0f, -1.0f, -1.0f, -1.0f },          // UNDER_FRONT_R
+    { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
+    { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
 };
 
 static const motorMixer_t mixerSingleProp[] = {
@@ -209,32 +212,65 @@ static const motorMixer_t mixerSingleProp[] = {
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
-    { 0, false, NULL },                // entry 0
-    { 3, true,  mixerTricopter },      // MIXER_TRI
-    { 4, false, mixerQuadP },          // MIXER_QUADP
-    { 4, false, mixerQuadX },          // MIXER_QUADX
-    { 2, true,  mixerBicopter },       // MIXER_BICOPTER
-    { 0, true,  NULL },                // * MIXER_GIMBAL
-    { 6, false, mixerY6 },             // MIXER_Y6
-    { 6, false, mixerHex6P },          // MIXER_HEX6
-    { 1, true,  mixerSingleProp },     // * MIXER_FLYING_WING
-    { 4, false, mixerY4 },             // MIXER_Y4
-    { 6, false, mixerHex6X },          // MIXER_HEX6X
-    { 8, false, mixerOctoX8 },         // MIXER_OCTOX8
-    { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
-    { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
-    { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
-    { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
-    { 0, true,  NULL },                // * MIXER_HELI_90_DEG
-    { 4, false, mixerVtail4 },         // MIXER_VTAIL4
-    { 6, false, mixerHex6H },          // MIXER_HEX6H
-    { 0, true,  NULL },                // * MIXER_PPM_TO_SERVO
-    { 2, true,  mixerDualcopter },     // MIXER_DUALCOPTER
-    { 1, true,  NULL },                // MIXER_SINGLECOPTER
-    { 4, false, mixerAtail4 },         // MIXER_ATAIL4
-    { 0, false, NULL },                // MIXER_CUSTOM
-    { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
-    { 3, true,  NULL },                // MIXER_CUSTOM_TRI
+    { 0, false, NULL, true },                // entry 0
+    { 3, true,  mixerTricopter, true },      // MIXER_TRI
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 4, false, mixerQuadP, true },      // MIXER_QUADP
+    #else
+        { 0, false, NULL, false },           // MIXER_QUADP
+    #endif
+    { 4, false, mixerQuadX, true },          // MIXER_QUADX
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 2, true,  mixerBicopter, true },   // MIXER_BICOPTER
+    #else
+        { 0, false, NULL, false },           // MIXER_BICOPTER
+    #endif
+    { 0, true,  NULL, true },                // * MIXER_GIMBAL
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 6, false, mixerY6, true },         // MIXER_Y6
+        { 6, false, mixerHex6P, true },      // MIXER_HEX6
+    #else
+        { 0, false, NULL, false },           // MIXER_Y6
+        { 0, false, NULL, false },           // MIXER_HEX6
+    #endif
+    { 1, true,  mixerSingleProp, true },     // * MIXER_FLYING_WING
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 4, false, mixerY4, true },         // MIXER_Y4
+    #else
+        { 0, false, NULL, false },           // MIXER_Y4
+    #endif
+    { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+    { 8, false, mixerOctoX8, true },         // MIXER_OCTOX8
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 8, false, mixerOctoFlatP, true },  // MIXER_OCTOFLATP
+        { 8, false, mixerOctoFlatX, true },  // MIXER_OCTOFLATX
+    #else
+        { 0, false, NULL, false },           // MIXER_OCTOFLATP
+        { 0, false, NULL, false },           // MIXER_OCTOFLATX
+    #endif
+    { 1, true,  mixerSingleProp, true },     // * MIXER_AIRPLANE
+    { 0, true,  NULL, false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
+    { 0, true,  NULL, false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 4, false, mixerVtail4, true },     // MIXER_VTAIL4
+        { 6, false, mixerHex6H, true },      // MIXER_HEX6H
+    #else
+        { 0, false, NULL, false },           // MIXER_VTAIL4
+        { 0, false, NULL, false },           // MIXER_HEX6H
+    #endif
+    { 0, true,  NULL, true },                // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { 2, true,  mixerDualcopter, true }, // MIXER_DUALCOPTER
+        { 1, true,  NULL, true },            // MIXER_SINGLECOPTER
+        { 4, false, mixerAtail4, true },     // MIXER_ATAIL4
+    #else
+        { 0, false, NULL, false },           // MIXER_DUALCOPTER
+        { 0, false, NULL, false },           // MIXER_SINGLECOPTER
+        { 0, false, NULL, false },           // MIXER_ATAIL4
+    #endif
+    { 0, false, NULL, true },                // MIXER_CUSTOM
+    { 2, true,  NULL, true },                // MIXER_CUSTOM_AIRPLANE
+    { 3, true,  NULL, true },                // MIXER_CUSTOM_TRI
 };
 #endif
 
@@ -258,15 +294,12 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
+#ifndef DISABLE_UNCOMMON_MIXERS
 static const servoMixer_t servoMixerBI[] = {
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-};
-
-static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerDual[] = {
@@ -284,6 +317,11 @@ static const servoMixer_t servoMixerSingle[] = {
     { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
+#endif
+
+static const servoMixer_t servoMixerTri[] = {
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+};
 
 static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
@@ -296,7 +334,11 @@ const mixerRules_t servoMixers[] = {
     { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MULTITYPE_TRI
     { 0, NULL },                // MULTITYPE_QUADP
     { 0, NULL },                // MULTITYPE_QUADX
-    { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MULTITYPE_BI
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MULTITYPE_BI
+    #else
+        { 0, NULL },                                              // MULTITYPE_BI
+    #endif
     { COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal },    // * MULTITYPE_GIMBAL
     { 0, NULL },                // MULTITYPE_Y6
     { 0, NULL },                // MULTITYPE_HEX6
@@ -307,13 +349,18 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_OCTOFLATP
     { 0, NULL },                // MULTITYPE_OCTOFLATX
     { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // * MULTITYPE_AIRPLANE
-    { 0, NULL },                // * MULTITYPE_HELI_120_CCPM
-    { 0, NULL },                // * MULTITYPE_HELI_90_DEG
+    { 0, NULL },                // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
+    { 0, NULL },                // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
     { 0, NULL },                // MULTITYPE_VTAIL4
     { 0, NULL },                // MULTITYPE_HEX6H
     { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
-    { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
+    #ifndef DISABLE_UNCOMMON_MIXERS
+        { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },        // MULTITYPE_DUALCOPTER
+        { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
+    #else
+        { 0, NULL }, // MULTITYPE_DUALCOPTER
+        { 0, NULL }, // MULTITYPE_SINGLECOPTER
+    #endif
     { 0, NULL },                // MULTITYPE_ATAIL4
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
@@ -368,6 +415,11 @@ int servoDirection(int servoIndex, int inputSource)
         return 1;
 }
 #endif
+
+bool isMixerEnabled(mixerMode_e mixerMode)
+{
+    return mixers[mixerMode].enabled;
+}
 
 #ifdef USE_SERVOS
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers)
@@ -429,7 +481,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
                 currentServoMixer[i] = servoMixers[currentMixerMode].rule[i];
         }
     }
-    
+
     // in 3D mode, mixer gain has to be halved
     if (feature(FEATURE_3D)) {
         if (motorCount > 1) {
@@ -447,7 +499,6 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
         currentMixerMode == MIXER_CUSTOM_AIRPLANE
     ) {
         ENABLE_STATE(FIXED_WING);
-        
         if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
             loadCustomServoMixer();
         }
@@ -566,10 +617,12 @@ void writeServos(void)
     uint8_t servoIndex = 0;
 
     switch (currentMixerMode) {
+        #ifndef DISABLE_UNCOMMON_MIXERS
         case MIXER_BICOPTER:
             pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
             pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
             break;
+        #endif
 
         case MIXER_TRI:
         case MIXER_CUSTOM_TRI:
@@ -590,10 +643,12 @@ void writeServos(void)
             pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
             break;
 
+        #ifndef DISABLE_UNCOMMON_MIXERS
         case MIXER_DUALCOPTER:
             pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
             pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
             break;
+        #endif
 
         case MIXER_CUSTOM_AIRPLANE:
         case MIXER_AIRPLANE:
@@ -602,11 +657,13 @@ void writeServos(void)
             }
             break;
 
+        #ifndef DISABLE_UNCOMMON_MIXERS
         case MIXER_SINGLECOPTER:
             for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
                 pwmWriteServo(servoIndex++, servo[i]);
             }
             break;
+        #endif
 
         default:
             break;
@@ -830,12 +887,14 @@ void mixTable(void)
         case MIXER_CUSTOM_AIRPLANE:
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
-        case MIXER_BICOPTER:
         case MIXER_CUSTOM_TRI:
         case MIXER_TRI:
-        case MIXER_DUALCOPTER:
-        case MIXER_SINGLECOPTER:
         case MIXER_GIMBAL:
+        #ifndef DISABLE_UNCOMMON_MIXERS
+            case MIXER_SINGLECOPTER:
+            case MIXER_DUALCOPTER:
+            case MIXER_BICOPTER:
+        #endif
             servoMixer();
             break;
 
@@ -912,4 +971,3 @@ void filterServos(void)
 
 #endif
 }
-

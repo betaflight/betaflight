@@ -174,3 +174,5 @@
 #define S1W_TX_PIN          GPIO_Pin_9
 #define S1W_RX_GPIO         GPIOA
 #define S1W_RX_PIN          GPIO_Pin_10
+
+#define DISABLE_UNCOMMON_MIXERS
