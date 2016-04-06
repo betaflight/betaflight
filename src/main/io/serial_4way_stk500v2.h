@@ -13,25 +13,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
- *  by Nathan Tsoi <nathan@vertile.com>
- */
+ * Author: 4712
+*/
+#include <platform.h>
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
 
 #pragma once
 
-#ifdef USE_SERIAL_1WIRE
+uint8_t Stk_SignOn(void);
+uint8_t Stk_ConnectEx(void);
+uint8_t Stk_ReadEEprom(void);
+uint8_t Stk_WriteEEprom(void);
+uint8_t Stk_ReadFlash(void);
+uint8_t Stk_WriteFlash(void);
+uint8_t Stk_Chip_Erase(void);
 
-extern uint8_t escCount;
-
-typedef struct {
-    GPIO_TypeDef* gpio;
-    uint16_t pinpos;
-    uint16_t pin;
-} escHardware_t;
-
-
-void usb1WireInitialize();
-void usb1WirePassthrough(uint8_t escIndex);
-void usb1WireDeInitialize(void);
 #endif

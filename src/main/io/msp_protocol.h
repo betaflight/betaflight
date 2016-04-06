@@ -36,7 +36,6 @@
  * API clients SHOULD attempt communication if the API MINOR VERSION has increased from the time
  * the API client was written and handle command failures gracefully.  Clients MAY disable
  * functionality that depends on the commands while still leaving other functionality intact.
- * Clients SHOULD operate in READ-ONLY mode and SHOULD present a warning to the user to state
  * that the newer API version may cause problems before using API commands that change FC state.
  *
  * It is for this reason that each MSP command should be specific as possible, such that changes
@@ -253,3 +252,4 @@
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough
+#define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface

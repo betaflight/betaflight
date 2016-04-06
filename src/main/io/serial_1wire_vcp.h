@@ -14,13 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
- *  by Nathan Tsoi <nathan@vertile.com>
+ * Author 4712
  */
-
 #pragma once
 
-#ifdef USE_SERIAL_1WIRE
+#include <platform.h>
+#ifdef USE_SERIAL_1WIRE_VCP
+#include "drivers/serial.h"
+#include "drivers/buf_writer.h"
+#include "drivers/pwm_mapping.h"
+#include "io/serial_msp.h"
 
 extern uint8_t escCount;
 
@@ -28,10 +31,12 @@ typedef struct {
     GPIO_TypeDef* gpio;
     uint16_t pinpos;
     uint16_t pin;
+    gpio_config_t gpio_config_INPUT;
+    gpio_config_t gpio_config_OUTPUT;
 } escHardware_t;
 
-
-void usb1WireInitialize();
-void usb1WirePassthrough(uint8_t escIndex);
-void usb1WireDeInitialize(void);
+void usb1WireInitializeVcp(void);
+void usb1WireDeInitializeVcp(void);
+void usb1WirePassthroughVcp(mspPort_t *mspPort, bufWriter_t *bufwriter, uint8_t escIndex);
 #endif
+
