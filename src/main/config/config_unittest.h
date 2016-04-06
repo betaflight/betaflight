@@ -20,22 +20,16 @@
 #ifdef SRC_MAIN_SCHEDULER_C_
 #ifdef UNIT_TEST
 
-uint8_t unittest_scheduler_taskId;
-uint8_t unittest_scheduler_selectedTaskId;
-uint8_t unittest_scheduler_selectedTaskDynPrio;
+cfTask_t *unittest_scheduler_selectedTask;
+uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 uint16_t unittest_scheduler_waitingTasks;
 uint32_t unittest_scheduler_timeToNextRealtimeTask;
 bool unittest_outsideRealtimeGuardInterval;
 
-#define SET_SCHEDULER_LOCALS() \
-    { \
-    }
-
 #define GET_SCHEDULER_LOCALS() \
     { \
-    unittest_scheduler_taskId = taskId; \
-    unittest_scheduler_selectedTaskId = selectedTaskId; \
-    unittest_scheduler_selectedTaskDynPrio = selectedTaskDynPrio; \
+    unittest_scheduler_selectedTask = selectedTask; \
+    unittest_scheduler_selectedTaskDynamicPriority = selectedTaskDynamicPriority; \
     unittest_scheduler_waitingTasks = waitingTasks; \
     unittest_scheduler_timeToNextRealtimeTask = timeToNextRealtimeTask; \
     unittest_outsideRealtimeGuardInterval = outsideRealtimeGuardInterval; \
@@ -43,7 +37,6 @@ bool unittest_outsideRealtimeGuardInterval;
 
 #else
 
-#define SET_SCHEDULER_LOCALS() {}
 #define GET_SCHEDULER_LOCALS() {}
 
 #endif
