@@ -443,6 +443,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     EXPECT_EQ(D8_PIDVEL, pidProfile()->D8[PIDVEL]);
 }
 
+/* !!TODO - this is temporarily removed, asses permanent removal
 TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
 {
     // check the buffer is big enough for the data to read in
@@ -519,7 +520,7 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
     EXPECT_FLOAT_EQ(A_level, pidProfile()->A_level);
     EXPECT_FLOAT_EQ(H_level, pidProfile()->H_level);
     EXPECT_EQ(H_sensitivity, pidProfile()->H_sensitivity);
-}
+}*/
 
 TEST_F(SerialMspUnitTest, Test_BoardAlignment)
 {

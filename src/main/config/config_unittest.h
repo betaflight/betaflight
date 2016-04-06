@@ -83,6 +83,8 @@ float unittest_pidLuxFloatCore_DTerm[3];
 #ifdef UNIT_TEST
 
 int32_t unittest_pidMultiWiiRewriteCore_lastErrorForDelta[3];
+int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
+int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
 int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
 int32_t unittest_pidMultiWiiRewriteCore_ITerm[3];
 int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
@@ -90,11 +92,15 @@ int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
 #define SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis) \
     { \
     lastErrorForDelta[axis] = unittest_pidMultiWiiRewriteCore_lastErrorForDelta[axis]; \
+    delta1[axis] = unittest_pidMultiWiiRewriteCore_delta1[axis]; \
+    delta1[axis] = unittest_pidMultiWiiRewriteCore_delta2[axis]; \
     }
 
 #define GET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis) \
     { \
         unittest_pidMultiWiiRewriteCore_lastErrorForDelta[axis] = lastErrorForDelta[axis]; \
+        unittest_pidMultiWiiRewriteCore_delta1[axis] = delta1[axis]; \
+        unittest_pidMultiWiiRewriteCore_delta1[axis] = delta2[axis]; \
         unittest_pidMultiWiiRewriteCore_PTerm[axis] = PTerm; \
         unittest_pidMultiWiiRewriteCore_ITerm[axis] = ITerm; \
         unittest_pidMultiWiiRewriteCore_DTerm[axis] = DTerm; \

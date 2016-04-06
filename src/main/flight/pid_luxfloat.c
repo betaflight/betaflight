@@ -63,6 +63,11 @@ extern biquad_t deltaFilterState[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
+// constants to scale pidLuxFloat so output is same as pidMultiWiiRewrite
+static const float luxPTermScale = 1.0f / 128;
+static const float luxITermScale = (1000000.0f / (0x1000000));
+static const float luxDTermScale = 3 * (0.000001f * (float)0xFFFF) / 1028; // the 3 is because mwrewrite sums 3 deltas rather than taking moving average
+
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate)
 {
     static float lastErrorForDelta[3];
@@ -73,13 +78,13 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     const float RateError = AngleRate - gyroRate;
 
     // -----calculate P component
-    const float PTerm = RateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
+    const float PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
 
     // -----calculate I component
-    float ITerm = lastITermf[axis] + RateError * dT * pidProfile->I8[axis] * 10;
+    float ITerm = lastITermf[axis] + luxITermScale * RateError * dT * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
+    //ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I, PID_LUX_FLOAT_MAX_I);
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
         ITerm = ITerm * pidScaleItermToRcInput(axis);
@@ -115,7 +120,8 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         delta1[axis] = delta;
         delta = deltaSum / 3.0f;
     }
-    const float DTerm = constrainf(delta * pidProfile->D8[axis] * PIDweight[axis] / 100, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
+    float DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
+    //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
 
 #ifdef BLACKBOX
     axisPID_P[axis] = PTerm;

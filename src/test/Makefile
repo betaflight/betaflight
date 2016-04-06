@@ -636,6 +636,10 @@ $(OBJECT_DIR)/flight/pid_mw23.o : \
 $(OBJECT_DIR)/pid_unittest.o : \
 	$(TEST_DIR)/pid_unittest.cc \
 	$(USER_DIR)/flight/pid.h \
+	$(USER_DIR)/flight/pid.c \
+	$(USER_DIR)/flight/pid_luxfloat.c \
+	$(USER_DIR)/flight/pid_mwrewrite.c \
+	$(USER_DIR)/flight/pid_mw23.c \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
