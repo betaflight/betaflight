@@ -251,5 +251,4 @@
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-#define MSP_SET_1WIRE            243    //in message          Sets 1Wire paththrough
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
