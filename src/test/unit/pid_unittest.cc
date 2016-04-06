@@ -682,11 +682,10 @@ TEST(PIDUnittest, TestPidMultiWiiRewriteITermConstrain)
     EXPECT_EQ(GYRO_I_MAX, unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
 }
 
-TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
+TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatCoreEquivalence)
 {
     pidProfile_t *pidProfile = &testPidProfile;
     const int angleRate = 10000;
-
 
     pidControllerInitLuxFloatCore();
     EXPECT_EQ(TARGET_LOOPTIME, targetLooptime);
@@ -716,6 +715,67 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
 
     const float allowedDError = (float)unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL] / 400; // 0.25% error allowed
     EXPECT_NEAR(unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL], unittest_pidLuxFloatCore_DTerm[FD_ROLL], allowedDError);
+}
+
+TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
+{
+    pidProfile_t *pidProfile = &testPidProfile;
+    resetPidProfile(&testPidProfile);
+
+    controlRateConfig_t controlRate;
+
+    const uint16_t max_angle_inclination = 500; // 50 degrees
+    rollAndPitchTrims_t rollAndPitchTrims;
+    rxConfig_t rxConfig;
+
+
+    pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+
+    // set up a rateError of 1000 on the roll axis
+    rcCommand[ROLL] = calcLuxRcCommandRoll(1000, &controlRate);
+    const float rateErrorRollf = calcLuxAngleRateRoll(&controlRate);
+    EXPECT_EQ(1000, rateErrorRollf);// cross check
+
+    // run the PID controller. Check expected PID values
+    pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    //float calcLuxITermDelta(pidProfile_t *pidProfile, flight_dynamics_index_t axis, float rateError) {
+
+    float ITermRoll = calcLuxITermDelta(pidProfile, FD_ROLL, rateErrorRollf);
+
+    pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    EXPECT_FLOAT_EQ(calcLuxPTerm(pidProfile, FD_ROLL, rateErrorRollf), unittest_pidLuxFloatCore_PTerm[FD_ROLL]);
+    EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloatCore_ITerm[FD_ROLL]);
+    float expectedDTerm = calcLuxDTerm(pidProfile, FD_ROLL, rateErrorRollf) / deltaTotalSamples;
+    EXPECT_FLOAT_EQ(expectedDTerm, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
+
+
+
+    resetPidProfile(&testPidProfile);
+    pidControllerInitMultiWiiRewrite(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+
+    // set up a rateError of 1000 on the roll axis
+    rcCommand[ROLL] = calcMwrRcCommandRoll(1000, &controlRate);
+    const int32_t rateErrorRoll = calcMwrAngleRateRoll(&controlRate);
+    EXPECT_EQ(1000, rateErrorRoll); // cross check
+
+    // run the PID controller. Check expected PID values
+    pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    EXPECT_EQ(calcMwrPTerm(pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL]);
+    EXPECT_EQ(calcMwrITermDelta(pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
+    EXPECT_EQ(calcMwrDTerm(pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL]);
+
+
+    //EXPECT_EQ(0, unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
+    //EXPECT_EQ(0, unittest_pidLuxFloatCore_ITerm[FD_ROLL]);
+
+    const float allowedPError = (float)unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL] / 100; // 1% error allowed
+    EXPECT_NEAR(unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL], unittest_pidLuxFloatCore_PTerm[FD_ROLL], allowedPError);
+
+    //const float allowedIError = (float)unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL] / 50; // 2% error allowed
+    //EXPECT_NEAR(unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL], unittest_pidLuxFloatCore_ITerm[FD_ROLL], allowedIError);
+
+    //const float allowedDError = (float)unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL] / 400; // 0.25% error allowed
+    //EXPECT_NEAR(unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL], unittest_pidLuxFloatCore_DTerm[FD_ROLL], allowedDError);
 }
 // STUBS
 
