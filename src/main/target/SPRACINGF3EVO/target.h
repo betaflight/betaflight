@@ -218,22 +218,12 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define BUTTON_A_PORT  GPIOB
-#define BUTTON_A_PIN   Pin_1
-#define BUTTON_B_PORT  GPIOB
-#define BUTTON_B_PIN   Pin_0
-
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-#define HARDWARE_BIND_PLUG
-#define BINDPLUG_PORT  BUTTON_B_PORT
-#define BINDPLUG_PIN   BUTTON_B_PIN
-
 #define USE_SERIAL_1WIRE
-#define USE_SERIAL_1WIRE_CLI
 
 #define S1W_TX_GPIO         UART1_GPIO
 #define S1W_TX_PIN          UART1_TX_PIN
