@@ -54,15 +54,13 @@ typedef enum {
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
 
 typedef struct pidProfile_s {
-    uint8_t pidController;                  // 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Luggi09s new baseflight pid
-
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
-
-    uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
-    float dterm_cut_hz;                     // dterm filtering
+    uint8_t pidController;
     uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
+    uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
+    uint16_t dterm_cut_hz;                  // dterm filtering
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
