@@ -268,7 +268,7 @@ void init(void)
 #endif
 
 #ifdef USE_SERVOS
-    pwm_params.useServos = isMixerUsingServos();
+    pwm_params.useServos = isServoOutputEnabled();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
     pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
@@ -495,9 +495,6 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (masterConfig.mixerMode == MIXER_GIMBAL) {
-        accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
-    }
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);

@@ -45,7 +45,6 @@ extern "C" {
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
 
-    extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
     void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
@@ -90,8 +89,6 @@ protected:
 
 TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithNoServos)
 {
-    // given
-    servoCount = 0;
 
     rcData[AUX1] = TEST_RC_MID;
     rcData[AUX2] = TEST_RC_MID;
@@ -110,7 +107,6 @@ TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithNoServos)
 TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithMaxServos)
 {
     // given
-    servoCount = MAX_SUPPORTED_SERVOS;
 
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1250;
@@ -130,7 +126,6 @@ TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithMaxServos)
 TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithLessRemainingServosThanAuxChannelsToForward)
 {
     // given
-    servoCount = MAX_SUPPORTED_SERVOS - 2;
 
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1250;
