@@ -119,10 +119,10 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
     return (float)((rate + 20) * stick) / 50.0f;
 }
 
-#define FP_PID_RATE_P_MULTIPLIER    40.0f
-#define FP_PID_RATE_I_MULTIPLIER    10.0f
-#define FP_PID_RATE_D_MULTIPLIER    4000.0f
-#define FP_PID_LEVEL_P_MULTIPLIER   40.0f
+#define FP_PID_RATE_P_MULTIPLIER    40.0f       // betaflight - 40.0
+#define FP_PID_RATE_I_MULTIPLIER    10.0f       // betaflight - 10.0
+#define FP_PID_RATE_D_MULTIPLIER    4000.0f     // betaflight - 1000.0
+#define FP_PID_LEVEL_P_MULTIPLIER   40.0f       // betaflight - 10.0
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
 static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
