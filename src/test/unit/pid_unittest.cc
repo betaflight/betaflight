@@ -33,6 +33,7 @@ extern "C" {
     #include "drivers/accgyro.h"
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
+    #include "sensors/gyro.h"
 
     #include "rx/rx.h"
     #include "io/rc_controls.h"
@@ -76,7 +77,8 @@ extern "C" {
 
 static const float luxPTermScale = 1.0f / 128;
 static const float luxITermScale = (1000000.0f / (0x1000000));
-static const float luxDTermScale = 3 * (0.000001f * (float)0xFFFF) / 1028; // the 3 is because mwrewrite sums 3 deltas rather than taking moving average
+static const float luxDTermScale = 3 * (0.000001f * (float)0xFFFF) / 1028;
+static const float luxGyroScale = 16.4f / 4.0f;
 #define TARGET_LOOPTIME 2048
 
 static int deltaTotalSamples;
@@ -93,7 +95,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDPITCH] = 23;
     pidProfile->P8[PIDYAW] = 85;
     pidProfile->I8[PIDYAW] = 45;
-    pidProfile->D8[PIDYAW] = 0;
+    pidProfile->D8[PIDYAW] = 10;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -120,6 +122,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
     //pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 }
 
+void resetRcCommands(void)
+{
+    rcCommand[ROLL] = 0;
+    rcCommand[PITCH] = 0;
+    rcCommand[YAW] = 0;
+    rcCommand[THROTTLE] = 0;
+}
+
 void pidControllerInitLuxFloatCore(void)
 {
     pidSetController(PID_CONTROLLER_LUX_FLOAT);
@@ -129,6 +139,13 @@ void pidControllerInitLuxFloatCore(void)
     pidResetITerm();
     targetLooptime = TARGET_LOOPTIME;
     dT = TARGET_LOOPTIME * 0.000001f;
+
+    gyro.scale = 1.0f / luxGyroScale;
+    EXPECT_EQ(0, gyroADC[ROLL]);
+    EXPECT_EQ(0, gyroADC[PITCH]);
+    EXPECT_EQ(0, gyroADC[YAW]);
+    //gyroADC[PITCH] = 0;
+    //gyroADC[YAW] = 0;
 
     // set up the PIDWeights to 100%, so they are neutral in the tests
     PIDweight[FD_ROLL] = 100;
@@ -224,6 +241,9 @@ TEST(PIDUnittest, TestPidLuxFloat)
     rcCommand[PITCH] = calcLuxRcCommandPitch(0, &controlRate);
     rcCommand[YAW] = calcLuxRcCommandYaw(0, &controlRate);
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    //gyroADC[ROLL] = 0;
+    //gyroADC[PITCH] = 0;
+    //gyroADC[YAW] = 0;
     EXPECT_EQ(0, unittest_pidLuxFloatCore_PTerm[FD_ROLL]);
     EXPECT_EQ(0, unittest_pidLuxFloatCore_ITerm[FD_ROLL]);
     EXPECT_EQ(0, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -521,6 +541,9 @@ void pidControllerInitMultiWiiRewriteCore(void)
     dT = TARGET_LOOPTIME * 0.000001f;
     pidResetITermAngle();
     pidResetITerm();
+    EXPECT_EQ(0, gyroADC[ROLL]);
+    EXPECT_EQ(0, gyroADC[PITCH]);
+    EXPECT_EQ(0, gyroADC[YAW]);
     // set up the PIDWeights to 100%, so they are neutral in the tests
     PIDweight[FD_ROLL] = 100;
     PIDweight[FD_PITCH] = 100;
@@ -602,7 +625,8 @@ int32_t calcMwrDTerm(pidProfile_t *pidProfile, pidIndex_e axis, int rateError) {
 
 TEST(PIDUnittest, TestPidMultiWiiRewrite)
 {
-    resetPidProfile(&testPidProfile);
+    pidProfile_t *pidProfile = &testPidProfile;
+    resetPidProfile(pidProfile);
 
     controlRateConfig_t controlRate;
 
@@ -615,7 +639,6 @@ TEST(PIDUnittest, TestPidMultiWiiRewrite)
     rcCommand[ROLL] = 0;
     rcCommand[PITCH] = 0;
     rcCommand[YAW] = 0;
-    pidProfile_t *pidProfile = &testPidProfile;
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_EQ(0, unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL]);
     EXPECT_EQ(0, unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
@@ -737,19 +760,16 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
 
     resetPidProfile(pidProfile);
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
-    targetLooptime = TARGET_LOOPTIME;
-    dT = TARGET_LOOPTIME * 0.000001f;
+    EXPECT_FLOAT_EQ(1.0f / luxGyroScale, gyro.scale);
 
     // set up a rateError of 1000 on the roll axis
     rcCommand[ROLL] = calcLuxRcCommandRoll(1000, &controlRate);
     const float rateErrorRollf = calcLuxAngleRateRoll(&controlRate);
     EXPECT_EQ(1000, rateErrorRollf);// cross check
 
-    // run the PID controller. Check expected PID values
-    //float calcLuxITermDelta(pidProfile_t *pidProfile, flight_dynamics_index_t axis, float rateError) {
-
     float ITermRoll = calcLuxITermDelta(pidProfile, FD_ROLL, rateErrorRollf);
 
+    // run the PID controller. Check expected PID values
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxPTerm(pidProfile, FD_ROLL, rateErrorRollf), unittest_pidLuxFloatCore_PTerm[FD_ROLL]);
     EXPECT_FLOAT_EQ(ITermRoll, unittest_pidLuxFloatCore_ITerm[FD_ROLL]);
@@ -760,8 +780,9 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
 
     resetPidProfile(pidProfile);
     pidControllerInitMultiWiiRewrite(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
-    targetLooptime = TARGET_LOOPTIME;
-    dT = TARGET_LOOPTIME * 0.000001f;
+    EXPECT_EQ(0, gyroADC[ROLL]);
+    EXPECT_EQ(0, gyroADC[PITCH]);
+    EXPECT_EQ(0, gyroADC[YAW]);
 
     // set up a rateError of 1000 on the roll axis
     rcCommand[ROLL] = calcMwrRcCommandRoll(1000, &controlRate);
@@ -799,8 +820,8 @@ uint16_t flightModeFlags = 0; // acro mode
 uint8_t stateFlags = 0;
 uint8_t motorCount = 4;
 gyro_t gyro;
-int16_t gyroADC[XYZ_AXIS_COUNT];
-int16_t rcCommand[4] = {1500,0,0,0};           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+int32_t gyroADC[XYZ_AXIS_COUNT];
+int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 bool motorLimitReached;
 uint32_t rcModeActivationMask;
