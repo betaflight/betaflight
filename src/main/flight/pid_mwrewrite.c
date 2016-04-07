@@ -98,30 +98,36 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     ITerm = ITerm >> 13; // take integer part of Q18.13 value
 
     // -----calculate D component
-    int32_t delta;
-    if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-        delta = RateError - lastErrorForDelta[axis];
-        lastErrorForDelta[axis] = RateError;
+    int32_t DTerm;
+    if (pidProfile->D8[axis] == 0) {
+        // optimisation for when D8 is zero, often used by YAW axis
+        DTerm = 0;
     } else {
-        // Delta from measurement
-        delta = -(gyroRate - lastErrorForDelta[axis]);
-        lastErrorForDelta[axis] = gyroRate;
+        int32_t delta;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
+        } else {
+            // Delta from measurement
+            delta = -(gyroRate - lastErrorForDelta[axis]);
+            lastErrorForDelta[axis] = gyroRate;
+        }
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
+        int32_t deltaSum;
+        if (pidProfile->dterm_cut_hz) {
+            // Dterm delta low pass
+            delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
+        } else {
+            // When dterm filter disabled apply moving average to reduce noise
+            deltaSum = delta1[axis] + delta2[axis] + delta;
+            delta2[axis] = delta1[axis];
+            delta1[axis] = delta;
+            delta = deltaSum;
+        }
+        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
     }
-    // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-    // would be scaled by different dt each time. Division by dT fixes that.
-    delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
-    int32_t deltaSum;
-    if (pidProfile->dterm_cut_hz) {
-        // Dterm delta low pass
-        delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
-    } else {
-        // When dterm filter disabled apply moving average to reduce noise
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
-        delta = deltaSum;
-    }
-    const int32_t DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
 #ifdef BLACKBOX
     axisPID_P[axis] = PTerm;

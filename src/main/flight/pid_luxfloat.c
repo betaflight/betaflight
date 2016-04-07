@@ -98,31 +98,37 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     lastITermf[axis] = ITerm;
 
     // -----calculate D component
-    float delta;
-    if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-        delta = RateError - lastErrorForDelta[axis];
-        lastErrorForDelta[axis] = RateError;
+    float DTerm;
+    if (pidProfile->D8[axis] == 0) {
+        // optimisation for when D8 is zero, often used by YAW axis
+        DTerm = 0;
     } else {
-        // Delta from measurement
-        delta = -(gyroRate - lastErrorForDelta[axis]);
-        lastErrorForDelta[axis] = gyroRate;
+        float delta;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
+        } else {
+            // Delta from measurement
+            delta = -(gyroRate - lastErrorForDelta[axis]);
+            lastErrorForDelta[axis] = gyroRate;
+        }
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta *= (1.0f / dT);
+        float deltaSum;
+        if (pidProfile->dterm_cut_hz) {
+            // Dterm delta low pass
+            delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
+        } else {
+            // When dterm filter disabled apply moving average to reduce noise
+            deltaSum = delta1[axis] + delta2[axis] + delta;
+            delta2[axis] = delta1[axis];
+            delta1[axis] = delta;
+            delta = deltaSum / 3.0f;
+        }
+        DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
+        //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
     }
-    // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-    // would be scaled by different dt each time. Division by dT fixes that.
-    delta *= (1.0f / dT);
-    float deltaSum;
-    if (pidProfile->dterm_cut_hz) {
-        // Dterm delta low pass
-        delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
-    } else {
-        // When dterm filter disabled apply moving average to reduce noise
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
-        delta = deltaSum / 3.0f;
-    }
-    float DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
-    //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
 
 #ifdef BLACKBOX
     axisPID_P[axis] = PTerm;
