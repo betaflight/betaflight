@@ -33,6 +33,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/system.h"
+#include "drivers/dma.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -52,9 +53,9 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/sdcard.h"
 
 #include "rx/rx.h"
 
@@ -130,8 +131,6 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
-void transponderInit(uint8_t* transponderCode);
-//void usbCableDetectInit(void);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -255,6 +254,8 @@ void init(void)
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
+
+    dmaInit();
 
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
 
@@ -534,11 +535,9 @@ void init(void)
     }
 #endif
 
-/* TODO - Fix in the future
 #ifdef USB_CABLE_DETECTION
     usbCableDetectInit();
 #endif
-
 
 #ifdef TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
@@ -548,7 +547,6 @@ void init(void)
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
     }
 #endif
-*/
 
 #ifdef USE_FLASHFS
 #ifdef NAZE
