@@ -64,7 +64,7 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
 
-STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate)
+STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, int32_t gyroRate, int32_t AngleRate)
 {
     static int32_t lastErrorForDelta[3];
     static int32_t delta1[3], delta2[3];

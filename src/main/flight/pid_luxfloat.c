@@ -137,7 +137,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
 #endif
     GET_PID_LUX_FLOAT_CORE_LOCALS(axis);
     // -----calculate total PID output
-    return PTerm + ITerm + DTerm;
+    return lrintf(PTerm + ITerm + DTerm);
 }
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,

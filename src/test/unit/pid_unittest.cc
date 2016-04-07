@@ -52,13 +52,14 @@ extern "C" {
     typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
             uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);            // pid controller function prototype
     int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate);
-    int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float AngleRate);
+    int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, int32_t gyroRate, int32_t AngleRate);
     void pidResetITerm(void);
     extern pidControllerFuncPtr pid_controller;
     extern uint8_t PIDweight[3];
     extern bool motorLimitReached;
     extern uint32_t rcModeActivationMask;
     float dT; // dT for pidLuxFloat
+    int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     float unittest_pidLuxFloatCore_lastErrorForDelta[3];
     float unittest_pidLuxFloatCore_delta1[3];
     float unittest_pidLuxFloatCore_delta2[3];
@@ -68,7 +69,6 @@ extern "C" {
     int32_t unittest_pidMultiWiiRewriteCore_lastErrorForDelta[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
-    int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_ITerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
@@ -83,7 +83,7 @@ static int deltaTotalSamples;
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->pidController = 1;
+    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
 
     pidProfile->P8[PIDROLL] = 40;
     pidProfile->I8[PIDROLL] = 30;
@@ -117,6 +117,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->dterm_cut_hz = 0;
     pidProfile->deltaMethod = DELTA_FROM_ERROR;
+    //pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 }
 
 void pidControllerInitLuxFloatCore(void)
@@ -148,7 +149,6 @@ void pidControllerInitLuxFloat(controlRateConfig_t *controlRate, uint16_t max_an
 
     pidControllerInitLuxFloatCore();
     resetRollAndPitchTrims(rollAndPitchTrims);
-    dT = 0.1f; // set large dT so constraints on PID values are not invoked
     // set up the control rates for calculation of rate error
     controlRate->rates[ROLL] = 173;
     controlRate->rates[PITCH] = 173;
@@ -321,6 +321,7 @@ TEST(PIDUnittest, TestPidLuxFloatIntegrationForLinearFunction)
     pidProfile_t *pidProfile = &testPidProfile;
 
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    dT = 0.1f; // set large dT so constraints on PID values are not invoked
     EXPECT_FLOAT_EQ(0.1f, dT);
 
     // Test PID integration for a linear function:
@@ -339,6 +340,7 @@ TEST(PIDUnittest, TestPidLuxFloatIntegrationForLinearFunction)
     float actITerm = 0.5 * k * t * t * pidProfile->I8[ROLL] * luxITermScale; // actual value of integral
     EXPECT_FLOAT_EQ(actITerm, pidITerm); // both are zero at this point
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
+    dT = 0.1f; // set large dT so constraints on PID values are not invoked
 
     rcCommand[ROLL] = calcLuxRcCommandRoll(100, &controlRate);
     EXPECT_FLOAT_EQ(100, calcLuxAngleRateRoll(&controlRate)); // cross check
