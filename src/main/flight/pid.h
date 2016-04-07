@@ -46,11 +46,6 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 
-typedef enum {
-	DELTA_FROM_ERROR = 0,
-	DELTA_FROM_MEASUREMENT
-} pidDeltaType_e;
-
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
 
 typedef struct pidProfile_s {
