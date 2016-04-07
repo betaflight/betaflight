@@ -302,6 +302,36 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #endif
 
+#if defined(SPRACINGF3EVO)
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    // PPM / UART2 RX
+    { TIM8,  GPIOA, Pin_15, TIM_Channel_1, TIM8_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource15, GPIO_AF_2},  // PPM
+
+    { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_1},  // PWM1
+    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_1},  // PWM2
+    { TIM15, GPIOA, Pin_2,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource2,  GPIO_AF_9},  // PWM3
+    { TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource3,  GPIO_AF_9},  // PWM4
+    { TIM3,  GPIOA, Pin_6,  TIM_Channel_1, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource6,  GPIO_AF_2},  // PWM5
+    { TIM3,  GPIOA, Pin_7,  TIM_Channel_2, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource7,  GPIO_AF_2},  // PWM6
+    { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_2},  // PWM7
+    { TIM3,  GPIOB, Pin_1,  TIM_Channel_4, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource1,  GPIO_AF_2},  // PWM8
+
+    // UART3 RX/TX
+    { TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
+    { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1}, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
+
+    // IR / LED Strip Pad
+    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_6},  // GPIO_TIMER / LED_STRIP
+};
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+
+#endif
+
 #if defined(MOTOLAB)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  GPIOA, Pin_4,  TIM_Channel_2, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource4,  GPIO_AF_2}, // PWM1  - PA4  - *TIM3_CH2
