@@ -142,14 +142,9 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         PTerm -= ((int32_t)gyroError * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
 
         //-----calculate D-term based on the configured approach (delta from measurement or deltafromError)
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = error - lastErrorForDelta[axis];
-            lastErrorForDelta[axis] = error;
-        } else {                                       /* Delta from measurement */
-            delta = -(gyroError - lastErrorForDelta[axis]);
-            lastErrorForDelta[axis] = gyroError;
-        }
-
+        // Delta from measurement
+        delta = -(gyroError - lastErrorForDelta[axis]);
+        lastErrorForDelta[axis] = gyroError;
         if (pidProfile->dterm_cut_hz) {
             // Dterm delta low pass
             DTerm = delta;
@@ -160,7 +155,6 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
         }
-
         DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm + DTerm;

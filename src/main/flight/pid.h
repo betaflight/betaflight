@@ -58,7 +58,6 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
     uint8_t pidController;
-    uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     uint16_t dterm_cut_hz;                  // dterm filtering
 } pidProfile_t;

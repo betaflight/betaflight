@@ -88,15 +88,15 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .P8[PIDALT] = 50,
     .I8[PIDALT] = 0,
     .D8[PIDALT] = 0,
-    .P8[PIDPOS] = 15, // POSHOLD_P * 100
-    .I8[PIDPOS] = 0, // POSHOLD_I * 100
+    .P8[PIDPOS] = 15,   // POSHOLD_P * 100
+    .I8[PIDPOS] = 0,    // POSHOLD_I * 100
     .D8[PIDPOS] = 0,
-    .P8[PIDPOSR] = 34, // POSHOLD_RATE_P * 10
-    .I8[PIDPOSR] = 14, // POSHOLD_RATE_I * 100
-    .D8[PIDPOSR] = 53, // POSHOLD_RATE_D * 1000
-    .P8[PIDNAVR] = 25, // NAV_P * 10
-    .I8[PIDNAVR] = 33, // NAV_I * 100
-    .D8[PIDNAVR] = 83, // NAV_D * 1000
+    .P8[PIDPOSR] = 34,  // POSHOLD_RATE_P * 10
+    .I8[PIDPOSR] = 14,  // POSHOLD_RATE_I * 100
+    .D8[PIDPOSR] = 53,  // POSHOLD_RATE_D * 1000
+    .P8[PIDNAVR] = 25,  // NAV_P * 10
+    .I8[PIDNAVR] = 33,  // NAV_I * 100
+    .D8[PIDNAVR] = 83,  // NAV_D * 1000
     .P8[PIDLEVEL] = 20,
     .I8[PIDLEVEL] = 10,
     .D8[PIDLEVEL] = 100,
@@ -107,7 +107,6 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
     .yaw_p_limit = YAW_P_LIMIT_MAX,
     .dterm_cut_hz = 0,
-    .deltaMethod = 1,
 );
 
 void pidResetITerm(void)

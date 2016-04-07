@@ -103,15 +103,9 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         // optimisation for when D8 is zero, often used by YAW axis
         DTerm = 0;
     } else {
-        int32_t delta;
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = rateError - lastErrorForDelta[axis];
-            lastErrorForDelta[axis] = rateError;
-        } else {
-            // Delta from measurement
-            delta = -(gyroRate - lastErrorForDelta[axis]);
-            lastErrorForDelta[axis] = gyroRate;
-        }
+        // Delta from measurement
+        int32_t delta = -(gyroRate - lastErrorForDelta[axis]);
+        lastErrorForDelta[axis] = gyroRate;
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
         // would be scaled by different dt each time. Division by dT fixes that.
         delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
