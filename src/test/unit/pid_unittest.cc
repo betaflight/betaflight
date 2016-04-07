@@ -119,7 +119,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->dterm_cut_hz = 0;
-    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 }
 
 void resetRcCommands(void)
