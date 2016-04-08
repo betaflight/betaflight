@@ -61,13 +61,13 @@ extern "C" {
     extern uint32_t rcModeActivationMask;
     float dT; // dT for pidLuxFloat
     int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
-    float unittest_pidLuxFloatCore_lastErrorForDelta[3];
+    float unittest_pidLuxFloatCore_lastRateForDelta[3];
     float unittest_pidLuxFloatCore_delta1[3];
     float unittest_pidLuxFloatCore_delta2[3];
     float unittest_pidLuxFloatCore_PTerm[3];
     float unittest_pidLuxFloatCore_ITerm[3];
     float unittest_pidLuxFloatCore_DTerm[3];
-    int32_t unittest_pidMultiWiiRewriteCore_lastErrorForDelta[3];
+    int32_t unittest_pidMultiWiiRewriteCore_lastRateForDelta[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
     int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
@@ -154,7 +154,7 @@ void pidControllerInitLuxFloatCore(void)
     PIDweight[FD_YAW] = 100;
     // reset the pidLuxFloat static values
     for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
-        unittest_pidLuxFloatCore_lastErrorForDelta[ii] = 0.0f;
+        unittest_pidLuxFloatCore_lastRateForDelta[ii] = 0.0f;
         unittest_pidLuxFloatCore_delta1[ii] = 0.0f;
         unittest_pidLuxFloatCore_delta2[ii] = 0.0f;
     }
@@ -542,7 +542,7 @@ void pidControllerInitMultiWiiRewriteCore(void)
     PIDweight[FD_YAW] = 100;
     // reset the pidMultiWiiRewrite static values
     for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
-        unittest_pidMultiWiiRewriteCore_lastErrorForDelta[ii] = 0;
+        unittest_pidMultiWiiRewriteCore_lastRateForDelta[ii] = 0;
         unittest_pidMultiWiiRewriteCore_delta1[ii] = 0;
         unittest_pidMultiWiiRewriteCore_delta2[ii] = 0;
     }

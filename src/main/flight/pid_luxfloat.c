@@ -71,7 +71,7 @@ static const float luxGyroScale = 16.4f / 4.0f; // the 16.4 is needed because mw
 
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
 {
-    static float lastErrorForDelta[3];
+    static float lastRateForDelta[3];
     static float delta1[3], delta2[3];
 
     SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
@@ -88,7 +88,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I / luxITermScale, PID_LUX_FLOAT_MAX_I / luxITermScale);
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        ITerm = ITerm * pidScaleItermToRcInput(axis);
+        ITerm = ITerm * pidScaleITermToRcInput(axis);
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             ITerm = constrainf(ITerm, -ITermLimitf[axis], ITermLimitf[axis]);
         } else {
@@ -103,19 +103,17 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         // optimisation for when D8 is zero, often used by YAW axis
         DTerm = 0;
     } else {
-        // Delta from measurement
-        float delta = -(gyroRate - lastErrorForDelta[axis]);
-        lastErrorForDelta[axis] = gyroRate;
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
+        // delta calculated from measurement
+        float delta = -(gyroRate - lastRateForDelta[axis]);
+        lastRateForDelta[axis] = gyroRate;
+        // Divide delta by dT to get differential (ie dr/dt)
         delta *= (1.0f / dT);
-        float deltaSum;
         if (pidProfile->dterm_cut_hz) {
-            // Dterm delta low pass
+            // DTerm delta low pass
             delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         } else {
-            // When dterm filter disabled apply moving average to reduce noise
-            deltaSum = delta1[axis] + delta2[axis] + delta;
+            // When DTerm filter disabled apply moving average to reduce noise
+            const float deltaSum = delta1[axis] + delta2[axis] + delta;
             delta2[axis] = delta1[axis];
             delta1[axis] = delta;
             delta = deltaSum / 3.0f;
@@ -142,8 +140,7 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
     pidFilterIsSetCheck(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
-
-        // Figure out the raw stick positions
+        // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
         const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
         const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
@@ -161,16 +158,17 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
     for (int axis = 0; axis < 3; axis++) {
         const uint8_t rate = controlRateConfig->rates[axis];
 
-        float angleRate;
         // -----Get the desired angle rate depending on flight mode
+        float angleRate;
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
             angleRate = (float)((rate + 27) * rcCommand[YAW]) / 32.0f;
         } else {
-            // control is GYRO based (ACRO and HORIZON) - direct sticks control is applied to rate PID
+            // control is GYRO based for ACRO and HORIZON - direct sticks control is applied to rate PID
             angleRate = (float)((rate + 27) * rcCommand[axis]) / 16.0f; // 200dps to 1200dps max roll/pitch rate
             if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
                 // calculate error angle and limit the angle to the max inclination
+                // multiplication of rcCommand corresponds to changing the sticks scaling here
 #ifdef GPS
                 const float errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int)max_angle_inclination), max_angle_inclination)
                         - attitude.raw[axis] + angleTrim->raw[axis];
@@ -179,23 +177,21 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
                         - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
                 if (FLIGHT_MODE(ANGLE_MODE)) {
-                    // ANGLE mode - control is angle based, so control loop is needed
+                    // ANGLE mode
                     angleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
                 } else {
-                    // HORIZON mode - direct sticks control is applied to rate PID
-                    // mix up angle error to desired angleRate to add a little auto-level feel
+                    // HORIZON mode
+                    // mix in errorAngle to desired angleRate to add a little auto-level feel.
+                    // horizonLevelStrength has been scaled to the stick input
                     angleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f;
                 }
             }
         }
 
         // --------low-level gyro-based PID. ----------
-        // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
-        // -----calculate scaled error.angleRates
-        // multiplication of rcCommand corresponds to changing the sticks scaling here
         const float gyroRate = luxGyroScale * gyroADC[axis] * gyro.scale;
         axisPID[axis] = pidLuxFloatCore(axis, pidProfile, gyroRate, angleRate);
-
+        //axisPID[axis] = constrain(axisPID[axis], -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             calculate_Gtune(axis);

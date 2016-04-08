@@ -70,8 +70,9 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);            // pid controller function prototype
 
-pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using
+pidControllerFuncPtr pid_controller = pidMultiWiiRewrite;
 
+<<<<<<< HEAD
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
@@ -117,7 +118,8 @@ void pidResetITerm(void)
     }
 }
 
-float pidScaleItermToRcInput(int axis) {
+float pidScaleITermToRcInput(int axis)
+{
     float rcCommandDeflection = (float)rcCommand[axis] / 500.0f;
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
     static float antiWindUpIncrement = 0;
@@ -142,7 +144,8 @@ float pidScaleItermToRcInput(int axis) {
 
 biquad_t deltaFilterState[3];
 
-void pidFilterIsSetCheck(const pidProfile_t *pidProfile) {
+void pidFilterIsSetCheck(const pidProfile_t *pidProfile)
+{
     static bool deltaStateIsSet = false;
     if (!deltaStateIsSet && pidProfile->dterm_cut_hz) {
         for (int axis = 0; axis < 3; axis++) {

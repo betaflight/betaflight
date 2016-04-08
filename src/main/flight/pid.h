@@ -63,7 +63,7 @@ PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 extern int16_t axisPID[FD_INDEX_COUNT];
 extern int32_t axisPID_P[FD_INDEX_COUNT], axisPID_I[FD_INDEX_COUNT], axisPID_D[FD_INDEX_COUNT];
 
-float pidScaleItermToRcInput(int axis);
+float pidScaleITermToRcInput(int axis);
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
 void pidSetController(pidControllerType_e type);
