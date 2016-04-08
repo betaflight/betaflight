@@ -223,9 +223,4 @@
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-#define USE_SERIAL_1WIRE
-
-#define S1W_TX_GPIO         UART1_GPIO
-#define S1W_TX_PIN          UART1_TX_PIN
-#define S1W_RX_GPIO         UART1_GPIO
-#define S1W_RX_PIN          UART1_RX_PIN
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
