@@ -2,6 +2,7 @@ ALL_TARGETS := naze
 ALL_TARGETS += cc3d
 ALL_TARGETS += cc3d_opbl
 ALL_TARGETS += spracingf3
+ALL_TARGETS += spracingf3evo
 ALL_TARGETS += spracingf3mini
 ALL_TARGETS += sparky
 ALL_TARGETS += alienflightf1
@@ -20,6 +21,7 @@ clean_cc3d cc3d:                          opts := TARGET=CC3D
 clean_cc3d_opbl cc3d_opbl :               opts := TARGET=CC3D_OPBL
 clean_spracingf3mini spracingf3mini :     opts := TARGET=SPRACINGF3MINI
 clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3
+clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3EVO
 clean_sparky sparky :                     opts := TARGET=SPARKY
 clean_alienflightf1 alienflightf1 :       opts := TARGET=ALIENFLIGHTF1
 clean_alienflightf3 alienflightf3  :      opts := TARGET=ALIENFLIGHTF3
