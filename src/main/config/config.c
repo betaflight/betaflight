@@ -593,6 +593,13 @@ static void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 #endif
 
+#ifdef SPRACINGF3EVO
+    featureSet(FEATURE_TRANSPONDER);
+    featureSet(FEATURE_RSSI_ADC);
+    featureSet(FEATURE_CURRENT_METER);
+    featureSet(FEATURE_TELEMETRY);
+#endif
+
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHT
     featureSet(FEATURE_RX_SERIAL);
