@@ -117,6 +117,7 @@ extern bool antiWindupProtection;
 
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
+static bool armingCalibrationWasInitialised;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -312,7 +313,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (IS_RC_MODE_ACTIVE(BOXARM) == 0 || armingCalibrationWasInitialised) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -341,6 +342,8 @@ void annexCode(void)
 
 void mwDisarm(void)
 {
+    armingCalibrationWasInitialised = false;
+
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
@@ -366,11 +369,12 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
-    static bool armingCalibrationWasInitialisedOnce;
+    static bool firstArmingCalibrationWasCompleted;
 
-    if (masterConfig.gyro_cal_on_first_arm && !armingCalibrationWasInitialisedOnce) {
+    if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
         gyroSetCalibrationCycles(calculateCalibratingCycles());
-        armingCalibrationWasInitialisedOnce = true;
+        armingCalibrationWasInitialised = true;
+        firstArmingCalibrationWasCompleted = true;
     }
 
     if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
