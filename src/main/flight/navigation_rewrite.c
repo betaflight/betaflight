@@ -968,7 +968,11 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
+
+    if (posControl.navConfig->flags.disarm_on_landing) {
+        mwDisarm();
+    }
+
     return NAV_FSM_EVENT_SUCCESS;
 }
 

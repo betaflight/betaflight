@@ -196,6 +196,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->flags.user_control_mode = NAV_GPS_ATTI;
     navConfig->flags.rth_alt_control_style = NAV_RTH_AT_LEAST_ALT;
     navConfig->flags.rth_tail_first = 0;
+    navConfig->flags.disarm_on_landing = 0;
 
     // Inertial position estimator parameters
 #if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
