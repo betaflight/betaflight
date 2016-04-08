@@ -156,6 +156,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &RaceMPUIntExtiConfig;
 #endif
 
+#if defined(DOGE)
+    static const extiConfig_t dogeMPUIntExtiConfig = {
+         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
+         .gpioPort = GPIOC,
+         .gpioPin = Pin_13,
+         .exti_port_source = EXTI_PortSourceGPIOC,
+         .exti_pin_source = EXTI_PinSource13,
+         .exti_line = EXTI_Line13,
+         .exti_irqn = EXTI15_10_IRQn
+    };
+    return &dogeMPUIntExtiConfig;
+#endif
+
 #if defined(MOTOLAB) || defined(SPARKY)
     static const extiConfig_t MotolabF3MPU6050Config = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
