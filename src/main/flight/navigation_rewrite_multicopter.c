@@ -61,6 +61,7 @@ extern int16_t magHold;
 static int16_t rcCommandAdjustedThrottle;
 static int16_t altHoldThrottleRCZero = 1500;
 static filterStatePt1_t altholdThrottleFilterState;
+static bool prepareForTakeoffOnReset = false;
 
 /* Calculate global altitude setpoint based on surface setpoint */
 static void updateSurfaceTrackingAltitudeSetpoint_MC(void)
@@ -135,13 +136,13 @@ bool adjustMulticopterAltitudeFromRCInput(void)
 
 void setupMulticopterAltitudeController(void)
 {
-    // Nothing here
+    throttleStatus_e throttleStatus = calculateThrottleStatus(posControl.rxConfig, posControl.flight3DConfig->deadband3d_throttle);
+
     if (posControl.navConfig->flags.use_thr_mid_for_althold) {
         altHoldThrottleRCZero = lookupThrottleRCMid;
     }
     else {
         // If throttle status is THROTTLE_LOW - use Thr Mid anyway
-        throttleStatus_e throttleStatus = calculateThrottleStatus(posControl.rxConfig, posControl.flight3DConfig->deadband3d_throttle);
         if (throttleStatus == THROTTLE_LOW) {
             altHoldThrottleRCZero = lookupThrottleRCMid;
         }
@@ -154,14 +155,25 @@ void setupMulticopterAltitudeController(void)
     altHoldThrottleRCZero = constrain(altHoldThrottleRCZero,
                                       posControl.escAndServoConfig->minthrottle + posControl.rcControlsConfig->alt_hold_deadband + 10, 
                                       posControl.escAndServoConfig->maxthrottle - posControl.rcControlsConfig->alt_hold_deadband - 10);
+
+    /* Force AH controller to initialize althold integral for pending takeoff on reset */
+    if (throttleStatus == THROTTLE_LOW) {
+        prepareForTakeoffOnReset = true;
+    }
 }
 
-void resetMulticopterAltitudeController()
+void resetMulticopterAltitudeController(void)
 {
     navPidReset(&posControl.pids.vel[Z]);
     filterResetPt1(&altholdThrottleFilterState, 0.0f);
     posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;
+
+    /* Prevent jump if activated with zero throttle - start with -50% throttle adjustment. That's obviously too much, but it will prevent jumping */
+    if (prepareForTakeoffOnReset) {
+        posControl.pids.vel[Z].integrator = -500.0f;
+        prepareForTakeoffOnReset = false;
+    }
 }
 
 static void applyMulticopterAltitudeController(uint32_t currentTime)
