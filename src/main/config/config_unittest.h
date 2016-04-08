@@ -47,9 +47,7 @@ bool unittest_outsideRealtimeGuardInterval;
 #ifdef UNIT_TEST
 
 float unittest_pidLuxFloatCore_lastRateForDelta[3];
-float unittest_pidLuxFloatCore_delta0[3];
-float unittest_pidLuxFloatCore_delta1[3];
-float unittest_pidLuxFloatCore_delta2[3];
+float unittest_pidLuxFloatCore_deltaState[3][DTERM_AVERAGE_COUNT];
 float unittest_pidLuxFloatCore_PTerm[3];
 float unittest_pidLuxFloatCore_ITerm[3];
 float unittest_pidLuxFloatCore_DTerm[3];
@@ -57,17 +55,17 @@ float unittest_pidLuxFloatCore_DTerm[3];
 #define SET_PID_LUX_FLOAT_CORE_LOCALS(axis) \
     { \
         lastRateForDelta[axis] = unittest_pidLuxFloatCore_lastRateForDelta[axis]; \
-        delta0[axis] = unittest_pidLuxFloatCore_delta0[axis]; \
-        delta1[axis] = unittest_pidLuxFloatCore_delta1[axis]; \
-        delta2[axis] = unittest_pidLuxFloatCore_delta2[axis]; \
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            deltaState[axis][ii] = unittest_pidLuxFloatCore_deltaState[axis][ii]; \
+        } \
     }
 
 #define GET_PID_LUX_FLOAT_CORE_LOCALS(axis) \
     { \
         unittest_pidLuxFloatCore_lastRateForDelta[axis] = lastRateForDelta[axis]; \
-        unittest_pidLuxFloatCore_delta0[axis] = delta0[axis]; \
-        unittest_pidLuxFloatCore_delta1[axis] = delta1[axis]; \
-        unittest_pidLuxFloatCore_delta2[axis] = delta2[axis]; \
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            unittest_pidLuxFloatCore_deltaState[axis][ii] = deltaState[axis][ii]; \
+        } \
         unittest_pidLuxFloatCore_PTerm[axis] = PTerm; \
         unittest_pidLuxFloatCore_ITerm[axis] = ITerm; \
         unittest_pidLuxFloatCore_DTerm[axis] = DTerm; \
@@ -86,27 +84,25 @@ float unittest_pidLuxFloatCore_DTerm[3];
 #ifdef UNIT_TEST
 
 int32_t unittest_pidMultiWiiRewriteCore_lastRateForDelta[3];
-int32_t unittest_pidMultiWiiRewriteCore_delta0[3];
-int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
-int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
+int32_t unittest_pidMultiWiiRewriteCore_deltaState[3][DTERM_AVERAGE_COUNT];
 int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
 int32_t unittest_pidMultiWiiRewriteCore_ITerm[3];
 int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
 
 #define SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis) \
     { \
-    lastRateForDelta[axis] = unittest_pidMultiWiiRewriteCore_lastRateForDelta[axis]; \
-    delta0[axis] = unittest_pidMultiWiiRewriteCore_delta0[axis]; \
-    delta1[axis] = unittest_pidMultiWiiRewriteCore_delta1[axis]; \
-    delta2[axis] = unittest_pidMultiWiiRewriteCore_delta2[axis]; \
+        lastRateForDelta[axis] = unittest_pidMultiWiiRewriteCore_lastRateForDelta[axis]; \
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            deltaState[axis][ii] = unittest_pidMultiWiiRewriteCore_deltaState[axis][ii]; \
+        } \
     }
 
 #define GET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis) \
     { \
         unittest_pidMultiWiiRewriteCore_lastRateForDelta[axis] = lastRateForDelta[axis]; \
-        unittest_pidMultiWiiRewriteCore_delta0[axis] = delta0[axis]; \
-        unittest_pidMultiWiiRewriteCore_delta1[axis] = delta1[axis]; \
-        unittest_pidMultiWiiRewriteCore_delta2[axis] = delta2[axis]; \
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            unittest_pidMultiWiiRewriteCore_deltaState[axis][ii] = deltaState[axis][ii]; \
+        } \
         unittest_pidMultiWiiRewriteCore_PTerm[axis] = PTerm; \
         unittest_pidMultiWiiRewriteCore_ITerm[axis] = ITerm; \
         unittest_pidMultiWiiRewriteCore_DTerm[axis] = DTerm; \

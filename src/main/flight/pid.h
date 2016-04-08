@@ -25,6 +25,8 @@
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 
+#define DTERM_AVERAGE_COUNT 4
+
 typedef enum {
     PIDROLL,
     PIDPITCH,

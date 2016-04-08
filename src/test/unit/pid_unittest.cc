@@ -26,7 +26,6 @@ extern "C" {
     #include "common/maths.h"
 
     #include "config/runtime_config.h"
-    #include "config/config_unittest.h"
     #include "config/parameter_group.h"
 
     #include "drivers/sensor.h"
@@ -40,6 +39,7 @@ extern "C" {
     #include "io/rate_profile.h"
 
     #include "flight/pid.h"
+    #include "config/config_unittest.h"
     #include "flight/imu.h"
 
     pidProfile_t testPidProfile;
@@ -62,16 +62,12 @@ extern "C" {
     float dT; // dT for pidLuxFloat
     int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     float unittest_pidLuxFloatCore_lastRateForDelta[3];
-    float unittest_pidLuxFloatCore_delta0[3];
-    float unittest_pidLuxFloatCore_delta1[3];
-    float unittest_pidLuxFloatCore_delta2[3];
+    int32_t unittest_pidLuxFloatCore_deltaState[3][DTERM_AVERAGE_COUNT];
     float unittest_pidLuxFloatCore_PTerm[3];
     float unittest_pidLuxFloatCore_ITerm[3];
     float unittest_pidLuxFloatCore_DTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_lastRateForDelta[3];
-    int32_t unittest_pidMultiWiiRewriteCore_delta0[3];
-    int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
-    int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
+    int32_t unittest_pidMultiWiiRewriteCore_deltaState[3][DTERM_AVERAGE_COUNT];
     int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_ITerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
@@ -84,7 +80,7 @@ static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrew
 static const int mwrGyroScale = 4;
 #define TARGET_LOOPTIME 2048
 
-static int deltaTotalSamples;
+static const int deltaTotalSamples = DTERM_AVERAGE_COUNT;
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -141,7 +137,6 @@ void resetGyroADC(void)
 void pidControllerInitLuxFloatCore(void)
 {
     pidSetController(PID_CONTROLLER_LUX_FLOAT);
-    deltaTotalSamples = 4;
     resetPidProfile(&testPidProfile);
     pidResetITermAngle();
     pidResetITerm();
@@ -155,11 +150,11 @@ void pidControllerInitLuxFloatCore(void)
     PIDweight[FD_PITCH] = 100;
     PIDweight[FD_YAW] = 100;
     // reset the pidLuxFloat static values
-    for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
-        unittest_pidLuxFloatCore_lastRateForDelta[ii] = 0.0f;
-        unittest_pidLuxFloatCore_delta0[ii] = 0.0f;
-        unittest_pidLuxFloatCore_delta1[ii] = 0.0f;
-        unittest_pidLuxFloatCore_delta2[ii] = 0.0f;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        unittest_pidLuxFloatCore_lastRateForDelta[axis] = 0.0f;
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            unittest_pidLuxFloatCore_deltaState[axis][ii] = 0.0f; \
+        } \
     }
 }
 
@@ -532,7 +527,6 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
 void pidControllerInitMultiWiiRewriteCore(void)
 {
     pidSetController(PID_CONTROLLER_MWREWRITE);
-    deltaTotalSamples = 3;
     resetPidProfile(&testPidProfile);
     targetLooptime = TARGET_LOOPTIME; // normalised targetLooptime for pidMultiWiiRewrite
     dT = TARGET_LOOPTIME * 0.000001f;
@@ -544,11 +538,11 @@ void pidControllerInitMultiWiiRewriteCore(void)
     PIDweight[FD_PITCH] = 100;
     PIDweight[FD_YAW] = 100;
     // reset the pidMultiWiiRewrite static values
-    for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
-        unittest_pidMultiWiiRewriteCore_lastRateForDelta[ii] = 0;
-        unittest_pidMultiWiiRewriteCore_delta0[ii] = 0;
-        unittest_pidMultiWiiRewriteCore_delta1[ii] = 0;
-        unittest_pidMultiWiiRewriteCore_delta2[ii] = 0;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        unittest_pidMultiWiiRewriteCore_lastRateForDelta[axis] = 0;
+        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
+            unittest_pidMultiWiiRewriteCore_deltaState[axis][ii] = 0; \
+        } \
     }
 }
 
@@ -724,7 +718,7 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatCoreEquivalence)
     pidControllerInitMultiWiiRewriteCore();
     EXPECT_EQ(TARGET_LOOPTIME, targetLooptime);
     EXPECT_FLOAT_EQ(TARGET_LOOPTIME * 0.000001f, dT);
-    EXPECT_EQ(3, deltaTotalSamples);
+    EXPECT_EQ(4, deltaTotalSamples);
 
     pidMultiWiiRewriteCore(FD_ROLL, pidProfile, -angleRate, 0);
     EXPECT_EQ(calcMwrPTerm(pidProfile, PIDROLL, angleRate), unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL]);

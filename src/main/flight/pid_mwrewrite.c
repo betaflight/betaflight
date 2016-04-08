@@ -32,7 +32,6 @@
 
 #include "config/parameter_group.h"
 #include "config/runtime_config.h"
-#include "config/config_unittest.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -48,6 +47,7 @@
 #include "io/rate_profile.h"
 
 #include "flight/pid.h"
+#include "config/config_unittest.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
@@ -59,6 +59,8 @@ extern int32_t lastITerm[3], ITermLimit[3];
 
 extern biquad_t deltaFilterState[3];
 
+extern uint8_t motorCount;
+
 #ifdef BLACKBOX
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
@@ -67,14 +69,18 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, int32_t gyroRate, int32_t angleRate)
 {
     static int32_t lastRateForDelta[3];
-    static int32_t delta0[3], delta1[3], delta2[3];
+    static int32_t deltaState[3][DTERM_AVERAGE_COUNT];
 
     SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis);
 
     const int32_t rateError = angleRate - gyroRate;
 
     // -----calculate P component
-    const int32_t PTerm = (rateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+    int32_t PTerm = (rateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+    // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
+    if (axis == YAW && pidProfile->yaw_p_limit && motorCount >= 4) {
+        PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+    }
 
     // -----calculate I component
     // There should be no division before accumulating the error to integrator, because the precision would be reduced.
@@ -112,12 +118,8 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
             // DTerm delta low pass
             delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis]));  // Keep same scaling as unfiltered deltaSum
         } else {
-            // When DTerm filter disabled apply moving average to reduce noise
-            const int32_t deltaSum = delta + delta0[axis] + delta1[axis] + delta2[axis] ;
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta0[axis];
-            delta0[axis] = delta;
-            delta = deltaSum / 4;
+            // When DTerm low pass filter disabled apply moving average to reduce noise
+            delta = filterApplyAverage(delta, DTERM_AVERAGE_COUNT, deltaState[axis]);
         }
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 6;
     }

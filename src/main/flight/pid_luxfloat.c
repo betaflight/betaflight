@@ -32,7 +32,6 @@
 
 #include "config/parameter_group.h"
 #include "config/runtime_config.h"
-#include "config/config_unittest.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -48,6 +47,7 @@
 #include "io/rate_profile.h"
 
 #include "flight/pid.h"
+#include "config/config_unittest.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
@@ -58,6 +58,8 @@ extern uint8_t PIDweight[3];
 extern float lastITermf[3], ITermLimitf[3];
 
 extern biquad_t deltaFilterState[3];
+
+extern uint8_t motorCount;
 
 #ifdef BLACKBOX
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
@@ -72,14 +74,18 @@ static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrew
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
 {
     static float lastRateForDelta[3];
-    static float delta0[3], delta1[3], delta2[3];
+    static float deltaState[3][DTERM_AVERAGE_COUNT];
 
     SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
 
     const float rateError = angleRate - gyroRate;
 
     // -----calculate P component
-    const float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
+    float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
+    // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
+    if (axis == YAW && pidProfile->yaw_p_limit && motorCount >= 4) {
+        PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+    }
 
     // -----calculate I component
     float ITerm = lastITermf[axis] + luxITermScale * rateError * dT * pidProfile->I8[axis];
@@ -112,12 +118,8 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
             // DTerm delta low pass
             delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         } else {
-            // When DTerm filter disabled apply moving average to reduce noise
-            const float deltaSum = delta + delta0[axis] + delta1[axis] + delta2[axis] ;
-            delta2[axis] = delta1[axis];
-            delta1[axis] = delta0[axis];
-            delta0[axis] = delta;
-            delta = deltaSum / 4.0f;
+            // When DTerm low pass filter disabled apply moving average to reduce noise
+            delta = filterApplyAveragef(delta, DTERM_AVERAGE_COUNT, deltaState[axis]);
         }
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
         //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
