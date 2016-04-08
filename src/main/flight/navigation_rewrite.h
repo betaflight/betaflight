@@ -273,6 +273,8 @@ extern int16_t navActualVelocity[3];
 extern int16_t navDesiredVelocity[3];
 extern int16_t navTargetPosition[3];
 extern int32_t navLatestActualPosition[3];
+extern int16_t navTargetSurface;
+extern int16_t navActualSurface;
 extern int16_t navDebug[4];
 extern uint16_t navFlags;
 #define NAV_BLACKBOX_DEBUG(x,y) navDebug[x] = constrain((y), -32678, 32767)

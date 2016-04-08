@@ -66,6 +66,8 @@ int16_t navDesiredHeading;
 int16_t navTargetPosition[3];
 int32_t navLatestActualPosition[3];
 int16_t navDebug[4];
+int16_t navTargetSurface;
+int16_t navActualSurface;
 uint16_t navFlags;
 #endif
 
@@ -615,16 +617,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
     if ((navGetStateFlags(previousState) & NAV_CTL_ALT) == 0) {
         resetAltitudeController();
         setupAltitudeController();
-
-        // If low enough and surface offset valid - enter surface tracking
-        if (posControl.flags.hasValidSurfaceSensor) {
-            setDesiredSurfaceOffset(posControl.actualState.surface);
-        }
-        else {
-            setDesiredSurfaceOffset(-1.0f);
-        }
-
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
     }
 
     return NAV_FSM_EVENT_SUCCESS;
@@ -633,6 +626,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+
+    // If we enable terrain mode and surface offset is not set yet - do it
+    if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
+        setDesiredSurfaceOffset(posControl.actualState.surface);
+    }
+
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -673,15 +672,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
     }
 
     if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
-        // If low enough and surface offset valid - enter surface tracking
-        if (posControl.flags.hasValidSurfaceSensor) {
-            setDesiredSurfaceOffset(posControl.actualState.surface);
-        }
-        else {
-            setDesiredSurfaceOffset(-1.0f);
-        }
-
-        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
     }
 
     if (((prevFlags & NAV_CTL_POS) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
@@ -696,6 +687,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+ 
+     // If we enable terrain mode and surface offset is not set yet - do it
+    if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
+        setDesiredSurfaceOffset(posControl.actualState.surface);
+    }
+
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -949,18 +946,18 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
         // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
         if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
             // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
-            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate);
+            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
         else {
             // Gradually reduce descent speed depending on actual altitude.
             if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
             else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
-                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
             else {
-                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate);
+                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
         }
 
@@ -971,7 +968,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
     return NAV_FSM_EVENT_SUCCESS;
 }
 
@@ -979,7 +976,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHED(navigat
 {
     // Stay in this state
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate);  // FIXME
+    updateAltitudeTargetFromClimbRate(-0.3f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1381,6 +1378,10 @@ void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, flo
     else {
         posControl.flags.surfaceDistanceNewData = 0;
     }
+
+#if defined(NAV_BLACKBOX)
+    navActualSurface = surfaceDistance;
+#endif
 }
 
 /*-----------------------------------------------------------
@@ -1525,11 +1526,15 @@ void updateHomePosition(void)
 void setDesiredSurfaceOffset(float surfaceOffset)
 {
     if (surfaceOffset > 0) {
-        posControl.desiredState.surface = constrainf(surfaceOffset, 20.0f, 250.0f);
+        posControl.desiredState.surface = constrainf(surfaceOffset, 1.0f, INAV_SURFACE_MAX_DISTANCE);
     }
     else {
         posControl.desiredState.surface = -1;
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
+#endif
 }
 
 /*-----------------------------------------------------------
@@ -1578,6 +1583,7 @@ void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t us
     navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
     navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
     navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
 #endif
 }
 
@@ -1615,20 +1621,31 @@ bool isLandingDetected(void)
 /*-----------------------------------------------------------
  * Z-position controller
  *-----------------------------------------------------------*/
-void updateAltitudeTargetFromClimbRate(float climbRate)
+void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode)
 {
     // FIXME: On FIXED_WING and multicopter this should work in a different way
     // Calculate new altitude target
 
     /* Move surface tracking setpoint if it is set */
-    if (posControl.desiredState.surface > 0.0f && posControl.actualState.surface > 0.0f && posControl.flags.hasValidSurfaceSensor) {
-        posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / posControl.pids.pos[Z].param.kP), 1.0f, 200.0f);
+    if (mode == CLIMB_RATE_RESET_SURFACE_TARGET) {
+        posControl.desiredState.surface = -1;
+    }
+    else {
+        if (posControl.flags.isTerrainFollowEnabled) {
+            if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
+                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / (posControl.pids.pos[Z].param.kP * posControl.pids.surface.param.kP)), 1.0f, INAV_SURFACE_MAX_DISTANCE);
+            }
+        }
+        else {
+            posControl.desiredState.surface = -1;
+        }
     }
 
     posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (climbRate / posControl.pids.pos[Z].param.kP);
 
 #if defined(NAV_BLACKBOX)
     navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
 #endif
 }
 
@@ -2091,6 +2108,7 @@ static void updateReadyStatus(void)
 void updateFlightBehaviorModifiers(void)
 {
     posControl.flags.isGCSAssistedNavigationEnabled = IS_RC_MODE_ACTIVE(BOXGCSNAV);
+    posControl.flags.isTerrainFollowEnabled = IS_RC_MODE_ACTIVE(BOXSURFACE);
 }
 
 /**
@@ -2177,6 +2195,11 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
     navPidInit(&posControl.pids.vel[Z], (float)posControl.pidProfile->P8[PIDVEL] / 100.0f,
                                         (float)posControl.pidProfile->I8[PIDVEL] / 100.0f,
                                         (float)posControl.pidProfile->D8[PIDVEL] / 100.0f);
+
+    // Initialize surface tracking PID
+    navPidInit(&posControl.pids.surface, 2.0f,
+                                         1.0f,
+                                         0.0f);
 
     // Initialize fixed wing PID controllers
     navPidInit(&posControl.pids.fw_nav, (float)posControl.pidProfile->P8[PIDNAVR] / 100.0f,

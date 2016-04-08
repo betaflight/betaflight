@@ -64,13 +64,25 @@ static filterStatePt1_t altholdThrottleFilterState;
 static bool prepareForTakeoffOnReset = false;
 
 /* Calculate global altitude setpoint based on surface setpoint */
-static void updateSurfaceTrackingAltitudeSetpoint_MC(void)
+static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
-    if (posControl.desiredState.surface > 0 && (posControl.actualState.surface > 0 && posControl.flags.hasValidSurfaceSensor)) {
-        float surfaceOffsetError = posControl.desiredState.surface - posControl.actualState.surface;
-        posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + surfaceOffsetError;
+    if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
+        if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
+            // We better overshoot a little bit than undershoot
+            float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -5.0f, +35.0f, false);
+            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
+        }
+        else {
+            // TODO: We are possible above valid range, we now descend down to attempt to get back within range
+            //updateAltitudeTargetFromClimbRate(-0.10f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            updateAltitudeTargetFromClimbRate(-20.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
+        }
     }
+
+#if defined(NAV_BLACKBOX)
+    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+#endif
 }
 
 // Position to velocity controller for Z axis
@@ -120,14 +132,14 @@ bool adjustMulticopterAltitudeFromRCInput(void)
             rcClimbRate = rcThrottleAdjustment * posControl.navConfig->max_manual_climb_rate / (altHoldThrottleRCZero - posControl.escAndServoConfig->minthrottle);
         }
 
-        updateAltitudeTargetFromClimbRate(rcClimbRate);
+        updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
 
         return true;
     }
     else {
         // Adjusting finished - reset desired position to stay exactly where pilot released the stick
         if (posControl.flags.isAdjustingAltitude) {
-            updateAltitudeTargetFromClimbRate(0);
+            updateAltitudeTargetFromClimbRate(0, CLIMB_RATE_UPDATE_SURFACE_TARGET);
         }
 
         return false;
@@ -165,6 +177,7 @@ void setupMulticopterAltitudeController(void)
 void resetMulticopterAltitudeController(void)
 {
     navPidReset(&posControl.pids.vel[Z]);
+    navPidReset(&posControl.pids.surface);
     filterResetPt1(&altholdThrottleFilterState, 0.0f);
     posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;
@@ -199,7 +212,7 @@ static void applyMulticopterAltitudeController(uint32_t currentTime)
 
         // Check if last correction was too log ago - ignore this update
         if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-            updateSurfaceTrackingAltitudeSetpoint_MC();
+            updateSurfaceTrackingAltitudeSetpoint(deltaMicrosPositionUpdate);
             updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
             updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
         }
@@ -526,7 +539,7 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate);
+                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
                 updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }

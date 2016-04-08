@@ -31,6 +31,9 @@
 #define NAV_DTERM_CUT_HZ                    10
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
+#define INAV_SONAR_MAX_DISTANCE             55      // Sonar is unreliable above 50cm due to noise from propellers
+#define INAV_SURFACE_MAX_DISTANCE           40
+
 #define HZ2US(hz)   (1000000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
 #define MS2US(ms)   ((ms) * 1000)
@@ -44,6 +47,12 @@ typedef enum {
     NAV_POS_UPDATE_BEARING              = 1 << 3,
     NAV_POS_UPDATE_BEARING_TAIL_FIRST   = 1 << 4,
 } navSetWaypointFlags_t;
+
+typedef enum {
+    CLIMB_RATE_KEEP_SURFACE_TARGET,
+    CLIMB_RATE_RESET_SURFACE_TARGET,
+    CLIMB_RATE_UPDATE_SURFACE_TARGET,
+} navUpdateAltitudeFromRateMode_e;
 
 typedef struct navigationFlags_s {
     bool horizontalPositionNewData;
@@ -62,7 +71,7 @@ typedef struct navigationFlags_s {
 
     // Behaviour modifiers
     bool isGCSAssistedNavigationEnabled;    // Does iNav accept WP#255 - follow-me etc.
-    //bool isTerrainFollowEnabled;            // Does iNav use sonar for terrain following (adjusting baro altitude target according to sonar readings)
+    bool isTerrainFollowEnabled;            // Does iNav use sonar for terrain following (adjusting baro altitude target according to sonar readings)
 
     bool forcedRTHActivated;
 } navigationFlags_t;
@@ -93,6 +102,7 @@ typedef struct navigationPIDControllers_s {
     /* Multicopter PIDs */
     pController_t   pos[XYZ_AXIS_COUNT];
     pidController_t vel[XYZ_AXIS_COUNT];
+    pidController_t surface;
 
     /* Fixed-wing PIDs */
     pidController_t fw_alt;
@@ -274,7 +284,7 @@ void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD);
 void navPInit(pController_t *p, float _kP);
 
 bool isThrustFacingDownwards(void);
-void updateAltitudeTargetFromClimbRate(float climbRate);
+void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode);
 uint32_t calculateDistanceToDestination(t_fp_vector * destinationPos);
 int32_t calculateBearingToDestination(t_fp_vector * destinationPos);
 void resetLandingDetector(void);

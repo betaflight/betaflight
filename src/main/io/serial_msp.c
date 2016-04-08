@@ -369,6 +369,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXHOMERESET, "HOME RESET;", 30 },
     { BOXGCSNAV, "GCS NAV;", 31 },
     { BOXHEADINGLOCK, "HEADING LOCK;", 32 },
+    { BOXSURFACE, "SURFACE;", 33 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -673,6 +674,7 @@ void mspInit(serialConfig_t *serialConfig)
 #ifdef GPS
     if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
+        activeBoxIds[activeBoxIdCount++] = BOXSURFACE;
     }
     if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
@@ -755,7 +757,11 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
+<<<<<<< HEAD
         IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
+=======
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
+>>>>>>> surface-tracking-mod
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {
