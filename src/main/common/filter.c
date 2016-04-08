@@ -98,8 +98,8 @@ float applyBiQuadFilter(float sample, biquad_t *state)
 }
 
 int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]) {
-	int count;
-	int32_t averageSum;
+    int count;
+    int32_t averageSum = 0;
 
     for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
     averageState[0] = input;
@@ -109,8 +109,8 @@ int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageS
 }
 
 float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]) {
-	int count;
-	float averageSum;
+    int count;
+    float averageSum = 0.0f;
 
     for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
     averageState[0] = input;
