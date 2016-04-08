@@ -247,6 +247,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw_max_throttle = 1900;
     navConfig->fw_min_throttle = 1300;
     navConfig->fw_pitch_to_throttle = 20;
+    navConfig->fw_roll_to_pitch = 50;
     navConfig->fw_loiter_radius = 3000;     // 30m
 }
 #endif

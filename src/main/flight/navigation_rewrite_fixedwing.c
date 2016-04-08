@@ -332,7 +332,7 @@ void applyFixedWingPitchRollThrottleController(void)
     }
 
     if (isRollAdjustmentValid) {
-        pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * 0.5f;
+        pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (posControl.navConfig->fw_roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
     }
 
