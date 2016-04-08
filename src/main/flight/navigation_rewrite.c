@@ -2007,40 +2007,43 @@ static bool canActivatePosHoldMode(void)
 
 static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
 {
-    // Flags if we can activate certain nav modes (check if we have required sensors and they provide valid data)
-    bool canActivateAltHold = canActivateAltHoldMode();
-    bool canActivatePosHold = canActivatePosHoldMode();
+    //We can switch modes only when ARMED
+    if (ARMING_FLAG(ARMED)) {
+        // Flags if we can activate certain nav modes (check if we have required sensors and they provide valid data)
+        bool canActivateAltHold = canActivateAltHoldMode();
+        bool canActivatePosHold = canActivatePosHoldMode();
 
-    // RTH/Failsafe_RTH can override PASSTHRU
-    if (posControl.flags.forcedRTHActivated || IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
-        // If we request forced RTH - attempt to activate it no matter what
-        // This might switch to emergency landing controller if GPS is unavailable
-        return NAV_FSM_EVENT_SWITCH_TO_RTH;
-    }
+        // RTH/Failsafe_RTH can override PASSTHRU
+        if (posControl.flags.forcedRTHActivated || IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
+            // If we request forced RTH - attempt to activate it no matter what
+            // This might switch to emergency landing controller if GPS is unavailable
+            return NAV_FSM_EVENT_SWITCH_TO_RTH;
+        }
 
-    // PASSTHRU mode has priority over WP/PH/AH
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
-        return NAV_FSM_EVENT_SWITCH_TO_IDLE;
-    }
+        // PASSTHRU mode has priority over WP/PH/AH
+        if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+            return NAV_FSM_EVENT_SWITCH_TO_IDLE;
+        }
 
-    if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-        if ((FLIGHT_MODE(NAV_WP_MODE)) || (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0)))
-            return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
-    }
+        if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
+            if ((FLIGHT_MODE(NAV_WP_MODE)) || (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0)))
+                return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
+        }
 
-    if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) && IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
-        if ((FLIGHT_MODE(NAV_ALTHOLD_MODE) && FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold && canActivateAltHold))
-            return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D;
-    }
+        if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) && IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
+            if ((FLIGHT_MODE(NAV_ALTHOLD_MODE) && FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold && canActivateAltHold))
+                return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D;
+        }
 
-    if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD)) {
-        if ((FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold))
-            return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D;
-    }
+        if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD)) {
+            if ((FLIGHT_MODE(NAV_POSHOLD_MODE)) || (canActivatePosHold))
+                return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D;
+        }
 
-    if (IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
-        if ((FLIGHT_MODE(NAV_ALTHOLD_MODE)) || (canActivateAltHold))
-            return NAV_FSM_EVENT_SWITCH_TO_ALTHOLD;
+        if (IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
+            if ((FLIGHT_MODE(NAV_ALTHOLD_MODE)) || (canActivateAltHold))
+                return NAV_FSM_EVENT_SWITCH_TO_ALTHOLD;
+        }
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
