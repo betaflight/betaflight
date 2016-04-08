@@ -250,7 +250,6 @@ void annexCode(void)
 
         if (!imuIsAircraftArmable(armingConfig()->max_arm_angle)) {
             DISABLE_ARMING_FLAG(OK_TO_ARM);
-            debug[3] = ARMING_FLAG(OK_TO_ARM);
         }
 
         if (isCalibrating() || isSystemOverloaded()) {
@@ -263,8 +262,6 @@ void annexCode(void)
                 warningLedFlash();
             }
         }
-
-        debug[3] = ARMING_FLAG(OK_TO_ARM);
 
         warningLedUpdate();
     }
