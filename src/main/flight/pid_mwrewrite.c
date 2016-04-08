@@ -67,7 +67,7 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *pidProfile, int32_t gyroRate, int32_t angleRate)
 {
     static int32_t lastRateForDelta[3];
-    static int32_t delta1[3], delta2[3];
+    static int32_t delta0[3], delta1[3], delta2[3];
 
     SET_PID_MULTI_WII_REWRITE_CORE_LOCALS(axis);
 
@@ -110,15 +110,16 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
         if (pidProfile->dterm_cut_hz) {
             // DTerm delta low pass
-            delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis])) * 3;  // Keep same scaling as unfiltered deltaSum
+            delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis]));  // Keep same scaling as unfiltered deltaSum
         } else {
             // When DTerm filter disabled apply moving average to reduce noise
-            const int32_t deltaSum = delta1[axis] + delta2[axis] + delta;
+            const int32_t deltaSum = delta + delta0[axis] + delta1[axis] + delta2[axis] ;
             delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
-            delta = deltaSum;
+            delta1[axis] = delta0[axis];
+            delta0[axis] = delta;
+            delta = deltaSum / 4;
         }
-        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 6;
     }
 
 #ifdef BLACKBOX

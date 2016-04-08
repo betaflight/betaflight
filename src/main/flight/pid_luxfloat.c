@@ -66,13 +66,13 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // constants to scale pidLuxFloat so output is same as pidMultiWiiRewrite
 static const float luxPTermScale = 1.0f / 128;
 static const float luxITermScale = (1000000.0f / (0x1000000));
-static const float luxDTermScale = 3 * (0.000001f * (float)0xFFFF) / 1028; // the 3 is because mwrewrite sums 3 deltas rather than taking moving average
+static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
 static const float luxGyroScale = 16.4f / 4.0f; // the 16.4 is needed because mwrewrite does not scale according to the gyro model
 
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
 {
     static float lastRateForDelta[3];
-    static float delta1[3], delta2[3];
+    static float delta0[3], delta1[3], delta2[3];
 
     SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
 
@@ -113,10 +113,11 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
             delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         } else {
             // When DTerm filter disabled apply moving average to reduce noise
-            const float deltaSum = delta1[axis] + delta2[axis] + delta;
+            const float deltaSum = delta + delta0[axis] + delta1[axis] + delta2[axis] ;
             delta2[axis] = delta1[axis];
-            delta1[axis] = delta;
-            delta = deltaSum / 3.0f;
+            delta1[axis] = delta0[axis];
+            delta0[axis] = delta;
+            delta = deltaSum / 4.0f;
         }
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
         //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);

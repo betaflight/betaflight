@@ -62,12 +62,14 @@ extern "C" {
     float dT; // dT for pidLuxFloat
     int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     float unittest_pidLuxFloatCore_lastRateForDelta[3];
+    float unittest_pidLuxFloatCore_delta0[3];
     float unittest_pidLuxFloatCore_delta1[3];
     float unittest_pidLuxFloatCore_delta2[3];
     float unittest_pidLuxFloatCore_PTerm[3];
     float unittest_pidLuxFloatCore_ITerm[3];
     float unittest_pidLuxFloatCore_DTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_lastRateForDelta[3];
+    int32_t unittest_pidMultiWiiRewriteCore_delta0[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta1[3];
     int32_t unittest_pidMultiWiiRewriteCore_delta2[3];
     int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
@@ -77,7 +79,7 @@ extern "C" {
 
 static const float luxPTermScale = 1.0f / 128;
 static const float luxITermScale = (1000000.0f / (0x1000000));
-static const float luxDTermScale = 3 * (0.000001f * (float)0xFFFF) / 1028;
+static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
 static const float luxGyroScale = 16.4f / 4.0f;
 static const int mwrGyroScale = 4;
 #define TARGET_LOOPTIME 2048
@@ -139,7 +141,7 @@ void resetGyroADC(void)
 void pidControllerInitLuxFloatCore(void)
 {
     pidSetController(PID_CONTROLLER_LUX_FLOAT);
-    deltaTotalSamples = 3;
+    deltaTotalSamples = 4;
     resetPidProfile(&testPidProfile);
     pidResetITermAngle();
     pidResetITerm();
@@ -155,6 +157,7 @@ void pidControllerInitLuxFloatCore(void)
     // reset the pidLuxFloat static values
     for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
         unittest_pidLuxFloatCore_lastRateForDelta[ii] = 0.0f;
+        unittest_pidLuxFloatCore_delta0[ii] = 0.0f;
         unittest_pidLuxFloatCore_delta1[ii] = 0.0f;
         unittest_pidLuxFloatCore_delta2[ii] = 0.0f;
     }
@@ -543,6 +546,7 @@ void pidControllerInitMultiWiiRewriteCore(void)
     // reset the pidMultiWiiRewrite static values
     for (int ii = FD_ROLL; ii <= FD_YAW; ++ii) {
         unittest_pidMultiWiiRewriteCore_lastRateForDelta[ii] = 0;
+        unittest_pidMultiWiiRewriteCore_delta0[ii] = 0;
         unittest_pidMultiWiiRewriteCore_delta1[ii] = 0;
         unittest_pidMultiWiiRewriteCore_delta2[ii] = 0;
     }
@@ -710,7 +714,7 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatCoreEquivalence)
     pidControllerInitLuxFloatCore();
     EXPECT_EQ(TARGET_LOOPTIME, targetLooptime);
     EXPECT_FLOAT_EQ(TARGET_LOOPTIME * 0.000001f, dT);
-    EXPECT_EQ(3, deltaTotalSamples);
+    EXPECT_EQ(4, deltaTotalSamples);
 
     pidLuxFloatCore(FD_ROLL, pidProfile, -angleRate, 0);
     EXPECT_FLOAT_EQ(calcLuxPTerm(pidProfile, FD_ROLL, angleRate), unittest_pidLuxFloatCore_PTerm[FD_ROLL]);
