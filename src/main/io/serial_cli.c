@@ -1736,7 +1736,7 @@ static void cliDump(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("beeper -%s\r\n", beeperNameForTableIndex(i));
             else
-                cliPrintf("beeper  %s\r\n", beeperNameForTableIndex(i));
+                cliPrintf("beeper %s\r\n", beeperNameForTableIndex(i));
         }
 #endif
 
