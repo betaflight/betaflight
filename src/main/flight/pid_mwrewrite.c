@@ -135,10 +135,9 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    int8_t horizonLevelStrength = 100;
-
     pidFilterIsSetCheck(pidProfile);
 
+    int8_t horizonLevelStrength;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));

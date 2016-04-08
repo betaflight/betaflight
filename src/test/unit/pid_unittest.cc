@@ -78,9 +78,9 @@ extern "C" {
 }
 
 static const float luxPTermScale = 1.0f / 128;
-static const float luxITermScale = (1000000.0f / (0x1000000));
+static const float luxITermScale = 1000000.0f / 0x1000000;
 static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
-static const float luxGyroScale = 16.4f / 4.0f;
+static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrewrite does not scale according to the gyro model gyro.scale
 static const int mwrGyroScale = 4;
 #define TARGET_LOOPTIME 2048
 

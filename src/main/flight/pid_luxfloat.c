@@ -65,9 +65,9 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 // constants to scale pidLuxFloat so output is same as pidMultiWiiRewrite
 static const float luxPTermScale = 1.0f / 128;
-static const float luxITermScale = (1000000.0f / (0x1000000));
+static const float luxITermScale = 1000000.0f / 0x1000000;
 static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
-static const float luxGyroScale = 16.4f / 4.0f; // the 16.4 is needed because mwrewrite does not scale according to the gyro model
+static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrewrite does not scale according to the gyro model gyro.scale
 
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
 {
@@ -136,10 +136,9 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float horizonLevelStrength = 1;
-
     pidFilterIsSetCheck(pidProfile);
 
+    float horizonLevelStrength;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
