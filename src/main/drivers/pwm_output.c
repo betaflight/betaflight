@@ -159,7 +159,7 @@ static void pwmWriteOneshot42(uint8_t index, uint16_t value)
 
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = (uint16_t)((float)(value-1000) / 4.1666f)+ 60;
+    *motors[index]->ccr = 60001 * (value - 1000) / 250000 + 60;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)

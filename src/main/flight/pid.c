@@ -138,6 +138,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
+    // Scaling factors for Pids to match rewrite and use same defaults
+    static const float luxPTermScale = 1.0f / 128;
+    static const float luxITermScale = 1000000.0f / 0x1000000;
+    static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
+
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
         const int32_t stickPosAil = ABS(getRcStickDeflection(FD_ROLL, rxConfig->midrc));
@@ -145,10 +150,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         const int32_t mostDeflectedPos = MAX(stickPosAil, stickPosEle);
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
-        if(pidProfile->H_sensitivity == 0){
+        if(pidProfile->D8[PIDLEVEL] == 0){
             horizonLevelStrength = 0;
         } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
         }
     }
 
@@ -158,31 +163,31 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
-            AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
+            AngleRate = (float)((rate + 47) * rcCommand[YAW]) / 32.0f;
          } else {
              // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
-             AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max roll/pitch rate
+             AngleRate = (float)((rate + 27) * rcCommand[axis]) / 16.0f; // 200dps to 1200dps max roll/pitch rate
              if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
                 // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-                const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #else
-                const float errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #endif
                 if (FLIGHT_MODE(ANGLE_MODE)) {
                     // ANGLE mode - control is angle based, so control loop is needed
-                    AngleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
+                    AngleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
                 } else {
                     // HORIZON mode - direct sticks control is applied to rate PID
                     // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] / 10.0f * horizonLevelStrength;
+                    AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f;
                 }
             }
         }
 
-        gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
+        gyroRate = gyroADC[axis] / 4.0f; // gyro output scaled to rewrite scale
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
@@ -192,9 +197,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         // -----calculate P component
         if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
-            PTerm = (pidProfile->P8[axis] / 40.0f * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
+            PTerm = (luxPTermScale * pidProfile->P8[axis] * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
         } else {
-            PTerm = RateError * (pidProfile->P8[axis] / 40.0f) * tpaFactor;
+            PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
         }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
@@ -203,7 +208,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         }
 
         // -----calculate I component.
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * getdT() * pidProfile->I8[axis] / 10.0f, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
             if (ABS(gyroRate) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
@@ -246,7 +251,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             // Apply moving average
             if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]);
 
-            DTerm = constrainf(delta * (float)pidProfile->D8[axis] * 0.001f * tpaFactor, -300.0f, 300.0f);
+            DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
         }
 
         // -----calculate total PID output

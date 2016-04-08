@@ -358,7 +358,6 @@ void Process4WayInterface(mspPort_t *mspPort, bufWriter_t *bufwriter) {
     #ifdef BEEPER
     // fix for buzzer often starts beeping continuously when the ESCs are read
     // switch beeper silent here
-    // TODO (4712) check: is beeperSilence useful here?
     beeperSilence();
     #endif
     bool isExitScheduled = false;
@@ -409,7 +408,6 @@ void Process4WayInterface(mspPort_t *mspPort, bufWriter_t *bufwriter) {
                 // ******* Interface related stuff *******
                 case cmd_InterfaceTestAlive:
                 {
-                    break;
                     if (IsMcuConnected){
                         switch(CurrentInterfaceMode)
                         {
