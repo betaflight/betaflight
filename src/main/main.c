@@ -392,8 +392,10 @@ void init(void)
 
     mixerUsePWMIOConfiguration(pwmIOConfiguration);
 
+#ifdef DEBUG_PWM_CONFIGURATION
     debug[2] = pwmIOConfiguration->pwmInputCount;
     debug[3] = pwmIOConfiguration->ppmInputCount;
+#endif
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
