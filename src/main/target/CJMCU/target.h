@@ -78,7 +78,6 @@
 #endif
 
 //#undef USE_CLI
-#define GTUNE
 //#define BLACKBOX
 
 #define DISABLE_UNCOMMON_MIXERS

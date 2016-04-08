@@ -55,6 +55,7 @@ typedef struct master_t {
     uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
     uint16_t dcm_kp_mag;                    // DCM filter proportional gain ( x 10000) for magnetometer and GPS heading
     uint16_t dcm_ki_mag;                    // DCM filter integral gain ( x 10000) for magnetometer and GPS heading
+
     uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
 
     gyroConfig_t gyroConfig;
@@ -64,7 +65,6 @@ typedef struct master_t {
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     uint8_t baro_hardware;                  // Barometer hardware to use
 
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     flightDynamicsTrims_t accZero;          // Accelerometer offset
     flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
     flightDynamicsTrims_t magZero;          // Compass offset

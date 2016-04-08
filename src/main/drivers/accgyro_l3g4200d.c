@@ -85,16 +85,16 @@ static void l3g4200dInit(uint8_t lpf)
     // Conversion from MPU6XXX LPF values
     switch (lpf) {
         default:
-        case 3:
+        case 3:     // BITS_DLPF_CFG_42HZ
             mpuLowPassFilter = L3G4200D_DLPF_32HZ;
             break;
-        case 4:
+        case 2:     // BITS_DLPF_CFG_98HZ
             mpuLowPassFilter = L3G4200D_DLPF_54HZ;
             break;
-        case 5:
+        case 1:     // BITS_DLPF_CFG_188HZ
             mpuLowPassFilter = L3G4200D_DLPF_78HZ;
             break;
-        case 6:
+        case 0:     // BITS_DLPF_CFG_256HZ
             mpuLowPassFilter = L3G4200D_DLPF_93HZ;
             break;
     }

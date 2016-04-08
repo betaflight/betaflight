@@ -292,9 +292,6 @@ bool isWaypointMissed(navWaypointPosition_t * waypoint);
 bool isApproachingLastWaypoint(void);
 float getActiveWaypointSpeed(void);
 
-int16_t rcCommandToLeanAngle(int16_t rcCommand);
-int16_t leanAngleToRcCommand(int16_t leanAngle);
-
 void updateActualHeading(int32_t newHeading);
 void updateActualHorizontalPositionAndVelocity(bool hasValidSensor, float newX, float newY, float newVelX, float newVelY);
 void updateActualAltitudeAndClimbRate(bool hasValidSensor, float newAltitude, float newVelocity);

@@ -61,6 +61,8 @@ uint8_t motorCount;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
+bool motorLimitReached = false;
+
 static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
 static escAndServoConfig_t *escAndServoConfig;
@@ -499,6 +501,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
         currentMixerMode == MIXER_CUSTOM_AIRPLANE
     ) {
         ENABLE_STATE(FIXED_WING);
+
         if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
             loadCustomServoMixer();
         }
@@ -808,67 +811,94 @@ void mixTable(void)
         axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
+    // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
+    int16_t rpyMix[MAX_SUPPORTED_MOTORS];
+    int16_t rpyMixMax = 0; // assumption: symetrical about zero.
+    int16_t rpyMixMin = 0;
+
     // motors for non-servo mixes
     for (i = 0; i < motorCount; i++) {
-        motor[i] =
-            rcCommand[THROTTLE] * currentMixer[i].throttle +
+        rpyMix[i] =
             axisPID[PITCH] * currentMixer[i].pitch +
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+
+        if (rpyMix[i] > rpyMixMax) rpyMixMax = rpyMix[i];
+        if (rpyMix[i] < rpyMixMin) rpyMixMin = rpyMix[i];
     }
 
-    if (ARMING_FLAG(ARMED)) {
+    int16_t rpyMixRange = rpyMixMax - rpyMixMin;
+    int16_t throttleRange, throttleCommand;
+    int16_t throttleMin, throttleMax;
+    static int16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
 
-        bool isFailsafeActive = failsafeIsActive();
+    // Find min and max throttle based on condition.
+    if (feature(FEATURE_3D)) {
+        if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
 
-        // Find the maximum motor output.
-        int16_t maxMotor = motor[0];
-        for (i = 1; i < motorCount; i++) {
-            // If one motor is above the maxthrottle threshold, we reduce the value
-            // of all motors by the amount of overshoot.  That way, only one motor
-            // is at max and the relative power of each motor is preserved.
-            if (motor[i] > maxMotor) {
-                maxMotor = motor[i];
-            }
+        if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
+            throttleMax = flight3DConfig->deadband3d_low;
+            throttleMin = escAndServoConfig->minthrottle;
+            throttlePrevious = throttleCommand = rcCommand[THROTTLE];
+        } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
+            throttleMax = escAndServoConfig->maxthrottle;
+            throttleMin = flight3DConfig->deadband3d_high;
+            throttlePrevious = throttleCommand = rcCommand[THROTTLE];
+        } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
+            throttleCommand = throttleMax = flight3DConfig->deadband3d_low;
+            throttleMin = escAndServoConfig->minthrottle;
+        } else {  // Deadband handling from positive to negative
+            throttleMax = escAndServoConfig->maxthrottle;
+            throttleCommand = throttleMin = flight3DConfig->deadband3d_high;
         }
+    } else {
+        throttleCommand = rcCommand[THROTTLE];
+        throttleMin = escAndServoConfig->minthrottle;
+        throttleMax = escAndServoConfig->maxthrottle;
+    }
 
-        int16_t maxThrottleDifference = 0;
-        if (maxMotor > escAndServoConfig->maxthrottle) {
-            maxThrottleDifference = maxMotor - escAndServoConfig->maxthrottle;
-        }
+    throttleRange = throttleMax - throttleMin;
+
+    if (rpyMixRange > throttleRange) {
+        motorLimitReached = true;
+        float mixReduction = (float)throttleRange / rpyMixRange;
 
         for (i = 0; i < motorCount; i++) {
-            // this is a way to still have good gyro corrections if at least one motor reaches its max.
-            motor[i] -= maxThrottleDifference;
+            rpyMix[i] =  mixReduction  * rpyMix[i];
+        }
 
-            if (feature(FEATURE_3D)) {
-                if ((IS_RC_MODE_ACTIVE(BOXAIRMODE))
-                        || rcData[THROTTLE] <= rxConfig->midrc - flight3DConfig->deadband3d_throttle
-                        || rcData[THROTTLE] >= rxConfig->midrc + flight3DConfig->deadband3d_throttle) {
-                    if (rcData[THROTTLE] > rxConfig->midrc) {
-                        motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
-                    } else {
-                        motor[i] = constrain(motor[i], escAndServoConfig->mincommand, flight3DConfig->deadband3d_low);
-                    }
+        // Get the maximum correction by setting offset to center
+        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+    } else {
+        motorLimitReached = false;
+        throttleMin = throttleMin + (rpyMixRange / 2);
+        throttleMax = throttleMax - (rpyMixRange / 2);
+    }
+
+    // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
+    // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
+    if (ARMING_FLAG(ARMED)) {
+        bool isFailsafeActive = failsafeIsActive();
+
+        for (i = 0; i < motorCount; i++) {
+            motor[i] = rpyMix[i] + constrain(throttleCommand * currentMixer[i].throttle, throttleMin, throttleMax);
+
+            if (isFailsafeActive) {
+                motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            } else if (feature(FEATURE_3D)) {
+                if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
+                    motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
                 } else {
-                    if (rcData[THROTTLE] > rxConfig->midrc) {
-                        motor[i] = flight3DConfig->deadband3d_high;
-                    } else {
-                        motor[i] = flight3DConfig->deadband3d_low;
-                    }
+                    motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
                 }
             } else {
-                if (isFailsafeActive) {
-                    motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
-                } else {
-                    // If we're at minimum throttle and FEATURE_MOTOR_STOP enabled,
-                    // do not spin the motors.
-                    motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-                    if ((rcData[THROTTLE]) < rxConfig->mincheck) {
-                        if (feature(FEATURE_MOTOR_STOP)) {
-                            motor[i] = escAndServoConfig->mincommand;
-                        }
-                    }
+                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+            }
+
+            // Motor stop handling
+            if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+                if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+                    motor[i] = escAndServoConfig->mincommand;
                 }
             }
         }

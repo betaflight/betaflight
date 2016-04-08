@@ -174,7 +174,6 @@
 
 #define NAV
 
-#define GTUNE
 #define SERIAL_RX
 #define TELEMETRY
 #define TELEMETRY_FRSKY
