@@ -132,6 +132,13 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 #endif
 
+#ifdef SPRACINGF3EVO
+    featureSet(FEATURE_TRANSPONDER);
+    featureSet(FEATURE_RSSI_ADC);
+    featureSet(FEATURE_CURRENT_METER);
+    featureSet(FEATURE_TELEMETRY);
+#endif
+
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
     featureSet(FEATURE_RX_SERIAL);
@@ -352,6 +359,11 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig())) {
         pgReset_serialConfig(serialConfig());
     }
+
+#if defined(USE_VCP)
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+#endif
+
 }
 
 void readEEPROM(void)
