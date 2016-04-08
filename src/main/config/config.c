@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 116;
+static const uint8_t EEPROM_CONF_VERSION = 117;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -184,7 +184,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
 
-    pidProfile->max_angle_inclination = 300;    // 30 degrees
+    pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
+    pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
 }
 
 #ifdef NAV

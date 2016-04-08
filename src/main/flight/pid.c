@@ -168,7 +168,7 @@ static void pidOuterLoop(pidProfile_t *pidProfile, rxConfig_t *rxConfig)
             // This is ROLL/PITCH, run ANGLE/HORIZON controllers
             if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
                 float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
-                float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination, +pidProfile->max_angle_inclination) - attitude.raw[axis]) / 10.0f;
+                float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination[axis], +pidProfile->max_angle_inclination[axis]) - attitude.raw[axis]) / 10.0f;
 
                 // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
                 if (FLIGHT_MODE(HORIZON_MODE)) {

@@ -54,7 +54,7 @@ typedef struct pidProfile_s {
 
     uint16_t yaw_p_limit;
 
-    int16_t max_angle_inclination;          // Max possible inclination
+    int16_t max_angle_inclination[2];       // Max possible inclination (roll and pitch axis separately
 } pidProfile_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
