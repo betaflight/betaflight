@@ -184,7 +184,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 
-    pidProfile->H_sensitivity = 75;
+    pidProfile->H_sensitivity = 75;  // TODO - Cleanup during next EEPROM changes
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
