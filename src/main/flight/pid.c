@@ -162,10 +162,15 @@ void pidSetController(pidControllerType_e type)
         case PID_CONTROLLER_MWREWRITE:
             pid_controller = pidMultiWiiRewrite;
             break;
+#ifndef SKIP_PID_LUXFLOAT
         case PID_CONTROLLER_LUX_FLOAT:
             pid_controller = pidLuxFloat;
             break;
+#endif
+#ifndef SKIP_PID_MW23
         case PID_CONTROLLER_MW23:
             pid_controller = pidMultiWii23;
+            break;
+#endif
     }
 }
