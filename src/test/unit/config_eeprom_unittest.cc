@@ -190,6 +190,10 @@ extern "C" {
 
 
 //#define DEBUG_PG_INSTANCES
+TEST(configTest, fixUnusedWarning)
+{
+    someSystemArray_arr();
+}
 
 TEST(configTest, resetEEPROM)
 {

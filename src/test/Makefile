@@ -113,26 +113,41 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
-
-$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
-
-$(OBJECT_DIR)/battery_unittest.o : \
-	$(TEST_DIR)/battery_unittest.cc \
-	$(USER_DIR)/sensors/battery.h \
+$(OBJECT_DIR)/maths_unittest.o : \
+	$(TEST_DIR)/maths_unittest.cc \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
 
-$(OBJECT_DIR)/battery_unittest : \
-	$(OBJECT_DIR)/sensors/battery.o \
+$(OBJECT_DIR)/maths_unittest : \
+	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/battery_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) $^ -o $@
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
+
+$(OBJECT_DIR)/common_filter_unittest.o : \
+	$(TEST_DIR)/common_filter_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/common_filter_unittest.cc -o $@
+
+$(OBJECT_DIR)/common_filter_unittest : \
+	$(OBJECT_DIR)/common_filter_unittest.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 $(OBJECT_DIR)/common/encoding.o : $(USER_DIR)/common/encoding.c $(USER_DIR)/common/encoding.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
@@ -153,6 +168,31 @@ $(OBJECT_DIR)/encoding_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/common/typeconversion.o : \
+	$(USER_DIR)/common/typeconversion.c \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/typeconversion.c -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest.o : \
+	$(TEST_DIR)/type_conversion_unittest.cc \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/type_conversion_unittest.cc -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest : \
+	$(OBJECT_DIR)/common/typeconversion.o \
+	$(OBJECT_DIR)/type_conversion_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+
 $(OBJECT_DIR)/flight/imu.o : \
 	$(USER_DIR)/flight/imu.c \
 	$(USER_DIR)/flight/imu.h \
@@ -160,14 +200,6 @@ $(OBJECT_DIR)/flight/imu.o : \
 
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/imu.c -o $@
-
-$(OBJECT_DIR)/common/filter.o : \
-	$(USER_DIR)/common/filter.c \
-	$(USER_DIR)/common/filter.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
 
 $(OBJECT_DIR)/flight_imu_unittest.o : \
 	$(TEST_DIR)/flight_imu_unittest.cc \
@@ -187,30 +219,58 @@ $(OBJECT_DIR)/flight_imu_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/maths_unittest.o : \
-	$(TEST_DIR)/maths_unittest.cc \
+$(OBJECT_DIR)/flight/pid.o : \
+	$(USER_DIR)/flight/pid.c \
+	$(USER_DIR)/flight/pid.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid.c -o $@
 
-$(OBJECT_DIR)/maths_unittest : \
-	$(OBJECT_DIR)/maths_unittest.o \
+$(OBJECT_DIR)/flight/pid_luxfloat.o : \
+	$(USER_DIR)/flight/pid_luxfloat.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_luxfloat.c -o $@
+
+$(OBJECT_DIR)/flight/pid_mwrewrite.o : \
+	$(USER_DIR)/flight/pid_mwrewrite.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mwrewrite.c -o $@
+
+$(OBJECT_DIR)/flight/pid_mw23.o : \
+	$(USER_DIR)/flight/pid_mw23.c \
+	$(USER_DIR)/flight/pid.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mw23.c -o $@
+
+$(OBJECT_DIR)/flight_pid_unittest.o : \
+	$(TEST_DIR)/flight_pid_unittest.cc \
+	$(USER_DIR)/flight/pid.h \
+	$(USER_DIR)/flight/pid.c \
+	$(USER_DIR)/flight/pid_luxfloat.c \
+	$(USER_DIR)/flight/pid_mwrewrite.c \
+	$(USER_DIR)/flight/pid_mw23.c \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_pid_unittest.cc -o $@
+
+$(OBJECT_DIR)/flight_pid_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/common_filter_unittest.o : \
-	$(TEST_DIR)/common_filter_unittest.cc \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/common_filter_unittest.cc -o $@
-
-$(OBJECT_DIR)/common_filter_unittest : \
-	$(OBJECT_DIR)/common_filter_unittest.o \
 	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/flight/pid.o \
+	$(OBJECT_DIR)/flight/pid_luxfloat.o \
+	$(OBJECT_DIR)/flight/pid_mwrewrite.o \
+	$(OBJECT_DIR)/flight/pid_mw23.o \
+	$(OBJECT_DIR)/flight_pid_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -262,29 +322,54 @@ $(OBJECT_DIR)/gps_conversion_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-
-$(OBJECT_DIR)/common/typeconversion.o : \
-	$(USER_DIR)/common/typeconversion.c \
-	$(USER_DIR)/common/typeconversion.h \
+$(OBJECT_DIR)/flight/mixer.o : \
+	$(USER_DIR)/flight/mixer.c \
+	$(USER_DIR)/flight/mixer.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/typeconversion.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
 
-$(OBJECT_DIR)/type_conversion_unittest.o : \
-	$(TEST_DIR)/type_conversion_unittest.cc \
-	$(USER_DIR)/common/typeconversion.h \
+$(OBJECT_DIR)/flight_mixer_unittest.o : \
+	$(TEST_DIR)/flight_mixer_unittest.cc \
+	$(USER_DIR)/flight/mixer.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/type_conversion_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
 
-$(OBJECT_DIR)/type_conversion_unittest : \
-	$(OBJECT_DIR)/common/typeconversion.o \
-	$(OBJECT_DIR)/type_conversion_unittest.o \
+$(OBJECT_DIR)/flight_mixer_unittest : \
+	$(OBJECT_DIR)/flight/mixer.o \
+	$(OBJECT_DIR)/flight_mixer_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/failsafe.o : \
+	$(USER_DIR)/flight/failsafe.c \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
+
+$(OBJECT_DIR)/flight_failsafe_unittest.o : \
+	$(TEST_DIR)/flight_failsafe_unittest.cc \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
+
+$(OBJECT_DIR)/flight_failsafe_unittest : \
+	$(OBJECT_DIR)/flight/failsafe.o \
+	$(OBJECT_DIR)/flight_failsafe_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 
 $(OBJECT_DIR)/telemetry/hott.o : \
@@ -310,6 +395,7 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 
 $(OBJECT_DIR)/io/rate_profile.o : \
@@ -402,54 +488,6 @@ $(OBJECT_DIR)/ws2811_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/flight/mixer.o : \
-	$(USER_DIR)/flight/mixer.c \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
-
-$(OBJECT_DIR)/flight_mixer_unittest.o : \
-	$(TEST_DIR)/flight_mixer_unittest.cc \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
-
-$(OBJECT_DIR)/flight_mixer_unittest : \
-	$(OBJECT_DIR)/flight/mixer.o \
-	$(OBJECT_DIR)/flight_mixer_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/failsafe.o : \
-	$(USER_DIR)/flight/failsafe.c \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
-
-$(OBJECT_DIR)/flight_failsafe_unittest.o : \
-	$(TEST_DIR)/flight_failsafe_unittest.cc \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
-
-$(OBJECT_DIR)/flight_failsafe_unittest : \
-	$(OBJECT_DIR)/flight/failsafe.o \
-	$(OBJECT_DIR)/flight_failsafe_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
 $(OBJECT_DIR)/io/serial.o : \
 	$(USER_DIR)/io/serial.c \
 	$(USER_DIR)/io/serial.h \
@@ -512,6 +550,28 @@ $(OBJECT_DIR)/rx_ranges_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
+
+$(OBJECT_DIR)/battery_unittest.o : \
+	$(TEST_DIR)/battery_unittest.cc \
+	$(USER_DIR)/sensors/battery.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+
+$(OBJECT_DIR)/battery_unittest : \
+	$(OBJECT_DIR)/sensors/battery.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/battery_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $@
+
 
 $(OBJECT_DIR)/drivers/barometer_ms5611.o : \
     $(USER_DIR)/drivers/barometer_ms5611.c \
@@ -611,62 +671,6 @@ $(OBJECT_DIR)/sonar_unittest : \
 	$(OBJECT_DIR)/drivers/sonar_hcsr04.o \
 	$(OBJECT_DIR)/sensors/sonar.o \
 	$(OBJECT_DIR)/sonar_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/pid.o : \
-	$(USER_DIR)/flight/pid.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid.c -o $@
-
-$(OBJECT_DIR)/flight/pid_luxfloat.o : \
-	$(USER_DIR)/flight/pid_luxfloat.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_luxfloat.c -o $@
-
-$(OBJECT_DIR)/flight/pid_mwrewrite.o : \
-	$(USER_DIR)/flight/pid_mwrewrite.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mwrewrite.c -o $@
-
-$(OBJECT_DIR)/flight/pid_mw23.o : \
-	$(USER_DIR)/flight/pid_mw23.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mw23.c -o $@
-
-$(OBJECT_DIR)/pid_unittest.o : \
-	$(TEST_DIR)/pid_unittest.cc \
-	$(USER_DIR)/flight/pid.h \
-	$(USER_DIR)/flight/pid.c \
-	$(USER_DIR)/flight/pid_luxfloat.c \
-	$(USER_DIR)/flight/pid_mwrewrite.c \
-	$(USER_DIR)/flight/pid_mw23.c \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/pid_unittest.cc -o $@
-
-$(OBJECT_DIR)/pid_unittest : \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/common/filter.o \
-	$(OBJECT_DIR)/flight/pid.o \
-	$(OBJECT_DIR)/flight/pid_luxfloat.o \
-	$(OBJECT_DIR)/flight/pid_mwrewrite.o \
-	$(OBJECT_DIR)/flight/pid_mw23.o \
-	$(OBJECT_DIR)/pid_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
