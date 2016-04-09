@@ -273,7 +273,7 @@ const mixer_t mixers[] = {
     { 2, true,  NULL, true },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL, true },                // MIXER_CUSTOM_TRI
 };
-#endif //USE_QUAD_MIXER_ONLY
+#endif // USE_QUAD_MIXER_ONLY
 
 #ifdef USE_SERVOS
 

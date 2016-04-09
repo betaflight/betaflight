@@ -49,6 +49,7 @@
 #include "rx/msp.h"
 #include "rx/xbus.h"
 #include "rx/ibus.h"
+#include "rx/nrf24.h"
 
 #include "rx/rx.h"
 
@@ -183,11 +184,23 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
     }
 #endif
 
+#ifdef USE_RX_NRF24
+    if (feature(FEATURE_RX_NRF24)) {
+        rxRefreshRate = 10000;
+        const bool enabled = rxNrf24Init(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        if (!enabled) {
+            featureClear(FEATURE_RX_NRF24);
+            rcReadRawFunc = nullReadRawRC;
+        }
+    }
+#endif
+
+#ifndef SKIP_RX_PWM
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxRefreshRate = 20000;
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
-
+#endif
     rxRuntimeConfig.auxChannelCount = rxRuntimeConfig.channelCount - STICK_CHANNEL_COUNT;
 }
 
@@ -332,6 +345,17 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
+#ifdef USE_RX_NRF24
+    if (feature(FEATURE_RX_NRF24)) {
+        rxDataReceived = rxNrf24DataReceived();
+        if (rxDataReceived) {
+            rxSignalReceived = true;
+            rxIsInFailsafeMode = false;
+            needRxSignalBefore = currentTime + DELAY_10_HZ;
+        }
+    }
+#endif
+
 #ifndef SKIP_RX_MSP
     if (feature(FEATURE_RX_MSP)) {
         rxDataReceived = rxMspFrameComplete();
@@ -344,6 +368,7 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
+#ifndef SKIP_RX_PWM
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;
@@ -360,7 +385,7 @@ void updateRx(uint32_t currentTime)
             needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
-
+#endif
 }
 
 bool shouldProcessRx(uint32_t currentTime)

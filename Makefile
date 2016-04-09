@@ -418,6 +418,72 @@ COMMON_SRC = \
             sensors/initialisation.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
+=======
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+			$(TARGET_DIR)
+
+VPATH		:= $(VPATH):$(TARGET_DIR)
+
+COMMON_SRC = build_config.c \
+		   debug.c \
+		   version.c \
+		   $(TARGET_SRC) \
+		   config/config.c \
+		   config/runtime_config.c \
+		   common/maths.c \
+		   common/printf.c \
+		   common/typeconversion.c \
+		   common/encoding.c \
+		   common/filter.c \
+		   scheduler/scheduler.c \
+		   scheduler/scheduler_tasks.c \
+		   main.c \
+		   mw.c \
+		   flight/failsafe.c \
+		   flight/pid.c \
+		   flight/imu.c \
+		   flight/hil.c \
+		   flight/mixer.c \
+		   drivers/bus_i2c_soft.c \
+		   drivers/serial.c \
+		   drivers/sound_beeper.c \
+		   drivers/system.c \
+		   drivers/gps_i2cnav.c \
+		   drivers/gyro_sync.c \
+		   drivers/buf_writer.c \
+		   drivers/rx_nrf24l01.c \
+		   io/beeper.c \
+		   io/rc_controls.c \
+		   io/rc_curves.c \
+		   io/serial.c \
+		   io/serial_4way.c \
+		   io/serial_4way_avrootloader.c \
+		   io/serial_4way_stk500v2.c \
+		   io/serial_cli.c \
+		   io/serial_msp.c \
+		   io/statusindicator.c \
+		   rx/rx.c \
+		   rx/pwm.c \
+		   rx/msp.c \
+		   rx/sbus.c \
+		   rx/sumd.c \
+		   rx/sumh.c \
+		   rx/spektrum.c \
+		   rx/xbus.c \
+		   rx/ibus.c \
+		   rx/nrf24.c \
+		   rx/nrf24_cx10.c \
+		   rx/nrf24_syma.c \
+		   rx/nrf24_v202.c \
+		   sensors/acceleration.c \
+		   sensors/battery.c \
+		   sensors/boardalignment.c \
+		   sensors/compass.c \
+		   sensors/gyro.c \
+		   sensors/initialisation.c \
+		   $(CMSIS_SRC) \
+		   $(DEVICE_STDPERIPH_SRC)
+>>>>>>> NRF24 support for iNav.
 
 HIGHEND_SRC = \
             blackbox/blackbox.c \
@@ -455,6 +521,7 @@ VCP_SRC = \
             drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
+<<<<<<< HEAD
             vcp/hw_config.c \
             vcp/stm32_it.c \
             vcp/usb_desc.c \
@@ -496,6 +563,7 @@ STM32F4xx_COMMON_SRC = \
             startup_stm32f40xx.s \
             target/system_stm32f4xx.c \
             drivers/accgyro_mpu.c \
+<<<<<<< HEAD
             drivers/adc_stm32f4xx.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
@@ -518,6 +586,102 @@ endif
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 TARGET_SRC += \
+=======
+            drivers/accgyro_mpu3050.c \
+            drivers/accgyro_mpu6050.c \
+            drivers/accgyro_mpu6500.c \
+            drivers/accgyro_spi_mpu6500.c \
+            drivers/barometer_bmp085.c \
+            drivers/barometer_bmp280.c \
+            drivers/barometer_ms5611.c \
+            drivers/compass_ak8975.c \
+            drivers/compass_hmc5883l.c \
+            drivers/compass_mag3110.c \
+            drivers/flash_m25p16.c \
+            drivers/light_ws2811strip.c \
+            drivers/light_ws2811strip_stm32f10x.c \
+            drivers/sonar_hcsr04.c \
+            drivers/sonar_srf10.c \
+            io/flashfs.c \
+            hardware_revision.c \
+            $(HIGHEND_SRC) \
+            $(COMMON_SRC)
+=======
+		   vcp/hw_config.c \
+		   vcp/stm32_it.c \
+		   vcp/usb_desc.c \
+		   vcp/usb_endp.c \
+		   vcp/usb_istr.c \
+		   vcp/usb_prop.c \
+		   vcp/usb_pwr.c \
+		   drivers/serial_usb_vcp.c
+
+NAZE_SRC = startup_stm32f10x_md_gcc.S \
+		   drivers/accgyro_adxl345.c \
+		   drivers/accgyro_bma280.c \
+		   drivers/accgyro_l3g4200d.c \
+		   drivers/accgyro_mma845x.c \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu3050.c \
+		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_mpu6500.c \
+		   drivers/accgyro_spi_mpu6500.c \
+		   drivers/adc.c \
+		   drivers/adc_stm32f10x.c \
+		   drivers/barometer_bmp085.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/barometer_bmp280.c \
+		   drivers/bus_spi.c \
+		   drivers/bus_spi_soft.c \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/compass_mag3110.c \
+		   drivers/compass_ak8975.c \
+		   drivers/display_ug2864hsweg01.h \
+		   drivers/flash_m25p16.c \
+		   drivers/gpio_stm32f10x.c \
+		   drivers/inverter.c \
+		   drivers/light_led_stm32f10x.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f10x.c \
+		   drivers/sonar_hcsr04.c \
+		   drivers/sonar_srf10.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
+		   drivers/serial_softserial.c \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.c \
+		   drivers/system_stm32f10x.c \
+		   drivers/timer.c \
+		   drivers/timer_stm32f10x.c \
+		   io/flashfs.c \
+		   hardware_revision.c \
+		   $(HIGHEND_SRC) \
+		   $(COMMON_SRC)
+>>>>>>> NRF24 support for iNav.
+
+ALIENFLIGHTF1_SRC = $(NAZE_SRC)
+
+EUSTM32F103RC_SRC = \
+            $(STM32F10x_COMMON_SRC) \
+            drivers/accgyro_adxl345.c \
+            drivers/accgyro_bma280.c \
+            drivers/accgyro_l3g4200d.c \
+            drivers/accgyro_mma845x.c \
+            drivers/accgyro_mpu.c \
+            drivers/accgyro_mpu3050.c \
+            drivers/accgyro_mpu6050.c \
+            drivers/accgyro_spi_mpu6000.c \
+            drivers/accgyro_spi_mpu6500.c \
+            drivers/barometer_bmp085.c \
+            drivers/barometer_bmp280.c \
+            drivers/barometer_ms5611.c \
+            drivers/compass_ak8975.c \
+            drivers/compass_hmc5883l.c \
+            drivers/compass_mag3110.c \
+>>>>>>> NRF24 support for iNav.
             drivers/flash_m25p16.c \
             io/flashfs.c
 endif
