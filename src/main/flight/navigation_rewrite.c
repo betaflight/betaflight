@@ -1365,13 +1365,18 @@ void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, flo
     posControl.actualState.surface = surfaceDistance;
     posControl.actualState.surfaceVel = surfaceVelocity;
 
-    if (surfaceDistance > 0) {
-        if (posControl.actualState.surfaceMin > 0) {
-            posControl.actualState.surfaceMin = MIN(posControl.actualState.surfaceMin, surfaceDistance);
+    if (ARMING_FLAG(ARMED)) {
+        if (surfaceDistance > 0) {
+            if (posControl.actualState.surfaceMin > 0) {
+                posControl.actualState.surfaceMin = MIN(posControl.actualState.surfaceMin, surfaceDistance);
+            }
+            else {
+                posControl.actualState.surfaceMin = surfaceDistance;
+            }
         }
-        else {
-            posControl.actualState.surfaceMin = surfaceDistance;
-        }
+    }
+    else {
+        posControl.actualState.surfaceMin = -1;
     }
 
     posControl.flags.hasValidSurfaceSensor = hasValidSensor;
