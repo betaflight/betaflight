@@ -780,11 +780,6 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
     EXPECT_EQ(calcMwrITermDelta(pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
     EXPECT_EQ(calcMwrDTerm(pidProfile, PIDROLL, rateErrorRoll), unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL]);
 
-    //EXPECT_EQ(0, unittest_pidMultiWiiRewriteCore_ITerm[FD_ROLL]);
-    //EXPECT_EQ(0, unittest_pidLuxFloatCore_ITerm[FD_ROLL]);
-    //EXPECT_EQ(0, unittest_pidMultiWiiRewriteCore_DTerm[FD_ROLL]);
-    //EXPECT_EQ(0, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
-
     const float allowedPError = (float)unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL] / 100; // 1% error allowed
     EXPECT_NEAR(unittest_pidMultiWiiRewriteCore_PTerm[FD_ROLL], unittest_pidLuxFloatCore_PTerm[FD_ROLL], allowedPError);
 
