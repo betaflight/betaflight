@@ -93,7 +93,6 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     ITerm = constrain(ITerm, (int32_t)(-GYRO_I_MAX << 13), (int32_t)(GYRO_I_MAX << 13));
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-        ITerm = (int32_t)(ITerm * pidScaleITermToRcInput(axis));
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             ITerm = constrain(ITerm, -ITermLimit[axis], ITermLimit[axis]);
         } else {

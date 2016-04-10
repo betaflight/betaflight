@@ -82,11 +82,9 @@ PG_RESET_TEMPLATE(motor3DConfig_t, motor3DConfig,
 
 
 #ifdef USE_SERVOS
-PG_RESET_TEMPLATE(
-    mixerConfig_t, mixerConfig,
+PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = MIXER_QUADX,
     .pid_at_min_throttle = 1,
-    .airmode_saturation_limit = 50,
     .yaw_motor_direction = 1,
     .yaw_jump_prevention_limit = 200,
 
@@ -97,7 +95,6 @@ PG_RESET_TEMPLATE(
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = MIXER_QUADX,
     .pid_at_min_throttle = 1,
-    .airmode_saturation_limit = 50,
     .yaw_motor_direction = 1,
     .yaw_jump_prevention_limit = 200,
 );
@@ -864,8 +861,8 @@ void mixTable(void)
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
             }
-            // Get the maximum correction by setting throtte offset to center. Configurable limit will constrain values once limit exceeded to prevent spazzing out in crashes
-            if (mixReduction > (mixerConfig()->airmode_saturation_limit / 100.0f)) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+            // Get the maximum correction by setting throttle offset to center.
+            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         } else {
             motorLimitReached = false;
             throttleMin = throttleMin + (rollPitchYawMixRange / 2);

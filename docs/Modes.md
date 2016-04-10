@@ -83,13 +83,6 @@ motors spooling up on the ground. Also the Iterm will be reset above 70% of stic
 quick Iterm windups during finishes of rolls and flips, which will provide much cleaner and more natural stops
 of flips and rolls what again opens the ability to have higher I gains for some.
 Note that AIRMODE will also overrule motor stop function! It will basically also act as an idle up switch.
-Things to know about Airmode: There is an optional cli parameter "airmode_saturation_limit" what is a hard
-limit in percentage to where airmode will still try to provide the maximum possible correction. 0 means no limit,
-but that also means maximum possible motor correction during crashes and during equipment failure. In worse case
-that can cause effects like best called "tasmanian devil effect" or slight spazzing out. Default value of 50
-has a limit of 50% saturation. After that it will assume crash occured or equipment failed what will again remove
-airmode seeking for the best possible protection and act as a normal mode. It should be fine in most cases.
-
 
 
 ## Auxillary Configuration

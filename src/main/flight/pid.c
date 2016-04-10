@@ -118,30 +118,6 @@ void pidResetITerm(void)
     }
 }
 
-float pidScaleITermToRcInput(int axis)
-{
-    float rcCommandDeflection = (float)rcCommand[axis] / 500.0f;
-    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
-    static float antiWindUpIncrement = 0;
-
-    if (!antiWindUpIncrement) {
-        antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
-    }
-
-    if (ABS(rcCommandDeflection) > 0.7f && (!flightModeFlags)) {   // scaling should not happen in level modes
-        // Reset Iterm on high stick inputs. No scaling necessary here
-        iTermScaler[axis] = 0.0f;
-    } else {
-        // Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms
-        if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
-        } else {
-            iTermScaler[axis] = 1;
-        }
-    }
-    return iTermScaler[axis];
-}
-
 biquad_t deltaFilterState[3];
 
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile)
