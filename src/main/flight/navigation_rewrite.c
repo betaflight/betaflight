@@ -2086,16 +2086,22 @@ int8_t naivationGetHeadingControlState(void)
 
 bool naivationBlockArming(void)
 {
+    bool shouldBlockArming = false;
+
     if (!posControl.navConfig->flags.extra_arming_safety)
         return false;
 
     // Apply extra arming safety only if pilot has any of GPS modes configured
-    if (isUsingNavigationModes() || failsafeMayRequireNavigationMode()) {
-        return !(posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME));
+    if ((isUsingNavigationModes() || failsafeMayRequireNavigationMode()) && !(posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME))) {
+        shouldBlockArming = true;
     }
-    else {
-        return false;
+
+    // Don't allow arming if any of NAV modes is active
+    if ((!ARMING_FLAG(ARMED)) && (IS_RC_MODE_ACTIVE(BOXPASSTHRU) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) || IS_RC_MODE_ACTIVE(BOXNAVALTHOLD))) {
+        shouldBlockArming = true;
     }
+
+    return shouldBlockArming;
 }
 
 /**
