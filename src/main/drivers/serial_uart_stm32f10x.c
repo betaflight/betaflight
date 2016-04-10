@@ -35,6 +35,7 @@
 #include "serial.h"
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
+#include "serial_uart_stm32f10x.h"
 
 #ifdef USE_USART1
 static uartPort_t uartPort1;

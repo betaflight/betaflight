@@ -30,6 +30,13 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
+#ifdef STM32F10X
+#include "serial_uart_stm32f10x.h"
+#endif
+#ifdef STM32F303xC
+#include "serial_uart_stm32f30x.h"
+#endif
+
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex);
