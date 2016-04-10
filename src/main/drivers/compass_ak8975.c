@@ -27,11 +27,12 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
+
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
 
-#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 
 #include "sensor.h"
@@ -59,7 +60,7 @@
 #define AK8975_MAG_REG_CNTL         0x0a
 #define AK8975_MAG_REG_ASCT         0x0c // self test
 
-bool ak8975detect(mag_t *mag)
+bool ak8975Detect(mag_t *mag)
 {
     bool ack = false;
     uint8_t sig = 0;

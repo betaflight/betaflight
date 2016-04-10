@@ -35,7 +35,7 @@ FLASH_SIZE ?=
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC LUX_RACE MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 SPRACINGF3MINI STM32F3DISCOVERY 
+VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC LUX_RACE MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY 
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -227,6 +227,11 @@ COMMON_SRC = build_config.c \
 		   $(TARGET_SRC) \
 		   config/config.c \
 		   config/runtime_config.c \
+		   config/config_streamer.c \
+		   config/config_eeprom.c \
+		   config/parameter_group.c \
+		   config/feature.c \
+		   config/profile.c \
 		   common/maths.c \
 		   common/printf.c \
 		   common/typeconversion.c \
@@ -239,6 +244,9 @@ COMMON_SRC = build_config.c \
 		   flight/altitudehold.c \
 		   flight/failsafe.c \
 		   flight/pid.c \
+		   flight/pid_luxfloat.c \
+		   flight/pid_mwrewrite.c \
+		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
 		   drivers/bus_i2c_soft.c \
@@ -249,6 +257,10 @@ COMMON_SRC = build_config.c \
 		   drivers/buf_writer.c \
 		   drivers/gyro_sync.c \
 		   io/beeper.c \
+		   io/gimbal.c \
+		   io/motor_and_servo.c \
+		   io/rate_profile.c \
+		   io/rc_adjustments.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \
@@ -265,6 +277,7 @@ COMMON_SRC = build_config.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -629,7 +642,7 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/barometer_bmp280.c \
-		   drivers/compass_ak8975.c \
+		   drivers/compass_ak8963.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
@@ -666,7 +679,7 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_bmp280.c \
-		   drivers/compass_ak8975.c \
+		   drivers/compass_ak8963.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \

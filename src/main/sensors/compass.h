@@ -22,17 +22,29 @@ typedef enum {
     MAG_DEFAULT = 0,
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
-    MAG_AK8975 = 3
+    MAG_AK8975 = 3,
+    MAG_AK8963 = 4
 } magSensor_e;
 
-#define MAG_MAX  MAG_AK8975
+#define MAG_MAX  MAG_AK8963
+
+typedef struct compassConfig_s {
+    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
+                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+} compassConfig_t;
+
+PG_DECLARE_PROFILE(compassConfig_t, compassConfig);
+
 
 #ifdef MAG
 void compassInit(void);
 void updateCompass(flightDynamicsTrims_t *magZero);
 #endif
 
+void recalculateMagneticDeclination(void);
+
 extern int32_t magADC[XYZ_AXIS_COUNT];
 
 extern sensor_align_e magAlign;
 extern mag_t mag;
+extern float magneticDeclination;

@@ -27,7 +27,6 @@
 #define YAW_JUMP_PREVENTION_LIMIT_LOW 80
 #define YAW_JUMP_PREVENTION_LIMIT_HIGH 500
 
-
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
 {
@@ -66,6 +65,8 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
+PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+
 // Custom mixer configuration
 typedef struct mixer_s {
     uint8_t motorCount;
@@ -74,6 +75,7 @@ typedef struct mixer_s {
 } mixer_t;
 
 typedef struct mixerConfig_s {
+    uint8_t mixerMode;
     uint8_t pid_at_min_throttle;            // when enabled pids are used at minimum throttle
     uint8_t airmode_saturation_limit;       // Use max possible correction when within the limit
     int8_t yaw_motor_direction;
@@ -85,16 +87,15 @@ typedef struct mixerConfig_s {
 #endif
 } mixerConfig_t;
 
-typedef struct flight3DConfig_s {
+PG_DECLARE(mixerConfig_t, mixerConfig);
+
+typedef struct motor3DConfig_s {
     uint16_t deadband3d_low;                // min 3d value
     uint16_t deadband3d_high;               // max 3d value
     uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
-} flight3DConfig_t;
+} motor3DConfig_t;
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
+PG_DECLARE(motor3DConfig_t, motor3DConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
@@ -170,6 +171,8 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
+PG_DECLARE_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer);
+
 // Custom mixer configuration
 typedef struct mixerRules_s {
     uint8_t servoRuleCount;
@@ -187,8 +190,14 @@ typedef struct servoParam_s {
     uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
 } __attribute__ ((__packed__)) servoParam_t;
 
+typedef struct servoProfile_s {
+    servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
+} servoProfile_t;
+
+PG_DECLARE_PROFILE(servoProfile_t, servoProfile);
+
 struct gimbalConfig_s;
-struct escAndServoConfig_s;
+struct motorAndServoConfig_s;
 struct rxConfig_s;
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
@@ -202,19 +211,20 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 extern bool motorLimitReached;
 
-struct escAndServoConfig_s;
-struct rxConfig_s;
+#ifdef USE_SERVOS
+void mixerInit(motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
+#else
+void mixerInit(motorMixer_t *customMotorMixers);
+#endif
 
 void mixerUseConfigs(
 #ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
-        struct gimbalConfig_s *gimbalConfigToUse,
+        servoParam_t *servoConfToUse
+#else
+        void
 #endif
-        flight3DConfig_t *flight3DConfigToUse,
-        struct escAndServoConfig_s *escAndServoConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
+);
+
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);

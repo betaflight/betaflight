@@ -23,6 +23,11 @@
 
 #ifdef TELEMETRY
 
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
@@ -32,28 +37,20 @@
 #include "rx/rx.h"
 #include "io/rc_controls.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
-
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
 
-static telemetryConfig_t *telemetryConfig;
-
-void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
-{
-    telemetryConfig = telemetryConfigToUse;
-}
+PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
 void telemetryInit(void)
 {
-    initFrSkyTelemetry(telemetryConfig);
-    initHoTTTelemetry(telemetryConfig);
-    initSmartPortTelemetry(telemetryConfig);
-    initLtmTelemetry(telemetryConfig);
+    initFrSkyTelemetry();
+    initHoTTTelemetry();
+    initSmartPortTelemetry();
+    initLtmTelemetry();
 
     telemetryCheckState();
 }
@@ -63,7 +60,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig->telemetry_switch)
+        if (telemetryConfig()->telemetry_switch)
             enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
@@ -80,9 +77,9 @@ void telemetryCheckState(void)
     checkLtmTelemetryState();
 }
 
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint16_t deadband3d_throttle)
 {
-    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+    handleFrSkyTelemetry(deadband3d_throttle);
     handleHoTTTelemetry();
     handleSmartPortTelemetry();
     handleLtmTelemetry();

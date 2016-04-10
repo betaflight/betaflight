@@ -29,6 +29,8 @@
 
 #include "build_config.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
@@ -50,10 +52,8 @@ static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 static void ibusDataReceive(uint16_t c);
 static uint16_t ibusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool ibusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
-
     if (callback)
         *callback = ibusReadRawRC;
 

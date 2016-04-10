@@ -23,17 +23,22 @@
 extern "C" {
     #include <platform.h>
 
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
     #include "rx/rx.h"
     #include "io/rc_controls.h"
     #include "common/maths.h"
 
     uint32_t rcModeActivationMask;
 
-    void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
+    void rxInit(modeActivationCondition_t *modeActivationConditions);
     void rxResetFlightChannelStatus(void);
     bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
+
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -55,12 +60,11 @@ TEST(RxTest, TestValidFlightChannels)
     rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
 
     // and
-    rxConfig_t rxConfig;
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.rx_min_usec = 1000;
-    rxConfig.rx_max_usec = 2000;
+    memset(rxConfig(), 0, sizeof(*rxConfig()));
+    rxConfig()->rx_min_usec = 1000;
+    rxConfig()->rx_max_usec = 2000;
 
     memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
     modeActivationConditions[0].auxChannelIndex = 0;
@@ -69,7 +73,7 @@ TEST(RxTest, TestValidFlightChannels)
     modeActivationConditions[0].range.endStep = CHANNEL_VALUE_TO_STEP(1600);
 
     // when
-    rxInit(&rxConfig, modeActivationConditions);
+    rxInit(modeActivationConditions);
 
     // then (ARM channel should be positioned just 1 step above active range to init to OFF)
     EXPECT_EQ(1625, rcData[modeActivationConditions[0].auxChannelIndex +  NON_AUX_CHANNEL_COUNT]);
@@ -93,12 +97,11 @@ TEST(RxTest, TestInvalidFlightChannels)
     memset(&testData, 0, sizeof(testData));
 
     // and
-    rxConfig_t rxConfig;
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.rx_min_usec = 1000;
-    rxConfig.rx_max_usec = 2000;
+    memset(rxConfig(), 0, sizeof(*rxConfig()));
+    rxConfig()->rx_min_usec = 1000;
+    rxConfig()->rx_max_usec = 2000;
 
     memset(&modeActivationConditions, 0, sizeof(modeActivationConditions));
     modeActivationConditions[0].auxChannelIndex = 0;
@@ -111,7 +114,7 @@ TEST(RxTest, TestInvalidFlightChannels)
     memset(&channelPulses, 1500, sizeof(channelPulses));
 
     // and
-    rxInit(&rxConfig, modeActivationConditions);
+    rxInit(modeActivationConditions);
 
     // then (ARM channel should be positioned just 1 step below active range to init to OFF)
     EXPECT_EQ(1375, rcData[modeActivationConditions[0].auxChannelIndex +  NON_AUX_CHANNEL_COUNT]);
@@ -123,9 +126,9 @@ TEST(RxTest, TestInvalidFlightChannels)
         rxResetFlightChannelStatus();
 
         for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
-            channelPulses[otherStickChannelIndex] = rxConfig.rx_min_usec;
+            channelPulses[otherStickChannelIndex] = rxConfig()->rx_min_usec;
         }
-        channelPulses[stickChannelIndex] = rxConfig.rx_min_usec - 1;
+        channelPulses[stickChannelIndex] = rxConfig()->rx_min_usec - 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
@@ -140,9 +143,9 @@ TEST(RxTest, TestInvalidFlightChannels)
         rxResetFlightChannelStatus();
 
         for (uint8_t otherStickChannelIndex = 0; otherStickChannelIndex < STICK_CHANNEL_COUNT; otherStickChannelIndex++) {
-            channelPulses[otherStickChannelIndex] = rxConfig.rx_max_usec;
+            channelPulses[otherStickChannelIndex] = rxConfig()->rx_max_usec;
         }
-        channelPulses[stickChannelIndex] = rxConfig.rx_max_usec + 1;
+        channelPulses[stickChannelIndex] = rxConfig()->rx_max_usec + 1;
 
         // when
         for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
@@ -185,7 +188,7 @@ extern "C" {
 
     bool rxMspFrameComplete(void) { return false; }
 
-    void rxMspInit(rxConfig_t *, rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
+    void rxMspInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 
     void rxPwmInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
 }

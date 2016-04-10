@@ -15,16 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * telemetry.h
- *
- *  Created on: 6 Apr 2014
- *      Author: Hydra
- */
-#include "rx/rx.h"
-
-#ifndef TELEMETRY_COMMON_H_
-#define TELEMETRY_COMMON_H_
+#pragma once
 
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
@@ -39,6 +30,7 @@ typedef enum {
 typedef struct telemetryConfig_s {
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inversion;            // also shared with smartport inversion
+<<<<<<< HEAD
     uint8_t telemetry_flvss_cells;          // Enable/Disable FrSky FLVSS Individual Cell Voltages Telemetry "Cels"
     float gpsNoFixLatitude;   
     float gpsNoFixLongitude;  
@@ -46,13 +38,18 @@ typedef struct telemetryConfig_s {
     frskyUnit_e frsky_unit;
     uint8_t frsky_vfas_precision;
     uint8_t hottAlarmSoundInterval;
+=======
+>>>>>>> master
 } telemetryConfig_t;
 
+PG_DECLARE(telemetryConfig_t, telemetryConfig);
+
+void telemetryInit(void);
+
 void telemetryCheckState(void);
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+void telemetryProcess(uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
 
-#endif /* TELEMETRY_COMMON_H_ */

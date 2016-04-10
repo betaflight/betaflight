@@ -32,6 +32,7 @@
 #include "io/serial_1wire.h"
 #include "io/beeper.h"
 #include "drivers/pwm_mapping.h"
+#include "config/parameter_group.h"
 #include "flight/mixer.h"
 
 uint8_t escCount; // we detect the hardware dynamically

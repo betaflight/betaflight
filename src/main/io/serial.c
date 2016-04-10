@@ -26,6 +26,9 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -45,12 +48,40 @@
 #include "serial_msp.h"
 
 #include "config/config.h"
+#include "config/parameter_group.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
-static serialConfig_t *serialConfig;
+PG_REGISTER_WITH_RESET(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+void pgReset_serialConfig(serialConfig_t *serialConfig)
+{
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    serialPortConfig_t portConfig_Reset = {
+        .msp_baudrateIndex = BAUD_115200,
+        .gps_baudrateIndex = BAUD_57600,
+        .telemetry_baudrateIndex = BAUD_AUTO,
+        .blackbox_baudrateIndex = BAUD_115200,
+    };
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+
+#if defined(USE_VCP)
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+#endif
+
+    serialConfig->reboot_character = 'R';
+}
+
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -80,7 +111,7 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-static uint8_t serialPortCount;
+STATIC_UNIT_TESTED uint8_t serialPortCount;
 
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000}; // see baudRate_e
 
@@ -137,7 +168,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
 {
     while (findSerialPortConfigState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSerialPortConfigState.lastIndex++];
+        serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSerialPortConfigState.lastIndex++];
 
         if (candidate->functionMask & function) {
             return candidate;
@@ -175,7 +206,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
     while (findSharedSerialPortState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSharedSerialPortState.lastIndex++];
+        serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSharedSerialPortState.lastIndex++];
 
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
@@ -238,7 +269,7 @@ serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifie
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[index];
+        serialPortConfig_t *candidate = &serialConfig()->portConfigs[index];
         if (candidate->identifier == identifier) {
             return candidate;
         }
@@ -349,11 +380,9 @@ void closeSerialPort(serialPort_t *serialPort) {
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled)
+void serialInit(bool softserialEnabled)
 {
     uint8_t index;
-
-    serialConfig = initialSerialConfig;
 
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
@@ -433,7 +462,7 @@ void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
         cliEnter(serialPort);
     }
 #endif
-    if (receivedChar == serialConfig->reboot_character) {
+    if (receivedChar == serialConfig()->reboot_character) {
         systemResetToBootloader();
     }
 }

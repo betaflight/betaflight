@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#include "config/parameter_group.h"
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
