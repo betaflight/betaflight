@@ -241,6 +241,7 @@ bool naivationRequiresAngleMode(void);
 bool navigationRequiresThrottleTiltCompensation(void);
 int8_t naivationGetHeadingControlState(void);
 bool naivationBlockArming(void);
+bool navigationPositionEstimateIsHealthy(void);
 
 /* Access to estimated position and velocity */
 float getEstimatedActualVelocity(int axis);

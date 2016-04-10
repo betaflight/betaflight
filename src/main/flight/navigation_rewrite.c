@@ -2109,6 +2109,12 @@ bool naivationBlockArming(void)
     return shouldBlockArming;
 }
 
+
+bool navigationPositionEstimateIsHealthy(void)
+{
+    return posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME);
+}
+
 /**
  * Indicate ready/not ready status
  */
@@ -2117,7 +2123,7 @@ static void updateReadyStatus(void)
     static bool posReadyBeepDone = false;
 
     /* Beep out READY_BEEP once when position lock is firstly acquired and HOME set */
-    if (posControl.flags.hasValidPositionSensor && STATE(GPS_FIX_HOME) && !posReadyBeepDone) {
+    if (navigationPositionEstimateIsHealthy() && !posReadyBeepDone) {
         beeper(BEEPER_READY_BEEP);
         posReadyBeepDone = true;
     }

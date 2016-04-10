@@ -260,8 +260,8 @@ void mwArm(void)
             disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
-#ifdef GPS
-            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5)
+#ifdef NAV
+            if (navigationPositionEstimateIsHealthy())
                 beeper(BEEPER_ARMING_GPS_FIX);
             else
                 beeper(BEEPER_ARMING);
