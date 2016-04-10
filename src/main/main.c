@@ -392,8 +392,10 @@ void init(void)
 
     mixerUsePWMIOConfiguration(pwmIOConfiguration);
 
+#ifdef DEBUG_PWM_CONFIGURATION
     debug[2] = pwmIOConfiguration->pwmInputCount;
     debug[3] = pwmIOConfiguration->ppmInputCount;
+#endif
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
@@ -672,6 +674,10 @@ int main(void) {
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#ifdef SPRACINGF3EVO
+    // fixme temporary solution for AK6983 via slave I2C on MPU9250
+    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+#endif
 #endif
 #ifdef BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));

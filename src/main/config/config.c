@@ -137,7 +137,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_RSSI_ADC);
     featureSet(FEATURE_CURRENT_METER);
     featureSet(FEATURE_TELEMETRY);
-    serialConfig()->portConfigs[2].functionMask = FUNCTION_TELEMETRY_FRSKY;
 #endif
 
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
