@@ -58,10 +58,10 @@ typedef struct drv_pwm_config_s {
     bool useSerialRx;
     bool useRSSIADC;
     bool useCurrentMeterADC;
-#ifdef STM32F10X
+#if defined(USE_USART2)
     bool useUART2;
 #endif
-#ifdef STM32F303xC
+#if defined(USE_USART3)
     bool useUART3;
 #endif
     bool useVbat;

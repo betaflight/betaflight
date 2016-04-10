@@ -664,14 +664,13 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X
-        // skip UART2 ports
-        if (init->useUART2 && (timerIndex == PWM3 || timerIndex == PWM4))
+        // skip UART ports
+#ifdef USE_USART2
+        if (init->useUART2 && timerHardwarePtr->gpio == UART2_GPIO && (timerHardwarePtr->pin == UART2_TX_PIN || timerHardwarePtr->pin == UART2_RX_PIN))
             continue;
 #endif
 
-#if defined(STM32F303xC) && defined(USE_USART3)
-        // skip UART3 ports (PB10/PB11)
+#ifdef USE_USART3
         if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
             continue;
 #endif

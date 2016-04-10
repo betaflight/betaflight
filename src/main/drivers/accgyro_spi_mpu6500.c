@@ -101,15 +101,16 @@ static void mpu6500SpiInit(void)
 
 bool mpu6500SpiDetect(void)
 {
-    uint8_t tmp;
+    uint8_t sig;
 
     mpu6500SpiInit();
 
-    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &sig);
 
-    if (tmp != MPU6500_WHO_AM_I_CONST)
+    sig &= MPU_INQUIRY_MASK;
+    if (sig != MPU6500_WHO_AM_I_CONST) {
         return false;
-
+    }
     return true;
 }
 

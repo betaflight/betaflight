@@ -63,12 +63,6 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_ADDRESS             0x68
 
-// WHO_AM_I register contents for MPU3050, 6050 and 6500
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPUx0x0_WHO_AM_I_CONST              (0x68)
-
-#define MPU_INQUIRY_MASK   0x7E
-
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
