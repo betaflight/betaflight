@@ -256,7 +256,7 @@ void checkSmartPortTelemetryState(void)
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
-    
+
     if (!smartPortTelemetryEnabled) {
         return;
     }
@@ -284,7 +284,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-         
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -312,7 +312,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_CELLS       :
-                if (feature(FEATURE_VBAT) && telemetryConfig->telemetry_flvss_cells) {
+                if (feature(FEATURE_VBAT) && frskyTelemetryConfig()->telemetry_flvss_cells) {
                     /*
                      * A cell packet is formated this way: https://github.com/jcheger/frsky-arduino/blob/master/FrskySP/FrskySP.cpp
                      * content    | length
@@ -322,7 +322,7 @@ void handleSmartPortTelemetry(void)
                      * cellid     | 4 bits
                      */
                     static uint8_t currentCell = 0; // Track current cell index number
-                    
+
                     // Cells Data Payload
                     uint32_t payload = 0;
                     payload |= ((uint16_t)(vbat * 100 + batteryCellCount) / (batteryCellCount * 2)) & 0x0FFF;  // Cell Voltage formatted for payload, modified code from cleanflight Frsky.c, TESTING NOTE: (uint16_t)(4.2 * 500.0) & 0x0FFF;
@@ -330,7 +330,7 @@ void handleSmartPortTelemetry(void)
                     payload |= (uint8_t)batteryCellCount & 0x0F; // Cell Total Count formatted for payload
                     payload <<= 4;
                     payload |= (uint8_t)currentCell & 0x0F; // Current Cell Index Number formatted for payload
-                    
+
                     // Send Payload
                     smartPortSendPackage(id,  payload);
                     smartPortHasRequest = 0;
