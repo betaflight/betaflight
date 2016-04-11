@@ -207,9 +207,9 @@ void updateAccelerationReadings(void)
         performAcclerationCalibration();
     }
 
-    alignSensors(accADC, accADC, accAlign);
-
     applyAccelerationZero(accZero, accGain);
+
+    alignSensors(accADC, accADC, accAlign);
 }
 
 void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse)

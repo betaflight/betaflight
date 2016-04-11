@@ -154,11 +154,11 @@ void gyroUpdate(void)
         }
     }
 
-    alignSensors(gyroADC, gyroADC, gyroAlign);
-
     if (!isGyroCalibrationComplete()) {
         performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();
+
+    alignSensors(gyroADC, gyroADC, gyroAlign);
 }
