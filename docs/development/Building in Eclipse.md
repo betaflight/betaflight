@@ -17,11 +17,11 @@ Make sure you have a valid ARM toolchain in the path
 * To work with ARM projects in Eclipse you need a few plugins:
 	+ **Eclipse C Development Tools** (CDT) (available via *Help > Install new Software*).
 	+ **Zylin Embedded CDT Plugin** (http://opensource.zylin.com/embeddedcdt.html).
-	+ name: Zylin-embedded CDT
-	+ location: http://opensource.zylin.com/zylincdt
+	 + name: Zylin-embedded CDT
+	 + location: http://opensource.zylin.com/zylincdt
 	+ **GNU ARM Eclipse** (http://sourceforge.net/projects/gnuarmeclipse/).
-  + name: GNU ARM Eclipse Plug-ins
-  + location: http://gnuarmeclipse.sourceforge.net/updates
+   + name: GNU ARM Eclipse Plug-ins
+   + location: http://gnuarmeclipse.sourceforge.net/updates
 	+ If you want to hook up an SWD debugger you also need the **GDB Hardware Debugging** plugin (Also available via *Install new Software*).
 * Now clone the project to your harddrive.
 * Create a new C project in Eclipse and choose ARM Cross Target Application and your ARM toolchain.
