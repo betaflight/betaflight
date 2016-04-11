@@ -93,7 +93,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     float ITerm = lastITermf[axis] + luxITermScale * rateError * dT * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    ITerm = constrainf(ITerm, -PID_LUX_FLOAT_MAX_I / luxITermScale, PID_LUX_FLOAT_MAX_I / luxITermScale);
+    ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
@@ -116,14 +116,14 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         // Divide delta by dT to get differential (ie dr/dt)
         delta *= (1.0f / dT);
         if (pidProfile->dterm_cut_hz) {
-            // DTerm delta low pass
+            // DTerm delta low pass filter
             delta = applyBiQuadFilter(delta, &deltaFilterState[axis]);
         } else {
             // When DTerm low pass filter disabled apply moving average to reduce noise
             delta = filterApplyAveragef(delta, DTERM_AVERAGE_COUNT, deltaState[axis]);
         }
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
-        //DTerm = constrainf(DTerm, -PID_LUX_FLOAT_MAX_D, PID_LUX_FLOAT_MAX_D);
+        DTerm = constrainf(DTerm, -PID_MAX_D, PID_MAX_D);
     }
 
 #ifdef BLACKBOX

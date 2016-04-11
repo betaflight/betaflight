@@ -90,7 +90,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     int32_t ITerm = lastITerm[axis] + ((rateError * (uint16_t)targetLooptime) >> 11) * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
-    ITerm = constrain(ITerm, (int32_t)(-GYRO_I_MAX << 13), (int32_t)(GYRO_I_MAX << 13));
+    ITerm = constrain(ITerm, (int32_t)(-PID_MAX_I << 13), (int32_t)(PID_MAX_I << 13));
     // Anti windup protection
     if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
@@ -114,13 +114,14 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         // Divide delta by targetLooptime to get differential (ie dr/dt)
         delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
         if (pidProfile->dterm_cut_hz) {
-            // DTerm delta low pass
-            delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis]));  // Keep same scaling as unfiltered deltaSum
+            // DTerm delta low pass filter
+            delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis]));
         } else {
             // When DTerm low pass filter disabled apply moving average to reduce noise
             delta = filterApplyAverage(delta, DTERM_AVERAGE_COUNT, deltaState[axis]);
         }
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 6;
+        DTerm = constrain(DTerm, -PID_MAX_D, PID_MAX_D);
     }
 
 #ifdef BLACKBOX

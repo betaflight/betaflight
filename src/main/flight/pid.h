@@ -17,9 +17,9 @@
 
 #pragma once
 
-#define PID_LUX_FLOAT_MAX_I 250.0f
-#define PID_LUX_FLOAT_MAX_D 300.0f
-#define PID_LUX_FLOAT_MAX_PID 1000
+#define PID_MAX_I 256
+#define PID_MAX_D 512
+#define PID_MAX_TOTAL_PID 1000
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
