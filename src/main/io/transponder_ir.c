@@ -39,14 +39,10 @@
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
 
-PG_REGISTER_WITH_RESET(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
-
-void pgReset_transponderConfig(transponderConfig_t *instance)
-{
-    static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
-
-    memcpy(instance->data, &defaultTransponderData, sizeof(defaultTransponderData));
-}
+PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
+    .data =  { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
+);
 
 // timers
 static uint32_t nextUpdateAt = 0;

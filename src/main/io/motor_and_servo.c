@@ -38,17 +38,13 @@
 #define DEFAULT_PWM_RATE BRUSHLESS_MOTORS_PWM_RATE
 #endif
 
-PG_REGISTER_WITH_RESET(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 
-void pgReset_motorAndServoConfig(motorAndServoConfig_t *motorAndServoConfig)
-{
-    RESET_CONFIG(motorAndServoConfig_t, motorAndServoConfig,
-        .minthrottle = 1150,
-        .maxthrottle = 1850,
-        .mincommand = 1000,
-        .servoCenterPulse = 1500,
-        .motor_pwm_rate = DEFAULT_PWM_RATE,
-        .servo_pwm_rate = 50,
-    );
-
-}
+PG_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig,
+    .minthrottle = 1150,
+    .maxthrottle = 1850,
+    .mincommand = 1000,
+    .servoCenterPulse = 1500,
+    .motor_pwm_rate = DEFAULT_PWM_RATE,
+    .servo_pwm_rate = 50,
+);
