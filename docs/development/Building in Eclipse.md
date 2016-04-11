@@ -17,7 +17,11 @@ Make sure you have a valid ARM toolchain in the path
 * To work with ARM projects in Eclipse you need a few plugins:
 	+ **Eclipse C Development Tools** (CDT) (available via *Help > Install new Software*).
 	+ **Zylin Embedded CDT Plugin** (http://opensource.zylin.com/embeddedcdt.html).
+	+ ***name: Zylin-embedded CDT
+	+ ***location: http://opensource.zylin.com/zylincdt
 	+ **GNU ARM Eclipse** (http://sourceforge.net/projects/gnuarmeclipse/).
+  + ***name: GNU ARM Eclipse Plug-ins
+  + ***location: http://gnuarmeclipse.sourceforge.net/updates
 	+ If you want to hook up an SWD debugger you also need the **GDB Hardware Debugging** plugin (Also available via *Install new Software*).
 * Now clone the project to your harddrive.
 * Create a new C project in Eclipse and choose ARM Cross Target Application and your ARM toolchain.
@@ -29,7 +33,7 @@ Make sure you have a valid ARM toolchain in the path
 	* Under *ARM Yagarto [Windows/Mac OS] Linker > General* (or whatever toolchain you chose)
 		+ Browse to the Script file *stm32_flash.ld*
 		+ Uncheck "Do not use standard start files"
-		+ Check "Remove unused sections"	
+		+ Check "Remove unused sections"
 	* Under *ARM Yagarto [Windows/Mac OS] Linker > Libraries*
 		+ Add "m" for the math library
 	* Under *ARM Yagarto [Windows/Mac OS] Compiler > Preprocessor* add the following 2 items to "Defined Symbols":
