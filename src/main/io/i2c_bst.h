@@ -19,13 +19,10 @@
 
 #include "drivers/bus_bst.h"
 
-void taskBstReadWrite(void);
+void bstProcessInCommand(void);
+void bstSlaveProcessInCommand(void);
 void taskBstMasterProcess(void);
-void taskBstCheckCommand(void);
 
-//void writeGpsPositionPrameToBST(void);
-//void writeGPSTimeFrameToBST(void);
-//void writeDataToBST(void);
 bool writeGpsPositionPrameToBST(void);
 bool writeRollPitchYawToBST(void);
 bool writeRCChannelToBST(void);

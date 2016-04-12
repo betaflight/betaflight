@@ -58,8 +58,6 @@ int16_t axisPID[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
-#define DELTA_MAX_SAMPLES 12
-
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
 
@@ -79,6 +77,14 @@ pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controlle
 
 void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
+}
+
+float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
+	float propFactor;
+
+    propFactor = 1.0f - ((rxConfig->superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+
+	return propFactor;
 }
 
 void pidResetErrorAngle(void)
@@ -107,35 +113,17 @@ void pidResetErrorGyroState(uint8_t resetOption)
     }
 }
 
-void scaleItermToRcInput(int axis, pidProfile_t *pidProfile) {
-    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
-    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
-    static float antiWindUpIncrement = 0;
+float getdT (void) {
+    static float dT;
+    if (!dT) dT = (float)targetPidLooptime * 0.000001f;
 
-    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetPidLooptime;  // Calculate increment for 500ms period
-
-    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
-        /* Reset Iterm on high stick inputs. No scaling necessary here */
-        iTermScaler[axis] = 0.0f;
-        errorGyroI[axis] = 0;
-        errorGyroIf[axis] = 0.0f;
-    } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
-        if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
-            if (pidProfile->pidController != PID_CONTROLLER_LUX_FLOAT) {
-                errorGyroI[axis] *= iTermScaler[axis];
-            } else {
-                errorGyroIf[axis] *= iTermScaler[axis];
-            }
-        }
-    }
+    return dT;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static biquad_t deltaBiQuadState[3];
-static bool deltaStateIsSet;
+static filterStatePt1_t deltaFilterState[3];
+static filterStatePt1_t yawFilterState;
 
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -143,18 +131,17 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
     static float lastErrorForDelta[3];
-    static float previousDelta[3][DELTA_MAX_SAMPLES];
-    static float previousAverageDelta[3];
-    float delta, deltaSum;
-    int axis, deltaCount;
+    static float deltaState[3][DELTA_MAX_SAMPLES];
+    float delta;
+    int axis;
     float horizonLevelStrength = 1;
 
-    float dT = (float)targetPidLooptime * 0.000001f;
+    float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
-    if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetPidLooptime);
-        deltaStateIsSet = true;
-    }
+    // Scaling factors for Pids to match rewrite and use same defaults
+    static const float luxPTermScale = 1.0f / 128;
+    static const float luxITermScale = 1000000.0f / 0x1000000;
+    static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -163,10 +150,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         const int32_t mostDeflectedPos = MAX(stickPosAil, stickPosEle);
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
-        if(pidProfile->H_sensitivity == 0){
+        if(pidProfile->D8[PIDLEVEL] == 0){
             horizonLevelStrength = 0;
         } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->H_sensitivity)) + 1, 0, 1);
+            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
         }
     }
 
@@ -176,31 +163,31 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
-            AngleRate = (float)((rate + 10) * rcCommand[YAW]) / 50.0f;
+            AngleRate = (float)((rate + 47) * rcCommand[YAW]) / 32.0f;
          } else {
              // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
-             AngleRate = (float)((rate + 20) * rcCommand[axis]) / 50.0f; // 200dps to 1200dps max roll/pitch rate
+             AngleRate = (float)((rate + 27) * rcCommand[axis]) / 16.0f; // 200dps to 1200dps max roll/pitch rate
              if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
                 // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-                const float errorAngle = (constrain(rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #else
-                const float errorAngle = (constrain(rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #endif
                 if (FLIGHT_MODE(ANGLE_MODE)) {
                     // ANGLE mode - control is angle based, so control loop is needed
-                    AngleRate = errorAngle * pidProfile->A_level;
+                    AngleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
                 } else {
                     // HORIZON mode - direct sticks control is applied to rate PID
                     // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->H_level * horizonLevelStrength;
+                    AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f;
                 }
             }
         }
 
-        gyroRate = gyroADC[axis] * gyro.scale; // gyro output scaled to dps
+        gyroRate = gyroADC[axis] / 4.0f; // gyro output scaled to rewrite scale
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
@@ -208,10 +195,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
-        if (lowThrottlePidReduction) RateError /= 4;
-
         // -----calculate P component
-        PTerm = RateError * pidProfile->P_f[axis] * PIDweight[axis] / 100;
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            PTerm = (luxPTermScale * pidProfile->P8[axis] * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
+        } else {
+            PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
+        }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -219,15 +208,20 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         }
 
         // -----calculate I component.
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
-            } else {
-                errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
-            }
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (axis == YAW) {
+            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
+        }
+
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+        } else {
+            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
         }
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
@@ -235,36 +229,35 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = RateError - lastErrorForDelta[axis];
-            lastErrorForDelta[axis] = RateError;
+        if (axis == YAW) {
+            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            DTerm = 0;
         } else {
-            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = gyroRate;
-        }
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateError - lastErrorForDelta[axis];
+                lastErrorForDelta[axis] = RateError;
+            } else {
+                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = gyroRate;
+            }
 
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta *= (1.0f / dT);
+            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+            // would be scaled by different dt each time. Division by dT fixes that.
+            delta *= (1.0f / getdT());
 
-        if (deltaStateIsSet) {
-            delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
-        } else {
+            // Filter delta
+            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+
             // Apply moving average
-            deltaSum = 0;
-            for (deltaCount = pidProfile->dterm_average_count-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
-            previousDelta[axis][0] = delta;
-            for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-            delta = ((deltaSum / pidProfile->dterm_average_count) + previousAverageDelta[axis]) / 2;  // Keep same original scaling + double pass averaging
-            previousAverageDelta[axis] = delta;
-        }
+            if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]);
 
-        DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
+            DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
+        }
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
-        if (lowThrottlePidReduction) axisPID[axis] /= 4;
+        if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -285,17 +278,11 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 {
     UNUSED(rxConfig);
 
-    int axis, deltaCount, prop = 0;
+    int axis, prop = 0;
     int32_t rc, error, errorAngle, delta, gyroError;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
     static int16_t lastErrorForDelta[2];
-    static int32_t previousDelta[2][DELTA_MAX_SAMPLES];
-    static int32_t previousAverageDelta[2];
-
-    if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 2; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetPidLooptime);
-        deltaStateIsSet = true;
-    }
+    static int32_t deltaState[3][DELTA_MAX_SAMPLES];
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         prop = MIN(MAX(ABS(rcCommand[PITCH]), ABS(rcCommand[ROLL])), 512);
@@ -306,25 +293,20 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
         rc = rcCommand[axis] << 1;
 
-        if (lowThrottlePidReduction) rc /= 4;
-
         gyroError = gyroADC[axis] / 4;
 
         error = rc - gyroError;
-        errorGyroI[axis]  = constrain(errorGyroI[axis] + ((error * (uint16_t)targetPidLooptime) >> 12) , -16000, +16000);   // WindUp   16 bits is ok here
+        errorGyroI[axis]  = constrain(errorGyroI[axis] + ((error * (uint16_t)targetPidLooptime) >> 11) , -16000, +16000);   // WindUp   16 bits is ok here
 
         if (ABS(gyroADC[axis]) > (640 * 4)) {
             errorGyroI[axis] = 0;
         }
 
         // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
-            } else {
-                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
-            }
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        } else {
+            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
 
         ITerm = (errorGyroI[axis] >> 7) * pidProfile->I8[axis] >> 6;   // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
@@ -368,23 +350,17 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         // Scale delta to looptime
         delta = (delta * ((uint16_t) 0xFFFF)) / ((uint16_t)targetPidLooptime << 5);
 
-        if (deltaStateIsSet) {
-            DTerm = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
-        } else {
-            // Apply moving average
-            DTerm = 0;
-            for (deltaCount = pidProfile->dterm_average_count-1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
-            previousDelta[axis][0] = delta;
-            for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) DTerm += previousDelta[axis][deltaCount];
-            DTerm = (((DTerm / pidProfile->dterm_average_count) << 1) + previousAverageDelta[axis]) >> 1;  // Keep same original scaling + double pass averaging
-            previousAverageDelta[axis] = DTerm;
-        }
+        // Filer delta
+        if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
-        DTerm = ((int32_t)DTerm * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
+        // Apply moving average and multiply to get original scaling
+        if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
+
+        DTerm = (delta * dynD8[axis]) >> 5;   // 32 bits is needed for calculation
 
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (lowThrottlePidReduction) axisPID[axis] /= 4;
+        if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -421,7 +397,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
 
     axisPID[FD_YAW] =  PTerm + ITerm;
 
-    if (lowThrottlePidReduction) axisPID[FD_YAW] /= 4;
+    if (pidProfile->yaw_lpf_hz) axisPID[FD_YAW] = filterApplyPt1(axisPID[FD_YAW], &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
 
 #ifdef GTUNE
     if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -441,19 +417,13 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 {
     UNUSED(rxConfig);
 
-    int axis, deltaCount;
-    int32_t PTerm, ITerm, DTerm, delta, deltaSum;
+    int axis;
+    int32_t PTerm, ITerm, DTerm, delta;
     static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
-    static int32_t previousDelta[3][DELTA_MAX_SAMPLES];
-    static int32_t previousAverageDelta[3];
+    static int32_t deltaState[3][DELTA_MAX_SAMPLES];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
-
-    if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetPidLooptime);
-        deltaStateIsSet = true;
-    }
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -474,7 +444,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
             // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[YAW]) >> 5;
+            AngleRateTmp = ((int32_t)(rate + 47) * rcCommand[YAW]) >> 5;
         } else {
             AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
             if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
@@ -504,10 +474,12 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         gyroRate = gyroADC[axis] / 4;
         RateError = AngleRateTmp - gyroRate;
 
-        if (lowThrottlePidReduction) RateError /= 4;
-
         // -----calculate P component
-        PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            PTerm = (pidProfile->P8[axis] * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
+        } else {
+            PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+        }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -525,48 +497,52 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) scaleItermToRcInput(axis, pidProfile);
-            if (antiWindupProtection || motorLimitReached) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
-            } else {
-                errorGyroILimit[axis] = ABS(errorGyroI[axis]);
-            }
+        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = 0;
+        }
+
+        if (axis == YAW) {
+            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = 0;
+        }
+
+        if (antiWindupProtection || motorLimitReached) {
+            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        } else {
+            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
         }
 
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = RateError;
+        if (axis == YAW) {
+            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            DTerm = 0;
         } else {
-            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastErrorForDelta[axis] = gyroRate;
-        }
-        
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 6;
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = RateError;
+            } else {
+                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+                lastErrorForDelta[axis] = gyroRate;
+            }
 
-        if (deltaStateIsSet) {
-            delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
-        } else {
+            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+            // would be scaled by different dt each time. Division by dT fixes that.
+            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 6;
+
+            // Filter delta
+            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+
             // Apply moving average
-            deltaSum = 0;
-            for (deltaCount = pidProfile->dterm_average_count -1; deltaCount > 0; deltaCount--) previousDelta[axis][deltaCount] = previousDelta[axis][deltaCount-1];
-            previousDelta[axis][0] = delta;
-            for (deltaCount = 0; deltaCount < pidProfile->dterm_average_count; deltaCount++) deltaSum += previousDelta[axis][deltaCount];
-            delta = (((deltaSum / pidProfile->dterm_average_count) << 1) + previousAverageDelta[axis]) >> 1;  // Keep same original scaling + double pass averaging
-            previousAverageDelta[axis] = delta;
-        }
+            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
 
-        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+            DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+        }
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (lowThrottlePidReduction) axisPID[axis] /= 4;
+        if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

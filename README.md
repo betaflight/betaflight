@@ -42,6 +42,7 @@ Cleanflight also has additional features not found in baseflight.
 * Graupner HoTT telemetry.
 * Multiple simultaneous telemetry providers.
 * Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
+* Optional lost buzzer on port 6 for CC3D (set enable_buzzer_p6 = ON)
 * And many more minor bug fixes.
 
 For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.

@@ -83,8 +83,6 @@ static void updateBatteryVoltage(void)
 }
 
 #define VBATTERY_STABLE_DELAY 40
-/* Batt Hysteresis of +/-100mV */
-#define VBATT_HYSTERESIS 1
 
 void updateBattery(void)
 {
@@ -123,23 +121,23 @@ void updateBattery(void)
     switch(batteryState)
     {
         case BATTERY_OK:
-            if (vbat <= (batteryWarningVoltage - VBATT_HYSTERESIS)) {
+            if (vbat <= (batteryWarningVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_WARNING:
-            if (vbat <= (batteryCriticalVoltage - VBATT_HYSTERESIS)) {
+            if (vbat <= (batteryCriticalVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_CRITICAL;
                 beeper(BEEPER_BAT_CRIT_LOW);
-            } else if (vbat > (batteryWarningVoltage + VBATT_HYSTERESIS)){
+            } else if (vbat > (batteryWarningVoltage + batteryConfig->vbathysteresis)){
                 batteryState = BATTERY_OK;
             } else {
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if (vbat > (batteryCriticalVoltage + VBATT_HYSTERESIS)){
+            if (vbat > (batteryCriticalVoltage + batteryConfig->vbathysteresis)){
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             } else {

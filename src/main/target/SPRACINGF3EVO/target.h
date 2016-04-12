@@ -17,13 +17,10 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SRFM"
-
-// early prototype had slightly different pin mappings.
-//#define SPRACINGF3MINI_MKII_REVA
+#define TARGET_BOARD_IDENTIFIER "SPEV"
 
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3
+#define LED0_PIN    Pin_8
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 
 #define BEEP_GPIO   GPIOC
@@ -31,7 +28,7 @@
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -44,11 +41,11 @@
 
 #define GYRO
 //#define USE_FAKE_GYRO
-#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
 
 #define ACC
 //#define USE_FAKE_ACC
-#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN CW180_DEG
 #define GYRO_MPU6500_ALIGN CW180_DEG
@@ -58,28 +55,22 @@
 
 #define MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883 // External
+#define USE_MAG_AK8963
+//#define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
-#define SONAR
+//#define SONAR
 #define BEEPER
 #define LED0
 
 #define USB_IO
-#define USB_CABLE_DETECTION
-
-#define USB_DETECT_PIN                   GPIO_Pin_5
-#define USB_DETECT_GPIO_PORT             GPIOB
-#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
 
 #define USE_VCP
 #define USE_USART1
 #define USE_USART2
 #define USE_USART3
-#define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 5
+#define SERIAL_PORT_COUNT 4
 
 #ifndef UART1_GPIO
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
@@ -106,15 +97,23 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
-#define SOFTSERIAL_1_TIMER TIM2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
-
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
-#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
+#define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
+#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5 SPI2 (SDCard)
+
+#define SPI1_GPIO               GPIOB
+#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI1_NSS_PIN            Pin_9
+#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource9
+#define SPI1_SCK_PIN            Pin_3
+#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
+#define SPI1_MISO_PIN           Pin_4
+#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
+#define SPI1_MOSI_PIN           Pin_5
+#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
@@ -153,8 +152,10 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-// Performance logging for SD card operations:
-// #define AFATFS_USE_INTROSPECTIVE_LOGGING
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL   SPI1_GPIO_PERIPHERAL
+#define MPU6500_CS_GPIO                  SPI1_GPIO
+#define MPU6500_CS_PIN                   GPIO_Pin_9
+#define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -179,6 +180,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
 
+#define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_6
@@ -190,7 +192,6 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -205,31 +206,20 @@
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
-
-#define BUTTONS
-#define BUTTON_A_PORT  GPIOB
-#define BUTTON_A_PIN   Pin_1
-#define BUTTON_B_PORT  GPIOB
-#define BUTTON_B_PIN   Pin_0
 
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
-
-#define HARDWARE_BIND_PLUG
-#define BINDPLUG_PORT  BUTTON_B_PORT
-#define BINDPLUG_PIN   BUTTON_B_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

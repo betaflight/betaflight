@@ -32,6 +32,8 @@
 #define CROSSFIRE_RSSI_FRAME_ID				0x14
 #define CLEANFLIGHT_MODE_FRAME_ID				0x20
 
+#define DATA_BUFFER_SIZE						64
+
 typedef enum BSTDevice {
     BSTDEV_1,
     BSTDEV_2,
@@ -39,6 +41,7 @@ typedef enum BSTDevice {
 } BSTDevice;
 
 void bstInit(BSTDevice index);
+uint32_t bstTimeoutUserCallback(void);
 uint16_t bstGetErrorCounter(void);
 
 bool bstWriteBusy(void);
@@ -47,7 +50,6 @@ bool bstSlaveRead(uint8_t* buf);
 bool bstSlaveWrite(uint8_t* data);
 
 void bstMasterWriteLoop(void);
-void bstMasterReadLoop(void);
 
 void crc8Cal(uint8_t data_in);
 

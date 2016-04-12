@@ -117,7 +117,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 #endif
 
-#if defined(SPRACINGF3) || defined(SPRACINGF3MINI)
+#if defined(SPRACINGF3) || defined(SPRACINGF3MINI) || defined(SPRACINGF3EVO)
     static const extiConfig_t spRacingF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,
@@ -154,6 +154,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
          .exti_irqn = EXTI9_5_IRQn
     };
     return &RaceMPUIntExtiConfig;
+#endif
+
+#if defined(DOGE)
+    static const extiConfig_t dogeMPUIntExtiConfig = {
+         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
+         .gpioPort = GPIOC,
+         .gpioPin = Pin_13,
+         .exti_port_source = EXTI_PortSourceGPIOC,
+         .exti_pin_source = EXTI_PinSource13,
+         .exti_line = EXTI_Line13,
+         .exti_irqn = EXTI15_10_IRQn
+    };
+    return &dogeMPUIntExtiConfig;
 #endif
 
 #if defined(MOTOLAB) || defined(SPARKY)

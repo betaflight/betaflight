@@ -103,8 +103,6 @@ enum {
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
-float dT;
-
 int16_t magHold;
 int16_t headFreeModeHold;
 
@@ -119,6 +117,7 @@ extern bool antiWindupProtection;
 
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
+static bool armingCalibrationWasInitialised;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
@@ -204,10 +203,21 @@ void filterRc(void){
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
+    //recalculate sin/cos only when masterConfig.rxConfig.fpvCamAngleDegrees changed
+    static uint8_t lastFpvCamAngleDegrees = 0;
+    static float cosFactor = 1.0;
+    static float sinFactor = 0.0;
+
+    if (lastFpvCamAngleDegrees != masterConfig.rxConfig.fpvCamAngleDegrees){
+        lastFpvCamAngleDegrees = masterConfig.rxConfig.fpvCamAngleDegrees;
+        cosFactor = cos_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+        sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+    }
+
     int16_t roll = rcCommand[ROLL];
     int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll - sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
-    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
+    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
 void annexCode(void)
@@ -303,7 +313,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (IS_RC_MODE_ACTIVE(BOXARM) == 0 || armingCalibrationWasInitialised) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -332,6 +342,8 @@ void annexCode(void)
 
 void mwDisarm(void)
 {
+    armingCalibrationWasInitialised = false;
+
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
@@ -357,6 +369,16 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
+    static bool firstArmingCalibrationWasCompleted;
+
+    if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
+        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        armingCalibrationWasInitialised = true;
+        firstArmingCalibrationWasCompleted = true;
+    }
+
+    if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
+
     if (ARMING_FLAG(OK_TO_ARM)) {
         if (ARMING_FLAG(ARMED)) {
             return;
@@ -366,6 +388,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
+            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
@@ -544,7 +567,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
