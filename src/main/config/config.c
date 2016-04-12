@@ -124,7 +124,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
 
-    parseRcChannels("TAER1234", rxConfig());
+    parseRcChannels("AETR1234", rxConfig());
 
     featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_VBAT);
