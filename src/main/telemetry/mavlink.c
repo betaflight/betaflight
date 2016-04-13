@@ -292,11 +292,7 @@ void mavlinkSendPosition(void)
         // lon Longitude in 1E7 degrees
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-#if defined(NAV)
-        getEstimatedActualPosition(Z) * 10.0f,
-#else
-        gpsSol.llh.alt * 1000,
-#endif
+        gpsSol.llh.alt * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
         65535,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
@@ -310,13 +306,41 @@ void mavlinkSendPosition(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
+    // Global position
+    mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
+        // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+        micros(),
+        // lat Latitude in 1E7 degrees
+        gpsSol.llh.lat,
+        // lon Longitude in 1E7 degrees
+        gpsSol.llh.lon,
+        // alt Altitude in 1E3 meters (millimeters) above MSL
+        gpsSol.llh.alt * 10,
+        // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
+#if defined(NAV)
+        getEstimatedActualPosition(Z) * 10,
+#else
+        gpsSol.llh.alt * 10,
+#endif
+        // Ground X Speed (Latitude), expressed as m/s * 100
+        0,
+        // Ground Y Speed (Longitude), expressed as m/s * 100
+        0,
+        // Ground Z Speed (Altitude), expressed as m/s * 100
+        0,
+        // heading Current heading in degrees, in compass units (0..360, 0=north)
+        DECIDEGREES_TO_DEGREES(attitude.values.yaw)
+    );
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
         // latitude Latitude (WGS84), expressed as * 1E7
         GPS_home.lat,
         // longitude Longitude (WGS84), expressed as * 1E7
         GPS_home.lon,
         // altitude Altitude(WGS84), expressed as * 1000
-        GPS_home.alt * 1000); // FIXME
+        GPS_home.alt * 10); // FIXME
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
