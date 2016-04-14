@@ -2102,7 +2102,7 @@ bool naivationBlockArming(void)
     }
 
     // Don't allow arming if any of NAV modes is active
-    if ((!ARMING_FLAG(ARMED)) && (IS_RC_MODE_ACTIVE(BOXPASSTHRU) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) || IS_RC_MODE_ACTIVE(BOXNAVALTHOLD))) {
+    if ((!ARMING_FLAG(ARMED)) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) || IS_RC_MODE_ACTIVE(BOXNAVALTHOLD))) {
         shouldBlockArming = true;
     }
 
