@@ -21,11 +21,15 @@
 //#define DEBUG_BATTERY
 
 extern "C" {
-    #include "sensors/battery.h"
-    
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
     #include "io/rc_controls.h"
-    #include "flight/lowpass.h"
+
+    #include "sensors/battery.h"
     #include "io/beeper.h"
+
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -42,7 +46,7 @@ typedef struct batteryAdcToVoltageExpectation_s {
 TEST(BatteryTest, BatteryADCToVoltage)
 {
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    batteryConfig_t batteryConfig = {
+    batteryConfig_t testBatteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
         .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
         .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
@@ -55,8 +59,9 @@ TEST(BatteryTest, BatteryADCToVoltage)
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
     };
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
-    batteryInit(&batteryConfig);
+    batteryInit();
 
     batteryAdcToVoltageExpectation_t batteryAdcToVoltageExpectations[] = {
             {1420, 126 /*125.88*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
@@ -74,7 +79,7 @@ TEST(BatteryTest, BatteryADCToVoltage)
 
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToVoltageExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToVoltageExpectation->scale;
 #ifdef DEBUG_BATTERY
         printf("adcReading: %d, vbatscale: %d\n",
                 batteryAdcToVoltageExpectation->adcReading,
@@ -102,7 +107,7 @@ typedef struct batteryAdcToBatteryStateExpectation_s
 TEST(BatteryTest, BatteryState)
 {
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    batteryConfig_t batteryConfig = {
+    batteryConfig_t testBatteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
         .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
         .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
@@ -115,8 +120,9 @@ TEST(BatteryTest, BatteryState)
         .multiwiiCurrentMeterOutput = 0,
         .batteryCapacity = 2200,
     };
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
-    batteryInit(&batteryConfig);
+    batteryInit();
 
     batteryAdcToBatteryStateExpectation_t batteryAdcToBatteryStateExpectations[] = {
             {1420, 126, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
@@ -141,7 +147,7 @@ TEST(BatteryTest, BatteryState)
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToBatteryStateExpectation_t *batteryAdcToBatteryStateExpectation = &batteryAdcToBatteryStateExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToBatteryStateExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToBatteryStateExpectation->scale;
         currentADCReading = batteryAdcToBatteryStateExpectation->adcReading;
         updateBattery( );
         batteryState_e batteryState = getBatteryState();
@@ -161,7 +167,7 @@ typedef struct batteryAdcToCellCountExpectation_s
 TEST(BatteryTest, CellCount)
 {
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    batteryConfig_t batteryConfig = {
+    batteryConfig_t testBatteryConfig = {
         .vbatscale = VBAT_SCALE_DEFAULT,
         .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
         .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
@@ -175,7 +181,9 @@ TEST(BatteryTest, CellCount)
         .batteryCapacity = 2200,
     };
 
-    batteryInit(&batteryConfig);
+    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
+
+    batteryInit();
 
     batteryAdcToCellCountExpectation_t batteryAdcToCellCountExpectations[] = {
             {0, 0, ELEVEN_TO_ONE_VOLTAGE_DIVIDER, 1},
@@ -186,7 +194,7 @@ TEST(BatteryTest, CellCount)
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToCellCountExpectation_t *batteryAdcToCellCountExpectation = &batteryAdcToCellCountExpectations[index];
-        batteryConfig.vbatscale = batteryAdcToCellCountExpectation->scale;
+        batteryConfig()->vbatscale = batteryAdcToCellCountExpectation->scale;
         currentADCReading = batteryAdcToCellCountExpectation->adcReading;
         updateBattery( );
         EXPECT_EQ(batteryAdcToCellCountExpectation->cellCount, batteryCellCount);
@@ -270,10 +278,12 @@ TEST(BatteryTest, RollOverPattern2)
 // STUBS
 
 extern "C" {
-
+#include "common/filter.h"
 uint8_t armingFlags = 0;
 int16_t rcCommand[4] = {0,0,0,0};
 
+float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
 
 bool feature(uint32_t mask)
 {
@@ -298,13 +308,6 @@ void delay(uint32_t ms)
 {
     UNUSED(ms);
     return;
-}
-
-int32_t lowpassFixed(lowpass_t *filter, int32_t in, int16_t freq)
-{
-    UNUSED(filter);
-    UNUSED(freq);
-    return in;
 }
 
 void beeper(beeperMode_e mode)

@@ -20,7 +20,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #ifdef GPS
 

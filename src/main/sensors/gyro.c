@@ -17,37 +17,65 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
+#include <math.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/gyro_sync.h"
+
 #include "sensors/sensors.h"
+
 #include "io/beeper.h"
 #include "io/statusindicator.h"
+
 #include "sensors/boardalignment.h"
 
 #include "sensors/gyro.h"
 
 uint16_t calibratingG = 0;
-int16_t gyroADC[XYZ_AXIS_COUNT];
-int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
+int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+int32_t gyroADC[XYZ_AXIS_COUNT];
+int32_t gyroZero[FD_INDEX_COUNT] = { 0, 0, 0 };
 
-static gyroConfig_t *gyroConfig;
-static int8_t * gyroFIRTable = 0L;
-static int16_t gyroFIRState[3][FILTER_TAPS];
+static biquad_t gyroFilterState[3];
+static bool gyroFilterStateIsSet;
+int axis;
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t * filterTableToUse)
+PG_REGISTER_WITH_RESET(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+
+void pgReset_gyroConfig(gyroConfig_t *instance)
 {
-    gyroConfig = gyroConfigToUse;
-    gyroFIRTable = filterTableToUse;
+    RESET_CONFIG(gyroConfig_t, instance,
+        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
+
+        .gyroMovementCalibrationThreshold = 32,
+    );
+}
+
+void initGyroFilterCoefficients(void) {
+    if (gyroConfig()->soft_gyro_lpf_hz) {
+        // Initialisation needs to happen once sampling rate is known
+        for (axis = 0; axis < 3; axis++) {
+            BiQuadNewLpf(gyroConfig()->soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
+        }
+
+        gyroFilterStateIsSet = true;
+    }
 }
 
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -121,18 +149,31 @@ static void applyGyroZero(void)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-    if (!gyro.read(gyroADC)) {
+    if (!gyro.read(gyroADCRaw)) {
         return;
     }
 
-    if (gyroFIRTable) {
-        filterApplyFIR(gyroADC, gyroFIRState, gyroFIRTable);
+    // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        gyroADC[axis] = gyroADCRaw[axis];
     }
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
+    if (gyroConfig()->soft_gyro_lpf_hz) {
+        if (!gyroFilterStateIsSet) {
+            initGyroFilterCoefficients();
+        }
+
+        if (gyroFilterStateIsSet) {
+            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                gyroADC[axis] = lrintf(applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]));
+            }
+        }
+    }
+
     if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
+        performAcclerationCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();

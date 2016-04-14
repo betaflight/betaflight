@@ -73,20 +73,14 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART3
+#define USE_UART1
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 4
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
-
-#define USART3_RX_PIN Pin_11
-#define USART3_TX_PIN Pin_10
-#define USART3_GPIO GPIOB
-#define USART3_APB1_PERIPHERALS RCC_APB1Periph_USART3
-#define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -120,7 +114,7 @@
 
 #define TELEMETRY
 #define SERIAL_RX
-#define SONAR
+//#define SONAR
 #define USE_SERVOS
 #define USE_CLI
 
@@ -136,6 +130,6 @@
 #define S1W_RX_PIN          GPIO_Pin_11
 
 #define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
+// UART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11

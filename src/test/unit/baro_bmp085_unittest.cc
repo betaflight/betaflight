@@ -16,7 +16,9 @@
  */
 #include <stdint.h>
 
+
 extern "C" {
+    #include <platform.h>
 
     void bmp085_calculate(int32_t *pressure, int32_t *temperature);
     extern uint32_t bmp085_up;

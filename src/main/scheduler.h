@@ -36,6 +36,7 @@ typedef struct {
     uint32_t     maxExecutionTime;
     uint32_t     totalExecutionTime;
     uint32_t     averageExecutionTime;
+    uint32_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -44,7 +45,9 @@ typedef enum {
     TASK_GYROPID,
     TASK_ACCEL,
     TASK_SERIAL,
+#ifdef BEEPER
     TASK_BEEPER,
+#endif
     TASK_BATTERY,
     TASK_RX,
 #ifdef GPS
@@ -88,18 +91,17 @@ typedef struct {
     const char * taskName;
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
-    bool isEnabled;
-    uint32_t desiredPeriod;     // target period of execution
-    uint8_t staticPriority;     // dynamicPriority grows in steps of this size, shouldn't be zero
+    uint32_t desiredPeriod;         // target period of execution
+    const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
-    uint8_t dynamicPriority;    // measurement of how old task was last executed, used to avoid task starvation
-    uint32_t lastExecutedAt;    // last time of invocation
-    uint32_t lastSignaledAt;    // time of invocation event for event-driven tasks
+    uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;
+    uint32_t lastExecutedAt;        // last time of invocation
+    uint32_t lastSignaledAt;        // time of invocation event for event-driven tasks
 
     /* Statistics */
-    uint32_t averageExecutionTime;  // Moving averate over 6 samples, used to calculate guard interval
+    uint32_t averageExecutionTime;  // Moving average over 6 samples, used to calculate guard interval
     uint32_t taskLatestDeltaTime;   //
 #ifndef SKIP_TASK_STATISTICS
     uint32_t maxExecutionTime;
@@ -116,6 +118,9 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 uint32_t getTaskDeltaTime(cfTaskId_e taskId);
 
+void schedulerInit(void);
 void scheduler(void);
 
-#define isSystemOverloaded() (averageSystemLoadPercent >= 100)
+#define LOAD_PERCENTAGE_ONE 100
+
+#define isSystemOverloaded() (averageSystemLoadPercent >= LOAD_PERCENTAGE_ONE)

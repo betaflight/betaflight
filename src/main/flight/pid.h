@@ -46,6 +46,11 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 
+typedef enum {
+	DELTA_FROM_ERROR = 0,
+	DELTA_FROM_MEASUREMENT
+} pidDeltaType_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
 
 typedef struct pidProfile_s {
@@ -55,29 +60,26 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for lux float pid controller
-    float I_f[3];
-    float D_f[3];
+    float P_f[FD_INDEX_COUNT];              // float p i and d factors for lux float pid controller
+    float I_f[FD_INDEX_COUNT];
+    float D_f[FD_INDEX_COUNT];
     float A_level;
     float H_level;
     uint8_t H_sensitivity;
 
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
-    uint8_t dterm_cut_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-    uint8_t yaw_pterm_cut_hz;               // Used for filering Pterm noise on noisy frames
-    uint8_t gyro_soft_lpf;
-
-#ifdef GTUNE
-    uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
-    uint8_t  gtune_hilimP[3];               // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
-    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
-    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
+    float dterm_cut_hz;                     // dterm filtering
+    uint8_t deltaMethod;                    // Alternative delta calculation. Delta from gyro might give smoother results
 } pidProfile_t;
 
-extern int16_t axisPID[XYZ_AXIS_COUNT];
-extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+
+
+extern int16_t axisPID[FD_INDEX_COUNT];
+extern int32_t axisPID_P[FD_INDEX_COUNT], axisPID_I[FD_INDEX_COUNT], axisPID_D[FD_INDEX_COUNT];
+
+float pidScaleItermToRcInput(int axis);
+void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
 void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);

@@ -28,7 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "stm32_it.h"
-#include "platform.h"
+#include <platform.h>
 #include "usb_lib.h"
 #include "usb_prop.h"
 #include "usb_desc.h"

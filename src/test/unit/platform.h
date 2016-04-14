@@ -17,24 +17,22 @@
 
 #pragma once
 
-#define MAG
-#define BARO
-#define GPS
-#define DISPLAY
-#define TELEMETRY
-#define LED_STRIP
-#define USE_SERVOS
-#define TRANSPONDER
-
-#define SERIAL_PORT_COUNT 4
-
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
-
-#define TARGET_BOARD_IDENTIFIER "TEST"
-
 #define U_ID_0 0
 #define U_ID_1 1
 #define U_ID_2 2
+
+#define MAG
+#define BARO
+#define GPS
+#define TELEMETRY
+#define LED_STRIP
+#define USE_SERVOS
+
+#define USART1              ((USART_TypeDef *) 1)
+#define USART2              ((USART_TypeDef *) 2)
+#define USART3              ((USART_TypeDef *) 3)
+#define UART4              ((USART_TypeDef *) 4)
+#define UART5              ((USART_TypeDef *) 5)
 
 typedef enum
 {
@@ -61,9 +59,30 @@ typedef struct {
     void* test;
 } DMA_Channel_TypeDef;
 
-uint8_t DMA_GetFlagStatus(void *);
+//typedef struct DMA_Channel_Struct DMA_Channel_TypeDef;
+typedef struct USART_Struct USART_TypeDef;
+
+uint8_t DMA_GetFlagStatus(uint32_t);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-#define WS2811_DMA_TC_FLAG (void *)1
+#define WS2811_DMA_TC_FLAG 1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
+
+#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
+
+typedef enum
+{
+  FLASH_BUSY = 1,
+  FLASH_ERROR_PG,
+  FLASH_ERROR_WRP,
+  FLASH_COMPLETE,
+  FLASH_TIMEOUT
+} FLASH_Status;
+
+void FLASH_Unlock(void);
+void FLASH_Lock(void);
+FLASH_Status FLASH_ErasePage(uint32_t Page_Address);
+FLASH_Status FLASH_ProgramWord(uint32_t Address, uint32_t Data);
+
+#include "target.h"

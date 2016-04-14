@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 
@@ -55,10 +55,12 @@
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
+#include "drivers/compass_ak8963.h"
 
 #include "drivers/sonar_hcsr04.h"
 
 #include "config/runtime_config.h"
+#include "config/parameter_group.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -71,8 +73,6 @@
 #ifdef NAZE
 #include "hardware_revision.h"
 #endif
-
-extern float magneticDeclination;
 
 extern gyro_t gyro;
 extern baro_t baro;
@@ -112,7 +112,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     }
 #endif
 
-#if defined(SPRACINGF3) || defined(SPRACINGF3MINI)
+#if defined(SPRACINGF3) || defined(SPRACINGF3MINI) || defined(SPRACINGF3EVO)
     static const extiConfig_t spRacingF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,
@@ -151,7 +151,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &MotolabF3MPUIntExtiConfig;
 #endif
 
-#if defined(COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
     static const extiConfig_t colibriRaceMPUIntExtiConfig = {
          .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
          .gpioPort = GPIOA,
@@ -212,9 +212,6 @@ bool fakeAccDetect(acc_t *acc)
 
 bool detectGyro(void)
 {
-    bool sensorDetected;
-    UNUSED(sensorDetected); // avoid unused-variable warning on some targets.
-
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
     gyroAlign = ALIGN_DEFAULT;
 
@@ -283,17 +280,22 @@ bool detectGyro(void)
 
         case GYRO_MPU6500:
 #ifdef USE_GYRO_MPU6500
-#ifdef USE_GYRO_SPI_MPU6500
-            sensorDetected = mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro);
-#else
-            sensorDetected = mpu6500GyroDetect(&gyro);
-#endif
-            if (sensorDetected) {
+            if (mpu6500GyroDetect(&gyro)) {
                 gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
                 gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
 
+                break;
+            }
+#endif
+
+#ifdef USE_GYRO_SPI_MPU6500
+            if (mpu6500SpiGyroDetect(&gyro)) {
+                gyroHardware = GYRO_MPU6500;
+#ifdef GYRO_MPU6500_ALIGN
+                gyroAlign = GYRO_MPU6500_ALIGN;
+#endif
                 break;
             }
 #endif
@@ -418,12 +420,17 @@ retry:
             ; // fallthrough
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
-#ifdef USE_ACC_SPI_MPU6500
-            sensorDetected = mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc);
-#else
-            sensorDetected = mpu6500AccDetect(&acc);
+            if (mpu6500AccDetect(&acc)) {
+#ifdef ACC_MPU6500_ALIGN
+                accAlign = ACC_MPU6500_ALIGN;
 #endif
-            if (sensorDetected) {
+                accHardware = ACC_MPU6500;
+                break;
+            }
+#endif
+
+#ifdef USE_ACC_SPI_MPU6500
+            if (mpu6500SpiAccDetect(&acc)) {
 #ifdef ACC_MPU6500_ALIGN
                 accAlign = ACC_MPU6500_ALIGN;
 #endif
@@ -535,6 +542,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 #endif
 }
 
+#ifdef MAG
 static void detectMag(magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware;
@@ -609,11 +617,22 @@ retry:
 
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-            if (ak8975detect(&mag)) {
+            if (ak8975Detect(&mag)) {
 #ifdef MAG_AK8975_ALIGN
                 magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
+                break;
+            }
+#endif
+            ; // fallthrough
+        case MAG_AK8963:
+#ifdef USE_MAG_AK8963
+            if (ak8963Detect(&mag)) {
+#ifdef MAG_AK8963_ALIGN
+                magAlign = MAG_AK8963_ALIGN;
+#endif
+                magHardware = MAG_AK8963;
                 break;
             }
 #endif
@@ -637,6 +656,7 @@ retry:
     detectedSensors[SENSOR_INDEX_MAG] = magHardware;
     sensorsSet(SENSOR_MAG);
 }
+#endif
 
 void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
@@ -646,17 +666,15 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     if (sensorAlignmentConfig->acc_align != ALIGN_DEFAULT) {
         accAlign = sensorAlignmentConfig->acc_align;
     }
+#ifdef MAG
     if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
         magAlign = sensorAlignmentConfig->mag_align;
     }
+#endif
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
-        int16_t magDeclinationFromConfig,
-        uint32_t looptime, uint8_t gyroSync, uint8_t gyroSyncDenominator) {
-
-    int16_t deg, min;
-
+bool sensorsAutodetect(void)
+{
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -671,31 +689,21 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
     if (!detectGyro()) {
         return false;
     }
-    detectAcc(accHardwareToUse);
-    detectBaro(baroHardwareToUse);
+    detectAcc(sensorSelectionConfig()->acc_hardware);
+    detectBaro(sensorSelectionConfig()->baro_hardware);
 
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
-    gyro.init(gyroLpf);
+    gyro.init(gyroConfig()->gyro_lpf);
 
-    detectMag(magHardwareToUse);
+#ifdef MAG
+    detectMag(sensorSelectionConfig()->mag_hardware);
+#endif
 
-    reconfigureAlignment(sensorAlignmentConfig);
-
-    // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (sensors(SENSOR_MAG)) {
-        // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
-        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
-    } else {
-        magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
-    }
+    reconfigureAlignment(sensorAlignmentConfig());
 
     return true;
 }

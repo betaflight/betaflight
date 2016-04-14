@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
 #define VBAT_SCALE_DEFAULT 110
 #define VBAT_RESDIVVAL_DEFAULT 10
 #define VBAT_RESDIVMULTIPLIER_DEFAULT 1
@@ -49,6 +47,8 @@ typedef struct batteryConfig_s {
     uint16_t batteryCapacity;               // mAh
 } batteryConfig_t;
 
+PG_DECLARE(batteryConfig_t, batteryConfig);
+
 typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
@@ -69,9 +69,9 @@ uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
-void batteryInit(batteryConfig_t *initialBatteryConfig);
+void batteryInit(void);
 
-void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+void updateCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

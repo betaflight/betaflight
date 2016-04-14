@@ -35,8 +35,8 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define SERIAL_PORT_COUNT 3
 
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
@@ -65,6 +65,6 @@
 #define USE_CLI
 
 #define SPEKTRUM_BIND
-// USART2, PA3
+// UART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3

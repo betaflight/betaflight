@@ -105,11 +105,14 @@
 #define INVERTER
 #define DISPLAY
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT 7
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5

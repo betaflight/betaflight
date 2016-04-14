@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 #include "version.h"
 
 #include "build_config.h"
@@ -37,7 +37,12 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
+#include "config/parameter_group.h"
+
 #ifdef DISPLAY
+
+#include "io/rate_profile.h"
+#include "io/rc_controls.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -45,9 +50,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#include "rx/rx.h"
-
-#include "io/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -63,8 +65,9 @@
 #endif
 
 #include "config/runtime_config.h"
-
 #include "config/config.h"
+#include "config/feature.h"
+#include "config/profile.h"
 
 #include "display.h"
 
@@ -81,8 +84,6 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 static uint32_t nextDisplayUpdateAt = 0;
 
 static bool displayPresent = false;
-
-static rxConfig_t *rxConfig;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -335,9 +336,9 @@ void showProfilePage(void)
     i2c_OLED_send_string(lineBuffer);
 
     tfp_sprintf(lineBuffer, "RR:%d PR:%d YR:%d",
-        controlRateConfig->rates[FD_ROLL],
-        controlRateConfig->rates[FD_PITCH],
-        controlRateConfig->rates[FD_YAW]
+        controlRateConfig->rates[ROLL],
+        controlRateConfig->rates[PITCH],
+        controlRateConfig->rates[YAW]
     );
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
@@ -653,13 +654,11 @@ void displaySetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void displayInit(rxConfig_t *rxConfigToUse)
+void displayInit(void)
 {
     delay(200);
     resetDisplay();
     delay(200);
-
-    rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);

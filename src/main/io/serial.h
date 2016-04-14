@@ -51,10 +51,11 @@ extern const uint32_t baudRates[];
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
     SERIAL_PORT_NONE = -1,
-    SERIAL_PORT_USART1 = 0,
-    SERIAL_PORT_USART2,
-    SERIAL_PORT_USART3,
-    SERIAL_PORT_USART4,
+    SERIAL_PORT_UART1 = 0,
+    SERIAL_PORT_UART2,
+    SERIAL_PORT_UART3,
+    SERIAL_PORT_UART4,
+    SERIAL_PORT_UART5,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
@@ -63,9 +64,12 @@ typedef enum {
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
+void serialInit(bool softserialEnabled);
+
 //
 // runtime
 //
+
 typedef struct serialPortUsage_s {
     serialPortIdentifier_e identifier;
     serialPort_t *serialPort;
@@ -92,6 +96,7 @@ typedef struct serialConfig_s {
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
 } serialConfig_t;
 
+PG_DECLARE(serialConfig_t, serialConfig);
 
 //
 // configuration

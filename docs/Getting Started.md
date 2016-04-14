@@ -78,7 +78,8 @@ Now, there are two ways to [configure CF](Configuration.md); via  the Configurat
 
 It's important that you have configured CF properly, so that your aircraft does not fly away, or even worse fly into property and people! This is an important step that you should NOT postpone until after your maiden flight. Please do this now, before you head off to the flying field.
 
-* First, learn how to arm your FC, and about other [controls](Controls.md).
+* First read the [safety](Safety.md) section.
+* Next, learn how to arm your FC, and about other [controls](Controls.md).
 * Next up, setup [Failsafe](Failsafe.md). Take your time, do it properly.
 * Now, on the bench, without props, test that failsafe works properly, according to the above doc.
 * Additionally, test the effect of AIL/ELE input of your Tx. Is the aircraft responding properly? Do the same for RUD input.

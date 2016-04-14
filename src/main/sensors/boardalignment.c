@@ -23,9 +23,14 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "sensors.h"
 
 #include "boardalignment.h"
+
+PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
 
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix
@@ -35,36 +40,36 @@ static bool isBoardAlignmentStandard(boardAlignment_t *boardAlignment)
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }
 
-void initBoardAlignment(boardAlignment_t *boardAlignment)
+void initBoardAlignment(void)
 {
-    if (isBoardAlignmentStandard(boardAlignment)) {
+    if (isBoardAlignmentStandard(boardAlignment())) {
         return;
     }
 
     standardBoardAlignment = false;
 
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll  = degreesToRadians(boardAlignment->rollDegrees );
-    rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
-    rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
+    rotationAngles.angles.roll = degreesToRadians(boardAlignment()->rollDegrees);
+    rotationAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
+    rotationAngles.angles.yaw = degreesToRadians(boardAlignment()->yawDegrees);
 
     buildRotationMatrix(&rotationAngles, boardRotation);
 }
 
-static void alignBoard(int16_t *vec)
+static void alignBoard(int32_t *vec)
 {
-    int16_t x = vec[X];
-    int16_t y = vec[Y];
-    int16_t z = vec[Z];
+    int32_t x = vec[X];
+    int32_t y = vec[Y];
+    int32_t z = vec[Z];
 
     vec[X] = lrintf(boardRotation[0][X] * x + boardRotation[1][X] * y + boardRotation[2][X] * z);
     vec[Y] = lrintf(boardRotation[0][Y] * x + boardRotation[1][Y] * y + boardRotation[2][Y] * z);
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
+void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation)
 {
-    static uint16_t swap[3];
+    static uint32_t swap[3];
     memcpy(swap, src, sizeof(swap));
 
     switch (rotation) {

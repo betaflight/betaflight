@@ -57,9 +57,9 @@
 #define BEEPER
 #define LED0
 
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 5
@@ -163,7 +163,7 @@
 #define USE_CLI
 
 #define SPEKTRUM_BIND
-// USART3,
+// UART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 

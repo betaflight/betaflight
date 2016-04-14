@@ -18,7 +18,9 @@
 #include "stdbool.h"
 #include "stdint.h"
 
-#include "platform.h"
+#include <platform.h>
+
+#include "config/parameter_group.h"
 
 #include "drivers/gpio.h"
 #include "drivers/timer.h"

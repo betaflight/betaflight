@@ -7,7 +7,7 @@ There are two types of failsafe:
 
 Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss and goes to the __failsafe mode__. The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.  See your receiver's documentation for this method.
 
-Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __failsafe mode__ of your receiver and upon detection goes to __failsafe stage 1__. The idea is that the flight controller starts using __fallback settings__ for all controls, which are set by you, using the CLI command `rxfail` (see `rxfail` section in rx documentation) or the cleanflight-configurator GUI.
+Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __failsafe mode__ of your receiver and upon detection goes to __failsafe stage 1__. The idea is that the flight controller starts using __fallback settings__ for all controls, which are set by you, using the CLI command `rxfail` (see [rxfail](Rx.md#rx-loss-configuration) section in rx documentation) or the cleanflight-configurator GUI.
 
 It is possible to use both types at the same time, which may be desirable.  Flight controller failsafe can even help if your receiver signal wires come loose, get damaged or your receiver malfunctions in a way the receiver itself cannot detect.
 
@@ -97,7 +97,7 @@ Configure the rc switched failsafe action: the same action as when the rc link i
 
 Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_.
 
-Use standard RX usec values.  See Rx documentation.
+Use standard RX usec values.  See [Rx documentation](Rx.md).
 
 ### `failsafe_procedure`
 

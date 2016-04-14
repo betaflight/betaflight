@@ -23,13 +23,18 @@
 
 #include "build_config.h"
 
-#include "platform.h"
+#include <platform.h>
+
+#include "config/config.h"
+#include "config/parameter_group.h"
 
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
 #include "config/config.h"
+#include "config/parameter_group.h"
+#include "config/feature.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

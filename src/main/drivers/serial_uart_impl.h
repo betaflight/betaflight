@@ -23,7 +23,9 @@ extern const struct serialPortVTable uartVTable[];
 
 void uartStartTxDMA(uartPort_t *s);
 
-uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options);
-uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t options);
-uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options);
 

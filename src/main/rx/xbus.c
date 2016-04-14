@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
+
+#include "config/parameter_group.h"
 
 #include "drivers/system.h"
 
@@ -84,11 +86,11 @@ static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 static void xBusDataReceive(uint16_t c);
 static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool xBusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     uint32_t baudRate;
 
-    switch (rxConfig->serialrx_provider) {
+    switch (rxConfig()->serialrx_provider) {
         case SERIALRX_XBUS_MODE_B:
             rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
             xBusFrameReceived = false;

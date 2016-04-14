@@ -31,7 +31,7 @@
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 14 // 8 Outputs; PPM; LED Strip; SonarPads; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -58,10 +58,10 @@
 
 #define MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8975
+#define USE_MAG_AK8963
 #define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW270_DEG_FLIP
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 #define SONAR
 #define BEEPER
@@ -75,9 +75,9 @@
 #define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 5
 
@@ -107,8 +107,8 @@
 #endif
 
 #define SOFTSERIAL_1_TIMER TIM2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9  // PA0
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -206,12 +206,14 @@
 
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
 #define SERIAL_RX
-#define AUTOTUNE
+#define GTUNE
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI

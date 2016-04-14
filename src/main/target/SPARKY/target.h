@@ -53,9 +53,9 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1 // Conn 1 - TX (PB6) RX PB7 (AF7)
-#define USE_USART2 // Input - RX (PA3)
-#define USE_USART3 // Servo out - 10/RX (PB11) 11/TX (PB10)
+#define USE_UART1 // Conn 1 - TX (PB6) RX PB7 (AF7)
+#define USE_UART2 // Input - RX (PA3)
+#define USE_UART3 // Servo out - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT 4
 
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
@@ -166,6 +166,6 @@
 #define S1W_RX_PIN          GPIO_Pin_7
 
 #define SPEKTRUM_BIND
-// USART2, PA3
+// UART2, PA3
 #define BIND_PORT GPIOA
 #define BIND_PIN Pin_3

@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "system.h"
 #include "gpio.h"
@@ -35,27 +35,36 @@
 #include "serial.h"
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
+#include "serial_uart_stm32f10x.h"
 
-#ifdef USE_USART1
+#ifdef USE_UART1
 static uartPort_t uartPort1;
 #endif
 
-#ifdef USE_USART2
+#ifdef USE_UART2
 static uartPort_t uartPort2;
 #endif
 
-#ifdef USE_USART3
+#ifdef USE_UART3
 static uartPort_t uartPort3;
 #endif
 
-// Using RX DMA disables the use of receive callbacks
-#define USE_USART1_RX_DMA
-
-#if defined(CC3D) // FIXME move board specific code to target.h files.
-#undef USE_USART1_RX_DMA
+#ifdef USE_UART4
+static uartPort_t uartPort4;
 #endif
 
-void usartIrqCallback(uartPort_t *s)
+#ifdef USE_UART5
+static uartPort_t uartPort5;
+#endif
+
+// Using RX DMA disables the use of receive callbacks
+#define USE_UART1_RX_DMA
+
+#if defined(CC3D) // FIXME move board specific code to target.h files.
+#undef USE_UART1_RX_DMA
+#endif
+
+void usartIrqHandler(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
@@ -82,9 +91,9 @@ void usartIrqCallback(uartPort_t *s)
     }
 }
 
-#ifdef USE_USART1
-// USART1 - Telemetry (RX/TX by DMA)
-uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
+#ifdef USE_UART1
+// UART1 - Telemetry (RX/TX by DMA)
+uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
@@ -105,34 +114,39 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->USARTx = USART1;
 
 
-#ifdef USE_USART1_RX_DMA
+#ifdef USE_UART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 #endif
     s->txDMAChannel = DMA1_Channel4;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#ifdef UART1_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(UART1_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART1_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART1_APB2_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART1_AHB_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART1_AHB_PERIPHERALS, ENABLE);
+#endif
 
-    // USART1_TX    PA9
-    // USART1_RX    PA10
     gpio.speed = Speed_2MHz;
 
-    gpio.pin = Pin_9;
+    gpio.pin = UART1_TX_PIN;
     if (options & SERIAL_BIDIR) {
         gpio.mode = Mode_AF_OD;
-        gpioInit(GPIOA, &gpio);
+        gpioInit(UART1_GPIO, &gpio);
     } else {
         if (mode & MODE_TX) {
             gpio.mode = Mode_AF_PP;
-            gpioInit(GPIOA, &gpio);
+            gpioInit(UART1_GPIO, &gpio);
         }
 
         if (mode & MODE_RX) {
-            gpio.pin = Pin_10;
+            gpio.pin = UART1_RX_PIN;
             gpio.mode = Mode_IPU;
-            gpioInit(GPIOA, &gpio);
+            gpioInit(UART1_GPIO, &gpio);
         }
     }
 
@@ -143,7 +157,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-#ifndef USE_USART1_RX_DMA
+#ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1);
@@ -156,7 +170,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
 }
 
 
-// USART1 Tx DMA Handler
+// UART1 Tx DMA Handler
 void DMA1_Channel4_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
@@ -169,18 +183,18 @@ void DMA1_Channel4_IRQHandler(void)
         s->txDMAEmpty = true;
 }
 
-// USART1 Rx/Tx IRQ Handler
+// UART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 
 #endif
 
-#ifdef USE_USART2
-// USART2 - GPS or Spektrum or ?? (RX + TX by IRQ)
-uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
+#ifdef USE_UART2
+// UART2 - GPS or Spektrum or ?? (RX + TX by IRQ)
+uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
@@ -203,27 +217,32 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+#ifdef UART2_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(UART2_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART2_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART2_APB2_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART2_AHB_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART2_AHB_PERIPHERALS, ENABLE);
+#endif
 
-    // USART2_TX    PA2
-    // USART2_RX    PA3
     gpio.speed = Speed_2MHz;
 
-    gpio.pin = Pin_2;
+    gpio.pin = UART2_TX_PIN;
     if (options & SERIAL_BIDIR) {
         gpio.mode = Mode_AF_OD;
-        gpioInit(GPIOA, &gpio);
+        gpioInit(UART2_GPIO, &gpio);
     } else {
         if (mode & MODE_TX) {
             gpio.mode = Mode_AF_PP;
-            gpioInit(GPIOA, &gpio);
+            gpioInit(UART2_GPIO, &gpio);
         }
 
         if (mode & MODE_RX) {
-            gpio.pin = Pin_3;
+            gpio.pin = UART2_RX_PIN;
             gpio.mode = Mode_IPU;
-            gpioInit(GPIOA, &gpio);
+            gpioInit(UART2_GPIO, &gpio);
         }
     }
 
@@ -238,18 +257,18 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
 }
 
 
-// USART2 Rx/Tx IRQ Handler
+// UART2 Rx/Tx IRQ Handler
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
 }
 
 #endif
 
-#ifdef USE_USART3
-// USART3
-uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
+#ifdef USE_UART3
+// UART3
+uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
@@ -272,29 +291,29 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 
-#ifdef USART3_APB1_PERIPHERALS
-    RCC_APB1PeriphClockCmd(USART3_APB1_PERIPHERALS, ENABLE);
+#ifdef UART3_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(UART3_APB1_PERIPHERALS, ENABLE);
 #endif
-#ifdef USART3_APB2_PERIPHERALS
-    RCC_APB2PeriphClockCmd(USART3_APB2_PERIPHERALS, ENABLE);
+#ifdef UART3_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART3_APB2_PERIPHERALS, ENABLE);
 #endif
 
     gpio.speed = Speed_2MHz;
 
-    gpio.pin = USART3_TX_PIN;
+    gpio.pin = UART3_TX_PIN;
     if (options & SERIAL_BIDIR) {
         gpio.mode = Mode_AF_OD;
-        gpioInit(USART3_GPIO, &gpio);
+        gpioInit(UART3_GPIO, &gpio);
     } else {
         if (mode & MODE_TX) {
             gpio.mode = Mode_AF_PP;
-            gpioInit(USART3_GPIO, &gpio);
+            gpioInit(UART3_GPIO, &gpio);
         }
 
         if (mode & MODE_RX) {
-            gpio.pin = USART3_RX_PIN;
+            gpio.pin = UART3_RX_PIN;
             gpio.mode = Mode_IPU;
-            gpioInit(USART3_GPIO, &gpio);
+            gpioInit(UART3_GPIO, &gpio);
         }
     }
 
@@ -308,10 +327,151 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     return s;
 }
 
-// USART2 Rx/Tx IRQ Handler
+// UART2 Rx/Tx IRQ Handler
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
-    usartIrqCallback(s);
+    usartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART4
+// UART4
+uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx4Buffer[UART4_RX_BUFFER_SIZE];
+    static volatile uint8_t tx4Buffer[UART4_TX_BUFFER_SIZE];
+    gpio_config_t gpio;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    s = &uartPort4;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBuffer = rx4Buffer;
+    s->port.txBuffer = tx4Buffer;
+    s->port.rxBufferSize = UART4_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART4_TX_BUFFER_SIZE;
+
+    s->USARTx = UART4;
+
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+
+#ifdef UART4_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(UART4_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART4_APB2_PERIPHERALS
+    RCC_APB2PeriphClockCmd(UART4_APB2_PERIPHERALS, ENABLE);
+#endif
+
+    gpio.speed = Speed_2MHz;
+
+    gpio.pin = UART4_TX_PIN;
+    if (options & SERIAL_BIDIR) {
+        gpio.mode = Mode_AF_OD;
+        gpioInit(UART4_GPIO, &gpio);
+    } else {
+        if (mode & MODE_TX) {
+            gpio.mode = Mode_AF_PP;
+            gpioInit(UART4_GPIO, &gpio);
+        }
+
+        if (mode & MODE_RX) {
+            gpio.pin = UART4_RX_PIN;
+            gpio.mode = Mode_IPU;
+            gpioInit(UART4_GPIO, &gpio);
+        }
+    }
+
+    // RX/TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = UART4_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART4);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART4);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    return s;
+}
+
+// UART4 Rx/Tx IRQ Handler
+void UART4_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort4;
+    usartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART5
+// UART5
+uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
+    uartPort_t *s;
+    static volatile uint8_t rx5Buffer[UART5_RX_BUFFER_SIZE];
+    static volatile uint8_t tx5Buffer[UART5_TX_BUFFER_SIZE];
+    gpio_config_t gpio;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    s = &uartPort5;
+    s->port.vTable = uartVTable;
+
+    s->port.baudRate = baudRate;
+
+    s->port.rxBuffer = rx5Buffer;
+    s->port.txBuffer = tx5Buffer;
+    s->port.rxBufferSize = UART5_RX_BUFFER_SIZE;
+    s->port.txBufferSize = UART5_TX_BUFFER_SIZE;
+
+    s->USARTx = UART5;
+
+    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+
+#ifdef UART5_APB1_PERIPHERALS
+    RCC_APB1PeriphClockCmd(UART5_APB1_PERIPHERALS, ENABLE);
+#endif
+#ifdef UART5_APB2_PERIPHERALS_TX
+    RCC_APB2PeriphClockCmd(UART5_APB2_PERIPHERALS_TX, ENABLE);
+#endif
+#ifdef UART5_APB2_PERIPHERALS_RX
+    RCC_APB2PeriphClockCmd(UART5_APB2_PERIPHERALS_RX, ENABLE);
+#endif
+
+    gpio.speed = Speed_2MHz;
+
+    gpio.pin = UART5_TX_PIN;
+    if (options & SERIAL_BIDIR) {
+        gpio.mode = Mode_AF_OD;
+        gpioInit(UART5_GPIO_TX, &gpio);
+    } else {
+        if (mode & MODE_TX) {
+            gpio.mode = Mode_AF_PP;
+            gpioInit(UART5_GPIO_TX, &gpio);
+        }
+
+        if (mode & MODE_RX) {
+            gpio.pin = UART5_RX_PIN;
+            gpio.mode = Mode_IPU;
+            gpioInit(UART5_GPIO_RX, &gpio);
+        }
+    }
+
+    // RX/TX Interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART5);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART5);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    return s;
+}
+
+// UART5 Rx/Tx IRQ Handler
+void UART5_IRQHandler(void)
+{
+    uartPort_t *s = &uartPort5;
+    usartIrqHandler(s);
 }
 #endif

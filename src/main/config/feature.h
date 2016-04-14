@@ -17,25 +17,16 @@
 
 #pragma once
 
+typedef struct featureConfig_s {
+    uint32_t enabledFeatures;
+} featureConfig_t;
 
-#define LOWPASS_NUM_COEF 3
-#define LPF_ROUND(x) (x < 0 ? (x - 0.5f) : (x + 0.5f))
+PG_DECLARE(featureConfig_t, featureConfig);
 
-typedef struct lowpass_s {
-    bool init;
-    int16_t freq;                           // Normalized freq in 1/1000ths
-    float bf[LOWPASS_NUM_COEF];
-    float af[LOWPASS_NUM_COEF];
-    int64_t b[LOWPASS_NUM_COEF];
-    int64_t a[LOWPASS_NUM_COEF];
-    int16_t coeff_shift;
-    int16_t input_shift;
-    int32_t input_bias;
-    float xf[LOWPASS_NUM_COEF];
-    float yf[LOWPASS_NUM_COEF];
-    int32_t x[LOWPASS_NUM_COEF];
-    int32_t y[LOWPASS_NUM_COEF];
-} lowpass_t;
-
-void generateLowpassCoeffs2(int16_t freq, lowpass_t *filter);
-int32_t lowpassFixed(lowpass_t *filter, int32_t in, int16_t freq);
+void latchActiveFeatures(void);
+bool featureConfigured(uint32_t mask);
+bool feature(uint32_t mask);
+void featureSet(uint32_t mask);
+void featureClear(uint32_t mask);
+void featureClearAll(void);
+uint32_t featureMask(void);

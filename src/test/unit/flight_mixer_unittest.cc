@@ -23,14 +23,20 @@
 extern "C" {
     #include "debug.h"
 
-    #include "platform.h"
+    #include <platform.h>
+    #include "build_config.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
+    #include "common/filter.h"
+
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "drivers/pwm_mapping.h"
+    #include "drivers/gyro_sync.h"
 
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
@@ -39,17 +45,26 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
-    #include "flight/lowpass.h"
 
-    #include "io/escservo.h"
+    #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
+
+    #include "config/config.h"
 
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
-    void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
+    void mixerInit(motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
     void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
+
+    PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+
+    PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
+    PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -79,6 +94,35 @@ uint32_t testFeatureMask = 0;
 
 int updatedServoCount;
 int updatedMotorCount;
+
+TEST(FlightAxisUnittest, TestAxisIndices)
+{
+    // In various places Cleanflight assumes equality between the flight dynamics indices,
+    // and angle indices, the RC controls indices, and the PID indices.
+    // This test asserts those equalities.
+
+    // check the FD indices have the correct absolute values
+    EXPECT_EQ(0, FD_ROLL);
+    EXPECT_EQ(1, FD_PITCH);
+    EXPECT_EQ(2, FD_YAW);
+    EXPECT_EQ(3, FD_INDEX_COUNT);
+
+    // check the AI indices match the FD indices
+    EXPECT_EQ(FD_ROLL, AI_ROLL);
+    EXPECT_EQ(FD_PITCH, AI_PITCH);
+    EXPECT_EQ(2, ANGLE_INDEX_COUNT);
+
+    // check the RC indices match the FD indices
+    EXPECT_EQ(FD_ROLL, ROLL);
+    EXPECT_EQ(FD_PITCH, PITCH);
+    EXPECT_EQ(FD_YAW, YAW);
+    EXPECT_EQ(3, THROTTLE); // throttle is sometimes used the fourth item in a zero based array
+
+    // check the PID indices match the FD indices
+    EXPECT_EQ(FD_ROLL, PIDROLL);
+    EXPECT_EQ(FD_PITCH, PIDPITCH);
+    EXPECT_EQ(FD_YAW, PIDYAW);
+}
 
 class ChannelForwardingTest : public ::testing::Test {
 protected:
@@ -153,50 +197,38 @@ TEST_F(ChannelForwardingTest, TestForwardAuxChannelsToServosWithLessRemainingSer
 
 class BasicMixerIntegrationTest : public ::testing::Test {
 protected:
-    mixerConfig_t mixerConfig;
-    rxConfig_t rxConfig;
-    escAndServoConfig_t escAndServoConfig;
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
     gimbalConfig_t gimbalConfig = {
         .mode = GIMBAL_MODE_NORMAL
     };
 
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    servoMixer_t customServoMixer[MAX_SUPPORTED_SERVOS];
-
     virtual void SetUp() {
         updatedServoCount = 0;
         updatedMotorCount = 0;
 
-        memset(&mixerConfig, 0, sizeof(mixerConfig));
-        memset(&rxConfig, 0, sizeof(rxConfig));
-        memset(&escAndServoConfig, 0, sizeof(escAndServoConfig));
-        memset(&servoConf, 0, sizeof(servoConf));
+        memset(mixerConfig(), 0, sizeof(*mixerConfig()));
+        memset(rxConfig(), 0, sizeof(*rxConfig()));
+        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
+        memset(servoProfile(), 0, sizeof(*servoProfile()));
 
         memset(rcData, 0, sizeof(rcData));
         memset(rcCommand, 0, sizeof(rcCommand));
         memset(axisPID, 0, sizeof(axisPID));
-
-        memset(&customMotorMixer, 0, sizeof(customMotorMixer));
+        memset(customMotorMixer_arr(), 0, sizeof(*customMotorMixer_arr()));
     }
 
-    virtual void withDefaultEscAndServoConfiguration(void) {
-        escAndServoConfig.mincommand = TEST_MIN_COMMAND;
+    virtual void withDefaultmotorAndServoConfiguration(void) {
+        motorAndServoConfig()->mincommand = TEST_MIN_COMMAND;
     }
 
     virtual void withDefaultRxConfig(void) {
-        rxConfig.midrc = 1500;
+        rxConfig()->midrc = 1500;
     }
 
-    virtual void configureMixer(void) {
+    virtual void configureMixer(uint8_t mixerMode) {
+        mixerConfig()->mixerMode = mixerMode;
         mixerUseConfigs(
-            servoConf,
-            &gimbalConfig,
-            NULL,
-            &escAndServoConfig,
-            &mixerConfig,
-            NULL,
-            &rxConfig
+            servoConf
         );
     }
 };
@@ -204,11 +236,11 @@ protected:
 TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 {
     // given
-    rxConfig.midrc = 1500;
+    rxConfig()->midrc = 1500;
 
-    mixerConfig.tri_unarmed_servo = 1;
+    mixerConfig()->tri_unarmed_servo = 1;
 
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
     withDefaultRxConfig();
 
     servoConf[5].min = DEFAULT_SERVO_MIN;
@@ -217,9 +249,9 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     servoConf[5].rate = 100;
     servoConf[5].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
 
-    configureMixer();
+    configureMixer(MIXER_TRI);
 
-    mixerInit(MIXER_TRI, customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -234,7 +266,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
     mixerUsePWMIOConfiguration(&pwmIOConfiguration);
 
     // and
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
     // when
     mixTable();
@@ -248,11 +280,11 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 {
     // given
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
 
-    configureMixer();
+    configureMixer(MIXER_QUADX);
 
-    mixerInit(MIXER_QUADX, customMotorMixer, customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -271,7 +303,7 @@ TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 
     // and
     memset(axisPID, 0, sizeof(axisPID));
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
 
     // when
@@ -304,13 +336,13 @@ protected:
             servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
         }
 
-        withDefaultEscAndServoConfiguration();
+        withDefaultmotorAndServoConfiguration();
         withDefaultRxConfig();
 
-        configureMixer();
+        configureMixer(MIXER_QUADX);
 
-        memset(&customMotorMixer, 0, sizeof(customMotorMixer));
-        memset(&customServoMixer, 0, sizeof(customServoMixer));
+        memset(*customMotorMixer_arr(), 0, sizeof(*customMotorMixer_arr()));
+        memset(*customServoMixer_arr(), 0, sizeof(*customServoMixer_arr()));
     }
 };
 
@@ -331,15 +363,17 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
         { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
         { SERVO_FLAPS, INPUT_RC_AUX1,  100, 0, 0, 100, 0 },
     };
-    memcpy(customServoMixer, testServoMixer, sizeof(testServoMixer));
+    memcpy(customServoMixer_arr(), testServoMixer, sizeof(testServoMixer));
 
     static const motorMixer_t testMotorMixer[EXPECTED_MOTORS_TO_MIX_COUNT] = {
         { 1.0f,  0.0f,  0.0f, -1.0f },          // LEFT
         { 1.0f,  0.0f,  0.0f,  1.0f },          // RIGHT
     };
-    memcpy(customMotorMixer, testMotorMixer, sizeof(testMotorMixer));
+    memcpy(customMotorMixer_arr(), testMotorMixer, sizeof(testMotorMixer));
 
-    mixerInit(MIXER_CUSTOM_AIRPLANE, customMotorMixer, customServoMixer);
+    configureMixer(MIXER_CUSTOM_AIRPLANE);
+
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 
     pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 6,
@@ -360,7 +394,7 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     // and
     memset(axisPID, 0, sizeof(axisPID));
-    axisPID[YAW] = 0;
+    axisPID[FD_YAW] = 0;
 
 
     // when
@@ -402,14 +436,16 @@ uint8_t stateFlags;
 uint16_t flightModeFlags;
 uint8_t armingFlags;
 
+uint32_t targetLooptime;
+
 void delay(uint32_t) {}
+
+float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
+void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
+
 
 bool feature(uint32_t mask) {
     return (mask & testFeatureMask);
-}
-
-int32_t lowpassFixed(lowpass_t *, int32_t, int16_t) {
-    return 0;
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value) {

@@ -79,11 +79,14 @@
 #define DISPLAY
 #define INVERTER
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT 7
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
@@ -132,6 +135,6 @@
 #define USE_CLI
 
 #define SPEKTRUM_BIND
-// USART2, PA3
+// UART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3

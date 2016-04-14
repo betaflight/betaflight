@@ -81,6 +81,9 @@ In Horizon and Angle modes, this controller uses both the LEVEL "P" and "I" sett
 auto-leveling corrections in a similar way to the way that P and I settings are applied to roll and yaw axes in the acro
 flight modes. The LEVEL "D" term is used as a limiter to constrain the maximum correction applied by the LEVEL "P" term.
 
+Cleanflight 1.12.0 changed the default value for P_Level from 90 to 20 because MWREWRITE became the default PID controller.
+If you use MW23 then try setting this to 90 before flying.
+
 ### PID controller "MWREWRITE"
 
 This is a newer PID controller that is derived from the one in MultiWii 2.3 and later. It works better from
@@ -88,7 +91,9 @@ all accounts, and fixes some inherent problems in the way the old one worked. Fr
 and it tolerates a wider range of PID values well.
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
-be. Note that the default value for P_Level is 90.  This is more than likely too high of a value for most, and will cause the model to be very unstable in Angle Mode, and could result in loss of control.  It is recommended to change this value to 20 before using PID Controller 1 in Angle Mode.
+be. 
+
+Cleanflight 1.12.0 changed the default value for P_Level to 20. This is the recommended value for the MWREWRITE PID controller  which provides a stable flight in Angle mode.  The old default value was 90 which provided a very unstable flight for some users with this pid controller.
 
 In Horizon mode, this controller uses the LEVEL "I" PID setting to decide how much auto-level correction should be applied. Level "I" term: Strength of horizon auto-level. value of 0.030 in the configurator equals to 3.0 for Level P. Level "D" term: Strength of horizon transition. 0 is more stick travel on level and 255 is more rate mode what means very narrow angle of leveling.
 
@@ -134,10 +139,20 @@ On PID Controller MW23 can be used to set the "feel" around center stick for sma
 
 ### Pitch and Roll rates
 
-In PID Controller MW23 the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick extremes. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
+In PID Controller MW23 the affect of the PID error terms for P and D are gradually lessened as the control sticks are moved away from center, ie 0.3 rate gives a 30% reduction of those terms at full throw, effectively making the stabilizing effect of the PID controller less at stick 90. This results in faster rotation rates. So for these controllers, you can set center stick sensitivity to control movement with RC rate above, and yet have much faster rotation rates at stick extremes.
 
 For PID Controllers MWREWRITE and LUX, this is an multiplier on overall stick sensitivity, like RC rate, but for roll and pitch independently. Stablility (to outside factors like turbulence) is not reduced at stick extremes. A zero value is no increase in stick sensitivity over that set by RC rate above. Higher values increases stick sensitivity across the entire stick movement range.
 
 ### Yaw Rate
 
 In PID Controllers MWREWRITE and LUX, it acts as a stick sensitivity multiplier, as explained above.
+
+### Filters
+
+gyro_lpf sets the hardware gyro low pass filter value. if 0 or 256 the gyro uses the least hardware filtering available (256Hz) and the internal sampling rate is the fastest possible (8kHz) with the least possible delay. The lower the number the stronger the filtering. Stronger filtering reduces noise in the gyro signal before that data gets into the PID calculations. Stronger filtering adds delays that can be associated with wobble and reduced responsiveness. Filtering is needed because motor/frame noise can cause overheating of motors especially when amplified by Dterm in quads with low mass and fast braking ESCs. If 188 or lower are chosen, the gyro sampling is internally at 1kHz and delays are greater. Faster sampling is good because things are slightly more responsive but can cause aliasing noise. Setting to 188 allows syncing of the FC to the gyro at 1kHz (if gyro_sync is enabled and available in the code) which reduces aliasing a lot. 
+
+gyro_cut_hz is an IIR software low-pass filter that can be configured to any desired frequency. If set to a value above zero it is active. It works after the hardware filter on the gyro (in the FC code) and further reduces noise. The two filters in series have twice the cut rate of one alone. There's not a lot of sense running gyro_cut_hz at a value above gyro_lpf. if used, it is typically set about half the hardware filter rate to enhance the cut of higher frequencies before the PID calculations. Frequencies above 100Hz are of no interest to us from a flight control perspective - they can and should be removed from the signal before it gets to the PID calculation stage. 
+
+pterm_cut_hz is an IIR software low-pass filter that can be configured to any desired frequency. If enabled, it works after both the gyro_cut filters. It specifically filters only the P term data. Lower values can therefore specifically help remove noise in the P term part of the PID calculation. Blackbox recording is needed to determine what value works best on this filter. It is only really needed if you have P term noise despite the gyro filters, but typically it is needed with the commonly used relatively high gyro filter values.
+
+dterm_cut_hz is an IIR software low-pass filter that can be configured to any desired frequency. It works after the gyro_cut filters and specifically filters only the D term data. D term data is frequency dependent, the higher the frequency, the greater the computed D term value. This filter is required if despite the gyro filtering there remains excessive D term noise. Typically it needs to be set quite low because D term noise is a major problem with typical IIR filters. If set too low the phase shift in D term reduces the effectiveness of D term in controlling stop wobble, so this value needs some care when varying it. Again blackbox recording is needed to properly optimise the value for this filter.

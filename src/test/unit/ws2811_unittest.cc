@@ -20,7 +20,7 @@
 #include <limits.h>
 
 extern "C" {
-    #include "platform.h"
+    #include <platform.h>
 
     #include "build_config.h"
 
@@ -104,7 +104,7 @@ void ws2811LedStripDMAEnable(void) {}
 
 void dmaSetHandler(dmaHandlerIdentifier_e, dmaCallbackHandlerFuncPtr ) {}
 
-uint8_t DMA_GetFlagStatus(void *) { return 0; }
+uint8_t DMA_GetFlagStatus(uint32_t) { return 0; }
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState ) {}
 void DMA_ClearFlag(uint32_t) {}
 

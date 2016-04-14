@@ -24,26 +24,28 @@
 extern "C" {
     #include "debug.h"
 
-    #include "platform.h"
+    #include <platform.h>
 
     #include "common/axis.h"
+
+    #include "config/parameter_group.h"
+    #include "config/runtime_config.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
 
-    #include "sensors/sensors.h"
-    #include "sensors/battery.h"
-
+    #include "io/rc_controls.h"
     #include "io/serial.h"
     #include "io/gps.h"
+
+    #include "sensors/sensors.h"
+    #include "sensors/battery.h"
 
     #include "telemetry/telemetry.h"
     #include "telemetry/hott.h"
 
     #include "flight/pid.h"
     #include "flight/gps_conversion.h"
-
-    #include "config/runtime_config.h"
 }
 
 #include "unittest_macros.h"

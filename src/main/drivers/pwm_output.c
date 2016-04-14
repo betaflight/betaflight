@@ -20,12 +20,10 @@
 
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "gpio.h"
 #include "timer.h"
-
-#include "flight/failsafe.h" // FIXME dependency into the main code from a driver
 
 #include "pwm_mapping.h"
 

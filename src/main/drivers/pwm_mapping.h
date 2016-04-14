@@ -19,11 +19,17 @@
 #include "gpio.h"
 #include "timer.h"
 
+#ifdef USE_QUAD_MIXER_ONLY
+#define MAX_PWM_MOTORS  4
+#define MAX_PWM_SERVOS  1
+#define MAX_MOTORS  4
+#define MAX_SERVOS  1
+#else
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
-
 #define MAX_MOTORS  12
 #define MAX_SERVOS  8
+#endif
 #define MAX_PWM_OUTPUT_PORTS MAX_PWM_MOTORS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
 
 #if MAX_PWM_OUTPUT_PORTS < MAX_MOTORS || MAX_PWM_OUTPUT_PORTS < MAX_SERVOS
@@ -52,11 +58,17 @@ typedef struct drv_pwm_config_s {
     bool useSerialRx;
     bool useRSSIADC;
     bool useCurrentMeterADC;
-#ifdef STM32F10X
+#if defined(USE_UART2)
     bool useUART2;
 #endif
-#ifdef STM32F303xC
+#if defined(USE_UART3)
     bool useUART3;
+#endif
+#if defined(USE_UART4)
+    bool useUART4;
+#endif
+#if defined(USE_UART5)
+    bool useUART5;
 #endif
     bool useVbat;
     bool useOneshot;
@@ -126,4 +138,6 @@ enum {
     PWM16
 };
 
+pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
 pwmIOConfiguration_t *pwmGetOutputConfiguration(void);
+

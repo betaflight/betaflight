@@ -19,9 +19,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
+
+#include "config/parameter_group.h"
 
 #include "system.h"
 

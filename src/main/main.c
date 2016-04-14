@@ -20,13 +20,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "platform.h"
-#include "scheduler.h"
+#include <platform.h>
+
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/atomic.h"
 #include "common/maths.h"
+#include "common/printf.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/nvic.h"
 
@@ -56,17 +62,20 @@
 #include "drivers/gyro_sync.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/escservo.h"
+#include "io/motor_and_servo.h"
 #include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/serial_msp.h"
+#include "io/serial_cli.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -89,15 +98,14 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "config/config_system.h"
+#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
-#include "build_config.h"
-#include "debug.h"
+#include "scheduler.h"
 
 extern uint8_t motorControlEnable;
 
@@ -105,30 +113,12 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
-void printfSupportInit(void);
-void timerInit(void);
-void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
-void mspInit(serialConfig_t *serialConfig);
-void cliInit(serialConfig_t *serialConfig);
-void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
-pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
-#ifdef USE_SERVOS
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
-#else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
-#endif
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
-void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
-void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
-void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-void imuInit(void);
-void displayInit(rxConfig_t *intialRxConfig);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
-void spektrumBind(rxConfig_t *rxConfig);
+void rxInit(modeActivationCondition_t *modeActivationConditions);
+
+void navigationInit(pidProfile_t *pidProfile);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
-void transponderInit(uint8_t* transponderCode);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -138,6 +128,14 @@ void SetSysClock(void);
 // from system_stm32f10x.c
 void SetSysClock(bool overclock);
 #endif
+
+PG_REGISTER_WITH_RESET(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
+
+void pgReset_systemConfig(systemConfig_t *instance)
+{
+    instance->i2c_highspeed = 1;
+}
 
 typedef enum {
     SYSTEM_STATE_INITIALISING        = 0,
@@ -248,9 +246,9 @@ void init(void)
 #ifdef STM32F10X
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(masterConfig.emf_avoidance);
+    SetSysClock(systemConfig()->emf_avoidance);
 #endif
-    i2cSetOverclock(masterConfig.i2c_overclock);
+    i2cSetOverclock(systemConfig()->i2c_highspeed);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
@@ -297,13 +295,13 @@ void init(void)
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
-        switch (masterConfig.rxConfig.serialrx_provider) {
+        switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 // Spektrum satellite binding if enabled on startup.
                 // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
                 // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(&masterConfig.rxConfig);
+                spektrumBind(rxConfig());
                 break;
         }
     }
@@ -316,12 +314,12 @@ void init(void)
     dmaInit();
 
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+    serialInit(feature(FEATURE_SOFTSERIAL));
 
 #ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
+    mixerInit(customMotorMixer(0), customServoMixer(0));
 #else
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(customMotorMixer(0));
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -330,7 +328,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
+        sonarHardware = sonarGetHardwareConfiguration(batteryConfig());
         sonarGPIOConfig_t sonarGPIOConfig = {
             .gpio = SONAR_GPIO,
             .triggerPin = sonarHardware->echo_pin,
@@ -341,22 +339,30 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_USART2) && defined(STM32F10X)
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#if defined(USE_UART2) && defined(STM32F10X)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_UART2);
 #endif
-#ifdef STM32F303xC
-    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
+#if defined(USE_UART3)
+    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_UART3);
+#endif
+#if defined(USE_UART4)
+    pwm_params.useUART4 = doesConfigurationUsePort(SERIAL_PORT_UART4);
+#endif
+#if defined(USE_UART5)
+    pwm_params.useUART5 = doesConfigurationUsePort(SERIAL_PORT_UART5);
 #endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+    pwm_params.useCurrentMeterADC = (
+        feature(FEATURE_CURRENT_METER)
+        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC
+    );
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
@@ -367,27 +373,29 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+    pwm_params.servoCenterPulse = motorAndServoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = motorAndServoConfig()->servo_pwm_rate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
-    pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.motorPwmRate = motorAndServoConfig()->motor_pwm_rate;
+    pwm_params.idlePulse = motorAndServoConfig()->mincommand;
     if (feature(FEATURE_3D))
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+        pwm_params.idlePulse = motor3DConfig()->neutral3d;
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 
-    pwmRxInit(masterConfig.inputFilteringMode);
+    pwmRxInit();
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmIOConfiguration_t *pwmIOConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMIOConfiguration(pwmIOConfiguration);
 
+#ifdef DEBUG_PWM_CONFIGURATION
     debug[2] = pwmIOConfiguration->pwmInputCount;
     debug[3] = pwmIOConfiguration->ppmInputCount;
+#endif
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
@@ -412,7 +420,7 @@ void init(void)
     if (hardwareRevision == NAZE32_SP) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
+        serialRemovePort(SERIAL_PORT_UART3);
     }
 #endif
 
@@ -434,12 +442,12 @@ void init(void)
     if (hardwareRevision != NAZE32_SP) {
         i2cInit(I2C_DEVICE);
     } else {
-        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+        if (!doesConfigurationUsePort(SERIAL_PORT_UART3)) {
             i2cInit(I2C_DEVICE);
         }
     }
 #elif defined(CC3D)
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+    if (!doesConfigurationUsePort(SERIAL_PORT_UART3)) {
         i2cInit(I2C_DEVICE);
     }
 #else
@@ -465,19 +473,17 @@ void init(void)
     adcInit(&adc_params);
 #endif
 
-
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment();
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
-        displayInit(&masterConfig.rxConfig);
+        displayInit();
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf,
-        masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination,
-        masterConfig.looptime, masterConfig.gyroSync, masterConfig.gyroSyncDenominator)) {
+    gyroUpdateSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
 
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -486,6 +492,10 @@ void init(void)
 
     flashLedsAndBeep();
 
+#ifdef USE_SERVOS
+    mixerInitialiseServoFiltering(targetLooptime);
+#endif
+
 #ifdef MAG
     if (sensors(SENSOR_MAG))
         compassInit();
@@ -493,26 +503,20 @@ void init(void)
 
     imuInit();
 
-    mspInit(&masterConfig.serialConfig);
+    mspInit();
 
 #ifdef USE_CLI
-    cliInit(&masterConfig.serialConfig);
+    cliInit();
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit();
 
-    rxInit(&masterConfig.rxConfig, currentProfile->modeActivationConditions);
+    rxInit(modeActivationProfile()->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            &masterConfig.serialConfig,
-            &masterConfig.gpsConfig
-        );
-        navigationInit(
-            &currentProfile->gpsProfile,
-            &currentProfile->pidProfile
-        );
+        gpsInit();
+        navigationInit(pidProfile());
     }
 #endif
 
@@ -523,7 +527,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors);
+    ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -542,7 +546,7 @@ void init(void)
 
 #ifdef TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
-        transponderInit(masterConfig.transponderData);
+        transponderInit(transponderConfig()->data);
         transponderEnable();
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
@@ -586,7 +590,7 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (masterConfig.mixerMode == MIXER_GIMBAL) {
+    if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
@@ -613,7 +617,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(&masterConfig.batteryConfig);
+        batteryInit();
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
@@ -654,18 +658,15 @@ void processLoopback(void) {
 int main(void) {
     init();
 
-    /* Setup scheduler */
-    if (masterConfig.gyroSync) {
-        rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
-    }
-    else {
-        rescheduleTask(TASK_GYROPID, targetLooptime);
-    }
-
+    // Setup scheduler
+    schedulerInit();
     setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
     setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+#ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
+#endif
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 #ifdef GPS
@@ -673,6 +674,10 @@ int main(void) {
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#ifdef SPRACINGF3EVO
+    // fixme temporary solution for AK6983 via slave I2C on MPU9250
+    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+#endif
 #endif
 #ifdef BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
@@ -696,7 +701,7 @@ int main(void) {
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
-    while (1) {
+    while (true) {
         scheduler();
         processLoopback();
     }

@@ -18,23 +18,54 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
+
+#include "build_config.h"
 
 #include "common/axis.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
+#include "io/rc_controls.h"
+#include "io/beeper.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-#include "io/beeper.h"
 #include "sensors/boardalignment.h"
+
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_reset.h"
+#include "config/feature.h"
 
 #include "sensors/acceleration.h"
 
-int16_t accADC[XYZ_AXIS_COUNT];
+PG_REGISTER_PROFILE_WITH_RESET(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
+}
+
+void pgReset_accelerometerConfig(accelerometerConfig_t *instance) {
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_cut_hz = 15,
+        .accz_lpf_cutoff = 5.0f,
+        .accDeadband.z = 40,
+        .accDeadband.xy = 40,
+        .acc_unarmedcal = 1,
+    );
+    resetRollAndPitchTrims(&instance->accelerometerTrims);
+}
+
+int32_t accADC[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
@@ -68,12 +99,6 @@ bool isOnFinalAccelerationCalibrationCycle(void)
 bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
-}
-
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
 }
 
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
@@ -169,11 +194,25 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
     accADC[Z] -= accelerationTrims->raw[Z];
 }
 
+static void convertRawACCADCReadingsToInternalType(int16_t *accADCRaw)
+{
+    int axis;
+
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        accADC[axis] = accADCRaw[axis];
+    }
+}
+
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    if (!acc.read(accADC)) {
+    int16_t accADCRaw[XYZ_AXIS_COUNT];
+
+    if (!acc.read(accADCRaw)) {
         return;
     }
+
+    convertRawACCADCReadingsToInternalType(accADCRaw);
+
     alignSensors(accADC, accADC, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
