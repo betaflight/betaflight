@@ -97,7 +97,6 @@ extern const uint8_t __pg_resetdata_end[];
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
-    void pgReset_ ## _name(_type *);                                    \
     static inline _type* _name(void) { return &_name ## _System; }      \
     struct _dummy                                                       \
     /**/
@@ -105,7 +104,6 @@ extern const uint8_t __pg_resetdata_end[];
 // Declare system config array
 #define PG_DECLARE_ARR(_type, _size, _name)                             \
     extern _type _name ## _SystemArray[_size];                          \
-    void pgReset_ ## _name(_type *);                                    \
     static inline _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type (* _name ## _arr(void))[_size] { return &_name ## _SystemArray; } \
     struct _dummy                                                       \
@@ -164,7 +162,7 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 #define PG_REGISTER_ARR_WITH_RESET_FN(_type, _size, _name, _pgn, _version) \
-    extern void pgResetFn_ ## _name(_type *) __attribute__ ((weak));    \
+    extern void pgResetFn_ ## _name(_type *);    \
     PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
     /**/
 

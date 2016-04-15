@@ -1048,7 +1048,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
     return ok;
 }
 
-void pgReset_colors(hsvColor_t *instance)
+void pgResetFn_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
 
