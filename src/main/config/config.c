@@ -149,7 +149,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
-    rxConfig()->serialrx_provider = 1;
+    rxConfig()->serialrx_provider = SERIALRX_SPEKTRUM2048;
     rxConfig()->spektrum_sat_bind = 5;
     motorAndServoConfig()->minthrottle = 1000;
     motorAndServoConfig()->maxthrottle = 2000;
@@ -165,54 +165,14 @@ STATIC_UNIT_TESTED void resetConf(void)
     currentControlRateProfile->rates[PITCH] = 20;
     currentControlRateProfile->rates[YAW] = 100;
     parseRcChannels("TAER1234", rxConfig());
-
-    //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    customMotorMixer(0)->throttle = 1.0f;
-    customMotorMixer(0)->roll = -0.414178f;
-    customMotorMixer(0)->pitch = 1.0f;
-    customMotorMixer(0)->yaw = -1.0f;
-
-    //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    customMotorMixer(1)->throttle = 1.0f;
-    customMotorMixer(1)->roll = -0.414178f;
-    customMotorMixer(1)->pitch = -1.0f;
-    customMotorMixer(1)->yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    customMotorMixer(2)->throttle = 1.0f;
-    customMotorMixer(2)->roll = 0.414178f;
-    customMotorMixer(2)->pitch = 1.0f;
-    customMotorMixer(2)->yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    customMotorMixer(3)->throttle = 1.0f;
-    customMotorMixer(3)->roll = 0.414178f;
-    customMotorMixer(3)->pitch = -1.0f;
-    customMotorMixer(3)->yaw = -1.0f;
-
-    //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    customMotorMixer(4)->throttle = 1.0f;
-    customMotorMixer(4)->roll = -1.0f;
-    customMotorMixer(4)->pitch = -0.414178f;
-    customMotorMixer(4)->yaw = -1.0f;
-
-    //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    customMotorMixer(5)->throttle = 1.0f;
-    customMotorMixer(5)->roll = 1.0f;
-    customMotorMixer(5)->pitch = -0.414178f;
-    customMotorMixer(5)->yaw = 1.0f;
-
-    //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    customMotorMixer(6)->throttle = 1.0f;
-    customMotorMixer(6)->roll = -1.0f;
-    customMotorMixer(6)->pitch = 0.414178f;
-    customMotorMixer(6)->yaw = 1.0f;
-
-    //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    customMotorMixer(7)->throttle = 1.0f;
-    customMotorMixer(7)->roll = 1.0f;
-    customMotorMixer(7)->pitch = 0.414178f;
-    customMotorMixer(7)->yaw = -1.0f;
+    *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    *customMotorMixer(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    *customMotorMixer(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    *customMotorMixer(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    *customMotorMixer(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    *customMotorMixer(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 #endif
 
     // copy first profile into remaining profile
@@ -235,9 +195,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        modeActivationProfile()->modeActivationConditions
-    );
+    useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
     pidSetController(pidProfile()->pidController);
 
