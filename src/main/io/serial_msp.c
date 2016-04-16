@@ -966,7 +966,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #ifdef GPS
     case MSP_RAW_GPS:
-        headSerialReply(16);
+        headSerialReply(18);
+
         serialize8(STATE(GPS_FIX));
         serialize8(GPS_numSat);
         serialize32(GPS_coord[LAT]);
@@ -974,6 +975,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(GPS_altitude);
         serialize16(GPS_speed);
         serialize16(GPS_ground_course);
+        serialize16(GPS_hdop);
         break;
     case MSP_COMP_GPS:
         headSerialReply(5);
