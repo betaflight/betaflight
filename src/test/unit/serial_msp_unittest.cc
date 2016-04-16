@@ -715,6 +715,7 @@ uint8_t GPS_numCh;                          // Number of channels
 uint16_t GPS_hdop;                          // HDOP value
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
 uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS];    // Satellite ID
+uint16_t GPS_hdop;                          // HDOP value
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS]; // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal Strength)
 // from gyro.c
