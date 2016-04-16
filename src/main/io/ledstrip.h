@@ -85,15 +85,6 @@ typedef enum {
 } modeIds;
 
 typedef enum {
-    DIRECTION_NORTH = 0,
-    DIRECTION_EAST,
-    DIRECTION_SOUTH,
-    DIRECTION_WEST,
-    DIRECTION_UP,
-    DIRECTIONDOWN_
-} directionIds;
-
-typedef enum {
     SC_FUNCTION_DISMARED = 0,
     SC_FUNCTION_ARMED,
     SC_FUNCTION_ANIMATION,
