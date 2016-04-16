@@ -390,10 +390,6 @@ static const char * const lookupTableGyroLpf[] = {
     "10HZ"
 };
 
-static const char * const lookupDeltaMethod[] = {
-    "ERROR", "MEASUREMENT"
-};
-
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -416,7 +412,6 @@ typedef enum {
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
     TABLE_GYRO_LPF,
-    TABLE_DELTA_METHOD,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -436,7 +431,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
-    { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -612,7 +606,6 @@ const clivalue_t valueTable[] = {
 
 
     { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, pid_at_min_throttle)},
-    { "airmode_saturation_limit",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, airmode_saturation_limit)},
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, .config.minmax = { -1,  1 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_motor_direction)},
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_jump_prevention_limit)},
 
@@ -671,8 +664,6 @@ const clivalue_t valueTable[] = {
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, .config.minmax = { -18000,  18000 } , PG_COMPASS_CONFIGURATION, offsetof(compassConfig_t, mag_declination)},
 #endif
 
-    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DELTA_METHOD } , PG_PID_PROFILE, offsetof(pidProfile_t, deltaMethod)},
-
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_CONTROLLER } , PG_PID_PROFILE, offsetof(pidProfile_t, pidController)},
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[FD_PITCH])},
@@ -684,20 +675,6 @@ const clivalue_t valueTable[] = {
     { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[FD_YAW])},
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[FD_YAW])},
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D8[FD_YAW])},
-
-    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_PITCH])},
-    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_PITCH])},
-    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_PITCH])},
-    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_ROLL])},
-    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_ROLL])},
-    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_ROLL])},
-    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_YAW])},
-    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_YAW])},
-    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_YAW])},
-
-    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_level)},
-    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, A_level)},
-    { "sensitivity_horizon",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  250 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_sensitivity)},
 
     { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[PIDALT])},
     { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[PIDALT])},
