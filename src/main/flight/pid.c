@@ -72,7 +72,6 @@ typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const contr
 
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite;
 
-<<<<<<< HEAD
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
