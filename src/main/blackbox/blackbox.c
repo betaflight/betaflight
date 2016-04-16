@@ -323,6 +323,9 @@ extern uint32_t currentTime;
 //From rx.c:
 extern uint16_t rssi;
 
+//From gyro.c
+extern uint32_t targetLooptime;
+
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static uint32_t blackboxLastArmingBeep = 0;
@@ -1166,6 +1169,21 @@ static bool blackboxWriteSysinfo()
                 blackboxPrintfHeaderLine("currentMeter:%d,%d", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
             }
         break;
+        case 13:
+            blackboxPrintfHeaderLine("rcExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
+            break;
+        case 14:
+            blackboxPrintfHeaderLine("rcYawExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawExpo8);
+            break;
+        case 15:
+            blackboxPrintfHeaderLine("rates:%d,%d,%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[0],
+                                     masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[1],
+                                     masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[2]);
+            break;
+        case 16:
+            blackboxPrintfHeaderLine("looptime:%d", targetLooptime);
+            break;
         default:
             return true;
     }
