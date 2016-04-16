@@ -371,7 +371,7 @@ static const char * const lookupTableBlackboxDevice[] = {
 
 
 static const char * const lookupTablePidController[] = {
-    "MW23", "MWREWRITE", "LUX"
+    "UNUSED", "MWREWRITE", "LUX"
 };
 
 static const char * const lookupTableSerialRX[] = {

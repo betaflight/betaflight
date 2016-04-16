@@ -1309,7 +1309,7 @@ static bool processInCommand(void)
         break;
     case MSP_SET_PID_CONTROLLER:
         oldPid = currentProfile->pidProfile.pidController;
-        currentProfile->pidProfile.pidController = read8();
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
         pidSetController(currentProfile->pidProfile.pidController);
         if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
