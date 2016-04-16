@@ -722,6 +722,7 @@ const clivalue_t valueTable[] = {
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "dterm_lowpass_hz",           VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
     { "dterm_average_count",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_average_count, .config.minmax = {0, 12 } },
+    { "dynamic_dterm_threshold",    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dynamic_dterm_threshold, .config.minmax = {0, 100 } },
     { "iterm_reset_degrees",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermResetRate, .config.minmax = {50, 1000 } },
     { "yaw_iterm_reset_degrees",    VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermResetRate, .config.minmax = {25, 1000 } },
     { "yaw_lowpass_hz",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },

@@ -133,6 +133,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     static float lastErrorForDelta[3];
     static float deltaState[3][DELTA_MAX_SAMPLES];
     float delta;
+    float dynamicDTermGain;
     int axis;
     float horizonLevelStrength = 1;
 
@@ -141,7 +142,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     // Scaling factors for Pids to match rewrite and use same defaults
     static const float luxPTermScale = 1.0f / 128;
     static const float luxITermScale = 1000000.0f / 0x1000000;
-    static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
+    static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 508;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -245,6 +246,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             // would be scaled by different dt each time. Division by dT fixes that.
             delta *= (1.0f / getdT());
 
+            // Several different Dterm filtering methods to prevent noise. All of them can be combined
+
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
@@ -252,6 +255,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
 
             DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
+
+            // Dynamic D Implementation
+            if (pidProfile->dynamic_dterm_threshold) {
+                dynamicDTermGain = constrainf(ABS(DTerm) / pidProfile->dynamic_dterm_threshold, 0.0f, 1.0f);
+                DTerm *= dynamicDTermGain;
+            }
         }
 
         // -----calculate total PID output
@@ -283,6 +292,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
     static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
     static int32_t deltaState[3][DELTA_MAX_SAMPLES];
     int32_t AngleRateTmp, RateError, gyroRate;
+    int32_t dynamicDTermGain;
 
     int8_t horizonLevelStrength = 100;
 
@@ -389,15 +399,23 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
             // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
             // would be scaled by different dt each time. Division by dT fixes that.
-            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 6;
+            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
+
+            // Several different Dterm filtering methods to prevent noise. All of them can be combined
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
             // Apply moving average
-            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
+            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]);
 
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+
+            // Dynamic D Implementation
+            if (pidProfile->dynamic_dterm_threshold) {
+                dynamicDTermGain = constrain((ABS(DTerm) << 7) / pidProfile->dynamic_dterm_threshold, 0, 1 << 7);
+                DTerm = (DTerm * dynamicDTermGain) >> 7;
+            }
         }
 
         // -----calculate total PID output
