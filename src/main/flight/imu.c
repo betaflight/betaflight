@@ -77,27 +77,22 @@ static bool isAccelUpdatedAtLeastOnce = false;
 static imuRuntimeConfig_t *imuRuntimeConfig;
 static accDeadband_t *accDeadband;
 
-PG_REGISTER_WITH_RESET(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
-PG_REGISTER_PROFILE_WITH_RESET(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
-void pgReset_imuConfig(imuConfig_t *instance)
-{
-    // imu settings
-    RESET_CONFIG(imuConfig_t, instance,
-        .dcm_kp = 2500,                // 1.0 * 10000
-        .looptime = 2000,
-        .gyroSync = 1,
-        .gyroSyncDenominator = 1,
-        .small_angle = 25,
-        .max_angle_inclination = 500,    // 50 degrees
-    );
-}
+PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+    .dcm_kp = 2500,                // 1.0 * 10000
+    .looptime = 2000,
+    .gyroSync = 1,
+    .gyroSyncDenominator = 1,
+    .small_angle = 25,
+    .max_angle_inclination = 500,    // 50 degrees
+);
 
-void pgReset_throttleCorrectionConfig(throttleCorrectionConfig_t *instance)
-{
-    instance->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    instance->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
-}
+PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
+    .throttle_correction_value = 0,      // could 10 with althold or 40 for fpv
+    .throttle_correction_angle = 800,    // could be 80.0 deg with atlhold or 45.0 for fpv
+);
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
@@ -111,7 +106,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     float q1q1 = sq(q1);
     float q2q2 = sq(q2);
     float q3q3 = sq(q3);
-    
+
     float q0q1 = q0 * q1;
     float q0q2 = q0 * q2;
     float q0q3 = q0 * q3;

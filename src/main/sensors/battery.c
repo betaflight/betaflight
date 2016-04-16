@@ -59,22 +59,18 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 static batteryState_e batteryState;
 static biquad_t vbatFilterState;
 
-PG_REGISTER_WITH_RESET(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 
-void pgReset_batteryConfig(batteryConfig_t *batteryConfig)
-{
-    RESET_CONFIG(batteryConfig_t, batteryConfig,
-        .vbatscale = VBAT_SCALE_DEFAULT,
-        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
-        .vbatmaxcellvoltage = 43,
-        .vbatmincellvoltage = 33,
-        .vbatwarningcellvoltage = 35,
-        .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
-        .currentMeterType = CURRENT_SENSOR_ADC,
-    );
-}
-
+PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
+    .vbatscale = VBAT_SCALE_DEFAULT,
+    .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+    .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+    .vbatmaxcellvoltage = 43,
+    .vbatmincellvoltage = 33,
+    .vbatwarningcellvoltage = 35,
+    .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+    .currentMeterType = CURRENT_SENSOR_ADC,
+);
 
 uint16_t batteryAdcToVoltage(uint16_t src)
 {

@@ -94,40 +94,36 @@ static uint8_t rcSampleIndex = 0;
 
 rxRuntimeConfig_t rxRuntimeConfig;
 
-PG_REGISTER_WITH_RESET(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 
-PG_REGISTER_ARR_WITH_RESET(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs, PG_FAILSAFE_CHANNEL_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges, PG_CHANNEL_RANGE_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs, PG_FAILSAFE_CHANNEL_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges, PG_CHANNEL_RANGE_CONFIG, 0);
 
-void pgReset_rxConfig(rxConfig_t *instance)
-{
-    RESET_CONFIG(rxConfig_t, instance,
-        .sbus_inversion = 1,
-        .midrc = 1500,
-        .mincheck = 1100,
-        .maxcheck = 1900,
-        .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
-        .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_scale = RSSI_SCALE_DEFAULT,
-    );
-}
+PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
+    .sbus_inversion = 1,
+    .midrc = 1500,
+    .mincheck = 1100,
+    .maxcheck = 1900,
+    .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
+    .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
+    .rssi_scale = RSSI_SCALE_DEFAULT,
+);
 
-void pgReset_channelRanges(rxChannelRangeConfiguration_t *instance) {
+void pgResetFn_channelRanges(rxChannelRangeConfiguration_t *instance) {
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        instance->min = PWM_RANGE_MIN;
-        instance->max = PWM_RANGE_MAX;
-        instance++;
+        instance[i].min = PWM_RANGE_MIN;
+        instance[i].max = PWM_RANGE_MAX;
     }
 }
 
-void pgReset_failsafeChannelConfigs(rxFailsafeChannelConfig_t *instance)
+void pgResetFn_failsafeChannelConfigs(rxFailsafeChannelConfig_t *instance)
 {
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        instance->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        instance->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
-
-        instance++;
+        instance[i].mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        instance[i].step = (i == THROTTLE)
+            ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec)
+            : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
     }
 }
 

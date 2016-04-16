@@ -81,20 +81,18 @@ static int16_t nav[2];
 static int16_t nav_rated[2];               // Adding a rate controller to the navigation to make it smoother
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 
-PG_REGISTER_PROFILE_WITH_RESET(gpsProfile_t, gpsProfile, PG_NAVIGATION_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(gpsProfile_t, gpsProfile, PG_NAVIGATION_CONFIG, 0);
 
-void pgReset_gpsProfile(gpsProfile_t *gpsProfile)
-{
-    RESET_CONFIG(gpsProfile_t, gpsProfile,
-        .gps_wp_radius = 200,
-        .gps_lpf = 20,
-        .nav_slew_rate = 30,
-        .nav_controls_heading = 1,
-        .nav_speed_min = 100,
-        .nav_speed_max = 300,
-        .ap_mode = 40,
-    );
-}
+PG_RESET_TEMPLATE(gpsProfile_t, gpsProfile,
+    .gps_wp_radius = 200,
+    .gps_lpf = 20,
+    .nav_slew_rate = 30,
+    .nav_controls_heading = 1,
+    .nav_speed_min = 100,
+    .nav_speed_max = 300,
+    .ap_mode = 40,
+);
+
 
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
 void navigationInit(pidProfile_t *pidProfile)
