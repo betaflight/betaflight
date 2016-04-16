@@ -326,9 +326,14 @@ extern uint16_t rssi;
 //From gyro.c
 extern uint32_t targetLooptime;
 
+//From rc_controls.c
+extern uint32_t rcModeActivationMask;
+
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static uint32_t blackboxLastArmingBeep = 0;
+static uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
+
 
 static struct {
     uint32_t headerIndex;
@@ -860,6 +865,8 @@ void startBlackbox(void)
          * it finally plays the beep for this arming event.
          */
         blackboxLastArmingBeep = getArmingBeepTimeMicros();
+        blackboxLastFlightModeFlags = rcModeActivationMask; // record startup status
+
 
         blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
     }
@@ -1211,6 +1218,10 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         case FLIGHT_LOG_EVENT_SYNC_BEEP:
             blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
+        case FLIGHT_LOG_EVENT_FLIGHTMODE: // New flightmode flags write
+            blackboxWriteUnsignedVB(data->flightMode.flags);
+            blackboxWriteUnsignedVB(data->flightMode.lastFlags);
+        break;
         case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
             if (data->inflightAdjustment.floatFlag) {
                 blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
@@ -1248,6 +1259,21 @@ static void blackboxCheckAndLogArmingBeep()
         eventData.time = blackboxLastArmingBeep;
 
         blackboxLogEvent(FLIGHT_LOG_EVENT_SYNC_BEEP, (flightLogEventData_t *) &eventData);
+    }
+}
+
+/* monitor the flight mode event status and trigger an event record if the state changes */
+static void blackboxCheckAndLogFlightMode()
+{
+    flightLogEvent_flightMode_t eventData; // Add new data for current flight mode flags
+
+    // Use != so that we can still detect a change if the counter wraps
+    if (rcModeActivationMask != blackboxLastFlightModeFlags) {
+        eventData.lastFlags = blackboxLastFlightModeFlags;
+        blackboxLastFlightModeFlags = rcModeActivationMask;
+        eventData.flags = rcModeActivationMask;
+
+        blackboxLogEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, (flightLogEventData_t *) &eventData);
     }
 }
 
@@ -1295,6 +1321,7 @@ static void blackboxLogIteration()
         writeIntraframe();
     } else {
         blackboxCheckAndLogArmingBeep();
+        blackboxCheckAndLogFlightMode(); // Check for FlightMode status change event
         
         if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
             /*
