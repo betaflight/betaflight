@@ -24,22 +24,19 @@
 #include <stdlib.h>
 #include <platform.h>
 
-#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-
+#ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "config/parameter_group.h"
-
 #include "drivers/system.h"
-#include "drivers/gpio.h"
 #include "drivers/serial.h"
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"
-
-
+#include "drivers/gpio.h"
 #include "io/serial.h"
 #include "io/serial_msp.h"
-
-#include "io/serial_4way_avrootloader.h"
 #include "io/serial_4way.h"
+#include "io/serial_4way_avrootloader.h"
+#ifdef  USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+
 
 // Bootloader commands
 // RunCmd
@@ -74,7 +71,7 @@
 
 #define BIT_TIME (52)  //52uS
 #define BIT_TIME_HALVE (BIT_TIME >> 1) //26uS
-#define START_BIT_TIME (BIT_TIME_HALVE)// + 1)
+#define START_BIT_TIME (BIT_TIME_HALVE + 1)
 //#define STOP_BIT_TIME ((BIT_TIME * 9) + BIT_TIME_HALVE)
 
 static uint8_t suart_getc_(uint8_t *bt)
@@ -132,8 +129,8 @@ static void suart_putc_(uint8_t *tx_b)
     }
 }
 
-static union uint8_16u CRC_16;
-static union uint8_16u LastCRC_16;
+static uint8_16_u CRC_16;
+static uint8_16_u LastCRC_16;
 
 static void ByteCrc(uint8_t *bt)
 {
@@ -163,7 +160,7 @@ static uint8_t BL_ReadBuf(uint8_t *pstring, uint8_t len)
         len--;
     } while(len > 0);
 
-    if(IsMcuConnected) {
+    if(isMcuConnected()) {
         //With CRC read 3 more
         if(!suart_getc_(&LastCRC_16.bytes[0])) goto timeout;
         if(!suart_getc_(&LastCRC_16.bytes[1])) goto timeout;
@@ -189,14 +186,14 @@ static void BL_SendBuf(uint8_t *pstring, uint8_t len)
         len--;
     } while (len > 0);
     
-    if (IsMcuConnected) {
+    if (isMcuConnected()) {
         suart_putc_(&CRC_16.bytes[0]);
         suart_putc_(&CRC_16.bytes[1]);
     }
     ESC_INPUT;
 }
 
-uint8_t BL_ConnectEx(void)
+uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo)
 {
     #define BootMsgLen 4
     #define DevSignHi (BootMsgLen)
@@ -225,9 +222,9 @@ uint8_t BL_ConnectEx(void)
     }
 
     //only 2 bytes used $1E9307 -> 0x9307
-    DeviceInfo.bytes[2] = BootInfo[BootMsgLen - 1];
-    DeviceInfo.bytes[1] = BootInfo[DevSignHi];
-    DeviceInfo.bytes[0] = BootInfo[DevSignLo];
+    pDeviceInfo->bytes[2] = BootInfo[BootMsgLen - 1];
+    pDeviceInfo->bytes[1] = BootInfo[DevSignHi];
+    pDeviceInfo->bytes[0] = BootInfo[DevSignLo];
     return (1);
 }
 
@@ -250,50 +247,50 @@ uint8_t BL_SendCMDKeepAlive(void)
     return 1;
 }
 
-void BL_SendCMDRunRestartBootloader(void)
+void BL_SendCMDRunRestartBootloader(uint8_32_u *pDeviceInfo)
 {
     uint8_t sCMD[] = {RestartBootloader, 0};
-    DeviceInfo.bytes[0] = 1;
+    pDeviceInfo->bytes[0] = 1;
     BL_SendBuf(sCMD, 2); //sends simply 4 x 0x00 (CRC =00)
     return;
 }
 
-static uint8_t BL_SendCMDSetAddress(void) //supports only 16 bit Adr
+static uint8_t BL_SendCMDSetAddress(ioMem_t *pMem) //supports only 16 bit Adr
 {
     // skip if adr == 0xFFFF
-    if((wtf.D_FLASH_ADDR_H == 0xFF) && (wtf.D_FLASH_ADDR_L == 0xFF)) return 1;
-    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, wtf.D_FLASH_ADDR_H, wtf.D_FLASH_ADDR_L };
+    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
+    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->D_FLASH_ADDR_H, pMem->D_FLASH_ADDR_L };
     BL_SendBuf(sCMD, 4);
     return (BL_GetACK(2) == brSUCCESS);
 }
 
-static uint8_t BL_SendCMDSetBuffer(void)
+static uint8_t BL_SendCMDSetBuffer(ioMem_t *pMem)
 {
-    uint8_t sCMD[] = {CMD_SET_BUFFER, 0, 0, wtf.D_NUM_BYTES};
-    if (wtf.D_NUM_BYTES == 0) {
+    uint8_t sCMD[] = {CMD_SET_BUFFER, 0, 0, pMem->D_NUM_BYTES};
+    if (pMem->D_NUM_BYTES == 0) {
         // set high byte
         sCMD[2] = 1;
     }
     BL_SendBuf(sCMD, 4);
     if (BL_GetACK(2) != brNONE) return 0;
-    BL_SendBuf(wtf.D_PTR_I, wtf.D_NUM_BYTES);
+    BL_SendBuf(pMem->D_PTR_I, pMem->D_NUM_BYTES);
     return (BL_GetACK(40) == brSUCCESS);
 }
 
-static uint8_t BL_ReadA(uint8_t cmd)
+static uint8_t BL_ReadA(uint8_t cmd, ioMem_t *pMem)
 {
-    if (BL_SendCMDSetAddress()) {
-        uint8_t sCMD[] = {cmd, wtf.D_NUM_BYTES};
+    if (BL_SendCMDSetAddress(pMem)) {
+        uint8_t sCMD[] = {cmd, pMem->D_NUM_BYTES};
         BL_SendBuf(sCMD, 2);
-        return (BL_ReadBuf(wtf.D_PTR_I, wtf.D_NUM_BYTES ));
+        return (BL_ReadBuf(pMem->D_PTR_I, pMem->D_NUM_BYTES ));
     }
     return 0;
 }
 
-static uint8_t BL_WriteA(uint8_t cmd, uint32_t timeout)
+static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
 {
-    if (BL_SendCMDSetAddress()) {
-        if (!BL_SendCMDSetBuffer()) return 0;
+    if (BL_SendCMDSetAddress(pMem)) {
+        if (!BL_SendCMDSetBuffer(pMem)) return 0;
         uint8_t sCMD[] = {cmd, 0x01};
         BL_SendBuf(sCMD, 2);
         return (BL_GetACK(timeout) == brSUCCESS);
@@ -302,24 +299,24 @@ static uint8_t BL_WriteA(uint8_t cmd, uint32_t timeout)
 }
 
 
-uint8_t BL_ReadFlash(uint8_t interface_mode)
+uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
 {
     if(interface_mode == imATM_BLB) {
-        return BL_ReadA(CMD_READ_FLASH_ATM);
+        return BL_ReadA(CMD_READ_FLASH_ATM, pMem);
     } else {
-        return BL_ReadA(CMD_READ_FLASH_SIL);
+        return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
     }
 }
  
  
-uint8_t BL_ReadEEprom(void)
+uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
-    return BL_ReadA(CMD_READ_EEPROM);
+    return BL_ReadA(CMD_READ_EEPROM, pMem);
 }
 
-uint8_t BL_PageErase(void)
+uint8_t BL_PageErase(ioMem_t *pMem)
 {
-    if (BL_SendCMDSetAddress()) {
+    if (BL_SendCMDSetAddress(pMem)) {
         uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
         BL_SendBuf(sCMD, 2);
         return (BL_GetACK((40 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
@@ -327,14 +324,15 @@ uint8_t BL_PageErase(void)
     return 0;
 }
 
-uint8_t BL_WriteEEprom(void)
+uint8_t BL_WriteEEprom(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_EEPROM, (3000 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_EEPROM, pMem, (3000 / START_BIT_TIMEOUT_MS));
 }
 
-uint8_t BL_WriteFlash(void)
+uint8_t BL_WriteFlash(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_FLASH, (40 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
 }
 
+#endif
 #endif
