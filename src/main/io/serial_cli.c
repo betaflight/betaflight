@@ -1260,7 +1260,7 @@ static void cliModeColor(char *cmdline)
 {
     int i, j;
     char *ptr;
-    int args[8], check = 0;
+    int args[4], check = 0;
     uint8_t colorIndex;
 
     if (isEmpty(cmdline)) {
@@ -1272,7 +1272,7 @@ static void cliModeColor(char *cmdline)
 #endif
             }
 
-            for (j = 0; j < 6; j++) {
+            for (j = 0; j < DIRECTIONS_COUNT; j++) {
 
                 switch (j) {
                     case 0: colorIndex = modeColors(i)->north; break;
@@ -1290,7 +1290,7 @@ static void cliModeColor(char *cmdline)
                 );
             }
         }
-        for (j = 0; j < 4; j++) {
+        for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
             switch (j) {
                 case 0: colorIndex = specialColors(0)->disarmed; break;
                 case 1: colorIndex = specialColors(0)->armed; break;

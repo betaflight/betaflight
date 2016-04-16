@@ -20,6 +20,8 @@
 #define MAX_LED_STRIP_LENGTH 32
 #define CONFIGURABLE_COLOR_COUNT 16
 #define MODE_COUNT 6
+#define DIRECTIONS_COUNT 6
+#define SPECIAL_COLORS_COUNT 4
 
 #define LED_X_BIT_OFFSET 4
 #define LED_Y_BIT_OFFSET 0
@@ -81,6 +83,22 @@ typedef enum {
     MODE_BARO,
     SPECIAL
 } modeIds;
+
+typedef enum {
+    DIRECTION_NORTH = 0,
+    DIRECTION_EAST,
+    DIRECTION_SOUTH,
+    DIRECTION_WEST,
+    DIRECTION_UP,
+    DIRECTIONDOWN_
+} directionIds;
+
+typedef enum {
+    SC_FUNCTION_DISMARED = 0,
+    SC_FUNCTION_ARMED,
+    SC_FUNCTION_ANIMATION,
+    SC_FUNCTION_BACKGROUND
+} specialColorFunctionIds;
 
 typedef struct modeColorIndexes_s {
     uint8_t north;

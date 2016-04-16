@@ -998,23 +998,23 @@ bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex)
 {
     bool ok = true;
 
-    modeColorIndexes_t *_modeColors;
+    modeColorIndexes_t *modeColor;
 
     switch (modeIndex) {
-        case MODE_ORIENTATION:  _modeColors = modeColors(MODE_ORIENTATION); break;
-        case MODE_HEADFREE:     _modeColors = modeColors(MODE_HEADFREE); break;
-        case MODE_HORIZON:      _modeColors = modeColors(MODE_HORIZON); break;
-        case MODE_ANGLE:        _modeColors = modeColors(MODE_ANGLE); break;
+        case MODE_ORIENTATION:  modeColor = modeColors(MODE_ORIENTATION); break;
+        case MODE_HEADFREE:     modeColor = modeColors(MODE_HEADFREE); break;
+        case MODE_HORIZON:      modeColor = modeColors(MODE_HORIZON); break;
+        case MODE_ANGLE:        modeColor = modeColors(MODE_ANGLE); break;
 #ifdef MAG
-        case MODE_MAG:          _modeColors = modeColors(MODE_MAG); break;
+        case MODE_MAG:          modeColor = modeColors(MODE_MAG); break;
 #endif
-        case MODE_BARO:         _modeColors = modeColors(MODE_BARO); break;
+        case MODE_BARO:         modeColor = modeColors(MODE_BARO); break;
         case SPECIAL:
             switch (modeColorIndex) {
-                case 0: specialColors(0)->disarmed = colorIndex; break;
-                case 1: specialColors(0)->armed = colorIndex; break;
-                case 2: specialColors(0)->animation = colorIndex; break;
-                case 3: specialColors(0)->background = colorIndex; break;
+                case SC_FUNCTION_DISMARED: specialColors(0)->disarmed = colorIndex; break;
+                case SC_FUNCTION_ARMED: specialColors(0)->armed = colorIndex; break;
+                case SC_FUNCTION_ANIMATION: specialColors(0)->animation = colorIndex; break;
+                case SC_FUNCTION_BACKGROUND: specialColors(0)->background = colorIndex; break;
                 default: return !ok;
             }
             return ok;
@@ -1023,12 +1023,12 @@ bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex)
     }
 
     switch (modeColorIndex) {
-        case 0: _modeColors->north = colorIndex; break;
-        case 1: _modeColors->east = colorIndex; break;
-        case 2: _modeColors->south = colorIndex; break;
-        case 3: _modeColors->west = colorIndex; break;
-        case 4: _modeColors->up = colorIndex; break;
-        case 5: _modeColors->down = colorIndex; break;
+        case DIRECTION_NORTH: modeColor->north = colorIndex; break;
+        case DIRECTION_EAST: modeColor->east = colorIndex; break;
+        case DIRECTION_SOUTH: modeColor->south = colorIndex; break;
+        case DIRECTION_WEST: modeColor->west = colorIndex; break;
+        case DIRECTION_UP: modeColor->up = colorIndex; break;
+        case DIRECTION_DOWN: modeColor->down = colorIndex; break;
         default: return !ok;
     }
 
