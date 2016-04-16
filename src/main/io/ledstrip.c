@@ -56,6 +56,8 @@
 
 PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
 PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(modeColorIndexes_t, MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(specialColorIndexes_t, 1, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -158,78 +160,6 @@ typedef enum {
     DIRECTION_DOWN
 } directionId_e;
 
-typedef struct modeColorIndexes_s {
-    uint8_t north;
-    uint8_t east;
-    uint8_t south;
-    uint8_t west;
-    uint8_t up;
-    uint8_t down;
-} modeColorIndexes_t;
-
-
-// Note, the color index used for the mode colors below refer to the default colors.
-// if the colors are reconfigured the index is still valid but the displayed color might
-// be different.
-// See colors[] and defaultColors[] and applyDefaultColors[]
-
-static const modeColorIndexes_t orientationModeColors = {
-        COLOR_WHITE,
-        COLOR_DARK_VIOLET,
-        COLOR_RED,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-
-static const modeColorIndexes_t headfreeModeColors = {
-        COLOR_LIME_GREEN,
-        COLOR_DARK_VIOLET,
-        COLOR_ORANGE,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-
-static const modeColorIndexes_t horizonModeColors = {
-        COLOR_BLUE,
-        COLOR_DARK_VIOLET,
-        COLOR_YELLOW,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-
-static const modeColorIndexes_t angleModeColors = {
-        COLOR_CYAN,
-        COLOR_DARK_VIOLET,
-        COLOR_YELLOW,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-
-#ifdef MAG
-static const modeColorIndexes_t magModeColors = {
-        COLOR_MINT_GREEN,
-        COLOR_DARK_VIOLET,
-        COLOR_ORANGE,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-#endif
-
-static const modeColorIndexes_t baroModeColors = {
-        COLOR_LIGHT_BLUE,
-        COLOR_DARK_VIOLET,
-        COLOR_RED,
-        COLOR_DEEP_PINK,
-        COLOR_BLUE,
-        COLOR_ORANGE
-};
-
-
 uint8_t ledGridWidth;
 uint8_t ledGridHeight;
 uint8_t ledCount;
@@ -292,6 +222,19 @@ const ledConfig_t defaultLedStripConfig[] = {
 
 };
 #endif
+
+const modeColorIndexes_t defaultModeColors[] = {
+    { COLOR_WHITE,      COLOR_DARK_VIOLET, COLOR_RED,       COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+    { COLOR_LIME_GREEN, COLOR_DARK_VIOLET, COLOR_ORANGE,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+    { COLOR_BLUE,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+    { COLOR_CYAN,       COLOR_DARK_VIOLET, COLOR_YELLOW,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+    { COLOR_MINT_GREEN, COLOR_DARK_VIOLET, COLOR_ORANGE,    COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+    { COLOR_LIGHT_BLUE, COLOR_DARK_VIOLET, COLOR_RED,       COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE },
+};
+
+const specialColorIndexes_t defaultSpecialColors[] = {
+    { COLOR_GREEN, COLOR_BLUE, COLOR_WHITE, COLOR_BLACK }
+};
 
 
 void pgResetFn_ledConfigs(ledConfig_t *instance)
@@ -612,37 +555,37 @@ void applyLedModeLayer(void)
             if (ledConfig->flags & LED_FUNCTION_COLOR) {
                 setLedHsv(ledIndex, colors(ledConfig->color));
             } else {
-                setLedHsv(ledIndex, &hsv_black);
+                setLedHsv(ledIndex, colors(specialColors(0)->background));
             }
         }
 
         if (!(ledConfig->flags & LED_FUNCTION_FLIGHT_MODE)) {
             if (ledConfig->flags & LED_FUNCTION_ARM_STATE) {
                 if (!ARMING_FLAG(ARMED)) {
-                    setLedHsv(ledIndex, &hsv_green);
+                    setLedHsv(ledIndex, colors(specialColors(0)->disarmed));
                 } else {
-                    setLedHsv(ledIndex, &hsv_blue);
+                    setLedHsv(ledIndex, colors(specialColors(0)->armed));
                 }
             }
             continue;
         }
 
-        applyDirectionalModeColor(ledIndex, ledConfig, &orientationModeColors);
+        applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_ORIENTATION));
 
         if (FLIGHT_MODE(HEADFREE_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &headfreeModeColors);
+            applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_HEADFREE));
 #ifdef MAG
         } else if (FLIGHT_MODE(MAG_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &magModeColors);
+            applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_MAG));
 #endif
 #ifdef BARO
         } else if (FLIGHT_MODE(BARO_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &baroModeColors);
+            applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_BARO));
 #endif
         } else if (FLIGHT_MODE(HORIZON_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &horizonModeColors);
+            applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_HORIZON));
         } else if (FLIGHT_MODE(ANGLE_MODE)) {
-            applyDirectionalModeColor(ledIndex, ledConfig, &angleModeColors);
+            applyDirectionalModeColor(ledIndex, ledConfig, modeColors(MODE_ANGLE));
         }
     }
 }
@@ -889,11 +832,11 @@ static void applyLedAnimationLayer(void)
         ledConfig = ledConfigs(ledIndex);
 
         if (GET_LED_Y(ledConfig) == previousRow) {
-            setLedHsv(ledIndex, &hsv_white);
+            setLedHsv(ledIndex, colors(specialColors(0)->animation));
             scaleLedValue(ledIndex, 50);
 
         } else if (GET_LED_Y(ledConfig) == currentRow) {
-            setLedHsv(ledIndex, &hsv_white);
+            setLedHsv(ledIndex, colors(specialColors(0)->animation));
         } else if (GET_LED_Y(ledConfig) == nextRow) {
             scaleLedValue(ledIndex, 50);
         }
@@ -1048,6 +991,50 @@ bool parseColor(uint8_t index, const char *colorConfig)
     return ok;
 }
 
+/*
+ * Redefine a color in a mode.
+ * */
+bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex)
+{
+    bool ok = true;
+
+    modeColorIndexes_t *_modeColors;
+
+    switch (modeIndex) {
+        case MODE_ORIENTATION:  _modeColors = modeColors(MODE_ORIENTATION); break;
+        case MODE_HEADFREE:     _modeColors = modeColors(MODE_HEADFREE); break;
+        case MODE_HORIZON:      _modeColors = modeColors(MODE_HORIZON); break;
+        case MODE_ANGLE:        _modeColors = modeColors(MODE_ANGLE); break;
+#ifdef MAG
+        case MODE_MAG:          _modeColors = modeColors(MODE_MAG); break;
+#endif
+        case MODE_BARO:         _modeColors = modeColors(MODE_BARO); break;
+        case SPECIAL:
+            switch (modeColorIndex) {
+                case 0: specialColors(0)->disarmed = colorIndex; break;
+                case 1: specialColors(0)->armed = colorIndex; break;
+                case 2: specialColors(0)->animation = colorIndex; break;
+                case 3: specialColors(0)->background = colorIndex; break;
+                default: return !ok;
+            }
+            return ok;
+            break;
+        default: return !ok;
+    }
+
+    switch (modeColorIndex) {
+        case 0: _modeColors->north = colorIndex; break;
+        case 1: _modeColors->east = colorIndex; break;
+        case 2: _modeColors->south = colorIndex; break;
+        case 3: _modeColors->west = colorIndex; break;
+        case 4: _modeColors->up = colorIndex; break;
+        case 5: _modeColors->down = colorIndex; break;
+        default: return !ok;
+    }
+
+    return ok;
+}
+
 void pgResetFn_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
@@ -1056,6 +1043,17 @@ void pgResetFn_colors(hsvColor_t *instance)
         *instance++ = *defaultColors[colorIndex];
     }
 }
+
+void pgResetFn_modeColors(modeColorIndexes_t *instance)
+{
+    memcpy(instance, &defaultModeColors, sizeof(defaultModeColors));
+}
+
+void pgResetFn_specialColors(specialColorIndexes_t *instance)
+{
+    memcpy(instance, &defaultSpecialColors, sizeof(defaultSpecialColors));
+}
+
 
 void ledStripInit(void)
 {
