@@ -599,6 +599,7 @@ COLIBRI_RACE_SRC = \
 		   drivers/bus_bst_stm32f30x.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
+		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_ms5611.c \
