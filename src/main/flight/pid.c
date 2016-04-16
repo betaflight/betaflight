@@ -72,59 +72,56 @@ typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const contr
 
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using
 
-PG_REGISTER_PROFILE_WITH_RESET(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
-void pgReset_pidProfile(pidProfile_t *pidProfile)
-{
-    RESET_CONFIG(pidProfile_t, pidProfile,
-        .pidController = PID_CONTROLLER_MWREWRITE,
-        .P8[PIDROLL] = 40,
-        .I8[PIDROLL] = 30,
-        .D8[PIDROLL] = 23,
-        .P8[PIDPITCH] = 40,
-        .I8[PIDPITCH] = 30,
-        .D8[PIDPITCH] = 23,
-        .P8[PIDYAW] = 85,
-        .I8[PIDYAW] = 45,
-        .D8[PIDYAW] = 0,
-        .P8[PIDALT] = 50,
-        .I8[PIDALT] = 0,
-        .D8[PIDALT] = 0,
-        .P8[PIDPOS] = 15, // POSHOLD_P * 100
-        .I8[PIDPOS] = 0, // POSHOLD_I * 100
-        .D8[PIDPOS] = 0,
-        .P8[PIDPOSR] = 34, // POSHOLD_RATE_P * 10
-        .I8[PIDPOSR] = 14, // POSHOLD_RATE_I * 100
-        .D8[PIDPOSR] = 53, // POSHOLD_RATE_D * 1000
-        .P8[PIDNAVR] = 25, // NAV_P * 10
-        .I8[PIDNAVR] = 33, // NAV_I * 100
-        .D8[PIDNAVR] = 83, // NAV_D * 1000
-        .P8[PIDLEVEL] = 20,
-        .I8[PIDLEVEL] = 10,
-        .D8[PIDLEVEL] = 100,
-        .P8[PIDMAG] = 40,
-        .P8[PIDVEL] = 120,
-        .I8[PIDVEL] = 45,
-        .D8[PIDVEL] = 1,
+PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
+    .pidController = PID_CONTROLLER_MWREWRITE,
+    .P8[PIDROLL] = 40,
+    .I8[PIDROLL] = 30,
+    .D8[PIDROLL] = 23,
+    .P8[PIDPITCH] = 40,
+    .I8[PIDPITCH] = 30,
+    .D8[PIDPITCH] = 23,
+    .P8[PIDYAW] = 85,
+    .I8[PIDYAW] = 45,
+    .D8[PIDYAW] = 0,
+    .P8[PIDALT] = 50,
+    .I8[PIDALT] = 0,
+    .D8[PIDALT] = 0,
+    .P8[PIDPOS] = 15, // POSHOLD_P * 100
+    .I8[PIDPOS] = 0, // POSHOLD_I * 100
+    .D8[PIDPOS] = 0,
+    .P8[PIDPOSR] = 34, // POSHOLD_RATE_P * 10
+    .I8[PIDPOSR] = 14, // POSHOLD_RATE_I * 100
+    .D8[PIDPOSR] = 53, // POSHOLD_RATE_D * 1000
+    .P8[PIDNAVR] = 25, // NAV_P * 10
+    .I8[PIDNAVR] = 33, // NAV_I * 100
+    .D8[PIDNAVR] = 83, // NAV_D * 1000
+    .P8[PIDLEVEL] = 20,
+    .I8[PIDLEVEL] = 10,
+    .D8[PIDLEVEL] = 100,
+    .P8[PIDMAG] = 40,
+    .P8[PIDVEL] = 120,
+    .I8[PIDVEL] = 45,
+    .D8[PIDVEL] = 1,
 
-        .yaw_p_limit = YAW_P_LIMIT_MAX,
-        .dterm_cut_hz = 0,
-        .deltaMethod = 1,
+    .yaw_p_limit = YAW_P_LIMIT_MAX,
+    .dterm_cut_hz = 0,
+    .deltaMethod = 1,
 
-        .P_f[FD_ROLL] = 1.4f,     // new PID with preliminary defaults test carefully
-        .I_f[FD_ROLL] = 0.4f,
-        .D_f[FD_ROLL] = 0.03f,
-        .P_f[FD_PITCH] = 1.4f,
-        .I_f[FD_PITCH] = 0.4f,
-        .D_f[FD_PITCH] = 0.03f,
-        .P_f[FD_YAW] = 3.5f,
-        .I_f[FD_YAW] = 0.4f,
-        .D_f[FD_YAW] = 0.01f,
-        .A_level = 5.0f,
-        .H_level = 3.0f,
-        .H_sensitivity = 75,
-    );
-}
+    .P_f[FD_ROLL] = 1.4f,     // new PID with preliminary defaults test carefully
+    .I_f[FD_ROLL] = 0.4f,
+    .D_f[FD_ROLL] = 0.03f,
+    .P_f[FD_PITCH] = 1.4f,
+    .I_f[FD_PITCH] = 0.4f,
+    .D_f[FD_PITCH] = 0.03f,
+    .P_f[FD_YAW] = 3.5f,
+    .I_f[FD_YAW] = 0.4f,
+    .D_f[FD_YAW] = 0.01f,
+    .A_level = 5.0f,
+    .H_level = 3.0f,
+    .H_sensitivity = 75,
+);
 
 void pidResetErrorGyro(void)
 {

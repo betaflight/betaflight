@@ -98,7 +98,6 @@ extern "C" {
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
-    PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
@@ -109,7 +108,6 @@ extern "C" {
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
     PG_REGISTER(hottTelemetryConfig_t, hottTelemetryConfig, PG_HOTT_TELEMETRY_CONFIG, 0);
 
-    PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
     PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 1);
     PG_REGISTER(sensorSelectionConfig_t, sensorSelectionConfig, PG_SENSOR_SELECTION_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
@@ -122,15 +120,24 @@ extern "C" {
     }  PG_PACKED someSystemData_t;
 
     PG_DECLARE(someSystemData_t, someSystemData);
-
-    void pgReset_someSystemData(someSystemData_t *instance)
+    PG_REGISTER_WITH_RESET_FN(someSystemData_t, someSystemData, PG_RESERVED_FOR_TESTING_1, 0);
+    void pgResetFn_someSystemData(someSystemData_t *instance)
     {
         instance->uint32 = 0xFFFFFFFF;
         instance->uint16 = 0xAAAA;
         instance->uint8 = 0x88;
     }
 
-    PG_REGISTER_WITH_RESET(someSystemData_t, someSystemData, PG_RESERVED_FOR_TESTING_1, 0);
+    PG_DECLARE(someSystemData_t, someSystemData_NR);  // NullReset
+    PG_REGISTER(someSystemData_t, someSystemData_NR, 0, 0);
+
+    PG_DECLARE(someSystemData_t, someSystemData_TR);  // TemplateReset
+    PG_REGISTER_WITH_RESET_TEMPLATE(someSystemData_t, someSystemData_TR, 0, 0);
+    PG_RESET_TEMPLATE(someSystemData_t, someSystemData_TR,
+        .uint32 = 0xFFFFFFFF,
+        .uint16 = 0xAAAA,
+        .uint8 = 0x88,
+    );
 
     typedef struct someSystemArrayItem_s {
         uint16_t uint16;
@@ -140,7 +147,7 @@ extern "C" {
 
     PG_DECLARE_ARR(someSystemArrayItem_t, 10, someSystemArray);
 
-    void pgReset_someSystemArray(someSystemArrayItem_t *instance)
+    void pgResetFn_someSystemArray(someSystemArrayItem_t *instance)
     {
         for (int i = 0; i < 10; i++) {
             instance->uint16 = 0xFFFF;
@@ -151,7 +158,7 @@ extern "C" {
         }
     }
 
-    PG_REGISTER_ARR_WITH_RESET(someSystemArrayItem_t, 10, someSystemArray, PG_RESERVED_FOR_TESTING_2, 0);
+    PG_REGISTER_ARR_WITH_RESET_FN(someSystemArrayItem_t, 10, someSystemArray, PG_RESERVED_FOR_TESTING_2, 0);
 
 
     typedef struct someProfileSpecificData_s {
@@ -161,15 +168,21 @@ extern "C" {
     } PG_PACKED someProfileSpecificData_t;
 
     PG_DECLARE_PROFILE(someProfileSpecificData_t, someProfileSpecificData);
-
-    void pgReset_someProfileSpecificData(someProfileSpecificData_t *instance)
+    PG_REGISTER_PROFILE_WITH_RESET_FN(someProfileSpecificData_t, someProfileSpecificData, PG_RESERVED_FOR_TESTING_3, 0);
+    void pgResetFn_someProfileSpecificData(someProfileSpecificData_t *instance)
     {
         instance->uint8 = 0xFF;
         instance->uint16 = 0xAAAA;
         instance->uint32 = 0x88888888;
     }
 
-    PG_REGISTER_PROFILE_WITH_RESET(someProfileSpecificData_t, someProfileSpecificData, PG_RESERVED_FOR_TESTING_3, 0);
+    PG_DECLARE_PROFILE(someProfileSpecificData_t, someProfileSpecificData_TR);
+    PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(someProfileSpecificData_t, someProfileSpecificData_TR, 0, 0);
+    PG_RESET_TEMPLATE(someProfileSpecificData_t, someProfileSpecificData_TR,
+        .uint8 = 0xFF,
+        .uint16 = 0xAAAA,
+        .uint32 = 0x88888888,
+    );
 }
 
 #include "unittest_macros.h"
@@ -182,6 +195,10 @@ TEST(configTest, resetEEPROM)
 {
     // when
 
+    someSystemData_NR()->uint32 = 0x55555555;  // Set to non-zero
+    someSystemData_NR()->uint16 = 0x5555;
+    someSystemData_NR()->uint8  = 0x55;
+
     resetEEPROM();
 
     // then
@@ -193,6 +210,14 @@ TEST(configTest, resetEEPROM)
     EXPECT_EQ(0xFFFFFFFF, someSystemData()->uint32);
     EXPECT_EQ(0xAAAA, someSystemData()->uint16);
     EXPECT_EQ(0x88, someSystemData()->uint8);
+
+    EXPECT_EQ(0, someSystemData_NR()->uint32);
+    EXPECT_EQ(0, someSystemData_NR()->uint16);
+    EXPECT_EQ(0, someSystemData_NR()->uint8);
+
+    EXPECT_EQ(0xFFFFFFFF, someSystemData_TR()->uint32);
+    EXPECT_EQ(0xAAAA, someSystemData_TR()->uint16);
+    EXPECT_EQ(0x88, someSystemData_TR()->uint8);
 
     for (int i = 0; i < 10; i++) {
         someSystemArrayItem_t *item = someSystemArray(i);
@@ -214,6 +239,10 @@ TEST(configTest, resetEEPROM)
     EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
     EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
 
+    EXPECT_EQ(0xFF, someProfileSpecificData_TR()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData_TR()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData_TR()->uint32);
+
     // and
 
     changeProfile(1);
@@ -221,12 +250,20 @@ TEST(configTest, resetEEPROM)
     EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
     EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
 
+    EXPECT_EQ(0xFF, someProfileSpecificData_TR()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData_TR()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData_TR()->uint32);
+
     // and
 
     changeProfile(2);
     EXPECT_EQ(0xFF, someProfileSpecificData()->uint8);
     EXPECT_EQ(0xAAAA, someProfileSpecificData()->uint16);
     EXPECT_EQ(0x88888888, someProfileSpecificData()->uint32);
+
+    EXPECT_EQ(0xFF, someProfileSpecificData_TR()->uint8);
+    EXPECT_EQ(0xAAAA, someProfileSpecificData_TR()->uint16);
+    EXPECT_EQ(0x88888888, someProfileSpecificData_TR()->uint32);
 }
 
 TEST(configTest, modify)

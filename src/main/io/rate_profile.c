@@ -34,20 +34,19 @@
 #include "io/rate_profile.h"
 
 PG_REGISTER_PROFILE(rateProfileSelection_t, rateProfileSelection, PG_RATE_PROFILE_SELECTION, 0);
-PG_REGISTER_ARR_WITH_RESET(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-void pgReset_controlRateProfiles(controlRateConfig_t *instance) {
+void pgResetFn_controlRateProfiles(controlRateConfig_t *instance) {
     for (int i = 0; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        RESET_CONFIG(controlRateConfig_t, instance,
+        RESET_CONFIG(controlRateConfig_t, &instance[i],
             .rcRate8 = 90,
             .rcExpo8 = 65,
             .thrMid8 = 50,
             .tpa_breakpoint = 1500,
         );
-        instance++;
     }
 }
 
