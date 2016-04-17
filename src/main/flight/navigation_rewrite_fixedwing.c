@@ -247,7 +247,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     int32_t virtualTargetBearing = calculateBearingToDestination(&virtualDesiredPosition);
 
     // Calculate NAV heading error
-    int32_t headingError = wrap_18000(virtualTargetBearing - posControl.actualState.yaw);
+    int32_t headingError = wrap_18000(virtualTargetBearing - DECIDEGREES_TO_CENTIDEGREES(posControl.actualState.yaw));
 
     // Forced turn direction
     if (ABS(headingError) > 17000) {
