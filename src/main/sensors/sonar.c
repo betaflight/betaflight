@@ -87,10 +87,10 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMet
         return &sonarRC;
     }
 #elif defined(SONAR_TRIGGER_PIN)
-    UNUSED(batteryConfig);
+    UNUSED(currentMeterType);
     return &sonarRC;
 #elif defined(UNIT_TEST)
-    UNUSED(batteryConfig);
+    UNUSED(currentMeterType);
     return 0;
 #else
 #error Sonar not defined for target
