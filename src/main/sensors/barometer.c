@@ -45,21 +45,19 @@ int32_t BaroAlt = 0;
 
 #ifdef BARO
 
-PG_REGISTER_PROFILE_WITH_RESET(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
 
-void pgReset_barometerConfig(barometerConfig_t *barometerConfig)
-{
-    RESET_CONFIG_2(barometerConfig_t, barometerConfig,
-        .baro_sample_count = 21,
-        .baro_noise_lpf = 0.6f,
-        .baro_cf_vel = 0.985f,
-        .baro_cf_alt = 0.965f,
-     );
- }
+PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
+    .baro_sample_count = 21,
+    .baro_noise_lpf = 0.6f,
+    .baro_cf_vel = 0.985f,
+    .baro_cf_alt = 0.965f,
+);
+
 
 bool isBaroCalibrationComplete(void)
 {

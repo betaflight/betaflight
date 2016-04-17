@@ -92,7 +92,6 @@ extern "C" {
     PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
-    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
@@ -110,8 +109,8 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
 
-    PG_REGISTER_PROFILE_WITH_RESET(pidProfile_t,  pidProfile, PG_PID_PROFILE, 0);
-    void pgReset_pidProfile(pidProfile_t *) {}
+    PG_REGISTER_PROFILE_WITH_RESET_FN(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+    void pgResetFn_pidProfile(pidProfile_t *) {}
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
@@ -444,83 +443,6 @@ TEST_F(SerialMspUnitTest, Test_PIDValuesInt)
     EXPECT_EQ(D8_PIDVEL, pidProfile()->D8[PIDVEL]);
 }
 
-TEST_F(SerialMspUnitTest, Test_PIDValuesFloat)
-{
-    // check the buffer is big enough for the data to read in
-    EXPECT_LE(sizeof(mspHeader_t) + 3 * PID_ITEM_COUNT + 1, MSP_PORT_INBUF_SIZE); // +1 for checksum
-
-    // set up some test data
-    // use test values close to default, but make sure they are all different
-    const float Pf_ROLL = 1.4f;
-    const float If_ROLL = 0.4f;
-    const float Df_ROLL = 0.03f;
-    const float Pf_PITCH = 1.5f; // default 1.4
-    const float If_PITCH = 0.5f; // default 0.4
-    const float Df_PITCH = 0.02f; // default 0.03
-    const float Pf_YAW = 3.5f;
-    const float If_YAW = 0.6f; // default 0.4
-    const float Df_YAW = 0.01;
-    const float A_level = 5.0f;
-    const float H_level = 3.0f;
-    const uint8_t H_sensitivity = 75;
-    pgActivateProfile(0);
-
-    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
-    pidProfile()->P_f[PIDROLL] = Pf_ROLL;
-    pidProfile()->I_f[PIDROLL] = If_ROLL;
-    pidProfile()->D_f[PIDROLL] = Df_ROLL;
-    pidProfile()->P_f[PIDPITCH] = Pf_PITCH;
-    pidProfile()->I_f[PIDPITCH] = If_PITCH;
-    pidProfile()->D_f[PIDPITCH] = Df_PITCH;
-    pidProfile()->P_f[PIDYAW] = Pf_YAW;
-    pidProfile()->I_f[PIDYAW] = If_YAW;
-    pidProfile()->D_f[PIDYAW] = Df_YAW;
-    pidProfile()->A_level = A_level;
-    pidProfile()->H_level = H_level;
-    pidProfile()->H_sensitivity = H_sensitivity;
-
-    // use the MSP to write out the PID values
-    serialWritePos = 0;
-    serialReadPos = 0;
-    currentPort->cmdMSP = MSP_PID;
-    mspProcessReceivedCommand();
-    EXPECT_EQ(3 * PID_ITEM_COUNT, serialBuffer.mspResponse.header.size);
-
-    // reset test values to zero, so we can check if they get read properly
-    memset(pidProfile(), 0, sizeof(*pidProfile()));
-
-    // now use the MSP to read back the PID values and check they are the same
-    // spoof a change from the written MSP_PID to the readable MSP_SET_PID
-    currentPort->cmdMSP = MSP_SET_PID;
-    serialBuffer.mspResponse.header.direction = '<';
-    serialBuffer.mspResponse.header.type = currentPort->cmdMSP;
-    // force the checksum
-    serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_PID;
-    serialBuffer.mspResponse.payload[3 * PID_ITEM_COUNT] ^= MSP_SET_PID;
-    // copy the command data into the current port inBuf so it can be processed
-    memcpy(currentPort->inBuf, serialBuffer.buf, MSP_PORT_INBUF_SIZE);
-
-    // need to reset the controller for values to be read back correctly
-    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
-
-    // set the offset into the payload
-    currentPort->indRX = offsetof(struct mspResonse_s, payload);
-    mspProcessReceivedCommand();
-
-    // check the values are as expected
-    EXPECT_FLOAT_EQ(Pf_ROLL, pidProfile()->P_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(If_ROLL, pidProfile()->I_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(Df_ROLL, pidProfile()->D_f[PIDROLL]);
-    EXPECT_FLOAT_EQ(Pf_PITCH, pidProfile()->P_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(If_PITCH, pidProfile()->I_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(Df_PITCH, pidProfile()->D_f[PIDPITCH]);
-    EXPECT_FLOAT_EQ(Pf_YAW, pidProfile()->P_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(If_YAW, pidProfile()->I_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(Df_YAW, pidProfile()->D_f[PIDYAW]);
-    EXPECT_FLOAT_EQ(A_level, pidProfile()->A_level);
-    EXPECT_FLOAT_EQ(H_level, pidProfile()->H_level);
-    EXPECT_EQ(H_sensitivity, pidProfile()->H_sensitivity);
-}
 
 TEST_F(SerialMspUnitTest, Test_BoardAlignment)
 {

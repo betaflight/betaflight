@@ -76,16 +76,13 @@
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
-void pgReset_blackboxConfig(blackboxConfig_t *instance)
-{
-    RESET_CONFIG(blackboxConfig_t, instance,
+PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
         .device = DEFAULT_BLACKBOX_DEVICE,
         .rate_num = 1,
         .rate_denom = 1,
-    );
-}
+);
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -403,11 +400,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            if (IS_PID_CONTROLLER_FP_BASED(pidProfile()->pidController)) {
-                return pidProfile()->D_f[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
-            } else {
-                return pidProfile()->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
-            }
+            return pidProfile()->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG

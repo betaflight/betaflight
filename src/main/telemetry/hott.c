@@ -86,12 +86,11 @@
 
 //#define HOTT_DEBUG
 
-PG_REGISTER_WITH_RESET(hottTelemetryConfig_t, hottTelemetryConfig, PG_HOTT_TELEMETRY_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(hottTelemetryConfig_t, hottTelemetryConfig, PG_HOTT_TELEMETRY_CONFIG, 0);
 
-void pgReset_hottTelemetryConfig(hottTelemetryConfig_t *instance)
-{
-    instance->hottAlarmSoundInterval = 5;
-}
+PG_RESET_TEMPLATE(hottTelemetryConfig_t, hottTelemetryConfig,
+    .hottAlarmSoundInterval = 5,
+);
 
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000

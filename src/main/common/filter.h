@@ -30,3 +30,5 @@ typedef struct biquad_s {
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dt);
 float applyBiQuadFilter(float sample, biquad_t *state);
 void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate);
+int32_t filterApplyAverage(int32_t input, uint8_t count, int32_t averageState[]);
+float filterApplyAveragef(float input, uint8_t count, float averageState[]);

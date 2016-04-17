@@ -71,42 +71,34 @@ bool motorLimitReached;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
 PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
-PG_REGISTER_WITH_RESET(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
-PG_REGISTER_WITH_RESET(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
-void pgReset_motor3DConfig(motor3DConfig_t *motor3DConfig)
-{
-    RESET_CONFIG(motor3DConfig_t, motor3DConfig,
-        .deadband3d_low = 1406,
-        .deadband3d_high = 1514,
-        .neutral3d = 1460,
-    );
-}
+PG_RESET_TEMPLATE(motor3DConfig_t, motor3DConfig,
+    .deadband3d_low = 1406,
+    .deadband3d_high = 1514,
+    .neutral3d = 1460,
+);
 
 
-void pgReset_mixerConfig(mixerConfig_t *mixerConfig) {
 #ifdef USE_SERVOS
-    RESET_CONFIG(mixerConfig_t, mixerConfig,
-        .mixerMode = MIXER_QUADX,
-        .pid_at_min_throttle = 1,
-        .airmode_saturation_limit = 50,
-        .yaw_motor_direction = 1,
-        .yaw_jump_prevention_limit = 200,
+PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
+    .mixerMode = MIXER_QUADX,
+    .pid_at_min_throttle = 1,
+    .yaw_motor_direction = 1,
+    .yaw_jump_prevention_limit = 200,
 
-        .tri_unarmed_servo = 1,
-        .servo_lowpass_freq = 400.0f,
-    );
+    .tri_unarmed_servo = 1,
+    .servo_lowpass_freq = 400.0f,
+);
 #else
-    RESET_CONFIG(mixerConfig_t, mixerConfig,
-        .mixerMode = MIXER_QUADX,
-        .pid_at_min_throttle = 1,
-        .airmode_saturation_limit = 50,
-        .yaw_motor_direction = 1,
-        .yaw_jump_prevention_limit = 200,
-    );
+PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
+    .mixerMode = MIXER_QUADX,
+    .pid_at_min_throttle = 1,
+    .yaw_motor_direction = 1,
+    .yaw_jump_prevention_limit = 200,
+);
 #endif
-}
-
 
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
@@ -119,9 +111,9 @@ static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
 
-PG_REGISTER_PROFILE_WITH_RESET(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
+PG_REGISTER_PROFILE_WITH_RESET_FN(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
 
-void pgReset_servoProfile(servoProfile_t *instance)
+void pgResetFn_servoProfile(servoProfile_t *instance)
 {
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         RESET_CONFIG(servoParam_t, &instance->servoConf[i],
@@ -869,8 +861,8 @@ void mixTable(void)
             for (i = 0; i < motorCount; i++) {
                 rollPitchYawMix[i] =  lrintf((float) rollPitchYawMix[i] * mixReduction);
             }
-            // Get the maximum correction by setting throtte offset to center. Configurable limit will constrain values once limit exceeded to prevent spazzing out in crashes
-            if (mixReduction > (mixerConfig()->airmode_saturation_limit / 100.0f)) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+            // Get the maximum correction by setting throttle offset to center.
+            throttleMin = throttleMax = throttleMin + (throttleRange / 2);
         } else {
             motorLimitReached = false;
             throttleMin = throttleMin + (rollPitchYawMixRange / 2);
