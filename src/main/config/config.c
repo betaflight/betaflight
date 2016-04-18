@@ -122,14 +122,8 @@ STATIC_UNIT_TESTED void resetConf(void)
 #if defined(COLIBRI_RACE)
     imuConfig()->looptime = 1000;
 
-    pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
-
-    parseRcChannels("AETR1234", rxConfig());
-
     featureSet(FEATURE_ONESHOT125);
-    featureSet(FEATURE_VBAT);
     featureSet(FEATURE_LED_STRIP);
-    featureSet(FEATURE_FAILSAFE);
 #endif
 
 #ifdef SPRACINGF3EVO

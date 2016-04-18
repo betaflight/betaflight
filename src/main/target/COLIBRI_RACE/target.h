@@ -181,3 +181,5 @@
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
+
+#define BOARD_HAS_VOLTAGE_DIVIDER
