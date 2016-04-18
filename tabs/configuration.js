@@ -363,7 +363,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="pitch"]').val(CONFIG.accelerometerTrims[0]);
 
         // fill magnetometer
-        $('input[name="mag_declination"]').val(MISC.mag_declination);
+        $('input[name="mag_declination"]').val(MISC.mag_declination.toFixed(2));
 
         //fill motor disarm params and FC loop time        
         if(semver.gte(CONFIG.apiVersion, "1.8.0")) {
