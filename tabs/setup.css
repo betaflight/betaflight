@@ -206,3 +206,48 @@
         height: calc(100% - 218px);
     }
 }
+
+#accel_calib_running {
+    display: none;
+    
+    width: 100%;
+    position: relative;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    float: left;
+    
+    padding: 5px 0px 5px 0px;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #59aa29;
+    color: #59aa29;
+    font-family: 'open_sanssemibold', Arial;
+    font-size: 12px;
+    line-height: 13px;
+    transition: all ease 0.2s;
+    text-decoration:none;
+    
+}
+
+#mag_calib_running {
+    display: none;
+    
+    width: 100%;
+    position: relative;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    float: left;
+    
+    padding: 5px 0px 5px 0px;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #59aa29;
+    color: #59aa29;
+    font-family: 'open_sanssemibold', Arial;
+    font-size: 12px;
+    line-height: 13px;
+    transition: all ease 0.2s;
+    text-decoration:none;
+}
