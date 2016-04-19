@@ -71,7 +71,9 @@
 #define USE_BARO_MS5611
 
 #define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_HMC5883
+#define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
 #define BEEPER
@@ -179,3 +181,5 @@
 #define S1W_TX_PIN          GPIO_Pin_10
 #define S1W_RX_GPIO         GPIOB
 #define S1W_RX_PIN          GPIO_Pin_11
+
+#define BOARD_HAS_VOLTAGE_DIVIDER
