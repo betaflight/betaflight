@@ -71,7 +71,6 @@
 #include "sensors/battery.h"
 
 
-
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
@@ -84,16 +83,9 @@
 #define SECOND_PORT_INDEX 1
 #endif
 
-uint16_t getCurrentMinthrottle(void)
-{
-    return motorAndServoConfig()->minthrottle;
-}
-
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
 {
-    int i;
-
     pgResetAll(MAX_PROFILE_COUNT);
 
     setProfile(0);
@@ -102,9 +94,8 @@ STATIC_UNIT_TESTED void resetConf(void)
     setControlRateProfile(0);
 
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE)
-    featureSet(FEATURE_RX_PPM);
-#endif
+
+    featureSet(DEFAULT_RX_FEATURE);
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -118,10 +109,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     featureSet(FEATURE_BLACKBOX);
 
-    // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
+    // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
-
     featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_LED_STRIP);
 #endif
@@ -176,15 +166,13 @@ STATIC_UNIT_TESTED void resetConf(void)
         }
     }
 
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         configureRateProfileSelection(i, i % MAX_CONTROL_RATE_PROFILE_COUNT);
     }
 }
 
 void activateConfig(void)
 {
-    static imuRuntimeConfig_t imuRuntimeConfig;
-
     activateControlRateConfig();
 
     resetAdjustmentStates();
@@ -208,7 +196,7 @@ void activateConfig(void)
 
     recalculateMagneticDeclination();
 
-
+    static imuRuntimeConfig_t imuRuntimeConfig;
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_cut_hz = accelerometerConfig()->acc_cut_hz;
@@ -303,7 +291,7 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
         serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
@@ -315,23 +303,18 @@ void validateAndFixConfig(void)
 #if defined(USE_VCP)
     serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
 #endif
-
 }
 
 void readEEPROM(void)
 {
     suspendRxSignal();
 
-    // Sanity check
-    // Read flash
+    // Sanity check, read flash
     if (!scanEEPROM(true)) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
     pgActivateProfile(getCurrentProfile());
-
-    if (rateProfileSelection()->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        rateProfileSelection()->defaultRateProfileIndex = 0;
 
     setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
@@ -355,7 +338,6 @@ void ensureEEPROMContainsValidData(void)
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
