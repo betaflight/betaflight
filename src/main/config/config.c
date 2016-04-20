@@ -165,7 +165,6 @@ STATIC_UNIT_TESTED void resetConf(void)
             memcpy(reg->address + i * pgSize(reg), reg->address, pgSize(reg));
         }
     }
-
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         configureRateProfileSelection(i, i % MAX_CONTROL_RATE_PROFILE_COUNT);
     }
