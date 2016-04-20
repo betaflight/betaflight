@@ -429,8 +429,11 @@ var MSP = {
                 MISC.gps_ubx_sbas = data.getInt8(offset++);
                 MISC.multiwiicurrentoutput = data.getUint8(offset++);
                 MISC.rssi_channel = data.getUint8(offset++);
-                MISC.placeholder2 = data.getUint8(offset++);
-                MISC.mag_declination = data.getInt16(offset, 1) / 100; // -18000-18000
+                MISC.placeholder2 = data.getUint8(offset++);                
+                if (semver.lt(CONFIG.apiVersion, "1.18.0"))
+                    MISC.mag_declination = data.getInt16(offset, 1) / 10; // -1800-1800
+                else
+                    MISC.mag_declination = data.getInt16(offset, 1) / 100; // -18000-18000                
                 offset += 2;
                 MISC.vbatscale = data.getUint8(offset++, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
@@ -1232,8 +1235,13 @@ MSP.crunch = function (code) {
             buffer.push(MISC.multiwiicurrentoutput);
             buffer.push(MISC.rssi_channel);
             buffer.push(MISC.placeholder2);
-            buffer.push(lowByte(Math.round(MISC.mag_declination * 100)));
-            buffer.push(highByte(Math.round(MISC.mag_declination * 100)));
+            if (semver.lt(CONFIG.apiVersion, "1.18.0")) {
+                buffer.push(lowByte(Math.round(MISC.mag_declination * 10)));
+                buffer.push(highByte(Math.round(MISC.mag_declination * 10)));
+            } else {            
+                buffer.push(lowByte(Math.round(MISC.mag_declination * 100)));
+                buffer.push(highByte(Math.round(MISC.mag_declination * 100)));
+            }
             buffer.push(MISC.vbatscale);
             buffer.push(Math.round(MISC.vbatmincellvoltage * 10));
             buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
