@@ -258,7 +258,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     float rollAdjustment = navPidApply2(posControl.actualState.yaw + headingError, posControl.actualState.yaw, US2S(deltaMicros), &posControl.pids.fw_nav,
                                        -DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_bank_angle),
                                         DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_bank_angle),
-                                        false);
+                                        true);
 
     // Convert rollAdjustment to decidegrees (rcAdjustment holds decidegrees)
     posControl.rcAdjustment[ROLL] = CENTIDEGREES_TO_DECIDEGREES(rollAdjustment);
