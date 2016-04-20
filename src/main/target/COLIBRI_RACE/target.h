@@ -71,7 +71,9 @@
 #define USE_BARO_MS5611
 
 #define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_HMC5883
+#define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
 #define BEEPER
@@ -175,3 +177,5 @@
 #define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define BOARD_HAS_VOLTAGE_DIVIDER

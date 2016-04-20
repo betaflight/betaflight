@@ -60,6 +60,8 @@ extern "C" {
     PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+
+    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -110,6 +112,37 @@ TEST(AltitudeHoldTest, IsThrustFacingDownwards)
     }
 }
 
+TEST(AltitudeHoldTest, applyMultirotorAltHold)
+{
+    // given
+
+    memset(motorAndServoConfig(), 0, sizeof(motorAndServoConfig_t));
+    motorAndServoConfig()->minthrottle = 1150;
+    motorAndServoConfig()->maxthrottle = 1850;
+    memset(rcControlsConfig(), 0, sizeof(rcControlsConfig_t));
+    rcControlsConfig()->alt_hold_deadband = 40;
+    
+    rcData[THROTTLE] = 1400;
+    rcCommand[THROTTLE] = 1500;
+    ACTIVATE_RC_MODE(BOXBARO);
+    updateAltHoldState();
+    
+    // when
+    applyAltHold();
+    
+    // expect
+    EXPECT_EQ(1500, rcCommand[THROTTLE]);
+    
+    // and given
+    rcControlsConfig()->alt_hold_fast_change = 1;
+    
+    // when
+    applyAltHold();
+    
+    // expect
+    EXPECT_EQ(1500, rcCommand[THROTTLE]);
+}
+
 // STUBS
 
 extern "C" {
@@ -139,9 +172,6 @@ int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
 
-PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
-
-
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {
     return flightModeFlags |= (mask);
@@ -165,17 +195,8 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 
 void imuResetAccelerationSum(void) {};
 
-int32_t applyDeadband(int32_t, int32_t) { return 0; }
 uint32_t micros(void) { return 0; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
-int constrain(int amt, int low, int high)
-{
-    UNUSED(amt);
-    UNUSED(low);
-    UNUSED(high);
-    return 0;
-}
-
 }
