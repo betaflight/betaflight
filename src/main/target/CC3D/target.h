@@ -126,6 +126,8 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
 #define USE_SERIAL_1WIRE
 
 // FlexPort (pin 21/22, TX/RX respectively):

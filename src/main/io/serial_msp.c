@@ -39,6 +39,8 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/gpio.h"
+#include "drivers/pwm_mapping.h"
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
@@ -94,8 +96,8 @@
 
 #include "serial_msp.h"
 
-#ifdef USE_SERIAL_1WIRE
-#include "io/serial_1wire.h"
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+#include "io/serial_4way.h"
 #endif
 static serialPort_t *mspSerialPort;
 
@@ -1685,70 +1687,26 @@ static bool processInCommand(void)
         isRebootScheduled = true;
         break;
 
-#ifdef USE_SERIAL_1WIRE
-    case MSP_SET_1WIRE:
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    case MSP_SET_4WAY_IF:
         // get channel number
-        i = read8();
-        // we do not give any data back, assume channel number is transmitted OK
-        if (i == 0xFF) {
-            // 0xFF -> preinitialize the Passthrough
-            // switch all motor lines HI
-            usb1WireInitialize();
-            // reply the count of ESC found
-            headSerialReply(1);
-            serialize8(escCount);
-
-            // and come back right afterwards
-            // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-            // bootloader mode before try to connect any ESC
-
-            return true;
-        }
-        else {
-            // Check for channel number 0..ESC_COUNT-1
-            if (i < escCount) {
-                // because we do not come back after calling usb1WirePassthrough
-                // proceed with a success reply first
-                headSerialReply(0);
-                tailSerialReply();
-                // flush the transmit buffer
-                bufWriterFlush(writer);
-                // wait for all data to send
-                waitForSerialPortToFinishTransmitting(currentPort->port);
-                // Start to activate here
-                // motor 1 => index 0
-                
-                // search currentPort portIndex
-                /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
-                uint8_t portIndex;	
-				for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-					if (currentPort == &mspPorts[portIndex]) {
-						break;
-					}
-				}
-				*/
-                mspReleasePortIfAllocated(mspSerialPort); // CloseSerialPort also marks currentPort as UNUSED_PORT
-                usb1WirePassthrough(i);
-                // Wait a bit more to let App read the 0 byte and switch baudrate
-                // 2ms will most likely do the job, but give some grace time
-                delay(10);
-                // rebuild/refill currentPort structure, does openSerialPort if marked UNUSED_PORT - used ports are skiped
-                mspAllocateSerialPorts();
-                /* restore currentPort and mspSerialPort
-                setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-                */ 
-                // former used MSP uart is active again
-                // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
-                currentPort->cmdMSP = MSP_SET_1WIRE;
-            } else {
-                // ESC channel higher than max. allowed
-                // rem: BLHeliSuite will not support more than 8
-                headSerialError(0);
-            }
-            // proceed as usual with MSP commands
-            // and wait to switch to next channel
-            // rem: App needs to call MSP_BOOT to deinitialize Passthrough
-        }
+        // switch all motor lines HI
+        // reply the count of ESC found
+        headSerialReply(1);
+        serialize8(Initialize4WayInterface());
+        // because we do not come back after calling Process4WayInterface
+        // proceed with a success reply first
+        tailSerialReply();
+        // flush the transmit buffer
+        bufWriterFlush(writer);
+        // wait for all data to send
+        waitForSerialPortToFinishTransmitting(currentPort->port);
+        // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
+        // bootloader mode before try to connect any ESC
+        // Start to activate here
+        Process4WayInterface(currentPort, writer);
+        // former used MSP uart is still active
+        // proceed as usual with MSP commands
         break;
 #endif
     default:
