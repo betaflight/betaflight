@@ -149,11 +149,11 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynam
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 45;
-    pidProfile->I8[ROLL] = 50;
+    pidProfile->P8[ROLL] = 30;
+    pidProfile->I8[ROLL] = 20;
     pidProfile->D8[ROLL] = 70;
-    pidProfile->P8[PITCH] = 45;
-    pidProfile->I8[PITCH] = 50;
+    pidProfile->P8[PITCH] = 30;
+    pidProfile->I8[PITCH] = 20;
     pidProfile->D8[PITCH] = 70;
     pidProfile->P8[YAW] = 100;      // 2.5 * 40
     pidProfile->I8[YAW] = 40;       // 4.0 * 10
@@ -167,11 +167,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDPOSR] = 180;  // NAV_VEL_XY_P * 100
     pidProfile->I8[PIDPOSR] = 15;   // NAV_VEL_XY_I * 100
     pidProfile->D8[PIDPOSR] = 100;  // NAV_VEL_XY_D * 100
-    pidProfile->P8[PIDNAVR] = 14;   // FW_NAV_P * 100
-    pidProfile->I8[PIDNAVR] = 2;    // FW_NAV_I * 100
+    pidProfile->P8[PIDNAVR] = 10;   // FW_NAV_P * 100
+    pidProfile->I8[PIDNAVR] = 5;    // FW_NAV_I * 100
     pidProfile->D8[PIDNAVR] = 8;    // FW_NAV_D * 100
-    pidProfile->P8[PIDLEVEL] = 160; // Self-level strength * 40 (4 * 40)
-    pidProfile->I8[PIDLEVEL] = 10;  // Self-leveing low-pass frequency (0 - disabled)
+    pidProfile->P8[PIDLEVEL] = 120; // Self-level strength * 40 (4 * 40)
+    pidProfile->I8[PIDLEVEL] = 15;  // Self-leveing low-pass frequency (0 - disabled)
     pidProfile->D8[PIDLEVEL] = 75;  // 75% horizon strength
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 100;   // NAV_VEL_Z_P * 100
@@ -241,15 +241,15 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->mc_min_fly_throttle = 1200;
 
     // Fixed wing
-    navConfig->fw_max_bank_angle = 30;      // 30 deg
+    navConfig->fw_max_bank_angle = 20;      // 30 deg
     navConfig->fw_max_climb_angle = 20;
     navConfig->fw_max_dive_angle = 15;
-    navConfig->fw_cruise_throttle = 1500;
-    navConfig->fw_max_throttle = 1900;
-    navConfig->fw_min_throttle = 1300;
-    navConfig->fw_pitch_to_throttle = 20;
-    navConfig->fw_roll_to_pitch = 50;
-    navConfig->fw_loiter_radius = 3000;     // 30m
+    navConfig->fw_cruise_throttle = 1400;
+    navConfig->fw_max_throttle = 1700;
+    navConfig->fw_min_throttle = 1200;
+    navConfig->fw_pitch_to_throttle = 10;
+    navConfig->fw_roll_to_pitch = 75;
+    navConfig->fw_loiter_radius = 5000;     // 50m
 }
 #endif
 
