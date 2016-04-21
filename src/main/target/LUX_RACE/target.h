@@ -127,6 +127,8 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+
 #define BLACKBOX
 #define GPS
 #define GTUNE

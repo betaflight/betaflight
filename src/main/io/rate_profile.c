@@ -62,6 +62,9 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
 
 void setControlRateProfile(uint8_t profileIndex)
 {
+    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
+        profileIndex = 0;
+    }
     currentControlRateProfileIndex = profileIndex;
     currentControlRateProfile = controlRateProfiles(profileIndex);
 }
@@ -75,9 +78,6 @@ void activateControlRateConfig(void)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = 0;
-    }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();
 }
