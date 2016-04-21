@@ -237,6 +237,7 @@ COMMON_SRC = build_config.c \
 		   common/typeconversion.c \
 		   common/encoding.c \
 		   common/filter.c \
+		   common/streambuf.c \
 		   scheduler.c \
            scheduler_tasks.c \
 		   main.c \

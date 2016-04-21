@@ -20,6 +20,7 @@
 #include <stddef.h>
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
+#define ARRAYEND(x) (&(x)[ARRAYLEN(x)])
 
 #define CONCAT_HELPER(x,y) x ## y
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
