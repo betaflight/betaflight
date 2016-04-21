@@ -83,6 +83,14 @@ void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profile
     memcpy(pgOffset(reg, profileIndex), from, take);
 }
 
+int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex)
+{
+    const int take = MIN(size, pgSize(reg));
+    memcpy(to, pgOffset(reg, profileIndex), take);
+    return take;
+}
+
+
 void pgResetAll(uint8_t profileCount)
 {
     PG_FOREACH(reg) {
