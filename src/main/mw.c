@@ -292,10 +292,10 @@ void mwDisarm(void)
 
 void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-    while (sharedPort) {
-        mspReleasePortIfAllocated(sharedPort);
-        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-    }
+     while (sharedPort) {
+         mspSerialReleasePortIfAllocated(sharedPort);
+         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+     }
 }
 
 void mwArm(void)
@@ -315,7 +315,7 @@ void mwArm(void)
             if (feature(FEATURE_BLACKBOX)) {
                 serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
                 if (sharedBlackboxAndMspPort) {
-                    mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
+                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
                 startBlackbox();
             }
@@ -575,14 +575,13 @@ void processRx(void)
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
-
+        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED))
+            || (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
             releaseSharedTelemetryPorts();
         } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
-            mspAllocateSerialPorts();
+            mspSerialAllocatePorts();
         }
     }
 #endif
