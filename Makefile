@@ -706,10 +706,9 @@ IRCFUSIONF3_SRC = \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_bmp085.c \
 		   drivers/flash_m25p16.c \
-		   drivers/serial_softserial.c \
 		   io/flashfs.c \
 		   $(HIGHEND_SRC) \
-		   $(COMMON_SRC)		   
+		   $(COMMON_SRC)
 
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src

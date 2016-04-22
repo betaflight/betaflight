@@ -48,9 +48,7 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT 5
+#define SERIAL_PORT_COUNT 3
 
 #ifndef UART1_GPIO
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
@@ -76,13 +74,6 @@
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
-
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -114,7 +105,6 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
-
 #define BLACKBOX
 #define GPS
 #define GTUNE
@@ -128,9 +118,4 @@
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#define USE_SERIAL_1WIRE
-#define S1W_TX_GPIO         GPIOA
-#define S1W_TX_PIN          GPIO_Pin_9
-#define S1W_RX_GPIO         GPIOA
-#define S1W_RX_PIN          GPIO_Pin_10
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
