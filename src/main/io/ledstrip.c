@@ -62,7 +62,7 @@ static bool ledStripEnabled = true;
 
 static void ledStripDisable(void);
 
-#define USE_LED_ANIMATION
+//#define USE_LED_ANIMATION
 //#define USE_LED_RING_DEFAULT_CONFIG
 
 // timers
