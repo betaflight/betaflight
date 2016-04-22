@@ -166,6 +166,7 @@
 #define GPS
 //#define GTUNE
 #define LED_STRIP
+#define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
 #define LED_STRIP_TIMER TIM16
 
