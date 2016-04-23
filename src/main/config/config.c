@@ -18,18 +18,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stddef.h>
 
 #include <platform.h>
 
 #include "build_config.h"
 
-#include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config.h"
+#include "config/config_eeprom.h"
+#include "config/feature.h"
+#include "config/profile.h"
+#include "config/config_reset.h"
+#include "config/config_system.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -40,35 +44,25 @@
 #include "io/rate_profile.h"
 #include "io/rc_controls.h"
 #include "io/rc_adjustments.h"
+#include "io/beeper.h"
+#include "io/serial.h"
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
-
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/ledstrip.h"
-
-#include "blackbox/blackbox_io.h"
-#include "blackbox/blackbox.h"
 
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/altitudehold.h"
+#include "flight/pid.h"
 #include "flight/navigation.h"
 
-#include "config/config.h"
-#include "config/config_eeprom.h"
-#include "config/feature.h"
-#include "config/profile.h"
-#include "config/config_reset.h"
-#include "config/config_system.h"
 
-// FIXME remove the include below when target specific configuration is moved out of this file
+// FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
+#include "io/motor_and_servo.h"
 
 
 #ifndef DEFAULT_RX_FEATURE
