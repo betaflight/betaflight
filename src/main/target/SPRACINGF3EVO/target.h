@@ -40,11 +40,11 @@
 
 
 #define GYRO
-//#define USE_FAKE_GYRO
+#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
 #define ACC
-//#define USE_FAKE_ACC
+#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN CW180_DEG
@@ -53,12 +53,12 @@
 #define BARO
 #define USE_BARO_BMP280
 
-#define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8963
+//#define MAG
+//#define USE_MPU9250_MAG // Enables bypass configuration
+//#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
-#define MAG_AK8963_ALIGN CW90_DEG_FLIP
+//#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
 #define BEEPER

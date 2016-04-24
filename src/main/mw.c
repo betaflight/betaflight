@@ -223,16 +223,16 @@ void scaleRcCommandToFpvCamAngle(void) {
 void annexCode(void)
 {
     int32_t tmp, tmp2;
-    int32_t axis, prop1 = 0, prop2;
+    int32_t axis, prop;
 
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop2 = 100;
+        prop = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+            prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
-            prop2 = 100 - currentControlRateProfile->dynThrPID;
+            prop = 100 - currentControlRateProfile->dynThrPID;
         }
     }
 
@@ -249,8 +249,6 @@ void annexCode(void)
 
             tmp2 = tmp / 100;
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
-            prop1 = (uint16_t)prop1 * prop2 / 100;
         } else if (axis == YAW) {
             if (masterConfig.rcControlsConfig.yaw_deadband) {
                 if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
@@ -261,19 +259,14 @@ void annexCode(void)
             }
             tmp2 = tmp / 100;
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
-        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
             PIDweight[axis] = 100;
         }
         else {
-            PIDweight[axis] = prop2;
+            PIDweight[axis] = prop;
         }
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)

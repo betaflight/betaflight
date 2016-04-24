@@ -32,7 +32,7 @@ clean_motolab motolab :                   opts := TARGET=MOTOLAB
 clean_rmdo rmdo :                         opts := TARGET=RMDO
 clean_ircfusionf3 ircfusionf3 :           opts := TARGET=IRCFUSIONF3
 clean_afromini afromini :                 opts := TARGET=AFROMINI
-clean_afromini doge :                     opts := TARGET=DOGE
+clean_doge doge :                         opts := TARGET=DOGE
 
 
 .PHONY: all clean

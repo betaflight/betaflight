@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 131;
+static const uint8_t EEPROM_CONF_VERSION = 132;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -178,7 +178,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 70.0f;
-    pidProfile->dterm_average_count = 4;
+    pidProfile->dterm_average_count = 0;
+    pidProfile->dynamic_dterm_threshold = 20;
     pidProfile->rollPitchItermResetRate = 200;
     pidProfile->yawItermResetRate = 50;
     pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
