@@ -70,8 +70,10 @@
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
-#define SPIN_RATE_LIMIT     20
-#define MAX_ACC_SQ_NEARNESS 25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
+
+#define SPIN_RATE_LIMIT             20
+#define MAX_ACC_SQ_NEARNESS         25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
+#define MAX_GPS_HEADING_ERROR_DEG   15      // Amount of error between GPS CoG and estimated Yaw at witch we stop trusting GPS and fallback to MAG
 
 t_fp_vector imuAccelInBodyFrame;
 t_fp_vector imuMeasuredGravityBF;
@@ -406,29 +408,51 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(float dT)
 {
-    float courseOverGround = 0;
+    const bool canUseMAG = sensors(SENSOR_MAG) && isMagnetometerHealthy();
+    const int accWeight = imuCalculateAccelerometerConfidence();
 
-    int accWeight = 0;
+    float courseOverGround = 0;
     bool useMag = false;
     bool useCOG = false;
 
-    accWeight = imuCalculateAccelerometerConfidence();
-
-    if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
-        useMag = true;
-    }
 #if defined(GPS)
-    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
-        // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-        if (gpsHeadingInitialized) {
-            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-            useCOG = true;
+    if (STATE(FIXED_WING)) {
+        bool canUseCOG = sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 6 && gpsSol.groundSpeed >= 300;
+
+        if (canUseCOG) {
+            if (gpsHeadingInitialized) {
+                // Use GPS heading if error is acceptable or if it's the only source of heading
+                if (ABS(gpsSol.groundCourse - attitude.values.yaw) < DEGREES_TO_DECIDEGREES(MAX_GPS_HEADING_ERROR_DEG) || !canUseMAG) {
+                    courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+                    useCOG = true;
+                }
+            }
+            else {
+                // Re-initialize quaternion from known Roll, Pitch and GPS heading
+                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+                gpsHeadingInitialized = true;
+            }
+
+            // If we can't use COG and there's MAG available - fallback
+            if (!useCOG && canUseMAG) {
+                useMag = true;
+            }
         }
-        else {
-            // Re-initialize quaternion from known Roll, Pitch and GPS heading
-            imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-            gpsHeadingInitialized = true;
+        else if (canUseMAG) {
+            useMag = true;
+            gpsHeadingInitialized = true;   // GPS heading initialised from MAG, continue on GPS if possible
         }
+    }
+    else {
+        // Multicopters don't use GPS heading
+        if (canUseMAG) {
+            useMag = true;
+        }
+    }
+#else
+    // In absence of GPS MAG is the only option
+    if (canUseMAG) {
+        useMag = true;
     }
 #endif
 
