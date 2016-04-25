@@ -181,12 +181,10 @@ void DeInitialize4WayInterface(void)
 }
 
 // Interface related only
-// establish and test connection to the Interface
-
 // Send Structure
-// ESC CMD ADDR_H ADDR_L PARAM_LEN [PARAM (if len > 0)] CRC16_Hi CRC16_Lo
+// ESC CMD ADDR_H ADDR_L PARAM_LEN PARAM (256B if len == 0) CRC16_Hi CRC16_Lo
 // Return
-// ESC CMD ADDR_H ADDR_L PARAM_LEN [PARAM (if len > 0)] + ACK (uint8_t OK or ERR) + CRC16_Hi CRC16_Lo
+// ESC CMD ADDR_H ADDR_L PARAM_LEN PARAM (256B if len == 0) + ACK (uint8_t OK or ERR) + CRC16_Hi CRC16_Lo
 
 typedef enum {
     cmd_Remote_Escape       = 0x2E, // '.'
@@ -401,7 +399,7 @@ static void WriteByteCrc(uint8_t b)
 
 void Process4WayInterface(serialPort_t *serial) {
     uint8_t paramBuf[256];
-    uint8_t paramInLen;
+    int paramInLen;
     uint8_t CMD;
     uint8_t ACK_OUT;
     uint8_16_u Dummy;
@@ -430,11 +428,13 @@ void Process4WayInterface(serialPort_t *serial) {
 
         Dummy.word = 0;
         O_PARAM = &Dummy.bytes[0];
-        O_PARAM_LEN = 1;
+        O_PARAM_LEN = 1;                       // must always return non-zero length
         CMD = ReadByteCrc();
         ioMem.D_FLASH_ADDR_H = ReadByteCrc();
         ioMem.D_FLASH_ADDR_L = ReadByteCrc();
         paramInLen = ReadByteCrc();
+        if(!paramInLen)
+            paramInLen = 0x100;                // len ==0 -> param is 256B
 
         for(int i = 0; i < paramInLen; i++)
             paramBuf[i] = ReadByteCrc();
@@ -452,8 +452,6 @@ void Process4WayInterface(serialPort_t *serial) {
         }
 
         if (ACK_OUT == ACK_OK) {
-            // wtf.D_FLASH_ADDR_H=Adress_H;
-            // wtf.D_FLASH_ADDR_L=Adress_L;
             ioMem.D_PTR_I = paramBuf;
 
             switch(CMD) {
@@ -701,9 +699,9 @@ void Process4WayInterface(serialPort_t *serial) {
         WriteByteCrc(CMD);
         WriteByteCrc(ioMem.D_FLASH_ADDR_H);
         WriteByteCrc(ioMem.D_FLASH_ADDR_L);
-        WriteByteCrc(O_PARAM_LEN);
+        WriteByteCrc(O_PARAM_LEN & 0xff);
 
-        for(int i = 0; i < O_PARAM_LEN; i++)
+        for(int i = 0; i < O_PARAM_LEN ? O_PARAM_LEN : 0x100; i++)  // TODO
             WriteByteCrc(O_PARAM[i]);
 
         WriteByteCrc(ACK_OUT);
