@@ -1704,7 +1704,7 @@ static bool processInCommand(void)
         // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
         // bootloader mode before try to connect any ESC
         // Start to activate here
-        Process4WayInterface(currentPort, writer);
+        Process4WayInterface(currentPort->port);
         // former used MSP uart is still active
         // proceed as usual with MSP commands
         break;
