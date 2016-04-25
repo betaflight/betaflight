@@ -1303,6 +1303,42 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("H_sensitivity:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.H_sensitivity);
             break;
+        case 42:
+            blackboxPrintfHeaderLine("deadband:%d", masterConfig.rcControlsConfig.deadband);
+            break;
+        case 43:
+            blackboxPrintfHeaderLine("yaw_deadband:%d", masterConfig.rcControlsConfig.yaw_deadband);
+            break;
+        case 44:
+            blackboxPrintfHeaderLine("gyro_lpf:%d", masterConfig.gyro_lpf);
+            break;
+        case 45:
+            blackboxPrintfHeaderLine("gyro_lowpass_hz:%d", (int)(masterConfig.gyro_soft_lpf_hz * 100.0));
+            break;
+        case 46:
+            blackboxPrintfHeaderLine("acc_lpf_hz:%d", (int)(masterConfig.acc_lpf_hz * 100.0));
+            break;
+        case 47:
+            blackboxPrintfHeaderLine("acc_hardware:%d", masterConfig.acc_hardware);
+            break;
+        case 48:
+            blackboxPrintfHeaderLine("baro_hardware:%d", masterConfig.baro_hardware);
+            break;
+        case 49:
+            blackboxPrintfHeaderLine("mag_hardware:%d", masterConfig.mag_hardware);
+            break;
+        case 50:
+            blackboxPrintfHeaderLine("gyro_cal_on_first_arm:%d", masterConfig.gyro_cal_on_first_arm);
+            break;
+        case 51:
+            blackboxPrintfHeaderLine("vbat_pid_compensation:%d", masterConfig.batteryConfig.vbatPidCompensation);
+            break;
+        case 52:
+            blackboxPrintfHeaderLine("rc_smoothing:%d", masterConfig.rxConfig.rcSmoothing);
+            break;
+        case 53:
+            blackboxPrintfHeaderLine("features:%d", masterConfig.enabledFeatures);
+            break;
         default:
             return true;
     }
