@@ -20,6 +20,7 @@ typedef void (*dmaCallbackHandlerFuncPtr)(DMA_Channel_TypeDef *channel);
 typedef enum {
     DMA1_CH2_HANDLER = 0,
     DMA1_CH3_HANDLER,
+    DMA1_CH5_HANDLER,
     DMA1_CH6_HANDLER,
     DMA1_CH7_HANDLER,
 } dmaHandlerIdentifier_e;
@@ -27,6 +28,7 @@ typedef enum {
 typedef struct dmaHandlers_s {
     dmaCallbackHandlerFuncPtr dma1Channel2IRQHandler;
     dmaCallbackHandlerFuncPtr dma1Channel3IRQHandler;
+    dmaCallbackHandlerFuncPtr dma1Channel5IRQHandler;
     dmaCallbackHandlerFuncPtr dma1Channel6IRQHandler;
     dmaCallbackHandlerFuncPtr dma1Channel7IRQHandler;
 } dmaHandlers_t;

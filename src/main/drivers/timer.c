@@ -425,6 +425,33 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC )
 #endif
 
+#if defined(RGFC_LE)
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    //
+    // PPM PORT - Also USART2 RX
+    //
+    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn,    0, Mode_AF_PP, GPIO_PinSource2, GPIO_AF_1},
+
+    // Main outputs 8 PWM
+
+    { TIM4, GPIOB, Pin_6, TIM_Channel_1, TIM4_IRQn,    1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2},
+    { TIM4, GPIOB, Pin_7, TIM_Channel_2, TIM4_IRQn,    1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2},
+    { TIM4, GPIOB, Pin_8, TIM_Channel_3, TIM4_IRQn,    1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_2},
+    { TIM4, GPIOB, Pin_9, TIM_Channel_4, TIM4_IRQn,    1, Mode_AF_PP, GPIO_PinSource9, GPIO_AF_2},
+    { TIM8, GPIOC, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_4},
+    { TIM8, GPIOC, Pin_7, TIM_Channel_2, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_4},
+    { TIM8, GPIOC, Pin_8, TIM_Channel_3, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_4},
+    { TIM8, GPIOC, Pin_9, TIM_Channel_4, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource9, GPIO_AF_4},
+
+};
+
+#define USED_TIMERS  (TIM_N(2) | TIM_N(4) | TIM_N(8))
+
+#define TIMER_APB1_PERIPHERALS ( RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM4 )
+#define TIMER_APB2_PERIPHERALS ( RCC_APB2Periph_TIM8 )
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC )
+#endif
+
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
 #define CC_CHANNELS_PER_TIMER 4              // TIM_Channel_1..4
 

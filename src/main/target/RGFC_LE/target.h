@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "RGFC" // rgFC_OSD
+#define TARGET_BOARD_IDENTIFIER "RGLE" // rgFC_OSD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_1  // Blue (Rev 1 & 2) - PB4
@@ -58,7 +58,7 @@
 #define SPI2_MOSI_PIN           GPIO_Pin_15
 #define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
-#define USABLE_TIMER_CHANNEL_COUNT 16
+#define USABLE_TIMER_CHANNEL_COUNT 9
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
@@ -83,12 +83,31 @@
 
 //#define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
+#define USE_SDCARD
+#define USE_SDCARD_SPI1
 
-#define M25P16_CS_GPIO          GPIOB
-#define M25P16_CS_PIN           GPIO_Pin_12
-#define M25P16_SPI_INSTANCE     SPI1
+#define SDCARD_DETECT_INVERTED
+
+//#define SDCARD_DETECT_PIN                   GPIO_Pin_14
+//#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
+//#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
+//#define SDCARD_DETECT_GPIO_PORT             GPIOC
+//#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+//#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
+//#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
+
+#define SDCARD_SPI_INSTANCE                 SPI1
+#define SDCARD_SPI_CS_GPIO                  GPIOB
+#define SDCARD_SPI_CS_PIN                   GPIO_Pin_12
+
+// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
+
+// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel3
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
 #define LED0
 #define LED1
@@ -140,8 +159,8 @@
 #define UART5_TX_PINSOURCE  GPIO_PinSource10
 #define UART5_RX_PINSOURCE  GPIO_PinSource11
 */
-//#define USE_I2C
-//#define I2C_DEVICE (I2CDEV_1) // SDA (PA14/AF4), SCL (PA15/AF4)
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_2) // SDA (PA14/AF4), SCL (PA15/AF4)
 
 //#define I2C1_SCL_GPIO        GPIOA
 //#define I2C1_SCL_GPIO_AF     GPIO_AF_4
@@ -182,33 +201,47 @@
 #define BLACKBOX
 #define GPS
 //#define GTUNE
-#define DISPLAY
+//#define DISPLAY
 #define SERIAL_RX
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
 //#define SONAR
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-
+/*
 #define LED_STRIP
 #if 1 // <----------
-#define LED_STRIP_TIMER TIM3
+#define LED_STRIP_TIMER TIM15
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_2
-#define WS2811_PIN                      GPIO_Pin_6
-#define WS2811_PIN_SOURCE               GPIO_PinSource6
-#define WS2811_TIMER                    TIM3
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB1Periph_TIM3
-#define WS2811_DMA_CHANNEL              DMA1_Channel6
-#define WS2811_IRQ                      DMA1_Channel6_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define WS2811_GPIO_AF                  GPIO_AF_9
+#define WS2811_PIN                      GPIO_Pin_2
+#define WS2811_PIN_SOURCE               GPIO_PinSource2
+#define WS2811_TIMER                    TIM15
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM15
+#define WS2811_DMA_CHANNEL              DMA1_Channel5
+#define WS2811_IRQ                      DMA1_Channel5_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC5
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH5_HANDLER
 #endif
-
+*/
+/*
+#define TRANSPONDER
+#define TRANSPONDER_GPIO                     GPIOB
+#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
+#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
+#define TRANSPONDER_PIN                      GPIO_Pin_10
+#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource10
+#define TRANSPONDER_TIMER                    TIM1
+#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
+#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
+#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+*/
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
@@ -221,10 +254,10 @@
 #endif
 #endif
 
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_6
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_7
+#define S1W_TX_GPIO         GPIOC
+#define S1W_TX_PIN          GPIO_Pin_4
+#define S1W_RX_GPIO         GPIOC
+#define S1W_RX_PIN          GPIO_Pin_5
 
 #define SPEKTRUM_BIND
 // UART5, PD2

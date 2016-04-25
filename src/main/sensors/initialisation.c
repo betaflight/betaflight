@@ -210,7 +210,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     }
 #endif
 
-#if defined(RGFC_OSD)
+#if defined(RGFC_OSD) || defined(RGFC_LE)
     static const extiConfig_t rgfcRev1MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPin = Pin_13,

@@ -124,7 +124,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
-#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(RGFC_OSD)
+#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(RGFC_OSD) || defined(RGFC_LE)
                 masterConfig.acc_hardware = 0;
 #else
                 masterConfig.acc_hardware = 1;

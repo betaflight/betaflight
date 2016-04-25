@@ -45,6 +45,11 @@ void DMA1_Channel3_IRQHandler(void)
     dmaHandlers.dma1Channel3IRQHandler(DMA1_Channel3);
 }
 
+void DMA1_Channel5_IRQHandler(void)
+{
+    dmaHandlers.dma1Channel5IRQHandler(DMA1_Channel5);
+}
+
 void DMA1_Channel6_IRQHandler(void)
 {
     dmaHandlers.dma1Channel6IRQHandler(DMA1_Channel6);
@@ -60,6 +65,7 @@ void dmaInit(void)
     memset(&dmaHandlers, 0, sizeof(dmaHandlers));
     dmaHandlers.dma1Channel2IRQHandler = dmaNoOpHandler;
     dmaHandlers.dma1Channel3IRQHandler = dmaNoOpHandler;
+    dmaHandlers.dma1Channel5IRQHandler = dmaNoOpHandler;
     dmaHandlers.dma1Channel6IRQHandler = dmaNoOpHandler;
     dmaHandlers.dma1Channel7IRQHandler = dmaNoOpHandler;
 }
@@ -72,6 +78,9 @@ void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr 
             break;
         case DMA1_CH3_HANDLER:
             dmaHandlers.dma1Channel3IRQHandler = callback;
+            break;
+        case DMA1_CH5_HANDLER:
+            dmaHandlers.dma1Channel5IRQHandler = callback;
             break;
         case DMA1_CH6_HANDLER:
             dmaHandlers.dma1Channel6IRQHandler = callback;
