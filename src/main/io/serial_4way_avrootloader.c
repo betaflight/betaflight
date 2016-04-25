@@ -25,6 +25,8 @@
 #include <platform.h>
 
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/buf_writer.h"
@@ -33,281 +35,259 @@
 #include "io/serial.h"
 #include "io/serial_msp.h"
 #include "io/serial_4way.h"
+#include "io/serial_4way_impl.h"
 #include "io/serial_4way_avrootloader.h"
-#ifdef  USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-
 
 // Bootloader commands
 // RunCmd
 #define RestartBootloader 0
-#define ExitBootloader 1
+#define ExitBootloader    1
 
-#define CMD_RUN           0x00
-#define CMD_PROG_FLASH    0x01
-#define CMD_ERASE_FLASH   0x02
+#define CMD_RUN            0x00
+#define CMD_PROG_FLASH     0x01
+#define CMD_ERASE_FLASH    0x02
 #define CMD_READ_FLASH_SIL 0x03
-#define CMD_VERIFY_FLASH  0x03
-#define CMD_READ_EEPROM   0x04
-#define CMD_PROG_EEPROM   0x05
-#define CMD_READ_SRAM     0x06
+#define CMD_VERIFY_FLASH   0x03
+#define CMD_READ_EEPROM    0x04
+#define CMD_PROG_EEPROM    0x05
+#define CMD_READ_SRAM      0x06
 #define CMD_READ_FLASH_ATM 0x07
-#define CMD_KEEP_ALIVE    0xFD
-#define CMD_SET_ADDRESS   0xFF
-#define CMD_SET_BUFFER    0xFE
+#define CMD_KEEP_ALIVE     0xFD
+#define CMD_SET_ADDRESS    0xFF
+#define CMD_SET_BUFFER     0xFE
 
-#define CMD_BOOTINIT      0x07
-#define CMD_BOOTSIGN      0x08
+#define CMD_BOOTINIT       0x07
+#define CMD_BOOTSIGN       0x08
 
 // Bootloader result codes
 
-#define brSUCCESS         0x30
-#define brERRORCOMMAND    0xC1
-#define brERRORCRC        0xC2
-#define brNONE            0xFF
+#define BR_SUCCESS          0x30
+#define BR_ERRORCOMMAND     0xC1
+#define BR_ERRORCRC         0xC2
+#define BR_NONE             0xFF
 
+#define START_BIT_TIMEOUT 2000                     // 2ms
 
-#define START_BIT_TIMEOUT_MS 2
+#define BIT_TIME          52                       // 52uS
+#define BIT_TIME_HALVE    (BIT_TIME >> 1)          // 26uS
+#define START_BIT_TIME    (BIT_TIME_HALVE + 1)
 
-#define BIT_TIME (52)  //52uS
-#define BIT_TIME_HALVE (BIT_TIME >> 1) //26uS
-#define START_BIT_TIME (BIT_TIME_HALVE + 1)
-//#define STOP_BIT_TIME ((BIT_TIME * 9) + BIT_TIME_HALVE)
-
-static uint8_t suart_getc_(uint8_t *bt)
+static int suart_getc(void)
 {
     uint32_t btime;
     uint32_t start_time;
 
-    uint32_t wait_time = millis() + START_BIT_TIMEOUT_MS;
+    uint32_t wait_time = micros() + START_BIT_TIMEOUT;
     while (ESC_IS_HI) {
         // check for startbit begin
-        if (millis() >= wait_time) {
-            return 0;
+        if (micros() >= wait_time) {
+            return -1;
         }
     }
     // start bit
     start_time = micros();
     btime = start_time + START_BIT_TIME;
     uint16_t bitmask = 0;
-    uint8_t bit = 0;
-    while (micros() < btime);
-    while(1) {
+    for(int bit = 0; bit < 10; bit++) {
+        while (cmp32(micros(), btime) < 0);
         if (ESC_IS_HI)
-        {
             bitmask |= (1 << bit);
-        }
         btime = btime + BIT_TIME;
-        bit++;
-        if (bit == 10) break;
-        while (micros() < btime);
     }
     // check start bit and stop bit
-    if ((bitmask & 1) || (!(bitmask & (1 << 9)))) {
-        return 0;
+    if ((bitmask & (1 << 0)) || (!(bitmask & (1 << 9)))) {
+        return -1;
     }
-    *bt = bitmask >> 1;
-    return 1;
+    return bitmask >> 1;
 }
 
-static void suart_putc_(uint8_t *tx_b)
+static void suart_putc(uint8_t byte)
 {
-    // shift out stopbit first
-    uint16_t bitmask = (*tx_b << 2) | 1 | (1 << 10);
+    // send one idle bit first (stopbit from previous byte)
+    uint16_t bitmask = (byte << 2) | (1  << 0) | (1 << 10);
     uint32_t btime = micros();
     while(1) {
-        if(bitmask & 1) {
+        if(bitmask & 1)
             ESC_SET_HI; // 1
-        }
-        else {
+        else
             ESC_SET_LO; // 0
-        }
         btime = btime + BIT_TIME;
-        bitmask = (bitmask >> 1);
-        if (bitmask == 0) break; // stopbit shifted out - but don't wait
-        while (micros() < btime);
+        bitmask >>= 1;
+        if (bitmask == 0)
+            break; // stopbit shifted out - but don't wait
+        while (cmp32(micros(), btime) < 0);
     }
 }
 
-static uint8_16_u CRC_16;
-static uint8_16_u LastCRC_16;
-
-static void ByteCrc(uint8_t *bt)
+static uint16_t crc16Byte(uint16_t from, uint8_t byte)
 {
-    uint8_t xb = *bt;
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        if (((xb & 0x01) ^ (CRC_16.word & 0x0001)) !=0 ) {
-            CRC_16.word = CRC_16.word >> 1;
-            CRC_16.word = CRC_16.word ^ 0xA001;
+    uint16_t crc16 = from;
+    for (int i = 0; i < 8; i++) {
+        if (((byte & 0x01) ^ (crc16 & 0x0001)) != 0) {
+            crc16 >>= 1;
+            crc16 ^= 0xA001;
         } else {
-            CRC_16.word = CRC_16.word >> 1;
+            crc16 >>= 1;
         }
-        xb = xb >> 1;
+        byte >>= 1;
     }
+    return crc16;
 }
 
-static uint8_t BL_ReadBuf(uint8_t *pstring, uint8_t len)
+static uint8_t BL_ReadBuf(uint8_t *pstring, int len, bool checkCrc)
 {
-    // len 0 means 256
-    CRC_16.word = 0;
-    LastCRC_16.word = 0;
-    uint8_t  LastACK = brNONE;
-    do {
-        if(!suart_getc_(pstring)) goto timeout;
-        ByteCrc(pstring);
-        pstring++;
-        len--;
-    } while(len > 0);
+    int crc = 0;
+    int c;
 
-    if(isMcuConnected()) {
-        //With CRC read 3 more
-        if(!suart_getc_(&LastCRC_16.bytes[0])) goto timeout;
-        if(!suart_getc_(&LastCRC_16.bytes[1])) goto timeout;
-        if(!suart_getc_(&LastACK)) goto timeout;
-        if (CRC_16.word != LastCRC_16.word) {
-            LastACK = brERRORCRC;
+    uint8_t  lastACK = BR_NONE;
+    for(int i = 0; i < len; i++) {
+        int c;
+        if ((c = suart_getc()) < 0) goto timeout;
+        crc = crc16Byte(crc, c);
+        pstring[i] = c;
+    }
+
+    if(checkCrc) {
+        // With CRC read 3 more
+        for(int i = 0; i < 2; i++) {  // checksum 2 CRC bytes
+            if ((c = suart_getc()) < 0) goto timeout;
+            crc = crc16Byte(crc, c);
         }
+        if((c = suart_getc()) < 0) goto timeout;
+        lastACK = c;
+        if (crc != 0)   // CRC of correct message is 0
+            lastACK = BR_ERRORCRC;
     } else {
-        if(!suart_getc_(&LastACK)) goto timeout;
+        if((c = suart_getc()) < 0) goto timeout;
+        lastACK = c;
     }
 timeout:
-    return (LastACK == brSUCCESS);
+    return (lastACK == BR_SUCCESS);
 }
 
-static void BL_SendBuf(uint8_t *pstring, uint8_t len)
+static void BL_SendBuf(uint8_t *pstring, int len, bool appendCrc)
 {
     ESC_OUTPUT;
-    CRC_16.word=0;
-    do {
-        suart_putc_(pstring);
-        ByteCrc(pstring);
-        pstring++;
-        len--;
-    } while (len > 0);
-    
-    if (isMcuConnected()) {
-        suart_putc_(&CRC_16.bytes[0]);
-        suart_putc_(&CRC_16.bytes[1]);
+    uint16_t crc = 0;
+    for(int i = 0; i < len; i++) {
+        suart_putc(pstring[i]);
+        crc = crc16Byte(crc, pstring[i]);
+    }
+    if (appendCrc) {
+        suart_putc(crc & 0xff);
+        suart_putc(crc >> 8);
     }
     ESC_INPUT;
 }
 
-uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo)
+uint8_t BL_ConnectEx(escDeviceInfo_t *pDeviceInfo)
 {
-    #define BootMsgLen 4
-    #define DevSignHi (BootMsgLen)
-    #define DevSignLo (BootMsgLen+1)
+#define BOOT_MSG_LEN 4
+#define DevSignHi (BOOT_MSG_LEN)
+#define DevSignLo (BOOT_MSG_LEN + 1)
 
-    //DeviceInfo.dword=0; is set before
-    uint8_t BootInfo[9];
-    uint8_t BootMsg[BootMsgLen-1] = "471";
+    memset(pDeviceInfo, 0, sizeof(*pDeviceInfo));
+    uint8_t bootInfo[BOOT_MSG_LEN + 4];
+    static const uint8_t bootMsgCheck[BOOT_MSG_LEN - 1] = "471";
     // x * 0 + 9
 #if defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
-    uint8_t BootInit[] = {0,0,0,0,0,0,0,0,0,0,0,0,0x0D,'B','L','H','e','l','i',0xF4,0x7D};
-    BL_SendBuf(BootInit, 21);
+    // SK message was sent during autodetection, use longer preamble
+    uint8_t bootInit[] = {0,0,0,0,0,0,0,0,0,0,0,0,0x0D,'B','L','H','e','l','i',0xF4,0x7D};
 #else
-    uint8_t BootInit[] = {0,0,0,0,0,0,0,0,0x0D,'B','L','H','e','l','i',0xF4,0x7D};
-    BL_SendBuf(BootInit, 17);
+    uint8_t bootInit[] = {        0,0,0,0,0,0,0,0,0x0D,'B','L','H','e','l','i',0xF4,0x7D};
 #endif
-    if (!BL_ReadBuf(BootInfo, BootMsgLen + 4)) {
+    BL_SendBuf(bootInit, sizeof(bootInit), false);
+    if (!BL_ReadBuf(bootInfo, sizeof(bootInfo), false))
         return 0;
-    }
     // BootInfo has no CRC  (ACK byte already analyzed... )
     // Format = BootMsg("471c") SIGNATURE_001, SIGNATURE_002, BootVersion (always 6), BootPages (,ACK)
-    for (uint8_t i = 0; i < (BootMsgLen - 1); i++) { // Check only the first 3 letters -> 471x OK
-        if (BootInfo[i] != BootMsg[i]) {
-            return (0);
-        }
-    }
-
-    //only 2 bytes used $1E9307 -> 0x9307
-    pDeviceInfo->bytes[2] = BootInfo[BootMsgLen - 1];
-    pDeviceInfo->bytes[1] = BootInfo[DevSignHi];
-    pDeviceInfo->bytes[0] = BootInfo[DevSignLo];
-    return (1);
-}
-
-static uint8_t BL_GetACK(uint32_t Timeout)
-{
-    uint8_t LastACK = brNONE;
-    while (!(suart_getc_(&LastACK)) && (Timeout)) {
-        Timeout--;
-    } ;
-    return (LastACK);
-}
-
-uint8_t BL_SendCMDKeepAlive(void) 
-{
-    uint8_t sCMD[] = {CMD_KEEP_ALIVE, 0};
-    BL_SendBuf(sCMD, 2);
-    if (BL_GetACK(1) != brERRORCOMMAND) {
+    if(memcmp(bootInfo, bootMsgCheck, sizeof(bootMsgCheck)) != 0) // Check only the first 3 letters -> 471x OK
         return 0;
-    }
+
+    pDeviceInfo->signature2 = bootInfo[BOOT_MSG_LEN - 1]; // taken from bootloaderMsg part, ascii 'c' now
+    pDeviceInfo->signature = (bootInfo[DevSignHi] << 8) | bootInfo[DevSignLo]; // SIGNATURE_001, SIGNATURE_002
     return 1;
 }
 
-void BL_SendCMDRunRestartBootloader(uint8_32_u *pDeviceInfo)
+static uint8_t BL_GetACK(int timeout)
+{
+    int c;
+    while ((c = suart_getc()) < 0)
+        if(--timeout < 0)    // timeout=1 -> 1 retry
+            return BR_NONE;
+    return c;
+}
+
+uint8_t BL_SendCMDKeepAlive(void)
+{
+    uint8_t sCMD[] = {CMD_KEEP_ALIVE, 0};
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    if (BL_GetACK(1) != BR_ERRORCOMMAND)
+        return 0;
+    return 1;
+}
+
+void BL_SendCMDRunRestartBootloader(void)
 {
     uint8_t sCMD[] = {RestartBootloader, 0};
-    pDeviceInfo->bytes[0] = 1;
-    BL_SendBuf(sCMD, 2); //sends simply 4 x 0x00 (CRC =00)
+    BL_SendBuf(sCMD, sizeof(sCMD), true); // sends simply 4 x 0x00 (CRC = 00)
     return;
 }
 
 static uint8_t BL_SendCMDSetAddress(ioMem_t *pMem) //supports only 16 bit Adr
 {
     // skip if adr == 0xFFFF
-    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
-    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->D_FLASH_ADDR_H, pMem->D_FLASH_ADDR_L };
-    BL_SendBuf(sCMD, 4);
-    return (BL_GetACK(2) == brSUCCESS);
+    if((pMem->addr == 0xffff))
+        return 1;
+    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->addr >> 8, pMem->addr & 0xff };
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    return BL_GetACK(2) == BR_SUCCESS;
 }
 
 static uint8_t BL_SendCMDSetBuffer(ioMem_t *pMem)
 {
-    uint8_t sCMD[] = {CMD_SET_BUFFER, 0, 0, pMem->D_NUM_BYTES};
-    if (pMem->D_NUM_BYTES == 0) {
-        // set high byte
-        sCMD[2] = 1;
-    }
-    BL_SendBuf(sCMD, 4);
-    if (BL_GetACK(2) != brNONE) return 0;
-    BL_SendBuf(pMem->D_PTR_I, pMem->D_NUM_BYTES);
-    return (BL_GetACK(40) == brSUCCESS);
+    uint16_t len = pMem->len;
+    uint8_t sCMD[] = {CMD_SET_BUFFER, 0, len >> 8, len & 0xff};
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    if (BL_GetACK(2) != BR_NONE)
+        return 0;
+    BL_SendBuf(pMem->data, len, true);
+    return BL_GetACK(40) == BR_SUCCESS;
 }
 
 static uint8_t BL_ReadA(uint8_t cmd, ioMem_t *pMem)
 {
-    if (BL_SendCMDSetAddress(pMem)) {
-        uint8_t sCMD[] = {cmd, pMem->D_NUM_BYTES};
-        BL_SendBuf(sCMD, 2);
-        return (BL_ReadBuf(pMem->D_PTR_I, pMem->D_NUM_BYTES ));
-    }
-    return 0;
+    if(!BL_SendCMDSetAddress(pMem))
+        return 0;
+    unsigned len = pMem->len;
+    uint8_t sCMD[] = {cmd, len & 0xff};    // 0x100 is sent a 0x00 here
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    return BL_ReadBuf(pMem->data, len, true);
 }
 
 static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
 {
-    if (BL_SendCMDSetAddress(pMem)) {
-        if (!BL_SendCMDSetBuffer(pMem)) return 0;
-        uint8_t sCMD[] = {cmd, 0x01};
-        BL_SendBuf(sCMD, 2);
-        return (BL_GetACK(timeout) == brSUCCESS);
-    }
-    return 0;
+    if(!BL_SendCMDSetAddress(pMem))
+        return 0;
+    if (!BL_SendCMDSetBuffer(pMem))
+        return 0;
+    uint8_t sCMD[] = {cmd, 0x01};
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    return BL_GetACK(timeout) == BR_SUCCESS;
 }
 
 
-uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
+uint8_t BL_ReadFlashATM(ioMem_t *pMem)
 {
-    if(interface_mode == imATM_BLB) {
-        return BL_ReadA(CMD_READ_FLASH_ATM, pMem);
-    } else {
-        return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
-    }
+    return BL_ReadA(CMD_READ_FLASH_ATM, pMem);
 }
- 
- 
+
+uint8_t BL_ReadFlashSIL(ioMem_t *pMem)
+{
+    return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
+}
+
+
 uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
     return BL_ReadA(CMD_READ_EEPROM, pMem);
@@ -315,23 +295,22 @@ uint8_t BL_ReadEEprom(ioMem_t *pMem)
 
 uint8_t BL_PageErase(ioMem_t *pMem)
 {
-    if (BL_SendCMDSetAddress(pMem)) {
-        uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
-        BL_SendBuf(sCMD, 2);
-        return (BL_GetACK((40 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
-    }
-    return 0;
+    if(!BL_SendCMDSetAddress(pMem))
+        return 0;
+
+    uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
+    BL_SendBuf(sCMD, sizeof(sCMD), true);
+    return BL_GetACK(40 * 1000 / START_BIT_TIMEOUT) == BR_SUCCESS;
 }
 
 uint8_t BL_WriteEEprom(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_EEPROM, pMem, (3000 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_EEPROM, pMem, 3000 * 1000 / START_BIT_TIMEOUT);
 }
 
 uint8_t BL_WriteFlash(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_FLASH, pMem, 40 * 1000 / START_BIT_TIMEOUT);
 }
 
-#endif
 #endif
