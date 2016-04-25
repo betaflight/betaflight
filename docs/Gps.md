@@ -115,7 +115,7 @@ This will cause the GPS receive to send the require messages out 10 times a seco
 
 Next change the mode, click `NAV5 (Navigation 5)` in the Configuration View.
 
-Set to `Dynamic Model` to `Pedestrian` and click `Send`.
+Set to `Dynamic Model` to `Airborne<1G` and click `Send`.
 
 Next change the SBAS settings.  Click `SBAS (SBAS Settings)` in the Configuration View.
 
@@ -131,7 +131,7 @@ Select `Save current configuration` and click `Send`.
 
 ### UBlox Navigation model
 
-Cleanflight will use `Pedestrian` when gps auto config is used.
+If GPS auto configuration is used Cleanflight will use `Airborne<1G` when `gps_nav_model=LOW_G` and `Airborne<4G` when `gps_nav_model=HIGH_G`.
 
 From the UBlox documentation:
 
