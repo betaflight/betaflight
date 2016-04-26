@@ -51,29 +51,15 @@ void setEscOutput(uint8_t selEsc);
 #define ESC_OUTPUT setEscOutput(escSelected)
 
 typedef struct ioMem_s {
-    uint8_t D_NUM_BYTES;
-    uint8_t D_FLASH_ADDR_H;
-    uint8_t D_FLASH_ADDR_L;
-    uint8_t *D_PTR_I;
+    uint16_t len;
+    uint16_t addr;
+    uint8_t *data;
 } ioMem_t;
 
-//extern ioMem_t ioMem;
-
-typedef union __attribute__ ((packed)) {
-    uint8_t bytes[2];
-    uint16_t word;
-} uint8_16_u;
-
-typedef union __attribute__ ((packed)) {
-    uint8_t bytes[4];
-    uint16_t words[2];
-    uint32_t dword;
-} uint8_32_u;
-
 typedef struct deviceInfo_s {
-    uint16_t signature;
+    uint16_t signature;        // lower 16 bit of signature, checked
+    uint8_t  signature2;       // upper 8 bit of signature, not used in current code
     uint8_t interfaceMode;
-    uint8_t pad;
 } deviceInfo_t;
 
 bool isMcuConnected(void);

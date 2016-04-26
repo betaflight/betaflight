@@ -203,9 +203,8 @@ uint8_t BL_ConnectEx(deviceInfo_t *pDeviceInfo)
     if(memcmp(bootInfo, bootMsgCheck, sizeof(bootMsgCheck)) != 0) // Check only the first 3 letters -> 471x OK
         return 0;
 
-    // only 2 bytes used $1E9307 -> 0x9307
-    // pDeviceInfo->bytes[2] = BootInfo[BOOT_MSG_LEN - 1]; used for interface in serial_4way
-    pDeviceInfo->signature = (bootInfo[DevSignHi] << 8) | bootInfo[DevSignLo];
+    pDeviceInfo->signature2 = bootInfo[BOOT_MSG_LEN - 1]; // taken from bootloaderMsg part, ascii 'c' now
+    pDeviceInfo->signature = (bootInfo[DevSignHi] << 8) | bootInfo[DevSignLo]; // SIGNATURE_001, SIGNATURE_002
     return 1;
 }
 
@@ -238,21 +237,21 @@ void BL_SendCMDRunRestartBootloader(deviceInfo_t *pDeviceInfo)
 static uint8_t BL_SendCMDSetAddress(ioMem_t *pMem) //supports only 16 bit Adr
 {
     // skip if adr == 0xFFFF
-    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF))
+    if((pMem->addr == 0xffff))
         return 1;
-    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->D_FLASH_ADDR_H, pMem->D_FLASH_ADDR_L };
+    uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->addr >> 8, pMem->addr & 0xff };
     BL_SendBuf(sCMD, sizeof(sCMD));
     return BL_GetACK(2) == BR_SUCCESS;
 }
 
 static uint8_t BL_SendCMDSetBuffer(ioMem_t *pMem)
 {
-    unsigned len = (pMem->D_NUM_BYTES == 0) ? 0x100 : pMem->D_NUM_BYTES;
+    uint16_t len = pMem->len;
     uint8_t sCMD[] = {CMD_SET_BUFFER, 0, len >> 8, len & 0xff};
     BL_SendBuf(sCMD, sizeof(sCMD));
     if (BL_GetACK(2) != BR_NONE)
         return 0;
-    BL_SendBuf(pMem->D_PTR_I, len);
+    BL_SendBuf(pMem->data, len);
     return BL_GetACK(40) == BR_SUCCESS;
 }
 
@@ -260,10 +259,10 @@ static uint8_t BL_ReadA(uint8_t cmd, ioMem_t *pMem)
 {
     if(!BL_SendCMDSetAddress(pMem))
         return 0;
-    unsigned len = (pMem->D_NUM_BYTES == 0) ? 0x100 : pMem->D_NUM_BYTES;
+    unsigned len = pMem->len;
     uint8_t sCMD[] = {cmd, len & 0xff};    // 0x100 is sent a 0x00 here
     BL_SendBuf(sCMD, sizeof(sCMD));
-    return BL_ReadBuf(pMem->D_PTR_I, len);
+    return BL_ReadBuf(pMem->data, len);
 }
 
 static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
