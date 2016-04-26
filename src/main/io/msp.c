@@ -312,10 +312,10 @@ static void initActiveBoxIds(void)
 #endif
 
     // check that all enabled IDs are in boxes array (check is skipped when using findBoxBy<id>() functions
-    for(int i = 0; i < CHECKBOX_ITEM_COUNT; i++)
-        if((ena & (1 << i))
-           && findBoxByBoxId(i) == NULL)
-            ena &= ~ (1 << i);                // this should not happen, but handle it gracefully
+    for(boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
+        if((ena & (1 << boxId))
+           && findBoxByBoxId(boxId) == NULL)
+            ena &= ~ (1 << boxId);                // this should not happen, but handle it gracefully
     activeBoxIds = ena;
 }
 
@@ -323,7 +323,7 @@ static void initActiveBoxIds(void)
 
 static uint32_t packFlightModeFlags(void)
 {
-    uint32_t i, junk, tmp;
+    uint32_t junk, tmp;
 
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix
@@ -356,10 +356,13 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
 
     // TODO!
-    for (i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
-        int flag = (tmp & (1 << i));
-        if (flag)
-            junk |= 1 << i;
+    int bitIdx = 0;                   // index of active boxId (matches sent permanentId and boxNames)
+    for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
+        if((activeBoxIds & (1 << boxId)) == 0)
+            continue;                 // this box is not active
+        if (tmp & (1 << boxId))
+            junk |= 1 << bitIdx;      // box is enabled
+        bitIdx++;                     // next output bit ID
     }
 
     return junk;
