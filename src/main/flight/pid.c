@@ -80,11 +80,17 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 }
 
 float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
-	float propFactor;
+    float propFactor;
+    float superExpoFactor;
 
-    propFactor = 1.0f - ((rxConfig->superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+    if (axis == YAW && !rxConfig->superExpoYawMode) {
+        propFactor = 1.0f;
+    } else {
+        superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
+        propFactor = 1.0f - ((superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+    }
 
-	return propFactor;
+    return propFactor;
 }
 
 void pidResetErrorAngle(void)
@@ -195,7 +201,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         RateError = AngleRate - gyroRate;
 
         // -----calculate P component
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (luxPTermScale * pidProfile->P8[axis] * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
         } else {
             PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
@@ -209,12 +215,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
+        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
+            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
+            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -337,7 +343,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         RateError = AngleRateTmp - gyroRate;
 
         // -----calculate P component
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (pidProfile->P8[axis] * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
         } else {
             PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -359,12 +365,12 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
-            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = 0;
+        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
+            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = 0;
+            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
         }
 
         if (antiWindupProtection || motorLimitReached) {
