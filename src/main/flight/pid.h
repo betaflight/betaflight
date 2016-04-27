@@ -54,17 +54,16 @@ typedef struct pidProfile_s {
 
     uint16_t yaw_p_limit;
 
-    int16_t max_angle_inclination[2];       // Max possible inclination (roll and pitch axis separately
+    int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 } pidProfile_t;
 
-extern int16_t axisPID[XYZ_AXIS_COUNT];
-extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPID_Setpoint[3];
+extern int16_t axisPID[];
+extern int32_t axisPID_P[], axisPID_I[], axisPID_D[], axisPID_Setpoint[];
 
 void pidResetErrorAccumulators(void);
 
-void updatePIDCoefficients(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig);
+void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig);
 
-float pidRcCommandToAngle(int16_t stick);
 int16_t pidAngleToRcCommand(float angleDeciDegrees);
 
-void pidController(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig);
