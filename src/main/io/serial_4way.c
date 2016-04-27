@@ -347,11 +347,12 @@ static uint8_t currentInterfaceMode;
 
 static uint8_t Connect(deviceInfo_t *pDeviceInfo)
 {
-    for (int try = 0; try < 3; try++) {
+    for (int i = 0; i < 3; i++) {    // TODO - probaly useless
 #if defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
-        if (Stk_ConnectEx(pDeviceInfo) && signatureMatch(pDeviceInfo->signature, signaturesAtmel)) {
+        if (Stk_ConnectEx(pDeviceInfo)) {
             currentInterfaceMode = imSK;
-            return 1;
+            if(signatureMatch(pDeviceInfo->signature, signaturesAtmel))
+                return 1;
         }
 #endif
 #if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)

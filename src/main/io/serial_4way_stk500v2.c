@@ -209,7 +209,7 @@ timeout:
     return 0;
 }
 
-static uint8_t StkRcvPacket(uint8_t *pstring, int maxLen)
+static uint8_t StkRcvPacket(uint8_t *pstring)
 {
     int byte;
     int len;
@@ -221,7 +221,7 @@ static uint8_t StkRcvPacket(uint8_t *pstring, int maxLen)
     if ((byte = ReadByte()) < 0 || (byte != SeqNumber)) goto Err;
     len = ReadByte() << 8;
     len |= ReadByte();
-    if(len < 1 || len >= maxLen + 2)  // will catch timeout too; limit length to buffer size
+    if(len < 1 || len > 0x1ff)  // will catch timeout too (TODO - original code did not allow 0x100 (low byte has to be non-zero)
         goto Err;
     if ((byte = ReadByte()) < 0 || (byte != TOKEN)) goto Err;
     if ((byte = ReadByte()) < 0 || (byte != StkCmd)) goto Err;
@@ -252,7 +252,7 @@ static uint8_t _CMD_SPI_MULTI_EX(uint8_t * resByte, uint8_t subcmd, uint16_t add
     StkSendByte(addr & 0xff);	// {TxData} AdrLow
     StkSendByte(0);             // {TxData} 0
     StkSendPacketFooter();
-    if (StkRcvPacket(stkInBuf, sizeof(stkInBuf))) { // NumRX + 3
+    if (StkRcvPacket(stkInBuf)) { // NumRX + 3
         if ((stkInBuf[0] == 0x00)
             && ((stkInBuf[1] == subcmd) || (stkInBuf[1] == 0x00 /* ignore  zero returns */))
             && (stkInBuf[2] == 0x00)) {
@@ -277,7 +277,7 @@ static uint8_t _CMD_LOAD_ADDRESS(ioMem_t *pMem)
     StkSendByte(pMem->addr >> 8);
     StkSendByte(pMem->addr & 0xff);
     StkSendPacketFooter();
-    return StkRcvPacket(stkInBuf, sizeof(stkInBuf));
+    return StkRcvPacket(stkInBuf);
 }
 
 static uint8_t _CMD_READ_MEM_ISP(ioMem_t *pMem)
@@ -288,7 +288,7 @@ static uint8_t _CMD_READ_MEM_ISP(ioMem_t *pMem)
     StkSendByte(pMem->len & 0xff);
     StkSendByte(CmdFlashEepromRead);
     StkSendPacketFooter();
-    return StkRcvPacket(pMem->data, pMem->len);
+    return StkRcvPacket(pMem->data);
 }
 
 static uint8_t _CMD_PROGRAM_MEM_ISP(ioMem_t *pMem)
@@ -307,7 +307,7 @@ static uint8_t _CMD_PROGRAM_MEM_ISP(ioMem_t *pMem)
     for(int i = 0; i < pMem->len; i++)
         StkSendByte(pMem->data[i]);
     StkSendPacketFooter();
-    return StkRcvPacket(stkInBuf, sizeof(stkInBuf));
+    return StkRcvPacket((uint8_t *)stkInBuf);
 }
 
 uint8_t Stk_SignOn(void)
@@ -316,7 +316,7 @@ uint8_t Stk_SignOn(void)
     StkSendPacketHeader(1);
     StkSendByte(CMD_SIGN_ON);
     StkSendPacketFooter();
-    return StkRcvPacket(stkInBuf, sizeof(stkInBuf));
+    return (StkRcvPacket(stkInBuf));
 }
 
 uint8_t Stk_ConnectEx(deviceInfo_t *pDeviceInfo)
@@ -346,7 +346,7 @@ uint8_t Stk_Chip_Erase(void)
     StkSendByte(0x13);
     StkSendByte(0x76);
     StkSendPacketFooter();
-    return StkRcvPacket(stkInBuf, sizeof(stkInBuf));
+    return StkRcvPacket(stkInBuf);
 }
 
 uint8_t Stk_ReadFlash(ioMem_t *pMem)
