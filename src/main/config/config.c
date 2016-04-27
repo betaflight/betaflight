@@ -179,7 +179,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 70.0f;
     pidProfile->dterm_average_count = 0;
-    pidProfile->dynamic_dterm_threshold = 20;
+    pidProfile->dterm_differentiator = 1;
     pidProfile->rollPitchItermResetRate = 200;
     pidProfile->yawItermResetRate = 50;
     pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default

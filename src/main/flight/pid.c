@@ -130,10 +130,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastErrorForDelta[3];
-    static float deltaState[3][DELTA_MAX_SAMPLES];
+    static float lastRate[3][PID_LAST_RATE_COUNT];
     float delta;
-    float dynamicDTermGain;
     int axis;
     float horizonLevelStrength = 1;
 
@@ -234,33 +232,28 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateError - lastErrorForDelta[axis];
-                lastErrorForDelta[axis] = RateError;
+            if (pidProfile->dterm_differentiator) {
+                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
+                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
+                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
+                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
+                    lastRate[axis][i] = lastRate[axis][i-1];
+                }
             } else {
-                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = gyroRate;
+                // When DTerm low pass filter disabled apply moving average to reduce noise
+                delta = -(gyroRate - lastRate[axis][0]);
             }
 
-            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-            // would be scaled by different dt each time. Division by dT fixes that.
-            delta *= (1.0f / getdT());
+            lastRate[axis][0] = gyroRate;
 
-            // Several different Dterm filtering methods to prevent noise. All of them can be combined
+            // Divide delta by targetLooptime to get differential (ie dr/dt)
+            delta *= (1.0f / getdT());
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
-            // Apply moving average
-            if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
-
             DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
-
-            // Dynamic D Implementation
-            if (pidProfile->dynamic_dterm_threshold) {
-                dynamicDTermGain = constrainf(ABS(DTerm) / pidProfile->dynamic_dterm_threshold, 0.0f, 1.0f);
-                DTerm *= dynamicDTermGain;
-            }
         }
 
         // -----calculate total PID output
@@ -289,10 +282,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
-    static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
-    static int32_t deltaState[3][DELTA_MAX_SAMPLES];
+    static int32_t lastRate[3][PID_LAST_RATE_COUNT];
     int32_t AngleRateTmp, RateError, gyroRate;
-    int32_t dynamicDTermGain;
 
     int8_t horizonLevelStrength = 100;
 
@@ -389,33 +380,28 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = RateError;
+            if (pidProfile->dterm_differentiator) {
+                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
+                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
+                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
+                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
+                    lastRate[axis][i] = lastRate[axis][i-1];
+                }
             } else {
-                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = gyroRate;
+                // When DTerm low pass filter disabled apply moving average to reduce noise
+                delta = -(gyroRate - lastRate[axis][0]);
             }
 
-            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-            // would be scaled by different dt each time. Division by dT fixes that.
-            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
+            lastRate[axis][0] = gyroRate;
 
-            // Several different Dterm filtering methods to prevent noise. All of them can be combined
+            // Divide delta by targetLooptime to get differential (ie dr/dt)
+            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
-            // Apply moving average
-            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]);
-
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
-
-            // Dynamic D Implementation
-            if (pidProfile->dynamic_dterm_threshold) {
-                dynamicDTermGain = constrain((ABS(DTerm) << 7) / pidProfile->dynamic_dterm_threshold, 0, 1 << 7);
-                DTerm = (DTerm * dynamicDTermGain) >> 7;
-            }
         }
 
         // -----calculate total PID output

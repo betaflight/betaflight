@@ -22,6 +22,10 @@
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 400                 // Maximum value for yaw P limiter
 
+#define PID_LAST_RATE_COUNT 7
+#define PID_DTERM_FIR_MAX_LENGTH 7
+#define PID_MAX_DIFFERENTIATOR (PID_DTERM_FIR_MAX_LENGTH-2)
+
 typedef enum {
     PIDROLL,
     PIDPITCH,
@@ -71,7 +75,7 @@ typedef struct pidProfile_s {
     uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
-    uint8_t dynamic_dterm_threshold;
+    uint8_t dterm_differentiator;
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
