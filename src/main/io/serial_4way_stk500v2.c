@@ -80,7 +80,7 @@ static uint8_t ckSumOut;
 #define CmdFlashEepromRead      0xA0
 #define EnterIspCmd1            0xAC
 #define EnterIspCmd2            0x53
-#define SPI_SIGNATURE_READ      0x30
+#define SIGNATURE_R             0x30
 
 #define delay_us(x) delayMicroseconds(x)
 #define IRQ_OFF // dummy
@@ -111,7 +111,7 @@ static void StkSendByte(uint8_t dat)
     }
 }
 
-static void StkSendPacketHeader(uint16_t len)
+static void StkSendPacketHeader(void)
 {
     IRQ_OFF;
     ESC_OUTPUT;
@@ -121,9 +121,6 @@ static void StkSendPacketHeader(uint16_t len)
     ckSumOut = 0;
     StkSendByte(MESSAGE_START);
     StkSendByte(++SeqNumber);
-    StkSendByte(len >> 8);
-    StkSendByte(len & 0xff);
-    StkSendByte(TOKEN);
 }
 
 static void StkSendPacketFooter(void)
@@ -239,24 +236,27 @@ Err:
     return 0;
 }
 
-static uint8_t _CMD_SPI_MULTI_EX(uint8_t * resByte, uint8_t subcmd, uint16_t addr)
+static uint8_t _CMD_SPI_MULTI_EX(uint8_t * ResByte, uint8_t Cmd, uint16_t addr)
 {
     StkCmd = CMD_SPI_MULTI;
-    StkSendPacketHeader(8);
+    StkSendPacketHeader();
+    StkSendByte(0);             // hi byte Msg len
+    StkSendByte(8);             // lo byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(CMD_SPI_MULTI);
     StkSendByte(4);             // NumTX
     StkSendByte(4);             // NumRX
     StkSendByte(0);             // RxStartAdr
-    StkSendByte(subcmd);    	// {TxData} Cmd
+    StkSendByte(Cmd);    	// {TxData} Cmd
     StkSendByte(addr >> 8);     // {TxData} AdrHi
-    StkSendByte(addr & 0xff);	// {TxData} AdrLow
+    StkSendByte(addr & 0xff);	// {TxData} AdrLoch
     StkSendByte(0);             // {TxData} 0
     StkSendPacketFooter();
     if (StkRcvPacket(stkInBuf)) { // NumRX + 3
         if ((stkInBuf[0] == 0x00)
-            && ((stkInBuf[1] == subcmd) || (stkInBuf[1] == 0x00 /* ignore  zero returns */))
+            && ((stkInBuf[1] == Cmd) || (stkInBuf[1] == 0x00 /* ignore  zero returns */))
             && (stkInBuf[2] == 0x00)) {
-            *resByte = stkInBuf[3];
+            *ResByte = stkInBuf[3];
         }
         return 1;
     }
@@ -266,37 +266,49 @@ static uint8_t _CMD_SPI_MULTI_EX(uint8_t * resByte, uint8_t subcmd, uint16_t add
 static uint8_t _CMD_LOAD_ADDRESS(ioMem_t *pMem)
 {
     // ignore 0xFFFF
-    // assume address is set before and we read or write the immediately following memory
-    if((pMem->addr == 0xffff))
+    // assume address is set before and we read or write the immediately following package
+    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF))
         return 1;
     StkCmd = CMD_LOAD_ADDRESS;
-    StkSendPacketHeader(5);
+    StkSendPacketHeader();
+    StkSendByte(0); // hi byte Msg len
+    StkSendByte(5); // lo byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(CMD_LOAD_ADDRESS);
     StkSendByte(0);
     StkSendByte(0);
-    StkSendByte(pMem->addr >> 8);
-    StkSendByte(pMem->addr & 0xff);
+    StkSendByte(pMem->D_FLASH_ADDR_H);
+    StkSendByte(pMem->D_FLASH_ADDR_L);
     StkSendPacketFooter();
     return StkRcvPacket(stkInBuf);
 }
 
 static uint8_t _CMD_READ_MEM_ISP(ioMem_t *pMem)
 {
-    StkSendPacketHeader(4);
+    int len =  (pMem->D_NUM_BYTES == 0) ? 0x100 : pMem->D_NUM_BYTES;
+    StkSendPacketHeader();
+    StkSendByte(0); // hi byte Msg len
+    StkSendByte(4); // lo byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(StkCmd);
-    StkSendByte(pMem->len >> 8);
-    StkSendByte(pMem->len & 0xff);
+    StkSendByte(len >> 8);
+    StkSendByte(len & 0xff);
     StkSendByte(CmdFlashEepromRead);
     StkSendPacketFooter();
-    return StkRcvPacket(pMem->data);
+    return StkRcvPacket(pMem->D_PTR_I);
 }
 
 static uint8_t _CMD_PROGRAM_MEM_ISP(ioMem_t *pMem)
 {
-    StkSendPacketHeader(pMem->len + 10);
+    int len =  (pMem->D_NUM_BYTES == 0) ? 0x100 : pMem->D_NUM_BYTES;
+    int msgLen = len + 10;
+    StkSendPacketHeader();
+    StkSendByte(msgLen >> 8);   // high byte Msg len
+    StkSendByte(msgLen & 0xff); // low byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(StkCmd);
-    StkSendByte(pMem->len >> 8);
-    StkSendByte(pMem->len & 0xff);
+    StkSendByte(len >> 8);
+    StkSendByte(len & 0xff);
     StkSendByte(0); // mode
     StkSendByte(0); // delay
     StkSendByte(0); // cmd1
@@ -304,8 +316,8 @@ static uint8_t _CMD_PROGRAM_MEM_ISP(ioMem_t *pMem)
     StkSendByte(0); // cmd3
     StkSendByte(0); // poll1
     StkSendByte(0); // poll2
-    for(int i = 0; i < pMem->len; i++)
-        StkSendByte(pMem->data[i]);
+    for(int i = 0; i < len; i++)
+        StkSendByte(pMem->D_PTR_I[i]);
     StkSendPacketFooter();
     return StkRcvPacket((uint8_t *)stkInBuf);
 }
@@ -313,7 +325,10 @@ static uint8_t _CMD_PROGRAM_MEM_ISP(ioMem_t *pMem)
 uint8_t Stk_SignOn(void)
 {
     StkCmd = CMD_SIGN_ON;
-    StkSendPacketHeader(1);
+    StkSendPacketHeader();
+    StkSendByte(0); // hi byte Msg len
+    StkSendByte(1); // lo byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(CMD_SIGN_ON);
     StkSendPacketFooter();
     return (StkRcvPacket(stkInBuf));
@@ -323,21 +338,22 @@ uint8_t Stk_ConnectEx(deviceInfo_t *pDeviceInfo)
 {
     if (!Stk_SignOn())
         return 0;
-    uint8_t signature[3];    // device signature, MSB first
-    for(unsigned i = 0; i < sizeof(signature); i++) {
-        if (!_CMD_SPI_MULTI_EX(&signature[i], SPI_SIGNATURE_READ, i))
-            return 0;
-    }
-    // convert signature to little endian
-    pDeviceInfo->signature = (signature[1] << 8) | signature[2];
-    pDeviceInfo->signature2 = signature[0];
+    uint8_t signHi, signLo;
+    if (!_CMD_SPI_MULTI_EX(&signHi, SIGNATURE_R, 1))
+        return 0;
+    if (_CMD_SPI_MULTI_EX(&signLo, SIGNATURE_R, 2))
+        return 0;
+    pDeviceInfo->signature = (signHi << 8) | signLo;
     return 1;
 }
 
 uint8_t Stk_Chip_Erase(void)
 {
     StkCmd = CMD_CHIP_ERASE_ISP;
-    StkSendPacketHeader(7);
+    StkSendPacketHeader();
+    StkSendByte(0);  // high byte Msg len
+    StkSendByte(7);  // low byte Msg len
+    StkSendByte(TOKEN);
     StkSendByte(StkCmd);
     StkSendByte(20); // ChipErase_eraseDelay atmega8
     StkSendByte(0);  // ChipErase_pollMethod atmega8
