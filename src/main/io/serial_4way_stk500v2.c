@@ -221,14 +221,13 @@ static uint8_t StkRcvPacket(uint8_t *pstring, int maxLen)
     if ((byte = ReadByte()) < 0 || (byte != SeqNumber)) goto Err;
     len = ReadByte() << 8;
     len |= ReadByte();
-    if(len < 1 || len >= 256 + 4)  // will catch timeout too; limit length to max expected size
+    if(len < 1 || len >= maxLen + 2)  // will catch timeout too; limit length to buffer size
         goto Err;
     if ((byte = ReadByte()) < 0 || (byte != TOKEN)) goto Err;
     if ((byte = ReadByte()) < 0 || (byte != StkCmd)) goto Err;
     if ((byte = ReadByte()) < 0 || (byte != STATUS_CMD_OK)) goto Err;
     for (int i = 0; i < len - 2; i++) {
         if ((byte = ReadByte()) < 0) goto Err;
-        if(i < maxLen)           // limit saved length (buffer is only 256B, but memory read reply contains additional status + 1 unknown byte)
         pstring[i] = byte;
     }
     ReadByte();                  // read checksum
