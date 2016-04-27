@@ -879,11 +879,8 @@ TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 
-ifeq ($(OPBL),yes)
 CLEAN_ARTIFACTS := $(TARGET_BIN)
-else
-CLEAN_ARTIFACTS := $(TARGET_HEX)
-endif
+CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP) 
 
 # List of buildable ELF files and their object dependencies.
