@@ -323,49 +323,53 @@ static void initActiveBoxIds(void)
 
 static uint32_t packFlightModeFlags(void)
 {
-    uint32_t junk, tmp;
-
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix
     // It would be preferable to setting the enabled bits based on BOXINDEX.
-    junk = 0;
-    tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-        IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
-        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
-        IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-        IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
-        IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
-        IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-        IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
-        IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
 
-    // TODO!
-    int bitIdx = 0;                   // index of active boxId (matches sent permanentId and boxNames)
+    uint32_t boxEnabledMask = 0;      // enabled BOXes, bits indexed by boxId_e
+
+    // enable BOXes dependent on FLIGHT_MODE, use mapping table
+    static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
+    flightModeFlags_e flightModeCopyMask = ~(GTUNE_MODE);  // BOXGTUNE is based on rcMode, not flight mode
+    for(unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
+        if(flightMode_boxId_map[i] == -1)
+            continue;                 // boxId_e does not exist for this FLIGHT_MODE
+        if((flightModeCopyMask & (1 << i)) == 0)
+            continue;                 // this flightmode is not copied
+        if(FLIGHT_MODE(1 << i))
+            boxEnabledMask |= 1 << flightMode_boxId_map[i];
+    }
+
+    // enable BOXes dependent on rcMode bits, indexes are the same.
+    // only subset of BOXes depend on rcMode, use mask to mark them
+#define BM(x) (1 << (x))
+    const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
+        | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
+        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX);
+    for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
+        if((rcModeCopyMask & BM(i)) == 0)
+            continue;
+        if(IS_RC_MODE_ACTIVE(i))
+            boxEnabledMask |= 1 << i;
+    }
+#undef BM
+    // copy ARM state
+    if(ARMING_FLAG(ARMED))
+        boxEnabledMask |= 1 << BOXARM;
+
+    // map boxId_e enabled bits to MSP status indexes
+    // only active boxIds are sent in status over MSP, other bits are not counted
+    uint32_t mspBoxEnabledMask = 0;
+    unsigned mspBoxIdx = 0;           // index of active boxId (matches sent permanentId and boxNames)
     for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
         if((activeBoxIds & (1 << boxId)) == 0)
             continue;                 // this box is not active
-        if (tmp & (1 << boxId))
-            junk |= 1 << bitIdx;      // box is enabled
-        bitIdx++;                     // next output bit ID
+        if (boxEnabledMask & (1 << boxId))
+            mspBoxEnabledMask |= 1 << mspBoxIdx;      // box is enabled
+        mspBoxIdx++;                  // next output bit ID
     }
-
-    return junk;
+    return mspBoxEnabledMask;
 }
 
 static void serializeSDCardSummaryReply(mspPacket_t *reply)
