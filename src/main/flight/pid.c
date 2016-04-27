@@ -124,6 +124,8 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f       // betaflight - 10.0
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
+#define PID_ONE_SIDED_DIFFERENTIATOR            // Use differentiator will less latency but worse noise rejection
+
 void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig)
 {
     // TPA should be updated only when TPA is actually set
