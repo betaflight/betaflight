@@ -1295,10 +1295,6 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0));
             break;
-        case 40:
-            blackboxPrintfHeaderLine("deltaMethod:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.deltaMethod);
-            break;
         case 41:
             blackboxPrintfHeaderLine("H_sensitivity:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.H_sensitivity);

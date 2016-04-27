@@ -261,13 +261,8 @@ void annexCode(void)
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
         }
 
-        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
-        if (axis == YAW) {
-            PIDweight[axis] = 100;
-        }
-        else {
-            PIDweight[axis] = prop;
-        }
+        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
+        PIDweight[axis] = prop;
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)
             rcCommand[axis] = -rcCommand[axis];

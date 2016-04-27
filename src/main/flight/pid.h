@@ -23,8 +23,6 @@
 #define YAW_P_LIMIT_MAX 400                 // Maximum value for yaw P limiter
 
 #define PID_LAST_RATE_COUNT 7
-#define PID_DTERM_FIR_MAX_LENGTH 7
-#define PID_MAX_DIFFERENTIATOR (PID_DTERM_FIR_MAX_LENGTH-2)
 #define ITERM_RESET_THRESHOLD 20
 #define ITERM_RESET_THRESHOLD_YAW 10
 
@@ -81,7 +79,6 @@ typedef struct pidProfile_s {
     uint16_t rollPitchItermResetRate;       // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint8_t rollPitchItermResetAlways;      // Reset Iterm also without SUPER EXPO
     uint16_t yawItermResetRate;             // Experimental threshold for resetting iterm for yaw on certain rates
-    uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t dterm_differentiator;
