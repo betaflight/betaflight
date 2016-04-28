@@ -19,12 +19,10 @@
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 
-typedef enum {
-    imC2      = 0,
-    imSIL_BLB = 1,
-    imATM_BLB = 2,
-    imSK      = 3,
-} interfaceMode_e;
+#define imC2 0
+#define imSIL_BLB 1
+#define imATM_BLB 2
+#define imSK 3
 
 typedef struct {
     GPIO_TypeDef* gpio;
@@ -34,7 +32,7 @@ typedef struct {
     gpio_config_t gpio_config_OUTPUT;
 } escHardware_t;
 
-extern uint8_t escSelected;
+extern uint8_t selected_esc;
 
 bool isEscHi(uint8_t selEsc);
 bool isEscLo(uint8_t selEsc);
@@ -43,26 +41,36 @@ void setEscLo(uint8_t selEsc);
 void setEscInput(uint8_t selEsc);
 void setEscOutput(uint8_t selEsc);
 
-#define ESC_IS_HI isEscHi(escSelected)
-#define ESC_IS_LO isEscLo(escSelected)
-#define ESC_SET_HI setEscHi(escSelected)
-#define ESC_SET_LO setEscLo(escSelected)
-#define ESC_INPUT setEscInput(escSelected)
-#define ESC_OUTPUT setEscOutput(escSelected)
+#define ESC_IS_HI isEscHi(selected_esc)
+#define ESC_IS_LO isEscLo(selected_esc)
+#define ESC_SET_HI setEscHi(selected_esc)
+#define ESC_SET_LO setEscLo(selected_esc)
+#define ESC_INPUT setEscInput(selected_esc)
+#define ESC_OUTPUT setEscOutput(selected_esc)
 
 typedef struct ioMem_s {
-    uint16_t len;
-    uint16_t addr;
-    uint8_t *data;
+    uint8_t D_NUM_BYTES;
+    uint8_t D_FLASH_ADDR_H;
+    uint8_t D_FLASH_ADDR_L;
+    uint8_t *D_PTR_I;
 } ioMem_t;
 
-typedef struct deviceInfo_s {
-    uint16_t signature;        // lower 16 bit of signature, checked
-    uint8_t  signature2;       // upper 8 bit of signature, not used in current code
-    uint8_t interfaceMode;
-} deviceInfo_t;
+extern ioMem_t ioMem;
+
+typedef union __attribute__ ((packed)) {
+    uint8_t bytes[2];
+    uint16_t word;
+} uint8_16_u;
+
+typedef union __attribute__ ((packed)) {
+    uint8_t bytes[4];
+    uint16_t words[2];
+    uint32_t dword;
+} uint8_32_u;
+
+//extern uint8_32_u DeviceInfo;
 
 bool isMcuConnected(void);
-int Initialize4WayInterface(void);
-void Process4WayInterface(serialPort_t *port);
+uint8_t Initialize4WayInterface(void);
+void Process4WayInterface(mspPort_t *mspPort, bufWriter_t *bufwriter);
 void DeInitialize4WayInterface(void);
