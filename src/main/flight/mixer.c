@@ -753,6 +753,11 @@ void mixTable(void)
     uint32_t i;
     fix12_t vbatCompensationFactor;
     static fix12_t mixReduction;
+	bool use_vbat_compensation = false;
+	if (batteryConfig && batteryConfig->vbatPidCompensation) {
+		use_vbat_compensation = true;
+		vbatCompensationFactor = calculateVbatPidCompensation();
+	}
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
@@ -766,8 +771,6 @@ void mixTable(void)
     int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
     int16_t rollPitchYawMixMin = 0;
 
-    if (batteryConfig->vbatPidCompensation) vbatCompensationFactor = calculateVbatPidCompensation(); // Calculate voltage compensation
-
     // Find roll/pitch/yaw desired output
     for (i = 0; i < motorCount; i++) {
         rollPitchYawMix[i] =
@@ -775,7 +778,7 @@ void mixTable(void)
             axisPID[ROLL] * currentMixer[i].roll +
             -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
-        if (batteryConfig->vbatPidCompensation) rollPitchYawMix[i] = qMultiply(vbatCompensationFactor, rollPitchYawMix[i]);  // Add voltage compensation
+        if (use_vbat_compensation) rollPitchYawMix[i] = qMultiply(vbatCompensationFactor, rollPitchYawMix[i]);  // Add voltage compensation
 
         if (rollPitchYawMix[i] > rollPitchYawMixMax) rollPitchYawMixMax = rollPitchYawMix[i];
         if (rollPitchYawMix[i] < rollPitchYawMixMin) rollPitchYawMixMin = rollPitchYawMix[i];
