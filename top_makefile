@@ -22,7 +22,7 @@ clean_cc3d cc3d:                          opts := TARGET=CC3D
 clean_cc3d_opbl cc3d_opbl :               opts := TARGET=CC3D_OPBL
 clean_spracingf3mini spracingf3mini :     opts := TARGET=SPRACINGF3MINI
 clean_spracingf3 spracingf3 :             opts := TARGET=SPRACINGF3
-clean_spracingf3 spracingf3evo :          opts := TARGET=SPRACINGF3EVO
+clean_spracingf3evo spracingf3evo :       opts := TARGET=SPRACINGF3EVO
 clean_sparky sparky :                     opts := TARGET=SPARKY
 clean_alienflightf1 alienflightf1 :       opts := TARGET=ALIENFLIGHTF1
 clean_alienflightf3 alienflightf3  :      opts := TARGET=ALIENFLIGHTF3
@@ -49,7 +49,7 @@ everything: $(ALL_TARGETS)
 
 .PHONY:$(ALL_TARGETS)
 $(ALL_TARGETS):
-	make -f Makefile $(opts)
+	make -f Makefile hex binary $(opts)
 
 .PHONY: $(CLEAN_TARGETS)
 $(CLEAN_TARGETS):

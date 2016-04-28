@@ -1280,8 +1280,8 @@ static bool blackboxWriteSysinfo()
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
             break;
         case 36:
-            blackboxPrintfHeaderLine("dynamic_dterm_threshold:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_dterm_threshold);
+            blackboxPrintfHeaderLine("dterm_differentiator:%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_differentiator);
             break;
         case 37:
             blackboxPrintfHeaderLine("rollPitchItermResetRate:%d",
@@ -1294,10 +1294,6 @@ static bool blackboxWriteSysinfo()
         case 39:
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0));
-            break;
-        case 40:
-            blackboxPrintfHeaderLine("deltaMethod:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.deltaMethod);
             break;
         case 41:
             blackboxPrintfHeaderLine("H_sensitivity:%d",

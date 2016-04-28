@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 132;
+static const uint8_t EEPROM_CONF_VERSION = 133;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -178,12 +178,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 70.0f;
-    pidProfile->dterm_average_count = 0;
-    pidProfile->dynamic_dterm_threshold = 20;
+    pidProfile->dterm_differentiator = 1;
     pidProfile->rollPitchItermResetRate = 200;
+    pidProfile->rollPitchItermResetAlways = 0;
     pidProfile->yawItermResetRate = 50;
     pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
-    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
 
     pidProfile->H_sensitivity = 75;  // TODO - Cleanup during next EEPROM changes
 
@@ -436,7 +435,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.rxConfig.midrc = 1500;
-    masterConfig.rxConfig.mincheck = 1040;
+    masterConfig.rxConfig.mincheck = 1080;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
@@ -454,6 +453,8 @@ static void resetConf(void)
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
     masterConfig.rxConfig.superExpoFactor = 30;
+    masterConfig.rxConfig.superExpoFactorYaw = 30;
+    masterConfig.rxConfig.superExpoYawMode = 0;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 

@@ -22,6 +22,10 @@
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 400                 // Maximum value for yaw P limiter
 
+#define PID_LAST_RATE_COUNT 7
+#define ITERM_RESET_THRESHOLD 20
+#define ITERM_RESET_THRESHOLD_YAW 10
+
 typedef enum {
     PIDROLL,
     PIDPITCH,
@@ -53,6 +57,12 @@ typedef enum {
     RESET_ITERM_AND_REDUCE_PID
 } pidErrorResetOption_e;
 
+typedef enum {
+    SUPEREXPO_YAW_OFF = 0,
+    SUPEREXPO_YAW_ON,
+    SUPEREXPO_YAW_ALWAYS
+} pidSuperExpoYaw_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
@@ -66,12 +76,12 @@ typedef struct pidProfile_s {
 
     float dterm_lpf_hz;                     // Delta Filter in hz
     float yaw_lpf_hz;                       // Additional yaw filter when yaw axis too noisy
-    uint16_t rollPitchItermResetRate;        // Experimental threshold for resetting iterm for pitch and roll on certain rates
-    uint16_t yawItermResetRate;              // Experimental threshold for resetting iterm for yaw on certain rates
-    uint8_t deltaMethod;                    // Alternative delta Calculation
+    uint16_t rollPitchItermResetRate;       // Experimental threshold for resetting iterm for pitch and roll on certain rates
+    uint8_t rollPitchItermResetAlways;      // Reset Iterm also without SUPER EXPO
+    uint16_t yawItermResetRate;             // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
-    uint8_t dynamic_dterm_threshold;
+    uint8_t dterm_differentiator;
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

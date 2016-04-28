@@ -426,10 +426,6 @@ static const char * const lookupTableMagHardware[] = {
     "AK8963"
 };
 
-static const char * const lookupDeltaMethod[] = {
-    "ERROR", "MEASUREMENT"
-};
-
 static const char * const lookupTableDebug[] = {
     "NONE",
     "CYCLETIME",
@@ -438,6 +434,10 @@ static const char * const lookupTableDebug[] = {
     "ACCELEROMETER",
     "MIXER",
     "AIRMODE"
+};
+
+static const char * const lookupTableSuperExpoYaw[] = {
+    "OFF", "ON", "ALWAYS"
 };
 
 typedef struct lookupTableEntry_s {
@@ -464,8 +464,8 @@ typedef enum {
     TABLE_ACC_HARDWARE,
     TABLE_BARO_HARDWARE,
     TABLE_MAG_HARDWARE,
-    TABLE_DELTA_METHOD,
 	TABLE_DEBUG,
+    TABLE_SUPEREXPO_YAW,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -487,8 +487,8 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
-    { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) },
-    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) }
+    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
+    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -688,6 +688,8 @@ const clivalue_t valueTable[] = {
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "super_expo_factor",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.superExpoFactor, .config.minmax = {1, 100 } },
+    { "super_expo_factor_yaw",      VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.superExpoFactorYaw, .config.minmax = {1, 100 } },
+    { "super_expo_yaw",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.superExpoYawMode, .config.lookup = { TABLE_SUPEREXPO_YAW } },
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
     { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
@@ -719,10 +721,9 @@ const clivalue_t valueTable[] = {
 
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
-    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "dterm_lowpass_hz",           VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
-    { "dterm_average_count",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_average_count, .config.minmax = {0, 12 } },
-    { "dynamic_dterm_threshold",    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dynamic_dterm_threshold, .config.minmax = {0, 100 } },
+    { "dterm_differentiator",       VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dterm_differentiator, .config.lookup = { TABLE_OFF_ON } },
+    { "iterm_always_reset",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermResetAlways, .config.lookup = { TABLE_OFF_ON } },
     { "iterm_reset_degrees",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermResetRate, .config.minmax = {50, 1000 } },
     { "yaw_iterm_reset_degrees",    VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermResetRate, .config.minmax = {25, 1000 } },
     { "yaw_lowpass_hz",             VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },

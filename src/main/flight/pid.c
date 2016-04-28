@@ -80,11 +80,17 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 }
 
 float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
-	float propFactor;
+    float propFactor;
+    float superExpoFactor;
 
-    propFactor = 1.0f - ((rxConfig->superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+    if (axis == YAW && !rxConfig->superExpoYawMode) {
+        propFactor = 1.0f;
+    } else {
+        superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
+        propFactor = 1.0f - ((superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+    }
 
-	return propFactor;
+    return propFactor;
 }
 
 void pidResetErrorAngle(void)
@@ -130,10 +136,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastErrorForDelta[3];
-    static float deltaState[3][DELTA_MAX_SAMPLES];
+    static float lastRate[3][PID_LAST_RATE_COUNT];
     float delta;
-    float dynamicDTermGain;
     int axis;
     float horizonLevelStrength = 1;
 
@@ -197,7 +201,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         RateError = AngleRate - gyroRate;
 
         // -----calculate P component
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (luxPTermScale * pidProfile->P8[axis] * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
         } else {
             PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
@@ -211,12 +215,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // -----calculate I component.
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = 0;
+        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
+            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = 0;
+            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -234,33 +238,28 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateError - lastErrorForDelta[axis];
-                lastErrorForDelta[axis] = RateError;
+            if (pidProfile->dterm_differentiator) {
+                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
+                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
+                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
+                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
+                    lastRate[axis][i] = lastRate[axis][i-1];
+                }
             } else {
-                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = gyroRate;
+                // When DTerm low pass filter disabled apply moving average to reduce noise
+                delta = -(gyroRate - lastRate[axis][0]);
             }
 
-            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-            // would be scaled by different dt each time. Division by dT fixes that.
-            delta *= (1.0f / getdT());
+            lastRate[axis][0] = gyroRate;
 
-            // Several different Dterm filtering methods to prevent noise. All of them can be combined
+            // Divide delta by targetLooptime to get differential (ie dr/dt)
+            delta *= (1.0f / getdT());
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
-            // Apply moving average
-            if (pidProfile->dterm_average_count) delta = filterApplyAveragef(delta, pidProfile->dterm_average_count, deltaState[axis]) * 2;
-
             DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
-
-            // Dynamic D Implementation
-            if (pidProfile->dynamic_dterm_threshold) {
-                dynamicDTermGain = constrainf(ABS(DTerm) / pidProfile->dynamic_dterm_threshold, 0.0f, 1.0f);
-                DTerm *= dynamicDTermGain;
-            }
         }
 
         // -----calculate total PID output
@@ -289,10 +288,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
-    static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
-    static int32_t deltaState[3][DELTA_MAX_SAMPLES];
+    static int32_t lastRate[3][PID_LAST_RATE_COUNT];
     int32_t AngleRateTmp, RateError, gyroRate;
-    int32_t dynamicDTermGain;
 
     int8_t horizonLevelStrength = 100;
 
@@ -346,7 +343,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         RateError = AngleRateTmp - gyroRate;
 
         // -----calculate P component
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
+        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (pidProfile->P8[axis] * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
         } else {
             PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -368,12 +365,12 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        if (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) {
-            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = 0;
+        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
+            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = 0;
+            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -389,33 +386,28 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = RateError;
+            if (pidProfile->dterm_differentiator) {
+                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
+                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
+                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
+                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
+                    lastRate[axis][i] = lastRate[axis][i-1];
+                }
             } else {
-                delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-                lastErrorForDelta[axis] = gyroRate;
+                // When DTerm low pass filter disabled apply moving average to reduce noise
+                delta = -(gyroRate - lastRate[axis][0]);
             }
 
-            // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-            // would be scaled by different dt each time. Division by dT fixes that.
-            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
+            lastRate[axis][0] = gyroRate;
 
-            // Several different Dterm filtering methods to prevent noise. All of them can be combined
+            // Divide delta by targetLooptime to get differential (ie dr/dt)
+            delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
-            // Apply moving average
-            if (pidProfile->dterm_average_count) delta = filterApplyAverage(delta, pidProfile->dterm_average_count, deltaState[axis]);
-
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
-
-            // Dynamic D Implementation
-            if (pidProfile->dynamic_dterm_threshold) {
-                dynamicDTermGain = constrain((ABS(DTerm) << 7) / pidProfile->dynamic_dterm_threshold, 0, 1 << 7);
-                DTerm = (DTerm * dynamicDTermGain) >> 7;
-            }
         }
 
         // -----calculate total PID output
