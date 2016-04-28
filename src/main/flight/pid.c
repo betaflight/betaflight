@@ -124,8 +124,6 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f       // betaflight - 10.0
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
-#define PID_ONE_SIDED_DIFFERENTIATOR            // Use differentiator will less latency but worse noise rejection
-
 void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig)
 {
     // TPA should be updated only when TPA is actually set
@@ -240,23 +238,13 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         // optimisation for when D8 is zero, often used by YAW axis
         newDTerm = 0;
     } else {
-        // Shift old rate values
-        for (int i = DTERM_BUF_COUNT - 1; i > 0; i--) {
-            pidState->dTermBuf[i] = pidState->dTermBuf[i-1];
-        }
-        // Store new rate value
-        pidState->dTermBuf[0] = pidState->gyroRate;
-
         // Calculate derivative using 5-point noise-robust differentiators without time delay (one-sided or forward filters)
         // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
-#ifdef PID_ONE_SIDED_DIFFERENTIATOR
         // h[0] = 5/8, h[-1] = 1/4, h[-2] = -1, h[-3] = -1/4, h[-4] = 3/8
-        newDTerm =  5*pidState->dTermBuf[0] + 2*pidState->dTermBuf[1] - 8*pidState->dTermBuf[2] - 2*pidState->dTermBuf[3] + 3*pidState->dTermBuf[4];
-#else
-        // centered differentiator
-        newDTerm = pidState->dTermBuf[0] + 2*(pidState->dTermBuf[1] - pidState->dTermBuf[3]) - pidState->dTermBuf[4];
-#endif
-        newDTerm *= -pidState->kD / (8 * dT);
+        static const float dtermCoeffs[DTERM_BUF_COUNT] = {5.0f, 2.0f, -8.0f, -2.0f, 3.0f};
+        filterUpdateFIR(DTERM_BUF_COUNT, pidState->dTermBuf, pidState->gyroRate);
+        newDTerm = filterApplyFIR(DTERM_BUF_COUNT, pidState->dTermBuf, dtermCoeffs, -pidState->kD / (8 * dT));
+
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
             if (!pidState->deltaFilterInit) {

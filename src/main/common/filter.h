@@ -34,3 +34,6 @@ void filterResetPt1(filterStatePt1_t *filter, float input);
 
 void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplingRate);
 float filterApplyBiQuad(float sample, biquad_t *state);
+
+void filterUpdateFIR(int filterLength, float *shiftBuf, float newSample);
+float filterApplyFIR(int filterLength, const float *shiftBuf, const float *coeffBuf, float commonMultiplier);

@@ -100,3 +100,22 @@ void filterResetPt1(filterStatePt1_t *filter, float input)
 {
     filter->state = input;
 }
+
+void filterUpdateFIR(int filterLength, float *shiftBuf, float newSample)
+{
+    // Shift history buffer and push new sample
+    for (int i = filterLength - 1; i > 0; i--)
+        shiftBuf[i] = shiftBuf[i - 1];
+
+    shiftBuf[0] = newSample;
+}
+
+float filterApplyFIR(int filterLength, const float *shiftBuf, const float *coeffBuf, float commonMultiplier)
+{
+    float accum = 0;
+
+    for (int i = 0; i < filterLength; i++)
+        accum += shiftBuf[i] * coeffBuf[i];
+
+    return accum * commonMultiplier;
+}
