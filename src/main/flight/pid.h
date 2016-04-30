@@ -74,8 +74,8 @@ typedef struct pidProfile_s {
 
     uint8_t H_sensitivity;
 
-    float dterm_lpf_hz;                     // Delta Filter in hz
-    float yaw_lpf_hz;                       // Additional yaw filter when yaw axis too noisy
+    uint16_t dterm_lpf_hz;                   // Delta Filter in hz
+    uint16_t yaw_lpf_hz;                     // Additional yaw filter when yaw axis too noisy
     uint16_t rollPitchItermResetRate;       // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint8_t rollPitchItermResetAlways;      // Reset Iterm also without SUPER EXPO
     uint16_t yawItermResetRate;             // Experimental threshold for resetting iterm for yaw on certain rates
