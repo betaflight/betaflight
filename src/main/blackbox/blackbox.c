@@ -1280,8 +1280,8 @@ static bool blackboxWriteSysinfo()
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
             break;
         case 36:
-            blackboxPrintfHeaderLine("dterm_differentiator:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_differentiator);
+            blackboxPrintfHeaderLine("dynamic_pterm:%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pterm);
             break;
         case 37:
             blackboxPrintfHeaderLine("rollPitchItermResetRate:%d",
