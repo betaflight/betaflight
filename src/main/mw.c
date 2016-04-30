@@ -489,8 +489,11 @@ void processRx(void)
             else {
                 pidResetErrorAccumulators();
             }
+
+            ENABLE_STATE(PID_ATTENUATE);
         }
         else {
+            DISABLE_STATE(PID_ATTENUATE);
             DISABLE_STATE(ANTI_WINDUP);
         }
     }
@@ -715,7 +718,7 @@ bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 void taskUpdateRxMain(void)
 {
     processRx();
-    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile);
+    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
     isRXDataNew = true;
 }
 

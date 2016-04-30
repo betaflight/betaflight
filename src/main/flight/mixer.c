@@ -859,6 +859,7 @@ void mixTable(void)
 
     throttleRange = throttleMax - throttleMin;
 
+    #define THROTTLE_CLIPPING_FACTOR    0.33f
     if (rpyMixRange > throttleRange) {
         motorLimitReached = true;
         float mixReduction = (float)throttleRange / rpyMixRange;
@@ -867,12 +868,13 @@ void mixTable(void)
             rpyMix[i] =  mixReduction  * rpyMix[i];
         }
 
-        // Get the maximum correction by setting offset to center
-        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        // Allow some clipping on edges to soften correction response
+        throttleMin = throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
+        throttleMax = throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
     } else {
         motorLimitReached = false;
-        throttleMin = throttleMin + (rpyMixRange / 2);
-        throttleMax = throttleMax - (rpyMixRange / 2);
+        throttleMin = MIN(throttleMin + (rpyMixRange / 2), throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
+        throttleMax = MAX(throttleMax - (rpyMixRange / 2), throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted

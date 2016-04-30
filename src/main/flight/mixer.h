@@ -55,6 +55,11 @@ typedef enum mixerMode
 
 #define DEFAULT_MIXER MIXER_QUADX
 
+typedef struct motorAxisCorrectionLimits_s {
+    int16_t min;
+    int16_t max;
+} motorAxisCorrectionLimits_t;
+
 // Custom mixer data per motor
 typedef struct motorMixer_s {
     float throttle;

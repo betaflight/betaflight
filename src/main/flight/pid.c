@@ -82,7 +82,6 @@ extern float dT;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
 static float tpaFactor;
-
 int16_t axisPID[FLIGHT_DYNAMICS_INDEX_COUNT];
 
 #ifdef BLACKBOX
@@ -124,7 +123,9 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
 #define FP_PID_LEVEL_P_MULTIPLIER   40.0f       // betaflight - 10.0
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
-void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig)
+#define KD_ATTENUATION_BREAK        0.25f
+
+void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
 {
     // TPA should be updated only when TPA is actually set
     if (controlRateConfig->dynThrPID == 0 || rcData[THROTTLE] < controlRateConfig->tpa_breakpoint) {
@@ -133,6 +134,16 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         tpaFactor = (100 - (uint16_t)controlRateConfig->dynThrPID * (rcData[THROTTLE] - controlRateConfig->tpa_breakpoint) / (2000 - controlRateConfig->tpa_breakpoint)) / 100.0f;
     } else {
         tpaFactor = (100 - controlRateConfig->dynThrPID) / 100.0f;
+    }
+
+    // Additional throttle-based KD attenuation (kudos to RS2K & Raceflight)
+    float relThrottle = constrainf( ((float)rcData[THROTTLE] - (float)rxConfig->mincheck) / ((float)rxConfig->maxcheck - (float)rxConfig->mincheck), 0.0f, 1.0f);
+    float kdAttenuationFactor;
+
+    if (relThrottle < KD_ATTENUATION_BREAK) {
+        kdAttenuationFactor = constrainf((relThrottle / KD_ATTENUATION_BREAK) + 0.50f, 0.0f, 1.0f);
+    } else {
+        kdAttenuationFactor = 1.0f;
     }
 
     // PID coefficients can be update only with THROTTLE and TPA or inflight PID adjustments
@@ -145,7 +156,7 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         // Apply TPA to ROLL and PITCH axes
         if (axis != FD_YAW) {
             pidState[axis].kP *= tpaFactor;
-            pidState[axis].kD *= tpaFactor;
+            pidState[axis].kD *= tpaFactor * kdAttenuationFactor;
         }
 
         if ((pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0)) {
@@ -257,7 +268,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 
     // TODO: Get feedback from mixer on available correction range for each axis
     const float newOutput = newPTerm + pidState->errorGyroIf + newDTerm;
-    const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
+    const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT) * (STATE(PID_ATTENUATE) ? 0.33f : 1.0f);
 
     // Integrate only if we can do backtracking
     pidState->errorGyroIf += (rateError * pidState->kI * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);
@@ -296,6 +307,7 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         pidLevel(pidProfile, &pidState[FD_ROLL], FD_ROLL, horizonLevelStrength);
         pidLevel(pidProfile, &pidState[FD_PITCH], FD_PITCH, horizonLevelStrength);
     }
+
     if (FLIGHT_MODE(HEADING_LOCK)) {
         pidApplyHeadingLock(pidProfile, &pidState[FD_YAW]);
     }
