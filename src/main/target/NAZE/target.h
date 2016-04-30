@@ -201,7 +201,7 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32
