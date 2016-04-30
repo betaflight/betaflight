@@ -26,6 +26,9 @@ export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 for target in "${targets[@]}"
 do
 	unset RUNTESTS PUBLISHMETA TARGET
+  echo
+  echo
+  echo "BUILDING '$target'"
 	eval "export $target"
 	make -f Makefile clean
 	./.travis.sh
