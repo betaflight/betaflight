@@ -183,3 +183,9 @@ serialPort_t *usbVcpOpen(void)
 
     return (serialPort_t *)s;
 }
+uint32_t usbVcpGetBaudRate(serialPort_t *instance)
+{
+    UNUSED(instance);
+
+    return CDC_BaudRate();
+}
