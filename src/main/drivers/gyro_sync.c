@@ -32,7 +32,8 @@ static uint8_t mpuDividerDrops;
 bool getMpuDataStatus(gyro_t *gyro)
 {
     bool mpuDataStatus;
-
+    if (!gyro->intStatus)
+      return false;
     gyro->intStatus(&mpuDataStatus);
     return mpuDataStatus;
 }
