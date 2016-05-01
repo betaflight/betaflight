@@ -45,7 +45,7 @@ This is default setting which supports VFAS resolution of 0.2 volts and is suppo
 ```
 set frsky_vfas_precision  = 1
 ```
-This is new setting which supports VFAS resolution of 0.1 volts and is only supported by OpenTX radios (this method uses custom ID 0x39).
+This is new setting which supports VFAS resolution of 0.1 volts and is supported by OpenTX and er9x/ersky9x firmware (this method uses custom ID 0x39).
 
 
 ### Notes
