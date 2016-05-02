@@ -1273,7 +1273,7 @@ static bool blackboxWriteSysinfo()
             break;
         case 34:
             blackboxPrintfHeaderLine("yaw_lpf_hz:%d",
-                                     (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0));
+                                     (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
             break;
         case 35:
             blackboxPrintfHeaderLine("dterm_average_count:%d",
@@ -1293,7 +1293,7 @@ static bool blackboxWriteSysinfo()
             break;
         case 39:
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
-                                     (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0));
+                                     (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
             break;
         case 40:
             blackboxPrintfHeaderLine("H_sensitivity:%d",
@@ -1309,10 +1309,10 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("gyro_lpf:%d", masterConfig.gyro_lpf);
             break;
         case 44:
-            blackboxPrintfHeaderLine("gyro_lowpass_hz:%d", (int)(masterConfig.gyro_soft_lpf_hz * 100.0));
+            blackboxPrintfHeaderLine("gyro_lowpass_hz:%d", (int)(masterConfig.gyro_soft_lpf_hz * 100.0f));
             break;
         case 45:
-            blackboxPrintfHeaderLine("acc_lpf_hz:%d", (int)(masterConfig.acc_lpf_hz * 100.0));
+            blackboxPrintfHeaderLine("acc_lpf_hz:%d", (int)(masterConfig.acc_lpf_hz * 100.0f));
             break;
         case 46:
             blackboxPrintfHeaderLine("acc_hardware:%d", masterConfig.acc_hardware);
