@@ -114,9 +114,17 @@
 
 #define TELEMETRY
 #define SERIAL_RX
-//#define SONAR
 #define USE_SERVOS
 #define USE_CLI
+
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
+#define SONAR_TRIGGER_GPIO          GPIOB
+#define SONAR_ECHO_PIN              Pin_0   // (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_EXTI_LINE             EXTI_Line0
+#define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
+#define SONAR_EXTI_IRQN             EXTI0_IRQn
 
 #define USE_SERIAL_1WIRE
 
