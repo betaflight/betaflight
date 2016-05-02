@@ -173,6 +173,8 @@
 #define GPS_PROTO_NAZA
 
 #define NAV
+//#define NAV_AUTO_MAG_DECLINATION
+#define NAV_GPS_GLITCH_DETECTION
 
 #define SERIAL_RX
 #define TELEMETRY

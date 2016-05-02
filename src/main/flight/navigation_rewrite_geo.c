@@ -44,7 +44,7 @@
 
 #if defined(NAV)
 
-#if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
+#if defined(NAV_AUTO_MAG_DECLINATION)
 /* Declination calculation code from PX4 project */
 /* set this always to the sampling in degrees for the table below */
 #define SAMPLING_RES		10.0f

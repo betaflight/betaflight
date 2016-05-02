@@ -82,7 +82,7 @@ typedef struct {
 
 typedef struct {
     uint32_t    lastUpdateTime; // Last update time (us)
-#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+#if defined(NAV_GPS_GLITCH_DETECTION)
     bool        glitchDetected;
     bool        glitchRecovery;
 #endif
@@ -204,7 +204,7 @@ static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
     return dTus;                                                 // Filter failed. Set GPS Hz by measurement
 }
 
-#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+#if defined(NAV_GPS_GLITCH_DETECTION)
 static bool detectGPSGlitch(uint32_t currentTime)
 {
     static uint32_t previousTime = 0;
@@ -311,7 +311,7 @@ void onNewGPSData(void)
                     posEstimator.gps.vel.V.Z = (posEstimator.gps.vel.V.Z + (gpsSol.llh.alt - previousAlt) / dT) / 2.0f;
                 }
 
-#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+#if defined(NAV_GPS_GLITCH_DETECTION)
                 /* GPS glitch protection. We have local coordinates and local velocity for current GPS update. Check if they are sane */
                 if (detectGPSGlitch(currentTime)) {
                     posEstimator.gps.glitchRecovery = false;
@@ -511,7 +511,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
                                         ((isSonarValid && posEstimator.sonar.alt < 20.0f && posEstimator.state.isBaroGroundValid) ||
                                          (isBaroValid && posEstimator.state.isBaroGroundValid && posEstimator.baro.alt < posEstimator.state.baroGroundAlt));
 
-#if defined(INAV_ENABLE_GPS_GLITCH_DETECTION)
+#if defined(NAV_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
 #endif
 
@@ -674,10 +674,12 @@ static void publishEstimatedTopic(uint32_t currentTime)
     }
 }
 
+#if defined(NAV_GPS_GLITCH_DETECTION)
 bool isGPSGlitchDetected(void)
 {
     return posEstimator.gps.glitchDetected;
 }
+#endif
 
 /**
  * Initialize position estimator

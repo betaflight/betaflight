@@ -41,12 +41,7 @@ void onNewGPSData(void);
 #define NAV_BLACKBOX
 #endif
 
-// Features
-//#define INAV_ENABLE_AUTO_MAG_DECLINATION
-#define INAV_ENABLE_GPS_GLITCH_DETECTION
-
-// Maximum number of waypoints, special waypoint 0 = home,
-#define NAV_MAX_WAYPOINTS       15
+#define NAV_MAX_WAYPOINTS           15
 
 enum {
     NAV_GPS_ATTI    = 0,                    // Pitch/roll stick controls attitude (pitch/roll lean angles)

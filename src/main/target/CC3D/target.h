@@ -117,6 +117,8 @@
 #define GPS_PROTO_NAZA
 
 #define NAV
+//#define NAV_AUTO_MAG_DECLINATION
+#define NAV_GPS_GLITCH_DETECTION
 
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM3
