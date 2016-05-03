@@ -689,7 +689,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(n
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
- 
+
      // If we enable terrain mode and surface offset is not set yet - do it
     if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
         setDesiredSurfaceOffset(posControl.actualState.surface);
@@ -951,16 +951,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
             updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
         else {
-            // Gradually reduce descent speed depending on actual altitude.
-            if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 1500.0f)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
-            }
-            else if (posControl.actualState.pos.V.Z > (posControl.homePosition.pos.V.Z + 500.0f)) {
-                updateAltitudeTargetFromClimbRate(-0.5f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
-            }
-            else {
-                updateAltitudeTargetFromClimbRate(-0.25f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
-            }
+            // Ramp down decend velocity from 100% at 1500cm altitude to 25% at 500cm altitude. 25% from 500cm to 0cm as safety margin for baro drift.
+            float decendVelScaling = (posControl.actualState.pos.V.Z - (posControl.homePosition.pos.V.Z + 500.0f)) / 1000.0f;
+            decendVelScaling = constrainf(decendVelScaling, 0.25f, 1.0f);
+            updateAltitudeTargetFromClimbRate(-decendVelScaling * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
 
         return NAV_FSM_EVENT_NONE;
