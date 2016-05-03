@@ -93,6 +93,16 @@ float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
     return propFactor;
 }
 
+uint16_t getDynamicKp(int axis, pidProfile_t *pidProfile) {
+    uint16_t dynamicKp;
+
+    uint32_t dynamicFactor = constrain(ABS(rcCommand[axis] << 8) / DYNAMIC_PTERM_STICK_THRESHOLD, 0, 1 << 7);
+
+    dynamicKp = ((pidProfile->P8[axis] << 8) + (pidProfile->P8[axis] * dynamicFactor)) >> 8;
+
+    return dynamicKp;
+}
+
 void pidResetErrorAngle(void)
 {
     errorAngleI[ROLL] = 0;
@@ -136,7 +146,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastRate[3][PID_LAST_RATE_COUNT];
+    static float lastRate[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -200,11 +210,13 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
+        uint16_t kP = (pidProfile->dynamic_pterm) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
+
         // -----calculate P component
         if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (luxPTermScale * pidProfile->P8[axis] * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
+            PTerm = (luxPTermScale * kP * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
         } else {
-            PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
+            PTerm = luxPTermScale * RateError * kP * tpaFactor;
         }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
@@ -220,7 +232,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
+            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -238,20 +250,8 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->dterm_differentiator) {
-                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
-                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
-                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
-                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
-                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
-                    lastRate[axis][i] = lastRate[axis][i-1];
-                }
-            } else {
-                // When DTerm low pass filter disabled apply moving average to reduce noise
-                delta = -(gyroRate - lastRate[axis][0]);
-            }
-
-            lastRate[axis][0] = gyroRate;
+            delta = -(gyroRate - lastRate[axis]);
+            lastRate[axis] = gyroRate;
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
@@ -288,7 +288,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
-    static int32_t lastRate[3][PID_LAST_RATE_COUNT];
+    static int32_t lastRate[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
@@ -342,11 +342,13 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         gyroRate = gyroADC[axis] / 4;
         RateError = AngleRateTmp - gyroRate;
 
+        uint16_t kP = (pidProfile->dynamic_pterm) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
+
         // -----calculate P component
         if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (pidProfile->P8[axis] * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
+            PTerm = (kP * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
         } else {
-            PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+            PTerm = (RateError * kP * PIDweight[axis] / 100) >> 7;
         }
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
@@ -366,11 +368,11 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
         if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
-            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
+            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -ITERM_RESET_THRESHOLD << 13, (int32_t) + ITERM_RESET_THRESHOLD << 13);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], -ITERM_RESET_THRESHOLD_YAW, ITERM_RESET_THRESHOLD_YAW);
+            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -ITERM_RESET_THRESHOLD << 13, (int32_t) + ITERM_RESET_THRESHOLD << 13);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -386,20 +388,8 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
             DTerm = 0;
         } else {
-            if (pidProfile->dterm_differentiator) {
-                // Calculate derivative using noise-robust differentiator without time delay (one-sided or forward filters)
-                // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
-                // N=5: h[0] = 3/8, h[-1] = 1/2, h[-2] = -1/2, h[-3] = -3/4, h[-4] = 1/8, h[-5] = 1/4
-                delta = -(3*gyroRate + 4*lastRate[axis][0] - 4*lastRate[axis][1] - 6*lastRate[axis][2] + 1*lastRate[axis][3]  + 2*lastRate[axis][4]) / 8;
-                for (int i = PID_LAST_RATE_COUNT - 1; i > 0; i--) {
-                    lastRate[axis][i] = lastRate[axis][i-1];
-                }
-            } else {
-                // When DTerm low pass filter disabled apply moving average to reduce noise
-                delta = -(gyroRate - lastRate[axis][0]);
-            }
-
-            lastRate[axis][0] = gyroRate;
+            delta = -(gyroRate - lastRate[axis]);
+            lastRate[axis] = gyroRate;
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;

@@ -152,7 +152,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
             if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
             if (looptime < 250) {
-                masterConfig.pid_process_denom = 3;
+                masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
                 if (currentProfile->pidProfile.pidController == 2) {
                     masterConfig.pid_process_denom = 3;
