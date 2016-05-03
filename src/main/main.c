@@ -26,6 +26,7 @@
 
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/atomic.h"
 #include "common/maths.h"
 
 #include "drivers/nvic.h"
@@ -657,7 +658,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) {
+int main(void) {
     init();
 
     /* Setup scheduler */
@@ -728,22 +729,12 @@ void main_init(void) {
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-}
 
-void main_step(void) {
-    scheduler();
-    processLoopback();
-}
-
-#ifndef NOMAIN
-int main(void)
-{
-    main_init();
-    while(1) {
-        main_step();
+    while (1) {
+        scheduler();
+        processLoopback();
     }
 }
-#endif
 
 #ifdef DEBUG_HARDFAULTS
 //from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/
