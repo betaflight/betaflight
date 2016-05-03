@@ -116,3 +116,25 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 int16_t qPercent(fix12_t q);
 int16_t qMultiply(fix12_t q, int16_t input);
 fix12_t qConstruct(int16_t num, int16_t den);
+
+// Defining constrain and constrainf as inline in the include file
+// because these functions are used universally and should be fast.
+inline int constrain(int amt, int low, int high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
+
+inline float constrainf(float amt, float low, float high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
