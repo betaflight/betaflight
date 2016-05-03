@@ -71,7 +71,9 @@
 #define USE_BARO_MS5611
 
 #define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_HMC5883
+#define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
 #define BEEPER
@@ -144,6 +146,8 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+
 #define BLACKBOX
 #define GPS
 #define GTUNE
@@ -174,8 +178,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_1WIRE
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_10
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_11
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define BOARD_HAS_VOLTAGE_DIVIDER

@@ -53,7 +53,7 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType)
 {
 #if defined(SONAR_PWM_TRIGGER_PIN)
     static const sonarHardware_t const sonarPWM = {
@@ -81,16 +81,16 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
     // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use RC pins 7 and 8
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && batteryConfig->currentMeterType == CURRENT_SENSOR_ADC)) {
+            || (feature(FEATURE_CURRENT_METER) && currentMeterType == CURRENT_SENSOR_ADC)) {
         return &sonarPWM;
     } else {
         return &sonarRC;
     }
 #elif defined(SONAR_TRIGGER_PIN)
-    UNUSED(batteryConfig);
+    UNUSED(currentMeterType);
     return &sonarRC;
 #elif defined(UNIT_TEST)
-    UNUSED(batteryConfig);
+    UNUSED(currentMeterType);
     return 0;
 #else
 #error Sonar not defined for target
