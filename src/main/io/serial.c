@@ -458,19 +458,80 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
     LED0_OFF;
     LED1_OFF;
 
+    // 3 position ring buffer. Used to implement a `+++` escape sequence for
+    // exiting passthrough mode.
+    // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
+    uint8_t last3[3];
+    int pos = 0, bpos = -1;
+
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
     // special handling is necessary OR performed.
     while(1) {
-        // TODO: maintain a timestamp of last data received. Use this to
-        // implement a guard interval and check for `+++` as an escape sequence
-        // to return to CLI command mode.
-        // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
+        // We do special handling of left -> right since left is likely our PC
+        // connection and right is usually a peripheral. We need to look for an
+        // escape sequence only from the PC connection.
         if (serialRxBytesWaiting(left)) {
             LED0_ON;
-            uint8_t c = serialRead(left);
-            serialWrite(right, c);
-            leftC(c);
+            last3[pos] = serialRead(left);
+            if (last3[pos] == '+') {
+                // We just received a +, so start or continue buffering.
+                if (bpos == -1)
+                    bpos = pos;
+                if (last3[0] == '+' &&
+                    last3[1] == '+' &&
+                    last3[2] == '+') {
+                    // We have received a possible escape sequence.
+                    int exit = 0;
+                    uint32_t ts = millis();
+                    while (1) {
+                        delay(1);
+                        if (serialRxBytesWaiting(left)) {
+                            break;
+                        }
+                        if (millis() - ts >= 1000) {
+                            // We passed our guard time. We can exit passthrough
+                            // mode.
+                            exit = 1;
+                            break;
+                        }
+                    }
+                    if (exit) {
+                        // Break from passthrough mode.
+                        LED0_OFF;
+                        break;
+                    } else {
+                        // We did not pass our guard time. Dump one char from
+                        // the buffer.
+                        serialWrite(right, last3[bpos]);
+                        leftC(last3[bpos]);
+                        // Continue buffering, advance bpos.
+                        if (++bpos > 2)
+                            bpos = 0;
+                    }
+                }
+            } else if (bpos == -1) {
+                // We received a regular char, we are not buffering, so pass it
+                // through.
+                serialWrite(right, last3[pos]);
+                leftC(last3[pos]);
+            } else {
+                // We received a regular char, we are buffering, so dump the
+                // whole buffer.
+                while (1) {
+                    if (++bpos > 2)
+                        bpos = 0;
+                    serialWrite(right, last3[bpos]);
+                    leftC(last3[bpos]);
+                    if (bpos == pos)
+                        break;
+                }
+                // Stop buffering.
+                bpos = -1;
+            }
+            // Advance our buffer.
+            if (++pos > 2)
+                pos = 0;
             LED0_OFF;
         }
         if (serialRxBytesWaiting(right)) {
