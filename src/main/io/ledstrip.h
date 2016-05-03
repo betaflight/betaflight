@@ -52,6 +52,8 @@ typedef enum {
     LED_FUNCTION_THROTTLE    = (1 << 10),
     LED_FUNCTION_THRUST_RING = (1 << 11),
     LED_FUNCTION_COLOR       = (1 << 12),
+    LED_FUNCTION_GPS         = (1 << 13),
+    LED_FUNCTION_RSSI        = (1 << 14),
 } ledFlag_e;
 
 #define LED_DIRECTION_BIT_OFFSET 0
@@ -71,7 +73,9 @@ typedef enum {
     LED_FUNCTION_ARM_STATE | \
     LED_FUNCTION_THROTTLE | \
     LED_FUNCTION_THRUST_RING | \
-    LED_FUNCTION_COLOR \
+    LED_FUNCTION_COLOR | \
+    LED_FUNCTION_GPS | \
+    LED_FUNCTION_RSSI \
 )
 
 typedef enum {
@@ -138,3 +142,6 @@ void ledStripEnable(void);
 void reevalulateLedConfig(void);
 
 bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex);
+
+extern uint16_t rssi; // FIXME dependency on mw.c
+

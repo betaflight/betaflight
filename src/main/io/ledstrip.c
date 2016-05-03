@@ -45,6 +45,8 @@
 #include "flight/failsafe.h"
 
 #include "io/rc_controls.h"
+#include "io/gps.h"
+#include "rx/rx.h"
 
 #include "sensors/battery.h"
 
@@ -74,6 +76,7 @@ static uint32_t nextAnimationUpdateAt = 0;
 
 static uint32_t nextIndicatorFlashAt = 0;
 static uint32_t nextWarningFlashAt = 0;
+static uint32_t nextGpsFlashAt = 0;
 static uint32_t nextRotationUpdateAt = 0;
 
 #define LED_STRIP_20HZ ((1000 * 1000) / 20)
@@ -275,7 +278,7 @@ static const uint8_t directionMappings[DIRECTION_COUNT] = {
     LED_DIRECTION_DOWN
 };
 
-static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C' };
+static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C', 'G', 'S' };
 #define FUNCTION_COUNT (sizeof(functionCodes) / sizeof(functionCodes[0]))
 static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_INDICATOR,
@@ -284,7 +287,9 @@ static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_ARM_STATE,
     LED_FUNCTION_THROTTLE,
 	LED_FUNCTION_THRUST_RING,
-	LED_FUNCTION_COLOR
+	LED_FUNCTION_COLOR,
+	LED_FUNCTION_GPS,
+	LED_FUNCTION_RSSI
 };
 
 // grid offsets
@@ -656,6 +661,43 @@ void applyLedWarningLayer(uint8_t updateNow)
     }
 }
 
+void applyLedGpsLayer(uint8_t updateNow)
+{
+    const ledConfig_t *ledConfig;
+    uint8_t ledIndex;
+    static uint8_t gpsFlashCounter = 0;
+    const blinkPauseLength = 4;
+
+    if (gpsFlashCounter > 0) {
+        const hsvColor_t *gpsColor = &hsv_black;
+
+        if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
+            if (STATE(GPS_FIX)) {
+                gpsColor = &hsv_green;
+            } else {
+                gpsColor = &hsv_red;
+            }
+        }
+
+        for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+
+            ledConfig = ledConfigs(ledIndex);
+
+            if (!(ledConfig->flags & LED_FUNCTION_GPS)) {
+                continue;
+            }
+            setLedHsv(ledIndex, gpsColor);
+        }
+    }
+
+    if (updateNow) {
+        gpsFlashCounter++;
+        if (gpsFlashCounter == GPS_numSat * 2 + blinkPauseLength) {
+            gpsFlashCounter = 0;
+        }
+    }
+}
+
 #define INDICATOR_DEADBAND 25
 
 void applyLedIndicatorLayer(uint8_t indicatorFlashState)
@@ -720,6 +762,27 @@ void applyLedThrottleLayer()
         getLedHsv(ledIndex, &color);
 
         int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
+        scaled += HSV_HUE_MAX;
+        color.h = (color.h + scaled) % HSV_HUE_MAX;
+        setLedHsv(ledIndex, &color);
+    }
+}
+
+void applyLedRssiLayer()
+{
+    const ledConfig_t *ledConfig;
+    hsvColor_t color;
+
+    uint8_t ledIndex;
+    for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        ledConfig = ledConfigs(ledIndex);
+        if (!(ledConfig->flags & LED_FUNCTION_RSSI)) {
+            continue;
+        }
+
+        getLedHsv(ledIndex, &color);
+
+        int scaled = scaleRange(rssi, 0, 1023, -60, +60);
         scaled += HSV_HUE_MAX;
         color.h = (color.h + scaled) % HSV_HUE_MAX;
         setLedHsv(ledIndex, &color);
@@ -869,6 +932,7 @@ void updateLedStrip(void)
 
     bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
     bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
+    bool gpsFlashNow = (int32_t)(now - nextGpsFlashAt) >= 0L;
     bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
 #ifdef USE_LED_ANIMATION
     bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
@@ -889,6 +953,7 @@ void updateLedStrip(void)
     // LAYER 1
     applyLedModeLayer();
     applyLedThrottleLayer();
+    applyLedRssiLayer();
 
     // LAYER 2
 
@@ -896,6 +961,11 @@ void updateLedStrip(void)
         nextWarningFlashAt = now + LED_STRIP_10HZ;
     }
     applyLedWarningLayer(warningFlashNow);
+
+    if (gpsFlashNow) {
+        nextGpsFlashAt = now + LED_STRIP_5HZ * 2;
+    }
+    applyLedGpsLayer(gpsFlashNow);
 
     // LAYER 3
 
