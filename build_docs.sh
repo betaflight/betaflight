@@ -52,6 +52,7 @@ if which gimli >/dev/null; then
 	for i in "${doc_files[@]}"
 	do
 		cat "$i" >> ${filename}.md
+		echo >> ${filename}.md
 	done
 	rm -f ${filename}.pdf
 	gimli -f ${filename}.md -stylesheet override.css \
