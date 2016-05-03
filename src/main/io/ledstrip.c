@@ -723,7 +723,7 @@ void applyLedGpsLayer(uint8_t updateNow)
     const ledConfig_t *ledConfig;
     uint8_t ledIndex;
     static uint8_t gpsFlashCounter = 0;
-    const blinkPauseLength = 4;
+    const uint8_t blinkPauseLength = 4;
 
     if (gpsFlashCounter > 0) {
         const hsvColor_t *gpsColor = &hsv_black;
