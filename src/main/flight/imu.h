@@ -79,7 +79,6 @@ void imuConfigure(
 float getCosTiltAngle(void);
 void calculateEstimatedAltitude(uint32_t currentTime);
 void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims);
-void imuUpdateGyro(void);
 void imuUpdateAttitude(void);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
@@ -88,5 +87,4 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_hz);
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
-void imuUpdateGyro(void);
 void imuUpdateAcc(rollAndPitchTrims_t *accelerometerTrims);
