@@ -51,7 +51,10 @@ extern "C" {
     extern uint8_t lowestXValueForEast;
     extern uint8_t ledGridWidth;
     extern uint8_t ledGridHeight;
-
+    extern uint8_t GPS_numSat;
+    extern uint8_t stateFlags;
+    extern uint8_t GPS_numSat;
+    extern uint16_t rssi;
     void determineLedStripDimensions(void);
     void determineOrientationLimits(void);
 }
