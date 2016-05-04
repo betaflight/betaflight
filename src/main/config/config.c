@@ -200,7 +200,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->flags.disarm_on_landing = 0;
 
     // Inertial position estimator parameters
-#if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
+#if defined(NAV_AUTO_MAG_DECLINATION)
     navConfig->inav.automatic_mag_declination = 1;
 #endif
     navConfig->inav.gps_min_sats = 6;

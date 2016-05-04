@@ -73,7 +73,7 @@ typedef struct navConfig_s {
     } flags;
 
     struct {
-#if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
+#if defined(NAV_AUTO_MAG_DECLINATION)
         uint8_t automatic_mag_declination;
 #endif
         uint8_t gps_min_sats;

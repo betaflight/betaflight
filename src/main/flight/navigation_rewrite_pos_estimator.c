@@ -274,7 +274,7 @@ void onNewGPSData(void)
             isFirstGPSUpdate = true;
         }
 
-#if defined(INAV_ENABLE_AUTO_MAG_DECLINATION)
+#if defined(NAV_AUTO_MAG_DECLINATION)
         /* Automatic magnetic declination calculation - do this once */
         static bool magDeclinationSet = false;
         if (posControl.navConfig->inav.automatic_mag_declination && !magDeclinationSet) {
