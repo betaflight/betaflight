@@ -64,6 +64,8 @@
 
 #include "display.h"
 
+#include "scheduler.h"
+
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
@@ -90,6 +92,9 @@ static const char* const pageTitles[] = {
     "SENSORS",
     "RX",
     "PROFILE"
+#ifndef SKIP_TASK_STATISTICS
+    ,"TASKS"
+#endif
 #ifdef GPS
     ,"GPS"
 #endif
@@ -108,6 +113,9 @@ const pageId_e cyclePageIds[] = {
     PAGE_RX,
     PAGE_BATTERY,
     PAGE_SENSORS
+#ifndef SKIP_TASK_STATISTICS
+    ,PAGE_TASKS
+#endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
     ,PAGE_DEBUG,
 #endif
@@ -514,6 +522,33 @@ void showSensorsPage(void)
 
 }
 
+#ifndef SKIP_TASK_STATISTICS
+void showTasksPage(void)
+{
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+    static const char *format = "%2d%6d%5d%4d%4d";
+
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string("Task max  avg mx% av%");
+    cfTaskInfo_t taskInfo;
+    for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        getTaskInfo(taskId, &taskInfo);
+        if (taskInfo.isEnabled && taskId != TASK_SERIAL) {// don't waste a line of the display showing serial taskInfo
+            const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 10000;
+            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 10000;
+            tfp_sprintf(lineBuffer, format, taskId, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, maxLoad, averageLoad);
+            padLineBuffer();
+            i2c_OLED_set_line(rowIndex++);
+            i2c_OLED_send_string(lineBuffer);
+            if (rowIndex > SCREEN_CHARACTER_ROW_COUNT) {
+                break;
+            }
+        }
+    }
+}
+#endif
+
 #ifdef ENABLE_DEBUG_OLED_PAGE
 
 void showDebugPage(void)
@@ -605,6 +640,11 @@ void updateDisplay(void)
         case PAGE_PROFILE:
             showProfilePage();
             break;
+#ifndef SKIP_TASK_STATISTICS
+        case PAGE_TASKS:
+            showTasksPage();
+            break;
+#endif
 #ifdef GPS
         case PAGE_GPS:
             if (feature(FEATURE_GPS)) {
