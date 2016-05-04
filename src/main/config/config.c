@@ -403,7 +403,7 @@ static void resetConf(void)
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 0;                 // 256HZ default
     masterConfig.gyro_sync_denom = 4;
-    masterConfig.gyro_soft_lpf_hz = 85;
+    masterConfig.gyro_soft_lpf_hz = 90;
 
     masterConfig.pid_process_denom = 2;
 
