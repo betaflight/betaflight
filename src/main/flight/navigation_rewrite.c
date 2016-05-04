@@ -951,15 +951,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
             updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
         else {
-            // Ramp down decend velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
-            int minAlt = posControl.navConfig->land_slowdown_minalt;
-            int maxAlt = posControl.navConfig->land_slowdown_maxalt;
-            
-            if (minAlt > (maxAlt - 100)) minAlt = maxAlt - 100; // Make sure minAlt is not more than maxAlt, maxAlt cannot be set lower than 500.
-            
-            float decendVelScaling = (posControl.actualState.pos.V.Z - posControl.homePosition.pos.V.Z - minAlt) / (maxAlt - minAlt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
-            decendVelScaling = constrainf(decendVelScaling, 0.25f, 1.0f);
-            updateAltitudeTargetFromClimbRate(-decendVelScaling * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
+            // Ramp down descent velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
+            float descentVelScaling = (posControl.actualState.pos.V.Z - posControl.homePosition.pos.V.Z - posControl.navConfig->land_slowdown_minalt)
+                                        / (posControl.navConfig->land_slowdown_maxalt - posControl.navConfig->land_slowdown_minalt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
+
+            descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
+            updateAltitudeTargetFromClimbRate(-descentVelScaling * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
 
         return NAV_FSM_EVENT_NONE;

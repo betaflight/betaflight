@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 117;
+static const uint8_t EEPROM_CONF_VERSION = 118;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -252,6 +252,12 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw_pitch_to_throttle = 10;
     navConfig->fw_roll_to_pitch = 75;
     navConfig->fw_loiter_radius = 5000;     // 50m
+}
+
+void validateNavConfig(navConfig_t * navConfig)
+{
+    // Make sure minAlt is not more than maxAlt, maxAlt cannot be set lower than 500.
+    navConfig->land_slowdown_minalt = MIN(navConfig->land_slowdown_minalt, navConfig->land_slowdown_maxalt - 100);
 }
 #endif
 
@@ -804,6 +810,11 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_PPM);
     }
+
+#if defined(NAV)
+    // Ensure sane values of navConfig settings
+    validateNavConfig(&masterConfig.navConfig);
+#endif
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
 #if defined(STM32F10X)
