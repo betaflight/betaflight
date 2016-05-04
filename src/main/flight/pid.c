@@ -202,7 +202,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             }
         }
 
-        gyroRate = gyroADC[axis] / 4.0f; // gyro output scaled to rewrite scale
+        gyroRate = gyroADCf[axis] / 4.0f; // gyro output scaled to rewrite scale
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
