@@ -144,11 +144,6 @@ char *itoa(int i, char *a, int base)
 
 #endif
 
-/* Note: the floatString must be at least 13 bytes long to cover all cases.
- * This includes up to 10 digits (32 bit ints can hold numbers up to 10
- * digits long) + the decimal point + negative sign or space + null
- * terminator.
- */
 char *ftoa(float x, char *floatString)
 {
     int32_t value;

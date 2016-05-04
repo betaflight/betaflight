@@ -21,17 +21,7 @@ void li2a(long num, char *bf);
 void ui2a(unsigned int num, unsigned int base, int uc, char *bf);
 void i2a(int num, char *bf);
 char a2i(char ch, const char **src, int base, int *nump);
-
-/* Simple conversion of a float to a string. Will display completely
- * inaccurate results for floats larger than about 2.15E6 (2^31 / 1000)
- * (same thing for negative values < -2.15E6).
- * Will always display 3 decimals, so anything smaller than 1E-3 will
- * not be displayed.
- * The floatString will be filled in with the result and will be
- * returned. It must be at least 13 bytes in length to cover all cases!
- */
 char *ftoa(float x, char *floatString);
-
 float fastA2F(const char *p);
 
 #ifndef HAVE_ITOA_FUNCTION
