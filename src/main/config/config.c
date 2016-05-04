@@ -181,7 +181,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->rollPitchItermResetRate = 200;
     pidProfile->rollPitchItermResetAlways = 0;
     pidProfile->yawItermResetRate = 50;
-    pidProfile->dterm_lpf_hz = 70;    // filtering ON by default
+    pidProfile->dterm_lpf_hz = 80;    // filtering ON by default
     pidProfile->dynamic_pterm = 1;
 
     pidProfile->H_sensitivity = 75;  // TODO - Cleanup during next EEPROM changes
@@ -403,7 +403,7 @@ static void resetConf(void)
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 0;                 // 256HZ default
     masterConfig.gyro_sync_denom = 4;
-    masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_lpf_hz = 85;
 
     masterConfig.pid_process_denom = 2;
 

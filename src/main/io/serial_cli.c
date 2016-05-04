@@ -653,7 +653,7 @@ const clivalue_t valueTable[] = {
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
-    { "gyro_lowpass",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  500 } },
+    { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
