@@ -231,6 +231,8 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->max_manual_speed = 500;
     navConfig->max_manual_climb_rate = 200;
     navConfig->land_descent_rate = 200;     // 2 m/s
+    navConfig->land_slowdown_minalt = 500;  // 5 meters of altitude
+    navConfig->land_slowdown_maxalt = 2000; // 20 meters of altitude
     navConfig->emerg_descent_rate = 500;    // 5 m/s
     navConfig->min_rth_distance = 500;      // If closer than 5m - land immediately
     navConfig->rth_altitude = 1000;         // 10m
