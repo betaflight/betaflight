@@ -653,13 +653,8 @@ void processRx(void)
 
 }
 
-#if defined(BARO) || defined(SONAR)
-static bool haveProcessedAnnexCodeOnce = false;
-#endif
-
-void taskMainPidLoop(void)
+void subTaskPidController(void)
 {
-
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         &currentProfile->pidProfile,
@@ -668,19 +663,13 @@ void taskMainPidLoop(void)
         &masterConfig.accelerometerTrims,
         &masterConfig.rxConfig
     );
-
-    mixTable();
 }
 
-void subTasksMainPidLoop(void) {
+void subTaskMainSubprocesses(void) {
 
     if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
         filterRc();
     }
-
-    #if defined(BARO) || defined(SONAR)
-        haveProcessedAnnexCodeOnce = true;
-    #endif
 
     #ifdef MAG
             if (sensors(SENSOR_MAG)) {
@@ -743,7 +732,8 @@ void subTasksMainPidLoop(void) {
     #endif
 }
 
-void taskMotorUpdate(void) {
+void subTaskMotorUpdate(void)
+{
     if (debugMode == DEBUG_CYCLETIME) {
         static uint32_t previousMotorUpdateTime;
         uint32_t currentDeltaTime = micros() - previousMotorUpdateTime;
@@ -751,6 +741,8 @@ void taskMotorUpdate(void) {
         debug[3] = currentDeltaTime - targetPidLooptime;
         previousMotorUpdateTime = micros();
     }
+
+    mixTable();
 
 #ifdef USE_SERVOS
     filterServos();
@@ -771,11 +763,12 @@ uint8_t setPidUpdateCountDown(void) {
 }
 
 // Function for loop trigger
-void taskMainPidLoopCheck(void) {
+void taskMainPidLoopCheck(void)
+{
     static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
 
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     cycleTime = micros() - previousTime;
     previousTime = micros();
@@ -790,18 +783,18 @@ void taskMainPidLoopCheck(void) {
             static uint8_t pidUpdateCountdown;
 
             if (runTaskMainSubprocesses) {
-                subTasksMainPidLoop();
+                subTaskMainSubprocesses();
                 runTaskMainSubprocesses = false;
             }
 
-            imuUpdateGyro();
+            gyroUpdate();
 
             if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
             } else {
                 pidUpdateCountdown = setPidUpdateCountDown();
-                taskMainPidLoop();
-                taskMotorUpdate();
+                subTaskPidController();
+                subTaskMotorUpdate();
                 runTaskMainSubprocesses = true;
             }
 
@@ -862,24 +855,19 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
+    // the 'annexCode' initialses rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    annexCode();
 #ifdef BARO
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
-        if (sensors(SENSOR_BARO)) {
-            updateAltHoldState();
-        }
+    if (sensors(SENSOR_BARO)) {
+        updateAltHoldState();
     }
 #endif
 
 #ifdef SONAR
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
-        if (sensors(SENSOR_SONAR)) {
-            updateSonarAltHoldState();
-        }
+    if (sensors(SENSOR_SONAR)) {
+        updateSonarAltHoldState();
     }
 #endif
-    annexCode();
 }
 
 #ifdef GPS
