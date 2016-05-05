@@ -154,3 +154,5 @@ void suspendRxSignal(void);
 void resumeRxSignal(void);
 
 void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
+
+extern uint16_t rssi;

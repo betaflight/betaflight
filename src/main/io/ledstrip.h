@@ -54,6 +54,7 @@ typedef enum {
     LED_FUNCTION_COLOR       = (1 << 12),
     LED_FUNCTION_GPS         = (1 << 13),
     LED_FUNCTION_RSSI        = (1 << 14),
+    LED_FUNCTION_BLINK       = (1 << 15),
 } ledFlag_e;
 
 #define LED_DIRECTION_BIT_OFFSET 0
@@ -75,7 +76,8 @@ typedef enum {
     LED_FUNCTION_THRUST_RING | \
     LED_FUNCTION_COLOR | \
     LED_FUNCTION_GPS | \
-    LED_FUNCTION_RSSI \
+    LED_FUNCTION_RSSI | \
+    LED_FUNCTION_BLINK \
 )
 
 typedef enum {
