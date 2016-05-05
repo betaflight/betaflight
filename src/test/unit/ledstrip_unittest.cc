@@ -414,4 +414,8 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
 
+uint8_t GPS_numsats;
+uint8_t stateFlags;
+uint16_t rssi;
+
 }
