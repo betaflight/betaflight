@@ -111,26 +111,6 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
-inline int constrain(int amt, int low, int high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
-
-inline float constrainf(float amt, float low, float high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
-
 void devClear(stdev_t *dev)
 {
     dev->m_n = 0;
