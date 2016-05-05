@@ -171,6 +171,10 @@ This mode fades the LED current LED color to the previous/next color in the HSB 
 RSSI level is at the mean value the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and RSSI at
 the same time.  RSSI should normally be combined with Color or Mode/Orientation.
 
+#### Blink
+
+This mode blinks the current LED, alternatively from black to the selected color.
+
 #### Flight Mode & Orientation
 
 This mode shows the flight mode and orientation.

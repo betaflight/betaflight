@@ -73,6 +73,7 @@ static uint32_t nextAnimationUpdateAt = 0;
 #endif
 
 static uint32_t nextIndicatorFlashAt = 0;
+static uint32_t nextBlinkFlashAt = 0;
 static uint32_t nextWarningFlashAt = 0;
 static uint32_t nextGpsFlashAt = 0;
 static uint32_t nextRotationUpdateAt = 0;
@@ -335,7 +336,7 @@ static const uint8_t directionMappings[DIRECTION_COUNT] = {
     LED_DIRECTION_DOWN
 };
 
-static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C', 'G', 'S' };
+static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C', 'G', 'S', 'B' };
 #define FUNCTION_COUNT (sizeof(functionCodes) / sizeof(functionCodes[0]))
 static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_INDICATOR,
@@ -346,7 +347,8 @@ static const uint16_t functionMappings[FUNCTION_COUNT] = {
 	LED_FUNCTION_THRUST_RING,
 	LED_FUNCTION_COLOR,
 	LED_FUNCTION_GPS,
-	LED_FUNCTION_RSSI
+	LED_FUNCTION_RSSI,
+	LED_FUNCTION_BLINK
 };
 
 // grid offsets
@@ -720,7 +722,6 @@ void applyLedWarningLayer(uint8_t updateNow)
 
 void applyLedGpsLayer(uint8_t updateNow)
 {
-#ifdef GPS
     const ledConfig_t *ledConfig;
     static uint8_t gpsFlashCounter = 0;
     const uint8_t blinkPauseLength = 4;
@@ -748,7 +749,6 @@ void applyLedGpsLayer(uint8_t updateNow)
             gpsFlashCounter = 0;
         }
     }
-#endif
 }
 
 #define INDICATOR_DEADBAND 25
@@ -913,6 +913,36 @@ void applyLedThrustRingLayer(void)
     }
 }
 
+void applyLedBlinkLayer(uint8_t updateNow)
+{
+    const ledConfig_t *ledConfig;
+    static uint8_t blinkCounter = 0;
+    const uint8_t blinkCycleLength = 20;
+
+    if (blinkCounter > 0) {
+        const hsvColor_t *blinkColor = &hsv_black;
+
+        for (uint8_t i = 0; i < ledCount; ++i) {
+
+            ledConfig = ledConfigs(i);
+            if (blinkCounter == 1 || blinkCounter == 3)
+                blinkColor = colors(ledConfig->color);
+
+            if (ledConfig->flags & LED_FUNCTION_BLINK) {
+                setLedHsv(i, blinkColor);
+            }
+        }
+    }
+
+    if (updateNow) {
+        blinkCounter++;
+        if (blinkCounter == blinkCycleLength) {
+            blinkCounter = 0;
+        }
+    }
+}
+
+
 #ifdef USE_LED_ANIMATION
 static uint8_t previousRow;
 static uint8_t currentRow;
@@ -981,6 +1011,7 @@ void updateLedStrip(void)
     uint32_t now = micros();
 
     bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
+    bool blinkFlashNow = (int32_t)(now - nextBlinkFlashAt) >= 0L;
     bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
     bool gpsFlashNow = (int32_t)(now - nextGpsFlashAt) >= 0L;
     bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
@@ -1012,10 +1043,12 @@ void updateLedStrip(void)
     }
     applyLedWarningLayer(warningFlashNow);
 
+#ifdef GPS
     if (gpsFlashNow) {
         nextGpsFlashAt = now + LED_STRIP_5HZ * 2;
     }
     applyLedGpsLayer(gpsFlashNow);
+#endif
 
     // LAYER 3
 
@@ -1034,6 +1067,14 @@ void updateLedStrip(void)
     }
 
     applyLedIndicatorLayer(indicatorFlashState);
+
+    // LAYER 4
+
+    if (blinkFlashNow) {
+        nextBlinkFlashAt = now + LED_STRIP_10HZ;
+    }
+    applyLedBlinkLayer(blinkFlashNow);
+
 
 #ifdef USE_LED_ANIMATION
     if (animationUpdateNow) {
