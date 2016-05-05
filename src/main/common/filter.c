@@ -26,7 +26,7 @@
 
 #include "drivers/gyro_sync.h"
 
-#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+#define BIQUAD_Q    (1.0f / 1.41421356f)     /* quality factor - butterworth (1 / sqrt(2)) */
 
 /* sets up a biquad Filter */
 void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplingRate)
@@ -43,7 +43,7 @@ void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplin
     omega = 2 * M_PIf * (float)filterCutFreq / (float)samplingRate;
     sn = sin_approx(omega);
     cs = cos_approx(omega);
-    alpha = sn * sin_approx(M_LN2f / 2 * BIQUAD_BANDWIDTH * omega / sn);
+    alpha = sn / (2 * BIQUAD_Q);
 
     b0 = (1 - cs) / 2;
     b1 = 1 - cs;
@@ -53,15 +53,14 @@ void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplin
     a2 = 1 - alpha;
 
     /* precompute the coefficients */
-    newState->a0 = b0 / a0;
-    newState->a1 = b1 / a0;
-    newState->a2 = b2 / a0;
-    newState->a3 = a1 / a0;
-    newState->a4 = a2 / a0;
+    newState->b0 = b0 / a0;
+    newState->b1 = b1 / a0;
+    newState->b2 = b2 / a0;
+    newState->a1 = a1 / a0;
+    newState->a2 = a2 / a0;
 
     /* zero initial samples */
-    newState->x1 = newState->x2 = 0;
-    newState->y1 = newState->y2 = 0;
+    newState->d1 = newState->d2 = 1;
 }
 
 /* Computes a biquad_t filter on a sample */
@@ -69,17 +68,9 @@ float filterApplyBiQuad(float sample, biquad_t *state)
 {
     float result;
 
-    /* compute result */
-    result = state->a0 * sample + state->a1 * state->x1 + state->a2 * state->x2 -
-        state->a3 * state->y1 - state->a4 * state->y2;
-
-    /* shift x1 to x2, sample to x1 */
-    state->x2 = state->x1;
-    state->x1 = sample;
-
-    /* shift y1 to y2, result to y1 */
-    state->y2 = state->y1;
-    state->y1 = result;
+    result = state->b0 * sample + state->d1;
+    state->d1 = state->b1 * sample - state->a1 * result + state->d2;
+    state->d2 = state->b2 * sample - state->a2 * result;
 
     return result;
 }
