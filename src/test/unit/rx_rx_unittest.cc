@@ -37,8 +37,6 @@ extern "C" {
     bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
-
-    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

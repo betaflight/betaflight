@@ -44,7 +44,7 @@
 
 #include "sensors/acceleration.h"
 
-PG_REGISTER_PROFILE_WITH_RESET(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
@@ -54,7 +54,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
     );
 }
 
-void pgReset_accelerometerConfig(accelerometerConfig_t *instance) {
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance) {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_cut_hz = 15,
         .accz_lpf_cutoff = 5.0f,

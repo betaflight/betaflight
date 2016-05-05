@@ -111,7 +111,8 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern uint8_t PIDweight[3];
+extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
@@ -210,11 +211,12 @@ void annexCode(void)
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -rcControlsConfig()->yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
+#ifndef SKIP_PID_MW23
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)pidProfile()->P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)pidProfile()->I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)pidProfile()->D8[axis] * prop1 / 100;
-
+#endif
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
             PIDweight[axis] = 100;
@@ -250,7 +252,6 @@ void annexCode(void)
 
         if (!imuIsAircraftArmable(armingConfig()->max_arm_angle)) {
             DISABLE_ARMING_FLAG(OK_TO_ARM);
-            debug[3] = ARMING_FLAG(OK_TO_ARM);
         }
 
         if (isCalibrating() || isSystemOverloaded()) {
@@ -263,8 +264,6 @@ void annexCode(void)
                 warningLedFlash();
             }
         }
-
-        debug[3] = ARMING_FLAG(OK_TO_ARM);
 
         warningLedUpdate();
     }
@@ -433,8 +432,10 @@ void processRx(void)
                 DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
-            pidResetErrorAngle();
-            pidResetErrorGyro();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
+            pidResetITerm();
         }
     } else {
         DISABLE_STATE(ANTI_WINDUP);
@@ -504,7 +505,9 @@ void processRx(void)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            pidResetErrorAngle();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -516,7 +519,9 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            pidResetErrorAngle();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {

@@ -114,20 +114,19 @@
 
 #define TELEMETRY
 #define SERIAL_RX
-//#define SONAR
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_1WIRE
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
+#define SONAR_TRIGGER_GPIO          GPIOB
+#define SONAR_ECHO_PIN              Pin_0   // (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_EXTI_LINE             EXTI_Line0
+#define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
+#define SONAR_EXTI_IRQN             EXTI0_IRQn
 
-// FlexPort (pin 21/22, TX/RX respectively):
-// Note, FlexPort has 10k pullups on both TX and RX
-// JST Pin3 TX - connect to external UART/USB RX
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_10
-// JST Pin4 RX - connect to external UART/USB TX
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_11
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SPEKTRUM_BIND
 // UART3, PB11 (Flexport)

@@ -54,15 +54,15 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-PG_REGISTER_ARR_WITH_RESET(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 
 static void ledStripDisable(void);
 
-#define USE_LED_ANIMATION
+//#define USE_LED_ANIMATION
 //#define USE_LED_RING_DEFAULT_CONFIG
 
 // timers
@@ -294,7 +294,7 @@ const ledConfig_t defaultLedStripConfig[] = {
 #endif
 
 
-void pgReset_ledConfigs(ledConfig_t *instance)
+void pgResetFn_ledConfigs(ledConfig_t *instance)
 {
     memcpy(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
 }
@@ -1048,7 +1048,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
     return ok;
 }
 
-void pgReset_colors(hsvColor_t *instance)
+void pgResetFn_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
 

@@ -117,7 +117,7 @@ void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
 void navigationInit(pidProfile_t *pidProfile);
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
@@ -129,13 +129,13 @@ void SetSysClock(void);
 void SetSysClock(bool overclock);
 #endif
 
-PG_REGISTER_WITH_RESET(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
-void pgReset_systemConfig(systemConfig_t *instance)
-{
-    instance->i2c_highspeed = 1;
-}
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .i2c_highspeed = 1,
+);
+
 
 typedef enum {
     SYSTEM_STATE_INITIALISING        = 0,
@@ -328,7 +328,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(batteryConfig());
+        sonarHardware = sonarGetHardwareConfiguration(batteryConfig()->currentMeterType);
         sonarGPIOConfig_t sonarGPIOConfig = {
             .gpio = SONAR_GPIO,
             .triggerPin = sonarHardware->echo_pin,
@@ -392,8 +392,10 @@ void init(void)
 
     mixerUsePWMIOConfiguration(pwmIOConfiguration);
 
+#ifdef DEBUG_PWM_CONFIGURATION
     debug[2] = pwmIOConfiguration->pwmInputCount;
     debug[3] = pwmIOConfiguration->ppmInputCount;
+#endif
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
@@ -672,6 +674,10 @@ int main(void) {
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#ifdef SPRACINGF3EVO
+    // fixme temporary solution for AK6983 via slave I2C on MPU9250
+    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+#endif
 #endif
 #ifdef BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));

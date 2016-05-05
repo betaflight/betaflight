@@ -71,7 +71,6 @@
 #include "sensors/battery.h"
 
 
-
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
@@ -84,16 +83,9 @@
 #define SECOND_PORT_INDEX 1
 #endif
 
-uint16_t getCurrentMinthrottle(void)
-{
-    return motorAndServoConfig()->minthrottle;
-}
-
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
 {
-    int i;
-
     pgResetAll(MAX_PROFILE_COUNT);
 
     setProfile(0);
@@ -102,9 +94,8 @@ STATIC_UNIT_TESTED void resetConf(void)
     setControlRateProfile(0);
 
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE)
-    featureSet(FEATURE_RX_PPM);
-#endif
+
+    featureSet(DEFAULT_RX_FEATURE);
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -118,18 +109,18 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     featureSet(FEATURE_BLACKBOX);
 
-    // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
+    // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
-
-    pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
-
-    parseRcChannels("TAER1234", rxConfig());
-
     featureSet(FEATURE_ONESHOT125);
-    featureSet(FEATURE_VBAT);
     featureSet(FEATURE_LED_STRIP);
-    featureSet(FEATURE_FAILSAFE);
+#endif
+
+#ifdef SPRACINGF3EVO
+    featureSet(FEATURE_TRANSPONDER);
+    featureSet(FEATURE_RSSI_ADC);
+    featureSet(FEATURE_CURRENT_METER);
+    featureSet(FEATURE_TELEMETRY);
 #endif
 
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
@@ -142,7 +133,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
-    rxConfig()->serialrx_provider = 1;
+    rxConfig()->serialrx_provider = SERIALRX_SPEKTRUM2048;
     rxConfig()->spektrum_sat_bind = 5;
     motorAndServoConfig()->minthrottle = 1000;
     motorAndServoConfig()->maxthrottle = 2000;
@@ -158,54 +149,14 @@ STATIC_UNIT_TESTED void resetConf(void)
     currentControlRateProfile->rates[PITCH] = 20;
     currentControlRateProfile->rates[YAW] = 100;
     parseRcChannels("TAER1234", rxConfig());
-
-    //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    customMotorMixer(0)->throttle = 1.0f;
-    customMotorMixer(0)->roll = -0.414178f;
-    customMotorMixer(0)->pitch = 1.0f;
-    customMotorMixer(0)->yaw = -1.0f;
-
-    //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    customMotorMixer(1)->throttle = 1.0f;
-    customMotorMixer(1)->roll = -0.414178f;
-    customMotorMixer(1)->pitch = -1.0f;
-    customMotorMixer(1)->yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    customMotorMixer(2)->throttle = 1.0f;
-    customMotorMixer(2)->roll = 0.414178f;
-    customMotorMixer(2)->pitch = 1.0f;
-    customMotorMixer(2)->yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    customMotorMixer(3)->throttle = 1.0f;
-    customMotorMixer(3)->roll = 0.414178f;
-    customMotorMixer(3)->pitch = -1.0f;
-    customMotorMixer(3)->yaw = -1.0f;
-
-    //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    customMotorMixer(4)->throttle = 1.0f;
-    customMotorMixer(4)->roll = -1.0f;
-    customMotorMixer(4)->pitch = -0.414178f;
-    customMotorMixer(4)->yaw = -1.0f;
-
-    //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    customMotorMixer(5)->throttle = 1.0f;
-    customMotorMixer(5)->roll = 1.0f;
-    customMotorMixer(5)->pitch = -0.414178f;
-    customMotorMixer(5)->yaw = 1.0f;
-
-    //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    customMotorMixer(6)->throttle = 1.0f;
-    customMotorMixer(6)->roll = -1.0f;
-    customMotorMixer(6)->pitch = 0.414178f;
-    customMotorMixer(6)->yaw = 1.0f;
-
-    //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    customMotorMixer(7)->throttle = 1.0f;
-    customMotorMixer(7)->roll = 1.0f;
-    customMotorMixer(7)->pitch = 0.414178f;
-    customMotorMixer(7)->yaw = -1.0f;
+    *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    *customMotorMixer(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    *customMotorMixer(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    *customMotorMixer(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    *customMotorMixer(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    *customMotorMixer(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 #endif
 
     // copy first profile into remaining profile
@@ -214,23 +165,18 @@ STATIC_UNIT_TESTED void resetConf(void)
             memcpy(reg->address + i * pgSize(reg), reg->address, pgSize(reg));
         }
     }
-
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         configureRateProfileSelection(i, i % MAX_CONTROL_RATE_PROFILE_COUNT);
     }
 }
 
 void activateConfig(void)
 {
-    static imuRuntimeConfig_t imuRuntimeConfig;
-
     activateControlRateConfig();
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        modeActivationProfile()->modeActivationConditions
-    );
+    useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
     pidSetController(pidProfile()->pidController);
 
@@ -249,7 +195,7 @@ void activateConfig(void)
 
     recalculateMagneticDeclination();
 
-
+    static imuRuntimeConfig_t imuRuntimeConfig;
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_cut_hz = accelerometerConfig()->acc_cut_hz;
@@ -344,30 +290,30 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
         serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
 
     if (!isSerialConfigValid(serialConfig())) {
-        pgReset_serialConfig(serialConfig());
+        PG_RESET_CURRENT(serialConfig);
     }
+
+#if defined(USE_VCP)
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+#endif
 }
 
 void readEEPROM(void)
 {
     suspendRxSignal();
 
-    // Sanity check
-    // Read flash
+    // Sanity check, read flash
     if (!scanEEPROM(true)) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
     pgActivateProfile(getCurrentProfile());
-
-    if (rateProfileSelection()->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        rateProfileSelection()->defaultRateProfileIndex = 0;
 
     setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
@@ -391,7 +337,6 @@ void ensureEEPROMContainsValidData(void)
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 

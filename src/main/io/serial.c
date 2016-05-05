@@ -54,9 +54,9 @@
 #include "telemetry/telemetry.h"
 #endif
 
-PG_REGISTER_WITH_RESET(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 
-void pgReset_serialConfig(serialConfig_t *serialConfig)
+void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 {
     memset(serialConfig, 0, sizeof(serialConfig_t));
 

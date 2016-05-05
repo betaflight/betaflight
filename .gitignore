@@ -17,3 +17,4 @@ startup_stm32f10x_md_gcc.s
 docs/Manual.pdf
 README.pdf
 
+/Debug/

@@ -58,14 +58,22 @@
 
 #define MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8975
+#define USE_MAG_AK8963
 #define USE_MAG_HMC5883 // External
 
-#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
-#define SONAR
 #define BEEPER
 #define LED0
+
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_0   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_TRIGGER_GPIO          GPIOB
+#define SONAR_ECHO_PIN              Pin_1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_EXTI_LINE             EXTI_Line1
+#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
+#define SONAR_EXTI_IRQN             EXTI1_IRQn
 
 #define USB_IO
 #define USB_CABLE_DETECTION
@@ -233,9 +241,4 @@
 #define BINDPLUG_PORT  BUTTON_B_PORT
 #define BINDPLUG_PIN   BUTTON_B_PIN
 
-#define USE_SERIAL_1WIRE
-
-#define S1W_TX_GPIO         UART1_GPIO
-#define S1W_TX_PIN          UART1_TX_PIN
-#define S1W_RX_GPIO         UART1_GPIO
-#define S1W_RX_PIN          UART1_RX_PIN
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

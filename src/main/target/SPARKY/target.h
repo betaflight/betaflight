@@ -109,6 +109,8 @@
 #define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+
 #define BLACKBOX
 #define GPS
 #define GTUNE
@@ -117,7 +119,15 @@
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
+
 #define SONAR
+#define SONAR_TRIGGER_PIN           Pin_2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_TRIGGER_GPIO          GPIOA
+#define SONAR_ECHO_PIN              Pin_1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_EXTI_LINE             EXTI_Line1
+#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
+#define SONAR_EXTI_IRQN             EXTI1_IRQn
 
 #define LED_STRIP
 #if 1
@@ -158,12 +168,7 @@
 
 #endif
 
-#define USE_SERIAL_1WIRE
-
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_6
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_7
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SPEKTRUM_BIND
 // UART2, PA3
