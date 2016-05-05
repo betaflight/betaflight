@@ -732,7 +732,7 @@ void applyLedGpsLayer(uint8_t updateNow)
             gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_red;
         }
 
-        for (uint8_t i = 0; i < ledCount; i++) {
+        for (uint8_t i = 0; i < ledCount; ++i) {
 
             ledConfig = ledConfigs(i);
 
@@ -826,7 +826,7 @@ void applyLedRssiLayer()
     const ledConfig_t *ledConfig;
     hsvColor_t color;
 
-    for (uint8_t i = 0; i < ledCount; i++) {
+    for (uint8_t i = 0; i < ledCount; ++i) {
         ledConfig = ledConfigs(i);
         if (ledConfig->flags & LED_FUNCTION_RSSI) {
             getLedHsv(i, &color);
