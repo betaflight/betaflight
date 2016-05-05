@@ -842,7 +842,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 #ifdef GPS
     case MSP_RAW_GPS:
         headSerialReply(18);
-        serialize8(STATE(GPS_FIX));
+        serialize8(gpsSol.fixType);
         serialize8(gpsSol.numSat);
         serialize32(gpsSol.llh.lat);
         serialize32(gpsSol.llh.lon);

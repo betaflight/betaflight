@@ -104,7 +104,7 @@ typedef struct gpsSolutionData_s {
         unsigned validEPE       : 1;    // EPH/EPV values are valid - actual accuracy
     } flags;
 
-    uint8_t fixType;
+    gpsFixType_e fixType;
     uint8_t numSat;
 
     gpsLocation_t llh;
