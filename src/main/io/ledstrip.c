@@ -720,6 +720,7 @@ void applyLedWarningLayer(uint8_t updateNow)
 
 void applyLedGpsLayer(uint8_t updateNow)
 {
+#ifdef GPS
     const ledConfig_t *ledConfig;
     uint8_t ledIndex;
     static uint8_t gpsFlashCounter = 0;
@@ -753,6 +754,7 @@ void applyLedGpsLayer(uint8_t updateNow)
             gpsFlashCounter = 0;
         }
     }
+#endif
 }
 
 #define INDICATOR_DEADBAND 25
