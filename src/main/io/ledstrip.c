@@ -722,7 +722,6 @@ void applyLedGpsLayer(uint8_t updateNow)
 {
 #ifdef GPS
     const ledConfig_t *ledConfig;
-    uint8_t ledIndex;
     static uint8_t gpsFlashCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
@@ -730,21 +729,16 @@ void applyLedGpsLayer(uint8_t updateNow)
         const hsvColor_t *gpsColor = &hsv_black;
 
         if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
-            if (STATE(GPS_FIX)) {
-                gpsColor = &hsv_green;
-            } else {
-                gpsColor = &hsv_red;
-            }
+            gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_red;
         }
 
-        for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        for (uint8_t i = 0; i < ledCount; i++) {
 
-            ledConfig = ledConfigs(ledIndex);
+            ledConfig = ledConfigs(i);
 
-            if (!(ledConfig->flags & LED_FUNCTION_GPS)) {
-                continue;
+            if (ledConfig->flags & LED_FUNCTION_GPS) {
+                setLedHsv(i, gpsColor);
             }
-            setLedHsv(ledIndex, gpsColor);
         }
     }
 
@@ -832,19 +826,16 @@ void applyLedRssiLayer()
     const ledConfig_t *ledConfig;
     hsvColor_t color;
 
-    uint8_t ledIndex;
-    for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        ledConfig = ledConfigs(ledIndex);
-        if (!(ledConfig->flags & LED_FUNCTION_RSSI)) {
-            continue;
+    for (uint8_t i = 0; i < ledCount; i++) {
+        ledConfig = ledConfigs(i);
+        if (ledConfig->flags & LED_FUNCTION_RSSI) {
+            getLedHsv(i, &color);
+
+            int scaled = scaleRange(rssi, 0, 1023, -60, +60);
+            scaled += HSV_HUE_MAX;
+            color.h = (color.h + scaled) % HSV_HUE_MAX;
+            setLedHsv(i, &color);
         }
-
-        getLedHsv(ledIndex, &color);
-
-        int scaled = scaleRange(rssi, 0, 1023, -60, +60);
-        scaled += HSV_HUE_MAX;
-        color.h = (color.h + scaled) % HSV_HUE_MAX;
-        setLedHsv(ledIndex, &color);
     }
 }
 
