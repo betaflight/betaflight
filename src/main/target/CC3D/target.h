@@ -135,7 +135,8 @@
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_PID_LUXFLOAT
+//#define SKIP_PID_LUXFLOAT
+#undef DISPLAY
 #undef SONAR
 #undef GPS
 #endif
