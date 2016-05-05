@@ -38,8 +38,6 @@
 #define DISABLE_MPU6500       GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN)
 #define ENABLE_MPU6500        GPIO_ResetBits(MPU6500_CS_GPIO, MPU6500_CS_PIN)
 
-extern uint16_t acc_1G;
-
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;
