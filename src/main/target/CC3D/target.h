@@ -128,11 +128,15 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
-//#define SONAR
+#define SONAR
 //#define GPS
 
 #undef BARO
 
+#ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_LUXFLOAT
+#undef SONAR
+#undef GPS
+#endif
 
