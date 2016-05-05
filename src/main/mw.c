@@ -504,7 +504,6 @@ void processRx(void)
             } else {
                 pidResetErrorGyroState(RESET_ITERM_AND_REDUCE_PID);
             }
-            pidResetErrorAngle();
         }
     } else {
         pidResetErrorGyroState(RESET_DISABLE);
@@ -655,6 +654,7 @@ void processRx(void)
 
 void subTaskPidController(void)
 {
+    const uint32_t startTime = micros();
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         &currentProfile->pidProfile,
@@ -663,9 +663,12 @@ void subTaskPidController(void)
         &masterConfig.accelerometerTrims,
         &masterConfig.rxConfig
     );
+    if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
 
 void subTaskMainSubprocesses(void) {
+
+    const uint32_t startTime = micros();
 
     if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
         filterRc();
@@ -730,16 +733,18 @@ void subTaskMainSubprocesses(void) {
     #ifdef TRANSPONDER
         updateTransponder();
     #endif
+    if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }
 
 void subTaskMotorUpdate(void)
 {
+    const uint32_t startTime = micros();
     if (debugMode == DEBUG_CYCLETIME) {
         static uint32_t previousMotorUpdateTime;
-        uint32_t currentDeltaTime = micros() - previousMotorUpdateTime;
+        const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
         debug[2] = currentDeltaTime;
         debug[3] = currentDeltaTime - targetPidLooptime;
-        previousMotorUpdateTime = micros();
+        previousMotorUpdateTime = startTime;
     }
 
     mixTable();
@@ -752,6 +757,7 @@ void subTaskMotorUpdate(void)
     if (motorControlEnable) {
         writeMotors();
     }
+    if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
 uint8_t setPidUpdateCountDown(void) {
@@ -778,10 +784,12 @@ void taskMainPidLoopCheck(void)
         debug[1] = averageSystemLoadPercent;
     }
 
+    const uint32_t startTime = micros();
     while (true) {
         if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
+            if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
             if (runTaskMainSubprocesses) {
                 subTaskMainSubprocesses();
                 runTaskMainSubprocesses = false;

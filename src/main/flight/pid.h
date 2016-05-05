@@ -97,7 +97,6 @@ bool antiWindupProtection;
 extern uint32_t targetPidLooptime;
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorAngle(void);
 void pidResetErrorGyroState(uint8_t resetOption);
 void setTargetPidLooptime(uint8_t pidProcessDenom);
 
