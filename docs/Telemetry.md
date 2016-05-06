@@ -138,6 +138,14 @@ More information about the fields, encoding and enumerations may be
 found at
 https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
 
+## MAVLink telemetry
+
+MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles. 
+Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
+for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
+
+MAVLink implementation in Cleanflight is transmit-only and usable on low baud rates and can be used over soft serial.
+
 ## SmartPort (S.Port)
 
 Smartport is a telemetry system used by newer FrSky transmitters and receivers such as the Taranis/XJR and X8R, X6R and X4R(SB).
