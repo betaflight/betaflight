@@ -26,7 +26,7 @@ typedef struct filterStatePt1_s {
 /* this holds the data required to update samples thru a filter */
 typedef struct biquad_s {
     float b0, b1, b2, a1, a2;
-    float x1, x2, y1, y2;
+    float d1, d2;
 } biquad_t;
 
 float applyBiQuadFilter(float sample, biquad_t *state);
