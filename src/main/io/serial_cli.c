@@ -26,6 +26,7 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "version.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -426,14 +427,15 @@ static const char * const lookupTableMagHardware[] = {
     "AK8963"
 };
 
-static const char * const lookupTableDebug[] = {
+static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
     "BATTERY",
     "GYRO",
     "ACCELEROMETER",
     "MIXER",
-    "AIRMODE"
+    "AIRMODE",
+    "PIDLOOP",
 };
 
 static const char * const lookupTableSuperExpoYaw[] = {
