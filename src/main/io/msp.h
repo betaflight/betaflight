@@ -24,6 +24,7 @@ typedef struct mspPacket_s {
 } mspPacket_t;
 
 extern bool isRebootScheduled;
+extern bool mspEnterEsc4way;
 
 void mspInit(void);
 

@@ -39,6 +39,7 @@
 #include "io/serial.h"
 #include "io/msp.h"
 #include "io/serial_msp.h"
+#include "io/serial_4way.h"
 
 STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
@@ -220,10 +221,20 @@ void mspSerialProcess(void)
 
             if (msp->c_state == COMMAND_RECEIVED) {
                 mspSerialProcessReceivedCommand(msp);
-                break; // process one command at a time so as not to block.
+                break; // process one command at a time so as not to block and handle modal command immediately
             }
         }
-
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+        if(mspEnterEsc4way) {
+            mspEnterEsc4way = false;
+            waitForSerialPortToFinishTransmitting(msp->port);
+            // esc4wayInit() was called in msp command
+            // modal switch to esc4way, will return only after 4way exit command
+            // port parameters are shared with esc4way, no need to close/reopen it
+            esc4wayProcess(msp->port);
+            // continue processing
+        }
+#endif
         if (isRebootScheduled) {
             waitForSerialPortToFinishTransmitting(msp->port);  // TODO - postpone reboot, allow all modules to react
             stopMotors();

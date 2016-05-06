@@ -150,7 +150,10 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 // cause reboot after MSP processing complete
 bool isRebootScheduled = false;
-
+// switch to 4wayIf (on current port)
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+bool mspEnterEsc4way = false;
+#endif
 static const char pidnames[] =
     "ROLL;"
     "PITCH;"
@@ -1014,7 +1017,14 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, sensorAlignmentConfig()->mag_align);
             break;
 
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+        case MSP_SET_4WAY_IF:
+            // initialize 4way ESC interface, return number of ESCs available
+            sbufWriteU8(dst, esc4wayInit());
+            mspEnterEsc4way = true;     // request protocol switch
             break;
+#endif
+
         default:
             return 0;   // unknown command
     }
