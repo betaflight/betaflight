@@ -176,7 +176,7 @@ void init(void)
 #ifdef STM32F10X
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(masterConfig.emf_avoidance);
+    SetSysClock(0); // TODO - Remove from config in the future
 #endif
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
@@ -311,18 +311,14 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    if (masterConfig.use_oneshot42) {
-        pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
-        masterConfig.use_multiShot = false;
-    } else {
-        pwm_params.useMultiShot = masterConfig.use_multiShot ? true : false;
-    }
+    pwm_params.useFastPwm = feature(FEATURE_ONESHOT125);  // Configurator feature abused for enabling Fast PWM
+    pwm_params.fastPwmProtocolType = masterConfig.fast_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
+    if (pwm_params.motorPwmRate > 500 && !pwm_params.useFastPwm)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;

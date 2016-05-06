@@ -755,7 +755,7 @@ void subTaskMotorUpdate(void)
 #endif
 
     if (motorControlEnable) {
-        writeMotors();
+        writeMotors(masterConfig.use_unsyncedPwm);
     }
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }

@@ -172,7 +172,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
         }
 #endif
 
-        if (!(masterConfig.use_multiShot || masterConfig.use_oneshot42) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125)) masterConfig.pid_process_denom = 3;
+        // Oneshot125 protection
+        if ((masterConfig.fast_pwm_protocol == 0) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125) && masterConfig.pid_process_denom < 3) masterConfig.pid_process_denom = 3;
     }
 }
 
