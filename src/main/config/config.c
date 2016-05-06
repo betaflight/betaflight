@@ -230,12 +230,6 @@ static void validateAndFixConfig(void)
         imuConfig()->gyroSyncDenominator = 2;
     }
 #endif
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#ifdef TELEMETRY
-    telemetryConfig()->telemetry_inversion = 1;
-#endif
-#endif
 
 
 #if defined(LED_STRIP)
