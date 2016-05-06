@@ -1016,70 +1016,7 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, sensorAlignmentConfig()->mag_align);
             break;
 
-#if defined(USE_SERIAL_1WIRE) && 0
-        case MSP_SET_1WIRE: {
-            // get channel number
-            int chan = sbufReadU8(src);
-            // we do not give any data back, assume channel number is transmitted OK
-            if (chan == 0xFF) {
-                // 0xFF -> preinitialize the Passthrough
-                // switch all motor lines HI
-                usb1WireInitialize();
-                // reply the count of ESC found
-                sbufWriteU8(dst, escCount);
-
-                // and come back right afterwards
-                // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-                // bootloader mode before try to connect any ESC
-
-                return true;
-            } else {
-                // Check for channel number 0..ESC_COUNT-1
-                if (chan < escCount) {
-                    // because we do not come back after calling usb1WirePassthrough
-                    // proceed with a success reply first
-                    tailSerialReply();
-                    // flush the transmit buffer
-                    bufWriterFlush(writer);
-                    // wait for all data to send
-                    waitForSerialPortToFinishTransmitting(currentPort->port);
-                    // Start to activate here
-                    // motor 1 => index 0
-
-                    // search currentPort portIndex
-                    /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
-                       uint8_t portIndex;
-                       for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-                       if (currentPort == &mspPorts[portIndex]) {
-                       break;
-                       }
-                       }
-                    */
-                    mspReleasePortIfAllocated(mspSerialPort); // CloseSerialPort also marks currentPort as UNUSED_PORT
-                    usb1WirePassthrough(chan);
-                    // Wait a bit more to let App read the 0 byte and switch baudrate
-                    // 2ms will most likely do the job, but give some grace time
-                    delay(10);
-                    // rebuild/refill currentPort structure, does openSerialPort if marked UNUSED_PORT - used ports are skiped
-                    mspAllocateSerialPorts();
-                    /* restore currentPort and mspSerialPort
-                       setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-                    */
-                    // former used MSP uart is active again
-                    // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
-                    currentPort->cmdMSP = MSP_SET_1WIRE;
-                } else {
-                    // ESC channel higher than max. allowed
-                    // rem: BLHeliSuite will not support more than 8
-                    headSerialError(0);
-                }
-                // proceed as usual with MSP commands
-                // and wait to switch to next channel
-                // rem: App needs to call MSP_BOOT to deinitialize Passthrough
-            }
             break;
-        }
-#endif
         default:
             return 0;   // unknown command
     }

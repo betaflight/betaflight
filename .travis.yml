@@ -22,6 +22,7 @@ env:
   - TARGET=CHEBUZZF3
   - TARGET=OLIMEXINO
   - TARGET=NAZE32PRO
+  - TARGET=IRCFUSIONF3
 
 # use new docker environment
 sudo: false
