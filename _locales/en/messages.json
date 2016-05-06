@@ -723,6 +723,9 @@
     "portsFunction_TELEMETRY_LTM": {
         "message": "LTM"
     },
+    "portsFunction_TELEMETRY_MAVLINK": {
+        "message": "MAVLink"
+    },
     "portsFunction_TELEMETRY_MSP": {
         "message": "MSP"
     },

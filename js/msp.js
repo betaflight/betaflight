@@ -149,6 +149,7 @@ var MSP = {
             'TELEMETRY_SMARTPORT': 5,
             'RX_SERIAL': 6,
             'BLACKBOX': 7,
+            'TELEMETRY_MAVLINK': 8,
         },
 
     read: function (readInfo) {
