@@ -74,14 +74,17 @@ TABS.setup.initialize = function (callback) {
                 GUI.interval_pause('setup_data_pull');
                 MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
+                    $('#accel_calib_running').show();
+                    $('#accel_calib_rest').hide();
                 });
 
                 GUI.timeout_add('button_reset', function () {
                     GUI.interval_resume('setup_data_pull');
 
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibEnded'));
-
                     self.removeClass('calibrating');
+                    $('#accel_calib_running').hide();
+                    $('#accel_calib_rest').show();
                 }, 2000);
             }
         });
@@ -94,11 +97,15 @@ TABS.setup.initialize = function (callback) {
 
                 MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibStarted'));
+                    $('#mag_calib_running').show();
+                    $('#mag_calib_rest').hide();
                 });
 
                 GUI.timeout_add('button_reset', function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibEnded'));
                     self.removeClass('calibrating');
+                    $('#mag_calib_running').hide();
+                    $('#mag_calib_rest').show();
                 }, 30000);
             }
         });

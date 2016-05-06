@@ -128,6 +128,9 @@ var MSP = {
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
     ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
 
+    last_received_timestamp:   null,
+    analog_last_received_timestamp: null,
+    
     supportedBaudRates: [ // 0 based index.
         'AUTO',
         '9600',
@@ -233,6 +236,7 @@ var MSP = {
                     console.log('Unknown state detected: ' + this.state);
             }
         }
+        this.last_received_timestamp = Date.now();
     },
     process_data: function (code, message_buffer, message_length) {
         var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
@@ -330,6 +334,7 @@ var MSP = {
                 ANALOG.mAhdrawn = data.getUint16(1, 1);
                 ANALOG.rssi = data.getUint16(3, 1); // 0-1023
                 ANALOG.amperage = data.getInt16(5, 1) / 100; // A
+                this.analog_last_received_timestamp = Date.now();
                 break;
             case MSP_codes.MSP_RC_TUNING:
                 var offset = 0;
