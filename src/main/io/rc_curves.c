@@ -34,17 +34,23 @@ int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & m
 void generatePitchRollCurve(controlRateConfig_t *controlRateConfig)
 {
     uint8_t i;
+    float j = 0;
 
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (i * i - 25)) * i * (int32_t) controlRateConfig->rcRate8 / 2500;
+    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++) {
+        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (j * j - 25)) * j * (int32_t) controlRateConfig->rcRate8 / 2500;
+        j += 0.2f;
+    }
 }
 
 void generateYawCurve(controlRateConfig_t *controlRateConfig)
 {
     uint8_t i;
+    float j = 0;
 
-    for (i = 0; i < YAW_LOOKUP_LENGTH; i++)
-        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (i * i - 25)) * i / 25;
+    for (i = 0; i < YAW_LOOKUP_LENGTH; i++) {
+        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (j * j - 25)) * j / 25;
+        j += 0.2f;
+    }
 }
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)

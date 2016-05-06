@@ -17,9 +17,9 @@
 
 #pragma once
 
-#define PITCH_LOOKUP_LENGTH 25
-#define YAW_LOOKUP_LENGTH 25
-#define THROTTLE_LOOKUP_LENGTH 16
+#define PITCH_LOOKUP_LENGTH 31
+#define YAW_LOOKUP_LENGTH 31
+#define THROTTLE_LOOKUP_LENGTH 12
 extern int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];   // lookup table for expo & RC rate PITCH+ROLL
 extern int16_t lookupYawRC[YAW_LOOKUP_LENGTH];     // lookup table for expo & RC rate YAW
 extern int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
