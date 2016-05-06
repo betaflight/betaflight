@@ -927,7 +927,7 @@ void applyLedBlinkLayer(uint8_t updateNow)
         for (uint8_t i = 0; i < ledCount; ++i) {
 
             ledConfig = ledConfigs(i);
-            if ((blinkCounter & 1) == 0 && blinkCounter < 4)
+            if ((blinkCounter & 1) == 1 && blinkCounter < 4)
                 blinkColor = colors(ledConfig->color);
 
             if (ledConfig->flags & LED_FUNCTION_BLINK) {
