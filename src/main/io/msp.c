@@ -66,9 +66,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/msp_protocol.h"
 #include "io/serial_msp.h"
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
-#endif
 
 #include "telemetry/telemetry.h"
 

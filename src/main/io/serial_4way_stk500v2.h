@@ -17,6 +17,8 @@
 */
 #pragma once
 
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+
 uint8_t Stk_SignOn(void);
 uint8_t Stk_ConnectEx(escDeviceInfo_t *pDeviceInfo);
 uint8_t Stk_ReadEEprom(ioMem_t *pMem);
@@ -25,3 +27,4 @@ uint8_t Stk_ReadFlash(ioMem_t *pMem);
 uint8_t Stk_WriteFlash(ioMem_t *pMem);
 uint8_t Stk_Chip_Erase(void);
 
+#endif

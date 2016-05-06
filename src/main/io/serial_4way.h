@@ -16,6 +16,10 @@
  * Author: 4712
 */
 
+#pragma once
+
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 
@@ -126,10 +130,12 @@ typedef struct escDeviceInfo_s {
     uint8_t interfaceMode;
 } escDeviceInfo_t;
 
-bool esc4wayExitRequested;     // flag that exit was requested. Set by esc4wayProcessCmd, used internally by esc4wayProcess
+extern bool esc4wayExitRequested;     // flag that exit was requested. Set by esc4wayProcessCmd, used internally by esc4wayProcess
 
 int esc4wayInit(void);
 void esc4wayStart(void);
 void esc4wayRelease(void);
 void esc4wayProcess(serialPort_t *serial);
 esc4wayAck_e esc4wayProcessCmd(esc4wayCmd_e command, uint16_t addr, uint8_t *data, int inLen, int *outLen);
+
+#endif
