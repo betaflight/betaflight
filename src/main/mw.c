@@ -247,8 +247,8 @@ void annexCode(void)
                 }
             }
 
-            tmp2 = tmp / 100;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
+            tmp2 = tmp / 20;
+            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 20) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 20;
         } else if (axis == YAW) {
             if (masterConfig.rcControlsConfig.yaw_deadband) {
                 if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
@@ -257,8 +257,8 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
+            tmp2 = tmp / 20;
+            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 20) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 20) * -masterConfig.yaw_control_direction;
         }
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
