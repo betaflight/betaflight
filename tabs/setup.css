@@ -251,3 +251,9 @@
     transition: all ease 0.2s;
     text-decoration:none;
 }
+
+.data-loading-setup {
+    width: 100%;
+    height: 100%;
+
+}
