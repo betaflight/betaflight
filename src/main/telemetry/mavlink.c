@@ -75,6 +75,13 @@
 
 #include "mw.h"
 
+// mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
+// until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "mavlink/common/mavlink.h"
+#pragma GCC diagnostic pop
+
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
@@ -89,7 +96,6 @@ static portSharing_e mavlinkPortSharing;
 
 /* MAVLink datastream rates in Hz */
 static const uint8_t mavRates[] = {
-    //[MAV_DATA_STREAM_RAW_SENSORS] = 2, //2Hz
     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
     [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
     [MAV_DATA_STREAM_POSITION] = 2, //2Hz
