@@ -1594,7 +1594,7 @@ dialog {
     margin-top: 10px;
     margin-left: 14px;
     height: 10px;
-    width: 40px;
+    width: 30px;
     /* width: 30px; */    
 }
 
@@ -1609,7 +1609,7 @@ dialog {
     width: 40px;
     text-align: left;
     color: silver;
-    margin-left: -3px;
+    margin-left: -8px;
 }
 
 .quad-status-contents progress::-webkit-progress-bar {
