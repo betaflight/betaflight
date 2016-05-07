@@ -140,7 +140,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 134;
+static const uint8_t EEPROM_CONF_VERSION = 135;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -189,8 +189,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawItermResetRate = 50;
     pidProfile->dterm_lpf_hz = 80;    // filtering ON by default
     pidProfile->dynamic_pterm = 1;
-
-    pidProfile->H_sensitivity = 75;  // TODO - Cleanup during next EEPROM changes
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -485,7 +483,8 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    masterConfig.use_oneshot42 = 0;
+    masterConfig.fast_pwm_protocol = 0;
+    masterConfig.use_unsyncedPwm = 0;
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;
 #endif
@@ -500,11 +499,7 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-#if defined(STM32F10X) && !defined(CC3D)
-    masterConfig.emf_avoidance = 1;
-#else
-    masterConfig.emf_avoidance = 0;
-#endif
+    masterConfig.emf_avoidance = 0; // TODO - needs removal
 
     resetPidProfile(&currentProfile->pidProfile);
 	

@@ -240,6 +240,7 @@ bool fakeGyroDetect(gyro_t *gyro)
     gyro->init = fakeGyroInit;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
+    gyro->scale = 1.0f / 16.4f;
     return true;
 }
 #endif

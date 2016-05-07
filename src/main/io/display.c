@@ -22,6 +22,7 @@
 
 #include "platform.h"
 #include "version.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -58,13 +59,15 @@
 #include "flight/navigation.h"
 #endif
 
-#include "config/runtime_config.h"
-
 #include "config/config.h"
+#include "config/runtime_config.h"
+#include "config/config_profile.h"
 
 #include "display.h"
 
 #include "scheduler.h"
+
+extern profile_t *currentProfile;
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
@@ -317,13 +320,26 @@ void showProfilePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
+    static const char* const axisTitles[3] = {"ROL", "PIT", "YAW"};
+    const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+    for (int axis = 0; axis < 3; ++axis) {
+        tfp_sprintf(lineBuffer, "%s P:%3d I:%3d D:%3d",
+            axisTitles[axis],
+            pidProfile->P8[axis],
+            pidProfile->I8[axis],
+            pidProfile->D8[axis]
+        );
+        padLineBuffer();
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
+    }
+
+    const uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
     tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
-
+    const controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
     tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
         controlRateConfig->rcExpo8,
         controlRateConfig->rcRate8

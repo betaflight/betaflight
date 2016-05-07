@@ -255,6 +255,9 @@ endif
 
 ifeq ($(TARGET),$(filter $(TARGET), $(CC3D_TARGETS)))
 TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D 
+ifeq ($(TARGET),CC3D_OPBL)
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_OPBL
+endif
 TARGET_DIR = $(ROOT)/src/main/target/CC3D
 endif
 
