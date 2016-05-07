@@ -21,9 +21,12 @@
 #include <string.h>
 
 #include <platform.h>
-#include "version.h"
-
 #include "build_config.h"
+
+#ifdef DISPLAY
+
+#include "version.h"
+#include "debug.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
@@ -38,58 +41,42 @@
 #include "common/typeconversion.h"
 
 #include "config/parameter_group.h"
-
-#ifdef DISPLAY
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/feature.h"
+#include "config/profile.h"
 
 #include "io/rate_profile.h"
 #include "io/rc_controls.h"
+#include "io/display.h"
+#include "io/gps.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
-
+#include "sensors/sonar.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
+#include "flight/navigation.h"
 
 #include "scheduler.h"
 
-#ifdef GPS
-#include "io/gps.h"
-#include "flight/navigation.h"
-#endif
+static uint32_t nextDisplayUpdateAt = 0;
+static bool displayPresent = false;
+static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
-#ifdef SONAR
-#include "sensors/sonar.h"
-#endif
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/feature.h"
-#include "config/profile.h"
-
-#include "display.h"
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
-
 #define DISPLAY_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 #define PAGE_TOGGLE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 2)
-
 #define GPS_DISPLAY_FORCE_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 1)
 
-static uint32_t nextDisplayUpdateAt = 0;
-
-static bool displayPresent = false;
-
 #define PAGE_TITLE_LINE_COUNT 1
-
-static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 
 #define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
@@ -112,9 +99,8 @@ static const char* const pageTitles[] = {
 #endif
 };
 
-#define PAGE_COUNT (PAGE_RX + 1)
 
-const pageId_e cyclePageIds[] = {
+static const pageId_e cyclePageIds[] = {
     PAGE_PROFILE,
 #ifdef GPS
     PAGE_GPS,
@@ -328,13 +314,25 @@ void showProfilePage(void)
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
+    static const char* const axisTitles[3] = {"ROL", "PIT", "YAW"};
+    for (int axis = 0; axis < 3; ++axis) {
+        tfp_sprintf(lineBuffer, "%s P:%3d I:%3d D:%3d",
+            axisTitles[axis],
+            pidProfile()->P8[axis],
+            pidProfile()->I8[axis],
+            pidProfile()->D8[axis]
+        );
+        padLineBuffer();
+        i2c_OLED_set_line(rowIndex++);
+        i2c_OLED_send_string(lineBuffer);
+    }
+
+    const uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
     tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
-
+    const controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
     tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
         controlRateConfig->rcExpo8,
         controlRateConfig->rcRate8
@@ -649,7 +647,11 @@ void updateDisplay(void)
             showArmedPage();
             break;
         case PAGE_BATTERY:
-            showBatteryPage();
+            if (feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER)) {
+                showBatteryPage();
+            } else {
+                pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+            }
             break;
         case PAGE_SENSORS:
             showSensorsPage();
