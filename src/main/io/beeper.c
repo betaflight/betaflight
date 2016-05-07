@@ -279,7 +279,7 @@ void beeperGpsStatus(void)
 void beeperUpdate(void)
 {
     // If beeper option from AUX switch has been selected
-    if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
+    if (rcModeIsActive(BOXBEEPERON)) {
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
             beeperGpsStatus();

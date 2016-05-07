@@ -789,7 +789,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
     // mix servos according to rules
     for (i = 0; i < servoRuleCount; i++) {
         // consider rule if no box assigned or box is active
-        if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
+        if (currentServoMixer[i].box == 0 || rcModeIsActive(BOXSERVO1 + currentServoMixer[i].box - 1)) {
             uint8_t target = currentServoMixer[i].targetChannel;
             uint8_t from = currentServoMixer[i].inputSource;
             uint16_t servo_width = servoConf[target].max - servoConf[target].min;
@@ -835,7 +835,7 @@ void mixTable(void)
         axisPID[FD_YAW] = constrain(axisPID[FD_YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+    if (rcModeIsActive(BOXAIRMODE)) {
         // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
         int16_t rollPitchYawMix[MAX_SUPPORTED_MOTORS];
         int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
@@ -1024,7 +1024,7 @@ void mixTable(void)
         servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
         servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
-        if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
+        if (rcModeIsActive(BOXCAMSTAB)) {
             if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
                 servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
                 servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
