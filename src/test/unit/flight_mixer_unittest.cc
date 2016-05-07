@@ -479,6 +479,8 @@ void pwmWriteServo(uint8_t index, uint16_t value) {
     updatedServoCount++;
 }
 
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
+
 bool failsafeIsActive(void) {
     return false;
 }

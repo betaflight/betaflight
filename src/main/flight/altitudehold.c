@@ -132,7 +132,7 @@ void applyAltHold(void)
 void updateAltHoldState(void)
 {
     // Baro alt hold activate
-    if (!IS_RC_MODE_ACTIVE(BOXBARO)) {
+    if (!rcModeIsActive(BOXBARO)) {
         DISABLE_FLIGHT_MODE(BARO_MODE);
         return;
     }
@@ -150,7 +150,7 @@ void updateAltHoldState(void)
 void updateSonarAltHoldState(void)
 {
     // Sonar alt hold activate
-    if (!IS_RC_MODE_ACTIVE(BOXSONAR)) {
+    if (!rcModeIsActive(BOXSONAR)) {
         DISABLE_FLIGHT_MODE(SONAR_MODE);
         return;
     }
