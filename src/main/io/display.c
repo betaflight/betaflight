@@ -87,12 +87,12 @@ static const char* const pageTitles[] = {
     "BATTERY",
     "SENSORS",
     "RX",
-    "PROFILE"
+    "PROFILE",
 #ifndef SKIP_TASK_STATISTICS
-    ,"TASKS"
+    "TASKS",
 #endif
 #ifdef GPS
-    ,"GPS"
+    "GPS",
 #endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
     ,"DEBUG"
@@ -107,12 +107,12 @@ static const pageId_e cyclePageIds[] = {
 #endif
     PAGE_RX,
     PAGE_BATTERY,
-    PAGE_SENSORS
+    PAGE_SENSORS,
 #ifndef SKIP_TASK_STATISTICS
-    ,PAGE_TASKS
+    PAGE_TASKS,
 #endif
 #ifdef ENABLE_DEBUG_OLED_PAGE
-    ,PAGE_DEBUG,
+    PAGE_DEBUG,
 #endif
 };
 
@@ -160,6 +160,7 @@ static void padLineBuffer(void)
     lineBuffer[length] = 0;
 }
 
+#ifdef GPS
 static void padHalfLineBuffer(void)
 {
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
@@ -169,6 +170,7 @@ static void padHalfLineBuffer(void)
     }
     lineBuffer[length] = 0;
 }
+#endif
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
 static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
@@ -615,9 +617,11 @@ void updateDisplay(void)
             if (cyclePageIds[pageState.cycleIndex] == PAGE_BATTERY && !(feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER))) {
                 pageState.cycleIndex++;
             }
+#ifdef GPS
             if (cyclePageIds[pageState.cycleIndex] == PAGE_GPS && !feature(FEATURE_GPS)) {
                 pageState.cycleIndex++;
             }
+#endif
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
             pageState.pageId = cyclePageIds[pageState.cycleIndex];
         }
