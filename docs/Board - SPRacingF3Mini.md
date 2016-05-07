@@ -23,6 +23,7 @@ http://seriouslypro.com/spracingf3mini
 * 8 PWM output lines for ESCs and Servos. Arranged for easy wiring on standard pin headers.
 * Supports direct connection of SBus, SumH, SumD, Spektrum1024/2048, XBus receivers. No external inverters required (built-in).
 * Supports direct connection of 3.3v Spektrum Satellite receivers via 3 pin through-hole JST-ZH connector.
+* Supports direct connection of 1-5 channel Parallel PWM receivers *1. 
 * Dedicated PPM receiver input.
 * 3 Serial Ports - NOT shared with the USB socket.
 * Telemetry port (via pin header or USART2 JST-SH socket).
@@ -42,6 +43,9 @@ http://seriouslypro.com/spracingf3mini
 * LEDs for 3v, 5v and Status for easy diagnostics.
 * Copper-etched Cleanflight and #RB logos.
 
+
+*1 - PWM receiver must use 3.3v outputs.  Works only in multirotor mode.  Uses motor outputs 5-8 and PPM pin as RC 1-5 inputs.
+
 ## Pinouts
 
 Full pinout details are available in the manual, here:
@@ -54,12 +58,12 @@ The main section is the square part of the board with the 30.5mm mounting holes.
 
 ### Left Side IO (Front to Back)
 
-| Pin | Function               | Notes                                        |
-| --- | ---------------------- | -------------------------------------------- |
-| 1   | RX3                    | Square Pad                                   |
-| 2   | TX3                    | Round Pad                                    |
-| 3   | PWM8 / SoftSerial 1 RX | Square Pad                                   |
-| 4   | PWM7 / SoftSerial 1 TX | Square Pad                                   |
+| Pin | Function                     | Notes                                        |
+| --- | ---------------------------- | -------------------------------------------- |
+| 1   | RX3                          | Square Pad                                   |
+| 2   | TX3                          | Round Pad                                    |
+| 3   | PWM8 / SoftSerial 1 RX / RC4 | Square Pad                                   |
+| 4   | PWM7 / SoftSerial 1 TX / RC3 | Square Pad                                   |
 
 To the left of both PWM7 and PWM8 there are 2 more pins - left to right: GND, VIN, PWM7/8.
 To the right of RX3 there are two more though holes.  Use RX3 and the 2 holes to attach a JST-ZH connector for a Spektrum Satellite 3v receiver.
@@ -70,8 +74,8 @@ To the right of RX3 there are two more though holes.  Use RX3 and the 2 holes to
 | --- | -------------- | -------------------------------------------- |
 | 1   | RSSI           | Round Pad / PWM                              |
 | 2   | CURRENT        | Round Pad                                    |
-| 3   | PWM6           | Square Pad                                   |
-| 4   | PWM5           | Square Pad                                   |
+| 3   | PWM6 / RC2     | Square Pad                                   |
+| 4   | PWM5 / RC1     | Square Pad                                   |
 | 5   | T1             | Round Pad                                    |
 | 6   | R1             | Round Pad                                    |
 | 7   | 5v             | Round Pad                                    |
