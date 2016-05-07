@@ -593,6 +593,7 @@ static const uint16_t multiPWM[] = {
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM1  | (MAP_TO_PWM_INPUT    << 8), // Use PWM input for AUX1, PWM6-9 get remapped by conditional code.
     PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
@@ -622,6 +623,7 @@ static const uint16_t airPWM[] = {
     PWM7  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM8  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM1  | (MAP_TO_PWM_INPUT    << 8), // Use PWM input for AUX1, PWM6-9 get remapped by conditional code.
     PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #8
     0xFFFF
@@ -755,6 +757,14 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         // hacks to allow current functionality
+
+#if defined(SPRACINGF3MINI)
+            // remap PWM1, 6-9 as PWM input when parallel PWM is used (for AUX1 and RC1-4, respectively)
+            if (init->useParallelPWM && (timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9 || timerIndex == PWM1)) {
+                type = MAP_TO_PWM_INPUT;
+            }
+#endif
+
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
             continue;
 
