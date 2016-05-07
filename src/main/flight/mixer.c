@@ -373,18 +373,12 @@ static servoMixer_t *customServoMixers;
 
 static motorMixer_t *customMixers;
 
-void mixerUseConfigs(
 #ifdef USE_SERVOS
-        servoParam_t *servoConfToUse
-#else
-        void
-#endif
-)
+void mixerUseConfigs(servoParam_t *servoConfToUse)
 {
-#ifdef USE_SERVOS
     servoConf = servoConfToUse;
-#endif
 }
+#endif
 
 #ifdef USE_SERVOS
 
@@ -420,9 +414,8 @@ int servoDirection(int servoIndex, int inputSource)
 #endif
 
 #ifdef USE_SERVOS
-void mixerInit(motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers)
+void mixerInitServos(servoMixer_t *initialCustomServoMixers)
 {
-    customMixers = initialCustomMotorMixers;
     customServoMixers = initialCustomServoMixers;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
@@ -436,12 +429,12 @@ void mixerInit(motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCust
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 }
-#else
+#endif
+
 void mixerInit(motorMixer_t *initialCustomMixers)
 {
     customMixers = initialCustomMixers;
 }
-#endif
 
 #ifdef USE_SERVOS
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
