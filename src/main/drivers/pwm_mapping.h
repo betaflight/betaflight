@@ -19,18 +19,27 @@
 #include "gpio.h"
 #include "timer.h"
 
-#ifdef USE_QUAD_MIXER_ONLY
+#if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_PWM_MOTORS  4
 #define MAX_PWM_SERVOS  1
 #define MAX_MOTORS  4
 #define MAX_SERVOS  1
+#define MAX_PWM_OUTPUT_PORTS MAX_PWM_MOTORS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
+
+#elif defined(TARGET_MOTOR_COUNT)
+#define MAX_PWM_MOTORS TARGET_MOTOR_COUNT
+#define MAX_PWM_SERVOS 8
+#define MAX_MOTORS  TARGET_MOTOR_COUNT
+#define MAX_SERVOS  8
+#define MAX_PWM_OUTPUT_PORTS MAX_PWM_SERVOS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
+
 #else
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
 #define MAX_MOTORS  12
 #define MAX_SERVOS  8
-#endif
 #define MAX_PWM_OUTPUT_PORTS MAX_PWM_MOTORS // must be set to the largest of either MAX_MOTORS or MAX_SERVOS
+#endif
 
 #if MAX_PWM_OUTPUT_PORTS < MAX_MOTORS || MAX_PWM_OUTPUT_PORTS < MAX_SERVOS
 #error Invalid motor/servo/port configuration

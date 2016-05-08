@@ -237,6 +237,7 @@ static const motorMixer_t mixerHex6X[] = {
     { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
 };
 
+#if (MAX_SUPPORTED_MOTORS >= 8)
 static const motorMixer_t mixerOctoX8[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
@@ -269,6 +270,7 @@ static const motorMixer_t mixerOctoFlatX[] = {
     { 1.0f, -0.414178f,  1.0f,      -1.0f },// REAR_R
     { 1.0f,  1.0f,       0.414178f, -1.0f },// MIDREAR_L
 };
+#endif
 
 static const motorMixer_t mixerSingleProp[] = {
     { 1.0f,  0.0f,  0.0f, 0.0f },
@@ -304,9 +306,15 @@ const mixer_t mixers[] = {
     { 1, true,  mixerSingleProp },     // * MIXER_FLYING_WING
     { 4, false, mixerY4 },             // MIXER_Y4
     { 6, false, mixerHex6X },          // MIXER_HEX6X
+#if (MAX_SUPPORTED_MOTORS >= 8)
     { 8, false, mixerOctoX8 },         // MIXER_OCTOX8
     { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
     { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
+#else
+    { 8, false, NULL },                // MIXER_OCTOX8
+    { 8, false, NULL },                // MIXER_OCTOFLATP
+    { 8, false, NULL },                // MIXER_OCTOFLATX
+#endif
     { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
     { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
     { 0, true,  NULL },                // * MIXER_HELI_90_DEG
