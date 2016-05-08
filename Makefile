@@ -302,6 +302,7 @@ HIGHEND_SRC = \
 		   telemetry/hott.c \
 		   telemetry/smartport.c \
 		   telemetry/ltm.c \
+		   telemetry/mavlink.c \
 		   sensors/sonar.c \
 		   sensors/barometer.c \
 		   blackbox/blackbox.c \
@@ -871,8 +872,9 @@ help: Makefile
 	@sed -n 's/^## //p' $<
 
 ## test        : run the cleanflight test suite
-test:
-	cd src/test && $(MAKE) test || true
+## junittest   : run the cleanflight test suite, producing Junit XML result files.
+test junittest:
+	cd src/test && $(MAKE) $@ || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
