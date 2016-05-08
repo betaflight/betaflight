@@ -108,14 +108,12 @@
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
-#define GPS
-#define BLACKBOX
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define SPEKTRUM_BIND
+// UART3, PB11 (Flexport)
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11
 
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
@@ -126,9 +124,15 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#define GPS
+#define BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#define SPEKTRUM_BIND
-// UART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define TELEMETRY
+#define SERIAL_RX
+#define USE_SERVOS
+#define USE_CLI
+#define TARGET_MOTOR_COUNT 6
+
+
+
