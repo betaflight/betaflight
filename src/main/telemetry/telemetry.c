@@ -44,7 +44,19 @@
 #include "telemetry/ltm.h"
 #include "telemetry/mavlink.h"
 
-PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+
+#ifdef STM32F303xC
+// hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+#define DEFAULT_TELEMETRY_INVERSION 1
+#else
+#define DEFAULT_TELEMETRY_INVERSION 0
+#endif
+
+
+PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
+    .telemetry_inversion = DEFAULT_TELEMETRY_INVERSION,
+);
 
 void telemetryInit(void)
 {
@@ -62,7 +74,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 
     if (portSharing == PORTSHARING_SHARED) {
         if (telemetryConfig()->telemetry_switch)
-            enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
+            enabled = rcModeIsActive(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
     }

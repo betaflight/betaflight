@@ -671,6 +671,8 @@ void pidSetController(pidControllerType_e) {}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 void useRcControlsConfig(modeActivationCondition_t *) {};
+bool rcModeIsActive(boxId_e modeId)  { return rcModeActivationMask & (1 << modeId); }
+
 // from runtime_config.c
 uint8_t armingFlags = 0;
 uint8_t stateFlags = 0;

@@ -92,7 +92,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrain(ITerm, (int32_t)(-PID_MAX_I << 13), (int32_t)(PID_MAX_I << 13));
     // Anti windup protection
-    if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+    if (rcModeIsActive(BOXAIRMODE)) {
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             ITerm = constrain(ITerm, -ITermLimit[axis], ITermLimit[axis]);
         } else {
