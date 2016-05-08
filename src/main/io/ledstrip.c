@@ -729,7 +729,7 @@ void applyLedGpsLayer(uint8_t updateNow)
     if (gpsFlashCounter > 0 || GPS_numSat == 0) {
         const hsvColor_t *gpsColor = &hsv_black;
 
-        if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
+        if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter <= GPS_numSat * 2) {
             gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_yellow;
         } else if (GPS_numSat == 0) {
             gpsColor = &hsv_red;
