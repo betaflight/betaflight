@@ -663,7 +663,7 @@ typedef enum {
 
 static uint8_t warningFlags = WARNING_FLAG_NONE;
 
-void applyLedWarningLayer(uint32_t updateNow)
+void applyLedWarningLayer(uint8_t updateNow)
 {
     const ledConfig_t *ledConfig;
     uint8_t ledIndex;
@@ -720,7 +720,7 @@ void applyLedWarningLayer(uint32_t updateNow)
     }
 }
 
-void applyLedGpsLayer(uint32_t updateNow)
+void applyLedGpsLayer(uint8_t updateNow)
 {
     const ledConfig_t *ledConfig;
     static uint8_t gpsFlashCounter = 0;
