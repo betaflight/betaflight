@@ -110,6 +110,17 @@ http://www.graupner.de/en/products/870ade17-ace8-427f-943b-657040579906/33565/pr
 
 SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for many recivers that lets them use SUMD instead.
 
+### IBUS
+
+10 channels via serial currently supported.
+
+IBUS is the FlySky digital serial protocol and is available with the FS-IA6B and
+FS-IA10 receivers. The Turnigy TGY-IA6B and TGY-IA10 are the same
+devices with a different label, therefore they also work.
+
+If you are using a 6ch tx such as the FS-I6 or TGY-I6 then you must flash a 10ch
+firmware on the tx to make use of these extra channels.
+
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
