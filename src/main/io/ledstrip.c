@@ -723,8 +723,8 @@ void applyLedWarningLayer(uint8_t updateNow)
 void applyLedGpsLayer(uint8_t updateNow)
 {
     const ledConfig_t *ledConfig;
-    static uint8_t gpsFlashCounter = 0;
-    const uint8_t blinkPauseLength = 4;
+    static int gpsFlashCounter = 0;
+    const int blinkPauseLength = 4;
 
     if (gpsFlashCounter > 0) {
         const hsvColor_t *gpsColor = &hsv_black;
@@ -735,7 +735,7 @@ void applyLedGpsLayer(uint8_t updateNow)
             gpsColor = &hsv_red;
         }
 
-        for (uint8_t i = 0; i < ledCount; ++i) {
+        for (int i = 0; i < ledCount; ++i) {
 
             ledConfig = ledConfigs(i);
 
@@ -828,7 +828,7 @@ void applyLedRssiLayer()
     const ledConfig_t *ledConfig;
     hsvColor_t color;
 
-    for (uint8_t i = 0; i < ledCount; ++i) {
+    for (int i = 0; i < ledCount; ++i) {
         ledConfig = ledConfigs(i);
         if (ledConfig->flags & LED_FUNCTION_RSSI) {
             getLedHsv(i, &color);
@@ -918,13 +918,13 @@ void applyLedThrustRingLayer(void)
 void applyLedBlinkLayer(uint8_t updateNow)
 {
     const ledConfig_t *ledConfig;
-    static uint8_t blinkCounter = 0;
-    const uint8_t blinkCycleLength = 20;
+    static int blinkCounter = 0;
+    const int blinkCycleLength = 20;
 
     if (blinkCounter > 0) {
         const hsvColor_t *blinkColor = &hsv_black;
 
-        for (uint8_t i = 0; i < ledCount; ++i) {
+        for (int i = 0; i < ledCount; ++i) {
 
             ledConfig = ledConfigs(i);
             if ((blinkCounter & 1) == 1 && blinkCounter < 4)
