@@ -91,7 +91,7 @@ static void adxl345Init(acc_t *acc)
         i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
         i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
     }
-    acc->acc_1G = 265; // 3.3V operation // FIXME verify this is supposed to be 265, not 256. Typo?
+    acc->acc_1G = 256;
 }
 
 uint8_t acc_samples = 0;
