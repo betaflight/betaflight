@@ -669,7 +669,7 @@ void applyLedGpsLayer(uint8_t updateNow)
     static uint8_t gpsFlashCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
-    if (gpsFlashCounter > 0) {
+    if (gpsFlashCounter > 0 || GPS_numSat == 0) {
         const hsvColor_t *gpsColor = &hsv_black;
 
         if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
@@ -745,38 +745,17 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     }
 }
 
-void applyLedThrottleLayer()
-{
-    const ledConfig_t *ledConfig;
-    hsvColor_t color;
-
-    uint8_t ledIndex;
-    for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        ledConfig = ledConfigs(ledIndex);
-        if (!(ledConfig->flags & LED_FUNCTION_THROTTLE)) {
-            continue;
-        }
-
-        getLedHsv(ledIndex, &color);
-
-        int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
-        scaled += HSV_HUE_MAX;
-        color.h = (color.h + scaled) % HSV_HUE_MAX;
-        setLedHsv(ledIndex, &color);
-    }
-}
-
-void applyLedRssiLayer()
+void applyLedHue(uint16_t flag, int16_t value, int16_t minRange, int16_t maxRange)
 {
     const ledConfig_t *ledConfig;
     hsvColor_t color;
 
     for (uint8_t i = 0; i < ledCount; ++i) {
         ledConfig = ledConfigs(i);
-        if (ledConfig->flags & LED_FUNCTION_RSSI) {
+        if (ledConfig->flags & flag) {
             getLedHsv(i, &color);
 
-            int scaled = scaleRange(rssi, 0, 1023, -60, +60);
+            int scaled = scaleRange(value, minRange, maxRange, -60, +60);
             scaled += HSV_HUE_MAX;
             color.h = (color.h + scaled) % HSV_HUE_MAX;
             setLedHsv(i, &color);
@@ -978,8 +957,8 @@ void updateLedStrip(void)
 
     // LAYER 1
     applyLedModeLayer();
-    applyLedThrottleLayer();
-    applyLedRssiLayer();
+    applyLedHue(LED_FUNCTION_THROTTLE, rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    applyLedHue(LED_FUNCTION_RSSI, rssi, 0, 1023);
 
     // LAYER 2
 
