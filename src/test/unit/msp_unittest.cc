@@ -552,6 +552,7 @@ void GPS_set_next_wp(int32_t *, int32_t *) {}
 void pidSetController(pidControllerType_e) {}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 void useRcControlsConfig(modeActivationCondition_t *) {};
 // from runtime_config.c
 uint8_t armingFlags = 0;

@@ -351,7 +351,7 @@ static uint32_t packFlightModeFlags(void)
     for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
         if((rcModeCopyMask & BM(i)) == 0)
             continue;
-        if(IS_RC_MODE_ACTIVE(i))
+        if(rcModeIsActive(i))
             boxEnabledMask |= 1 << i;
     }
 #undef BM

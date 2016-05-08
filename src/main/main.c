@@ -318,10 +318,9 @@ void init(void)
 
     serialInit(feature(FEATURE_SOFTSERIAL));
 
-#ifdef USE_SERVOS
-    mixerInit(customMotorMixer(0), customServoMixer(0));
-#else
     mixerInit(customMotorMixer(0));
+#ifdef USE_SERVOS
+    mixerInitServos(customServoMixer(0));
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
