@@ -337,6 +337,7 @@ First 6 groups of ModeIndexes are :
 Modes 0 to 5 functions:
 
 | function | name  |
+|----------|-------|
 | 0        | north |
 | 1        | east  |
 | 2        | south |
@@ -347,6 +348,7 @@ Modes 0 to 5 functions:
 Mode 6 use these functions:
 
 | function | name       |
+|----------|------------|
 | 0        | disarmed   |
 | 1        | armed      |
 | 2        | animation  |
