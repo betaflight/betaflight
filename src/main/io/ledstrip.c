@@ -673,7 +673,7 @@ void applyLedGpsLayer(uint8_t updateNow)
 
     if (GPS_numSat == 0) {
         gpsColor = &hsv_red;
-    } else if (updateNow) {
+    } else {
         if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
             gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_orange;
         }
