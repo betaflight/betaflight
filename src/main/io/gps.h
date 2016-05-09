@@ -34,11 +34,12 @@ typedef enum {
 } gpsProvider_e;
 
 typedef enum {
-    SBAS_AUTO = 0,
+    SBAS_NONE = 0,
     SBAS_EGNOS,
     SBAS_WAAS,
     SBAS_MSAS,
-    SBAS_GAGAN
+    SBAS_GAGAN,
+    SBAS_AUTO
 } sbasMode_e;
 
 #define SBAS_MODE_MAX SBAS_GAGAN

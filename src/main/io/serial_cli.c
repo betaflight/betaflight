@@ -338,7 +338,7 @@ static const char * const lookupTableGPSProvider[] = {
 };
 
 static const char * const lookupTableGPSSBASMode[] = {
-    "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN"
+    "NONE", "EGNOS", "WAAS", "MSAS", "GAGAN", "AUTO"
 };
 
 static const char * const lookupTableGpsModel[] = {

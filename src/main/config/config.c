@@ -503,7 +503,7 @@ static void resetConf(void)
 #ifdef GPS
     // gps/nav stuff
     masterConfig.gpsConfig.provider = GPS_UBLOX;
-    masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
+    masterConfig.gpsConfig.sbasMode = SBAS_NONE;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
     masterConfig.gpsConfig.navModel = GPS_MODEL_LOW_G;
