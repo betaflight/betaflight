@@ -358,9 +358,9 @@ The ColorIndex is picked from the colors array ("palette").
 
 Examples (using the default colors):
 
-- set armed color to red: ```set mode_color 6 1 2```
-- set disarmed color to yellow: ```set mode_color 6 0 4```
-- set Headfree mode 'south' to Cyan: ```set mode_color 1 2 8```
+- set armed color to red: ```mode_color 6 1 2```
+- set disarmed color to yellow: ```mode_color 6 0 4```
+- set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
 
 
 ## Positioning
