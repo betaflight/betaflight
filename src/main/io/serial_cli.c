@@ -734,6 +734,7 @@ const clivalue_t valueTable[] = {
     { "iterm_always_reset",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.rollPitchItermResetAlways, .config.lookup = { TABLE_OFF_ON } },
     { "iterm_reset_degrees",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermResetRate, .config.minmax = {50, 1000 } },
     { "yaw_iterm_reset_degrees",    VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermResetRate, .config.minmax = {25, 1000 } },
+    { "iterm_reset_offset",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermResetOffset, .config.minmax = { 0,  100 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
 
