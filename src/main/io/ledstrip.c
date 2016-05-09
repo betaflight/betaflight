@@ -726,13 +726,13 @@ void applyLedGpsLayer(uint8_t updateNow)
     static uint8_t gpsFlashCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
-    if (gpsFlashCounter > 0 || GPS_numSat == 0) {
+    if (updateNow) {
         const hsvColor_t *gpsColor = &hsv_black;
 
         if (GPS_numSat == 0) {
             gpsColor = &hsv_red;
-        } else if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter <= GPS_numSat * 2) {
-            gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_yellow;
+        } else if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
+            gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_orange;
         }
 
         for (uint8_t i = 0; i < ledCount; ++i) {
@@ -743,9 +743,7 @@ void applyLedGpsLayer(uint8_t updateNow)
                 setLedHsv(i, gpsColor);
             }
         }
-    }
 
-    if (updateNow) {
         gpsFlashCounter++;
         if (gpsFlashCounter == GPS_numSat * 2 + blinkPauseLength) {
             gpsFlashCounter = 0;
@@ -991,17 +989,19 @@ void updateLedStrip(void)
 
     uint32_t now = micros();
 
-    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
-    bool blinkFlashNow = (int32_t)(now - nextBlinkFlashAt) >= 0L;
-    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
-    bool gpsFlashNow = (int32_t)(now - nextGpsFlashAt) >= 0L;
-    bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
+    bool indicatorFlashNow = (now >= nextIndicatorFlashAt);
+    bool blinkFlashNow = (now >= nextBlinkFlashAt);
+    bool warningFlashNow = (now >= nextWarningFlashAt);
+    bool gpsFlashNow = (now >= nextGpsFlashAt);
+    bool rotationUpdateNow = (now >= nextRotationUpdateAt);
 #ifdef USE_LED_ANIMATION
-    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
+    bool animationUpdateNow = (now >= nextAnimationUpdateAt);
 #endif
     if (!(
             indicatorFlashNow ||
             rotationUpdateNow ||
+            gpsFlashNow ||
+            blinkFlashNow ||
             warningFlashNow
 #ifdef USE_LED_ANIMATION
             || animationUpdateNow
@@ -1019,16 +1019,16 @@ void updateLedStrip(void)
 
     // LAYER 2
 
+    applyLedWarningLayer(warningFlashNow);
     if (warningFlashNow) {
         nextWarningFlashAt = now + LED_STRIP_10HZ;
     }
-    applyLedWarningLayer(warningFlashNow);
 
 #ifdef GPS
+    applyLedGpsLayer(gpsFlashNow);
     if (gpsFlashNow) {
         nextGpsFlashAt = now + LED_STRIP_5HZ * 2;
     }
-    applyLedGpsLayer(gpsFlashNow);
 #endif
 
     // LAYER 3
