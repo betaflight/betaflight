@@ -1298,7 +1298,7 @@ static void cliModeColor(char *cmdline)
             );
         }
     } else {
-        enum {MODE = 0, MODE_COLOR, COLOR, ARGS_COUNT};
+        enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
             args[check++] = atoi(ptr);
@@ -1313,7 +1313,7 @@ static void cliModeColor(char *cmdline)
         i = args[MODE];
 
         if (i >= 0 && i < MODE_COUNT) {
-            switch (args[MODE_COLOR]) {
+            switch (args[FUNCTION]) {
                 case 0: modeColors(i)->north = args[COLOR]; break;
                 case 1: modeColors(i)->east = args[COLOR]; break;
                 case 2: modeColors(i)->south = args[COLOR]; break;
@@ -1325,7 +1325,7 @@ static void cliModeColor(char *cmdline)
 
         } else if (i == MODE_COUNT) {
             // special colors
-            switch (args[MODE_COLOR]) {
+            switch (args[FUNCTION]) {
                 case 0: specialColors(0)->disarmed = args[COLOR]; break;
                 case 1: specialColors(0)->armed = args[COLOR]; break;
                 case 2: specialColors(0)->animation = args[COLOR]; break;
@@ -1339,7 +1339,7 @@ static void cliModeColor(char *cmdline)
 
         cliPrintf("mode_color %u %u %u\r\n",
                             i,
-                            args[MODE_COLOR],
+                            args[FUNCTION],
                             args[COLOR]
                         );
     }
