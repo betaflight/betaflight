@@ -1977,8 +1977,16 @@ static void cliDump(char *cmdline)
                     cliDumpRateProfile(rateCount);
             }
 
+            cliPrint("\r\n# restore original profile / rateprofile selection\r\n");
+
             changeProfile(activeProfile);
+            cliProfile("");
+            printSectionBreak();
+
             changeControlRateProfile(currentRateIndex);
+            cliRateProfile("");
+
+            cliPrint("\r\n# save configuration\r\nsave\r\n");
         } else {
             cliDumpProfile(masterConfig.current_profile_index);
             cliDumpRateProfile(currentProfile->activeRateProfile);
@@ -2003,24 +2011,25 @@ void cliDumpProfile(uint8_t profileIndex) {
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
         cliPrintf("############################# PROFILE VALUES ####################################\r\n");
-        cliProfile("");
+
         printSectionBreak();
         dumpValues(PROFILE_VALUE);
 
         cliRateProfile("");
 }
+
 void cliDumpRateProfile(uint8_t rateProfileIndex) {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
     
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");		
-    cliRateProfile("");		
+    cliRateProfile("");	
     printSectionBreak();		
 
     dumpValues(PROFILE_RATE_VALUE);
-            
 }
+
 void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
@@ -2397,7 +2406,7 @@ static void cliRateProfile(char *cmdline) {
 		i = atoi(cmdline);		
 		if (i >= 0 && i < MAX_RATEPROFILES) {		
 			changeControlRateProfile(i);		
-			cliRateProfile("");		
+			cliRateProfile("");
 		}		
 	}		
 }
