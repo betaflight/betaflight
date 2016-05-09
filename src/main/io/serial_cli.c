@@ -1870,7 +1870,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
 
-        cliPrint("\r\n\r\n# mode color\r\n");
+        cliPrint("\r\n\r\n# mode_color\r\n");
         cliModeColor("");
 #endif
         printSectionBreak();
