@@ -13,24 +13,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Ported from https://github.com/4712/BLHeliSuite/blob/master/Interfaces/Arduino1Wire/Source/Arduino1Wire_C/Arduino1Wire.c
- *  by Nathan Tsoi <nathan@vertile.com>
  */
 
-#pragma once
+#ifndef TELEMETRY_MAVLINK_H_
+#define TELEMETRY_MAVLINK_H_
 
-#ifdef USE_SERIAL_1WIRE
+void initMAVLinkTelemetry(void);
+void handleMAVLinkTelemetry(void);
+void checkMAVLinkTelemetryState(void);
 
-extern uint8_t escCount;
+void freeMAVLinkTelemetryPort(void);
+void configureMAVLinkTelemetryPort(void);
 
-typedef struct {
-    GPIO_TypeDef* gpio;
-    uint16_t pinpos;
-    uint16_t pin;
-} escHardware_t;
-
-
-void usb1WireInitialize();
-void usb1WirePassthrough(uint8_t escIndex);
-#endif
+#endif /* TELEMETRY_MSP_H_ */

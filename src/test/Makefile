@@ -42,6 +42,17 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Compiler flags for coverage instrumentation
+GCOV_CC_FLAGS := -fprofile-arcs -ftest-coverage
+GCOV_L_FLAGS  := -lgcov
+
+C_FLAGS   += $(GCOV_CC_FLAGS) $(GCOV_L_FLAGS)
+CXX_FLAGS += $(GCOV_CC_FLAGS) $(GCOV_L_FLAGS) 
+
+#enable fast Maths tests
+C_FLAGS   += -DFAST_MATH
+CXX_FLAGS += -DFAST_MATH
+
 # Determine the OS and set up the parameter group linker flags accordingly
 UNAME := $(shell uname -s)
 ifeq ($(UNAME), Darwin)
@@ -50,7 +61,6 @@ else
 PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
 endif
 
-#
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -62,10 +72,13 @@ GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
 
 # House-keeping build targets.
 
+## all         : Build all Unit Tests (Default goal)
 all : $(TEST_BINARIES)
 
+## clean       : Cleanup the UnitTest binaries.
 clean :
 	rm -rf $(OBJECT_DIR)
+
 
 # Builds gtest.a and gtest_main.a.
 
@@ -881,9 +894,33 @@ $(OBJECT_DIR)/config_streamer_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 
+## junittest   : Build and run the Unit Tests, producing Junit XML result files."
+junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml" 
+junittest: $(TESTS:%=test-%)
+
 test-%: $(OBJECT_DIR)/%
-	$<
+	$< $(EXEC_OPTS)
+
+## help        : print this help message and exit
+## what        : print this help message and exit
+## usage       : print this help message and exit
+help what usage: Makefile
+	@echo ""
+	@echo "Makefile for Unit Tests"
+	@echo ""
+	@echo "Usage:"
+	@echo "        make [goal] "
+	@echo ""
+	@echo "Valid goals are:"
+	@echo ""
+	@sed -n 's/^## //p' $<
+	@echo ""
+	@echo "Any of the Unit Test programs can be used as goals:"
+	@$(foreach prg, $(TEST_BINARIES), echo "    $(prg)";)
+
+
 
 -include $(DEPS)

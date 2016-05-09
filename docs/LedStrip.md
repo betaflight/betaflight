@@ -188,7 +188,8 @@ LEDs are set in a specific order:
 
 That is, south facing LEDs have priority.
 
-The mapping between modes led placement and colors is currently fixed and cannot be changed.
+The mapping between modes led placement and colors can be changed. Examples below use standard color
+assignement.
 
 #### Indicator
 
@@ -331,6 +332,47 @@ color 13 330,0,255
 color 14 0,0,0
 color 15 0,0,0
 ```
+
+### Mode Colors Assignement
+
+Mode Colors can be configured using the cli `mode_color` command.
+
+- No arguments: lists all mode colors
+- arguments: ModeIndex, ModeColorIndex, ColorIndex
+
+First 6 groups of ModeIndexes are :
+
+- orientation
+- headfree
+- horizon
+- angle
+- mag
+- baro
+
+Each of these groups use these ModelColorIndexes :
+
+- north
+- east
+- south
+- west
+- up
+- down
+
+Group 6 is used for special colors according to these ModelColorIndexes:
+
+- disarmed
+- armed
+- animation
+- bakground
+
+The ColorIndex is picked from the colors array ("palette").
+
+Examples :
+
+- set armed color to red: ```set mode_color 6 1 2```
+- set disarmed color to yellow: ```set mode_color 6 0 4```
+- set Headfree Mode - South to Cyan: ```set mode_color 1 2 8```
+
 
 ## Positioning
 

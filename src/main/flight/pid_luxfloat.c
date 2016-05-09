@@ -95,7 +95,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
     // Anti windup protection
-    if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+    if (rcModeIsActive(BOXAIRMODE)) {
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             ITerm = constrainf(ITerm, -ITermLimitf[axis], ITermLimitf[axis]);
         } else {

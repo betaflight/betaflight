@@ -117,7 +117,7 @@ void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
 void navigationInit(pidProfile_t *pidProfile);
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
@@ -316,10 +316,9 @@ void init(void)
 
     serialInit(feature(FEATURE_SOFTSERIAL));
 
-#ifdef USE_SERVOS
-    mixerInit(customMotorMixer(0), customServoMixer(0));
-#else
     mixerInit(customMotorMixer(0));
+#ifdef USE_SERVOS
+    mixerInitServos(customServoMixer(0));
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -328,7 +327,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(batteryConfig());
+        sonarHardware = sonarGetHardwareConfiguration(batteryConfig()->currentMeterType);
         sonarGPIOConfig_t sonarGPIOConfig = {
             .gpio = SONAR_GPIO,
             .triggerPin = sonarHardware->echo_pin,

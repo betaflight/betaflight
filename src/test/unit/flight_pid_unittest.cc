@@ -798,6 +798,7 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
 // STUBS
 
 extern "C" {
+bool rcModeIsActive(boxId_e modeId)  { return rcModeActivationMask & (1 << modeId); }
 int16_t GPS_angle[ANGLE_INDEX_COUNT] = { 0, 0 };
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {return MIN(ABS(rcData[axis] - midrc), 500);}
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };

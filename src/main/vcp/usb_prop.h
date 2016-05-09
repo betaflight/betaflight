@@ -79,6 +79,7 @@ uint8_t *Virtual_Com_Port_GetStringDescriptor( uint16_t);
 uint8_t *Virtual_Com_Port_GetLineCoding(uint16_t Length);
 uint8_t *Virtual_Com_Port_SetLineCoding(uint16_t Length);
 
+uint32_t Virtual_Com_Port_GetBaudRate(void);
 #endif /* __usb_prop_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

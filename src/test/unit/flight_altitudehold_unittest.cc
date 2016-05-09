@@ -62,6 +62,8 @@ extern "C" {
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
     PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+
+    extern uint32_t rcModeActivationMask;
 }
 
 #include "unittest_macros.h"
@@ -124,7 +126,7 @@ TEST(AltitudeHoldTest, applyMultirotorAltHold)
     
     rcData[THROTTLE] = 1400;
     rcCommand[THROTTLE] = 1500;
-    ACTIVATE_RC_MODE(BOXBARO);
+    rcModeActivationMask |= (1 << BOXBARO);
     updateAltHoldState();
     
     // when
@@ -147,6 +149,7 @@ TEST(AltitudeHoldTest, applyMultirotorAltHold)
 
 extern "C" {
 uint32_t rcModeActivationMask;
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 

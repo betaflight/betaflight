@@ -42,7 +42,7 @@ This project could really do with some functional tests which test the behaviour
 
 All pull requests to add/improve the testability of the code or testing methods are highly sought!
 
-Note: Tests are written in C++ and linked with with firmware's C code.
+Note: Tests are written in C++ and linked with with firmware's C code. All code is also instrumented using gcov to make test coverage analysis possible.
 
 ### Running the tests.
 
@@ -52,15 +52,45 @@ The tests and test build system is very simple and based off the googletest exam
 make test
 ```
 
+You can also do:
+
+```
+make junittest
+```
+
 This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
 
-After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report.
+After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the "junittest" goal. Junit report files are saved in obj/test directory and has the following  naming pattern test_name_results.xml, for example: obj/test/battery_unittest_results.xml 
 
 You can also step-debug the tests in eclipse and you can use the GoogleTest test runner to make building and re-running the tests simple.
 
 The tests are currently always compiled with debugging information enabled, there may be additional warnings, if you see any warnings please attempt to fix them and submit pull requests with the fixes.
 
 Tests are verified and working with GCC 4.9.2.
+
+## Test coverage analysis
+
+There are a number of possibilities to analyse test coverage and produce various reports. There are guides available from many sources, a good overview and link collection to more info can be found on Wikipedia: 
+
+https://en.wikipedia.org/wiki/Gcov
+
+A simple report for a single test can for example be made using this command:
+
+```
+gcov -s src/main/sensors -o obj/test/ battery_unittest.cc
+```
+
+To produce an coverage report in xml format usable by the Cobertura plugin in Jenkins requires installation of a  Python script called "gcovr" from github:
+
+https://github.com/gcovr/gcovr/tree/dev
+
+Example usage in Jenkins:
+
+```
+/gcovr-install-path/gcovr/scripts/gcovr obj/test --root=src/main -x > coverage.xml
+```
+
+There are many other ways to prodice test coverage reports in other formats, like html etc etc. 
 
 ## Using git and github
 
