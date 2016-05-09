@@ -1265,13 +1265,6 @@ static void cliModeColor(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < MODE_COUNT; i++) {
-            if (i == MODE_MAG) {
-#ifdef MAG
-#else
-                    continue;
-#endif
-            }
-
             for (j = 0; j < DIRECTIONS_COUNT; j++) {
 
                 switch (j) {
@@ -1290,6 +1283,7 @@ static void cliModeColor(char *cmdline)
                 );
             }
         }
+
         for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
             switch (j) {
                 case 0: colorIndex = specialColors(0)->disarmed; break;
@@ -1317,14 +1311,6 @@ static void cliModeColor(char *cmdline)
         }
 
         i = args[MODE];
-
-        if (i == MODE_MAG) {
-#ifdef MAG
-#else
-                cliShowParseError();
-                return;
-#endif
-        }
 
         if (i >= 0 && i < MODE_COUNT) {
             switch (args[MODE_COLOR]) {
