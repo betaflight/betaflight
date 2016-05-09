@@ -383,7 +383,6 @@ void init(void)
     adcInit(&adc_params);
 #endif
 
-
     initBoardAlignment(&masterConfig.boardAlignment);
 
 #ifdef DISPLAY
@@ -398,9 +397,11 @@ void init(void)
     }
 #endif
 
+    // Set gyro sampling rate divider before initialization
+    gyroSetSampleRate(masterConfig.looptime, masterConfig.gyro_lpf, masterConfig.gyroSync, masterConfig.gyroSyncDenominator);
+
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf,
-        masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination,
-        masterConfig.looptime, masterConfig.gyroSync, masterConfig.gyroSyncDenominator)) {
+        masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination)) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);

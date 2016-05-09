@@ -19,5 +19,4 @@
 
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf,
         uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
-        int16_t magDeclinationFromConfig,
-        uint32_t looptime, uint8_t gyroSync, uint8_t gyroSyncDenominator);
+        int16_t magDeclinationFromConfig);

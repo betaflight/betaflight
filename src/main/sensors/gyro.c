@@ -36,19 +36,20 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 
-uint16_t calibratingG = 0;
-int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+gyro_t gyro;                      // gyro access functions
+sensor_align_e gyroAlign = 0;
+
 int32_t gyroADC[XYZ_AXIS_COUNT];
-int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
+
+static uint16_t calibratingG = 0;
+static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static int8_t gyroLpfCutHz = 0;
 static biquad_t gyroFilterState[XYZ_AXIS_COUNT];
 static bool gyroFilterInitialised = false;
-
-gyro_t gyro;                      // gyro access functions
-sensor_align_e gyroAlign = 0;
 
 void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t initialGyroLpfCutHz)
 {
@@ -66,23 +67,22 @@ bool isGyroCalibrationComplete(void)
     return calibratingG == 0;
 }
 
-bool isOnFinalGyroCalibrationCycle(void)
+static bool isOnFinalGyroCalibrationCycle(void)
 {
     return calibratingG == 1;
 }
 
-bool isOnFirstGyroCalibrationCycle(void)
+static bool isOnFirstGyroCalibrationCycle(void)
 {
     return calibratingG == CALIBRATING_GYRO_CYCLES;
 }
 
 static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
-    int8_t axis;
     static int32_t g[3];
     static stdev_t var[3];
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
 
         // Reset g[axis] at start of calibration
         if (isOnFirstGyroCalibrationCycle()) {
@@ -118,28 +118,25 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
 
 static void applyGyroZero(void)
 {
-    int8_t axis;
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
     }
 }
 
 void gyroUpdate(void)
 {
-    int8_t axis;
-
     // range: +/- 8192; +/- 2000 deg/sec
     if (!gyro.read(gyroADCRaw)) {
         return;
     }
 
     // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = gyroADCRaw[axis];
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = gyroADCRaw[axis];
 
     if (gyroLpfCutHz) {
         if (!gyroFilterInitialised) {
             if (targetLooptime) {  /* Initialisation needs to happen once sample rate is known */
-                for (axis = 0; axis < 3; axis++) {
+                for (int axis = 0; axis < 3; axis++) {
                     filterInitBiQuad(gyroLpfCutHz, &gyroFilterState[axis], 0);
                 }
 
@@ -148,7 +145,7 @@ void gyroUpdate(void)
         }
 
         if (gyroFilterInitialised) {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 gyroADC[axis] = lrintf(filterApplyBiQuad((float) gyroADC[axis], &gyroFilterState[axis]));
             }
         }

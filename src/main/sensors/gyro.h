@@ -33,7 +33,6 @@ extern gyro_t gyro;
 extern sensor_align_e gyroAlign;
 
 extern int32_t gyroADC[XYZ_AXIS_COUNT];
-extern int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];
 
 typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.

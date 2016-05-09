@@ -389,7 +389,7 @@ static int imuCalculateAccelerometerConfidence(void)
     }
 
     // Magnitude^2 in percent of G^2
-    accMagnitude = accMagnitude * 100 / ((int32_t)acc_1G * acc_1G);
+    accMagnitude = accMagnitude * 100 / ((int32_t)acc.acc_1G * acc.acc_1G);
 
     int32_t nearness = ABS(100 - accMagnitude);
 
@@ -454,7 +454,7 @@ static void imuUpdateMeasuredAcceleration(void)
 
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc_1G);
+        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
 
@@ -483,9 +483,9 @@ void imuHILUpdate(void)
     imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, attitude.values.yaw);
 
     /* Fake accADC readings */
-    accADC[X] = hilToFC.bodyAccel[X] * (acc_1G / GRAVITY_CMSS);
-    accADC[Y] = hilToFC.bodyAccel[Y] * (acc_1G / GRAVITY_CMSS);
-    accADC[Z] = hilToFC.bodyAccel[Z] * (acc_1G / GRAVITY_CMSS);
+    accADC[X] = hilToFC.bodyAccel[X] * (acc.acc_1G / GRAVITY_CMSS);
+    accADC[Y] = hilToFC.bodyAccel[Y] * (acc.acc_1G / GRAVITY_CMSS);
+    accADC[Z] = hilToFC.bodyAccel[Z] * (acc.acc_1G / GRAVITY_CMSS);
 }
 #endif
 
