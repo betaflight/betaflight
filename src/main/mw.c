@@ -220,12 +220,10 @@ void scaleRcCommandToFpvCamAngle(void) {
     rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
-void annexCode(void)
+static void updateRcCommands(void)
 {
-    int32_t tmp;
-    int32_t axis, prop;
-
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
+    int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop = 100;
     } else {
@@ -236,35 +234,32 @@ void annexCode(void)
         }
     }
 
-    for (axis = 0; axis < 3; axis++) {
-        tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
-        if (axis == ROLL || axis == PITCH) {
-            if (masterConfig.rcControlsConfig.deadband) {
-                if (tmp > masterConfig.rcControlsConfig.deadband) {
-                    tmp -= masterConfig.rcControlsConfig.deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-            rcCommand[axis] = rcLookupPitchRoll(tmp);
-        } else if (axis == YAW) {
-            if (masterConfig.rcControlsConfig.yaw_deadband) {
-                if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
-                    tmp -= masterConfig.rcControlsConfig.yaw_deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
-        }
-
+    for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
         PIDweight[axis] = prop;
 
-        if (rcData[axis] < masterConfig.rxConfig.midrc)
+        int32_t tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
+        if (axis == ROLL || axis == PITCH) {
+            if (tmp > masterConfig.rcControlsConfig.deadband) {
+                tmp -= masterConfig.rcControlsConfig.deadband;
+            } else {
+                tmp = 0;
+            }
+            rcCommand[axis] = rcLookupPitchRoll(tmp);
+        } else if (axis == YAW) {
+            if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
+                tmp -= masterConfig.rcControlsConfig.yaw_deadband;
+            } else {
+                tmp = 0;
+            }
+            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
+        }
+        if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
+        }
     }
 
+    int32_t tmp;
     if (feature(FEATURE_3D)) {
         tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
@@ -280,10 +275,10 @@ void annexCode(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        float cosDiff = cos_approx(radDiff);
-        float sinDiff = sin_approx(radDiff);
-        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+        const float cosDiff = cos_approx(radDiff);
+        const float sinDiff = sin_approx(radDiff);
+        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
@@ -859,8 +854,8 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
-    // the 'annexCode' initialses rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    annexCode();
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {
         updateAltHoldState();
