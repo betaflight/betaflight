@@ -153,6 +153,7 @@ static void cliMap(char *cmdline);
 #ifdef LED_STRIP
 static void cliLed(char *cmdline);
 static void cliColor(char *cmdline);
+static void cliModeColor(char *cmdline);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -252,6 +253,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
+    CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dump", "dump configuration",
@@ -1253,6 +1255,95 @@ static void cliColor(char *cmdline)
         }
     }
 }
+
+static void cliModeColor(char *cmdline)
+{
+    int i, j;
+    char *ptr;
+    int args[4], check = 0;
+    uint8_t colorIndex;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            for (j = 0; j < DIRECTIONS_COUNT; j++) {
+
+                switch (j) {
+                    case 0: colorIndex = modeColors(i)->north; break;
+                    case 1: colorIndex = modeColors(i)->east; break;
+                    case 2: colorIndex = modeColors(i)->south; break;
+                    case 3: colorIndex = modeColors(i)->west; break;
+                    case 4: colorIndex = modeColors(i)->up; break;
+                    case 5: colorIndex = modeColors(i)->down; break;
+                }
+
+                cliPrintf("mode_color %u %u %u\r\n",
+                    i,
+                    j,
+                    colorIndex
+                );
+            }
+        }
+
+        for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
+            switch (j) {
+                case 0: colorIndex = specialColors(0)->disarmed; break;
+                case 1: colorIndex = specialColors(0)->armed; break;
+                case 2: colorIndex = specialColors(0)->animation; break;
+                case 3: colorIndex = specialColors(0)->background; break;
+            }
+            cliPrintf("mode_color %u %u %u\r\n",
+                MODE_COUNT,
+                j,
+                colorIndex
+            );
+        }
+    } else {
+        enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
+        ptr = strtok(cmdline, " ");
+        while (ptr != NULL && check < ARGS_COUNT) {
+            args[check++] = atoi(ptr);
+            ptr = strtok(NULL, " ");
+        }
+
+        if (ptr != NULL || check != ARGS_COUNT) {
+            cliShowParseError();
+            return;
+        }
+
+        i = args[MODE];
+
+        if (i >= 0 && i < MODE_COUNT) {
+            switch (args[FUNCTION]) {
+                case 0: modeColors(i)->north = args[COLOR]; break;
+                case 1: modeColors(i)->east = args[COLOR]; break;
+                case 2: modeColors(i)->south = args[COLOR]; break;
+                case 3: modeColors(i)->west = args[COLOR]; break;
+                case 4: modeColors(i)->up = args[COLOR]; break;
+                case 5: modeColors(i)->down = args[COLOR]; break;
+                default: cliShowParseError(); return;
+            }
+
+        } else if (i == MODE_COUNT) {
+            // special colors
+            switch (args[FUNCTION]) {
+                case 0: specialColors(0)->disarmed = args[COLOR]; break;
+                case 1: specialColors(0)->armed = args[COLOR]; break;
+                case 2: specialColors(0)->animation = args[COLOR]; break;
+                case 3: specialColors(0)->background = args[COLOR]; break;
+                default: cliShowParseError(); return;
+            }
+        } else {
+            cliShowParseError();
+            return;
+        }
+
+        cliPrintf("mode_color %u %u %u\r\n",
+                            i,
+                            args[FUNCTION],
+                            args[COLOR]
+                        );
+    }
+}
 #endif
 
 #ifdef USE_SERVOS
@@ -1778,6 +1869,9 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
+
+        cliPrint("\r\n\r\n# mode_color\r\n");
+        cliModeColor("");
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
