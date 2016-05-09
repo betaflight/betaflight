@@ -635,8 +635,10 @@ uint16_t GPS_altitude;              // altitude in 0.1m
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
 uint8_t GPS_numCh;                          // Number of channels
+uint16_t GPS_hdop;                          // HDOP value
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
 uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS];    // Satellite ID
+uint16_t GPS_hdop;                          // HDOP value
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS]; // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal Strength)
 // from gyro.c
@@ -669,6 +671,8 @@ void pidSetController(pidControllerType_e) {}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 void useRcControlsConfig(modeActivationCondition_t *) {};
+bool rcModeIsActive(boxId_e modeId)  { return rcModeActivationMask & (1 << modeId); }
+
 // from runtime_config.c
 uint8_t armingFlags = 0;
 uint8_t stateFlags = 0;

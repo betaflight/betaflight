@@ -58,6 +58,11 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+extern "C" {
+extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
+extern uint32_t rcModeActivationMask;
+}
+
 class RcControlsModesTest : public ::testing::Test {
 protected:
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
@@ -82,14 +87,14 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 
     // when
-    updateActivatedModes(modeActivationConditions);
+    rcModeUpdateActivated(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
 #ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
+        EXPECT_EQ(false, rcModeIsActive((boxId_e)index));
     }
 }
 
@@ -171,7 +176,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     expectedMask |= (0 << 6);
 
     // when
-    updateActivatedModes(modeActivationConditions);
+    rcModeUpdateActivated(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {

@@ -17,13 +17,19 @@
 
 #pragma once
 
-#ifdef USE_QUAD_MIXER_ONLY
+#if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_MOTORS 4
 #define MAX_SUPPORTED_SERVOS 1
+
+#elif defined(TARGET_MOTOR_COUNT)
+#define MAX_SUPPORTED_MOTORS TARGET_MOTOR_COUNT
+#define MAX_SUPPORTED_SERVOS 8
+
 #else
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
 #endif
+
 #define YAW_JUMP_PREVENTION_LIMIT_LOW 80
 #define YAW_JUMP_PREVENTION_LIMIT_HIGH 500
 
@@ -210,24 +216,12 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 extern bool motorLimitReached;
 
-#ifdef USE_SERVOS
-void mixerInit(motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
-#else
 void mixerInit(motorMixer_t *customMotorMixers);
-#endif
-
-void mixerUseConfigs(
-#ifdef USE_SERVOS
-        servoParam_t *servoConfToUse
-#else
-        void
-#endif
-);
-
-
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 #ifdef USE_SERVOS
+void mixerInitServos(servoMixer_t *customServoMixers);
+void mixerUseConfigs(servoParam_t *servoConfToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
