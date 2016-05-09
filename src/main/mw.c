@@ -476,10 +476,10 @@ void processRx(void)
     else {
         if (throttleStatus == THROTTLE_LOW) {
             if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
-                rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+                rollPitchStatus_e rollPitchStatus = calculateRollPitchCenterStatus(&masterConfig.rxConfig);
 
                 // ANTI_WINDUP at centred stick with MOTOR_STOP is needed on MRs and not needed on FWs
-                if (rollPitchStatus == CENTERED || (feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING))) {
+                if ((rollPitchStatus == CENTERED) || (feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING))) {
                     ENABLE_STATE(ANTI_WINDUP);
                 }
                 else {

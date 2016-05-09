@@ -93,9 +93,10 @@ static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
 void pidResetErrorAccumulators(void)
 {
     // Reset R/P/Y integrator
-    pidState[FD_ROLL].errorGyroIf = 0.0f;
-    pidState[FD_PITCH].errorGyroIf = 0.0f;
-    pidState[FD_YAW].errorGyroIf = 0.0f;
+    for (int axis = 0; axis < 3; axis++) {
+        pidState[axis].errorGyroIf = 0.0f;
+        pidState[axis].errorGyroIfLimit = 0.0f;
+    }
 
     // Reset yaw heading lock accumulator
     pidState[FD_YAW].axisLockAccum = 0;
@@ -267,8 +268,9 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
     }
 
     // TODO: Get feedback from mixer on available correction range for each axis
-    const float newOutput = newPTerm + pidState->errorGyroIf + newDTerm;
-    const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT) * (STATE(PID_ATTENUATE) ? 0.33f : 1.0f);
+    const float pidAttenuationFactor = STATE(PID_ATTENUATE) ? 0.33f : 1.0f;
+    const float newOutput = (newPTerm + newDTerm) * pidAttenuationFactor + pidState->errorGyroIf;
+    const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
 
     // Integrate only if we can do backtracking
     pidState->errorGyroIf += (rateError * pidState->kI * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);

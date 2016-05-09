@@ -59,7 +59,7 @@
 
 #include "mw.h"
 
-#define AIRMODE_DEADBAND 10
+#define AIRMODE_DEADBAND 25
 
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
