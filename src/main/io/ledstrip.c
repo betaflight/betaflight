@@ -669,24 +669,26 @@ void applyLedGpsLayer(uint8_t updateNow)
     static uint8_t gpsFlashCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
-    if (updateNow) {
-        const hsvColor_t *gpsColor = &hsv_black;
+    const hsvColor_t *gpsColor = &hsv_black;
 
-        if (GPS_numSat == 0) {
-            gpsColor = &hsv_red;
-        } else if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
+    if (GPS_numSat == 0) {
+        gpsColor = &hsv_red;
+    } else if (updateNow) {
+        if ((gpsFlashCounter & 1) == 0 && gpsFlashCounter < GPS_numSat * 2) {
             gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_orange;
         }
+    }
 
-        for (uint8_t i = 0; i < ledCount; ++i) {
+    for (uint8_t i = 0; i < ledCount; ++i) {
 
-            ledConfig = ledConfigs(i);
+        ledConfig = ledConfigs(i);
 
-            if (ledConfig->flags & LED_FUNCTION_GPS) {
-                setLedHsv(i, gpsColor);
-            }
+        if (ledConfig->flags & LED_FUNCTION_GPS) {
+            setLedHsv(i, gpsColor);
         }
+    }
 
+    if (updateNow) {
         gpsFlashCounter++;
         if (gpsFlashCounter == GPS_numSat * 2 + blinkPauseLength) {
             gpsFlashCounter = 0;
