@@ -112,7 +112,7 @@
 #define BLACKBOX
 
 #define NAV
-//#define NAV_AUTO_MAG_DECLINATION
+#define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 
 #define GPS
