@@ -320,40 +320,45 @@ color 15 0,0,0
 Mode Colors can be configured using the cli `mode_color` command.
 
 - No arguments: lists all mode colors
-- arguments: ModeIndex, ModeColorIndex, ColorIndex
+- arguments: mode, function, color
 
 First 6 groups of ModeIndexes are :
 
-- orientation
-- headfree
-- horizon
-- angle
-- mag
-- baro
+| mode | name        |
+|------|-------------|
+| 0    | orientation |
+| 1    | headfree    |
+| 2    | horizon     |
+| 3    | angle       |
+| 4    | mag         |
+| 5    | baro        |
+| 5    | special     |
 
-Each of these groups use these ModelColorIndexes :
+Modes 0 to 5 functions:
 
-- north
-- east
-- south
-- west
-- up
-- down
+| function | name  |
+| 0        | north |
+| 1        | east  |
+| 2        | south |
+| 3        | west  |
+| 4        | up    |
+| 5        | down  |
 
-Group 6 is used for special colors according to these ModelColorIndexes:
+Mode 6 use these functions:
 
-- disarmed
-- armed
-- animation
-- bakground
-
+| function | name       |
+| 0        | disarmed   |
+| 1        | armed      |
+| 2        | animation  |
+| 3        | background |
+ 
 The ColorIndex is picked from the colors array ("palette").
 
-Examples :
+Examples (using the default colors):
 
 - set armed color to red: ```set mode_color 6 1 2```
 - set disarmed color to yellow: ```set mode_color 6 0 4```
-- set Headfree Mode - South to Cyan: ```set mode_color 1 2 8```
+- set Headfree mode 'south' to Cyan: ```set mode_color 1 2 8```
 
 
 ## Positioning
