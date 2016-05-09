@@ -690,7 +690,7 @@ void applyLedGpsLayer(uint8_t updateNow)
 
     if (updateNow) {
         gpsFlashCounter++;
-        if (gpsFlashCounter == GPS_numSat * 2 + blinkPauseLength) {
+        if (gpsFlashCounter >= GPS_numSat * 2 + blinkPauseLength) {
             gpsFlashCounter = 0;
         }
     }
