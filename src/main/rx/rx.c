@@ -533,7 +533,7 @@ static void detectAndApplySignalLossBehaviour(void)
 
     rxFlightChannelsValid = rxHaveValidFlightChannels();
 
-    if ((rxFlightChannelsValid) && !(IS_RC_MODE_ACTIVE(BOXFAILSAFE) && feature(FEATURE_FAILSAFE))) {
+    if ((rxFlightChannelsValid) && !(rcModeIsActive(BOXFAILSAFE) && feature(FEATURE_FAILSAFE))) {
         failsafeOnValidDataReceived();
     } else {
         rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven = true;

@@ -105,7 +105,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         }
 
         // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (rcModeIsActive(BOXAIRMODE)) {
             if (STATE(ANTI_WINDUP) || motorLimitReached) {
                 lastITerm[axis] = constrain(lastITerm[axis], -ITermLimit[axis], ITermLimit[axis]);
             } else {

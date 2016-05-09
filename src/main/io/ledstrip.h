@@ -19,6 +19,9 @@
 
 #define MAX_LED_STRIP_LENGTH 32
 #define CONFIGURABLE_COLOR_COUNT 16
+#define MODE_COUNT 6
+#define DIRECTIONS_COUNT 6
+#define SPECIAL_COLORS_COUNT 4
 
 #define LED_X_BIT_OFFSET 4
 #define LED_Y_BIT_OFFSET 0
@@ -49,6 +52,9 @@ typedef enum {
     LED_FUNCTION_THROTTLE    = (1 << 10),
     LED_FUNCTION_THRUST_RING = (1 << 11),
     LED_FUNCTION_COLOR       = (1 << 12),
+    LED_FUNCTION_GPS         = (1 << 13),
+    LED_FUNCTION_RSSI        = (1 << 14),
+    LED_FUNCTION_BLINK       = (1 << 15),
 } ledFlag_e;
 
 #define LED_DIRECTION_BIT_OFFSET 0
@@ -68,9 +74,44 @@ typedef enum {
     LED_FUNCTION_ARM_STATE | \
     LED_FUNCTION_THROTTLE | \
     LED_FUNCTION_THRUST_RING | \
-    LED_FUNCTION_COLOR \
+    LED_FUNCTION_COLOR | \
+    LED_FUNCTION_GPS | \
+    LED_FUNCTION_RSSI | \
+    LED_FUNCTION_BLINK \
 )
 
+typedef enum {
+    MODE_ORIENTATION = 0,
+    MODE_HEADFREE,
+    MODE_HORIZON,
+    MODE_ANGLE,
+    MODE_MAG,
+    MODE_BARO,
+    SPECIAL
+} modeIds;
+
+typedef enum {
+    SC_FUNCTION_DISMARED = 0,
+    SC_FUNCTION_ARMED,
+    SC_FUNCTION_ANIMATION,
+    SC_FUNCTION_BACKGROUND
+} specialColorFunctionIds;
+
+typedef struct modeColorIndexes_s {
+    uint8_t north;
+    uint8_t east;
+    uint8_t south;
+    uint8_t west;
+    uint8_t up;
+    uint8_t down;
+} modeColorIndexes_t;
+
+typedef struct specialColorIndexes_s {
+    uint8_t disarmed;
+    uint8_t armed;
+    uint8_t animation;
+    uint8_t background;
+} specialColorIndexes_t;
 
 typedef struct ledConfig_s {
     uint8_t xy;     // see LED_X/Y_MASK defines
@@ -83,6 +124,8 @@ extern uint8_t ledsInRingCount;
 
 PG_DECLARE_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs);
 PG_DECLARE_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors);
+PG_DECLARE_ARR(modeColorIndexes_t, MODE_COUNT, modeColors);
+PG_DECLARE_ARR(specialColorIndexes_t, 1, specialColors);
 
 void ledStripInit(void);
 
@@ -99,4 +142,8 @@ void applyDefaultColors(void);
 void ledStripInit(void);
 void ledStripEnable(void);
 void reevalulateLedConfig(void);
+
+bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex);
+
+extern uint16_t rssi; // FIXME dependency on mw.c
 
