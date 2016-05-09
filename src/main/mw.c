@@ -222,7 +222,7 @@ void scaleRcCommandToFpvCamAngle(void) {
 
 void annexCode(void)
 {
-    int32_t tmp, tmp2;
+    int32_t tmp;
     int32_t axis, prop;
 
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
@@ -246,9 +246,7 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-
-            tmp2 = tmp / 20;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 20) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 20;
+            rcCommand[axis] = rcLookupPitchRoll(tmp);
         } else if (axis == YAW) {
             if (masterConfig.rcControlsConfig.yaw_deadband) {
                 if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
@@ -257,8 +255,7 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            tmp2 = tmp / 20;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 20) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 20) * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
         }
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
@@ -275,8 +272,7 @@ void annexCode(void)
         tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
     }
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
