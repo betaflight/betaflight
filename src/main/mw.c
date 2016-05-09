@@ -169,7 +169,8 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void filterRc(void){
+void filterRc(void)
+{
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
@@ -287,8 +288,10 @@ static void updateRcCommands(void)
     if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
         scaleRcCommandToFpvCamAngle();
     }
+}
 
-
+static void updateLEDs(void)
+{
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
@@ -313,10 +316,6 @@ static void updateRcCommands(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
 }
 
 void mwDisarm(void)
@@ -665,6 +664,11 @@ void subTaskMainSubprocesses(void) {
         filterRc();
     }
 
+    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
+    if (gyro.temperature) {
+        gyro.temperature(&telemTemperature1);
+    }
+
     #ifdef MAG
             if (sensors(SENSOR_MAG)) {
                 updateMagHold();
@@ -856,6 +860,8 @@ void taskUpdateRxMain(void)
 
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
+    updateLEDs();
+
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {
         updateAltHoldState();
