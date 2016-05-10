@@ -238,7 +238,7 @@ const modeColorIndexes_t defaultModeColors[] = {
 };
 
 const specialColorIndexes_t defaultSpecialColors[] = {
-    { COLOR_GREEN, COLOR_BLUE, COLOR_WHITE, COLOR_BLACK }
+    { COLOR_GREEN, COLOR_BLUE, COLOR_WHITE, COLOR_BLACK, COLOR_BLACK, COLOR_RED, COLOR_ORANGE, COLOR_GREEN }
 };
 
 
@@ -656,14 +656,14 @@ void applyLedGpsLayer(bool updateNow)
     static uint8_t gpsPauseCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
-    const hsvColor_t *gpsColor = &hsv_black;
+    const hsvColor_t *gpsColor = colors(specialColors(0)->background);
 
     if (GPS_numSat == 0 || !sensors(SENSOR_GPS)) {
-        gpsColor = &hsv_red;
+        gpsColor = colors(specialColors(0)->gps_nosats);
         gpsFlashCounter = gpsPauseCounter = 0; // reset counters
     } else {
         if (gpsPauseCounter == 0 && (gpsFlashCounter & 1) == 0) {
-            gpsColor = STATE(GPS_FIX) ? &hsv_green : &hsv_orange;
+            gpsColor = STATE(GPS_FIX) ? colors(specialColors(0)->gps_locked) : colors(specialColors(0)->gps_nolock);
         }
     }
 
@@ -823,7 +823,7 @@ void applyLedBlinkLayer(bool updateNow)
             if ((blinkCounter & 1) == 1 && blinkCounter < 4)
                 blinkColor = colors(ledConfig->color);
             else
-                blinkColor = &hsv_black;
+                blinkColor = colors(specialColors(0)->blink_background);
             setLedHsv(i, blinkColor);
         }
     }
@@ -897,9 +897,9 @@ void updateLedStrip(void)
     bool gpsFlashNow = cmp32(now, nextGpsFlashAt) >= 0;
 #endif
     bool rotationUpdateNow = cmp32(now, nextRotationUpdateAt) >= 0;
-#endif
 #ifdef USE_LED_ANIMATION
     bool animationUpdateNow = cmp32(now, nextAnimationUpdateAt) >= 0;
+#endif
     if (!(  false
             || indicatorFlashNow
             || rotationUpdateNow

@@ -1291,6 +1291,10 @@ static void cliModeColor(char *cmdline)
                 case 1: colorIndex = specialColors(0)->armed; break;
                 case 2: colorIndex = specialColors(0)->animation; break;
                 case 3: colorIndex = specialColors(0)->background; break;
+                case 4: colorIndex = specialColors(0)->blink_background; break;
+                case 5: colorIndex = specialColors(0)->gps_nosats; break;
+                case 6: colorIndex = specialColors(0)->gps_nolock; break;
+                case 7: colorIndex = specialColors(0)->gps_locked; break;
             }
             cliPrintf("mode_color %u %u %u\r\n",
                 MODE_COUNT,
@@ -1331,6 +1335,10 @@ static void cliModeColor(char *cmdline)
                 case 1: specialColors(0)->armed = args[COLOR]; break;
                 case 2: specialColors(0)->animation = args[COLOR]; break;
                 case 3: specialColors(0)->background = args[COLOR]; break;
+                case 4: specialColors(0)->blink_background = args[COLOR]; break;
+                case 5: specialColors(0)->gps_nosats = args[COLOR]; break;
+                case 6: specialColors(0)->gps_nolock = args[COLOR]; break;
+                case 7: specialColors(0)->gps_locked = args[COLOR]; break;
                 default: cliShowParseError(); return;
             }
         } else {

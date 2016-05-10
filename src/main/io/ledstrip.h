@@ -21,7 +21,7 @@
 #define CONFIGURABLE_COLOR_COUNT 16
 #define MODE_COUNT 6
 #define DIRECTIONS_COUNT 6
-#define SPECIAL_COLORS_COUNT 4
+#define SPECIAL_COLORS_COUNT 8
 
 #define LED_X_BIT_OFFSET 4
 #define LED_Y_BIT_OFFSET 0
@@ -94,7 +94,11 @@ typedef enum {
     SC_FUNCTION_DISMARED = 0,
     SC_FUNCTION_ARMED,
     SC_FUNCTION_ANIMATION,
-    SC_FUNCTION_BACKGROUND
+    SC_FUNCTION_BACKGROUND,
+    SC_FUNCTION_BLINKBACKGROUND,
+    SC_FUNCTION_GPSNOSTATS,
+    SC_FUNCTION_GPSNOLOCK,
+    SC_FUNCTION_GPSLOCKED
 } specialColorFunctionIds;
 
 typedef struct modeColorIndexes_s {
@@ -111,6 +115,10 @@ typedef struct specialColorIndexes_s {
     uint8_t armed;
     uint8_t animation;
     uint8_t background;
+    uint8_t blink_background;
+    uint8_t gps_nosats;
+    uint8_t gps_nolock;
+    uint8_t gps_locked;
 } specialColorIndexes_t;
 
 typedef struct ledConfig_s {
