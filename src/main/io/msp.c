@@ -593,7 +593,7 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_RAW_IMU: {
             // Hack scale due to choice of units for sensor data in multiwii
-            unsigned scale_shift = (acc_1G > 1024) ? 3 : 0;
+            unsigned scale_shift = (acc.acc_1G > 1024) ? 3 : 0;
 
             for (unsigned i = 0; i < 3; i++)
                 sbufWriteU16(dst, accSmooth[i] >> scale_shift);

@@ -32,7 +32,7 @@
 #define BMA280_PMU_BW      0x10
 #define BMA280_PMU_RANGE   0x0F
 
-static void bma280Init(void);
+static void bma280Init(acc_t *acc);
 static bool bma280Read(int16_t *accelData);
 
 bool bma280Detect(acc_t *acc)
@@ -49,12 +49,12 @@ bool bma280Detect(acc_t *acc)
     return true;
 }
 
-static void bma280Init(void)
+static void bma280Init(acc_t *acc)
 {
     i2cWrite(BMA280_ADDRESS, BMA280_PMU_RANGE, 0x08); // +-8g range
     i2cWrite(BMA280_ADDRESS, BMA280_PMU_BW, 0x0E); // 500Hz BW
 
-    acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 8;
 }
 
 static bool bma280Read(int16_t *accelData)

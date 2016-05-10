@@ -15,13 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum awf3HardwareRevision_t {
+    UNKNOWN = 0,
+    AFF3_REV_1, // MPU6050 / MPU9150 (I2C)
+    AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
+} awf3HardwareRevision_e;
 
-typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read prototype
+extern uint8_t hardwareRevision;
 
-struct acc_s;
-typedef void (*sensorAccInitFuncPtr)(struct acc_s *acc);                    // sensor init prototype
-typedef void (*sensorGyroInitFuncPtr)(uint8_t lpf);         // gyro sensor init prototype
-typedef bool (*sensorIsDataReadyFuncPtr)(void);             // sensor data ready prototype
-
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

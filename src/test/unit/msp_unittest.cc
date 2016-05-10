@@ -482,7 +482,7 @@ TEST_F(MspTest, TestMspCommands)
 // STUBS
 extern "C" {
 // from acceleration.c
-uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
+acc_t acc;                       // acc access functions
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired) {UNUSED(calibrationCyclesRequired);}
 // from altitudehold.c
 int32_t AltHold;

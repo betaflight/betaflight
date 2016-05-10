@@ -38,8 +38,6 @@
 #define DISABLE_MPU6500       GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN)
 #define ENABLE_MPU6500        GPIO_ResetBits(MPU6500_CS_GPIO, MPU6500_CS_PIN)
 
-extern uint16_t acc_1G;
-
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;
@@ -107,11 +105,11 @@ bool mpu6500SpiDetect(void)
 
     mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &sig);
 
-    sig &= MPU_INQUIRY_MASK;
-    if (sig != MPU6500_WHO_AM_I_CONST) {
-        return false;
+    if (sig == MPU6500_WHO_AM_I_CONST || sig == MPU9250_WHO_AM_I_CONST) {
+        return true;
     }
-    return true;
+
+    return false;
 }
 
 bool mpu6500SpiAccDetect(acc_t *acc)

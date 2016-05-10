@@ -21,4 +21,4 @@ extern uint32_t targetLooptime;
 
 bool gyroSyncCheckUpdate(void);
 uint8_t gyroMPU6xxxCalculateDivider(void);
-void gyroUpdateSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);
+void gyroSetSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);
