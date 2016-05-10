@@ -105,11 +105,11 @@ bool mpu6500SpiDetect(void)
 
     mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &sig);
 
-    sig &= MPU_INQUIRY_MASK;
-    if (sig != MPU6500_WHO_AM_I_CONST) {
-        return false;
+    if (sig == MPU6500_WHO_AM_I_CONST || sig == MPU9250_WHO_AM_I_CONST) {
+        return true;
     }
-    return true;
+
+    return false;
 }
 
 bool mpu6500SpiAccDetect(acc_t *acc)
