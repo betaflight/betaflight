@@ -101,13 +101,12 @@ STATIC_UNIT_TESTED void resetConf(void)
     imuConfig()->looptime = 1000;
 #endif
 
-    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
-#ifdef ALIENWII32
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_MOTOR_STOP);
-# ifdef ALIENWIIF3
+    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
+#ifdef ALIENFLIGHT
+#ifdef ALIENFLIGHTF3
     serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     batteryConfig()->vbatscale = 20;
+    sensorSelectionConfig()->mag_hardware = MAG_NONE;            // disabled by default
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
@@ -117,16 +116,16 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorAndServoConfig()->maxthrottle = 2000;
     motorAndServoConfig()->motor_pwm_rate = 32000;
     imuConfig()->looptime = 2000;
-    pidProfile()->pidController = 3;
-    pidProfile()->P8[PIDROLL] = 36;
-    pidProfile()->P8[PIDPITCH] = 36;
+    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
-    currentControlRateProfile->rates[ROLL] = 20;
+    mixerConfig()->yaw_jump_prevention_limit = YAW_JUMP_PREVENTION_LIMIT_HIGH;
+    currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[PITCH] = 20;
-    currentControlRateProfile->rates[YAW] = 100;
+    currentControlRateProfile->rates[ROLL] = 20;
+    currentControlRateProfile->rates[YAW] = 20;
     parseRcChannels("TAER1234", rxConfig());
+
     *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L

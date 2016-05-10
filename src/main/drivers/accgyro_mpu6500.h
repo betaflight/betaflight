@@ -16,6 +16,7 @@
  */
 
 #define MPU6500_WHO_AM_I_CONST              (0x70)
+#define MPU9250_WHO_AM_I_CONST              (0x71)
 
 #define MPU6500_BIT_RESET                   (0x80)
 

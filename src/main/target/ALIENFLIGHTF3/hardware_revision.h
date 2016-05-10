@@ -15,12 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum awf3HardwareRevision_t {
+    UNKNOWN = 0,
+    AFF3_REV_1, // MPU6050 / MPU9150 (I2C)
+    AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
+} awf3HardwareRevision_e;
 
-bool mpu6500SpiDetect(void);
+extern uint8_t hardwareRevision;
 
-bool mpu6500SpiAccDetect(acc_t *acc);
-bool mpu6500SpiGyroDetect(gyro_t *gyro);
-
-bool mpu6500WriteRegister(uint8_t reg, uint8_t data);
-bool mpu6500ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

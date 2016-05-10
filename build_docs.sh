@@ -36,7 +36,7 @@ doc_files=(
     'Board - RMDO.md'
     'Board - Naze32.md'
     'Board - Paris Air Hero 32.md'
-    'Board - AlienWii32.md'
+    'Board - AlienFlight.md'
     'Board - CC3D.md'
     'Board - CJMCU.md'
     'Board - Olimexino.md'
