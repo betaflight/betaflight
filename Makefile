@@ -237,6 +237,7 @@ COMMON_SRC = build_config.c \
 		   common/typeconversion.c \
 		   common/encoding.c \
 		   common/filter.c \
+		   common/streambuf.c \
 		   scheduler.c \
            scheduler_tasks.c \
 		   main.c \
@@ -249,6 +250,7 @@ COMMON_SRC = build_config.c \
 		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
+		   flight/servos.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
@@ -270,6 +272,7 @@ COMMON_SRC = build_config.c \
 		   io/serial_cli.c \
 		   io/serial_msp.c \
 		   io/statusindicator.c \
+		   io/msp.c \
 		   rx/rx.c \
 		   rx/pwm.c \
 		   rx/msp.c \
@@ -663,6 +666,7 @@ SPRACINGF3EVO_SRC	 = \
 MOTOLAB_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \

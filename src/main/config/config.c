@@ -54,6 +54,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/pid.h"
@@ -80,9 +81,14 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     setControlRateProfile(0);
 
+    parseRcChannels("AETR1234", rxConfig());
+
     featureClearAll();
 
-    featureSet(DEFAULT_RX_FEATURE);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_BLACKBOX);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
+#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -90,24 +96,9 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
-    featureSet(FEATURE_FAILSAFE);
-
-    parseRcChannels("AETR1234", rxConfig());
-
-    featureSet(FEATURE_BLACKBOX);
-
 #if defined(COLIBRI_RACE)
     // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
-    featureSet(FEATURE_ONESHOT125);
-    featureSet(FEATURE_LED_STRIP);
-#endif
-
-#ifdef SPRACINGF3EVO
-    featureSet(FEATURE_TRANSPONDER);
-    featureSet(FEATURE_RSSI_ADC);
-    featureSet(FEATURE_CURRENT_METER);
-    featureSet(FEATURE_TELEMETRY);
 #endif
 
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets

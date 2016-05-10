@@ -224,6 +224,7 @@ typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *c
 const pgRegistry_t* pgFind(pgn_t pgn);
 const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex);
+int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex);
 void pgResetAll(uint8_t profileCount);
 void pgActivateProfile(uint8_t profileIndexToActivate);
 void pgResetCurrent(const pgRegistry_t *reg);

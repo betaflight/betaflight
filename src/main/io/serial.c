@@ -194,6 +194,13 @@ bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, s
     return (portConfig) && (portConfig->functionMask & sharedWithFunction) && (portConfig->functionMask & functionMask);
 }
 
+bool isSerialPortOpen(serialPortConfig_t *portConfig)
+{
+    serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(portConfig->identifier);
+    return serialPortUsage && serialPortUsage->function != FUNCTION_NONE;
+}
+
+
 static findSharedSerialPortState_t findSharedSerialPortState;
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
@@ -441,7 +448,7 @@ void handleSerial(void)
     }
 #endif
 
-    mspProcess();
+    mspSerialProcess();
 }
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)

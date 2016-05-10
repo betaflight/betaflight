@@ -81,6 +81,7 @@
 #include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
@@ -1265,13 +1266,6 @@ static void cliModeColor(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < MODE_COUNT; i++) {
-            if (i == MODE_MAG) {
-#ifdef MAG
-#else
-                    continue;
-#endif
-            }
-
             for (j = 0; j < DIRECTIONS_COUNT; j++) {
 
                 switch (j) {
@@ -1290,6 +1284,7 @@ static void cliModeColor(char *cmdline)
                 );
             }
         }
+
         for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
             switch (j) {
                 case 0: colorIndex = specialColors(0)->disarmed; break;
@@ -1304,7 +1299,7 @@ static void cliModeColor(char *cmdline)
             );
         }
     } else {
-        enum {MODE = 0, MODE_COLOR, COLOR, ARGS_COUNT};
+        enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
             args[check++] = atoi(ptr);
@@ -1318,16 +1313,8 @@ static void cliModeColor(char *cmdline)
 
         i = args[MODE];
 
-        if (i == MODE_MAG) {
-#ifdef MAG
-#else
-                cliShowParseError();
-                return;
-#endif
-        }
-
         if (i >= 0 && i < MODE_COUNT) {
-            switch (args[MODE_COLOR]) {
+            switch (args[FUNCTION]) {
                 case 0: modeColors(i)->north = args[COLOR]; break;
                 case 1: modeColors(i)->east = args[COLOR]; break;
                 case 2: modeColors(i)->south = args[COLOR]; break;
@@ -1339,7 +1326,7 @@ static void cliModeColor(char *cmdline)
 
         } else if (i == MODE_COUNT) {
             // special colors
-            switch (args[MODE_COLOR]) {
+            switch (args[FUNCTION]) {
                 case 0: specialColors(0)->disarmed = args[COLOR]; break;
                 case 1: specialColors(0)->armed = args[COLOR]; break;
                 case 2: specialColors(0)->animation = args[COLOR]; break;
@@ -1353,7 +1340,7 @@ static void cliModeColor(char *cmdline)
 
         cliPrintf("mode_color %u %u %u\r\n",
                             i,
-                            args[MODE_COLOR],
+                            args[FUNCTION],
                             args[COLOR]
                         );
     }
@@ -1884,7 +1871,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
 
-        cliPrint("\r\n\r\n# mode color\r\n");
+        cliPrint("\r\n\r\n# mode_color\r\n");
         cliModeColor("");
 #endif
         printSectionBreak();

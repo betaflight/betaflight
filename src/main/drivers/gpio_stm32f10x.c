@@ -22,7 +22,7 @@
 
 #include "gpio.h"
 
-void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
+void gpioInit(GPIO_TypeDef *gpio, const gpio_config_t *config)
 {
     uint32_t pinpos;
     for (pinpos = 0; pinpos < 16; pinpos++) {

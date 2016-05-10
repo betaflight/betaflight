@@ -41,14 +41,21 @@
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
-#define USE_GYRO_MPU6050
-
-#define GYRO_MPU6050_ALIGN CW180_DEG
-
 #define ACC
-#define USE_ACC_MPU6050
 
+#define USE_GYRO_MPU6050
+#define GYRO_MPU6050_ALIGN CW180_DEG
+#define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN CW180_DEG
+
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW180_DEG
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW180_DEG
+
+#define MPU6000_CS_GPIO GPIOB
+#define MPU6000_CS_PIN GPIO_Pin_12
+#define MPU6000_SPI_INSTANCE SPI2
 
 //#define BARO
 //#define USE_BARO_MS5611
@@ -59,7 +66,6 @@
 #define LED0
 
 #define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -117,6 +123,7 @@
 #define BLACKBOX
 #define SERIAL_RX
 //#define GPS
+#define GTUNE
 #define DISPLAY
 #define USE_SERVOS
 #define USE_FLASHFS
@@ -142,9 +149,9 @@
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
 #define LED_STRIP
-#if 1
 #define LED_STRIP_TIMER TIM16
 
+#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOB
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -157,32 +164,10 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-
-#endif
-
-#if 0
-// Alternate LED strip pin
-// FIXME DMA IRQ Transfer Complete is never called because the  TIM17_DMA_RMP needs to be set in SYSCFG_CFGR1
-#define LED_STRIP_TIMER TIM17
-
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_7 // TIM17_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource7
-#define WS2811_TIMER                    TIM17
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
-#define WS2811_DMA_CHANNEL              DMA1_Channel7
-#define WS2811_IRQ                      DMA1_Channel7_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC7
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH7_HANDLER
-
-#endif
-
-
 #define SPEKTRUM_BIND
 // UART2, PB4
 #define BIND_PORT GPIOB
 #define BIND_PIN Pin_4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+

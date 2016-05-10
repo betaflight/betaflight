@@ -39,13 +39,8 @@
 #include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
-
-#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-# include "io/serial_4way_avrootloader.h"
-#endif
-#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
-# include "io/serial_4way_stk500v2.h"
-#endif
+#include "io/serial_4way_avrootloader.h"
+#include "io/serial_4way_stk500v2.h"
 
 #define USE_TXRX_LED
 
@@ -88,8 +83,9 @@
 
 static uint8_t escCount;
 uint8_t escSelected;
-
 escHardware_t escHardware[MAX_PWM_MOTORS];
+
+bool esc4wayExitRequested = false;
 
 static escDeviceInfo_t deviceInfo;
 

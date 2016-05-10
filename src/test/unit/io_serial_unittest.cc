@@ -92,7 +92,7 @@ void cliProcess(void) {}
 bool isSerialTransmitBufferEmpty(serialPort_t *) {
     return true;
 }
-void mspProcess(void) {}
+void mspSerialProcess(void) {}
 void systemResetToBootloader(void) {}
 
 serialPort_t *usbVcpOpen(void) { return NULL; }

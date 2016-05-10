@@ -211,4 +211,4 @@ This gives a 2.2k for an 11.2v battery.  The `vbat_scale` for this divider shoul
 
 ## Current Monitoring
 
-Connect a current sensor to PWM8/PA7 that gives a range between 0v and 3.3v out (MAX). 
+Connect a current sensor to PWM8/PA7 that gives a range between 0v and 3.3v out (MAX).

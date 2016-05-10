@@ -405,10 +405,12 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
                 val = atoi(chunk);
                 ledConfig->xy |= CALCULATE_LED_X(val);
                 break;
+
             case Y_COORDINATE:
                 val = atoi(chunk);
                 ledConfig->xy |= CALCULATE_LED_Y(val);
                 break;
+
             case DIRECTIONS:
                 for (chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
                     for (uint8_t mappingIndex = 0; mappingIndex < DIRECTION_COUNT; mappingIndex++) {
@@ -419,6 +421,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
                     }
                 }
                 break;
+
             case FUNCTIONS:
                 for (chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
                     for (uint8_t mappingIndex = 0; mappingIndex < FUNCTION_COUNT; mappingIndex++) {
@@ -429,6 +432,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
                     }
                 }
                 break;
+
             case RING_COLORS:
                 if (atoi(chunk) < CONFIGURABLE_COLOR_COUNT) {
                     ledConfig->color = atoi(chunk);
@@ -939,18 +943,20 @@ void updateLedStrip(void)
 
     uint32_t now = micros();
 
-    bool indicatorFlashNow = (now >= nextIndicatorFlashAt);
-    bool blinkFlashNow = (now >= nextBlinkFlashAt);
-    bool warningFlashNow = (now >= nextWarningFlashAt);
-    bool gpsFlashNow = (now >= nextGpsFlashAt);
-    bool rotationUpdateNow = (now >= nextRotationUpdateAt);
+    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
+    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
+    bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
+    bool blinkFlashNow = (int32_t)(now - nextBlinkFlashAt) >= 0L;
+    bool gpsFlashNow = (int32_t)(now - nextGpsFlashAt) >= 0L;
 #ifdef USE_LED_ANIMATION
-    bool animationUpdateNow = (now >= nextAnimationUpdateAt);
+    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
 #endif
     if (!(
             indicatorFlashNow ||
             rotationUpdateNow ||
+#ifdef GPS
             gpsFlashNow ||
+#endif
             blinkFlashNow ||
             warningFlashNow
 #ifdef USE_LED_ANIMATION
@@ -969,16 +975,16 @@ void updateLedStrip(void)
 
     // LAYER 2
 
-    applyLedWarningLayer(warningFlashNow);
     if (warningFlashNow) {
         nextWarningFlashAt = now + LED_STRIP_10HZ;
     }
+    applyLedWarningLayer(warningFlashNow);
 
 #ifdef GPS
-    applyLedGpsLayer(gpsFlashNow);
     if (gpsFlashNow) {
         nextGpsFlashAt = now + LED_STRIP_5HZ * 2;
     }
+    applyLedGpsLayer(gpsFlashNow);
 #endif
 
     // LAYER 3
@@ -1051,6 +1057,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
                 }
                 colors(index)->h = val;
                 break;
+
             case HSV_SATURATION:
                 if (val > HSV_SATURATION_MAX) {
                     ok = false;
@@ -1058,6 +1065,7 @@ bool parseColor(uint8_t index, const char *colorConfig)
                 }
                 colors(index)->s = (uint8_t)val;
                 break;
+
             case HSV_VALUE:
                 if (val > HSV_VALUE_MAX) {
                     ok = false;
@@ -1093,35 +1101,86 @@ bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex)
     modeColorIndexes_t *modeColor;
 
     switch (modeIndex) {
-        case MODE_ORIENTATION:  modeColor = modeColors(MODE_ORIENTATION); break;
-        case MODE_HEADFREE:     modeColor = modeColors(MODE_HEADFREE); break;
-        case MODE_HORIZON:      modeColor = modeColors(MODE_HORIZON); break;
-        case MODE_ANGLE:        modeColor = modeColors(MODE_ANGLE); break;
+        case MODE_ORIENTATION:
+            modeColor = modeColors(MODE_ORIENTATION);
+            break;
+
+        case MODE_HEADFREE:
+            modeColor = modeColors(MODE_HEADFREE);
+            break;
+
+        case MODE_HORIZON:
+            modeColor = modeColors(MODE_HORIZON);
+            break;
+
+        case MODE_ANGLE:
+            modeColor = modeColors(MODE_ANGLE);
+            break;
+
 #ifdef MAG
-        case MODE_MAG:          modeColor = modeColors(MODE_MAG); break;
+        case MODE_MAG:
+            modeColor = modeColors(MODE_MAG);
+            break;
 #endif
-        case MODE_BARO:         modeColor = modeColors(MODE_BARO); break;
+        case MODE_BARO:
+            modeColor = modeColors(MODE_BARO);
+            break;
+
         case SPECIAL:
             switch (modeColorIndex) {
-                case SC_FUNCTION_DISMARED: specialColors(0)->disarmed = colorIndex; break;
-                case SC_FUNCTION_ARMED: specialColors(0)->armed = colorIndex; break;
-                case SC_FUNCTION_ANIMATION: specialColors(0)->animation = colorIndex; break;
-                case SC_FUNCTION_BACKGROUND: specialColors(0)->background = colorIndex; break;
-                default: return !ok;
+                case SC_FUNCTION_DISMARED:
+                    specialColors(0)->disarmed = colorIndex;
+                    break;
+
+                case SC_FUNCTION_ARMED:
+                    specialColors(0)->armed = colorIndex;
+                    break;
+
+                case SC_FUNCTION_ANIMATION:
+                    specialColors(0)->animation = colorIndex;
+                    break;
+
+                case SC_FUNCTION_BACKGROUND:
+                    specialColors(0)->background = colorIndex;
+                    break;
+
+                default:
+                    return !ok;
             }
+
             return ok;
-            break;
-        default: return !ok;
+
+        default:
+            return !ok;
     }
 
     switch (modeColorIndex) {
-        case DIRECTION_NORTH: modeColor->north = colorIndex; break;
-        case DIRECTION_EAST: modeColor->east = colorIndex; break;
-        case DIRECTION_SOUTH: modeColor->south = colorIndex; break;
-        case DIRECTION_WEST: modeColor->west = colorIndex; break;
-        case DIRECTION_UP: modeColor->up = colorIndex; break;
-        case DIRECTION_DOWN: modeColor->down = colorIndex; break;
-        default: return !ok;
+        case DIRECTION_NORTH:
+            modeColor->north = colorIndex;
+            break;
+
+        case DIRECTION_EAST:
+            modeColor->east = colorIndex;
+            break;
+
+        case DIRECTION_SOUTH:
+            modeColor->south = colorIndex;
+            break;
+
+        case DIRECTION_WEST:
+            modeColor->west = colorIndex;
+            break;
+
+        case DIRECTION_UP:
+            modeColor->up = colorIndex;
+            break;
+
+        case DIRECTION_DOWN:
+            modeColor->down = colorIndex;
+            break;
+
+        default:
+            return !ok;
     }
 
     return ok;
