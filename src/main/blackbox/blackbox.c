@@ -1133,7 +1133,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("Firmware type:Cleanflight");
         break;
         case 1:
-            blackboxPrintfHeaderLine("Firmware revision:Betaflight %s (%s)", FC_VERSION_STRING, shortGitRevision);
+            blackboxPrintfHeaderLine("Firmware revision:Betaflight %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
         break;
         case 2:
             blackboxPrintfHeaderLine("Firmware date:%s %s", buildDate, buildTime);
