@@ -896,7 +896,7 @@ void updateLedStrip(void)
     bool gpsFlashNow = cmp32(now, nextGpsFlashAt) >= 0;
 #endif
     bool rotationUpdateNow = cmp32(now, nextRotationUpdateAt) >= 0;
-    bool blinkFlashNow = cmp32(now, nextBlinkFlashAt) >= 0L;
+#endif
 #ifdef USE_LED_ANIMATION
     bool animationUpdateNow = cmp32(now, nextAnimationUpdateAt) >= 0;
     if (!(  false
@@ -1082,7 +1082,7 @@ bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex)
                     break;
 
                 default:
-                    return !ok;
+                    return false;
             }
             return true;
             break;
