@@ -36,7 +36,7 @@
 //#define GPIO_Speed_2MHz  GPIO_Speed_Level_2   Medium Speed:2MHz
 //#define GPIO_Speed_50MHz GPIO_Speed_Level_3   High Speed:50MHz
 
-void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
+void gpioInit(GPIO_TypeDef *gpio, const gpio_config_t *config)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
