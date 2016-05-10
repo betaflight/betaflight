@@ -20,9 +20,9 @@
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 400                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 
-#define ITERM_RESET_THRESHOLD 15
+#define YAW_ITERM_RESET_OFFSET 15 // May be made configurable in the future, but not really needed for yaw
 #define DYNAMIC_PTERM_STICK_THRESHOLD 400
 
 typedef enum {
@@ -71,10 +71,9 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    uint8_t H_sensitivity;
-
-    uint16_t dterm_lpf_hz;                   // Delta Filter in hz
-    uint16_t yaw_lpf_hz;                     // Additional yaw filter when yaw axis too noisy
+    uint8_t itermResetOffset;               // Reset offset for Iterm
+    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
+    uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
     uint16_t rollPitchItermResetRate;       // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint8_t rollPitchItermResetAlways;      // Reset Iterm also without SUPER EXPO
     uint16_t yawItermResetRate;             // Experimental threshold for resetting iterm for yaw on certain rates
@@ -97,7 +96,6 @@ bool antiWindupProtection;
 extern uint32_t targetPidLooptime;
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorAngle(void);
 void pidResetErrorGyroState(uint8_t resetOption);
 void setTargetPidLooptime(uint8_t pidProcessDenom);
 

@@ -34,8 +34,8 @@ typedef struct master_t {
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t use_oneshot42;                  // Oneshot42
-    uint8_t use_multiShot;                  // multishot
+    uint8_t fast_pwm_protocol;              // Fast Pwm Protocol
+    uint8_t use_unsyncedPwm;                // unsync fast pwm protocol from PID loop
 
 #ifdef USE_SERVOS
     servoMixer_t customServoMixer[MAX_SERVO_RULES];

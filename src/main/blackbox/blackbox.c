@@ -1296,8 +1296,8 @@ static bool blackboxWriteSysinfo()
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
             break;
         case 40:
-            blackboxPrintfHeaderLine("H_sensitivity:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.H_sensitivity);
+            blackboxPrintfHeaderLine("iterm_reset_offset:%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.itermResetOffset);
             break;
         case 41:
             blackboxPrintfHeaderLine("deadband:%d", masterConfig.rcControlsConfig.deadband);

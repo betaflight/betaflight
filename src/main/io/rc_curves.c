@@ -26,25 +26,35 @@
 
 #include "config/config.h"
 
-int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
-int16_t lookupYawRC[YAW_LOOKUP_LENGTH];     // lookup table for expo & RC rate YAW
-int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
+#define PITCH_LOOKUP_LENGTH 31
+#define YAW_LOOKUP_LENGTH 31
+#define THROTTLE_LOOKUP_LENGTH 12
+
+static int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];      // lookup table for expo & RC rate PITCH+ROLL
+static int16_t lookupYawRC[YAW_LOOKUP_LENGTH];              // lookup table for expo & RC rate YAW
+static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
 
 void generatePitchRollCurve(controlRateConfig_t *controlRateConfig)
 {
     uint8_t i;
+    float j = 0;
 
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (i * i - 25)) * i * (int32_t) controlRateConfig->rcRate8 / 2500;
+    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++) {
+        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (j * j - 25)) * j * (int32_t) controlRateConfig->rcRate8 / 2500;
+        j += 0.2f;
+    }
 }
 
 void generateYawCurve(controlRateConfig_t *controlRateConfig)
 {
     uint8_t i;
+    float j = 0;
 
-    for (i = 0; i < YAW_LOOKUP_LENGTH; i++)
-        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (i * i - 25)) * i / 25;
+    for (i = 0; i < YAW_LOOKUP_LENGTH; i++) {
+        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (j * j - 25)) * j / 25;
+        j += 0.2f;
+    }
 }
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
@@ -63,3 +73,23 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
         lookupThrottleRC[i] = minThrottle + (int32_t) (escAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 }
+
+int16_t rcLookupPitchRoll(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 20;
+    return lookupPitchRollRC[tmp2] + (tmp - tmp2 * 20) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 20;
+}
+
+int16_t rcLookupYaw(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 20;
+    return lookupYawRC[tmp2] + (tmp - tmp2 * 20) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 20;
+}
+
+int16_t rcLookupThrottle(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 100;
+    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
+}
+

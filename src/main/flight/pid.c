@@ -62,9 +62,10 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 uint8_t PIDweight[3];
 
 static int32_t errorGyroI[3], errorGyroILimit[3];
+#ifndef SKIP_PID_LUXFLOAT
 static float errorGyroIf[3], errorGyroIfLimit[3];
-static int32_t errorAngleI[2];
-static float errorAngleIf[2];
+#endif
+
 static bool lowThrottlePidReduction;
 
 static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
@@ -87,7 +88,7 @@ float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
         propFactor = 1.0f;
     } else {
         superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
-        propFactor = 1.0f - ((superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f));
+        propFactor = constrainf(1.0f - ((superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f)), 0.0f, 1.0f);
     }
 
     return propFactor;
@@ -103,22 +104,15 @@ uint16_t getDynamicKp(int axis, pidProfile_t *pidProfile) {
     return dynamicKp;
 }
 
-void pidResetErrorAngle(void)
-{
-    errorAngleI[ROLL] = 0;
-    errorAngleI[PITCH] = 0;
-
-    errorAngleIf[ROLL] = 0.0f;
-    errorAngleIf[PITCH] = 0.0f;
-}
-
 void pidResetErrorGyroState(uint8_t resetOption)
 {
     if (resetOption >= RESET_ITERM) {
         int axis;
         for (axis = 0; axis < 3; axis++) {
             errorGyroI[axis] = 0;
+#ifndef SKIP_PID_LUXFLOAT
             errorGyroIf[axis] = 0.0f;
+#endif
         }
     }
 
@@ -141,6 +135,7 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static filterStatePt1_t deltaFilterState[3];
 static filterStatePt1_t yawFilterState;
 
+#ifndef SKIP_PID_LUXFLOAT
 static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
@@ -202,7 +197,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             }
         }
 
-        gyroRate = gyroADC[axis] / 4.0f; // gyro output scaled to rewrite scale
+        gyroRate = gyroADCf[axis] / 4.0f; // gyro output scaled to rewrite scale
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
@@ -228,11 +223,11 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
         if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
+            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -pidProfile->itermResetOffset, pidProfile->itermResetOffset);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ITERM_RESET_THRESHOLD, ITERM_RESET_THRESHOLD);
+            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -YAW_ITERM_RESET_OFFSET, YAW_ITERM_RESET_OFFSET);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -280,6 +275,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #endif
     }
 }
+#endif
 
 static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
@@ -368,11 +364,11 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
         if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
-            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -ITERM_RESET_THRESHOLD << 13, (int32_t) + ITERM_RESET_THRESHOLD << 13);
+            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -pidProfile->itermResetOffset << 13, (int32_t) + pidProfile->itermResetOffset << 13);
         }
 
         if (axis == YAW) {
-            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -ITERM_RESET_THRESHOLD << 13, (int32_t) + ITERM_RESET_THRESHOLD << 13);
+            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -YAW_ITERM_RESET_OFFSET << 13, (int32_t) + YAW_ITERM_RESET_OFFSET << 13);
         }
 
         if (antiWindupProtection || motorLimitReached) {
@@ -426,8 +422,10 @@ void pidSetController(pidControllerType_e type)
         case PID_CONTROLLER_MWREWRITE:
             pid_controller = pidMultiWiiRewrite;
             break;
+#ifndef SKIP_PID_LUXFLOAT
         case PID_CONTROLLER_LUX_FLOAT:
             pid_controller = pidLuxFloat;
+#endif
     }
 }
 

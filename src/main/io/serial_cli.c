@@ -26,6 +26,7 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "version.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -426,18 +427,23 @@ static const char * const lookupTableMagHardware[] = {
     "AK8963"
 };
 
-static const char * const lookupTableDebug[] = {
+static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
     "BATTERY",
     "GYRO",
     "ACCELEROMETER",
     "MIXER",
-    "AIRMODE"
+    "AIRMODE",
+    "PIDLOOP",
 };
 
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
+};
+
+static const char * const lookupTableFastPwm[] = {
+    "ONESHOT125", "ONESHOT42", "MULTISHOT"
 };
 
 typedef struct lookupTableEntry_s {
@@ -466,6 +472,7 @@ typedef enum {
     TABLE_MAG_HARDWARE,
 	TABLE_DEBUG,
     TABLE_SUPEREXPO_YAW,
+    TABLE_FAST_PWM,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -488,7 +495,8 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
-    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) }
+    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
+    { lookupTableFastPwm, sizeof(lookupTableFastPwm) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -564,12 +572,12 @@ const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "use_oneshot42",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_oneshot42, .config.lookup = { TABLE_OFF_ON } },
-    { "use_multishot",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_multiShot, .config.lookup = { TABLE_OFF_ON } },
+    { "unsynced_fast_pwm",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
+    { "fast_pwm_protocol",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.fast_pwm_protocol, .config.lookup = { TABLE_FAST_PWM } },
 #ifdef CC3D
     { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
 #endif
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 300,  32000 } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200,  32000 } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
@@ -653,7 +661,7 @@ const clivalue_t valueTable[] = {
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
-    { "gyro_lowpass",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  500 } },
+    { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
@@ -726,6 +734,7 @@ const clivalue_t valueTable[] = {
     { "iterm_always_reset",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.rollPitchItermResetAlways, .config.lookup = { TABLE_OFF_ON } },
     { "iterm_reset_degrees",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermResetRate, .config.minmax = {50, 1000 } },
     { "yaw_iterm_reset_degrees",    VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermResetRate, .config.minmax = {25, 1000 } },
+    { "iterm_reset_offset",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermResetOffset, .config.minmax = { 0,  100 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
 
@@ -1968,8 +1977,16 @@ static void cliDump(char *cmdline)
                     cliDumpRateProfile(rateCount);
             }
 
+            cliPrint("\r\n# restore original profile / rateprofile selection\r\n");
+
             changeProfile(activeProfile);
+            cliProfile("");
+            printSectionBreak();
+
             changeControlRateProfile(currentRateIndex);
+            cliRateProfile("");
+
+            cliPrint("\r\n# save configuration\r\nsave\r\n");
         } else {
             cliDumpProfile(masterConfig.current_profile_index);
             cliDumpRateProfile(currentProfile->activeRateProfile);
@@ -1994,24 +2011,25 @@ void cliDumpProfile(uint8_t profileIndex) {
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
         cliPrintf("############################# PROFILE VALUES ####################################\r\n");
-        cliProfile("");
+
         printSectionBreak();
         dumpValues(PROFILE_VALUE);
 
         cliRateProfile("");
 }
+
 void cliDumpRateProfile(uint8_t rateProfileIndex) {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
     
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");		
-    cliRateProfile("");		
+    cliRateProfile("");	
     printSectionBreak();		
 
     dumpValues(PROFILE_RATE_VALUE);
-            
 }
+
 void cliEnter(serialPort_t *serialPort)
 {
     cliMode = 1;
@@ -2388,7 +2406,7 @@ static void cliRateProfile(char *cmdline) {
 		i = atoi(cmdline);		
 		if (i >= 0 && i < MAX_RATEPROFILES) {		
 			changeControlRateProfile(i);		
-			cliRateProfile("");		
+			cliRateProfile("");
 		}		
 	}		
 }

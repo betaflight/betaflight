@@ -36,9 +36,11 @@
 #define MAX_INPUTS  8
 
 #define PWM_TIMER_MHZ 1
-#define ONESHOT_TIMER_MHZ 24
+
 #define PWM_BRUSHED_TIMER_MHZ 8
 #define MULTISHOT_TIMER_MHZ 12
+#define ONESHOT42_TIMER_MHZ 24
+#define ONESHOT125_TIMER_MHZ 8
 
 typedef struct sonarGPIOConfig_s {
     GPIO_TypeDef *gpio;
@@ -59,9 +61,8 @@ typedef struct drv_pwm_config_s {
     bool useUART3;
 #endif
     bool useVbat;
-    bool useOneshot;
-    bool useOneshot42;
-    bool useMultiShot;
+    bool useFastPwm;
+    bool useUnsyncedPwm;
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef SONAR
@@ -70,11 +71,12 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
-#ifdef CC3D
-    bool useBuzzerP6;
-#endif
+    uint8_t fastPwmProtocolType;
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
+#endif
+#ifdef CC3D
+    bool useBuzzerP6;
 #endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
     uint16_t motorPwmRate;
