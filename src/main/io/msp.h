@@ -13,18 +13,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- * Author: 4712
-*/
+ */
+
 #pragma once
 
-#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+typedef struct mspPacket_s {
+    sbuf_t buf;
+    int16_t cmd;
+    int16_t result;
+} mspPacket_t;
 
-uint8_t Stk_SignOn(void);
-uint8_t Stk_ConnectEx(escDeviceInfo_t *pDeviceInfo);
-uint8_t Stk_ReadEEprom(ioMem_t *pMem);
-uint8_t Stk_WriteEEprom(ioMem_t *pMem);
-uint8_t Stk_ReadFlash(ioMem_t *pMem);
-uint8_t Stk_WriteFlash(ioMem_t *pMem);
-uint8_t Stk_Chip_Erase(void);
+extern bool isRebootScheduled;
+extern bool mspEnterEsc4way;
 
-#endif
+void mspInit(void);
+
+int mspProcess(mspPacket_t *command, mspPacket_t *reply);

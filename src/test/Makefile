@@ -730,6 +730,14 @@ $(OBJECT_DIR)/drivers/buf_writer.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/drivers/buf_writer.c -o $@
 
+$(OBJECT_DIR)/common/streambuf.o : \
+	$(USER_DIR)/common/streambuf.c \
+	$(USER_DIR)/common/streambuf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/common/streambuf.c -o $@
+
 $(OBJECT_DIR)/io/serial_msp.o : \
 	$(USER_DIR)/io/serial_msp.c \
 	$(USER_DIR)/io/serial_msp.h \
@@ -737,6 +745,14 @@ $(OBJECT_DIR)/io/serial_msp.o : \
 
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/serial_msp.c -o $@
+
+$(OBJECT_DIR)/io/msp.o : \
+	$(USER_DIR)/io/msp.c \
+	$(USER_DIR)/io/msp.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/msp.c -o $@
 
 $(OBJECT_DIR)/serial_msp_unittest.o : \
 	$(TEST_DIR)/serial_msp_unittest.cc \
@@ -747,12 +763,32 @@ $(OBJECT_DIR)/serial_msp_unittest.o : \
 
 $(OBJECT_DIR)/serial_msp_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/common/streambuf.o \
 	$(OBJECT_DIR)/version.o \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/io/serial_msp.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
 	$(OBJECT_DIR)/config/parameter_group.o \
 	$(OBJECT_DIR)/serial_msp_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/msp_unittest.o : \
+	$(TEST_DIR)/msp_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/msp_unittest.cc -o $@
+
+$(OBJECT_DIR)/msp_unittest : \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/common/streambuf.o \
+	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/io/serial.o \
+	$(OBJECT_DIR)/io/msp.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
+	$(OBJECT_DIR)/msp_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@

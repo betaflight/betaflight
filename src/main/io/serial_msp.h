@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "io/serial.h"
-#include "drivers/serial.h"
 
 /**
  * MSP Guidelines, emphasis is used to clarify.
@@ -61,28 +59,27 @@
 
 typedef enum {
     IDLE,
-    HEADER_START,
     HEADER_M,
     HEADER_ARROW,
     HEADER_SIZE,
     HEADER_CMD,
+    HEADER_DATA,
     COMMAND_RECEIVED
 } mspState_e;
 
 #define MSP_PORT_INBUF_SIZE 64
+#define MSP_PORT_OUTBUF_SIZE 256
 
 typedef struct mspPort_s {
-    serialPort_t *port; // null when port unused.
+    serialPort_t *port;                      // NULL when port unused.
+    mspState_e c_state;
     uint8_t offset;
     uint8_t dataSize;
-    uint8_t checksum;
-    uint8_t indRX;
-    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
-    mspState_e c_state;
     uint8_t cmdMSP;
+    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
 } mspPort_t;
 
-void mspInit(void);
-void mspProcess(void);
-void mspAllocateSerialPorts(void);
-void mspReleasePortIfAllocated(serialPort_t *serialPort);
+void mspSerialInit(void);
+void mspSerialProcess();
+void mspSerialAllocatePorts(void);
+void mspSerialReleasePortIfAllocated(serialPort_t *serialPort);
