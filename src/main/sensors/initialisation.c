@@ -694,8 +694,10 @@ bool sensorsAutodetect(void)
 
 
     // Now time to init things, acc first
-    if (sensors(SENSOR_ACC))
-        acc.init();
+    if (sensors(SENSOR_ACC)) {
+        acc.acc_1G = 256; // set default
+        acc.init(&acc);
+    }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init(gyroConfig()->gyro_lpf);
 

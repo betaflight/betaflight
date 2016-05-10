@@ -1141,7 +1141,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));
         break;
         case 9:
-            blackboxPrintfHeaderLine("acc_1G:%u", acc_1G);
+            blackboxPrintfHeaderLine("acc_1G:%u", acc.acc_1G);
         break;
         case 10:
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
