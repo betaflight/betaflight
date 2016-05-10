@@ -250,6 +250,7 @@ COMMON_SRC = build_config.c \
 		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
+		   flight/servos.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
