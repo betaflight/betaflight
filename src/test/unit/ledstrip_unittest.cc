@@ -36,6 +36,7 @@ extern "C" {
     #include "rx/rx.h"
 
     #include "sensors/battery.h"
+    #include "sensors/sensors.h"
 
     #include "drivers/light_ws2811strip.h"
     #include "io/ledstrip.h"
