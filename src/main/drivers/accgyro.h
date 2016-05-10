@@ -17,7 +17,6 @@
 
 #pragma once
 
-
 typedef struct gyro_s {
     sensorGyroInitFuncPtr init;                             // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
