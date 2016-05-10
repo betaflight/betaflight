@@ -240,6 +240,53 @@ This mode flashes LEDs that correspond to roll and pitch stick positions.  i.e. 
 |Baro        | Up     | BLUE 			|
 |Baro        | Down   | ORANGE 		|
 
+### Mode Colors Assignement
+
+Mode Colors can be configured using the cli `mode_color` command.
+
+- No arguments: lists all mode colors
+- arguments: mode, function, color
+
+First 6 groups of ModeIndexes are :
+
+| mode | name        |
+|------|-------------|
+| 0    | orientation |
+| 1    | headfree    |
+| 2    | horizon     |
+| 3    | angle       |
+| 4    | mag         |
+| 5    | baro        |
+
+Modes 0 to 5 functions:
+
+| function | name  |
+|----------|-------|
+| 0        | north |
+| 1        | east  |
+| 2        | south |
+| 3        | west  |
+| 4        | up    |
+| 5        | down  |
+
+Mode 6 use these functions:
+
+| function | name               |
+|----------|--------------------|
+| 0        | disarmed           |
+| 1        | armed              |
+| 2        | animation          |
+| 3        | background         |
+| 4        | blink background   |
+ 
+The ColorIndex is picked from the colors array ("palette").
+
+Examples (using the default colors):
+
+- set armed color to red: ```mode_color 6 1 2```
+- set disarmed color to yellow: ```mode_color 6 0 4```
+- set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
+
 #### Armed state
 
 This mode toggles LEDs between green and blue when disarmed and armed, respectively.
