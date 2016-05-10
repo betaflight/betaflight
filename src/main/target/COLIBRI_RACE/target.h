@@ -130,6 +130,7 @@
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 
+#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_GPIO               GPIOC
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
 #define VBAT_ADC_CHANNEL            ADC_Channel_6
@@ -146,13 +147,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-
-#define BLACKBOX
-#define GPS
-#define GTUNE
 #define LED_STRIP
-
 #define LED_STRIP_TIMER TIM16
 
 #define WS2811_GPIO                     GPIOA
@@ -173,11 +168,16 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT FEATURES (FEATURE_ONESHOT125 | FEATURE_LED_STRIP)
+
+#define BLACKBOX
+#define GPS
+#define GTUNE
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define BOARD_HAS_VOLTAGE_DIVIDER
