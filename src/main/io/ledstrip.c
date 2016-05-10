@@ -680,11 +680,13 @@ void applyLedGpsLayer(bool updateNow)
     if (updateNow) {
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
-        } else if (gpsFlashCounter >= GPS_numSat * 2) {
-            gpsFlashCounter = 0;
-            gpsPauseCounter = blinkPauseLength;
-        } else
+        } else {
+            if (gpsFlashCounter >= GPS_numSat * 2) {
+                gpsFlashCounter = 0;
+                gpsPauseCounter = blinkPauseLength;
+            }
             gpsFlashCounter++;
+        }
     }
 }
 
