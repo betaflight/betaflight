@@ -664,6 +664,8 @@ void applyLedGpsLayer(bool updateNow)
     } else {
         if (gpsPauseCounter == 0 && (gpsFlashCounter & 1) == 0) {
             gpsColor = STATE(GPS_FIX) ? colors(specialColors(0)->gps_locked) : colors(specialColors(0)->gps_nolock);
+        } else {
+            gpsColor = STATE(GPS_FIX) ? colors(specialColors(0)->background) : colors(specialColors(0)->gps_nosats);
         }
     }
 
