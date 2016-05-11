@@ -183,12 +183,12 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 75;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_lpf_hz = 70;
+    pidProfile->yaw_lpf_hz = 80;
     pidProfile->rollPitchItermResetRate = 200;
     pidProfile->rollPitchItermResetAlways = 0;
     pidProfile->yawItermResetRate = 50;
     pidProfile->itermResetOffset = 15;
-    pidProfile->dterm_lpf_hz = 80;    // filtering ON by default
+    pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
     pidProfile->dynamic_pterm = 1;
 
 #ifdef GTUNE
