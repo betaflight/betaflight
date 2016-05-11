@@ -280,7 +280,7 @@ static const uint8_t directionMappings[DIRECTION_COUNT] = {
     LED_DIRECTION_DOWN
 };
 
-static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C', 'G', 'S', 'B' };
+static const char functionCodes[] = { 'I', 'W', 'F', 'A', 'T', 'R', 'C', 'G', 'B' };
 #define FUNCTION_COUNT (sizeof(functionCodes) / sizeof(functionCodes[0]))
 static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_INDICATOR,
@@ -291,7 +291,6 @@ static const uint16_t functionMappings[FUNCTION_COUNT] = {
 	LED_FUNCTION_THRUST_RING,
 	LED_FUNCTION_COLOR,
 	LED_FUNCTION_GPS,
-	LED_FUNCTION_RSSI,
 	LED_FUNCTION_BLINK
 };
 
