@@ -2291,27 +2291,30 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
 
         case VAR_FLOAT:
-            cliPrintf("%s", ftoa(*(float *)ptr, ftoaBuffer));
             if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                cliPrintf(" %s", ftoa((float)var->config.minmax.min, ftoaBuffer));
-                cliPrintf(" %s", ftoa((float)var->config.minmax.max, ftoaBuffer));
+                cliPrintf("%s", ftoa((float)var->config.minmax.min, ftoaBuffer));
+                cliPrintf(" - %s", ftoa((float)var->config.minmax.max, ftoaBuffer));
+            } else {
+                cliPrintf("%s", ftoa(*(float *)ptr, ftoaBuffer));
             }
             return; // return from case for float only
     }
 
     switch(var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
-            cliPrintf("%d", value);
             if (full) {
-                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                cliPrintf("%d - %d", var->config.minmax.min, var->config.minmax.max);
+            } else {
+                cliPrintf("%d", value);
             }
             break;
         case MODE_LOOKUP:
-            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
             if (full) {
                 for (int i=0; i<lookupTables[var->config.lookup.tableIndex].valueCount; i++) {
-                    cliPrintf(" %s", lookupTables[var->config.lookup.tableIndex].values[i]);
+                    cliPrintf("%s ", lookupTables[var->config.lookup.tableIndex].values[i]);
                 }
+            } else {
+                cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
             }
             break;
     }
