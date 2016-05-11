@@ -1132,7 +1132,7 @@ void pgResetFn_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
 
-    for (int colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
+    for (uint8_t colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
         *instance++ = *defaultColors[colorIndex];
     }
 }
