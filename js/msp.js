@@ -126,7 +126,7 @@ var MSP = {
     unsupported:                0,
 
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
-    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b'], // in LSB bit order
 
     last_received_timestamp:   null,
     analog_last_received_timestamp: null,
