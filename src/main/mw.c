@@ -169,7 +169,8 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void filterRc(void){
+void filterRc(void)
+{
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
@@ -220,12 +221,10 @@ void scaleRcCommandToFpvCamAngle(void) {
     rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
-void annexCode(void)
+static void updateRcCommands(void)
 {
-    int32_t tmp, tmp2;
-    int32_t axis, prop;
-
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
+    int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop = 100;
     } else {
@@ -236,38 +235,32 @@ void annexCode(void)
         }
     }
 
-    for (axis = 0; axis < 3; axis++) {
-        tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
-        if (axis == ROLL || axis == PITCH) {
-            if (masterConfig.rcControlsConfig.deadband) {
-                if (tmp > masterConfig.rcControlsConfig.deadband) {
-                    tmp -= masterConfig.rcControlsConfig.deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-
-            tmp2 = tmp / 20;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 20) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 20;
-        } else if (axis == YAW) {
-            if (masterConfig.rcControlsConfig.yaw_deadband) {
-                if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
-                    tmp -= masterConfig.rcControlsConfig.yaw_deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-            tmp2 = tmp / 20;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 20) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 20) * -masterConfig.yaw_control_direction;
-        }
-
+    for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
         PIDweight[axis] = prop;
 
-        if (rcData[axis] < masterConfig.rxConfig.midrc)
+        int32_t tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
+        if (axis == ROLL || axis == PITCH) {
+            if (tmp > masterConfig.rcControlsConfig.deadband) {
+                tmp -= masterConfig.rcControlsConfig.deadband;
+            } else {
+                tmp = 0;
+            }
+            rcCommand[axis] = rcLookupPitchRoll(tmp);
+        } else if (axis == YAW) {
+            if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
+                tmp -= masterConfig.rcControlsConfig.yaw_deadband;
+            } else {
+                tmp = 0;
+            }
+            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
+        }
+        if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
+        }
     }
 
+    int32_t tmp;
     if (feature(FEATURE_3D)) {
         tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
@@ -275,8 +268,7 @@ void annexCode(void)
         tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
     }
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
@@ -284,10 +276,10 @@ void annexCode(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        float cosDiff = cos_approx(radDiff);
-        float sinDiff = sin_approx(radDiff);
-        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+        const float cosDiff = cos_approx(radDiff);
+        const float sinDiff = sin_approx(radDiff);
+        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
@@ -296,8 +288,10 @@ void annexCode(void)
     if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
         scaleRcCommandToFpvCamAngle();
     }
+}
 
-
+static void updateLEDs(void)
+{
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
@@ -322,10 +316,6 @@ void annexCode(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
 }
 
 void mwDisarm(void)
@@ -674,6 +664,11 @@ void subTaskMainSubprocesses(void) {
         filterRc();
     }
 
+    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
+    if (gyro.temperature) {
+        gyro.temperature(&telemTemperature1);
+    }
+
     #ifdef MAG
             if (sensors(SENSOR_MAG)) {
                 updateMagHold();
@@ -863,8 +858,10 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
-    // the 'annexCode' initialses rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    annexCode();
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
+    updateLEDs();
+
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {
         updateAltHoldState();
