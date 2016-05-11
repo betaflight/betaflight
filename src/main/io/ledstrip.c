@@ -367,16 +367,16 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
     int val;
 
     int parseState = X_COORDINATE;
-    bool ok = true;
+    bool result = true;
 
     if (ledIndex >= MAX_LED_STRIP_LENGTH) {
-        return !ok;
+        return !result;
     }
 
     ledConfig_t *ledConfig = ledConfigs(ledIndex);
     memset(ledConfig, 0, sizeof(ledConfig_t));
 
-    while (ok) {
+    while (result) {
 
         char chunkSeparator = chunkSeparators[parseState];
 
@@ -388,7 +388,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         }
 
         if (*config++ != chunkSeparator) {
-            ok = false;
+            result = false;
             break;
         }
 
@@ -442,13 +442,13 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         }
     }
 
-    if (!ok) {
+    if (!result) {
         memset(ledConfig, 0, sizeof(ledConfig_t));
     }
 
     reevalulateLedConfig();
 
-    return ok;
+    return result;
 }
 
 void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize)
@@ -652,6 +652,9 @@ void applyLedWarningLayer(bool updateNow)
 
 void applyLedGpsLayer(bool updateNow)
 {
+#ifdef CC3D
+    return;
+#endif
     static uint8_t gpsFlashCounter = 0;
     static uint8_t gpsPauseCounter = 0;
     const uint8_t blinkPauseLength = 4;
