@@ -1133,7 +1133,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("Firmware type:Cleanflight");
         break;
         case 1:
-            blackboxPrintfHeaderLine("Firmware revision:Betaflight %s (%s)", FC_VERSION_STRING, shortGitRevision);
+            blackboxPrintfHeaderLine("Firmware revision:Betaflight %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
         break;
         case 2:
             blackboxPrintfHeaderLine("Firmware date:%s %s", buildDate, buildTime);
@@ -1195,7 +1195,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("tpa_breakpoint:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].tpa_breakpoint);
             break;
         case 19:
-            blackboxPrintfHeaderLine("superExpoFactor:%d", masterConfig.rxConfig.superExpoFactor);
+            blackboxPrintfHeaderLine("superExpoFactor:%d, %d", masterConfig.rxConfig.superExpoFactor, masterConfig.rxConfig.superExpoFactorYaw);
             break;
         case 20:
             blackboxPrintfHeaderLine("rates:%d,%d,%d",
@@ -1333,6 +1333,9 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rc_smoothing:%d", masterConfig.rxConfig.rcSmoothing);
             break;
         case 52:
+            blackboxPrintfHeaderLine("superExpoYawMode:%d", masterConfig.rxConfig.superExpoYawMode);
+            break;
+        case 53:
             blackboxPrintfHeaderLine("features:%d", masterConfig.enabledFeatures);
             break;
         default:
