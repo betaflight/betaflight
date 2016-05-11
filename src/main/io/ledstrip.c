@@ -367,16 +367,16 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
     int val;
 
     int parseState = X_COORDINATE;
-    bool ok = true;
+    bool result = true;
 
     if (ledIndex >= MAX_LED_STRIP_LENGTH) {
-        return !ok;
+        return !result;
     }
 
     ledConfig_t *ledConfig = ledConfigs(ledIndex);
     memset(ledConfig, 0, sizeof(ledConfig_t));
 
-    while (ok) {
+    while (result) {
 
         char chunkSeparator = chunkSeparators[parseState];
 
@@ -388,7 +388,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         }
 
         if (*config++ != chunkSeparator) {
-            ok = false;
+            result = false;
             break;
         }
 
@@ -442,13 +442,13 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         }
     }
 
-    if (!ok) {
+    if (!result) {
         memset(ledConfig, 0, sizeof(ledConfig_t));
     }
 
     reevalulateLedConfig();
 
-    return ok;
+    return result;
 }
 
 void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize)
@@ -731,6 +731,7 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     }
 }
 
+/*
 void applyLedHue(uint16_t flag, int16_t value, int16_t minRange, int16_t maxRange)
 {
     int scaled = scaleRange(value, minRange, maxRange, -60, +60);
@@ -747,6 +748,25 @@ void applyLedHue(uint16_t flag, int16_t value, int16_t minRange, int16_t maxRang
         setLedHsv(i, &color);
     }
 }
+*/
+
+void applyLedThrottle()
+{
+    int scaled = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, -60, +60);
+    scaled += HSV_HUE_MAX;   // wrap negative values correctly
+
+    for (int i = 0; i < ledCount; ++i) {
+        const ledConfig_t *ledConfig = ledConfigs(i);
+        if (!(ledConfig->flags & LED_FUNCTION_THROTTLE))
+            continue;
+
+        hsvColor_t color;
+        getLedHsv(i, &color);
+        color.h = (color.h + scaled) % (HSV_HUE_MAX + 1);
+        setLedHsv(i, &color);
+    }
+}
+
 
 #define ROTATION_SEQUENCE_LED_COUNT 6 // 2 on, 4 off
 #define ROTATION_SEQUENCE_LED_WIDTH 2
@@ -921,8 +941,9 @@ void updateLedStrip(void)
 
     // LAYER 1
     applyLedModeLayer();
-    applyLedHue(LED_FUNCTION_THROTTLE, rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-    applyLedHue(LED_FUNCTION_RSSI, rssi, 0, 1023);
+    // applyLedHue(LED_FUNCTION_THROTTLE, rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    // applyLedHue(LED_FUNCTION_RSSI, rssi, 0, 1023);
+    applyLedThrottle();
 
     // LAYER 2
     if (warningFlashNow) {
@@ -1129,7 +1150,7 @@ void pgResetFn_colors(hsvColor_t *instance)
 {
     BUILD_BUG_ON(ARRAYLEN(*colors_arr()) <= ARRAYLEN(defaultColors));
 
-    for (int colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
+    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(defaultColors); colorIndex++) {
         *instance++ = *defaultColors[colorIndex];
     }
 }
