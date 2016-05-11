@@ -560,11 +560,18 @@ static bool gpsConfigure(void)
 {
     switch (gpsState.autoConfigStep) {
     case 0: // NAV5
-        if (gpsState.gpsConfig->navModel == GPS_MODEL_HIGH_G)
-            ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne4G, sizeof(ubloxInit_NAV5_Airborne4G));
-        else
-            ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne1G, sizeof(ubloxInit_NAV5_Airborne1G));
-
+        switch (gpsState.gpsConfig->dynModel) {
+            case GPS_DYNMODEL_PEDESTRIAN:
+                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Pedestrian, sizeof(ubloxInit_NAV5_Pedestrian));
+                break;
+            case GPS_DYNMODEL_AIR_1G:   // Default to this
+            default:
+                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne1G, sizeof(ubloxInit_NAV5_Airborne1G));
+                break;
+            case GPS_DYNMODEL_AIR_4G:
+                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne4G, sizeof(ubloxInit_NAV5_Airborne4G));
+                break;
+        }
         break;
 
     case 1: // NAVX5 - skip

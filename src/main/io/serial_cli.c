@@ -342,7 +342,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 };
 
 static const char * const lookupTableGpsModel[] = {
-    "LOW_G", "HIGH_G"
+    "PEDESTRIAN", "AIR_1G", "AIR_4G"
 };
 #endif
 
@@ -412,7 +412,7 @@ typedef enum {
 #ifdef GPS
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
-    TABLE_GPS_NAV_MODEL,
+    TABLE_GPS_DYN_MODEL,
 #endif
 #ifdef BLACKBOX
     TABLE_BLACKBOX_DEVICE,
@@ -541,7 +541,7 @@ const clivalue_t valueTable[] = {
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.provider, .config.lookup = { TABLE_GPS_PROVIDER }, 0 },
     { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE }, 0 },
-    { "gps_nav_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.navModel, .config.lookup = { TABLE_GPS_NAV_MODEL }, 0 },
+    { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.dynModel, .config.lookup = { TABLE_GPS_DYN_MODEL }, 0 },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoConfig, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoBaud, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif

@@ -506,7 +506,7 @@ static void resetConf(void)
     masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
-    masterConfig.gpsConfig.navModel = GPS_MODEL_LOW_G;
+    masterConfig.gpsConfig.dynModel = GPS_DYNMODEL_AIR_1G;
 #endif
 
 #ifdef NAV
