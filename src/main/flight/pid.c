@@ -72,6 +72,7 @@ typedef struct {
     filterStatePt1_t angleFilterState;
 
     // Rate filtering
+    filterStatePt1_t ptermLpfState;
     filterStatePt1_t deltaLpfState;
 } pidState_t;
 
@@ -241,6 +242,11 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
     // Constrain YAW by yaw_p_limit value if not servo driven (in that case servo limits apply)
     if (axis == FD_YAW && (motorCount >= 4 && pidProfile->yaw_p_limit)) {
         newPTerm = constrain(newPTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+    }
+
+    // Additional P-term LPF on YAW axis
+    if (axis == FD_YAW && pidProfile->yaw_lpf_hz) {
+        newPTerm = filterApplyPt1(newPTerm, &pidState->ptermLpfState, pidProfile->yaw_lpf_hz, dT);
     }
 
     // Calculate new D-term
