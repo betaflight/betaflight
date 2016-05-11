@@ -72,8 +72,7 @@ typedef struct {
     filterStatePt1_t angleFilterState;
 
     // Rate filtering
-    biquad_t deltaBiQuadState;
-    bool deltaFilterInit;
+    filterStatePt1_t deltaLpfState;
 } pidState_t;
 
 extern uint8_t motorCount;
@@ -259,11 +258,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
-            if (!pidState->deltaFilterInit) {
-                filterInitBiQuad(pidProfile->dterm_lpf_hz, &pidState->deltaBiQuadState, 0);
-                pidState->deltaFilterInit = true;
-            }
-            newDTerm = filterApplyBiQuad(newDTerm, &pidState->deltaBiQuadState);
+            newDTerm = filterApplyPt1(newDTerm, &pidState->deltaLpfState, pidProfile->dterm_lpf_hz, dT);
         }
     }
 
