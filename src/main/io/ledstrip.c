@@ -308,7 +308,7 @@ void determineLedStripDimensions(void)
 
     const ledConfig_t *ledConfig;
 
-    for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    for (uint8_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         ledConfig = ledConfigs(ledIndex);
 
         if (GET_LED_X(ledConfig) >= ledGridWidth) {
@@ -335,9 +335,9 @@ void determineOrientationLimits(void)
 
 void updateLedCount(void)
 {
-    int count = 0, countRing = 0;
+    uint8_t count = 0, countRing = 0;
 
-    for (int ledIndex = 0; ledIndex < MAX_LED_STRIP_LENGTH; ledIndex++) {
+    for (uint8_t ledIndex = 0; ledIndex < MAX_LED_STRIP_LENGTH; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
         if (ledConfig->flags == 0 && ledConfig->xy == 0)
             break;
@@ -381,7 +381,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         char chunkSeparator = chunkSeparators[parseState];
 
         memset(&chunk, 0, sizeof(chunk));
-        int chunkIndex = 0;
+        uint8_t chunkIndex = 0;
 
         while (*config && chunkIndex < CHUNK_BUFFER_SIZE && *config != chunkSeparator) {
             chunk[chunkIndex++] = *config++;
@@ -404,7 +404,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
                 break;
 
             case DIRECTIONS:
-                for (int chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
+                for (uint8_t chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
                     for (unsigned mappingIndex = 0; mappingIndex < DIRECTION_COUNT; mappingIndex++) {
                         if (directionCodes[mappingIndex] == chunk[chunkIndex]) {
                             ledConfig->flags |= directionMappings[mappingIndex];
@@ -415,7 +415,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
                 break;
 
             case FUNCTIONS:
-                for (int chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
+                for (uint8_t chunkIndex = 0; chunk[chunkIndex] && chunkIndex < CHUNK_BUFFER_SIZE; chunkIndex++) {
                     for (unsigned mappingIndex = 0; mappingIndex < FUNCTION_COUNT; mappingIndex++) {
                         if (functionCodes[mappingIndex] == chunk[chunkIndex]) {
                             ledConfig->flags |= functionMappings[mappingIndex];
@@ -546,7 +546,7 @@ void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, co
 
 void applyLedModeLayer(void)
 {
-    for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    for (uint8_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
 
         if (!(ledConfig->flags & LED_FUNCTION_THRUST_RING)) {
@@ -633,7 +633,7 @@ void applyLedWarningLayer(bool updateNow)
             }
         }
 
-        for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        for (uint8_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
             const ledConfig_t *ledConfig = ledConfigs(ledIndex);
             if (!(ledConfig->flags & LED_FUNCTION_WARNING))
                 continue;
@@ -669,7 +669,7 @@ void applyLedGpsLayer(bool updateNow)
         }
     }
 
-    for (int i = 0; i < ledCount; ++i) {
+    for (uint8_t i = 0; i < ledCount; ++i) {
         const ledConfig_t *ledConfig = ledConfigs(i);
 
         if (ledConfig->flags & LED_FUNCTION_GPS) {
@@ -704,7 +704,7 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
     }
 
 
-    for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    for (uint8_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
         if (!(ledConfig->flags & LED_FUNCTION_INDICATOR))
             continue;
@@ -736,7 +736,7 @@ void applyLedHue(uint16_t flag, int16_t value, int16_t minRange, int16_t maxRang
     int scaled = scaleRange(value, minRange, maxRange, -60, +60);
     scaled += HSV_HUE_MAX;   // wrap negative values correctly
 
-    for (int i = 0; i < ledCount; ++i) {
+    for (uint8_t i = 0; i < ledCount; ++i) {
         const ledConfig_t *ledConfig = ledConfigs(i);
         if (!(ledConfig->flags & flag))
             continue;
@@ -755,13 +755,13 @@ void applyLedHue(uint16_t flag, int16_t value, int16_t minRange, int16_t maxRang
 
 void applyLedThrustRingLayer(void)
 {
-    int ledRingIndex = 0;
+    uint8_t ledRingIndex = 0;
     // initialised to special value instead of using more memory for a flag.
     static uint8_t rotationSeqLedCount = RING_PATTERN_NOT_CALCULATED;
     static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
     bool nextLedOn = false;
 
-    for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    for (uint8_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
         if ((ledConfig->flags & LED_FUNCTION_THRUST_RING) == 0)
             continue;
@@ -786,7 +786,6 @@ void applyLedThrustRingLayer(void)
 
     if (rotationSeqLedCount == RING_PATTERN_NOT_CALCULATED) {
         // update ring pattern according to total number of ring leds found
-        int ledRingLedCount = ledRingIndex;
 
         rotationSeqLedCount = ledRingLedCount;
 
@@ -816,7 +815,7 @@ void applyLedBlinkLayer(bool updateNow)
     const uint8_t blinkCycleLength = 20;
 
     if (blinkCounter > 0) {
-        for (int i = 0; i < ledCount; ++i) {
+        for (uint8_t i = 0; i < ledCount; ++i) {
             const ledConfig_t *ledConfig = ledConfigs(i);
             if (!(ledConfig->flags & LED_FUNCTION_BLINK))
                 continue;

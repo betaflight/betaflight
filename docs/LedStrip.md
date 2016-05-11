@@ -246,57 +246,6 @@ This mode toggles LEDs between green and blue when disarmed and armed, respectiv
 
 Note: Armed State cannot be used with Flight Mode.
 
-### Mode Colors Assignement
-
-Mode Colors can be configured using the cli `mode_color` command.
-
-- No arguments: lists all mode colors
-- arguments: mode, function, color
-
-First 6 groups of ModeIndexes are :
-
-| mode | name        |
-|------|-------------|
-| 0    | orientation |
-| 1    | headfree    |
-| 2    | horizon     |
-| 3    | angle       |
-| 4    | mag         |
-| 5    | baro        |
-| 6    | special     |
-
-Modes 0 to 5 functions:
-
-| function | name  |
-|----------|-------|
-| 0        | north |
-| 1        | east  |
-| 2        | south |
-| 3        | west  |
-| 4        | up    |
-| 5        | down  |
-
-Mode 6 use these functions:
-
-| function | name               |
-|----------|--------------------|
-| 0        | disarmed           |
-| 1        | armed              |
-| 2        | animation          |
-| 3        | background         |
-| 4        | blink background   |
-| 5        | gps: no satellites |
-| 6        | gps: no fix        |
-| 7        | gps: 3D fix        |
- 
-The ColorIndex is picked from the colors array ("palette").
-
-Examples (using the default colors):
-
-- set armed color to red: ```mode_color 6 1 2```
-- set disarmed color to yellow: ```mode_color 6 0 4```
-- set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
-
 #### Thrust state
 
 This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the
@@ -384,6 +333,57 @@ color 13 330,0,255
 color 14 0,0,0
 color 15 0,0,0
 ```
+
+### Mode Colors Assignement
+
+Mode Colors can be configured using the cli `mode_color` command.
+
+- No arguments: lists all mode colors
+- arguments: mode, function, color
+
+First 6 groups of ModeIndexes are :
+
+| mode | name        |
+|------|-------------|
+| 0    | orientation |
+| 1    | headfree    |
+| 2    | horizon     |
+| 3    | angle       |
+| 4    | mag         |
+| 5    | baro        |
+| 6    | special     |
+
+Modes 0 to 5 functions:
+
+| function | name  |
+|----------|-------|
+| 0        | north |
+| 1        | east  |
+| 2        | south |
+| 3        | west  |
+| 4        | up    |
+| 5        | down  |
+
+Mode 6 use these functions:
+
+| function | name               |
+|----------|--------------------|
+| 0        | disarmed           |
+| 1        | armed              |
+| 2        | animation          |
+| 3        | background         |
+| 4        | blink background   |
+| 5        | gps: no satellites |
+| 6        | gps: no fix        |
+| 7        | gps: 3D fix        |
+ 
+The ColorIndex is picked from the colors array ("palette").
+
+Examples (using the default colors):
+
+- set armed color to red: ```mode_color 6 1 2```
+- set disarmed color to yellow: ```mode_color 6 0 4```
+- set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
 
 ## Positioning
 
