@@ -415,6 +415,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
 bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
+bool sensors(uint32_t mask) { return true; }
 
 uint8_t GPS_numSat;
 uint8_t stateFlags;
