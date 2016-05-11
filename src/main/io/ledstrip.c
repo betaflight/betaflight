@@ -786,7 +786,7 @@ void applyLedThrustRingLayer(void)
 
     if (rotationSeqLedCount == RING_PATTERN_NOT_CALCULATED) {
         // update ring pattern according to total number of ring leds found
-
+        uint8_t ledRingLedCount = ledRingIndex;
         rotationSeqLedCount = ledRingLedCount;
 
         // try to split in segments/rings of exactly ROTATION_SEQUENCE_LED_COUNT leds
