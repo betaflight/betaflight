@@ -2308,6 +2308,11 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
         case MODE_LOOKUP:
             cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+            if (full) {
+                for (int i=0; i<lookupTables[var->config.lookup.tableIndex].valueCount; i++) {
+                    cliPrintf(" %s", lookupTables[var->config.lookup.tableIndex].values[i]);
+                }
+            }
             break;
     }
 }
@@ -2426,7 +2431,9 @@ static void cliSet(char *cmdline)
                     cliPrintf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrint("Invalid value\r\n");
+                    cliPrint("Invalid value. Allowed values are: ");
+                    cliPrintVar(val, 1); // print out min/max/table values
+                    cliPrint("\r\n");
                 }
 
                 return;
