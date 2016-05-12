@@ -25,6 +25,11 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         functionRules.push(mspFunctionRule);
     }
 
+    if (semver.gte(CONFIG.apiVersion, "1.18.0")) {
+        var mavlinkFunctionRule = {name: 'TELEMETRY_MAVLINK',    groups: ['telemetry'], sharableWith: ['msp'], notSharableWith: ['blackbox'], maxPorts: 1};
+        functionRules.push(mavlinkFunctionRule);
+    }
+
     for (var i = 0; i < functionRules.length; i++) {
         functionRules[i].displayName = chrome.i18n.getMessage('portsFunction_' + functionRules[i].name);
     }
