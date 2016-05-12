@@ -2396,7 +2396,7 @@ static void cliSet(char *cmdline)
                 int_float_value_t tmp;
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
-                            if(strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
+                            if(strlen(eqptr) > 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
                                 int32_t value = 0;
                                 float valuef = 0;
 
