@@ -36,7 +36,7 @@ $(document).ready(function () {
     }
 
     // check release time to inform people in case they are running old release
-    if (CONFIGURATOR.releaseDate > (new Date().getTime() - (86400000 * 60))) { // 1 day = 86400000 miliseconds, * 60 = 2 month window
+    if (CONFIGURATOR.releaseDate > (new Date().getTime() - (86400000 * 91))) { // 1 day = 86400000 miliseconds, * 91 = 3 month window
         console.log('Application version is valid for another: ' + Math.round((CONFIGURATOR.releaseDate - (new Date().getTime() - (86400000 * 60))) / 86400000) + ' days');
     } else {
         console.log('Application version expired');
