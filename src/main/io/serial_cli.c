@@ -2396,20 +2396,22 @@ static void cliSet(char *cmdline)
                 int_float_value_t tmp;
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
-                            int32_t value = 0;
-                            float valuef = 0;
+                            if(strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
+                                int32_t value = 0;
+                                float valuef = 0;
 
-                            value = atoi(eqptr);
-                            valuef = fastA2F(eqptr);
+                                value = atoi(eqptr);
+                                valuef = fastA2F(eqptr);
 
-                            if (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) { // note: compare float value
+                                if (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) { // note: compare float value
 
-                                if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
-                                    tmp.float_value = valuef;
-                                else
-                                    tmp.int_value = value;
+                                    if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
+                                        tmp.float_value = valuef;
+                                    else
+                                        tmp.int_value = value;
 
-                                changeValue = true;
+                                    changeValue = true;
+                                }
                             }
                         }
                         break;
