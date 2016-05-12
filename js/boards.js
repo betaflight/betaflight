@@ -53,6 +53,18 @@ var BOARD_DEFINITIONS = [
         identifier: "SRFM",
         vcp: true
     }, {
+        name: "SP Racing F3 EVO",
+        identifier: "SPEV",
+        vcp: true
+    }, {
+        name: "Alienflight F3",
+        identifier: "AFF3",
+        vcp: true
+    }, {
+        name: "ImmersionRC Fusion F3",
+        identifier: "IFF3",
+        vcp: false
+    }, {
         name: "MotoLab",
         identifier: "MOTO",
         vcp: true
