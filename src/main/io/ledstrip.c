@@ -854,9 +854,9 @@ static void applyLedAnimationLayer(bool updateNow)
     if (ARMING_FLAG(ARMED))
         return;
 
-    int previousRow = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
+    int previousRow = frameCounter > 0 ? frameCounter - 1 : animationFrames - 1;
     int currentRow = frameCounter;
-    int nextRow = frameCounter > 0 ? frameCounter - 1 : animationFrames - 1;
+    int nextRow = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
 
     for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
