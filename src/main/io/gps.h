@@ -38,7 +38,8 @@ typedef enum {
     SBAS_EGNOS,
     SBAS_WAAS,
     SBAS_MSAS,
-    SBAS_GAGAN
+    SBAS_GAGAN,
+    SBAS_NONE
 } sbasMode_e;
 
 #define SBAS_MODE_MAX SBAS_GAGAN
@@ -63,9 +64,10 @@ typedef enum {
 } gpsAutoBaud_e;
 
 typedef enum {
-    GPS_MODEL_LOW_G = 0,
-    GPS_MODEL_HIGH_G,
-} gpsNavModel_e;
+    GPS_DYNMODEL_PEDESTRIAN = 0,
+    GPS_DYNMODEL_AIR_1G,
+    GPS_DYNMODEL_AIR_4G,
+} gpsDynModel_e;
 
 typedef enum {
     GPS_NO_FIX = 0,
@@ -80,7 +82,7 @@ typedef struct gpsConfig_s {
     sbasMode_e sbasMode;
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
-    gpsNavModel_e navModel;
+    gpsDynModel_e dynModel;
 } gpsConfig_t;
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
