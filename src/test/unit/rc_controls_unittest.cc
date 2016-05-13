@@ -186,7 +186,7 @@ static int callCounts[CALL_COUNT_ITEM_COUNT];
 #define CALL_COUNTER(item) (callCounts[item])
 
 extern "C" {
-void generatePitchRollCurve(controlRateConfig_t *) {
+void generateRcCurves(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
 

@@ -732,8 +732,7 @@ static bool isEEPROMContentValid(void)
 
 void activateControlRateConfig(void)
 {
-    generatePitchRollCurve(currentControlRateProfile);
-    generateYawCurve(currentControlRateProfile);
+    generateRcCurves(currentControlRateProfile);
     generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
 }
 
