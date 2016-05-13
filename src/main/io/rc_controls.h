@@ -109,10 +109,14 @@ typedef enum {
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
 // Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  180
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN  10
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT  20
 
 /* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier: */
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
+#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         180
+#define CONTROL_RATE_CONFIG_YAW_RATE_MIN         2
+#define CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT     20
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
