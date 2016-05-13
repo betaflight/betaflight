@@ -685,7 +685,7 @@ static void writeInterframe(void)
     arraySubInt32(deltas, blackboxCurrent->axisPID_P, blackboxLast->axisPID_P, XYZ_AXIS_COUNT);
     blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
-    /* 
+    /*
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
      * that can pack all three fields into one byte in that situation.
      */
@@ -920,7 +920,7 @@ void startBlackbox(void)
          * cache those now.
          */
         blackboxBuildConditionCache();
-        
+
         blackboxModeActivationConditionPresent = isModeActivationConditionPresent(currentProfile->modeActivationConditions, BOXBLACKBOX);
 
         blackboxIteration = 0;
@@ -1228,7 +1228,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         break;
         case 4:
-            blackboxPrintfHeaderLine("rcRate:%d", masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcRate8);
+            blackboxPrintfHeaderLine("rcRate:%d", 100); //For compatibility reasons write rc_rate 100
         break;
         case 5:
             blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);
@@ -1323,7 +1323,7 @@ static void blackboxCheckAndLogArmingBeep()
     }
 }
 
-/* 
+/*
  * Use the user's num/denom settings to decide if the P-frame of the given index should be logged, allowing the user to control
  * the portion of logged loop iterations.
  */
@@ -1367,7 +1367,7 @@ static void blackboxLogIteration()
         writeIntraframe();
     } else {
         blackboxCheckAndLogArmingBeep();
-        
+
         if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
             /*
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
@@ -1499,7 +1499,7 @@ void handleBlackbox(void)
 
                 blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
                 blackboxSetState(BLACKBOX_STATE_RUNNING);
-                
+
                 blackboxLogIteration();
             }
 

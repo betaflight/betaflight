@@ -732,7 +732,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RC_TUNING:
         headSerialReply(11);
-        serialize8(currentControlRateProfile->rcRate8);
+        serialize8(100); //rcRate8 kept for compatibity reasons, this setting is no longer used
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
             serialize8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
@@ -1215,7 +1215,7 @@ static bool processInCommand(void)
 
     case MSP_SET_RC_TUNING:
         if (currentPort->dataSize >= 10) {
-            currentControlRateProfile->rcRate8 = read8();
+            read8(); //Read rcRate8, kept for protocol compatibility reasons
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
                 rate = read8();

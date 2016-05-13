@@ -456,12 +456,6 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         beeperConfirmationBeeps(1);
     }
     switch(adjustmentFunction) {
-        case ADJUSTMENT_RC_RATE:
-            newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in serial_cli.c
-            controlRateConfig->rcRate8 = newValue;
-            generateRcCurves(controlRateConfig);
-            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
-        break;
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcExpo8 = newValue;
