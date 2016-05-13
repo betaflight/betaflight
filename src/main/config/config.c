@@ -54,6 +54,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/pid.h"
@@ -80,9 +81,14 @@ STATIC_UNIT_TESTED void resetConf(void)
     
     setControlRateProfile(0);
     
+    parseRcChannels("AETR1234", rxConfig());
+    
     featureClearAll();
     
-    featureSet(DEFAULT_RX_FEATURE);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_BLACKBOX);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
+#endif
     
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -90,33 +96,17 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
     
-    featureSet(FEATURE_FAILSAFE);
-    
-    parseRcChannels("AETR1234", rxConfig());
-    
-    featureSet(FEATURE_BLACKBOX);
-    
 #if defined(COLIBRI_RACE)
     // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
-    featureSet(FEATURE_ONESHOT125);
-    featureSet(FEATURE_LED_STRIP);
 #endif
     
-#ifdef SPRACINGF3EVO
-    featureSet(FEATURE_TRANSPONDER);
-    featureSet(FEATURE_RSSI_ADC);
-    featureSet(FEATURE_CURRENT_METER);
-    featureSet(FEATURE_TELEMETRY);
-#endif
-    
-    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
-#ifdef ALIENWII32
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_MOTOR_STOP);
-# ifdef ALIENWIIF3
+    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
+#ifdef ALIENFLIGHT
+#ifdef ALIENFLIGHTF3
     serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     batteryConfig()->vbatscale = 20;
+    sensorSelectionConfig()->mag_hardware = MAG_NONE;            // disabled by default
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
@@ -126,16 +116,16 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorAndServoConfig()->maxthrottle = 2000;
     motorAndServoConfig()->motor_pwm_rate = 32000;
     imuConfig()->looptime = 2000;
-    pidProfile()->pidController = 3;
-    pidProfile()->P8[PIDROLL] = 36;
-    pidProfile()->P8[PIDPITCH] = 36;
+    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
-    currentControlRateProfile->rates[ROLL] = 20;
+    mixerConfig()->yaw_jump_prevention_limit = YAW_JUMP_PREVENTION_LIMIT_HIGH;
+    currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[PITCH] = 20;
-    currentControlRateProfile->rates[YAW] = 100;
+    currentControlRateProfile->rates[ROLL] = 20;
+    currentControlRateProfile->rates[YAW] = 20;
     parseRcChannels("TAER1234", rxConfig());
+    
     *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
