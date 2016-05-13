@@ -80,47 +80,27 @@ STATIC_UNIT_TESTED void resetConf(void)
     pgActivateProfile(0);
 
     setControlRateProfile(0);
-<<<<<<< HEAD
 
     parseRcChannels("AETR1234", rxConfig());
 
     featureClearAll();
 
-=======
-    
-    parseRcChannels("AETR1234", rxConfig());
-    
-    featureClearAll();
-    
->>>>>>> patch-3
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_BLACKBOX);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
 #endif
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> patch-3
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
     featureSet(FEATURE_VBAT);
 #endif
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> patch-3
 #if defined(COLIBRI_RACE)
     // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
 #endif
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> patch-3
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHT
 #ifdef ALIENFLIGHTF3
@@ -145,11 +125,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     currentControlRateProfile->rates[ROLL] = 20;
     currentControlRateProfile->rates[YAW] = 20;
     parseRcChannels("TAER1234", rxConfig());
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> patch-3
     *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
