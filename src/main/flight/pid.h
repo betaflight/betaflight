@@ -53,6 +53,7 @@ typedef struct pidProfile_s {
     uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 
     uint16_t yaw_p_limit;
+    uint8_t yaw_lpf_hz;
 
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 } pidProfile_t;
