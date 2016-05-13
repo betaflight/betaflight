@@ -53,6 +53,8 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    #include "io/rc_controls.h"
+
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -152,7 +154,7 @@ uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-uint16_t acc_1G;
+acc_t acc;
 int16_t heading;
 gyro_t gyro;
 int32_t magADC[XYZ_AXIS_COUNT];
@@ -174,6 +176,8 @@ int16_t GPS_ground_course;
 int16_t GPS_numSat;
 
 float magneticDeclination = 0.0f;
+
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

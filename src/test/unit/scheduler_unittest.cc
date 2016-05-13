@@ -298,19 +298,19 @@ TEST(SchedulerUnittest, TestSingleTask)
 
 TEST(SchedulerUnittest, TestTwoTasks)
 {
-    // disable all tasks except TASK_GYROPID  and TASK_ACCEL
+    // disable all tasks except TASK_GYROPID  and TASK_SERIAL
     for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
-    setTaskEnabled(TASK_ACCEL, true);
+    setTaskEnabled(TASK_SERIAL, true);
     setTaskEnabled(TASK_GYROPID, true);
 
-    // set it up so that TASK_ACCEL ran just before TASK_GYROPID
+    // set it up so that TASK_SERIAL ran just before TASK_GYROPID
     static const uint32_t startTime = 4000;
     simulatedTime = startTime;
     cfTasks[TASK_GYROPID].lastExecutedAt = simulatedTime;
-    cfTasks[TASK_ACCEL].lastExecutedAt = cfTasks[TASK_GYROPID].lastExecutedAt - updateAccelerometerTime;
-    EXPECT_EQ(0, cfTasks[TASK_ACCEL].taskAgeCycles);
+    cfTasks[TASK_SERIAL].lastExecutedAt = cfTasks[TASK_GYROPID].lastExecutedAt - updateAccelerometerTime;
+    EXPECT_EQ(0, cfTasks[TASK_SERIAL].taskAgeCycles);
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed
@@ -318,7 +318,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
 
     // NOTE:
     // TASK_GYROPID desiredPeriod is  1000 microseconds
-    // TASK_ACCEL   desiredPeriod is 10000 microseconds
+    // TASK_SERIAL   desiredPeriod is 10000 microseconds
     // 500 microseconds later
     simulatedTime += 500;
     // no tasks should run, since neither task's desired time has elapsed
@@ -343,13 +343,13 @@ TEST(SchedulerUnittest, TestTwoTasks)
     EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
     EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
-    simulatedTime = startTime + 10500; // TASK_GYROPID and TASK_ACCEL desiredPeriods have elapsed
+    simulatedTime = startTime + 10500; // TASK_GYROPID and TASK_SERIAL desiredPeriods have elapsed
     // of the two TASK_GYROPID should run first
     scheduler();
     EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
-    // and finally TASK_ACCEL should now run
+    // and finally TASK_SERIAL should now run
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&cfTasks[TASK_SERIAL], unittest_scheduler_selectedTask);
 }
 
 TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)

@@ -81,6 +81,7 @@
 #include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
@@ -153,6 +154,7 @@ static void cliMap(char *cmdline);
 #ifdef LED_STRIP
 static void cliLed(char *cmdline);
 static void cliColor(char *cmdline);
+static void cliModeColor(char *cmdline);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -252,6 +254,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
+    CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dump", "dump configuration",
@@ -390,10 +393,6 @@ static const char * const lookupTableGyroLpf[] = {
     "10HZ"
 };
 
-static const char * const lookupDeltaMethod[] = {
-    "ERROR", "MEASUREMENT"
-};
-
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -416,7 +415,6 @@ typedef enum {
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
     TABLE_GYRO_LPF,
-    TABLE_DELTA_METHOD,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -436,7 +434,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
-    { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -596,7 +593,7 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
-    { "gyro_soft_lpf",              VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
+    { "gyro_soft_lpf",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  128 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold)},
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_kp)},
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_ki)},
@@ -613,7 +610,6 @@ const clivalue_t valueTable[] = {
 
 
     { "pid_at_min_throttle",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, pid_at_min_throttle)},
-    { "airmode_saturation_limit",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, airmode_saturation_limit)},
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, .config.minmax = { -1,  1 } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_motor_direction)},
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } , PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_jump_prevention_limit)},
 
@@ -672,8 +668,6 @@ const clivalue_t valueTable[] = {
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, .config.minmax = { -18000,  18000 } , PG_COMPASS_CONFIGURATION, offsetof(compassConfig_t, mag_declination)},
 #endif
 
-    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DELTA_METHOD } , PG_PID_PROFILE, offsetof(pidProfile_t, deltaMethod)},
-
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_CONTROLLER } , PG_PID_PROFILE, offsetof(pidProfile_t, pidController)},
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[FD_PITCH])},
@@ -685,20 +679,6 @@ const clivalue_t valueTable[] = {
     { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[FD_YAW])},
     { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[FD_YAW])},
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D8[FD_YAW])},
-
-    { "p_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_PITCH])},
-    { "i_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_PITCH])},
-    { "d_pitchf",                   VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_PITCH])},
-    { "p_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_ROLL])},
-    { "i_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_ROLL])},
-    { "d_rollf",                    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_ROLL])},
-    { "p_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P_f[FD_YAW])},
-    { "i_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I_f[FD_YAW])},
-    { "d_yawf",                     VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { PID_F_MIN,  PID_F_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D_f[FD_YAW])},
-
-    { "level_horizon",              VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_level)},
-    { "level_angle",                VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  10 } , PG_PID_PROFILE, offsetof(pidProfile_t, A_level)},
-    { "sensitivity_horizon",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  250 } , PG_PID_PROFILE, offsetof(pidProfile_t, H_sensitivity)},
 
     { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[PIDALT])},
     { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[PIDALT])},
@@ -713,7 +693,7 @@ const clivalue_t valueTable[] = {
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, D8[PIDVEL])},
 
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_p_limit)},
-    { "dterm_cut_hz",               VAR_FLOAT  | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_hz)},
+    { "dterm_cut_hz",               VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, dterm_cut_hz)},
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 10,  200 } , PG_GTUNE_CONFIG, offsetof(gtuneConfig_t, gtune_lolimP[FD_ROLL])},
@@ -1190,7 +1170,7 @@ static void cliRxRange(char *cmdline)
             cliPrintf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
         }
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        pgReset_channelRanges(channelRanges(0));
+        PG_RESET_CURRENT(channelRanges);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -1275,6 +1255,103 @@ static void cliColor(char *cmdline)
         } else {
             cliShowArgumentRangeError("index", 0, CONFIGURABLE_COLOR_COUNT - 1);
         }
+    }
+}
+
+static void cliModeColor(char *cmdline)
+{
+    int i, j;
+    char *ptr;
+    int args[4], check = 0;
+    uint8_t colorIndex;
+
+    if (isEmpty(cmdline)) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            for (j = 0; j < DIRECTIONS_COUNT; j++) {
+
+                switch (j) {
+                    case 0: colorIndex = modeColors(i)->north; break;
+                    case 1: colorIndex = modeColors(i)->east; break;
+                    case 2: colorIndex = modeColors(i)->south; break;
+                    case 3: colorIndex = modeColors(i)->west; break;
+                    case 4: colorIndex = modeColors(i)->up; break;
+                    case 5: colorIndex = modeColors(i)->down; break;
+                }
+
+                cliPrintf("mode_color %u %u %u\r\n",
+                    i,
+                    j,
+                    colorIndex
+                );
+            }
+        }
+
+        for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
+            switch (j) {
+                case 0: colorIndex = specialColors(0)->disarmed; break;
+                case 1: colorIndex = specialColors(0)->armed; break;
+                case 2: colorIndex = specialColors(0)->animation; break;
+                case 3: colorIndex = specialColors(0)->background; break;
+                case 4: colorIndex = specialColors(0)->blink_background; break;
+                case 5: colorIndex = specialColors(0)->gps_nosats; break;
+                case 6: colorIndex = specialColors(0)->gps_nolock; break;
+                case 7: colorIndex = specialColors(0)->gps_locked; break;
+            }
+            cliPrintf("mode_color %u %u %u\r\n",
+                MODE_COUNT,
+                j,
+                colorIndex
+            );
+        }
+    } else {
+        enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
+        ptr = strtok(cmdline, " ");
+        while (ptr != NULL && check < ARGS_COUNT) {
+            args[check++] = atoi(ptr);
+            ptr = strtok(NULL, " ");
+        }
+
+        if (ptr != NULL || check != ARGS_COUNT) {
+            cliShowParseError();
+            return;
+        }
+
+        i = args[MODE];
+
+        if (i >= 0 && i < MODE_COUNT) {
+            switch (args[FUNCTION]) {
+                case 0: modeColors(i)->north = args[COLOR]; break;
+                case 1: modeColors(i)->east = args[COLOR]; break;
+                case 2: modeColors(i)->south = args[COLOR]; break;
+                case 3: modeColors(i)->west = args[COLOR]; break;
+                case 4: modeColors(i)->up = args[COLOR]; break;
+                case 5: modeColors(i)->down = args[COLOR]; break;
+                default: cliShowParseError(); return;
+            }
+
+        } else if (i == MODE_COUNT) {
+            // special colors
+            switch (args[FUNCTION]) {
+                case 0: specialColors(0)->disarmed = args[COLOR]; break;
+                case 1: specialColors(0)->armed = args[COLOR]; break;
+                case 2: specialColors(0)->animation = args[COLOR]; break;
+                case 3: specialColors(0)->background = args[COLOR]; break;
+                case 4: specialColors(0)->blink_background = args[COLOR]; break;
+                case 5: specialColors(0)->gps_nosats = args[COLOR]; break;
+                case 6: specialColors(0)->gps_nolock = args[COLOR]; break;
+                case 7: specialColors(0)->gps_locked = args[COLOR]; break;
+                default: cliShowParseError(); return;
+            }
+        } else {
+            cliShowParseError();
+            return;
+        }
+
+        cliPrintf("mode_color %u %u %u\r\n",
+                            i,
+                            args[FUNCTION],
+                            args[COLOR]
+                        );
     }
 }
 #endif
@@ -1802,6 +1879,9 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
+
+        cliPrint("\r\n\r\n# mode_color\r\n");
+        cliModeColor("");
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);

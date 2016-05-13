@@ -73,6 +73,7 @@
 #include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
@@ -111,7 +112,8 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern uint8_t PIDweight[3];
+extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
@@ -136,7 +138,7 @@ void updateGtuneState(void)
 {
     static bool GTuneWasUsed = false;
 
-    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
+    if (rcModeIsActive(BOXGTUNE)) {
         if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             ENABLE_FLIGHT_MODE(GTUNE_MODE);
             init_Gtune();
@@ -154,7 +156,7 @@ void updateGtuneState(void)
 }
 #endif
 
-bool isCalibrating()
+bool isCalibrating(void)
 {
 #ifdef BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
@@ -167,8 +169,12 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void annexCode(void)
-{
+/*
+This function processes RX dependent coefficients when new RX commands are available
+Those are: TPA, throttle expo
+*/
+void processRxDependentCoefficients(void) {
+
     int32_t tmp, tmp2;
     int32_t axis, prop1 = 0, prop2;
 
@@ -210,11 +216,12 @@ void annexCode(void)
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -rcControlsConfig()->yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
+#ifndef SKIP_PID_MW23
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)pidProfile()->P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)pidProfile()->I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)pidProfile()->D8[axis] * prop1 / 100;
-
+#endif
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
             PIDweight[axis] = 100;
@@ -231,7 +238,10 @@ void annexCode(void)
     tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+}
 
+void annexCode(void)
+{
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
         float cosDiff = cos_approx(radDiff);
@@ -244,7 +254,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (rcModeIsActive(BOXARM) == 0) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -286,14 +296,14 @@ void mwDisarm(void)
     }
 }
 
-#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM)
+#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
 
 void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-    while (sharedPort) {
-        mspReleasePortIfAllocated(sharedPort);
-        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
-    }
+     while (sharedPort) {
+         mspSerialReleasePortIfAllocated(sharedPort);
+         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+     }
 }
 
 void mwArm(void)
@@ -302,7 +312,7 @@ void mwArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        if (rcModeIsActive(BOXFAILSAFE)) {
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
@@ -313,7 +323,7 @@ void mwArm(void)
             if (feature(FEATURE_BLACKBOX)) {
                 serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
                 if (sharedBlackboxAndMspPort) {
-                    mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
+                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
                 startBlackbox();
             }
@@ -364,11 +374,11 @@ void handleInflightCalibrationStickPosition(void)
 
 void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > rxConfig()->mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > rxConfig()->mincheck && !rcModeIsActive(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
-    if (IS_RC_MODE_ACTIVE(BOXCALIB)) {      // Use the Calib Option to activate : Calib = TRUE measurement started, Land and Calib = 0 measurement stored
+    if (rcModeIsActive(BOXCALIB)) {      // Use the Calib Option to activate : Calib = TRUE measurement started, Land and Calib = 0 measurement stored
         if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
             InflightcalibratingA = 50;
         AccInflightCalibrationActive = true;
@@ -401,7 +411,7 @@ void processRx(void)
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
-        if (!IS_RC_MODE_ACTIVE(BOXARM))
+        if (!rcModeIsActive(BOXARM))
             mwDisarm();
     }
 
@@ -423,15 +433,17 @@ void processRx(void)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
      Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
     if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
+        if (rcModeIsActive(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
             if (rollPitchStatus == CENTERED) {
                 ENABLE_STATE(ANTI_WINDUP);
             } else {
                 DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
-            pidResetErrorAngle();
-            pidResetErrorGyro();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
+            pidResetITerm();
         }
     } else {
         DISABLE_STATE(ANTI_WINDUP);
@@ -487,7 +499,7 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
+    rcModeUpdateActivated(modeActivationProfile()->modeActivationConditions);
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
@@ -496,24 +508,28 @@ void processRx(void)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
+    if ((rcModeIsActive(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive())) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-            pidResetErrorAngle();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode) {
+    if (rcModeIsActive(BOXHORIZON) && canUseHorizonMode) {
 
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-            pidResetErrorAngle();
+#ifndef SKIP_PID_MW23
+            pidResetITermAngle();
+#endif
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {
@@ -528,7 +544,7 @@ void processRx(void)
 
 #ifdef  MAG
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
+        if (rcModeIsActive(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
                 magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
@@ -536,14 +552,14 @@ void processRx(void)
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
+        if (rcModeIsActive(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
             }
         } else {
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
+        if (rcModeIsActive(BOXHEADADJ)) {
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
         }
     }
@@ -555,7 +571,7 @@ void processRx(void)
     }
 #endif
 
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+    if (rcModeIsActive(BOXPASSTHRU)) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
@@ -567,14 +583,13 @@ void processRx(void)
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
-
+        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED))
+            || (telemetryConfig()->telemetry_switch && rcModeIsActive(BOXTELEMETRY))) {
             releaseSharedTelemetryPorts();
         } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
-            mspAllocateSerialPorts();
+            mspSerialAllocatePorts();
         }
     }
 #endif
@@ -625,7 +640,7 @@ void taskMainPidLoop(void)
 
     // Calculate average cycle time and average jitter
     filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
-    
+
     debug[0] = cycleTime;
     debug[1] = cycleTime - filteredCycleTime;
 
@@ -645,6 +660,10 @@ void taskMainPidLoop(void)
         if (sensors(SENSOR_MAG)) {
             updateMagHold();
         }
+#endif
+
+#ifdef GTUNE
+        updateGtuneState();
 #endif
 
 #if defined(BARO) || defined(SONAR)
@@ -716,7 +735,7 @@ void taskMainPidLoop(void)
 
 // Function for loop trigger
 void taskMainPidLoopChecker(void) {
-    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point. 
+    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
@@ -783,6 +802,8 @@ bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 void taskUpdateRxMain(void)
 {
     processRx();
+    processRxDependentCoefficients();
+
     isRXDataNew = true;
 
 #ifdef BARO

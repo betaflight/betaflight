@@ -63,9 +63,9 @@
 
 #define AIRMODE_DEADBAND 12
 
-PG_REGISTER_WITH_RESET(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
 
-PG_REGISTER_PROFILE_WITH_RESET(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 PG_REGISTER_PROFILE(modeActivationProfile_t, modeActivationProfile, PG_MODE_ACTIVATION_PROFILE, 0);
 
 // true if arming is done via the sticks (as opposed to a switch)
@@ -73,28 +73,23 @@ static bool isUsingSticksToArm = true;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
-uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
+STATIC_UNIT_TESTED uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
-void pgReset_rcControlsConfig(rcControlsConfig_t *rcControlsConfig)
-{
-    RESET_CONFIG_2(rcControlsConfig_t, rcControlsConfig,
-        .deadband = 0,
-        .yaw_deadband = 0,
-        .alt_hold_deadband = 40,
-        .alt_hold_fast_change = 1,
-        .yaw_control_direction = 1,
-        .deadband3d_throttle = 50,
-    );
-}
+PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
+    .deadband = 0,
+    .yaw_deadband = 0,
+    .alt_hold_deadband = 40,
+    .alt_hold_fast_change = 1,
+    .yaw_control_direction = 1,
+    .deadband3d_throttle = 50,
+);
 
-void pgReset_armingConfig(armingConfig_t *instance)
-{
-    RESET_CONFIG(armingConfig_t, instance,
-         .disarm_kill_switch = 1,
-         .auto_disarm_delay = 5,
-         .max_arm_angle = 25,
-    );
-}
+PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
+    .disarm_kill_switch = 1,
+    .auto_disarm_delay = 5,
+    .max_arm_angle = 25,
+);
+
 
 bool isUsingSticksForArming(void)
 {
@@ -152,7 +147,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     // perform actions
     if (!isUsingSticksToArm) {
 
-        if (IS_RC_MODE_ACTIVE(BOXARM)) {
+        if (rcModeIsActive(BOXARM)) {
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -312,18 +307,17 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 }
 
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
+bool rcModeIsActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
 {
     uint8_t index;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-        
+
         if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             return true;
         }
     }
-    
     return false;
 }
 
@@ -338,19 +332,23 @@ bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range)
             && channelValue < MODE_STEP_TO_CHANNEL_VALUE(range->endStep));
 }
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
+bool rcModeIsActive(boxId_e modeId)
 {
-    rcModeActivationMask = 0;
+    return rcModeActivationMask & (1 << modeId);
+}
 
-    uint8_t index;
+void rcModeUpdateActivated(modeActivationCondition_t *modeActivationConditions)
+{
+    uint32_t newRcModeMask = 0;
 
-    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
 
         if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
-            ACTIVATE_RC_MODE(modeActivationCondition->modeId);
+            newRcModeMask |= 1 << modeActivationCondition->modeId;
         }
     }
+    rcModeActivationMask = newRcModeMask;
 }
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
@@ -359,6 +357,6 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
 {
-    isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
+    isUsingSticksToArm = !rcModeIsActivationConditionPresent(modeActivationConditions, BOXARM);
 }
 

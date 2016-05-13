@@ -70,7 +70,7 @@
 #include "sensors/sonar.h"
 #include "sensors/initialisation.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
@@ -162,6 +162,34 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
          .exti_irqn = EXTI9_5_IRQn
     };
     return &colibriRaceMPUIntExtiConfig;
+#endif
+
+#ifdef ALIENFLIGHTF3
+    // MPU_INT output on V1 PA15
+    static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_15,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource15,
+            .exti_line = EXTI_Line15,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    // MPU_INT output on V2 PB13
+    static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
+            .gpioPort = GPIOB,
+            .gpioPin = Pin_13,
+            .exti_port_source = EXTI_PortSourceGPIOB,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_line = EXTI_Line13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    if (hardwareRevision == AFF3_REV_1) {
+        return &alienFlightF3V1MPUIntExtiConfig;
+    } else {
+        return &alienFlightF3V2MPUIntExtiConfig;
+    }
 #endif
 
     return NULL;
@@ -626,6 +654,7 @@ retry:
             }
 #endif
             ; // fallthrough
+
         case MAG_AK8963:
 #ifdef USE_MAG_AK8963
             if (ak8963Detect(&mag)) {
@@ -694,8 +723,10 @@ bool sensorsAutodetect(void)
 
 
     // Now time to init things, acc first
-    if (sensors(SENSOR_ACC))
-        acc.init();
+    if (sensors(SENSOR_ACC)) {
+        acc.acc_1G = 256; // set default
+        acc.init(&acc);
+    }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init(gyroConfig()->gyro_lpf);
 

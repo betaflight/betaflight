@@ -55,18 +55,14 @@
 
 static failsafeState_t failsafeState;
 
-PG_REGISTER_WITH_RESET(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
-void pgReset_failsafeConfig(failsafeConfig_t *instance)
-{
-    // Failsafe Variables
-    RESET_CONFIG(failsafeConfig_t, instance,
-        .failsafe_delay = 10,              // 1sec
-        .failsafe_off_delay = 200,         // 20sec
-        .failsafe_throttle = 1000,         // default throttle off.
-        .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
-    );
-}
+PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
+    .failsafe_delay = 10,              // 1sec
+    .failsafe_off_delay = 200,         // 20sec
+    .failsafe_throttle = 1000,         // default throttle off.
+    .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
+);
 
 static void failsafeReset(void)
 {
@@ -177,7 +173,7 @@ void failsafeUpdateState(void)
 
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
-    bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    bool failsafeSwitchIsOn = rcModeIsActive(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     if (!receivingRxData) {
@@ -277,7 +273,7 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
-                        if (!(!isUsingSticksForArming() && IS_RC_MODE_ACTIVE(BOXARM))) {
+                        if (!(!isUsingSticksForArming() && rcModeIsActive(BOXARM))) {
                             DISABLE_ARMING_FLAG(PREVENT_ARMING);
                             failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                             reprocessState = true;

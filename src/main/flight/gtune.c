@@ -98,22 +98,19 @@ extern uint8_t motorCount;
     pidProfile->gtune_average_cycles = 16;  [8..128] Number of looptime cycles used for gyro average calculation
 */
 
-PG_REGISTER_PROFILE_WITH_RESET(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(gtuneConfig_t, gtuneConfig, PG_GTUNE_CONFIG, 0);
 
-void pgReset_gtuneConfig(gtuneConfig_t * gtuneConfig)
-{
-    RESET_CONFIG(gtuneConfig_t, gtuneConfig,
-        .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
-        .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
-        .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
-        .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-        .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-        .gtune_pwr = 0,                       // [0..10] Strength of adjustment
-        .gtune_settle_time = 450,             // [200..1000] Settle time in ms
-        .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
-    );
-}
+PG_RESET_TEMPLATE(gtuneConfig_t, gtuneConfig,
+    .gtune_lolimP[FD_ROLL] = 10,          // [0..200] Lower limit of ROLL P during G tune.
+    .gtune_lolimP[FD_PITCH] = 10,         // [0..200] Lower limit of PITCH P during G tune.
+    .gtune_lolimP[FD_YAW] = 10,           // [0..200] Lower limit of YAW P during G tune.
+    .gtune_hilimP[FD_ROLL] = 100,         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
+    .gtune_hilimP[FD_PITCH] = 100,        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
+    .gtune_hilimP[FD_YAW] = 100,          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
+    .gtune_pwr = 0,                       // [0..10] Strength of adjustment
+    .gtune_settle_time = 450,             // [200..1000] Settle time in ms
+    .gtune_average_cycles = 16,           // [8..128] Number of looptime cycles used for gyro average calculation
+);
 
 static int16_t delay_cycles;
 static int16_t time_skip[3];
@@ -139,17 +136,10 @@ void init_Gtune(void)
         if ((gtuneConfig()->gtune_hilimP[i] && gtuneConfig()->gtune_lolimP[i] > gtuneConfig()->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
             gtuneConfig()->gtune_hilimP[i] = 0;                                    // Disable YAW tuning for everything below a quadcopter
         }
-        if (floatPID) {
-            if((pidProfile()->P_f[i] * 10.0f) < gtuneConfig()->gtune_lolimP[i]) {
-                pidProfile()->P_f[i] = (float)(gtuneConfig()->gtune_lolimP[i] / 10.0f);
-            }
-            result_P64[i] = (int16_t)pidProfile()->P_f[i] << 6;                   // 6 bit extra resolution for P.
-        } else {
-            if(pidProfile()->P8[i] < gtuneConfig()->gtune_lolimP[i]) {
-                pidProfile()->P8[i] = gtuneConfig()->gtune_lolimP[i];
-            }
-            result_P64[i] = (int16_t)pidProfile()->P8[i] << 6;                    // 6 bit extra resolution for P.
+        if(pidProfile()->P8[i] < gtuneConfig()->gtune_lolimP[i]) {
+            pidProfile()->P8[i] = gtuneConfig()->gtune_lolimP[i];
         }
+        result_P64[i] = (int16_t)pidProfile()->P8[i] << 6;                    // 6 bit extra resolution for P.
         OldError[i] = 0;
         time_skip[i] = delay_cycles;
     }
@@ -218,11 +208,7 @@ void calculate_Gtune(uint8_t axis)
                 }
 #endif
 
-                if (floatPID) {
-                    pidProfile()->P_f[axis] = (float)newP / 10.0f;                // new P value for float PID
-                } else {
-                    pidProfile()->P8[axis] = newP;                                // new P value
-                }
+                pidProfile()->P8[axis] = newP;                                // new P value
             }
             OldError[axis] = error;
         }

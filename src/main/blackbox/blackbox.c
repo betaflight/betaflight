@@ -54,6 +54,7 @@
 
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -76,16 +77,13 @@
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
-void pgReset_blackboxConfig(blackboxConfig_t *instance)
-{
-    RESET_CONFIG(blackboxConfig_t, instance,
+PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
         .device = DEFAULT_BLACKBOX_DEVICE,
         .rate_num = 1,
         .rate_denom = 1,
-    );
-}
+);
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -403,11 +401,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            if (IS_PID_CONTROLLER_FP_BASED(pidProfile()->pidController)) {
-                return pidProfile()->D_f[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
-            } else {
-                return pidProfile()->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
-            }
+            return pidProfile()->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
@@ -850,7 +844,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
         
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationProfile()->modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = rcModeIsActivationConditionPresent(modeActivationProfile()->modeActivationConditions, BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;
@@ -1147,7 +1141,7 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));
         break;
         case 9:
-            blackboxPrintfHeaderLine("acc_1G:%u", acc_1G);
+            blackboxPrintfHeaderLine("acc_1G:%u", acc.acc_1G);
         break;
         case 10:
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
@@ -1407,7 +1401,7 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_PAUSED:
             // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
+            if (rcModeIsActive(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
                 // Write a log entry so the decoder is aware that our large time/iteration skip is intended
                 flightLogEvent_loggingResume_t resume;
 
@@ -1425,7 +1419,7 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_RUNNING:
             // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
-            if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+            if (blackboxModeActivationConditionPresent && !rcModeIsActive(BOXBLACKBOX)) {
                 blackboxSetState(BLACKBOX_STATE_PAUSED);
             } else {
                 blackboxLogIteration();

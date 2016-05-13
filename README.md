@@ -58,13 +58,12 @@ If what you need is not covered, check the [Baseflight documentation](https://gi
 
 ## IRC Support and Developers Channel
 
-There's a dedicated Cleanflight IRC channel on the Freenode IRC network:
+There's a dedicated Cleanflight IRC channel on the Freenode IRC network. Many users and some of the developers frequent there, and it is a helpful and friendly community - but there are two important things to keep in mind: First and most importantly, please go ahead and ask if you have questions, but **make sure you wait around long enough for a reply**. Next, sometimes people are out flying, asleep or at work and can't answer immediately, even though they are present in the channel. This is how IRC works: Many people stay logged in, even though they are not actively participating in the discussion all the time. Have a seat, grab a drink and hang around if it's a quiet time of day.
 
 irc://irc.freenode.net/#cleanflight
 
 If you are using Windows and don't have an IRC client installed, take a look at [HydraIRC](http://hydrairc.com/).
 
-Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
 ## Videos
 

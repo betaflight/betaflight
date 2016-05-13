@@ -48,8 +48,6 @@ typedef enum {
 
 void handleOneshotFeatureChangeOnRestart(void);
 
-void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
-
 void initEEPROM(void);
 void resetEEPROM(void);
 void readEEPROM(void);
@@ -63,5 +61,3 @@ uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
-
-uint16_t getCurrentMinthrottle(void);

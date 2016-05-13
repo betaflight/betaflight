@@ -43,6 +43,9 @@ extern "C" {
     #include "flight/failsafe.h"
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+
+    extern uint32_t rcModeActivationMask;
 }
 
 #include "unittest_macros.h"
@@ -71,8 +74,6 @@ void resetCallCounters(void) {
 #define PERIOD_OF_10_SCONDS 10000
 #define DE_ACTIVATE_ALL_BOXES 0
 
-PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 uint32_t sysTickUptime;
 
 void configureFailsafe(void)
@@ -314,7 +315,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     // and
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfig()->failsafe_kill_switch = 1;        // configure AUX switch as kill switch
-    ACTIVATE_RC_MODE(BOXFAILSAFE);                  // and activate it
+    rcModeActivationMask |= (1 << BOXFAILSAFE);     // and activate it
     sysTickUptime = 0;                              // restart time from 0
     failsafeOnValidDataReceived();                  // set last valid sample at current time
     sysTickUptime = PERIOD_RXDATA_FAILURE + 1;      // adjust time to point just past the failure time to
@@ -415,10 +416,11 @@ extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint8_t armingFlags;
 int16_t rcCommand[4];
-uint32_t rcModeActivationMask;
+uint32_t rcModeActivationMask = 0;
 int16_t debug[DEBUG16_VALUE_COUNT];
 bool isUsingSticksToArm = true;
 
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)

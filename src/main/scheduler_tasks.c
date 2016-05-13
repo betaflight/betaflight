@@ -16,7 +16,6 @@
  */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
 
 #include <platform.h>
@@ -44,28 +43,28 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
+        .desiredPeriod = 1000000 / 10,          // 10 Hz, every 100 ms
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_GYROPID] = {
         .taskName = "GYRO/PID",
         .taskFunc = taskMainPidLoopChecker,
-        .desiredPeriod = 1000,
+        .desiredPeriod = 1000,                  // every 1 ms
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
 
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,     // every 10ms
+        .desiredPeriod = 1000,                  // every 1 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
         .taskFunc = taskHandleSerial,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .desiredPeriod = 1000000 / 100,         // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
@@ -73,7 +72,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
         .taskFunc = taskUpdateBeeper,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz
+        .desiredPeriod = 1000000 / 100,         // 100 Hz, every 10 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -81,7 +80,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
+        .desiredPeriod = 1000000 / 50,          // 50 Hz, every 20 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
@@ -89,7 +88,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "RX",
         .checkFunc = taskUpdateRxCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .desiredPeriod = 1000000 / 50,          // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -97,7 +96,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GPS] = {
         .taskName = "GPS",
         .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
+        .desiredPeriod = 1000000 / 10,          // GPS usually don't go faster than 10Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -106,7 +105,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_COMPASS] = {
         .taskName = "COMPASS",
         .taskFunc = taskUpdateCompass,
-        .desiredPeriod = 1000000 / 10,      // Compass is updated at 10 Hz
+        .desiredPeriod = 1000000 / 10,          // 10 Hz, every 100 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -115,7 +114,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BARO] = {
         .taskName = "BARO",
         .taskFunc = taskUpdateBaro,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = 1000000 / 20,          // 20 Hz, every 50 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -124,7 +123,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = 70000,                 // every 70 ms, approximately 14 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -133,7 +132,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = 1000000 / 40,
+        .desiredPeriod = 1000000 / 40,          // 40 Hz, every 25 ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -142,7 +141,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
         .taskFunc = taskTransponder,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .desiredPeriod = 1000000 / 250,         // 250 Hz, every 4 ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -151,7 +150,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_DISPLAY] = {
         .taskName = "DISPLAY",
         .taskFunc = taskUpdateDisplay,
-        .desiredPeriod = 1000000 / 10,
+        .desiredPeriod = 1000000 / 10,          // 10 Hz, every 100 ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -160,7 +159,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .desiredPeriod = 1000000 / 250,         // 250 Hz, every 4 ms
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
@@ -169,7 +168,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .desiredPeriod = 1000000 / 100,         // 100 Hz, every 10 ms
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

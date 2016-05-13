@@ -12,14 +12,11 @@ supports the following:
 * Heading/Orientation lights.
 * Flight mode specific color schemes.
 * Low battery warning.
-* AUX operated on/off switch
+* AUX operated on/off switch.
+* GPS state.
+* RSSI level.
 
-The function and orientation configuration is fixed for now but later it should be able to be set via the UI or CLI..
-
-In the future, if someone codes it, they could be used to show GPS navigation status, thrust levels, RSSI, etc.
-Lots of scope for ideas and improvements.
-
-Likewise, support for more than 32 LEDs is possible, it just requires additional development.
+Support for more than 32 LEDs is possible, it just requires additional development.
 
 ## Supported hardware
 
@@ -71,7 +68,7 @@ The datasheet can be found here: http://www.adafruit.com/datasheets/WS2812.pdf
 
 ## Configuration
 
-The led strip feature can be configured via the GUI
+The led strip feature can be configured via the GUI.
 
 GUI:
 Enable the Led Strip feature via the GUI under setup.
@@ -121,6 +118,9 @@ Note: It is perfectly possible to configure an LED to have all directions `NESWU
 * `T` - `T`hrust state.
 * `R` - `R`ing thrust state.
 * `C` - `C`olor.
+* `G` - `G`PS state.
+* `S` - R`S`SSI level.
+* `B` - `B`link (flash twice) mode.
 
 `cc` specifies the color number (0 based index).
 
@@ -133,6 +133,7 @@ led 2 0,0:ND:IAW:0
 led 3 0,15:SD:IAW:0
 led 4 7,7::C:1
 led 5 8,8::C:2
+led 6 8,9::B:1
 ```
 
 To erase an led, and to mark the end of the chain, use `0,0::` as the second argument, like this:
@@ -156,6 +157,25 @@ This mode simply uses the LEDs to flash when warnings occur.
 | Failsafe | flash between light blue and yellow | Failsafe must be enabled |
 
 Flash patterns appear in order, so that it's clear which warnings are enabled.
+
+#### GPS state
+
+This mode shows the GPS state and satellite count.
+
+No fix = red LED
+3D fix = green LED
+
+The LEDs will blink as many times as the satellite count, then pause and start again.
+
+#### RSSI level
+
+This mode fades the LED current LED color to the previous/next color in the HSB color space depending on RSSI level.  When the
+RSSI level is at the mean value the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and RSSI at
+the same time.  RSSI should normally be combined with Color or Mode/Orientation.
+
+#### Blink
+
+This mode blinks the current LED, alternatively from black to the selected color.
 
 #### Flight Mode & Orientation
 
@@ -313,6 +333,57 @@ color 13 330,0,255
 color 14 0,0,0
 color 15 0,0,0
 ```
+
+### Mode Colors Assignement
+
+Mode Colors can be configured using the cli `mode_color` command.
+
+- No arguments: lists all mode colors
+- arguments: mode, function, color
+
+First 6 groups of ModeIndexes are :
+
+| mode | name        |
+|------|-------------|
+| 0    | orientation |
+| 1    | headfree    |
+| 2    | horizon     |
+| 3    | angle       |
+| 4    | mag         |
+| 5    | baro        |
+| 6    | special     |
+
+Modes 0 to 5 functions:
+
+| function | name  |
+|----------|-------|
+| 0        | north |
+| 1        | east  |
+| 2        | south |
+| 3        | west  |
+| 4        | up    |
+| 5        | down  |
+
+Mode 6 use these functions:
+
+| function | name               |
+|----------|--------------------|
+| 0        | disarmed           |
+| 1        | armed              |
+| 2        | animation          |
+| 3        | background         |
+| 4        | blink background   |
+| 5        | gps: no satellites |
+| 6        | gps: no fix        |
+| 7        | gps: 3D fix        |
+ 
+The ColorIndex is picked from the colors array ("palette").
+
+Examples (using the default colors):
+
+- set armed color to red: ```mode_color 6 1 2```
+- set disarmed color to yellow: ```mode_color 6 0 4```
+- set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
 
 ## Positioning
 

@@ -29,8 +29,6 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/serial_softserial.h"
     #include "io/serial.h"
-
-    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -94,7 +92,7 @@ void cliProcess(void) {}
 bool isSerialTransmitBufferEmpty(serialPort_t *) {
     return true;
 }
-void mspProcess(void) {}
+void mspSerialProcess(void) {}
 void systemResetToBootloader(void) {}
 
 serialPort_t *usbVcpOpen(void) { return NULL; }

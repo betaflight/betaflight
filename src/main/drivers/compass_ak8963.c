@@ -90,18 +90,10 @@
 #define CNTL_MODE_SELF_TEST             0x08
 #define CNTL_MODE_FUSE_ROM              0x0F
 
-typedef bool (*ak8963ReadRegisterFunc)(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf);
-typedef bool (*ak8963WriteRegisterFunc)(uint8_t addr_, uint8_t reg_, uint8_t data);
-
-typedef struct ak8963Configuration_s {
-    ak8963ReadRegisterFunc read;
-    ak8963WriteRegisterFunc write;
-} ak8963Configuration_t;
-
-ak8963Configuration_t ak8963config;
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 // FIXME pretend we have real MPU9250 support
+// Is an separate MPU9250 driver really needed? The GYRO/ACC part between MPU6500 and MPU9250 is exactly the same.
 #ifdef MPU6500_SPI_INSTANCE
 #define MPU9250_SPI_INSTANCE
 #define verifympu9250WriteRegister mpu6500WriteRegister
@@ -111,7 +103,21 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
 
-bool ak8963SPIRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
+typedef struct queuedReadState_s {
+    bool waiting;
+    uint8_t len;
+    uint32_t readStartedAt; // time read was queued in micros.
+} queuedReadState_t;
+
+typedef enum {
+    CHECK_STATUS = 0,
+    WAITING_FOR_STATUS,
+    WAITING_FOR_DATA
+} ak8963ReadState_e;
+
+static queuedReadState_t queuedRead = { false, 0, 0};
+
+bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
 {
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
@@ -123,7 +129,7 @@ bool ak8963SPIRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
     return true;
 }
 
-bool ak8963SPIWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
+bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 {
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_);               // set I2C slave address for write
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
@@ -131,19 +137,8 @@ bool ak8963SPIWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_CTRL, 0x81);                // write 1 byte
     return true;
 }
-#endif
 
-#ifdef SPRACINGF3EVO
-
-typedef struct queuedReadState_s {
-    bool waiting;
-    uint8_t len;
-    uint32_t readStartedAt; // time read was queued in micros.
-} queuedReadState_t;
-
-static queuedReadState_t queuedRead = { false, 0, 0};
-
-bool ak8963SPIStartRead(uint8_t addr_, uint8_t reg_, uint8_t len_)
+bool ak8963SensorStartRead(uint8_t addr_, uint8_t reg_, uint8_t len_)
 {
     if (queuedRead.waiting) {
         return false;
@@ -161,7 +156,7 @@ bool ak8963SPIStartRead(uint8_t addr_, uint8_t reg_, uint8_t len_)
     return true;
 }
 
-static uint32_t ak8963SPIQueuedReadTimeRemaining(void)
+static uint32_t ak8963SensorQueuedReadTimeRemaining(void)
 {
     if (!queuedRead.waiting) {
         return 0;
@@ -178,9 +173,9 @@ static uint32_t ak8963SPIQueuedReadTimeRemaining(void)
     return timeRemaining;
 }
 
-bool ak8963SPICompleteRead(uint8_t *buf)
+bool ak8963SensorCompleteRead(uint8_t *buf)
 {
-    uint32_t timeRemaining = ak8963SPIQueuedReadTimeRemaining();
+    uint32_t timeRemaining = ak8963SensorQueuedReadTimeRemaining();
 
     if (timeRemaining > 0) {
         delayMicroseconds(timeRemaining);
@@ -191,16 +186,13 @@ bool ak8963SPICompleteRead(uint8_t *buf)
     mpu9250ReadRegister(MPU_RA_EXT_SENS_DATA_00, queuedRead.len, buf);               // read I2C buffer
     return true;
 }
-
-#endif
-
-#ifdef USE_I2C
-bool c_i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data) {
-    return i2cWrite(addr_, reg_, data);
+#else
+bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) {
+    return i2cRead(addr_, reg_, len, buf);
 }
 
-bool c_i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) {
-    return i2cRead(addr_, reg_, len, buf);
+bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data) {
+    return i2cWrite(addr_, reg_, data);
 }
 #endif
 
@@ -209,22 +201,8 @@ bool ak8963Detect(mag_t *mag)
     bool ack = false;
     uint8_t sig = 0;
 
-#ifdef USE_I2C
-    // check for AK8963 on I2C bus
-    ack = c_i2cRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
-    if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
-    {
-        ak8963config.read = c_i2cRead;
-        ak8963config.write = c_i2cWrite;
-        mag->init = ak8963Init;
-        mag->read = ak8963Read;
-
-        return true;
-    }
-#endif
-
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
-    // check for AK8963 on I2C master via SPI bus (as part of MPU9250)
+    // initialze I2C master via SPI bus (MPU9250)
 
     ack = verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
     delay(10);
@@ -234,18 +212,17 @@ bool ak8963Detect(mag_t *mag)
 
     ack = verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
     delay(10);
+#endif
 
-    ack = ak8963SPIRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
+    // check for AK8963
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
     if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
     {
-        ak8963config.read = ak8963SPIRead;
-        ak8963config.write = ak8963SPIWrite;
         mag->init = ak8963Init;
         mag->read = ak8963Read;
 
         return true;
     }
-#endif
     return false;
 }
 
@@ -256,49 +233,43 @@ void ak8963Init()
     uint8_t calibration[3];
     uint8_t status;
 
-    ack = ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
+    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
     delay(20);
 
-    ack = ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_FUSE_ROM); // Enter Fuse ROM access mode
+    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_FUSE_ROM); // Enter Fuse ROM access mode
     delay(10);
 
-    ack = ak8963config.read(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ASAX, sizeof(calibration), calibration); // Read the x-, y-, and z-axis calibration values
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ASAX, sizeof(calibration), calibration); // Read the x-, y-, and z-axis calibration values
     delay(10);
 
     magGain[X] = (((((float)(int8_t)calibration[X] - 128) / 256) + 1) * 30);
     magGain[Y] = (((((float)(int8_t)calibration[Y] - 128) / 256) + 1) * 30);
     magGain[Z] = (((((float)(int8_t)calibration[Z] - 128) / 256) + 1) * 30);
 
-    ack = ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down after reading.
+    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down after reading.
     delay(10);
 
     // Clear status registers
-    ack = ak8963config.read(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &status);
-    ack = ak8963config.read(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS2, 1, &status);
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &status);
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS2, 1, &status);
 
     // Trigger first measurement
-#ifdef SPRACINGF3EVO
-    ack = ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_CONT1);
+#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_CONT1);
 #else
-    ack = ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
+    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
 #endif
 }
-
-typedef enum {
-    CHECK_STATUS = 0,
-    WAITING_FOR_STATUS,
-    WAITING_FOR_DATA
-} ak8963ReadState_e;
 
 bool ak8963Read(int16_t *magData)
 {
     bool ack;
     uint8_t buf[7];
 
-#ifdef SPRACINGF3EVO
+#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
 
-    // we currently need a different approach on the SPRacingF3EVO which has an MPU9250 connected via SPI.
-    // we cannot use the ak8963SPIRead() method, it is to slow and blocks for far too long.
+    // we currently need a different approach for the MPU9250 connected via SPI.
+    // we cannot use the ak8963SensorRead() method for SPI, it is to slow and blocks for far too long.
 
     static ak8963ReadState_e state = CHECK_STATUS;
 
@@ -307,17 +278,17 @@ bool ak8963Read(int16_t *magData)
 restart:
     switch (state) {
         case CHECK_STATUS:
-            ak8963SPIStartRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1);
+            ak8963SensorStartRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1);
             state++;
             return false;
 
         case WAITING_FOR_STATUS: {
-            uint32_t timeRemaining = ak8963SPIQueuedReadTimeRemaining();
+            uint32_t timeRemaining = ak8963SensorQueuedReadTimeRemaining();
             if (timeRemaining) {
                 return false;
             }
 
-            ack = ak8963SPICompleteRead(&buf[0]);
+            ack = ak8963SensorCompleteRead(&buf[0]);
 
             uint8_t status = buf[0];
 
@@ -333,7 +304,7 @@ restart:
 
 
             // read the 6 bytes of data and the status2 register
-            ak8963SPIStartRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_HXL, 7);
+            ak8963SensorStartRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_HXL, 7);
 
             state++;
 
@@ -341,31 +312,16 @@ restart:
         }
 
         case WAITING_FOR_DATA: {
-            uint32_t timeRemaining = ak8963SPIQueuedReadTimeRemaining();
+            uint32_t timeRemaining = ak8963SensorQueuedReadTimeRemaining();
             if (timeRemaining) {
                 return false;
             }
 
-            ack = ak8963SPICompleteRead(&buf[0]);
-
-            uint8_t status2 = buf[6];
-            if (!ack || (status2 & STATUS2_DATA_ERROR) || (status2 & STATUS2_MAG_SENSOR_OVERFLOW)) {
-                return false;
-            }
-
-            magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * magGain[X];
-            magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
-            magData[Z] = -(int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
-
-            state = CHECK_STATUS;
-
-            return true;
+            ack = ak8963SensorCompleteRead(&buf[0]);
         }
     }
-
-    return false;
 #else
-    ack = ak8963config.read(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &buf[0]);
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &buf[0]);
 
     uint8_t status = buf[0];
 
@@ -373,8 +329,8 @@ restart:
         return false;
     }
 
-    ack = ak8963config.read(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_HXL, 7, &buf[0]);
-
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_HXL, 7, &buf[0]);
+#endif
     uint8_t status2 = buf[6];
     if (!ack || (status2 & STATUS2_DATA_ERROR) || (status2 & STATUS2_MAG_SENSOR_OVERFLOW)) {
         return false;
@@ -384,6 +340,10 @@ restart:
     magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
     magData[Z] = -(int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
 
-    return ak8963config.write(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE); // start reading again
+#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+    state = CHECK_STATUS;
+    return true;
+#else
+    return ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE); // start reading again
 #endif
 }

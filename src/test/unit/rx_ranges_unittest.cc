@@ -29,8 +29,6 @@ extern "C" {
     #include "rx/rx.h"
     #include "io/rc_controls.h"
     #include "common/maths.h"
-
-    PG_REGISTER_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs, PG_FAILSAFE_CHANNEL_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -105,6 +103,8 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
 
 // stubs
 extern "C" {
+
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}

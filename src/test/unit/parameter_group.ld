@@ -11,6 +11,12 @@ SECTIONS {
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = . );
     PROVIDE_HIDDEN (___pg_registry_end = . );
+
+    PROVIDE_HIDDEN (__pg_resetdata_start = . );
+    PROVIDE_HIDDEN (___pg_resetdata_start = . );
+    KEEP (*(.pg_resetdata))
+    PROVIDE_HIDDEN (__pg_resetdata_end = . );
+    PROVIDE_HIDDEN (___pg_resetdata_end = . );
   }
 }
 INSERT AFTER .text;

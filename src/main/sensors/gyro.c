@@ -43,37 +43,35 @@
 
 #include "sensors/gyro.h"
 
-uint16_t calibratingG = 0;
-int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-int32_t gyroADC[XYZ_AXIS_COUNT];
-int32_t gyroZero[FD_INDEX_COUNT] = { 0, 0, 0 };
-
-static biquad_t gyroFilterState[3];
-static bool gyroFilterStateIsSet;
-int axis;
-
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
-PG_REGISTER_WITH_RESET(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+int32_t gyroADC[XYZ_AXIS_COUNT];
 
-void pgReset_gyroConfig(gyroConfig_t *instance)
+
+static uint16_t calibratingG = 0;
+static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
+
+static biquad_t gyroFilterState[3];
+static bool gyroFilterStateIsSet;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
+    .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
+    .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
+
+    .gyroMovementCalibrationThreshold = 32,
+);
+
+static void initGyroFilterCoefficients(void)
 {
-    RESET_CONFIG(gyroConfig_t, instance,
-        .gyro_lpf = 1,                 // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
-        .soft_gyro_lpf_hz = 60,        // Software based lpf filter for gyro
-
-        .gyroMovementCalibrationThreshold = 32,
-    );
-}
-
-void initGyroFilterCoefficients(void) {
     if (gyroConfig()->soft_gyro_lpf_hz) {
         // Initialisation needs to happen once sampling rate is known
-        for (axis = 0; axis < 3; axis++) {
+        for (int axis = 0; axis < 3; axis++) {
             BiQuadNewLpf(gyroConfig()->soft_gyro_lpf_hz, &gyroFilterState[axis], targetLooptime);
         }
-
         gyroFilterStateIsSet = true;
     }
 }
@@ -88,23 +86,22 @@ bool isGyroCalibrationComplete(void)
     return calibratingG == 0;
 }
 
-bool isOnFinalGyroCalibrationCycle(void)
+static bool isOnFinalGyroCalibrationCycle(void)
 {
     return calibratingG == 1;
 }
 
-bool isOnFirstGyroCalibrationCycle(void)
+static bool isOnFirstGyroCalibrationCycle(void)
 {
     return calibratingG == CALIBRATING_GYRO_CYCLES;
 }
 
 static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
-    int8_t axis;
     static int32_t g[3];
     static stdev_t var[3];
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
 
         // Reset g[axis] at start of calibration
         if (isOnFirstGyroCalibrationCycle()) {
@@ -135,13 +132,11 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
         beeper(BEEPER_GYRO_CALIBRATED);
     }
     calibratingG--;
-
 }
 
 static void applyGyroZero(void)
 {
-    int8_t axis;
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
     }
 }
@@ -154,7 +149,7 @@ void gyroUpdate(void)
     }
 
     // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         gyroADC[axis] = gyroADCRaw[axis];
     }
 
@@ -164,11 +159,8 @@ void gyroUpdate(void)
         if (!gyroFilterStateIsSet) {
             initGyroFilterCoefficients();
         }
-
-        if (gyroFilterStateIsSet) {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroADC[axis] = lrintf(applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]));
-            }
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroADC[axis] = lrintf(applyBiQuadFilter((float)gyroADC[axis], &gyroFilterState[axis]));
         }
     }
 
