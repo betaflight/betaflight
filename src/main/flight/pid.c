@@ -122,7 +122,7 @@ Rate 20 means 200dps at full stick deflection
 */
 float pidRcCommandToRate(int16_t stick, uint8_t rate)
 {
-    return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate);
+    return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
 }
 
 #define FP_PID_RATE_P_MULTIPLIER    40.0f       // betaflight - 40.0
