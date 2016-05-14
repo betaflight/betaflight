@@ -169,7 +169,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &dogeMPUIntExtiConfig;
 #endif
 
-#if defined(MOTOLAB) || defined(SPARKY)
+#if defined(MOTOLAB) || defined(SPARKY) || defined(PIKOBLX)
     static const extiConfig_t MotolabF3MPU6050Config = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,

@@ -539,7 +539,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#if defined(MOTOLAB)
+#if defined(MOTOLAB) || defined(PIKOBLX)
 static const uint16_t multiPPM[] = {
     PWM9  | (MAP_TO_PPM_INPUT << 8), // PPM input
 
