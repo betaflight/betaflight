@@ -17,8 +17,6 @@
 
 #pragma once
 
-extern int16_t magHold;
-
 void handleInflightCalibrationStickPosition();
 
 void mwDisarm(void);

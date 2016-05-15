@@ -51,11 +51,6 @@
 #if defined(NAV)
 
 /*-----------------------------------------------------------
- * Backdoor to MW heading controller
- *-----------------------------------------------------------*/
-extern int16_t magHold;
-
-/*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft
  *-----------------------------------------------------------*/
 static int16_t rcCommandAdjustedThrottle;
@@ -165,7 +160,7 @@ void setupMulticopterAltitudeController(void)
 
     // Make sure we are able to satisfy the deadband
     altHoldThrottleRCZero = constrain(altHoldThrottleRCZero,
-                                      posControl.escAndServoConfig->minthrottle + posControl.rcControlsConfig->alt_hold_deadband + 10, 
+                                      posControl.escAndServoConfig->minthrottle + posControl.rcControlsConfig->alt_hold_deadband + 10,
                                       posControl.escAndServoConfig->maxthrottle - posControl.rcControlsConfig->alt_hold_deadband - 10);
 
     /* Force AH controller to initialize althold integral for pending takeoff on reset */
@@ -578,12 +573,12 @@ void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
 
 void resetMulticopterHeadingController(void)
 {
-    magHold = CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw);
+    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 static void applyMulticopterHeadingController(void)
 {
-    magHold = CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw);
+    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 }
 
 void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)

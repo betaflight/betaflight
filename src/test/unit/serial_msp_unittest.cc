@@ -544,7 +544,6 @@ void loadCustomServoMixer(void) {}
 void rxMspFrameReceive(uint16_t *frame, int channelCount) {UNUSED(frame);UNUSED(channelCount);}
 // from mw.c
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-int16_t magHold;
 // from navigation.c
 int32_t GPS_home[2];
 int32_t GPS_hold[2];
@@ -578,4 +577,3 @@ uint16_t averageSystemLoadPercent = 0;
 // from transponder_ir.c
 void transponderUpdateData(uint8_t*) {}
 }
-

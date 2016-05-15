@@ -49,11 +49,6 @@ static bool isPitchAndThrottleAdjustmentValid = false;
 static bool isRollAdjustmentValid = false;
 
 /*-----------------------------------------------------------
- * Backdoor to MW heading controller
- *-----------------------------------------------------------*/
-extern int16_t magHold;
-
-/*-----------------------------------------------------------
  * Altitude controller
  *-----------------------------------------------------------*/
 void setupFixedWingAltitudeController(void)
@@ -265,7 +260,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
 
     // Update magHold heading lock in case pilot is using MAG mode (prevent MAGHOLD to fight navigation)
     posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
-    magHold = CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw);
+    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 
     // Add pitch compensation
     //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
@@ -382,7 +377,7 @@ void calculateFixedWingInitialHoldPosition(t_fp_vector * pos)
 
 void resetFixedWingHeadingController(void)
 {
-    magHold = CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw);
+    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 //#define NAV_FW_LIMIT_MIN_FLY_VELOCITY

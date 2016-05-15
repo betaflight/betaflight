@@ -48,7 +48,6 @@ typedef struct master_t {
     sensorAlignmentConfig_t sensorAlignmentConfig;
     boardAlignment_t boardAlignment;
 
-    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
 
     uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer

@@ -173,7 +173,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDLEVEL] = 120; // Self-level strength * 40 (4 * 40)
     pidProfile->I8[PIDLEVEL] = 15;  // Self-leveing low-pass frequency (0 - disabled)
     pidProfile->D8[PIDLEVEL] = 75;  // 75% horizon strength
-    pidProfile->P8[PIDMAG] = 40;
+    pidProfile->P8[PIDMAG] = 60;
     pidProfile->P8[PIDVEL] = 100;   // NAV_VEL_Z_P * 100
     pidProfile->I8[PIDVEL] = 50;    // NAV_VEL_Z_I * 100
     pidProfile->D8[PIDVEL] = 10;    // NAV_VEL_Z_D * 100
@@ -184,6 +184,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_lpf_hz = 30;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
+    pidProfile->mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT;
 
     pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
     pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
@@ -451,7 +452,6 @@ static void resetConf(void)
     masterConfig.boardAlignment.pitchDeciDegrees = 0;
     masterConfig.boardAlignment.yawDeciDegrees = 0;
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect

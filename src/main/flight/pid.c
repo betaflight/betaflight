@@ -47,6 +47,7 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
+#define MAG_HOLD_ERROR_LPF_FREQ 2
 
 typedef struct {
     float kP;
@@ -79,6 +80,8 @@ typedef struct {
 extern uint8_t motorCount;
 extern bool motorLimitReached;
 extern float dT;
+
+int16_t magHoldTargetHeading;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
 static float tpaFactor;
@@ -293,13 +296,127 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 #endif
 }
 
+void updateMagHoldHeading(int16_t heading)
+{
+    magHoldTargetHeading = heading;
+}
+
+int16_t getMagHoldHeading() {
+    return magHoldTargetHeading;
+}
+
+uint8_t getMagHoldState()
+{
+
+    #ifndef MAG
+        return MAG_HOLD_DISABLED;
+    #endif
+
+    if (!sensors(SENSOR_MAG) || !STATE(SMALL_ANGLE)) {
+        return MAG_HOLD_DISABLED;
+    }
+
+#if defined(NAV)
+    int navHeadingState = naivationGetHeadingControlState();
+    // NAV will prevent MAG_MODE from activating, but require heading control
+    if (navHeadingState != NAV_HEADING_CONTROL_NONE) {
+        // Apply maghold only if heading control is in auto mode
+        if (navHeadingState == NAV_HEADING_CONTROL_AUTO) {
+            return MAG_HOLD_ENABLED;
+        }
+    }
+    else
+#endif
+    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
+        return MAG_HOLD_ENABLED;
+    } else {
+        return MAG_HOLD_UPDATE_HEADING;
+    }
+
+    return MAG_HOLD_UPDATE_HEADING;
+}
+
+/*
+ * MAG_HOLD P Controller returns desired rotation rate in dps to be fed to Rate controller
+ */
+float pidMagHold(const pidProfile_t *pidProfile)
+{
+
+    static filterStatePt1_t magHoldRateFilter;
+    float magHoldRate;
+
+    int16_t error = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHoldTargetHeading;
+
+    /*
+     * Convert absolute error into relative to current heading
+     */
+    if (error <= -180) {
+        error += 360;
+    }
+
+    if (error >= +180) {
+        error -= 360;
+    }
+
+    /*
+        New MAG_HOLD controller work slightly different that previous one.
+        Old one mapped error to rotation speed in following way:
+            - on rate 0 it gave about 0.5dps for each degree of error
+            - error 0 = rotation speed of 0dps
+            - error 180 = rotation speed of 96 degrees per second
+            - output
+            - that gives about 2 seconds to correct any error, no matter how big. Of course, usually more because of inertia.
+        That was making him quite "soft" for small changes and rapid for big ones that started to appear
+        when iNav introduced real RTH and WAYPOINT that might require rapid heading changes.
+
+        New approach uses modified principle:
+            - manual yaw rate is not used. MAG_HOLD is decoupled from manual input settings
+            - instead, mag_hold_rate_limit is used. It defines max rotation speed in dps that MAG_HOLD controller can require from RateController
+            - computed rotation speed is capped at -mag_hold_rate_limit and mag_hold_rate_limit
+            - Default mag_hold_rate_limit = 40dps and default MAG_HOLD P-gain is 40
+            - With those values, maximum rotation speed will be required from Rate Controller when error is greater that 30 degrees
+            - For smaller error, required rate will be proportional.
+            - It uses LPF filter set at 2Hz to additionally smoothen out any rapid changes
+            - That makes correction of smaller errors stronger, and those of big errors softer
+
+        This make looks as very slow rotation rate, but please remember this is automatic mode.
+        Manual override with YAW input when MAG_HOLD is enabled will still use "manual" rates, not MAG_HOLD rates.
+        Highest possible correction is 180 degrees and it will take more less 4.5 seconds. It is even more than sufficient
+        to run RTH or WAYPOINT missions. My favourite rate range here is 20dps - 30dps that gives nice and smooth turns.
+
+        Correction for small errors is much faster now. For example, old contrioller for 2deg errors required 1dps (correction in 2 seconds).
+        New controller for 2deg error requires 2,6dps. 4dps for 3deg and so on up until mag_hold_rate_limit is reached.
+    */
+
+    magHoldRate = error * pidProfile->P8[PIDMAG] / 30;
+    magHoldRate = constrainf(magHoldRate, -pidProfile->mag_hold_rate_limit, pidProfile->mag_hold_rate_limit);
+    magHoldRate = filterApplyPt1(magHoldRate, &magHoldRateFilter, MAG_HOLD_ERROR_LPF_FREQ, dT);
+
+    return magHoldRate;
+}
+
 void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
 {
+
+    uint8_t magHoldState = getMagHoldState();
+
+    if (magHoldState == MAG_HOLD_UPDATE_HEADING) {
+        updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+    }
+
     for (int axis = 0; axis < 3; axis++) {
         // Step 1: Calculate gyro rates
         pidState[axis].gyroRate = gyroADC[axis] * gyro.scale;
-        // Step 2: Read sticks
-        const float rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
+
+        // Step 2: Read target
+        float rateTarget;
+
+        if (axis == FD_YAW && magHoldState == MAG_HOLD_ENABLED) {
+            rateTarget = pidMagHold(pidProfile);
+        } else {
+            rateTarget = pidRcCommandToRate(rcCommand[axis], controlRateConfig->rates[axis]);
+        }
+
         // Limit desired rate to something gyro can measure reliably
         pidState[axis].rateTarget = constrainf(rateTarget, -GYRO_SATURATION_LIMIT, +GYRO_SATURATION_LIMIT);
     }
@@ -311,7 +428,7 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         pidLevel(pidProfile, &pidState[FD_PITCH], FD_PITCH, horizonLevelStrength);
     }
 
-    if (FLIGHT_MODE(HEADING_LOCK)) {
+    if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
         pidApplyHeadingLock(pidProfile, &pidState[FD_YAW]);
     }
 

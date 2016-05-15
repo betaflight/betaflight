@@ -101,7 +101,6 @@ uint16_t cycleTime = 0;         // this is the number in micro second to achieve
 
 float dT;
 
-int16_t magHold;
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
@@ -152,7 +151,7 @@ void annexCode(void)
                 }
             }
             tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -1;
         }
 
         if (rcData[axis] < masterConfig.rxConfig.midrc)
@@ -278,46 +277,6 @@ void mwArm(void)
     }
 }
 
-void applyMagHold(void)
-{
-    int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
-
-    if (dif <= -180) {
-        dif += 360;
-    }
-
-    if (dif >= +180) {
-        dif -= 360;
-    }
-
-    dif *= masterConfig.yaw_control_direction;
-
-    if (STATE(SMALL_ANGLE)) {
-        rcCommand[YAW] = dif * currentProfile->pidProfile.P8[PIDMAG] / 30;
-    }
-}
-
-void updateMagHold(void)
-{
-#if defined(NAV)
-    int navHeadingState = naivationGetHeadingControlState();
-    // NAV will prevent MAG_MODE from activating, but require heading control
-    if (navHeadingState != NAV_HEADING_CONTROL_NONE) {
-        // Apply maghold only if heading control is in auto mode
-        if (navHeadingState == NAV_HEADING_CONTROL_AUTO) {
-            applyMagHold();
-        }
-    }
-    else
-#endif
-    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
-        applyMagHold();
-    }
-    else {
-        magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-    }
-}
-
 void processRx(void)
 {
     static bool armedBeeperOn = false;
@@ -440,7 +399,7 @@ void processRx(void)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
-                magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
             }
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
@@ -587,12 +546,6 @@ void taskMainPidLoop(void)
 #if defined(NAV)
     updatePositionEstimator();
     applyWaypointNavigationAndAltitudeHold();
-#endif
-
-#ifdef MAG
-    if (sensors(SENSOR_MAG)) {
-        updateMagHold();
-    }
 #endif
 
     // If we're armed, at minimum throttle, and we do arming via the
