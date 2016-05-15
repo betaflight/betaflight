@@ -2012,6 +2012,8 @@ static bool canActivatePosHoldMode(void)
 
 static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
 {
+    static bool canActivateWaypoint = false;
+
     //We can switch modes only when ARMED
     if (ARMING_FLAG(ARMED)) {
         // Flags if we can activate certain nav modes (check if we have required sensors and they provide valid data)
@@ -2022,17 +2024,23 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         if (posControl.flags.forcedRTHActivated || IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
             // If we request forced RTH - attempt to activate it no matter what
             // This might switch to emergency landing controller if GPS is unavailable
+            canActivateWaypoint = false;    // Block WP mode if we switched to RTH for whatever reason
             return NAV_FSM_EVENT_SWITCH_TO_RTH;
         }
 
         // PASSTHRU mode has priority over WP/PH/AH
         if (IS_RC_MODE_ACTIVE(BOXPASSTHRU)) {
+            canActivateWaypoint = false;    // Block WP mode if we are in PASSTHROUGH mode
             return NAV_FSM_EVENT_SWITCH_TO_IDLE;
         }
 
         if (IS_RC_MODE_ACTIVE(BOXNAVWP)) {
-            if ((FLIGHT_MODE(NAV_WP_MODE)) || (canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0)))
+            if ((FLIGHT_MODE(NAV_WP_MODE)) || (canActivateWaypoint && canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED) && posControl.waypointListValid && (posControl.waypointCount > 0)))
                 return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
+        }
+        else {
+            // Arm the state variable if the WP BOX mode is not enabled
+            canActivateWaypoint = true;
         }
 
         if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) && IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)) {
@@ -2049,6 +2057,9 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
             if ((FLIGHT_MODE(NAV_ALTHOLD_MODE)) || (canActivateAltHold))
                 return NAV_FSM_EVENT_SWITCH_TO_ALTHOLD;
         }
+    }
+    else {
+        canActivateWaypoint = false;
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
