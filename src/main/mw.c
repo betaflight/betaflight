@@ -428,8 +428,7 @@ void processRx(void)
        This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air
        Low Throttle + roll and Pitch centered is assuming the copter is on the ground. Done to prevent complex air/ground detections */
     if (FLIGHT_MODE(PASSTHRU_MODE) || !ARMING_FLAG(ARMED)) {
-        /* In PASSTHRU mode anti-windup must be explicitly enabled to prevent I-term wind-up (PID output is not used in PASSTHRU) */
-        //ENABLE_STATE(ANTI_WINDUP);
+        /* In PASSTHRU mode we reset integrators prevent I-term wind-up (PID output is not used in PASSTHRU) */
         pidResetErrorAccumulators();
     }
     else {
@@ -446,10 +445,17 @@ void processRx(void)
                 }
             }
             else {
+                DISABLE_STATE(ANTI_WINDUP);
                 pidResetErrorAccumulators();
             }
 
-            ENABLE_STATE(PID_ATTENUATE);
+            // Enable low-throttle PID attenuation on multicopters
+            if (!STATE(FIXED_WING)) {
+                ENABLE_STATE(PID_ATTENUATE);
+            }
+            else {
+                DISABLE_STATE(PID_ATTENUATE);
+            }
         }
         else {
             DISABLE_STATE(PID_ATTENUATE);
