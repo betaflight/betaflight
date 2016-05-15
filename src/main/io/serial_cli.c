@@ -2288,23 +2288,31 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
 
         case VAR_FLOAT:
-            cliPrintf("%s", ftoa(*(float *)ptr, ftoaBuffer));
             if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                cliPrintf(" %s", ftoa((float)var->config.minmax.min, ftoaBuffer));
-                cliPrintf(" %s", ftoa((float)var->config.minmax.max, ftoaBuffer));
+                cliPrintf("%s", ftoa((float)var->config.minmax.min, ftoaBuffer));
+                cliPrintf(" - %s", ftoa((float)var->config.minmax.max, ftoaBuffer));
+            } else {
+                cliPrintf("%s", ftoa(*(float *)ptr, ftoaBuffer));
             }
             return; // return from case for float only
     }
 
     switch(var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
-            cliPrintf("%d", value);
             if (full) {
-                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+                cliPrintf("%d - %d", var->config.minmax.min, var->config.minmax.max);
+            } else {
+                cliPrintf("%d", value);
             }
             break;
         case MODE_LOOKUP:
-            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+            if (full) {
+                for (int i=0; i<lookupTables[var->config.lookup.tableIndex].valueCount; i++) {
+                    cliPrintf("%s ", lookupTables[var->config.lookup.tableIndex].values[i]);
+                }
+            } else {
+                cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+            }
             break;
     }
 }
@@ -2385,20 +2393,22 @@ static void cliSet(char *cmdline)
                 int_float_value_t tmp;
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
-                            int32_t value = 0;
-                            float valuef = 0;
+                            if(*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
+                                int32_t value = 0;
+                                float valuef = 0;
 
-                            value = atoi(eqptr);
-                            valuef = fastA2F(eqptr);
+                                value = atoi(eqptr);
+                                valuef = fastA2F(eqptr);
 
-                            if (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) { // note: compare float value
+                                if (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) { // note: compare float value
 
-                                if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
-                                    tmp.float_value = valuef;
-                                else
-                                    tmp.int_value = value;
+                                    if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
+                                        tmp.float_value = valuef;
+                                    else
+                                        tmp.int_value = value;
 
-                                changeValue = true;
+                                    changeValue = true;
+                                }
                             }
                         }
                         break;
@@ -2423,7 +2433,9 @@ static void cliSet(char *cmdline)
                     cliPrintf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrint("Invalid value\r\n");
+                    cliPrint("Invalid value. Allowed values are: ");
+                    cliPrintVar(val, 1); // print out min/max/table values
+                    cliPrint("\r\n");
                 }
 
                 return;
