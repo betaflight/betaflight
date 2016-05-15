@@ -87,6 +87,23 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float d
     return filter->state;
 }
 
+// PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
+// f_cut = cutoff frequency
+// rate_limit = maximum rate of change of the output value in units per second
+float filterApplyPt1WithRateLimit(float input, filterStatePt1_t *filter, float f_cut, float rate_limit, float dT)
+{
+	// Pre calculate and store RC
+	if (!filter->RC) {
+		filter->RC = 1.0f / ( 2.0f * (float)M_PI * f_cut );
+	}
+
+    const float newState = filter->state + dT / (filter->RC + dT) * (input - filter->state);
+    const float rateLimitPerSample = rate_limit * dT;
+    filter->state = constrainf(newState, filter->state - rateLimitPerSample, filter->state + rateLimitPerSample);
+
+    return filter->state;
+}
+
 void filterResetPt1(filterStatePt1_t *filter, float input)
 {
     filter->state = input;

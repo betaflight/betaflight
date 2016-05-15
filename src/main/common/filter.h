@@ -30,6 +30,7 @@ typedef struct biquad_s {
 } biquad_t;
 
 float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dt);
+float filterApplyPt1WithRateLimit(float input, filterStatePt1_t *filter, float f_cut, float rate_limit, float dT);
 void filterResetPt1(filterStatePt1_t *filter, float input);
 
 void filterInitBiQuad(uint8_t filterCutFreq, biquad_t *newState, int16_t samplingRate);
