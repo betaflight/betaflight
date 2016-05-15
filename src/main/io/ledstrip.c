@@ -127,7 +127,6 @@ uint8_t ledRingCount;
 static uint8_t ledRingSeqLen;
 
 // macro for initializer
-#define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
 #define LF(name) LED_FLAG_FUNCTION(LED_FUNCTION_ ## name)
 #define LD(name) LED_FLAG_DIRECTION(LED_DIRECTION_ ## name)
 

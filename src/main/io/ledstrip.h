@@ -101,6 +101,7 @@ static inline int ledGetY(const ledConfig_t *lcfg) { return (lcfg->xy >> LED_Y_B
 static inline void ledSetXY(ledConfig_t *lcfg, int x, int y) {
     lcfg->xy = ((x & LED_XY_MASK) << LED_X_BIT_OFFSET) | ((y & LED_XY_MASK) << LED_Y_BIT_OFFSET);
 }
+#define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
 
 extern uint8_t ledCount;
 extern uint8_t ledRingCount;
