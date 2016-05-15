@@ -373,10 +373,6 @@ static const char * const lookupTableSerialRX[] = {
     "IBUS"
 };
 
-static const char * const lookupTableGyroFilter[] = {
-    "OFF", "LOW", "MEDIUM", "HIGH"
-};
-
 static const char * const lookupTableGyroLpf[] = {
     "256HZ",
     "188HZ",

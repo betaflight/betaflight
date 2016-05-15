@@ -105,7 +105,7 @@ void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
 void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
-void mspInit(serialConfig_t *serialConfig);
+void mspInit();
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
