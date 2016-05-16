@@ -152,6 +152,12 @@ void gyroUpdate(void)
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
+    if (!isGyroCalibrationComplete()) {
+        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
+    }
+
+    applyGyroZero();
+
     if (gyroLpfCutFreq) {
         if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
 
@@ -162,10 +168,4 @@ void gyroUpdate(void)
             }
         }
     }
-
-    if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
-    }
-
-    applyGyroZero();
 }
