@@ -132,6 +132,7 @@ static void applyGyroZero(void)
     int8_t axis;
     for (axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
+        gyroADCf[axis] -= gyroZero[axis];
     }
 }
 
