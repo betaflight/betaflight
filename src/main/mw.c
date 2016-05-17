@@ -602,8 +602,20 @@ void taskMainPidLoop(void)
     mixTable();
 
 #ifdef USE_SERVOS
-    filterServos();
-    writeServos();
+
+    if (isMixerUsingServos()) {
+        servoMixer();
+    }
+
+    if (feature(FEATURE_SERVO_TILT)) {
+        processServoTilt();
+    }
+
+    //Servos should be filtered or written only when mixer is using servos or special feaures are enabled
+    if (isServoOutputEnabled()) {
+        filterServos();
+        writeServos();
+    }
 #endif
 
     if (motorControlEnable) {

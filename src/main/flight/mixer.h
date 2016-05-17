@@ -170,6 +170,8 @@ typedef struct servoMixer_s {
 // Custom mixer configuration
 typedef struct mixerRules_s {
     uint8_t servoRuleCount;
+    uint8_t minServoIndex;
+    uint8_t maxServoIndex;
     const servoMixer_t *rule;
 } mixerRules_t;
 
@@ -189,6 +191,7 @@ struct escAndServoConfig_s;
 struct rxConfig_s;
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
+bool isServoOutputEnabled(void);
 bool isMixerUsingServos(void);
 void writeServos(void);
 void filterServos(void);
@@ -221,6 +224,8 @@ int servoDirection(int servoIndex, int fromChannel);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);
+void servoMixer(void);
+void processServoTilt(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);
 
