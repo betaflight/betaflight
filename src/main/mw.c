@@ -125,40 +125,56 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void annexCode(void)
+int16_t computeCommandFromLookup(int16_t (*loopupTable)(int32_t), int16_t absoluteDeflection)
 {
-    int32_t tmp;
 
-    for (int axis = 0; axis < 3; axis++) {
-        tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
-        if (axis == ROLL || axis == PITCH) {
-            if (currentProfile->rcControlsConfig.deadband) {
-                if (tmp > currentProfile->rcControlsConfig.deadband) {
-                    tmp -= currentProfile->rcControlsConfig.deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-            rcCommand[axis] = rcLookupPitchRoll(tmp);
-        } else if (axis == YAW) {
-            if (currentProfile->rcControlsConfig.yaw_deadband) {
-                if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
-                    tmp -= currentProfile->rcControlsConfig.yaw_deadband;
-                } else {
-                    tmp = 0;
-                }
-            }
-            rcCommand[axis] = rcLookupYaw(tmp) * -1;
-        }
+    int16_t lookupStep;
 
-        if (rcData[axis] < masterConfig.rxConfig.midrc) {
-            rcCommand[axis] = -rcCommand[axis];
+    lookupStep = absoluteDeflection / 100;
+
+    return loopupTable(lookupStep) + (absoluteDeflection - lookupStep * 100) * (loopupTable(lookupStep + 1) - loopupTable(lookupStep)) / 100;
+}
+
+int16_t getAxisRcCommand(int16_t rawData, int16_t (*loopupTable)(int32_t), int16_t deadband)
+{
+    int16_t command, absoluteDeflection;
+
+    absoluteDeflection = MIN(ABS(rawData - masterConfig.rxConfig.midrc), 500);
+
+    if (deadband) {
+        if (absoluteDeflection > deadband) {
+            absoluteDeflection -= deadband;
+        } else {
+            absoluteDeflection = 0;
         }
     }
 
-    tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
-    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
+    /*
+        Get command from lookup table after applying deadband
+    */
+    command = computeCommandFromLookup(loopupTable, absoluteDeflection);
+
+    if (rawData < masterConfig.rxConfig.midrc) {
+        command = -command;
+    }
+
+    return command;
+}
+
+void annexCode(void)
+{
+
+    int32_t throttleValue;
+
+    // Compute ROLL PITCH and YAW command
+    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
+    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
+    rcCommand[YAW] = getAxisRcCommand(rcData[YAW], rcLookupYaw, currentProfile->rcControlsConfig.yaw_deadband);
+
+    //Compute THROTTLE command
+    throttleValue = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
+    throttleValue = (uint32_t)(throttleValue - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
+    rcCommand[THROTTLE] = computeCommandFromLookup(rcLookupThrottle, throttleValue);
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
