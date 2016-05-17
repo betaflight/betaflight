@@ -139,7 +139,7 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
 {
     pidFilterIsSetCheck(pidProfile);
 
-    int8_t horizonLevelStrength;
+    int8_t horizonLevelStrength = 0;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
