@@ -21,6 +21,10 @@
 
 #include <platform.h>
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/config_system.h"
+
 #ifdef USE_FLASH_M25P16
 
 #include "drivers/flash_m25p16.h"
@@ -170,6 +174,11 @@ static bool m25p16_readIdentification()
             geometry.pagesPerSector = 256;
         break;
         default:
+            if (chipID == systemConfig()->flashdev_id) {
+                geometry.sectors = systemConfig()->flashdev_nsect;
+                geometry.pagesPerSector = systemConfig()->flashdev_pps;
+                break;
+            }
             // Unsupported chip or not an SPI NOR flash
             geometry.sectors = 0;
             geometry.pagesPerSector = 0;

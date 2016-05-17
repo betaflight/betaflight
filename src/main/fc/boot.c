@@ -143,6 +143,9 @@ PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .i2c_highspeed = 1,
+    .flashdev_id = 0,
+    .flashdev_nsect = 0,
+    .flashdev_pps = 0,
 );
 
 

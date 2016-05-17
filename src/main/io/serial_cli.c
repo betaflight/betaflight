@@ -501,6 +501,10 @@ const clivalue_t valueTable[] = {
     { "looptime",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 9000} , PG_IMU_CONFIG, offsetof(imuConfig_t, looptime)},
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, emf_avoidance)},
     { "i2c_highspeed",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_highspeed)},
+    { "flashdev_id",                VAR_UINT32 | MASTER_VALUE, .config.minmax = { 0,  0xffffff } ,   PG_SYSTEM_CONFIG, offsetof(systemConfig_t, flashdev_id)},
+    { "flashdev_nsect",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_SYSTEM_CONFIG, offsetof(systemConfig_t, flashdev_nsect)},
+    { "flashdev_pps",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_SYSTEM_CONFIG, offsetof(systemConfig_t, flashdev_pps)},
+
     { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyroSync)},
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyroSyncDenominator)},
 
