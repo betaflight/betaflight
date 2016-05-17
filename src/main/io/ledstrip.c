@@ -78,7 +78,9 @@ static uint32_t nextAnimationUpdateAt = 0;
 static uint32_t nextIndicatorFlashAt = 0;
 static uint32_t nextBlinkFlashAt = 0;
 static uint32_t nextWarningFlashAt = 0;
+#ifdef GPS
 static uint32_t nextGpsFlashAt = 0;
+#endif
 static uint32_t nextRotationUpdateAt = 0;
 
 #define LED_STRIP_20HZ ((1000 * 1000) / 20)
