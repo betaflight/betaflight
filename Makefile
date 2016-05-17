@@ -29,6 +29,14 @@ SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+
+# Detect travis Pull Request build
+ifeq ($(TRAVIS),true)                      # travis build
+ifneq ($(TRAVIS_PULL_REQUEST), false)      # building pull request
+OPTIONS += FAIL_ON_WARNINGS                # do not allow pull requests with warnings
+endif
+endif
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -737,13 +745,18 @@ OPTIMIZE	 = -O0
 LTO_FLAGS	 = $(OPTIMIZE)
 else
 OPTIMIZE	 = -Os
-LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
+LTO_FLAGS	 =  -flto -fuse-linker-plugin $(OPTIMIZE)
+endif
+
+ifneq ($(filter $(OPTIONS),FAIL_ON_WARNINGS),)
+WARN_FLAGS      += -Werror
 endif
 
 DEBUG_FLAGS	 = -ggdb3 -DDEBUG
 
 CFLAGS		 = $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
+		   $(WARN_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   $(DEBUG_FLAGS) \
@@ -757,10 +770,12 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
 		   -D'__TARGET__="$(TARGET)"' \
 		   -D'__REVISION__="$(REVISION)"' \
+		   -fverbose-asm -ffat-lto-objects \
 		   -save-temps=obj \
 		   -MMD -MP
 
 ASFLAGS		 = $(ARCH_FLAGS) \
+		   $(WARN_FLAGS) \
 		   -x assembler-with-cpp \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		  -MMD -MP
@@ -772,11 +787,12 @@ LDFLAGS		 = -lm \
 		   -lnosys \
 		   $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
+		   $(WARN_FLAGS) \
 		   $(DEBUG_FLAGS) \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -Wl,-L$(LINKER_DIR) \
-           -Wl,--cref \
+		   -Wl,--cref \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################
