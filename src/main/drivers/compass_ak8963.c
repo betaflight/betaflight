@@ -263,7 +263,7 @@ void ak8963Init()
 
 bool ak8963Read(int16_t *magData)
 {
-    bool ack;
+    bool ack = false;
     uint8_t buf[7];
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
