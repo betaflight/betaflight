@@ -19,6 +19,7 @@ TARGET		?= NAZE
 
 # Compile-time options
 OPTIONS		?=
+export OPTIONS
 
 # Debugger optons, must be empty or GDB
 DEBUG ?=
@@ -895,7 +896,7 @@ help: Makefile
 ## test        : run the cleanflight test suite
 ## junittest   : run the cleanflight test suite, producing Junit XML result files.
 test junittest:
-	cd src/test && $(MAKE) $@ || true
+	cd src/test && $(MAKE) $@
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

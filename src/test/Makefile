@@ -23,11 +23,16 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
+WARN_FLAGS	= -Wall -Wextra
+
+ifneq ($(filter $(OPTIONS),FAIL_ON_WARNINGS),)
+WARN_FLAGS      += -Werror
+endif
+
 COMMON_FLAGS = \
 	-g \
-	-Wall \
 	-pthread \
-	-Wextra \
+	$(WARN_FLAGS) \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
