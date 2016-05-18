@@ -186,29 +186,12 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-
-#define BLACKBOX
-#define TELEMETRY
-//#define TELEMETRY_FRSKY
-//#define TELEMETRY_HOTT
-//#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 
 #define SPEKTRUM_BIND
@@ -229,4 +212,10 @@
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_5
 #endif
+
+#undef TELEMETRY_FRSKY
+#undef TELEMETRY_HOTT
+#undef TELEMETRY_SMARTPORT
+
+
 

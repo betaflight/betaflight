@@ -57,10 +57,6 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA
@@ -70,11 +66,17 @@
 #define USE_QUAD_MIXER_ONLY
 
 
-#if (FLASH_SIZE > 64)
-#define BLACKBOX
-#else
+#if (FLASH_SIZE <=> 64)
+#undef BLACKBOX
 #define SKIP_TASK_STATISTICS
 #endif
+
+#undef BEEPER
+#undef GPS
+#undef GPS_PROTO_NMEA
+#undef GPS_PROTO_UBLOX
+#undef GPS_PROTO_I2C_NAV
+#undef GPS_PROTO_NAZA
 
 //#undef USE_CLI
 //#define BLACKBOX

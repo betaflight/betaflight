@@ -19,12 +19,17 @@
 
 #define TARGET_BOARD_IDENTIFIER "AWF3" // AlienWii32 F3.
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4 // Blue LEDs - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define LED1
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_5  // Green LEDs - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define BEEPER
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_5  // White LEDs - PA5
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
@@ -51,10 +56,6 @@
 //#define USE_MAG_AK8975
 
 #define MAG_AK8975_ALIGN CW0_DEG_FLIP
-
-#define BEEPER
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1 // Not connected - TX (PB6) RX PB7 (AF7)
@@ -110,17 +111,6 @@
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
 
-//#define BLACKBOX
-#define SERIAL_RX
-//#define GPS
-//#define GPS_PROTO_NMEA
-//#define GPS_PROTO_UBLOX
-//#define GPS_PROTO_I2C_NAV
-//#define GPS_PROTO_NAZA
-
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA
@@ -133,4 +123,18 @@
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_12
+
+#undef BLACKBOX
+
+#undef GPS
+#undef GPS_PROTO_NMEA
+#undef GPS_PROTO_UBLOX
+#undef GPS_PROTO_I2C_NAV
+#undef GPS_PROTO_NAZA
+
+#undef TELEMETRY
+#undef TELEMETRY_FRSKY
+#undef TELEMETRY_HOTT
+#undef TELEMETRY_SMARTPORT
+#undef TELEMETRY_LTM
 
