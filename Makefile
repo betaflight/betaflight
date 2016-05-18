@@ -584,6 +584,8 @@ SPARKY_SRC = \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/sonar_hcsr04.c \
+		   drivers/sonar_srf10.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)

@@ -51,81 +51,40 @@ static int32_t calculatedAltitude;
 
 static const sonarHardware_t *sonarGetHardwareConfigurationForHCSR04(currentSensor_e currentSensor)
 {
-#if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R) || defined(PORT103V)
-    static const sonarHardware_t const sonarPWM56 = {
-        .trigger_pin = Pin_8,   // PWM5 (PB8) - 5v tolerant
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_9,      // PWM6 (PB9) - 5v tolerant
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line9,
-        .exti_pin_source = GPIO_PinSource9,
-        .exti_irqn = EXTI9_5_IRQn
+#if defined(SONAR_PWM_TRIGGER_PIN)
+    static const sonarHardware_t const sonarPWM = {
+        .trigger_pin = SONAR_PWM_TRIGGER_PIN,
+        .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
+        .echo_pin = SONAR_PWM_ECHO_PIN,
+        .echo_gpio = SONAR_PWM_ECHO_GPIO,
+        .exti_line = SONAR_PWM_EXTI_LINE,
+        .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
+        .exti_irqn = SONAR_PWM_EXTI_IRQN
     };
-    static const sonarHardware_t sonarRC78 = {
-        .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = GPIO_PinSource1,
-        .exti_irqn = EXTI1_IRQn
+#endif
+#if !defined(UNIT_TEST)
+    static const sonarHardware_t sonarRC = {
+        .trigger_pin = SONAR_TRIGGER_PIN,
+        .trigger_gpio = SONAR_TRIGGER_GPIO,
+        .echo_pin = SONAR_ECHO_PIN,
+        .echo_gpio = SONAR_ECHO_GPIO,
+        .exti_line = SONAR_EXTI_LINE,
+        .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
+        .exti_irqn = SONAR_EXTI_IRQN
     };
-    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
+#endif
+#if defined(SONAR_PWM_TRIGGER_PIN)
+    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC) ) {
-        return &sonarPWM56;
+            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
+        return &sonarPWM;
     } else {
-        return &sonarRC78;
+        return &sonarRC;
     }
-#elif defined(OLIMEXINO)
+#elif defined(SONAR_TRIGGER_PIN)
     UNUSED(currentSensor);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = GPIO_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
-#elif defined(CC3D)
-    UNUSED(currentSensor);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_5,   // RX4 (PB5)
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_0,      // RX5 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line0,
-        .exti_pin_source = GPIO_PinSource0,
-        .exti_irqn = EXTI0_IRQn
-    };
-    return &sonarHardware;
-#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI)
-    UNUSED(currentSensor);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = EXTI_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
-#elif defined(SPARKY)
-    UNUSED(currentSensor);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_2,   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOA,
-        .echo_pin = Pin_1,      // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = EXTI_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
+    return &sonarRC;
 #elif defined(UNIT_TEST)
    UNUSED(currentSensor);
    return 0;
@@ -138,6 +97,7 @@ STATIC_UNIT_TESTED void sonarSetFunctionPointers(sonarHardwareType_e sonarHardwa
 {
 
     switch (sonarHardwareType) {
+    default:
     case SONAR_NONE:
         break;
     case SONAR_HCSR04:
@@ -145,11 +105,13 @@ STATIC_UNIT_TESTED void sonarSetFunctionPointers(sonarHardwareType_e sonarHardwa
         sonarFunctionPointers.update = hcsr04_start_reading;
         sonarFunctionPointers.read = hcsr04_get_distance;
         break;
+#ifdef USE_SONAR_SRF10
     case SONAR_SRF10:
         sonarFunctionPointers.init = srf10_init;
         sonarFunctionPointers.update = srf10_start_reading;
         sonarFunctionPointers.read = srf10_get_distance;
         break;
+#endif
     }
 }
 
@@ -171,13 +133,14 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSens
 static sonarHardwareType_e sonarDetect(void)
 {
     sonarHardwareType_e sonarHardwareType;
+    // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+    // since there is no way to detect it
+    sonarHardwareType = SONAR_HCSR04;
+#ifdef USE_SONAR_SRF10
     if (srf10_detect()) {
         sonarHardwareType = SONAR_SRF10;
-    } else {
-        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
-        // since there is no way to detect it
-        sonarHardwareType = SONAR_HCSR04;
     }
+#endif
     sensorsSet(SENSOR_SONAR);
 #ifndef UNIT_TEST
     sonarSetFunctionPointers(sonarHardwareType);

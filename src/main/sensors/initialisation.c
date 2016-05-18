@@ -731,7 +731,7 @@ retry:
     sensorsSet(SENSOR_MAG);
 }
 
-void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
+static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
         gyroAlign = sensorAlignmentConfig->gyro_align;
@@ -747,17 +747,12 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
         int16_t magDeclinationFromConfig) {
 
-    int16_t deg, min;
-
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
-
-    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-
-    mpuDetectionResult_t *mpuDetectionResult = detectMpu(extiConfig);
-    UNUSED(mpuDetectionResult);
+    const extiConfig_t *mpuExtiConfig = selectMPUIntExtiConfig();
+    detectMpu(mpuExtiConfig);
 #endif
 
     if (!detectGyro()) {
@@ -768,8 +763,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
 
 
     // Now time to init things, acc first
-    if (sensors(SENSOR_ACC))
+    if (sensors(SENSOR_ACC)) {
         acc.init(&acc);
+    }
 
     gyro.init(gyroLpf);
 
@@ -780,9 +776,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
         // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
+        const int deg = magDeclinationFromConfig / 100;
+        const int min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
