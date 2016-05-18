@@ -91,8 +91,6 @@
 
 #define LED0
 #define LED1
-#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 #define INVERTER
 
 #define USE_USART1
@@ -158,4 +156,3 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define DISABLE_UNCOMMON_MIXERS

@@ -118,8 +118,6 @@
 #define LED1
 #define LED2
 #define INVERTER
-#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 
 #define USE_USART1
 #define USE_USART2
@@ -181,7 +179,5 @@
 
 #define USE_SERVOS
 #define USE_CLI
-
-#define DISABLE_UNCOMMON_MIXERS
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

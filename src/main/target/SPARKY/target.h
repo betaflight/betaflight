@@ -121,9 +121,6 @@
 #define GPS_PROTO_I2C_NAV
 #define GPS_PROTO_NAZA
 
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
-
 #define SERIAL_RX
 #define TELEMETRY
 #define TELEMETRY_FRSKY

@@ -139,8 +139,6 @@
 #define LED0
 #define LED1
 #define INVERTER
-#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 
 #define USE_USART1
 #define USE_USART2
@@ -212,7 +210,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define SKIP_CLI_COMMAND_HELP
 
 #define SPEKTRUM_BIND
 // USART2, PA3
@@ -233,4 +230,3 @@
 #define BINDPLUG_PIN   Pin_5
 #endif
 
-#define DISABLE_UNCOMMON_MIXERS

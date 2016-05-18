@@ -58,7 +58,7 @@
 // #define SOFT_I2C_PB67
 
 #define SERIAL_RX
-//#define USE_SERVOS
+#define USE_SERVOS
 #define USE_CLI
 
 #define SPEKTRUM_BIND
@@ -74,10 +74,8 @@
 #define BLACKBOX
 #else
 #define SKIP_TASK_STATISTICS
-#define SKIP_CLI_COMMAND_HELP
 #endif
 
 //#undef USE_CLI
 //#define BLACKBOX
 
-#define DISABLE_UNCOMMON_MIXERS

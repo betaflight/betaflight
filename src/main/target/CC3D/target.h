@@ -70,8 +70,6 @@
 
 #define INVERTER
 #define BEEPER
-//#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 
 #define USE_VCP
 #define USE_USART1
@@ -146,8 +144,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define SKIP_CLI_COMMAND_HELP
-
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SPEKTRUM_BIND
@@ -156,7 +152,6 @@
 #define BIND_PIN   Pin_11
 
 //Disables uncommon predefined mixer settings like BiCopter, H6 and similar exotics
-#define DISABLE_UNCOMMON_MIXERS
 
 #ifdef CC3D_OPBL
 #define USE_QUAD_MIXER_ONLY
