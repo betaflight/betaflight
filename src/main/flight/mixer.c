@@ -179,7 +179,7 @@ static const motorMixer_t mixerOctoFlatX[] = {
     { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
 };
 
-#endif
+#endif //DISABLE_UNCOMMON_MIXERS
 
 static const motorMixer_t mixerHex6X[] = {
     { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
@@ -263,7 +263,7 @@ const mixer_t mixers[] = {
     { 2, true,  NULL, true },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL, true },                // MIXER_CUSTOM_TRI
 };
-#endif
+#endif //USE_QUAD_MIXER_ONLY
 
 #ifdef USE_SERVOS
 
@@ -369,7 +369,12 @@ int servoDirection(int servoIndex, int inputSource)
 
 bool isMixerEnabled(mixerMode_e mixerMode)
 {
+#ifdef USE_QUAD_MIXER_ONLY
+    UNUSED(mixerMode);
+    return true;
+#else
     return mixers[mixerMode].enabled;
+#endif
 }
 
 #ifdef USE_SERVOS
