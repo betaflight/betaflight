@@ -444,7 +444,7 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 #endif
 
 #ifdef USE_SERVOS
-void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
+void mixerUsePWMIOConfiguration(void)
 {
     int i;
 
@@ -482,9 +482,8 @@ void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
     mixerResetDisarmedMotors();
 }
 #else
-void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration)
+void mixerUsePWMIOConfiguration(void)
 {
-    UNUSED(pwmIOConfiguration);
     motorCount = 4;
     uint8_t i;
     for (i = 0; i < motorCount; i++) {

@@ -114,7 +114,7 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixe
 #else
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 #endif
-void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
+void mixerUsePWMIOConfiguration(void);
 void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
 void gpsPreInit(gpsConfig_t *initialGpsConfig);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
@@ -282,9 +282,9 @@ void init(void)
     pwmRxInit(masterConfig.inputFilteringMode);
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
-    pwmIOConfiguration_t *pwmIOConfiguration = pwmInit(&pwm_params);
+    pwmInit(&pwm_params);
 
-    mixerUsePWMIOConfiguration(pwmIOConfiguration);
+    mixerUsePWMIOConfiguration();
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
