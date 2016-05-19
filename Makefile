@@ -20,6 +20,9 @@ TARGET		?= NAZE
 # Compile-time options
 OPTIONS		?=
 
+# compile for OpenPilot BootLoader support
+OPBL ?=no
+
 # Debugger optons, must be empty or GDB
 DEBUG ?=
 
@@ -36,14 +39,20 @@ FLASH_SIZE ?=
 FORKNAME			 = inav
 
 64K_TARGETS  = CJMCU
-128K_TARGETS = ALIENWIIF1 CC3D NAZE OLIMEXINO RMDO
+128K_TARGETS = ALIENWIIF1 CC3D CC3D_OPBL NAZE OLIMEXINO RMDO
 256K_TARGETS = ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC LUX_RACE MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY
 
 F3_TARGETS = ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY
 
 VALID_TARGETS = $(64K_TARGETS) $(128K_TARGETS) $(256K_TARGETS)
 
-VCP_TARGETS = CC3D ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO SPARKY STM32F3DISCOVERY
+VCP_TARGETS = CC3D CC3D_OPBL ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO SPARKY STM32F3DISCOVERY
+
+# Valid targets for OP BootLoader support
+OPBL_TARGETS = CC3D_OPBL
+ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
+OPBL=yes
+endif
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -225,6 +234,15 @@ endif
 ifeq ($(TARGET),$(filter $(TARGET),RMDO IRCFUSIONF3))
 # RMDO and IRCFUSIONF3 are a VARIANT of SPRACINGF3
 TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3
+endif
+
+ifeq ($(TARGET),$(filter $(TARGET),CC3D CC3D_OPBL))
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D 
+ifeq ($(TARGET),CC3D_OPBL)
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_OPBL
+CC3D_OPBL_SRC = $(CC3D_SRC)
+endif
+TARGET_DIR = $(ROOT)/src/main/target/CC3D
 endif
 
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
@@ -753,9 +771,20 @@ TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(
 TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
 TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+
 ## Default make goal:
 ## hex		 : Make filetype hex only
 .DEFAULT_GOAL := hex
+
+ifeq ($(OPBL),yes)
+ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
+TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+.DEFAULT_GOAL := binary
+else
+$(error OPBL specified with an unsupported target)
+endif
+endif
 
 ## Optional make goals:
 ## all		 : Make all filetypes, binary and hex
@@ -799,8 +828,6 @@ st-flash_$(TARGET): $(TARGET_BIN)
 
 ## st-flash	: flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
-
-binary: $(TARGET_BIN)
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
