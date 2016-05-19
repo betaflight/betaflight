@@ -244,7 +244,7 @@ const specialColorIndexes_t defaultSpecialColors[] = {
 
 void pgResetFn_ledConfigs(ledConfig_t *instance)
 {
-    memcpy(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
+    memcpy_fn(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
 }
 
 /*
@@ -1139,12 +1139,12 @@ void pgResetFn_colors(hsvColor_t *instance)
 
 void pgResetFn_modeColors(modeColorIndexes_t *instance)
 {
-    memcpy(instance, &defaultModeColors, sizeof(defaultModeColors));
+    memcpy_fn(instance, &defaultModeColors, sizeof(defaultModeColors));
 }
 
 void pgResetFn_specialColors(specialColorIndexes_t *instance)
 {
-    memcpy(instance, &defaultSpecialColors, sizeof(defaultSpecialColors));
+    memcpy_fn(instance, &defaultSpecialColors, sizeof(defaultSpecialColors));
 }
 
 
