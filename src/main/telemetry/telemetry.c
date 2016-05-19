@@ -23,6 +23,8 @@
 
 #ifdef TELEMETRY
 
+#include "common/utils.h"
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
@@ -106,6 +108,9 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
 #if defined(TELEMETRY_FRSKY)
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+#else
+    UNUSED(rxConfig);
+    UNUSED(deadband3d_throttle);
 #endif
 
 #if defined(TELEMETRY_HOTT)
