@@ -356,23 +356,23 @@ batteryState_e getBatteryState(void) {
 void ws2811LedStripInit(void) {}
 void ws2811UpdateStrip(void) {}
 
-void setLedValue(uint16_t index, const uint8_t value) {
+void setLedValue(int index, const uint8_t value) {
     UNUSED(index);
     UNUSED(value);
 }
 
-void setLedHsv(uint16_t index, const hsvColor_t *color) {
+void setLedHsv(int index, const hsvColor_t *color) {
     UNUSED(index);
     UNUSED(color);
 }
 
-void getLedHsv(uint16_t index, hsvColor_t *color) {
+void getLedHsv(int index, hsvColor_t *color) {
     UNUSED(index);
     UNUSED(color);
 }
 
 
-void scaleLedValue(uint16_t index, const uint8_t scalePercent) {
+void scaleLedValue(int index, const uint8_t scalePercent) {
     UNUSED(index);
     UNUSED(scalePercent);
 }
