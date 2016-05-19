@@ -20,7 +20,7 @@
 #include <platform.h>
 #include "drivers/sonar.h"
 
-typedef struct sonarHardware_s {
+typedef struct sonarHcsr04Hardware_s {
     uint16_t trigger_pin;
     GPIO_TypeDef* trigger_gpio;
     uint16_t echo_pin;
@@ -28,9 +28,9 @@ typedef struct sonarHardware_s {
     uint32_t exti_line;
     uint8_t exti_pin_source;
     IRQn_Type exti_irqn;
-} sonarHardware_t;
+} sonarHcsr04Hardware_t;
 
-void hcsr04_set_sonar_hardware(const sonarHardware_t *initialSonarHardware);
+void hcsr04_set_sonar_hardware(void);
 void hcsr04_init(sonarRange_t *sonarRange);
 void hcsr04_start_reading(void);
 int32_t hcsr04_get_distance(void);

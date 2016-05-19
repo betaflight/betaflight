@@ -228,16 +228,15 @@ void init(void)
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
-    const sonarHardware_t *sonarHardware;
+    sonarGPIOConfig_t sonarGPIOConfig;
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
-        sonarGPIOConfig_t sonarGPIOConfig = {
-            .gpio = sonarHardware->echo_gpio,
-            .triggerPin = sonarHardware->echo_pin,
-            .echoPin = sonarHardware->trigger_pin,
-        };
+        const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
+        sonarGPIOConfig.gpio = sonarHardware->echo_gpio;
+        sonarGPIOConfig.triggerPin = sonarHardware->echo_pin;
+        sonarGPIOConfig.echoPin = sonarHardware->trigger_pin;
         pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
     }
+    pwm_params.useSonar = feature(FEATURE_SONAR);
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
@@ -260,9 +259,6 @@ void init(void)
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
-#ifdef SONAR
-    pwm_params.useSonar = feature(FEATURE_SONAR);
-#endif
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isServoOutputEnabled();
@@ -458,7 +454,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        sonarInit(sonarHardware);
+        sonarInit();
     }
 #endif
 

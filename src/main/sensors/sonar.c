@@ -40,57 +40,64 @@
 // Inclination is adjusted by imu
 
 #ifdef SONAR
-int16_t sonarMaxRangeCm;
-int16_t sonarMaxAltWithTiltCm;
-int16_t sonarCfAltCm; // Complimentary Filter altitude
+
+extern sonarHcsr04Hardware_t sonarHcsr04Hardware;
+
+static int16_t sonarMaxRangeCm;
+static int16_t sonarMaxAltWithTiltCm;
+static int16_t sonarCfAltCm; // Complimentary Filter altitude
 STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
 static sonarFunctionPointers_t sonarFunctionPointers;
-float sonarMaxTiltCos;
+static float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-static const sonarHardware_t *sonarGetHardwareConfigurationForHCSR04(currentSensor_e currentSensor)
+static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(currentSensor_e currentSensor)
 {
 #if defined(SONAR_PWM_TRIGGER_PIN)
-    static const sonarHardware_t const sonarPWM = {
-        .trigger_pin = SONAR_PWM_TRIGGER_PIN,
-        .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
-        .echo_pin = SONAR_PWM_ECHO_PIN,
-        .echo_gpio = SONAR_PWM_ECHO_GPIO,
-        .exti_line = SONAR_PWM_EXTI_LINE,
-        .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_PWM_EXTI_IRQN
-    };
 #endif
 #if !defined(UNIT_TEST)
-    static const sonarHardware_t sonarRC = {
+#endif
+#if defined(UNIT_TEST)
+   UNUSED(currentSensor);
+   return 0;
+#elif defined(SONAR_PWM_TRIGGER_PIN)
+    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
+    if (feature(FEATURE_SOFTSERIAL)
+            || feature(FEATURE_RX_PARALLEL_PWM )
+            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
+        sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
+            .trigger_pin = SONAR_PWM_TRIGGER_PIN,
+            .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
+            .echo_pin = SONAR_PWM_ECHO_PIN,
+            .echo_gpio = SONAR_PWM_ECHO_GPIO,
+            .exti_line = SONAR_PWM_EXTI_LINE,
+            .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
+            .exti_irqn = SONAR_PWM_EXTI_IRQN };
+    } else {
+        sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
+            .trigger_pin = SONAR_TRIGGER_PIN,
+            .trigger_gpio = SONAR_TRIGGER_GPIO,
+            .echo_pin = SONAR_ECHO_PIN,
+            .echo_gpio = SONAR_ECHO_GPIO,
+            .exti_line = SONAR_EXTI_LINE,
+            .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
+            .exti_irqn = SONAR_EXTI_IRQN };
+    }
+#elif defined(SONAR_TRIGGER_PIN)
+    UNUSED(currentSensor);
+    sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
         .trigger_pin = SONAR_TRIGGER_PIN,
         .trigger_gpio = SONAR_TRIGGER_GPIO,
         .echo_pin = SONAR_ECHO_PIN,
         .echo_gpio = SONAR_ECHO_GPIO,
         .exti_line = SONAR_EXTI_LINE,
         .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_EXTI_IRQN
-    };
-#endif
-#if defined(SONAR_PWM_TRIGGER_PIN)
-    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
-    if (feature(FEATURE_SOFTSERIAL)
-            || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
-        return &sonarPWM;
-    } else {
-        return &sonarRC;
-    }
-#elif defined(SONAR_TRIGGER_PIN)
-    UNUSED(currentSensor);
-    return &sonarRC;
-#elif defined(UNIT_TEST)
-   UNUSED(currentSensor);
-   return 0;
+        .exti_irqn = SONAR_EXTI_IRQN };
 #else
 #error Sonar not defined for target
 #endif
+    return &sonarHcsr04Hardware;
 }
 
 STATIC_UNIT_TESTED void sonarSetFunctionPointers(sonarHardwareType_e sonarHardwareType)
@@ -119,7 +126,7 @@ STATIC_UNIT_TESTED void sonarSetFunctionPointers(sonarHardwareType_e sonarHardwa
  * Get the HCSR04 sonar hardware configuration.
  * NOTE: sonarInit() must be subsequently called before using any of the sonar functions.
  */
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor)
+const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor)
 {
     // Return the configuration for the HC-SR04 hardware.
     // Unfortunately the I2C bus is not initialised at this point
@@ -132,29 +139,26 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSens
  */
 static sonarHardwareType_e sonarDetect(void)
 {
-    sonarHardwareType_e sonarHardwareType;
     // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
     // since there is no way to detect it
-    sonarHardwareType = SONAR_HCSR04;
+    sonarHardwareType_e sonarHardwareType = SONAR_HCSR04;
 #ifdef USE_SONAR_SRF10
     if (srf10_detect()) {
         sonarHardwareType = SONAR_SRF10;
     }
 #endif
-    sensorsSet(SENSOR_SONAR);
-#ifndef UNIT_TEST
-    sonarSetFunctionPointers(sonarHardwareType);
-#endif
     return sonarHardwareType;
 }
 
-void sonarInit(const sonarHardware_t *sonarHardware)
+void sonarInit(void)
 {
-    calculatedAltitude = SONAR_OUT_OF_RANGE;
     const sonarHardwareType_e sonarHardwareType = sonarDetect();
     if (sonarHardwareType == SONAR_HCSR04) {
-        hcsr04_set_sonar_hardware(sonarHardware);
+        hcsr04_set_sonar_hardware();
     }
+#ifndef UNIT_TEST
+    sonarSetFunctionPointers(sonarHardwareType);
+#endif
 
     sonarRange_t sonarRange;
     sonarFunctionPointers.init(&sonarRange);
@@ -163,6 +167,10 @@ void sonarInit(const sonarHardware_t *sonarHardware)
     sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
     sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
     sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
+
+    calculatedAltitude = SONAR_OUT_OF_RANGE;
+
+    sensorsSet(SENSOR_SONAR);
 }
 
 

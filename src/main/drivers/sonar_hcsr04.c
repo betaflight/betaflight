@@ -44,24 +44,23 @@
 
 #if defined(SONAR)
 STATIC_UNIT_TESTED volatile int32_t hcsr04SonarPulseTravelTime = 0;
-static sonarHardware_t const *sonarHardware;
+sonarHcsr04Hardware_t sonarHcsr04Hardware;
 
 #if !defined(UNIT_TEST)
 static void ECHO_EXTI_IRQHandler(void)
 {
     static uint32_t timing_start;
-    uint32_t timing_stop;
 
-    if (digitalIn(sonarHardware->echo_gpio, sonarHardware->echo_pin) != 0) {
+    if (digitalIn(sonarHcsr04Hardware.echo_gpio, sonarHcsr04Hardware.echo_pin) != 0) {
         timing_start = micros();
     } else {
-        timing_stop = micros();
+        const uint32_t timing_stop = micros();
         if (timing_stop > timing_start) {
             hcsr04SonarPulseTravelTime = timing_stop - timing_start;
         }
     }
 
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
+    EXTI_ClearITPendingBit(sonarHcsr04Hardware.exti_line);
 }
 
 void EXTI0_IRQHandler(void)
@@ -80,10 +79,9 @@ void EXTI9_5_IRQHandler(void)
 }
 #endif
 
-void hcsr04_set_sonar_hardware(const sonarHardware_t *initialSonarHardware)
+void hcsr04_set_sonar_hardware(void)
 {
 #if !defined(UNIT_TEST)
-    sonarHardware = initialSonarHardware;
 
 #ifdef STM32F10X
     // enable AFIO for EXTI support
@@ -99,35 +97,35 @@ void hcsr04_set_sonar_hardware(const sonarHardware_t *initialSonarHardware)
 
     gpio_config_t gpio;
     // trigger pin
-    gpio.pin = sonarHardware->trigger_pin;
+    gpio.pin = sonarHcsr04Hardware.trigger_pin;
     gpio.mode = Mode_Out_PP;
     gpio.speed = Speed_2MHz;
-    gpioInit(sonarHardware->trigger_gpio, &gpio);
+    gpioInit(sonarHcsr04Hardware.trigger_gpio, &gpio);
     // echo pin
-    gpio.pin = sonarHardware->echo_pin;
+    gpio.pin = sonarHcsr04Hardware.echo_pin;
     gpio.mode = Mode_IN_FLOATING;
-    gpioInit(sonarHardware->echo_gpio, &gpio);
+    gpioInit(sonarHcsr04Hardware.echo_gpio, &gpio);
 
 #ifdef STM32F10X
     // setup external interrupt on echo pin
-    gpioExtiLineConfig(GPIO_PortSourceGPIOB, sonarHardware->exti_pin_source);
+    gpioExtiLineConfig(GPIO_PortSourceGPIOB, sonarHcsr04Hardware.exti_pin_source);
 #endif
 
 #ifdef STM32F303xC
-    gpioExtiLineConfig(EXTI_PortSourceGPIOB, sonarHardware->exti_pin_source);
+    gpioExtiLineConfig(EXTI_PortSourceGPIOB, sonarHcsr04Hardware.exti_pin_source);
 #endif
 
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
+    EXTI_ClearITPendingBit(sonarHcsr04Hardware.exti_line);
 
     EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = sonarHardware->exti_line;
+    EXTIInit.EXTI_Line = sonarHcsr04Hardware.exti_line;
     EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
     EXTIInit.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTIInit);
 
     NVIC_InitTypeDef NVIC_InitStructure;
-    NVIC_InitStructure.NVIC_IRQChannel = sonarHardware->exti_irqn;
+    NVIC_InitStructure.NVIC_IRQChannel = sonarHcsr04Hardware.exti_irqn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SONAR_ECHO);
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SONAR_ECHO);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -157,10 +155,10 @@ void hcsr04_start_reading(void)
     const uint32_t timeNowMs = millis();
     if (timeNowMs > timeOfLastMeasurementMs + HCSR04_MinimumFiringIntervalMs) {
         timeOfLastMeasurementMs = timeNowMs;
-        digitalHi(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
+        digitalHi(sonarHcsr04Hardware.trigger_gpio, sonarHcsr04Hardware.trigger_pin);
         //  The width of trigger signal must be greater than 10us, according to device spec
         delayMicroseconds(11);
-        digitalLo(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
+        digitalLo(sonarHcsr04Hardware.trigger_gpio, sonarHcsr04Hardware.trigger_pin);
     }
 #endif
 }

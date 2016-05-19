@@ -38,14 +38,10 @@ typedef struct sonarFunctionPointers_s {
     sonarReadFunctionPtr read;
 } sonarFunctionPointers_t;
 
-extern int16_t sonarMaxRangeCm;
-extern int16_t sonarCfAltCm;
-extern int16_t sonarMaxAltWithTiltCm;
-
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
+const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
 int32_t sonarGetLatestAltitude(void);
-void sonarInit(const sonarHardware_t *sonarHardware);
+void sonarInit(void);
 void sonarUpdate(void);
 int32_t sonarRead(void);
 
