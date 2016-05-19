@@ -149,7 +149,6 @@
 #define BIND_PORT  GPIOC
 #define BIND_PIN   Pin_5
 
-#define GTUNE
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #undef GPS_PROTO_NMEA
 #undef GPS_PROTO_UBLOX

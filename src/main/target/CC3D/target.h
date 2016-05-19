@@ -145,7 +145,6 @@
 #undef TELEMETRY
 #undef TELEMETRY_LTM
 #undef SERIAL_RX
-//#define SKIP_RX_MSP
 #endif
 
 // DEBUG

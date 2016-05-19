@@ -43,5 +43,6 @@
 
 #endif // STM32F10X
 
+#include "target/common.h"
 #include "target.h"
 

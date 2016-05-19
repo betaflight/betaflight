@@ -23,6 +23,7 @@
 #define DISPLAY_ARMED_BITMAP
 #else
 #define SKIP_CLI_COMMAND_HELP
+#define SKIP_RX_MSP
 #define DISABLE_UNCOMMON_MIXERS
 #endif
 
@@ -43,5 +44,4 @@
 #define TELEMETRY_HOTT
 #define TELEMETRY_SMARTPORT
 #define TELEMETRY_LTM
-
 
