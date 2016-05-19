@@ -22,11 +22,11 @@
 
 #include "build_config.h"
 
-#include "drivers/system.h"
+#ifndef SKIP_RX_MSP
 
+#include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "io/serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -71,3 +71,4 @@ void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     if (callback)
         *callback = rxMspReadRawRC;
 }
+#endif

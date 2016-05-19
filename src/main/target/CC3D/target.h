@@ -158,6 +158,15 @@
 //Disables uncommon predefined mixer settings like BiCopter, H6 and similar exotics
 #define DISABLE_UNCOMMON_MIXERS
 
+#ifdef CC3D_OPBL
+#define USE_QUAD_MIXER_ONLY
+#undef USE_SERVOS
+#undef TELEMETRY
+#undef TELEMETRY_LTM
+#undef SERIAL_RX
+//#define SKIP_RX_MSP
+#endif
+
 // DEBUG
 //#define HIL
 //#define USE_FAKE_MAG

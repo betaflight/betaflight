@@ -1139,6 +1139,7 @@ static bool processInCommand(void)
         updateMagHoldHeading(read16());
         break;
     case MSP_SET_RAW_RC:
+#ifndef SKIP_RX_MSP
         {
             uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
@@ -1153,6 +1154,7 @@ static bool processInCommand(void)
                 rxMspFrameReceive(frame, channelCount);
             }
         }
+#endif
         break;
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
