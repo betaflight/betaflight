@@ -1207,24 +1207,23 @@ static void cliRxRange(char *cmdline)
 static void cliLed(char *cmdline)
 {
     int i;
-    char *ptr;
     char ledConfigBuffer[20];
 
     if (isEmpty(cmdline)) {
-        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
             cliPrintf("led %u %s\r\n", i, ledConfigBuffer);
         }
     } else {
-        ptr = cmdline;
+        char *ptr = cmdline;
         i = atoi(ptr);
-        if (i < MAX_LED_STRIP_LENGTH) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseLedStripConfig(i, ++ptr)) {
+        if (i < LED_MAX_STRIP_LENGTH) {
+            ptr = strchr(ptr, ' ');
+            if (!ptr || !parseLedStripConfig(i, ptr + 1)) {
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_LED_STRIP_LENGTH - 1);
+            cliShowArgumentRangeError("index", 0, LED_MAX_STRIP_LENGTH - 1);
         }
     }
 }
@@ -1232,10 +1231,9 @@ static void cliLed(char *cmdline)
 static void cliColor(char *cmdline)
 {
     int i;
-    char *ptr;
 
     if (isEmpty(cmdline)) {
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             cliPrintf("color %u %d,%u,%u\r\n",
                 i,
                 colors(i)->h,
@@ -1244,113 +1242,57 @@ static void cliColor(char *cmdline)
             );
         }
     } else {
-        ptr = cmdline;
+        char *ptr = cmdline;
         i = atoi(ptr);
-        if (i < CONFIGURABLE_COLOR_COUNT) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseColor(i, ++ptr)) {
+        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+            ptr = strchr(ptr, ' ');
+            if (!ptr || !parseColor(i, ptr + 1)) {
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, CONFIGURABLE_COLOR_COUNT - 1);
+            cliShowArgumentRangeError("index", 0, LED_CONFIGURABLE_COLOR_COUNT - 1);
         }
     }
 }
 
 static void cliModeColor(char *cmdline)
 {
-    int i, j;
-    char *ptr;
-    int args[4], check = 0;
-    uint8_t colorIndex;
-
     if (isEmpty(cmdline)) {
-        for (i = 0; i < MODE_COUNT; i++) {
-            for (j = 0; j < DIRECTIONS_COUNT; j++) {
-
-                switch (j) {
-                    case 0: colorIndex = modeColors(i)->north; break;
-                    case 1: colorIndex = modeColors(i)->east; break;
-                    case 2: colorIndex = modeColors(i)->south; break;
-                    case 3: colorIndex = modeColors(i)->west; break;
-                    case 4: colorIndex = modeColors(i)->up; break;
-                    case 5: colorIndex = modeColors(i)->down; break;
-                }
-
-                cliPrintf("mode_color %u %u %u\r\n",
-                    i,
-                    j,
-                    colorIndex
-                );
+        for (int i = 0; i < LED_MODE_COUNT; i++) {
+            for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                int colorIndex = modeColors(i)->color[j];
+                cliPrintf("mode_color %u %u %u\r\n", i, j, colorIndex);
             }
         }
 
-        for (j = 0; j < SPECIAL_COLORS_COUNT; j++) {
-            switch (j) {
-                case 0: colorIndex = specialColors(0)->disarmed; break;
-                case 1: colorIndex = specialColors(0)->armed; break;
-                case 2: colorIndex = specialColors(0)->animation; break;
-                case 3: colorIndex = specialColors(0)->background; break;
-                case 4: colorIndex = specialColors(0)->blink_background; break;
-                case 5: colorIndex = specialColors(0)->gps_nosats; break;
-                case 6: colorIndex = specialColors(0)->gps_nolock; break;
-                case 7: colorIndex = specialColors(0)->gps_locked; break;
-            }
-            cliPrintf("mode_color %u %u %u\r\n",
-                MODE_COUNT,
-                j,
-                colorIndex
-            );
+        for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+            int colorIndex = specialColors(0)->color[j];
+            cliPrintf("mode_color %u %u %u\r\n", LED_SPECIAL, j, colorIndex);
         }
     } else {
         enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
-        ptr = strtok(cmdline, " ");
-        while (ptr != NULL && check < ARGS_COUNT) {
-            args[check++] = atoi(ptr);
+        int args[ARGS_COUNT];
+        int argNo = 0;
+        char* ptr = strtok(cmdline, " ");
+        while (ptr && argNo < ARGS_COUNT) {
+            args[argNo++] = atoi(ptr);
             ptr = strtok(NULL, " ");
         }
 
-        if (ptr != NULL || check != ARGS_COUNT) {
+        if (ptr != NULL || argNo != ARGS_COUNT) {
             cliShowParseError();
             return;
         }
 
-        i = args[MODE];
-
-        if (i >= 0 && i < MODE_COUNT) {
-            switch (args[FUNCTION]) {
-                case 0: modeColors(i)->north = args[COLOR]; break;
-                case 1: modeColors(i)->east = args[COLOR]; break;
-                case 2: modeColors(i)->south = args[COLOR]; break;
-                case 3: modeColors(i)->west = args[COLOR]; break;
-                case 4: modeColors(i)->up = args[COLOR]; break;
-                case 5: modeColors(i)->down = args[COLOR]; break;
-                default: cliShowParseError(); return;
-            }
-
-        } else if (i == MODE_COUNT) {
-            // special colors
-            switch (args[FUNCTION]) {
-                case 0: specialColors(0)->disarmed = args[COLOR]; break;
-                case 1: specialColors(0)->armed = args[COLOR]; break;
-                case 2: specialColors(0)->animation = args[COLOR]; break;
-                case 3: specialColors(0)->background = args[COLOR]; break;
-                case 4: specialColors(0)->blink_background = args[COLOR]; break;
-                case 5: specialColors(0)->gps_nosats = args[COLOR]; break;
-                case 6: specialColors(0)->gps_nolock = args[COLOR]; break;
-                case 7: specialColors(0)->gps_locked = args[COLOR]; break;
-                default: cliShowParseError(); return;
-            }
-        } else {
+        int modeIdx  = args[MODE];
+        int funIdx = args[FUNCTION];
+        int color = args[COLOR];
+        if(!setModeColor(modeIdx, funIdx, color)) {
             cliShowParseError();
             return;
         }
-
-        cliPrintf("mode_color %u %u %u\r\n",
-                            i,
-                            args[FUNCTION],
-                            args[COLOR]
-                        );
+        // values are validated
+        cliPrintf("mode_color %u %u %u\r\n", modeIdx, funIdx, color);
     }
 }
 #endif
