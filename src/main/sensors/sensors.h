@@ -21,12 +21,10 @@ typedef enum {
     SENSOR_INDEX_GYRO = 0,
     SENSOR_INDEX_ACC,
     SENSOR_INDEX_BARO,
-    SENSOR_INDEX_MAG
+    SENSOR_INDEX_MAG,
+    SENSOR_INDEX_RANGEFINDER,
+    SENSOR_INDEX_COUNT
 } sensorIndex_e;
-
-#define MAX_SENSORS_TO_DETECT (SENSOR_INDEX_MAG + 1)
-
-extern uint8_t detectedSensors[MAX_SENSORS_TO_DETECT];
 
 typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;

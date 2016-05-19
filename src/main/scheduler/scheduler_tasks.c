@@ -112,7 +112,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = 70000,                 // every 70 ms, approximately 14 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif

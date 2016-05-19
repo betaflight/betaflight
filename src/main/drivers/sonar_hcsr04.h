@@ -17,9 +17,6 @@
 
 #pragma once
 
-#include <platform.h>
-#include "drivers/sonar.h"
-
 typedef struct sonarHcsr04Hardware_s {
     uint16_t trigger_pin;
     GPIO_TypeDef* trigger_gpio;
@@ -30,7 +27,8 @@ typedef struct sonarHcsr04Hardware_s {
     IRQn_Type exti_irqn;
 } sonarHcsr04Hardware_t;
 
+struct rangefinder_s;
 void hcsr04_set_sonar_hardware(void);
-void hcsr04_init(sonarRange_t *sonarRange);
+void hcsr04_init(struct rangefinder_s *rangefinder);
 void hcsr04_start_reading(void);
 int32_t hcsr04_get_distance(void);

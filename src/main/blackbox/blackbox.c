@@ -42,7 +42,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -1060,7 +1060,7 @@ static void loadMainState(void)
 
 #ifdef SONAR
     // Store the raw sonar value without applying tilt correction
-    blackboxCurrent->sonarRaw = sonarRead();
+    blackboxCurrent->sonarRaw = rangefinderRead();
 #endif
 
     blackboxCurrent->rssi = rssi;
