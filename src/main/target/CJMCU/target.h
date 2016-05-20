@@ -20,17 +20,19 @@
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
 
+#define LED0
 #define LED0_GPIO GPIOC
 #define LED0_PIN Pin_14 // PC14 (LED)
-#define LED0
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOC
+
+#define LED1
 #define LED1_GPIO GPIOC
 #define LED1_PIN Pin_13 // PC13 (LED)
-#define LED1
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOC
+
+#define LED2
 #define LED2_GPIO GPIOC
 #define LED2_PIN Pin_15 // PC15 (LED)
-#define LED2
 #define LED2_PERIPHERAL RCC_APB2Periph_GPIOC
 
 
@@ -40,8 +42,8 @@
 #define GYRO
 #define USE_GYRO_MPU6050
 
-//#define MAG
-//#define USE_MAG_HMC5883
+#define MAG
+#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 
@@ -57,10 +59,6 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define SERIAL_RX
-//#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA
@@ -70,14 +68,18 @@
 #define USE_QUAD_MIXER_ONLY
 
 
-#if (FLASH_SIZE > 64)
-#define BLACKBOX
-#else
+#if (FLASH_SIZE <= 64)
+#undef BLACKBOX
 #define SKIP_TASK_STATISTICS
-#define SKIP_CLI_COMMAND_HELP
 #endif
 
-//#undef USE_CLI
-//#define BLACKBOX
+#undef BEEPER
+#undef GPS
+#undef GPS_PROTO_NMEA
+#undef GPS_PROTO_UBLOX
+#undef GPS_PROTO_I2C_NAV
+#undef GPS_PROTO_NAZA
+#undef SKIP_RX_MSP
 
-#define DISABLE_UNCOMMON_MIXERS
+//#undef USE_CLI
+

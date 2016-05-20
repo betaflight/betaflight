@@ -15,34 +15,33 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #pragma once
 
-#ifdef STM32F303xC
-#include "stm32f30x_conf.h"
-#include "stm32f30x_rcc.h"
-#include "stm32f30x_gpio.h"
-#include "core_cm4.h"
-
-// Chip Unique ID on F303
-#define U_ID_0 (*(uint32_t*)0x1FFFF7AC)
-#define U_ID_1 (*(uint32_t*)0x1FFFF7B0)
-#define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
-
+#if (FLASH_SIZE > 128)
+#define DISPLAY
+#define DISPLAY_ARMED_BITMAP
+#else
+#define SKIP_CLI_COMMAND_HELP
+#define SKIP_RX_MSP
+#define DISABLE_UNCOMMON_MIXERS
 #endif
 
-#ifdef STM32F10X
+#define SERIAL_RX
+#define USE_SERVOS
+#define USE_CLI
 
-#include "stm32f10x_conf.h"
-#include "stm32f10x_gpio.h"
-#include "core_cm3.h"
+#define BLACKBOX
 
-// Chip Unique ID on F103
-#define U_ID_0 (*(uint32_t*)0x1FFFF7E8)
-#define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
-#define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
+#define GPS
+#define GPS_PROTO_NMEA
+#define GPS_PROTO_UBLOX
+#define GPS_PROTO_I2C_NAV
+#define GPS_PROTO_NAZA
 
-#endif // STM32F10X
-
-#include "target/common.h"
-#include "target.h"
+#define TELEMETRY
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_SMARTPORT
+#define TELEMETRY_LTM
 

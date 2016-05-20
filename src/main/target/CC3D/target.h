@@ -17,16 +17,17 @@
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
-#define LED0
 
 #define INVERTER_PIN Pin_2 // PB2 (BOOT1) used as inverter select GPIO
 #define INVERTER_GPIO GPIOB
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
 #define INVERTER_USART USART1
 
+#define BEEPER
 #define BEEP_GPIO GPIOA
 #define BEEP_PIN Pin_15 // PA15 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
@@ -69,9 +70,6 @@
 #define USE_MAG_MAG3110
 
 #define INVERTER
-#define BEEPER
-//#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 
 #define USE_VCP
 #define USE_USART1
@@ -110,12 +108,6 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
 #define RSSI_ADC_CHANNEL            ADC_Channel_1
 
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
@@ -123,14 +115,7 @@
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM3
 
-#define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#define TELEMETRY
-//#define TELEMETRY_FRSKY
-//#define TELEMETRY_HOTT
-//#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
 
 #define SONAR
 #define USE_SONAR_SRF10
@@ -142,12 +127,6 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-
-#define SKIP_CLI_COMMAND_HELP
-
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SPEKTRUM_BIND
@@ -155,8 +134,10 @@
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-//Disables uncommon predefined mixer settings like BiCopter, H6 and similar exotics
-#define DISABLE_UNCOMMON_MIXERS
+#undef TELEMETRY_FRSKY
+#undef TELEMETRY_HOTT
+#undef TELEMETRY_SMARTPORT
+
 
 #ifdef CC3D_OPBL
 #define USE_QUAD_MIXER_ONLY
@@ -164,7 +145,6 @@
 #undef TELEMETRY
 #undef TELEMETRY_LTM
 #undef SERIAL_RX
-//#define SKIP_RX_MSP
 #endif
 
 // DEBUG

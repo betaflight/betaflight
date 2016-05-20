@@ -19,10 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 
+#define BEEPER
 #define BEEP_GPIO   GPIOC
 #define BEEP_PIN    Pin_15
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
@@ -37,7 +39,6 @@
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
-
 
 #define GYRO
 #define USE_GYRO_MPU6050
@@ -56,7 +57,6 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_MAG3110
-
 #define MAG_HMC5883_ALIGN CW270_DEG
 
 #define USE_FLASHFS
@@ -70,9 +70,6 @@
 #define SONAR_EXTI_LINE             EXTI_Line1
 #define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
 #define SONAR_EXTI_IRQN             EXTI1_IRQn
-
-#define BEEPER
-#define LED0
 
 #define USE_USART1
 #define USE_USART2
@@ -137,7 +134,6 @@
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
-
 #define ADC_INSTANCE                ADC2
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
@@ -168,31 +164,11 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 
-#define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
-
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
 
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-
-#define SERIAL_RX
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define USE_SERVOS
-#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART3,

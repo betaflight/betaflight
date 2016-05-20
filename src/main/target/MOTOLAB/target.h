@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
-#define USE_CLI
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_5 // Blue LEDs - PB5
@@ -27,11 +26,11 @@
 #define LED1_PIN    Pin_9  // Green LEDs - PB9
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
+#define BEEPER
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_0
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 #define BEEPER_INVERTED
-#define BEEPER
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
@@ -109,24 +108,6 @@
 //#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
 #define SENSORS_SET (SENSOR_ACC)
 
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define BLACKBOX
-#define SERIAL_RX
-//#define GPS
-// #define GPS_PROTO_NMEA
-// #define GPS_PROTO_UBLOX
-// #define GPS_PROTO_I2C_NAV
-//#define GPS_PROTO_NAZA
-
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
-
-#define USE_SERVOS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
@@ -189,3 +170,11 @@
 #define BIND_PIN Pin_4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#undef GPS
+#undef GPS_PROTO_NMEA
+#undef GPS_PROTO_UBLOX
+#undef GPS_PROTO_I2C_NAV
+#undef GPS_PROTO_NAZA
+
+

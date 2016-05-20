@@ -19,18 +19,22 @@
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
 
+#define LED0
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
 
+#define LED1
 #define LED1_GPIO   GPIOC
 #define LED1_PIN    Pin_14
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOC
 
+#define LED2
 #define LED2_GPIO   GPIOC
 #define LED2_PIN    Pin_13
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 
+#define BEEPER
 #define BEEP_GPIO   GPIOB
 #define BEEP_PIN    Pin_13
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -73,11 +77,6 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-
-#define BEEPER
-#define LED0
-#define LED1
-#define LED2
 
 #define USE_VCP
 #define USE_USART1
@@ -142,16 +141,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define BLACKBOX
-
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
 #define LED_STRIP
-
 #define LED_STRIP_TIMER TIM16
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
@@ -169,16 +159,6 @@
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -19,15 +19,16 @@
 
 #pragma once
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_12
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define BEEPER
 #define BEEP_GPIO   GPIOB
 #define BEEP_PIN    Pin_10
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
 
-#define BEEPER
-#define LED0
 
 #define GYRO
 #define ACC
@@ -40,23 +41,6 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define BLACKBOX
-
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
-#define SERIAL_RX
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define USE_SERVOS
-#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART2, PA3

@@ -91,8 +91,6 @@
 
 #define LED0
 #define LED1
-#define DISPLAY
-//#define DISPLAY_ARMED_BITMAP
 #define INVERTER
 
 #define USE_USART1
@@ -133,29 +131,11 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-
-#define BLACKBOX
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define DISABLE_UNCOMMON_MIXERS

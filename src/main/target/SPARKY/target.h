@@ -109,30 +109,10 @@
 #define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
-#define BLACKBOX
-
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
-
-#define SERIAL_RX
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define USE_SERVOS
-#define USE_CLI
 
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
