@@ -348,7 +348,7 @@ static uint32_t packFlightModeFlags(void)
 #define BM(x) (1 << (x))
     const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX);
+        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) ;
     for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
         if((rcModeCopyMask & BM(i)) == 0)
             continue;
