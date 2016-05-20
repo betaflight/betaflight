@@ -127,9 +127,9 @@ bool isCalibrating()
 
 void annexCode(void)
 {
-    int32_t tmp, tmp2, axis;
+    int32_t tmp;
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
             if (currentProfile->rcControlsConfig.deadband) {
@@ -139,9 +139,7 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-
-            tmp2 = tmp / 100;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
+            rcCommand[axis] = rcLookupPitchRoll(tmp);
         } else if (axis == YAW) {
             if (currentProfile->rcControlsConfig.yaw_deadband) {
                 if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
@@ -150,24 +148,23 @@ void annexCode(void)
                     tmp = 0;
                 }
             }
-            tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -1;
+            rcCommand[axis] = rcLookupYaw(tmp) * -1;
         }
 
-        if (rcData[axis] < masterConfig.rxConfig.midrc)
+        if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
+        }
     }
 
     tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
     tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        float cosDiff = cos_approx(radDiff);
-        float sinDiff = sin_approx(radDiff);
-        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+        const float cosDiff = cos_approx(radDiff);
+        const float sinDiff = sin_approx(radDiff);
+        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
