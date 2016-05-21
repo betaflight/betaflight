@@ -109,6 +109,7 @@ static void ltm_serialise_16(uint16_t v)
     ltm_serialise_8((v >> 8));
 }
 
+#if defined(GPS)
 static void ltm_serialise_32(uint32_t v)
 {
     ltm_serialise_8((uint8_t)v);
@@ -116,6 +117,7 @@ static void ltm_serialise_32(uint32_t v)
     ltm_serialise_8((v >> 16));
     ltm_serialise_8((v >> 24));
 }
+#endif
 
 static void ltm_finalise(void)
 {

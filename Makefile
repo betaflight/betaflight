@@ -530,6 +530,7 @@ STM32F30x_COMMON_SRC = \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
+		   drivers/display_ug2864hsweg01.h \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led_stm32f30x.c \
 		   drivers/light_ws2811strip.c \

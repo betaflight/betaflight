@@ -18,19 +18,9 @@
 
 #pragma once
 
-#define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
-
-#if (FLASH_SIZE > 128)
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
-#else
-#define SKIP_CLI_COMMAND_HELP
-#define SKIP_RX_MSP
-#define DISABLE_UNCOMMON_MIXERS
-#endif
-
+#define SERIAL_RX
 #define BLACKBOX
 
 #if (FLASH_SIZE > 64)
@@ -46,3 +36,13 @@
 #define TELEMETRY_SMARTPORT
 #define TELEMETRY_LTM
 #endif
+
+#if (FLASH_SIZE > 128)
+#define DISPLAY
+#define DISPLAY_ARMED_BITMAP
+#else
+#define SKIP_CLI_COMMAND_HELP
+#define SKIP_RX_MSP
+#define DISABLE_UNCOMMON_MIXERS
+#endif
+
