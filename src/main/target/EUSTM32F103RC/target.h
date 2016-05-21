@@ -19,13 +19,17 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
+
+#define LED1
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_4 // PB4 (LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
+#define INVERTER
 #define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_GPIO GPIOB
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
@@ -88,10 +92,6 @@
 #define SONAR_EXTI_LINE             EXTI_Line1
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
 #define SONAR_EXTI_IRQN             EXTI1_IRQn
-
-#define LED0
-#define LED1
-#define INVERTER
 
 #define USE_USART1
 #define USE_USART2

@@ -66,7 +66,7 @@
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
-
+#undef USE_SERVOS
 
 #if (FLASH_SIZE <= 64)
 #undef BLACKBOX
@@ -74,11 +74,6 @@
 #endif
 
 #undef BEEPER
-#undef GPS
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_UBLOX
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
 #undef SKIP_RX_MSP
 
 //#undef USE_CLI

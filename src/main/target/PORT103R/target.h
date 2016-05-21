@@ -39,16 +39,17 @@
 #define BEEP_PIN    Pin_12 // PA12 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
 
+#define INVERTER
+#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_GPIO GPIOB
+#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER_USART USART2
+
 #define BARO_XCLR_GPIO   GPIOC
 #define BARO_XCLR_PIN    Pin_13
 #define BARO_EOC_GPIO    GPIOC
 #define BARO_EOC_PIN     Pin_14
 #define BARO_APB2_PERIPHERALS RCC_APB2Periph_GPIOC
-
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
-#define INVERTER_USART USART2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
@@ -117,8 +118,6 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
 #define SONAR_EXTI_IRQN             EXTI1_IRQn
 
-#define INVERTER
-
 #define USE_USART1
 #define USE_USART2
 #define USE_SOFTSERIAL1
@@ -157,27 +156,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define LED0
-
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-
-#define BLACKBOX
-
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
-#define SERIAL_RX
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-
-#define USE_SERVOS
-#define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
