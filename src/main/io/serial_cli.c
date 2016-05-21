@@ -196,14 +196,13 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#ifndef CJMCU
+#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR)
-#ifndef XXXX
 // sync with gyroSensor_e
 static const char * const gyroNames[] = { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE"};
 // sync with accelerationSensor_e
@@ -216,17 +215,8 @@ static const char * const magNames[] = { "", "None", "HMC5883", "AK8975", "FAKE"
 static const char * const rangefinderNames[] = { "None", "HCSR04", "SRF10"};
 
 static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames};
-#else
-static const char * const sensorHardwareNames[5][11] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "None", "BMP085", "MS5611", "BMP280", "FAKE", NULL },
-    { "", "None", "HMC5883", "AK8975", "FAKE", NULL },
-    { "", "None", "HCSR04", "SRF10", NULL }
-};
-#endif
 
-#endif // CJMCU
+#endif
 
 typedef struct {
     const char *name;
@@ -2501,16 +2491,15 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
-#ifndef CJMCU
+#if (FLASH_SIZE > 64)
     const uint32_t detectedSensorsMask = sensorsMask();
 
     for (int i = 0; i < SENSOR_INDEX_COUNT; i++) {
 
         const uint32_t mask = (1 << i);
         if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
-            const char *sensorHardware;
             const int sensorHardwareIndex = detectedSensors[i];
-            sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
 
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
 
