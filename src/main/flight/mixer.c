@@ -123,6 +123,14 @@ static const motorMixer_t mixerAtail4[] = {
     { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
 };
 
+static const motorMixer_t mixerY4[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
+    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
+    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
+};
+
+#if (MAX_SUPPORTED_MOTORS >= 6)
 static const motorMixer_t mixerHex6H[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
@@ -132,7 +140,6 @@ static const motorMixer_t mixerHex6H[] = {
     { 1.0f,  0.0f,  0.0f,  0.0f },     // LEFT
 };
 
-#if (MAX_SUPPORTED_MOTORS >= 6)
 static const motorMixer_t mixerY6[] = {
     { 1.0f,  0.0f,  1.333333f,  1.0f },     // REAR
     { 1.0f, -1.0f, -0.666667f, -1.0f },     // RIGHT
@@ -151,13 +158,6 @@ static const motorMixer_t mixerHex6P[] = {
     { 1.0f,  0.0f,       1.0f, -1.0f },     // REAR
 };
 #endif
-
-static const motorMixer_t mixerY4[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
-    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
-    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
-    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
-};
 
 #if (MAX_SUPPORTED_MOTORS >= 8)
 static const motorMixer_t mixerOctoFlatP[] = {
@@ -237,7 +237,11 @@ const mixer_t mixers[] = {
     #else
         { 0, false, NULL, false },           // MIXER_Y4
     #endif
-    { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+    #if (MAX_SUPPORTED_MOTORS >= 6)
+        { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+    #else
+        { 0, false, NULL, false },          // MIXER_HEX6X
+    #endif
     #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
         { 8, false, mixerOctoX8, true },     // MIXER_OCTOX8
         { 8, false, mixerOctoFlatP, true },  // MIXER_OCTOFLATP
