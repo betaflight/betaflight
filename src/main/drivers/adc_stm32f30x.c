@@ -30,6 +30,8 @@
 #include "adc.h"
 #include "adc_impl.h"
 
+#include "common/utils.h"
+
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
@@ -50,6 +52,10 @@ void adcInit(drv_adc_config_t *init)
     GPIO_StructInit(&GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
+
+#if !defined(VBAT_ADC_GPIO) && !defined(RSSI_ADC_GPIO) && !defined(CURRENT_METER_ADC_GPIO) && !defined(EXTERNAL1_ADC_GPIO)
+    UNUSED(init);
+#endif
 
 #ifdef VBAT_ADC_GPIO
     if (init->enableVBat) {

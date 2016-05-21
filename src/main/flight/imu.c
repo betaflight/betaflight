@@ -171,6 +171,7 @@ static float invSqrt(float x)
     return 1.0f / sqrtf(x);
 }
 
+#if defined(GPS) || defined(HIL)
 STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
 {
     if (initialRoll > 1800) initialRoll -= 3600;
@@ -193,6 +194,7 @@ STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t
 
     imuComputeRotationMatrix();
 }
+#endif
 
 static bool imuUseFastGains(void)
 {

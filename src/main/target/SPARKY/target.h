@@ -19,9 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define LED1
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_5  // Green (Rev 1) / Red (Rev 2) - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -48,9 +51,6 @@
 #define USE_MAG_MAG3110
 
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
-
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1 // Conn 1 - TX (PB6) RX PB7 (AF7)

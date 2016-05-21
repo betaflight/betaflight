@@ -19,9 +19,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_5 // Blue LEDs - PB5
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_9  // Green LEDs - PB9
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -55,7 +57,6 @@
 //#define MAG
 //#define USE_MAG_HMC5883
 
-#define LED0
 
 #define USE_VCP
 #define USE_USART1

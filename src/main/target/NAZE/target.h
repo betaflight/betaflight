@@ -22,27 +22,32 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
+#define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3 // PB3 (LED)
 #define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
+
+#define LED1
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_4 // PB4 (LED)
 #define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
 
+#define BEEPER
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_12 // PA12 (Beeper)
 #define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
+
+#define INVERTER
+#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_GPIO GPIOB
+#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER_USART USART2
 
 #define BARO_XCLR_GPIO   GPIOC
 #define BARO_XCLR_PIN    Pin_13
 #define BARO_EOC_GPIO    GPIOC
 #define BARO_EOC_PIN     Pin_14
 #define BARO_APB2_PERIPHERALS RCC_APB2Periph_GPIOC
-
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
-#define INVERTER_USART USART2
 
 // SPI2
 // PB15 28 SPI2_MOSI
@@ -135,11 +140,6 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
 #define SONAR_EXTI_IRQN             EXTI1_IRQn
 
-#define BEEPER
-#define LED0
-#define LED1
-#define INVERTER
-
 #define USE_USART1
 #define USE_USART2
 #define USE_USART3
@@ -216,6 +216,4 @@
 #undef TELEMETRY_FRSKY
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
-
-
 
