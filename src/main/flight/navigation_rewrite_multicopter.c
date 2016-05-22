@@ -146,12 +146,12 @@ void setupMulticopterAltitudeController(void)
     throttleStatus_e throttleStatus = calculateThrottleStatus(posControl.rxConfig, posControl.flight3DConfig->deadband3d_throttle);
 
     if (posControl.navConfig->flags.use_thr_mid_for_althold) {
-        altHoldThrottleRCZero = lookupThrottleRCMid;
+        altHoldThrottleRCZero = rcLookupThrottleMid();
     }
     else {
         // If throttle status is THROTTLE_LOW - use Thr Mid anyway
         if (throttleStatus == THROTTLE_LOW) {
-            altHoldThrottleRCZero = lookupThrottleRCMid;
+            altHoldThrottleRCZero = rcLookupThrottleMid();
         }
         else {
             altHoldThrottleRCZero = rcCommand[THROTTLE];
