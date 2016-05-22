@@ -216,6 +216,17 @@
 // Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_5
+#endif // ALIENWII32
+
+#ifdef MICROSKYSKY
+#undef TARGET_BOARD_IDENTIFIER
+#define TARGET_BOARD_IDENTIFIER "MSKY" // Micro SKYsci
+#define BRUSHED_MOTORS
+#define USE_QUAD_MIXER_ONLY
+#undef USE_SERVOS
+#undef BEEPER
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+
 #endif
 
 #undef TELEMETRY_FRSKY
