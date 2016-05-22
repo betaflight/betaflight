@@ -103,9 +103,9 @@
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
 #define VBAT_ADC_CHANNEL            ADC_Channel_0
 
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_1
+#define RSSI_ADC_GPIO               GPIOB
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
+#define RSSI_ADC_CHANNEL            ADC_Channel_8
 
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
