@@ -64,6 +64,8 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
 #undef USE_SERVOS
