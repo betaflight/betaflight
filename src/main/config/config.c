@@ -72,6 +72,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifndef DEFAULT_RX_FEATURE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
@@ -424,8 +428,9 @@ static void resetConf(void)
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
     persistentFlagClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(LUX_RACE)
-    featureSet(FEATURE_RX_PPM);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
@@ -433,8 +438,6 @@ static void resetConf(void)
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
     featureSet(FEATURE_VBAT);
 #endif
-
-    featureSet(FEATURE_FAILSAFE);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -605,8 +608,6 @@ static void resetConf(void)
 
     // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
 #ifdef ALIENWII32
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_MOTOR_STOP);
 #ifdef ALIENWIIF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
