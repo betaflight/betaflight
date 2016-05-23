@@ -94,6 +94,12 @@
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 #define USE_RX_NRF24
+
+#ifdef USE_RX_NRF24
+#undef SERIAL_RX
+#define SKIP_RX_MSP
+#define SKIP_RX_PWM
+
 #define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
 #define USE_RX_V202
 #define USE_RX_SYMA
@@ -103,12 +109,19 @@
 
 #define USE_SOFTSPI
 #define USE_NRF24_SOFTSPI
+#else
+#define SPEKTRUM_BIND
+// USART3, PB11 (Flexport)
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11
+#endif // USE_RX_NRF24
+
 
 #ifdef USE_NRF24_SOFTSPI
+
 #undef USE_SOFTSERIAL1
 #undef SERIAL_PORT_COUNT
 #define SERIAL_PORT_COUNT 3
-
 
 // RC pinouts
 // RC3  PB6/TIM4    unused
@@ -156,10 +169,6 @@
 #define RSSI_ADC_CHANNEL            ADC_Channel_8
 #endif
 
-
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
-
 #define SONAR
 #define USE_SONAR_SRF10
 #define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
@@ -170,21 +179,13 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
-
 #endif // USE_NRF24_SOFTSPI
 
-#define TARGET_MOTOR_COUNT 6
+// LED strip is on PWM5 output pin
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
-#ifdef USE_RX_NRF24
-#undef SERIAL_RX
-#define SKIP_RX_MSP
-#endif
+//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
