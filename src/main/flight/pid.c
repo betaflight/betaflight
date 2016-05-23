@@ -68,11 +68,8 @@ static float errorGyroIf[3], errorGyroIfLimit[3];
 
 static bool lowThrottlePidReduction;
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
-
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
+static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
+        uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 
 pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using, defaultMultiWii
 
@@ -80,7 +77,7 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
 }
 
-float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
+float calculateExpoPlus(int axis, const rxConfig_t *rxConfig) {
     float propFactor;
     float superExpoFactor;
 
@@ -94,7 +91,7 @@ float calculateExpoPlus(int axis, rxConfig_t *rxConfig) {
     return propFactor;
 }
 
-uint16_t getDynamicKp(int axis, pidProfile_t *pidProfile) {
+uint16_t getDynamicKp(int axis, const pidProfile_t *pidProfile) {
     uint16_t dynamicKp;
 
     uint32_t dynamicFactor = constrain(ABS(rcCommand[axis] << 8) / DYNAMIC_PTERM_STICK_THRESHOLD, 0, 1 << 7);
@@ -136,8 +133,8 @@ static filterStatePt1_t deltaFilterState[3];
 static filterStatePt1_t yawFilterState;
 
 #ifndef SKIP_PID_LUXFLOAT
-static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
+static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
+        uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
@@ -277,11 +274,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 }
 #endif
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
-        rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
+static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+        const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    UNUSED(rxConfig);
-
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
     static int32_t lastRate[3];
