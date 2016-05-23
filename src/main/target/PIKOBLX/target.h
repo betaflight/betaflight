@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "Piko BLX" // Furious FPV Piko BLX
+#define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV Piko BLX
 #define USE_CLI
 
 #define LED0_GPIO   GPIOB
@@ -44,12 +44,6 @@
 
 #define GYRO
 #define ACC
-
-#define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW180_DEG
-
-#define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW180_DEG
 
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW180_DEG
