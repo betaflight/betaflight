@@ -93,6 +93,49 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
+#define USE_RX_NRF24
+#define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
+#define USE_RX_V202
+#define USE_RX_SYMA
+#define USE_RX_CX10
+#define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+//#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
+
+#define USE_SOFTSPI
+#define USE_NRF24_SOFTSPI
+
+#ifdef USE_NRF24_SOFTSPI
+#undef USE_SOFTSERIAL1
+#undef SERIAL_PORT_COUNT
+#define SERIAL_PORT_COUNT 3
+
+
+// RC pinouts
+// RC3  PB6/TIM4    unused
+// RC4  PB5/TIM3    SCK / softserial1 TX / sonar trigger
+// RC5  PB0/TIM3    MISO / softserial1 RX / sonar echo / RSSI ADC
+// RC6  PB1/TIM3    MOSI / current
+// RC7  PA0/TIM2    CSN / battery voltage
+// RC8  PA1/TIM2    CE / RX_PPM
+
+// Nordic Semiconductor uses 'CSN', STM uses 'NSS'
+#define NRF24_CE_GPIO                   GPIOA
+#define NRF24_CE_PIN                    GPIO_Pin_1
+#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
+#define NRF24_CSN_GPIO                  GPIOA
+#define NRF24_CSN_PIN                   GPIO_Pin_0
+#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define NRF24_SCK_GPIO                  GPIOB
+#define NRF24_SCK_PIN                   GPIO_Pin_5
+#define NRF24_MOSI_GPIO                 GPIOB
+#define NRF24_MOSI_PIN                  GPIO_Pin_1
+#define NRF24_MISO_GPIO                 GPIOB
+#define NRF24_MISO_PIN                  GPIO_Pin_0
+
+//#define SOFTSPI_NSS_PIN
+
+#else
+
 #define USE_ADC
 
 #define CURRENT_METER_ADC_GPIO      GPIOB
@@ -113,14 +156,9 @@
 #define RSSI_ADC_CHANNEL            ADC_Channel_8
 #endif
 
-#define NAV
-//#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
 
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM3
-
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define SONAR
 #define USE_SONAR_SRF10
@@ -139,7 +177,20 @@
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
+#endif // USE_NRF24_SOFTSPI
+
 #define TARGET_MOTOR_COUNT 6
+
+#ifdef USE_RX_NRF24
+#undef SERIAL_RX
+#define SKIP_RX_MSP
+#endif
+
+#define NAV
+//#define NAV_AUTO_MAG_DECLINATION
+#define NAV_GPS_GLITCH_DETECTION
+
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #undef TELEMETRY_FRSKY
 #undef TELEMETRY_HOTT

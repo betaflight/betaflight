@@ -53,7 +53,11 @@ static const softSPIDevice_t softSPI = {
     .miso_gpio = NRF24_MISO_GPIO,
     .sck_pin = NRF24_SCK_PIN,
     .mosi_pin = NRF24_MOSI_PIN,
-    .miso_pin = NRF24_MISO_PIN
+    .miso_pin = NRF24_MISO_PIN,
+#ifdef SOFTSPI_NSS_PIN
+    .nss_pin = NRF24_CSN_PIN,
+    .nss_gpio = NRF24_CSN_GPIO
+#endif
 };
 #endif
 
@@ -90,7 +94,7 @@ void NRF24L01_SpiInit(void)
     gpio_config_t gpio;
     gpio.speed = Speed_50MHz;
     gpio.mode = Mode_Out_PP;
-#ifndef USE_NRF24_SOFTSPI
+#ifndef SOFTSPI_NSS_PIN
     // CSN as output
     RCC_APB2PeriphClockCmd(NRF24_CSN_GPIO_CLK_PERIPHERAL, ENABLE);
     gpio.pin = NRF24_CSN_PIN;
