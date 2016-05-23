@@ -1280,24 +1280,24 @@ static bool blackboxWriteSysinfo()
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
             break;
         case 36:
-            blackboxPrintfHeaderLine("dynamic_pterm:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pterm);
+            blackboxPrintfHeaderLine("dynamic_pid:%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pid);
             break;
         case 37:
             blackboxPrintfHeaderLine("rollPitchItermResetRate:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermResetRate);
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
             break;
         case 38:
             blackboxPrintfHeaderLine("yawItermResetRate:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermResetRate);
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
             break;
         case 39:
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
             break;
         case 40:
-            blackboxPrintfHeaderLine("iterm_reset_offset:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.itermResetOffset);
+            blackboxPrintfHeaderLine("airmode_activate_throttle:%d",
+                                     masterConfig.rxConfig.airModeActivateThreshold);
             break;
         case 41:
             blackboxPrintfHeaderLine("deadband:%d", masterConfig.rcControlsConfig.deadband);

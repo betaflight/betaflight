@@ -49,7 +49,6 @@
 #include "config/runtime_config.h"
 
 extern uint8_t motorCount;
-extern bool motorLimitReached;
 uint32_t targetPidLooptime;
 
 int16_t axisPID[3];
@@ -61,12 +60,10 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
 
-static int32_t errorGyroI[3], errorGyroILimit[3];
+static int32_t errorGyroI[3];
 #ifndef SKIP_PID_LUXFLOAT
-static float errorGyroIf[3], errorGyroIfLimit[3];
+static float errorGyroIf[3];
 #endif
-
-static bool lowThrottlePidReduction;
 
 static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
@@ -101,22 +98,28 @@ uint16_t getDynamicKp(int axis, const pidProfile_t *pidProfile) {
     return dynamicKp;
 }
 
-void pidResetErrorGyroState(uint8_t resetOption)
-{
-    if (resetOption >= RESET_ITERM) {
-        int axis;
-        for (axis = 0; axis < 3; axis++) {
-            errorGyroI[axis] = 0;
-#ifndef SKIP_PID_LUXFLOAT
-            errorGyroIf[axis] = 0.0f;
-#endif
-        }
-    }
+uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile) {
+    uint16_t dynamicKi;
+    uint16_t resetRate;
 
-    if (resetOption == RESET_ITERM_AND_REDUCE_PID) {
-        lowThrottlePidReduction = true;
-    } else {
-        lowThrottlePidReduction = false;
+    resetRate = (axis == YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
+
+    uint32_t dynamicFactor = (1 << 8) - constrain(ABS(gyroADC[axis] << 8) / resetRate, 0, 1 << 8);
+
+    dynamicKi = (pidProfile->I8[axis] * dynamicFactor) >> 8;
+
+    return dynamicKi;
+}
+
+void pidResetErrorGyroState(void)
+{
+    int axis;
+
+    for (axis = 0; axis < 3; axis++) {
+        errorGyroI[axis] = 0;
+#ifndef SKIP_PID_LUXFLOAT
+        errorGyroIf[axis] = 0.0f;
+#endif
     }
 }
 
@@ -202,7 +205,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = AngleRate - gyroRate;
 
-        uint16_t kP = (pidProfile->dynamic_pterm) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
+        uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
         if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
@@ -217,21 +220,9 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         }
 
         // -----calculate I component.
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
+        uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile) : pidProfile->I8[axis];
 
-        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->rollPitchItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -pidProfile->itermResetOffset, pidProfile->itermResetOffset);
-        }
-
-        if (axis == YAW) {
-            if (ABS(gyroRate / 4.1f) >= pidProfile->yawItermResetRate) errorGyroIf[axis] = constrainf(errorGyroIf[axis], -YAW_ITERM_RESET_OFFSET, YAW_ITERM_RESET_OFFSET);
-        }
-
-        if (antiWindupProtection || motorLimitReached) {
-            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
-        } else {
-            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
-        }
+        errorGyroIf[axis] = constrainf(kI + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -256,8 +247,6 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
-
-        if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -333,7 +322,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         gyroRate = gyroADC[axis] / 4;
         RateError = AngleRateTmp - gyroRate;
 
-        uint16_t kP = (pidProfile->dynamic_pterm) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
+        uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
         if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
@@ -352,25 +341,13 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetPidLooptime) >> 11) * pidProfile->I8[axis];
+        uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile) : pidProfile->I8[axis];
+
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetPidLooptime) >> 11) * kI;
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
-
-        if ((pidProfile->rollPitchItermResetAlways || IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) && axis != YAW) {
-            if (ABS(gyroRate *10 / 41) >= pidProfile->rollPitchItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -pidProfile->itermResetOffset << 13, (int32_t) + pidProfile->itermResetOffset << 13);
-        }
-
-        if (axis == YAW) {
-            if (ABS(gyroRate * 10 / 41) >= pidProfile->yawItermResetRate) errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) -YAW_ITERM_RESET_OFFSET << 13, (int32_t) + YAW_ITERM_RESET_OFFSET << 13);
-        }
-
-        if (antiWindupProtection || motorLimitReached) {
-            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
-        } else {
-            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
-        }
 
         ITerm = errorGyroI[axis] >> 13;
 
@@ -393,8 +370,6 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
-
-        if (lowThrottlePidReduction) axisPID[axis] /= 3;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

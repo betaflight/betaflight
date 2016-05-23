@@ -822,7 +822,6 @@ void mixTable(void)
     throttleRange = throttleMax - throttleMin;
 
     if (rollPitchYawMixRange > throttleRange) {
-        motorLimitReached = true;
         mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
@@ -833,7 +832,6 @@ void mixTable(void)
 
         if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
-        motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }

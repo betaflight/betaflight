@@ -140,7 +140,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 135;
+static const uint8_t EEPROM_CONF_VERSION = 136;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -154,13 +154,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidController = 1;
 
     pidProfile->P8[ROLL] = 45;
-    pidProfile->I8[ROLL] = 35;
+    pidProfile->I8[ROLL] = 55;
     pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 45;
-    pidProfile->I8[PITCH] = 35;
+    pidProfile->I8[PITCH] = 55;
     pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 90;
-    pidProfile->I8[YAW] = 40;
+    pidProfile->I8[YAW] = 50;
     pidProfile->D8[YAW] = 0;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
@@ -184,12 +184,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermResetRate = 200;
-    pidProfile->rollPitchItermResetAlways = 0;
-    pidProfile->yawItermResetRate = 50;
-    pidProfile->itermResetOffset = 15;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 50;;
     pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
-    pidProfile->dynamic_pterm = 1;
+    pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -462,6 +460,7 @@ static void resetConf(void)
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
     masterConfig.rxConfig.superExpoFactor = 30;
+    masterConfig.rxConfig.airModeActivateThreshold = 1350;
     masterConfig.rxConfig.superExpoFactorYaw = 30;
     masterConfig.rxConfig.superExpoYawMode = 0;
 
