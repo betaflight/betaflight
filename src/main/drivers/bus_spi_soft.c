@@ -34,9 +34,7 @@ void softSpiInit(const softSPIDevice_t *dev)
 
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    //GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    //GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    //GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+
     // SCK as output
     GPIO_InitStructure.GPIO_Pin = dev->sck_pin;
     GPIO_Init(dev->sck_gpio, &GPIO_InitStructure);
