@@ -94,9 +94,9 @@ STATIC_UNIT_TESTED uint8_t rxAddr[RX_TX_ADDR_LEN] = {0x49, 0x26, 0x87, 0x7d, 0x2
 #define TX_ID_LEN 4
 STATIC_UNIT_TESTED uint8_t txId[TX_ID_LEN];
 
-STATIC_UNIT_TESTED uint8_t rfChannelIndex = 0;
+STATIC_UNIT_TESTED uint8_t cx10RfChannelIndex = 0;
 #define RF_CHANNEL_COUNT 4
-STATIC_UNIT_TESTED uint8_t rfChannels[RF_CHANNEL_COUNT]; // channels are set using txId from bind packet
+STATIC_UNIT_TESTED uint8_t cx10RfChannels[RF_CHANNEL_COUNT]; // channels are set using txId from bind packet
 
 static uint32_t timeOfLastHop;
 static const uint32_t hopTimeout = 5000; // 5ms
@@ -131,7 +131,7 @@ void cx10Nrf24Init(nrf24_protocol_t protocol)
 /*
  * Returns true if it is a bind packet.
  */
-STATIC_UNIT_TESTED bool checkBindPacket(const uint8_t *packet)
+STATIC_UNIT_TESTED bool cx10CheckBindPacket(const uint8_t *packet)
 {
     const bool bindPacket = (packet[0] == 0xaa);
     if (bindPacket) {
@@ -144,7 +144,7 @@ STATIC_UNIT_TESTED bool checkBindPacket(const uint8_t *packet)
     return false;
 }
 
-STATIC_UNIT_TESTED uint16_t convertToPwmUnsigned(const uint8_t* pVal)
+STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t* pVal)
 {
     uint16_t ret = (*(pVal + 1)) & 0x7f; // mask out top bit which is used for a flag for the rudder
     ret = (ret << 8) | *pVal;
@@ -154,10 +154,10 @@ STATIC_UNIT_TESTED uint16_t convertToPwmUnsigned(const uint8_t* pVal)
 void cx10SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     const uint8_t offset = (cx10Protocol == NRF24RX_CX10) ? 0 : 4;
-    rcData[NRF24_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - convertToPwmUnsigned(&payload[5 + offset]);  // aileron
-    rcData[NRF24_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - convertToPwmUnsigned(&payload[7 + offset]); // elevator
-    rcData[NRF24_THROTTLE] = convertToPwmUnsigned(&payload[9 + offset]); // throttle
-    rcData[NRF24_YAW] = convertToPwmUnsigned(&payload[11 + offset]);  // rudder
+    rcData[NRF24_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
+    rcData[NRF24_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[7 + offset]); // elevator
+    rcData[NRF24_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]); // throttle
+    rcData[NRF24_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);  // rudder
     const uint8_t flags1 = payload[13 + offset];
     const uint8_t rate = flags1 & FLAG_MODE_MASK; // takes values 0, 1, 2
     if (rate == 0) {
@@ -177,21 +177,21 @@ void cx10SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
 static void hopToNextChannel(void)
 {
-    ++rfChannelIndex;
-    if (rfChannelIndex >= RF_CHANNEL_COUNT) {
-        rfChannelIndex = 0;
+    ++cx10RfChannelIndex;
+    if (cx10RfChannelIndex >= RF_CHANNEL_COUNT) {
+        cx10RfChannelIndex = 0;
     }
-    NRF24L01_SetChannel(rfChannels[rfChannelIndex]);
+    NRF24L01_SetChannel(cx10RfChannels[cx10RfChannelIndex]);
 }
 
 // The hopping channels are determined by the txId
 STATIC_UNIT_TESTED void setHoppingChannels(const uint8_t* txId)
 {
-    rfChannelIndex = 0;
-    rfChannels[0] = 0x03 + (txId[0] & 0x0F);
-    rfChannels[1] = 0x16 + (txId[0] >> 4);
-    rfChannels[2] = 0x2D + (txId[1] & 0x0F);
-    rfChannels[3] = 0x40 + (txId[1] >> 4);
+    cx10RfChannelIndex = 0;
+    cx10RfChannels[0] = 0x03 + (txId[0] & 0x0F);
+    cx10RfChannels[1] = 0x16 + (txId[0] >> 4);
+    cx10RfChannels[2] = 0x2D + (txId[1] & 0x0F);
+    cx10RfChannels[3] = 0x40 + (txId[1] >> 4);
 }
 
 /*
@@ -209,7 +209,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
             XN297_UnscramblePayload(payload, payloadSize + 2);
-            const bool bindPacket = checkBindPacket(payload);
+            const bool bindPacket = cx10CheckBindPacket(payload);
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
                 setHoppingChannels(txId);
@@ -237,7 +237,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         }
         // send out an ACK on each of the hopping channels, required by CX10 transmitter
         for (uint8_t ii = 0; ii < RF_CHANNEL_COUNT; ++ii) {
-            NRF24L01_SetChannel(rfChannels[ii]);
+            NRF24L01_SetChannel(cx10RfChannels[ii]);
             XN297_WritePayload(payload, payloadSize);
             NRF24L01_SetTxMode();// enter transmit mode to send the packet
             // wait for the ACK packet to send before changing channel
@@ -252,7 +252,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         }
         NRF24L01_SetRxMode();//reenter receive mode after sending ACKs
         if (ackCount > ACK_TO_SEND_COUNT) {
-            NRF24L01_SetChannel(rfChannels[0]);
+            NRF24L01_SetChannel(cx10RfChannels[0]);
             // and go into data state to wait for first data packet
             protocolState = STATE_DATA;
         }

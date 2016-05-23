@@ -15,19 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * v202 Protocol
- * No auto acknowledgment
- * Payload size is 16, static
- * Data rate is 250Kbps or 1Mbps depending on variant
- * Bind Phase
- * uses address {0x66, 0x88, 0x68, 0x68, 0x68}
- * hops between 16 channels
- * Data Phase
- * uses same address as bind phase
- * hops between 16 channels generated from address received in bind packets
- */
-
 // this file is copied with modifications from bradwii for jd385
 // see https://github.com/hackocopter/bradwii-jd385
 

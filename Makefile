@@ -62,11 +62,16 @@ FEATURES        =
 ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 
+<<<<<<< HEAD
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
+=======
+# Valid targets for OP BootLoader support
+OPBL_TARGETS = CC3D_OPBL CC3D_OPBL_NRF24
+>>>>>>> Tidied protocols and added H8_3D protocol.
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
@@ -332,8 +337,31 @@ ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
 endif
 
+<<<<<<< HEAD
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
+=======
+ifeq ($(TARGET),$(filter $(TARGET), $(CC3D_TARGETS)))
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D
+ifeq ($(TARGET),CC3D_PPM1)
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_PPM1
+CC3D_PPM1_SRC = $(CC3D_SRC)
+endif
+ifeq ($(TARGET),CC3D_OPBL)
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_OPBL
+CC3D_OPBL_SRC = $(CC3D_SRC)
+endif
+ifeq ($(TARGET),CC3D_OPBL_NRF24)
+TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_OPBL -DUSE_RX_NRF24
+CC3D_OPBL_NRF24_SRC = $(CC3D_SRC)
+endif
+TARGET_DIR = $(ROOT)/src/main/target/CC3D
+endif
+
+ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
+OPBL=yes
+endif
+>>>>>>> Tidied protocols and added H8_3D protocol.
 
 ifeq ($(OPBL),yes)
 TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
@@ -418,72 +446,6 @@ COMMON_SRC = \
             sensors/initialisation.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
-=======
-INCLUDE_DIRS := $(INCLUDE_DIRS) \
-			$(TARGET_DIR)
-
-VPATH		:= $(VPATH):$(TARGET_DIR)
-
-COMMON_SRC = build_config.c \
-		   debug.c \
-		   version.c \
-		   $(TARGET_SRC) \
-		   config/config.c \
-		   config/runtime_config.c \
-		   common/maths.c \
-		   common/printf.c \
-		   common/typeconversion.c \
-		   common/encoding.c \
-		   common/filter.c \
-		   scheduler/scheduler.c \
-		   scheduler/scheduler_tasks.c \
-		   main.c \
-		   mw.c \
-		   flight/failsafe.c \
-		   flight/pid.c \
-		   flight/imu.c \
-		   flight/hil.c \
-		   flight/mixer.c \
-		   drivers/bus_i2c_soft.c \
-		   drivers/serial.c \
-		   drivers/sound_beeper.c \
-		   drivers/system.c \
-		   drivers/gps_i2cnav.c \
-		   drivers/gyro_sync.c \
-		   drivers/buf_writer.c \
-		   drivers/rx_nrf24l01.c \
-		   io/beeper.c \
-		   io/rc_controls.c \
-		   io/rc_curves.c \
-		   io/serial.c \
-		   io/serial_4way.c \
-		   io/serial_4way_avrootloader.c \
-		   io/serial_4way_stk500v2.c \
-		   io/serial_cli.c \
-		   io/serial_msp.c \
-		   io/statusindicator.c \
-		   rx/rx.c \
-		   rx/pwm.c \
-		   rx/msp.c \
-		   rx/sbus.c \
-		   rx/sumd.c \
-		   rx/sumh.c \
-		   rx/spektrum.c \
-		   rx/xbus.c \
-		   rx/ibus.c \
-		   rx/nrf24.c \
-		   rx/nrf24_cx10.c \
-		   rx/nrf24_syma.c \
-		   rx/nrf24_v202.c \
-		   sensors/acceleration.c \
-		   sensors/battery.c \
-		   sensors/boardalignment.c \
-		   sensors/compass.c \
-		   sensors/gyro.c \
-		   sensors/initialisation.c \
-		   $(CMSIS_SRC) \
-		   $(DEVICE_STDPERIPH_SRC)
->>>>>>> NRF24 support for iNav.
 
 HIGHEND_SRC = \
             blackbox/blackbox.c \
@@ -521,7 +483,6 @@ VCP_SRC = \
             drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
-<<<<<<< HEAD
             vcp/hw_config.c \
             vcp/stm32_it.c \
             vcp/usb_desc.c \
