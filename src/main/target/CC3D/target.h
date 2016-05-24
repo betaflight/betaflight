@@ -98,12 +98,14 @@
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
 #define DEFAULT_FEATURES FEATURE_SOFTSPI
-#define USE_RX_V202
 #define USE_RX_SYMA
+#ifdef CC3D_OPBL
+#define USE_RX_V202
 #define USE_RX_CX10
 #define USE_RX_H8_3D
-//#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
+#endif
 #define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+//#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
 
 #define USE_SOFTSPI
@@ -164,7 +166,7 @@
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
 // LED strip is on PWM5 output pin
-#define LED_STRIP
+//#define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
 #define SPEKTRUM_BIND
@@ -190,11 +192,10 @@
 #undef TELEMETRY
 #undef TELEMETRY_LTM
 #undef SERIAL_RX
+#define LED_STRIP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
-#define SKIP_RX_MSP
 #undef BLACKBOX
-//#undef LED_STRIP
 #endif
 #endif
 
