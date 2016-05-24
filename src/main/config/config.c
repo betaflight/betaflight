@@ -628,7 +628,6 @@ static void resetConf(void)
     currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    masterConfig.mixerConfig.yaw_jump_prevention_limit = 500;
     currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
