@@ -53,20 +53,10 @@ static float rangefinderMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(currentSensor_e currentSensor)
+static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(sonarHCSR04Pins_e sonarHCSR04Pins)
 {
+    if (sonarHCSR04Pins == SONAR_HCSR04_PINS_PWM) {
 #if defined(SONAR_PWM_TRIGGER_PIN)
-#endif
-#if !defined(UNIT_TEST)
-#endif
-#if defined(UNIT_TEST)
-   UNUSED(currentSensor);
-   return 0;
-#elif defined(SONAR_PWM_TRIGGER_PIN)
-    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
-    if (feature(FEATURE_SOFTSERIAL)
-            || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
         sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
             .trigger_pin = SONAR_PWM_TRIGGER_PIN,
             .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
@@ -75,7 +65,12 @@ static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(curre
             .exti_line = SONAR_PWM_EXTI_LINE,
             .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
             .exti_irqn = SONAR_PWM_EXTI_IRQN };
+#else
+        // no PWM pins available for sonar, so return NULL
+        return NULL;
+#endif
     } else {
+#if defined(SONAR_TRIGGER_PIN)
         sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
             .trigger_pin = SONAR_TRIGGER_PIN,
             .trigger_gpio = SONAR_TRIGGER_GPIO,
@@ -84,20 +79,11 @@ static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(curre
             .exti_line = SONAR_EXTI_LINE,
             .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
             .exti_irqn = SONAR_EXTI_IRQN };
-    }
-#elif defined(SONAR_TRIGGER_PIN)
-    UNUSED(currentSensor);
-    sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
-        .trigger_pin = SONAR_TRIGGER_PIN,
-        .trigger_gpio = SONAR_TRIGGER_GPIO,
-        .echo_pin = SONAR_ECHO_PIN,
-        .echo_gpio = SONAR_ECHO_GPIO,
-        .exti_line = SONAR_EXTI_LINE,
-        .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_EXTI_IRQN };
 #else
-#error Sonar not defined for target
+        // no RC pins available for sonar, so return NULL
+        return NULL;
 #endif
+    }
     return &sonarHcsr04Hardware;
 }
 
@@ -132,7 +118,16 @@ const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e curre
     // Return the configuration for the HC-SR04 hardware.
     // Unfortunately the I2C bus is not initialised at this point
     // so cannot detect if another sonar device is present
-    return sonarGetHardwareConfigurationForHCSR04(currentSensor);
+    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
+    sonarHCSR04Pins_e sonarHCSR04Pins = SONAR_HCSR04_PINS_RC;
+    if (feature(FEATURE_SOFTSERIAL)
+            || feature(FEATURE_SOFTSPI)
+            || feature(FEATURE_RX_PARALLEL_PWM )
+            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
+        // cannot use the RC pins for sonar
+        sonarHCSR04Pins = SONAR_HCSR04_PINS_PWM;
+    }
+    return sonarGetHardwareConfigurationForHCSR04(sonarHCSR04Pins);
 }
 
 void rangefinderInit(rangefinderType_e rangefinderType)

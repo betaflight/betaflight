@@ -84,21 +84,20 @@ pwmIOConfiguration_t *pwmGetOutputConfiguration(void){
 
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-    int i = 0;
-    const uint16_t *setup;
-
+#ifndef SKIP_RX_PWM
     int channelIndex = 0;
-
+#endif
 
     memset(&pwmIOConfiguration, 0, sizeof(pwmIOConfiguration));
 
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
+    int i = 0;
     if (init->airplane)
         i = 2; // switch to air hardware config
     if (init->usePPM || init->useSerialRx)
         i++; // next index is for PPM
 
-    setup = hardwareMaps[i];
+    const uint16_t *setup = hardwareMaps[i];
 
     for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT && setup[i] != 0xFFFF; i++) {
         uint8_t timerIndex = setup[i] & 0x00FF;
@@ -175,27 +174,27 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef USE_NRF24_SOFTSPI
-        if (type == MAP_TO_PWM_INPUT)
-            continue;
-        if (type == MAP_TO_PPM_INPUT)
-            continue;
-        if (timerHardwarePtr->gpio == NRF24_CE_GPIO && timerHardwarePtr->pin == NRF24_CE_PIN) {
-            continue;
-        }
-        if (timerHardwarePtr->gpio == NRF24_CSN_GPIO && timerHardwarePtr->pin == NRF24_CSN_PIN) {
-            continue;
-        }
-        if (timerHardwarePtr->gpio == NRF24_SCK_GPIO && timerHardwarePtr->pin == NRF24_SCK_PIN) {
-            continue;
-        }
-        if (timerHardwarePtr->gpio == NRF24_MOSI_GPIO && timerHardwarePtr->pin == NRF24_MOSI_PIN) {
-            continue;
-        }
-        if (timerHardwarePtr->gpio == NRF24_MISO_GPIO && timerHardwarePtr->pin == NRF24_MISO_PIN) {
-            continue;
-        }
-#endif
+        /*if (init->useSoftSPI) {
+            if (type == MAP_TO_PWM_INPUT)
+                continue;
+            if (type == MAP_TO_PPM_INPUT)
+                continue;
+            if (timerHardwarePtr->gpio == NRF24_CE_GPIO && timerHardwarePtr->pin == NRF24_CE_PIN) {
+                continue;
+            }
+            if (timerHardwarePtr->gpio == NRF24_CSN_GPIO && timerHardwarePtr->pin == NRF24_CSN_PIN) {
+                continue;
+            }
+            if (timerHardwarePtr->gpio == NRF24_SCK_GPIO && timerHardwarePtr->pin == NRF24_SCK_PIN) {
+                continue;
+            }
+            if (timerHardwarePtr->gpio == NRF24_MOSI_GPIO && timerHardwarePtr->pin == NRF24_MOSI_PIN) {
+                continue;
+            }
+            if (timerHardwarePtr->gpio == NRF24_MISO_GPIO && timerHardwarePtr->pin == NRF24_MISO_PIN) {
+                continue;
+            }
+        }*/
 
         // hacks to allow current functionality
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
@@ -283,6 +282,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
+#ifndef SKIP_RX_PWM
 #ifdef CC3D_PPM1
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
@@ -296,11 +296,14 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             ppmInConfig(timerHardwarePtr);
             pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_PPM;
             pwmIOConfiguration.ppmInputCount++;
+#endif
         } else if (type == MAP_TO_PWM_INPUT) {
+#ifndef SKIP_RX_PWM
             pwmInConfig(timerHardwarePtr, channelIndex);
             pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_PWM;
             pwmIOConfiguration.pwmInputCount++;
             channelIndex++;
+#endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #if defined(CC3D) && !defined(CC3D_PPM1)

@@ -801,7 +801,7 @@ void activateConfig(void)
 #endif
 }
 
-void validateAndFixConfig(void)
+static void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_NRF24))) {
          featureSet(DEFAULT_RX_FEATURE);
@@ -827,6 +827,19 @@ void validateAndFixConfig(void)
     // Ensure sane values of navConfig settings
     validateNavConfig(&masterConfig.navConfig);
 #endif
+
+    if (featureConfigured(FEATURE_SOFTSPI)) {
+        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
+#if defined(STM32F10X)
+        featureClear(FEATURE_LED_STRIP);
+        // rssi adc needs the same ports
+        featureClear(FEATURE_RSSI_ADC);
+        // current meter needs the same ports
+        if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+            featureClear(FEATURE_CURRENT_METER);
+        }
+#endif
+    }
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
          featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_NRF24);

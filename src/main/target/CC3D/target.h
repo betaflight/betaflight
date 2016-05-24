@@ -93,35 +93,24 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
+//#define USE_RX_NRF24
 #ifdef USE_RX_NRF24
 #undef SERIAL_RX
 #define SKIP_RX_MSP
-#define SKIP_RX_PWM
+//#define SKIP_RX_PWM
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
+#define DEFAULT_FEATURES FEATURE_SOFTSPI
 #define USE_RX_V202
 #define USE_RX_SYMA
 #define USE_RX_CX10
 #define USE_RX_H8_3D
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
-//#define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
-#define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
+#define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+//#define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
 
 #define USE_SOFTSPI
 #define USE_NRF24_SOFTSPI
-#else
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
-#endif // USE_RX_NRF24
-
-
-#ifdef USE_NRF24_SOFTSPI
-
-#undef USE_SOFTSERIAL1
-#undef SERIAL_PORT_COUNT
-#define SERIAL_PORT_COUNT 3
 
 // RC pinouts
 // RC3  PB6/TIM4    unused
@@ -145,9 +134,24 @@
 #define NRF24_MISO_GPIO                 GPIOB
 #define NRF24_MISO_PIN                  GPIO_Pin_0
 
+#else
+#define SPEKTRUM_BIND
+// USART3, PB11 (Flexport)
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11
+#endif // USE_RX_NRF24
+
+
+/*#ifdef USE_NRF24_SOFTSPI
+
+#undef USE_SOFTSERIAL1
+#undef SERIAL_PORT_COUNT
+#define SERIAL_PORT_COUNT 3
+
+
 //#define SOFTSPI_NSS_PIN
 
-#else
+#else*/
 
 #define USE_ADC
 
@@ -179,13 +183,14 @@
 #define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource0
 #define SONAR_EXTI_IRQN             EXTI0_IRQn
 
-#endif // USE_NRF24_SOFTSPI
-
 // LED strip is on PWM5 output pin
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
+#define LED_STRIP
+#define LED_STRIP_TIMER TIM3
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+//#endif // USE_NRF24_SOFTSPI
+
 
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
@@ -202,6 +207,10 @@
 #undef BLACKBOX
 #undef TELEMETRY
 #undef TELEMETRY_LTM
+#undef SERIAL_RX
+#ifdef USE_RX_NRF24
+#undef BLACKBOX
+#endif
 #endif
 
 // DEBUG
