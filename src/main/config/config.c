@@ -887,7 +887,15 @@ void validateAndFixConfig(void)
     masterConfig.telemetryConfig.telemetry_inversion = 1;
 #endif
 
-#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+#if defined(CC3D)
+#if defined(CC3D_PPM1)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        featureClear(FEATURE_SONAR);
+    }
+#endif
+#else
+#if defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
     // shared pin
     if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
        featureClear(FEATURE_SONAR);
@@ -895,6 +903,8 @@ void validateAndFixConfig(void)
        featureClear(FEATURE_RSSI_ADC);
     }
 #endif
+#endif // CC3D_PPM1
+#endif // CC3D
 
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
