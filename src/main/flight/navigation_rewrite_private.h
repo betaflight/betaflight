@@ -324,7 +324,7 @@ bool adjustMulticopterPositionFromRCInput(void);
 
 void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
 
-bool isMulticopterLandingDetected(uint32_t * landingTimer);
+bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity);
 void calculateMulticopterInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing specific functions */

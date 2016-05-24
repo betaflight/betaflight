@@ -948,7 +948,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
         // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
         if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
             // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
-            updateAltitudeTargetFromClimbRate(-0.15f * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
+            // Do not allow descent velocity slower than -30cm/s so the landing detector works.
+            float descentVelLimited = MIN(-0.15f * posControl.navConfig->land_descent_rate, -30.0f);
+            updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
         else {
             // Ramp down descent velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
@@ -956,7 +958,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
                                         / (posControl.navConfig->land_slowdown_maxalt - posControl.navConfig->land_slowdown_minalt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
 
             descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
-            updateAltitudeTargetFromClimbRate(-descentVelScaling * posControl.navConfig->land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
+            
+            // Do not allow descent velocity slower than -50cm/s so the landing detector works.
+            float descentVelLimited = MIN(-descentVelScaling * posControl.navConfig->land_descent_rate, -50.0f);
+            updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
         }
 
         return NAV_FSM_EVENT_NONE;
@@ -1605,10 +1610,12 @@ void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t dista
  * NAV land detector
  *-----------------------------------------------------------*/
 static uint32_t landingTimer;
+static bool hasHadSomeVelocity;
 
 void resetLandingDetector(void)
 {
     landingTimer = micros();
+    hasHadSomeVelocity = false;
 }
 
 bool isLandingDetected(void)
@@ -1619,7 +1626,7 @@ bool isLandingDetected(void)
         landingDetected = isFixedWingLandingDetected(&landingTimer);
     }
     else {
-        landingDetected = isMulticopterLandingDetected(&landingTimer);
+        landingDetected = isMulticopterLandingDetected(&landingTimer, &hasHadSomeVelocity);
     }
 
     return landingDetected;
