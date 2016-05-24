@@ -57,11 +57,13 @@
 #include "io/escservo.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
+#include "io/gps.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/navigation.h"
 
 #include "telemetry/telemetry.h"
 
