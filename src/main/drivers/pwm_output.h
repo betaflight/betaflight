@@ -18,9 +18,10 @@
 #pragma once
 
 typedef enum {
-  PWM_TYPE_ONESHOT125 = 0,
-  PWM_TYPE_ONESHOT42 = 1,
-  PWM_TYPE_MULTISHOT = 2
+  PWM_TYPE_CONVENTIONAL = 0,
+  PWM_TYPE_ONESHOT125,
+  PWM_TYPE_ONESHOT42,
+  PWM_TYPE_MULTISHOT
 } FastPwmProtocolTypes_e;
 
 void pwmWriteMotor(uint8_t index, uint16_t value);

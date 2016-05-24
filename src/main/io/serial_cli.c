@@ -443,7 +443,7 @@ static const char * const lookupTableSuperExpoYaw[] = {
 };
 
 static const char * const lookupTableFastPwm[] = {
-    "ONESHOT125", "ONESHOT42", "MULTISHOT"
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT"
 };
 
 typedef struct lookupTableEntry_s {

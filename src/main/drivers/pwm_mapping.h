@@ -71,7 +71,7 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
-    uint8_t fastPwmProtocolType;
+    uint8_t pwmProtocolType;
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif

@@ -486,7 +486,7 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    masterConfig.fast_pwm_protocol = 0;
+    masterConfig.fast_pwm_protocol = 1;
     masterConfig.use_unsyncedPwm = 0;
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;

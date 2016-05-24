@@ -171,9 +171,6 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
         }
 #endif
-
-        // Oneshot125 protection
-        if ((masterConfig.fast_pwm_protocol == 0) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125) && masterConfig.pid_process_denom < 3) masterConfig.pid_process_denom = 3;
     }
 }
 

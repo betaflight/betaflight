@@ -929,7 +929,7 @@ if (init->useBuzzerP6) {
             }
 #endif
             if (init->useFastPwm) {
-                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->fastPwmProtocolType, init->motorPwmRate, init->useUnsyncedPwm, init->idlePulse);
+                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->pwmProtocolType, init->motorPwmRate, init->useUnsyncedPwm, init->idlePulse);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
             } else if (isMotorBrushed(init->motorPwmRate)) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
