@@ -41,6 +41,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
 
 #include "rx/pwm.h"
@@ -189,7 +190,8 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
 #ifdef USE_RX_NRF24
     if (feature(FEATURE_RX_NRF24)) {
         rxRefreshRate = 10000;
-        const bool enabled = rxNrf24Init(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        const nfr24l01_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? NFR24L01_SOFTSPI : NFR24L01_SPI;
+        const bool enabled = rxNrf24Init(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
         if (!enabled) {
             featureClear(FEATURE_RX_NRF24);
             rcReadRawFunc = nullReadRawRC;
@@ -197,7 +199,7 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
     }
 #endif
 
-#ifndef SKIP_RX_PWM
+#ifndef SKIP_RX_PWM_PPM
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxRefreshRate = 20000;
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
@@ -370,7 +372,7 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
-#ifndef SKIP_RX_PWM
+#ifndef SKIP_RX_PWM_PPM
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;

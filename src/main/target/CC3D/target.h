@@ -93,11 +93,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
-//#define USE_RX_NRF24
+#define USE_RX_NRF24
 #ifdef USE_RX_NRF24
-#undef SERIAL_RX
-#define SKIP_RX_MSP
-//#define SKIP_RX_PWM
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
 #define DEFAULT_FEATURES FEATURE_SOFTSPI
@@ -133,25 +130,8 @@
 #define NRF24_MOSI_PIN                  GPIO_Pin_1
 #define NRF24_MISO_GPIO                 GPIOB
 #define NRF24_MISO_PIN                  GPIO_Pin_0
-
-#else
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
 #endif // USE_RX_NRF24
 
-
-/*#ifdef USE_NRF24_SOFTSPI
-
-#undef USE_SOFTSERIAL1
-#undef SERIAL_PORT_COUNT
-#define SERIAL_PORT_COUNT 3
-
-
-//#define SOFTSPI_NSS_PIN
-
-#else*/
 
 #define USE_ADC
 
@@ -187,10 +167,12 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
+#define SPEKTRUM_BIND
+// USART3, PB11 (Flexport)
+#define BIND_PORT  GPIOB
+#define BIND_PIN   Pin_11
+
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-//#endif // USE_NRF24_SOFTSPI
-
 
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
@@ -209,7 +191,10 @@
 #undef TELEMETRY_LTM
 #undef SERIAL_RX
 #ifdef USE_RX_NRF24
+#define SKIP_RX_PWM_PPM
+#define SKIP_RX_MSP
 #undef BLACKBOX
+//#undef LED_STRIP
 #endif
 #endif
 

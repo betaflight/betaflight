@@ -47,7 +47,7 @@ void NRF24L01_SpiInit(void) {}
 #define NRF24_CE_LO()       {GPIO_ResetBits(NRF24_CE_GPIO, NRF24_CE_PIN);}
 
 #ifdef USE_NRF24_SOFTSPI
-static const softSPIDevice_t softSPI = {
+static const softSPIDevice_t softSPIDevice = {
     .sck_gpio = NRF24_SCK_GPIO,
     .mosi_gpio = NRF24_MOSI_GPIO,
     .miso_gpio = NRF24_MISO_GPIO,
@@ -61,7 +61,8 @@ static const softSPIDevice_t softSPI = {
 };
 #endif
 
-void NRF24L01_SpiInit(void)
+static bool useSoftSPI = false;
+void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType)
 {
     static bool hardwareInitialised = false;
 
@@ -69,16 +70,23 @@ void NRF24L01_SpiInit(void)
         return;
     }
 #ifdef USE_NRF24_SOFTSPI
-    softSpiInit(&softSPI);
+    if (spiType == NFR24L01_SOFTSPI) {
+        useSoftSPI = true;
+        softSpiInit(&softSPIDevice);
+    }
 #endif
     // Note: Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#ifdef STM32F303xC
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+#if defined(STM32F10X)
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+#endif
+#ifdef STM32F303xC
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#ifndef USE_NRF24_SOFTSPI
+#endif
+#ifndef SOFTSPI_NSS_PIN
     // CSN as output
     RCC_AHBPeriphClockCmd(NRF24_CSN_GPIO_CLK_PERIPHERAL, ENABLE);
     GPIO_InitStructure.GPIO_Pin = NRF24_CSN_PIN;
@@ -88,24 +96,6 @@ void NRF24L01_SpiInit(void)
     RCC_AHBPeriphClockCmd(NRF24_CE_GPIO_CLK_PERIPHERAL, ENABLE);
     GPIO_InitStructure.GPIO_Pin = NRF24_CE_PIN;
     GPIO_Init(NRF24_CE_GPIO, &GPIO_InitStructure);
-#endif // STM32F303xC
-
-#ifdef STM32F10X
-    gpio_config_t gpio;
-    gpio.speed = Speed_50MHz;
-    gpio.mode = Mode_Out_PP;
-#ifndef SOFTSPI_NSS_PIN
-    // CSN as output
-    RCC_APB2PeriphClockCmd(NRF24_CSN_GPIO_CLK_PERIPHERAL, ENABLE);
-    gpio.pin = NRF24_CSN_PIN;
-    gpioInit(NRF24_CSN_GPIO, &gpio);
-#endif
-    // CE as output
-    RCC_APB2PeriphClockCmd(NRF24_CE_GPIO_CLK_PERIPHERAL, ENABLE);
-    gpio.pin = NRF24_CE_PIN;
-    gpioInit(NRF24_CE_GPIO, &gpio);
-    // TODO: NRF24_IRQ as input
-#endif // STM32F10X
 
     DISABLE_NRF24();
     NRF24_CE_LO();
@@ -118,11 +108,15 @@ void NRF24L01_SpiInit(void)
 
 uint8_t nrf24TransferByte(uint8_t data)
 {
-#ifdef USE_NRF24_SOFTSPI
-    return softSpiTransferByte(&softSPI, data);
+    if (useSoftSPI) {
+        return softSpiTransferByte(&softSPIDevice, data);
+    } else {
+#ifdef NRF24_SPI_INSTANCE
+        return spiTransferByte(NRF24_SPI_INSTANCE, data);
 #else
-    return spiTransferByte(NRF24_SPI_INSTANCE, data);
+        return 0;
 #endif
+    }
 }
 
 // Instruction Mnemonics

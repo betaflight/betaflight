@@ -94,7 +94,7 @@
 
 #if (FLASH_SIZE <= 64)
 //#define SKIP_TASK_STATISTICS
-#define SKIP_RX_PWM
+#define SKIP_RX_PWM_PPM
 #define SKIP_CLI_COMMAND_HELP
 #undef SERIAL_RX
 #undef BLACKBOX

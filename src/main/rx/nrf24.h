@@ -63,4 +63,4 @@ typedef enum {
 
 
 bool rxNrf24DataReceived(void);
-bool rxNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool rxNrf24Init(nfr24l01_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);

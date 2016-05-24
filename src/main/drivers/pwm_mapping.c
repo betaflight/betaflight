@@ -84,7 +84,7 @@ pwmIOConfiguration_t *pwmGetOutputConfiguration(void){
 
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-#ifndef SKIP_RX_PWM
+#ifndef SKIP_RX_PWM_PPM
     int channelIndex = 0;
 #endif
 
@@ -174,28 +174,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-        /*if (init->useSoftSPI) {
-            if (type == MAP_TO_PWM_INPUT)
-                continue;
-            if (type == MAP_TO_PPM_INPUT)
-                continue;
-            if (timerHardwarePtr->gpio == NRF24_CE_GPIO && timerHardwarePtr->pin == NRF24_CE_PIN) {
-                continue;
-            }
-            if (timerHardwarePtr->gpio == NRF24_CSN_GPIO && timerHardwarePtr->pin == NRF24_CSN_PIN) {
-                continue;
-            }
-            if (timerHardwarePtr->gpio == NRF24_SCK_GPIO && timerHardwarePtr->pin == NRF24_SCK_PIN) {
-                continue;
-            }
-            if (timerHardwarePtr->gpio == NRF24_MOSI_GPIO && timerHardwarePtr->pin == NRF24_MOSI_PIN) {
-                continue;
-            }
-            if (timerHardwarePtr->gpio == NRF24_MISO_GPIO && timerHardwarePtr->pin == NRF24_MISO_PIN) {
-                continue;
-            }
-        }*/
-
         // hacks to allow current functionality
         if (type == MAP_TO_PWM_INPUT && !init->useParallelPWM)
             continue;
@@ -282,7 +260,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
-#ifndef SKIP_RX_PWM
+#ifndef SKIP_RX_PWM_PPM
 #ifdef CC3D_PPM1
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
@@ -298,7 +276,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             pwmIOConfiguration.ppmInputCount++;
 #endif
         } else if (type == MAP_TO_PWM_INPUT) {
-#ifndef SKIP_RX_PWM
+#ifndef SKIP_RX_PWM_PPM
             pwmInConfig(timerHardwarePtr, channelIndex);
             pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_PWM;
             pwmIOConfiguration.pwmInputCount++;

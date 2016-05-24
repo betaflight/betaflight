@@ -116,7 +116,12 @@ enum {
     NRF24L01_1C_DYNPD_ALL_PIPES         = 0x3F,
 };
 
-void NRF24L01_SpiInit(void);
+typedef enum {
+    NFR24L01_SOFTSPI,
+    NFR24L01_SPI,
+} nfr24l01_spi_type_e;
+
+void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType);
 void NRF24L01_Initialize(uint8_t baseConfig);
 uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data);
 uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length);

@@ -113,10 +113,10 @@ bool rxNrf24DataReceived(void)
 /*
  * Set and initialize the NRF24 protocol
  */
-bool rxNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxNrf24Init(nfr24l01_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     bool ret = false;
-    NRF24L01_SpiInit();
+    NRF24L01_SpiInit(spiType);
     if (rxNrf24SetProtocol(rxConfig->nrf24rx_protocol)) {
         protocolInit(rxConfig, rxRuntimeConfig);
         ret = true;
