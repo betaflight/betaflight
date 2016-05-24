@@ -382,6 +382,8 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
 {
     uint8_t i;
 
+    currentMixerMode = mixerMode;
+
     // set flag that we're on something with wings
     if (currentMixerMode == MIXER_FLYING_WING ||
         currentMixerMode == MIXER_AIRPLANE ||
@@ -391,8 +393,6 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
     } else {
         DISABLE_STATE(FIXED_WING);
     }
-
-    currentMixerMode = mixerMode;
 
     customMixers = initialCustomMotorMixers;
     customServoMixers = initialCustomServoMixers;
