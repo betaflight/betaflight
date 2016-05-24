@@ -564,7 +564,6 @@ static void resetConf(void)
 #ifdef LED_STRIP
     applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
-    masterConfig.ledstrip_visual_beeper = 0;
 #endif
 
 #ifdef SPRACINGF3

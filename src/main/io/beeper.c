@@ -386,13 +386,6 @@ int beeperTableEntryCount(void)
     return (int)BEEPER_TABLE_ENTRY_COUNT;
 }
 
-/*
- * Returns true if the beeper is on, false otherwise
- */
-bool isBeeperOn(void) {
-    return beeperIsOn;
-}
-
 #else
 
 // Stub out beeper functions if #BEEPER not defined
@@ -404,6 +397,5 @@ uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
 int beeperTableEntryCount(void) {return 0;}
-bool isBeeperOn(void) {return false;}
 
 #endif
