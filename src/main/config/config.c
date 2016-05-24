@@ -140,7 +140,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 136;
+static const uint8_t EEPROM_CONF_VERSION = 137;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -154,14 +154,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidController = 1;
 
     pidProfile->P8[ROLL] = 45;
-    pidProfile->I8[ROLL] = 55;
+    pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 15;
     pidProfile->P8[PITCH] = 45;
-    pidProfile->I8[PITCH] = 55;
+    pidProfile->I8[PITCH] = 40;
     pidProfile->D8[PITCH] = 15;
     pidProfile->P8[YAW] = 90;
-    pidProfile->I8[YAW] = 50;
-    pidProfile->D8[YAW] = 0;
+    pidProfile->I8[YAW] = 45;
+    pidProfile->D8[YAW] = 10;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -184,8 +184,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 200;
-    pidProfile->yawItermIgnoreRate = 50;;
+    pidProfile->rollPitchItermIgnoreRate = 180;
+    pidProfile->yawItermIgnoreRate = 35;
     pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
     pidProfile->dynamic_pid = 1;
 
@@ -308,7 +308,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcExpo8 = 60;
+    controlRateConfig->rcExpo8 = 70;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 20;
@@ -330,7 +330,6 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
     mixerConfig->servo_lowpass_freq = 400;

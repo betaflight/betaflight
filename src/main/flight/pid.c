@@ -231,7 +231,15 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         //-----calculate D-term
         if (axis == YAW) {
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
-            DTerm = 0;
+
+            axisPID[axis] = lrintf(PTerm + ITerm);
+
+            if (motorCount >= 4) {
+                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
+
+                // prevent "yaw jump" during yaw correction
+                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+            }
         } else {
             delta = -(gyroRate - lastRate[axis]);
             lastRate[axis] = gyroRate;
@@ -243,10 +251,10 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
             DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
-        }
 
-        // -----calculate total PID output
-        axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
+            // -----calculate total PID output
+            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
+        }
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -354,7 +362,15 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         //-----calculate D-term
         if (axis == YAW) {
             if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
-            DTerm = 0;
+
+            axisPID[axis] = PTerm + ITerm;
+
+            if (motorCount >= 4) {
+                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
+
+                // prevent "yaw jump" during yaw correction
+                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+            }
         } else {
             delta = -(gyroRate - lastRate[axis]);
             lastRate[axis] = gyroRate;
@@ -366,10 +382,11 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
             if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
 
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+
+            // -----calculate total PID output
+            axisPID[axis] = PTerm + ITerm + DTerm;
         }
 
-        // -----calculate total PID output
-        axisPID[axis] = PTerm + ITerm + DTerm;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

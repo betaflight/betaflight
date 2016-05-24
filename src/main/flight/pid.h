@@ -21,6 +21,8 @@
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
+#define YAW_JUMP_PREVENTION_LIMIT_LOW 80
+#define YAW_JUMP_PREVENTION_LIMIT_HIGH 400
 
 #define DYNAMIC_PTERM_STICK_THRESHOLD 400
 

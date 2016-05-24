@@ -761,11 +761,6 @@ void mixTable(void)
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
-    if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
-        // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
-    }
-
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
     int16_t rollPitchYawMix[MAX_SUPPORTED_MOTORS];
     int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
