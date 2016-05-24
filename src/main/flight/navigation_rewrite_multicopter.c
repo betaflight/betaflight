@@ -468,10 +468,10 @@ static void applyMulticopterPositionController(uint32_t currentTime)
 /*-----------------------------------------------------------
  * Multicopter land detector
  *-----------------------------------------------------------*/
-bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity)
+bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity, int32_t * landingThrSum, int16_t * landingThrSamples)
 {
     uint32_t currentTime = micros();
-    
+
     // When descend stage is activated velocity is ~0, so wait until we have descended faster than -25cm/s
     if (!*hasHadSomeVelocity && posControl.actualState.vel.V.Z < -25.0f) *hasHadSomeVelocity = true;
 
@@ -481,13 +481,31 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     // check if we are moving horizontally
     bool horizontalMovement = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y)) > 100.0f;
 
+    /*
     // Throttle should be low enough
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     bool minimalThrust = rcCommandAdjustedThrottle < posControl.navConfig->mc_min_fly_throttle;
-    
+    */
+
+    // We have likely landed if throttle is 100 units below average throttle
+    // TODO: We could use "((throttle - min_throttle) / acc[z] + min_throttle)" to get a more accurate hover throttle.
+    // TODO: rcCommandAdjustedThrottle never goes below min_throttle+1, so replace 1040+1 with min_throttle+1
+    *landingThrSum += rcCommandAdjustedThrottle;
+    *landingThrSamples += 1;
+    bool minimalThrust= rcCommandAdjustedThrottle <= MAX(*landingThrSum / *landingThrSamples - 100, 1040+1);
+
     bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
     
+    int landingDebug;
+    if (hasHadSomeVelocity) landingDebug += 1;
+    if (minimalThrust) landingDebug += 2;
+    if (!verticalMovement) landingDebug += 4;
+    if (!horizontalMovement) landingDebug += 8;
+    navDebug[0] = landingDebug;
+    navDebug[1] = *landingThrSum / *landingThrSamples;
+    navDebug[2] = *landingThrSamples;
+
     // If we have surface sensor (for example sonar) - use it to detect touchdown
     if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surfaceMin >= 0) {
         // TODO: Come up with a clever way to let sonar increase detection performance, not just add extra safety.

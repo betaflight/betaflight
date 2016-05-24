@@ -1611,11 +1611,15 @@ void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t dista
  *-----------------------------------------------------------*/
 static uint32_t landingTimer;
 static bool hasHadSomeVelocity;
+static int32_t landingThrSum;
+static int16_t landingThrSamples;
 
 void resetLandingDetector(void)
 {
     landingTimer = micros();
     hasHadSomeVelocity = false;
+    landingThrSum = 0;
+    landingThrSamples = 0;
 }
 
 bool isLandingDetected(void)
@@ -1626,7 +1630,7 @@ bool isLandingDetected(void)
         landingDetected = isFixedWingLandingDetected(&landingTimer);
     }
     else {
-        landingDetected = isMulticopterLandingDetected(&landingTimer, &hasHadSomeVelocity);
+        landingDetected = isMulticopterLandingDetected(&landingTimer, &hasHadSomeVelocity, &landingThrSum, &landingThrSamples);
     }
 
     return landingDetected;
