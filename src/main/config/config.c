@@ -187,7 +187,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_lpf_hz = 40;
     pidProfile->yaw_lpf_hz = 30;
 
-    pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
+    pidProfile->yaw_p_limit = YAW_P_LIMIT_DEFAULT;
     pidProfile->mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT;
 
     pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
