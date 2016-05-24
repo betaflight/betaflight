@@ -145,7 +145,11 @@ static const uint16_t airPWM[] = {
 
 #ifdef CC3D
 static const uint16_t multiPPM[] = {
+#ifdef CC3D_PPM1
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+#else
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+#endif
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #1
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #2
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #3
@@ -156,8 +160,12 @@ static const uint16_t multiPPM[] = {
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+#ifdef CC3D_PPM1
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+#endif
     0xFFFF
 };
+
 static const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
@@ -175,7 +183,11 @@ static const uint16_t multiPWM[] = {
 };
 
 static const uint16_t airPPM[] = {
+#ifdef CC3D_PPM1
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+#else
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+#endif
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
@@ -186,6 +198,9 @@ static const uint16_t airPPM[] = {
     PWM3  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM4  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM5  | (MAP_TO_SERVO_OUTPUT  << 8),
+#ifdef CC3D_PPM1
+    PWM6  | (MAP_TO_SERVO_OUTPUT  << 8),
+#endif
     0xFFFF
 };
 
@@ -204,7 +219,7 @@ static const uint16_t airPWM[] = {
     PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
     0xFFFF
 };
-#endif
+#endif // CC3D
 
 #ifdef CJMCU
 static const uint16_t multiPPM[] = {
@@ -237,7 +252,7 @@ static const uint16_t airPPM[] = {
 static const uint16_t airPWM[] = {
         0xFFFF
 };
-#endif
+#endif // CJMCU
 
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
 static const uint16_t multiPPM[] = {
@@ -630,6 +645,11 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
+#ifdef CC3D_PPM1
+            if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
+                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
+            }
+#endif
 #ifdef SPARKY
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
@@ -645,7 +665,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             channelIndex++;
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
-#ifdef CC3D
+#if defined(CC3D) && !defined(CC3D_PPM1)
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
                 if (timerHardwarePtr->tim == TIM2)
