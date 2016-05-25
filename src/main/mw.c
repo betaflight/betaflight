@@ -125,16 +125,6 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-int16_t computeCommandFromLookup(int16_t (*loopupTable)(int32_t), int16_t absoluteDeflection)
-{
-
-    int16_t lookupStep;
-
-    lookupStep = absoluteDeflection / 100;
-
-    return loopupTable(lookupStep) + (absoluteDeflection - lookupStep * 100) * (loopupTable(lookupStep + 1) - loopupTable(lookupStep)) / 100;
-}
-
 int16_t getAxisRcCommand(int16_t rawData, int16_t (*loopupTable)(int32_t), int16_t deadband)
 {
     int16_t command, absoluteDeflection;
@@ -152,7 +142,7 @@ int16_t getAxisRcCommand(int16_t rawData, int16_t (*loopupTable)(int32_t), int16
     /*
         Get command from lookup table after applying deadband
     */
-    command = computeCommandFromLookup(loopupTable, absoluteDeflection);
+    command = loopupTable(absoluteDeflection);
 
     if (rawData < masterConfig.rxConfig.midrc) {
         command = -command;
@@ -174,7 +164,7 @@ void annexCode(void)
     //Compute THROTTLE command
     throttleValue = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
     throttleValue = (uint32_t)(throttleValue - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
-    rcCommand[THROTTLE] = computeCommandFromLookup(rcLookupThrottle, throttleValue);
+    rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);

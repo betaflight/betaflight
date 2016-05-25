@@ -67,22 +67,25 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
     }
 }
 
-int16_t rcLookupPitchRoll(int32_t tmp)
+int16_t rcLookupTable(int16_t lookupTable[], int32_t absoluteDeflection)
 {
-    const int32_t tmp2 = tmp / 100;
-    return lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
+    const int32_t lookupStep = absoluteDeflection / 100;
+    return lookupTable[lookupStep] + (absoluteDeflection - lookupStep * 100) * (lookupTable[lookupStep + 1] - lookupTable[lookupStep]) / 100;
 }
 
-int16_t rcLookupYaw(int32_t tmp)
+int16_t rcLookupPitchRoll(int32_t absoluteDeflection)
 {
-    const int32_t tmp2 = tmp / 100;
-    return (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100);
+    return rcLookupTable(lookupPitchRollRC, absoluteDeflection);
 }
 
-int16_t rcLookupThrottle(int32_t tmp)
+int16_t rcLookupYaw(int32_t absoluteDeflection)
 {
-    const int32_t tmp2 = tmp / 100;
-    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    return rcLookupTable(lookupYawRC, absoluteDeflection);
+}
+
+int16_t rcLookupThrottle(int32_t absoluteDeflection)
+{
+    return rcLookupTable(lookupThrottleRC, absoluteDeflection);
 }
 
 int16_t rcLookupThrottleMid(void)
