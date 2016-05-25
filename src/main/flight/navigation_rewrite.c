@@ -741,7 +741,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_INITIALIZE(navig
         if (posControl.flags.hasValidPositionSensor) {
             // If close to home - reset home position
             if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
-                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
             }
 
             return NAV_FSM_EVENT_SUCCESS;
@@ -826,7 +826,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
         if (posControl.flags.hasValidPositionSensor) {
             // If close to home - reset home position and land
             if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
-                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
                 setDesiredPosition(&posControl.actualState.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z);
 
                 return NAV_FSM_EVENT_SWITCH_TO_RTH_3D_LANDING;   // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
@@ -1490,10 +1490,24 @@ static void updateDesiredRTHAltitude(void)
 /*-----------------------------------------------------------
  * Reset home position to current position
  *-----------------------------------------------------------*/
-void setHomePosition(t_fp_vector * pos, int32_t yaw)
+void setHomePosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask)
 {
-    posControl.homePosition.pos = *pos;
-    posControl.homePosition.yaw = yaw;
+    // XY-position
+    if ((useMask & NAV_POS_UPDATE_XY) != 0) {
+        posControl.homePosition.pos.V.X = pos->V.X;
+        posControl.homePosition.pos.V.Y = pos->V.Y;
+    }
+
+    // Z-position
+    if ((useMask & NAV_POS_UPDATE_Z) != 0) {
+        posControl.homePosition.pos.V.Z = pos->V.Z;
+    }
+
+    // Heading
+    if ((useMask & NAV_POS_UPDATE_HEADING) != 0) {
+        // Heading
+        posControl.homePosition.yaw = yaw;
+    }
 
     posControl.homeDistance = 0;
     posControl.homeDirection = 0;
@@ -1514,13 +1528,18 @@ void updateHomePosition(void)
     // Disarmed and have a valid position, constantly update home
     if (!ARMING_FLAG(ARMED)) {
         if (posControl.flags.hasValidPositionSensor) {
-            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING );
         }
     }
     else {
         // If pilot so desires he may reset home position to current position
         if (IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE) && posControl.flags.hasValidPositionSensor) {
-            setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw);
+            if (STATE(GPS_FIX_HOME)) {
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+            }
+            else {
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+            }
         }
 
         // Update distance and direction to home if armed (home is not updated when armed)
@@ -1799,7 +1818,7 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     if ((wpNumber == 0) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid) {
         // Forcibly set home position. Note that this is only valid if already armed, otherwise home will be reset instantly
         geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
-        setHomePosition(&wpPos.pos, 0);
+        setHomePosition(&wpPos.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
     }
     // WP #255 - special waypoint - directly set desiredPosition
     // Only valid when armed and in poshold mode

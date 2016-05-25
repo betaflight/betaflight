@@ -41,8 +41,8 @@
 
 typedef enum {
     NAV_POS_UPDATE_NONE                 = 0,
-    NAV_POS_UPDATE_XY                   = 1 << 0,
     NAV_POS_UPDATE_Z                    = 1 << 1,
+    NAV_POS_UPDATE_XY                   = 1 << 0,
     NAV_POS_UPDATE_HEADING              = 1 << 2,
     NAV_POS_UPDATE_BEARING              = 1 << 3,
     NAV_POS_UPDATE_BEARING_TAIL_FIRST   = 1 << 4,
@@ -292,7 +292,7 @@ bool isLandingDetected(void);
 
 navigationFSMStateFlags_t navGetCurrentStateFlags(void);
 
-void setHomePosition(t_fp_vector * pos, int32_t yaw);
+void setHomePosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
 void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
 void setDesiredSurfaceOffset(float surfaceOffset);
 void setDesiredPositionToFarAwayTarget(int32_t yaw, int32_t distance, navSetWaypointFlags_t useMask);
