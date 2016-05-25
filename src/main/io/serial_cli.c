@@ -2177,7 +2177,7 @@ static void cliBeeper(char *cmdline)
                         beeperOffSetAll(beeperCount-2);
                     else
                     	if (i == BEEPER_PREFERENCE-1)
-                            setBeeperOffMask(getPreferedBeeperOffMask());
+                            setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
                             mask = 1 << i;
                             beeperOffSet(mask);
@@ -2189,7 +2189,7 @@ static void cliBeeper(char *cmdline)
                         beeperOffClearAll();
                     else
                     	if (i == BEEPER_PREFERENCE-1)
-                            setPreferedBeeperOffMask(getBeeperOffMask());
+                            setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
                             mask = 1 << i;
                             beeperOffClear(mask);
