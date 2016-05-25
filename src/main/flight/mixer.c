@@ -854,6 +854,15 @@ void mixTable(void)
                 motor[i] = escAndServoConfig->mincommand;
             }
         }
+
+        // Experimental Code. Anti Desync feature for ESC's
+        if (escAndServoConfig->escDesyncProtection) {
+            const int16_t maxThrottleStep = escAndServoConfig->escDesyncProtection / (1000 / targetPidLooptime);
+            static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
+
+            motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
+            motorPrevious[i] = motor[i];
+        }
     }
 
     // Disarmed mode

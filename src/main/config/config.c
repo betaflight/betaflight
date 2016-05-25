@@ -140,7 +140,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 137;
+static const uint8_t EEPROM_CONF_VERSION = 138;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -236,6 +236,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
+    escAndServoConfig->escDesyncProtection = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
