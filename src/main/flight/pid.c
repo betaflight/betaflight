@@ -222,7 +222,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         // -----calculate I component.
         uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile) : pidProfile->I8[axis];
 
-        errorGyroIf[axis] = constrainf(kI + luxITermScale * RateError * getdT() * pidProfile->I8[axis], -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * kI, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings

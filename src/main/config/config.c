@@ -161,7 +161,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PITCH] = 15;
     pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 45;
-    pidProfile->D8[YAW] = 10;
+    pidProfile->D8[YAW] = 20;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -184,7 +184,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 180;
+    pidProfile->rollPitchItermIgnoreRate = 900;
     pidProfile->yawItermIgnoreRate = 35;
     pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
     pidProfile->dynamic_pid = 1;
