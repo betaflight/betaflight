@@ -139,7 +139,7 @@ typedef struct master_t {
 #endif
 
     uint32_t beeper_off_flags;
-    uint32_t prefered_beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
