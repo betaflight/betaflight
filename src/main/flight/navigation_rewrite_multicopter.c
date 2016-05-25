@@ -489,7 +489,6 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     */
 
     // We have likely landed if throttle is 100 units below average throttle
-    // TODO: We could use "((throttle - min_throttle) / acc[z] + min_throttle)" to get a more accurate hover throttle.
     // TODO: rcCommandAdjustedThrottle never goes below min_throttle+1, so replace 1040+1 with min_throttle+1
     *landingThrSum += rcCommandAdjustedThrottle;
     *landingThrSamples += 1;
@@ -497,14 +496,9 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
 
     bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
     
-    int landingDebug;
-    if (hasHadSomeVelocity) landingDebug += 1;
-    if (minimalThrust) landingDebug += 2;
-    if (!verticalMovement) landingDebug += 4;
-    if (!horizontalMovement) landingDebug += 8;
-    navDebug[0] = landingDebug;
-    navDebug[1] = *landingThrSum / *landingThrSamples;
-    navDebug[2] = *landingThrSamples;
+    navDebug[0] = *hasHadSomeVelocity*1000 + minimalThrust*100 + !verticalMovement*10 + !horizontalMovement*1;
+    navDebug[1] = (*landingThrSum / *landingThrSamples - 100) - rcCommandAdjustedThrottle;
+    navDebug[2] = (currentTime - *landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
     if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surfaceMin >= 0) {
