@@ -66,6 +66,10 @@
 #define FLAG_RATE_HIGH  0x04
 #define FLAG_HEADLESS   0x10 // RTH + headless on H8, headless on JJRC H20
 #define FLAG_RTH        0x20 // 360° flip mode on H8 3D, RTH on JJRC H20
+#define FLAG_PICTURE    0x40 // on payload[18]
+#define FLAG_VIDEO      0x80 // on payload[18]
+#define FLAG_CAMERA_UP  0x04 // on payload[18]
+#define FLAG_CAMERA_DOWN 0x08 // on payload[18]
 
 // XN297 emulation layer
 static void XN297_UnscramblePayload(uint8_t* data, int len);
@@ -102,7 +106,6 @@ void setBound(const uint8_t* txId);
 void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 {
     UNUSED(protocol);
-    UNUSED(nrf24_id);
     protocolState = STATE_BIND;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC
@@ -161,6 +164,7 @@ void h8_3dSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     rcData[NRF24_YAW] = yawByte >= 0 ? h8_3dConvertToPwm(yawByte, -0x3c, 0x3c) : h8_3dConvertToPwm(yawByte, 0xbc, 0x44);
 
     const uint8_t flags = payload[17];
+    const uint8_t flags2 = payload[18];
     if (flags & FLAG_RATE_HIGH) {
         rcData[NRF24_AUX1] = PWM_RANGE_MAX;
     } else if (flags & FLAG_RATE_MID) {
@@ -168,22 +172,21 @@ void h8_3dSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     } else {
         rcData[NRF24_AUX1] = PWM_RANGE_MIN;
     }
+    if (flags2 & FLAG_CAMERA_UP) {
+        rcData[NRF24_AUX7] = PWM_RANGE_MAX;
+    } else if (flags2 & FLAG_CAMERA_DOWN) {
+        rcData[NRF24_AUX7] = PWM_RANGE_MIN;
+    } else {
+        rcData[NRF24_AUX7] = PWM_RANGE_MIDDLE;
+    }
     rcData[NRF24_AUX2] = flags & FLAG_FLIP ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[NRF24_AUX3] = PWM_RANGE_MIN; // picture
-    rcData[NRF24_AUX4] = PWM_RANGE_MIN; // video
+    rcData[NRF24_AUX3] = flags2 & FLAG_PICTURE ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+    rcData[NRF24_AUX4] = flags2 & FLAG_VIDEO ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     rcData[NRF24_AUX5] = flags & FLAG_HEADLESS ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     rcData[NRF24_AUX6] = flags & FLAG_RTH ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[NRF24_AUX7] = h8_3dConvertToPwm(payload[13], 0x43, 0xbb);
-    rcData[NRF24_AUX9] = h8_3dConvertToPwm(payload[14], 0x43, 0xbb);
-    rcData[NRF24_AUX9] = h8_3dConvertToPwm(payload[15], 0x43, 0xbb);
-    rcData[NRF24_AUX10] = h8_3dConvertToPwm(payload[16], 0x43, 0xbb);
-
-    rcData[NRF24_AUX1] = 1000+payload[0];
-    rcData[NRF24_AUX2] = 1000+payload[1];
-    rcData[NRF24_AUX3] = 1000+payload[2];
-    rcData[NRF24_AUX4] = 1000+payload[3];
-    rcData[NRF24_AUX5] = 1000+payload[4];
-    rcData[NRF24_AUX6] = 1000+payload[5];
+    rcData[NRF24_AUX8] = h8_3dConvertToPwm(payload[14], 0x10, 0x30);
+    rcData[NRF24_AUX9] = h8_3dConvertToPwm(payload[15], 0x30, 0x10);
+    rcData[NRF24_AUX10] = h8_3dConvertToPwm(payload[16], 0x10, 0x30);
 }
 
 static void hopToNextChannel(void)
@@ -205,10 +208,13 @@ static void hopToNextChannel(void)
 // The hopping channels are determined by the txId
 void setHoppingChannels(const uint8_t* txId)
 {
-    h8_3dRfChannels[0] = 0x06 + ((txId[0] & 0x0f) % 0x0f);
-    h8_3dRfChannels[1] = 0x15 + ((txId[1] & 0x0f) % 0x0f);
-    h8_3dRfChannels[2] = 0x24 + ((txId[2] & 0x0f) % 0x0f);
-    h8_3dRfChannels[3] = 0x33 + ((txId[3] & 0x0f) % 0x0f);
+    h8_3dRfChannels[0] = 0x06 + ((txId[0]>>4) +(txId[0] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[1] = 0x15 + ((txId[1]>>4) +(txId[1] & 0x0f)) % 0x0f;
+    // Kludge to allow bugged deviation TX H8_3D implementation to work
+    //h8_3dRfChannels[2] = 0x24 + ((txId[2]>>4) +(txId[2] & 0x0f)) % 0x0f;
+    //h8_3dRfChannels[3] = 0x33 + ((txId[3]>>4) +(txId[3] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[2] = 0x06 + ((txId[0]>>8) +(txId[0] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[3] = 0x15 + ((txId[1]>>8) +(txId[1] & 0x0f)) % 0x0f;
 }
 
 void setBound(const uint8_t* txId)
