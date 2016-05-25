@@ -168,3 +168,4 @@ float acos_approx(float x);
 #endif
 
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a);

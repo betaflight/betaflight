@@ -28,6 +28,7 @@
 #ifdef USE_RX_CX10
 
 #include "drivers/rx_nrf24l01.h"
+#include "drivers/rx_xn297.h"
 #include "drivers/system.h"
 
 #include "rx/nrf24.h"
@@ -67,10 +68,6 @@
 // flags2
 #define FLAG_VIDEO      0x02
 #define FLAG_PICTURE    0x04
-
-// XN297 emulation layer
-STATIC_UNIT_TESTED uint8_t XN297_WritePayload(uint8_t* data, int len);
-STATIC_UNIT_TESTED void XN297_UnscramblePayload(uint8_t* data, int len);
 
 static nrf24_protocol_t cx10Protocol;
 
@@ -227,7 +224,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         payload[9] = 0x01;
         NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
         NRF24L01_FlushTx();
-        XN297_WritePayload(payload, payloadSize);
+        XN297_WritePayload(payload, payloadSize, rxAddr);
         NRF24L01_SetTxMode();// enter transmit mode to send the packet
         // wait for the ACK packet to send before changing channel
         static const int fifoDelayUs = 100;
@@ -238,7 +235,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         // send out an ACK on each of the hopping channels, required by CX10 transmitter
         for (uint8_t ii = 0; ii < RF_CHANNEL_COUNT; ++ii) {
             NRF24L01_SetChannel(cx10RfChannels[ii]);
-            XN297_WritePayload(payload, payloadSize);
+            XN297_WritePayload(payload, payloadSize, rxAddr);
             NRF24L01_SetTxMode();// enter transmit mode to send the packet
             // wait for the ACK packet to send before changing channel
             while (!(NRF24L01_ReadReg(NRF24L01_17_FIFO_STATUS) & BV(NRF24L01_17_FIFO_STATUS_TX_EMPTY))) {
@@ -279,70 +276,5 @@ void cx10Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = CX10_RC_CHANNEL_COUNT;
     cx10Nrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
 }
-
-
-// XN297 emulation layer
-
-static const uint8_t xn297_data_scramble[30] = {
-    0xbc, 0xe5, 0x66, 0x0d, 0xae, 0x8c, 0x88, 0x12,
-    0x69, 0xee, 0x1f, 0xc7, 0x62, 0x97, 0xd5, 0x0b,
-    0x79, 0xca, 0xcc, 0x1b, 0x5d, 0x19, 0x10, 0x24,
-    0xd3, 0xdc, 0x3f, 0x8e, 0xc5, 0x2f
-};
-
-static uint8_t bitReverse(uint8_t bIn)
-{
-    uint8_t bOut = 0;
-    for (int ii = 0; ii < 8; ++ii) {
-        bOut = (bOut << 1) | (bIn & 1);
-        bIn >>= 1;
-    }
-    return bOut;
-}
-
-static uint16_t crc16_update(uint16_t crc, unsigned char a)
-{
-    static const uint16_t crcPolynomial = 0x1021;
-    crc ^= a << 8;
-    for (int ii = 0; ii < 8; ++ii) {
-        if (crc & 0x8000) {
-            crc = (crc << 1) ^ crcPolynomial;
-        } else {
-            crc = crc << 1;
-        }
-    }
-    return crc;
-}
-
-STATIC_UNIT_TESTED uint8_t XN297_WritePayload(uint8_t* data, int len)
-{
-    uint8_t packet[NRF24L01_MAX_PAYLOAD_SIZE];
-    uint16_t crc = 0xb5d2;
-    for (int ii = 0; ii < RX_TX_ADDR_LEN; ++ii) {
-        packet[ii] = rxAddr[RX_TX_ADDR_LEN - 1 - ii];
-        crc = crc16_update(crc, packet[ii]);
-    }
-    for (int ii = 0; ii < len; ++ii) {
-        // bit-reverse bytes in packet
-        const uint8_t bOut = bitReverse(data[ii]);
-        packet[ii + RX_TX_ADDR_LEN] = bOut ^ xn297_data_scramble[ii];
-        crc = crc16_update(crc, packet[ii + RX_TX_ADDR_LEN]);
-    }
-    const uint16_t crcXor = (len == CX10_PROTOCOL_PAYLOAD_SIZE) ? 0x9BA7 : 0x61B1;
-    crc ^= crcXor;
-    packet[RX_TX_ADDR_LEN + len] = crc >> 8;
-    packet[RX_TX_ADDR_LEN + len + 1] = crc & 0xff;
-    return NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
-}
-
-STATIC_UNIT_TESTED void XN297_UnscramblePayload(uint8_t* data, int len)
-{
-    for (uint8_t ii = 0; ii < len; ++ii) {
-        data[ii] = bitReverse(data[ii] ^ xn297_data_scramble[ii]);
-    }
-}
-
-// End of XN297 emulation
-
 #endif
 

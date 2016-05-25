@@ -28,6 +28,7 @@
 #ifdef USE_RX_H8_3D
 
 #include "drivers/rx_nrf24l01.h"
+#include "drivers/rx_xn297.h"
 #include "drivers/system.h"
 
 #include "rx/nrf24.h"
@@ -71,9 +72,6 @@
 #define FLAG_CAMERA_UP  0x04 // on payload[18]
 #define FLAG_CAMERA_DOWN 0x08 // on payload[18]
 
-// XN297 emulation layer
-static void XN297_UnscramblePayload(uint8_t* data, int len);
-
 typedef enum {
     STATE_BIND = 0,
     STATE_DATA
@@ -101,7 +99,7 @@ STATIC_UNIT_TESTED uint8_t h8_3dRfChannels[H8_3D_RF_CHANNEL_COUNT];
 static uint32_t hopTimeout = BIND_HOP_TIMEOUT;
 static uint32_t timeOfLastHop;
 
-void setBound(const uint8_t* txId);
+void h8_3dSetBound(const uint8_t* txId);
 
 void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 {
@@ -120,7 +118,7 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
         h8_3dRfChannelIndex = H8_3D_RF_BIND_CHANNEL_START;
         NRF24L01_SetChannel(H8_3D_RF_BIND_CHANNEL_START);
     } else {
-        setBound(nrf24_id);
+        h8_3dSetBound(nrf24_id);
     }
 
     NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
@@ -206,7 +204,7 @@ static void hopToNextChannel(void)
 }
 
 // The hopping channels are determined by the txId
-void setHoppingChannels(const uint8_t* txId)
+void h8_3dSetHoppingChannels(const uint8_t* txId)
 {
     h8_3dRfChannels[0] = 0x06 + ((txId[0]>>4) +(txId[0] & 0x0f)) % 0x0f;
     h8_3dRfChannels[1] = 0x15 + ((txId[1]>>4) +(txId[1] & 0x0f)) % 0x0f;
@@ -217,9 +215,9 @@ void setHoppingChannels(const uint8_t* txId)
     h8_3dRfChannels[3] = 0x15 + ((txId[1]>>8) +(txId[1] & 0x0f)) % 0x0f;
 }
 
-void setBound(const uint8_t* txId)
+void h8_3dSetBound(const uint8_t* txId)
 {
-    setHoppingChannels(txId);
+    h8_3dSetHoppingChannels(txId);
     protocolState = STATE_DATA;
     hopTimeout = DATA_HOP_TIMEOUT;
     h8_3dRfChannelIndex = 0;
@@ -244,7 +242,7 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
             const bool bindPacket = h8_3dCheckBindPacket(payload);
             if (bindPacket) {
                 ret = NRF24_RECEIVED_BIND;
-                setBound(txId);
+                h8_3dSetBound(txId);
             }
         }
         break;
@@ -265,29 +263,5 @@ void h8_3dInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = H8_3D_RC_CHANNEL_COUNT;
     h8_3dNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
-}
-
-static const uint8_t xn297_data_scramble[30] = {
-    0xbc, 0xe5, 0x66, 0x0d, 0xae, 0x8c, 0x88, 0x12,
-    0x69, 0xee, 0x1f, 0xc7, 0x62, 0x97, 0xd5, 0x0b,
-    0x79, 0xca, 0xcc, 0x1b, 0x5d, 0x19, 0x10, 0x24,
-    0xd3, 0xdc, 0x3f, 0x8e, 0xc5, 0x2f
-};
-
-static uint8_t bitReverse(uint8_t bIn)
-{
-    uint8_t bOut = 0;
-    for (int ii = 0; ii < 8; ++ii) {
-        bOut = (bOut << 1) | (bIn & 1);
-        bIn >>= 1;
-    }
-    return bOut;
-}
-
-static void XN297_UnscramblePayload(uint8_t* data, int len)
-{
-    for (uint8_t ii = 0; ii < len; ++ii) {
-        data[ii] = bitReverse(data[ii] ^ xn297_data_scramble[ii]);
-    }
 }
 #endif
