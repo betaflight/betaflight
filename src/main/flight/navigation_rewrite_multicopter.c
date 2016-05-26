@@ -492,12 +492,12 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     // TODO: rcCommandAdjustedThrottle never goes below min_throttle+1, so replace 1040+1 with min_throttle+1
     *landingThrSum += rcCommandAdjustedThrottle;
     *landingThrSamples += 1;
-    bool minimalThrust= rcCommandAdjustedThrottle <= MAX(*landingThrSum / *landingThrSamples - 100, 1040+1);
+    bool minimalThrust= rcCommandAdjustedThrottle <= MAX(*landingThrSum / *landingThrSamples - 50, 1040+1);
 
     bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
     
     navDebug[0] = *hasHadSomeVelocity*1000 + minimalThrust*100 + !verticalMovement*10 + !horizontalMovement*1;
-    navDebug[1] = (*landingThrSum / *landingThrSamples - 100) - rcCommandAdjustedThrottle;
+    navDebug[1] = (*landingThrSum / *landingThrSamples) - rcCommandAdjustedThrottle;
     navDebug[2] = (currentTime - *landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
