@@ -84,6 +84,7 @@ STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
 #endif
 #ifdef USE_RX_H8_3D
     case NRF24RX_H8_3D:
+    case NRF24RX_H8_3D_DEVIATION:
         protocolInit = h8_3dInit;
         protocolDataReceived = h8_3dDataReceived;
         protocolSetRcDataFromPayload = h8_3dSetRcDataFromPayload;

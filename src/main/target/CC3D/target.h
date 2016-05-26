@@ -193,6 +193,7 @@
 #undef TELEMETRY
 #undef TELEMETRY_LTM
 #undef SERIAL_RX
+#undef SPEKTRUM_BIND
 #define LED_STRIP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
