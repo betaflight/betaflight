@@ -803,7 +803,9 @@ SINGULARITY_SRC	 = \
 		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
+		   drivers/vtx_rtc6705.c \
 		   io/flashfs.c \
+		   io/vtx.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)
