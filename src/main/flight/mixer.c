@@ -101,7 +101,6 @@ static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
 };
 
-#ifndef DISABLE_UNCOMMON_MIXERS
 static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
     { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
@@ -109,6 +108,7 @@ static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
 };
 
+#ifndef DISABLE_UNCOMMON_MIXERS
 static const motorMixer_t mixerVtail4[] = {
     { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
     { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
@@ -215,11 +215,7 @@ const mixer_t mixers[] = {
     // motors, use servo, motor mixer
     { 0, false, NULL, true },                // entry 0
     { 3, true,  mixerTricopter, true },      // MIXER_TRI
-    #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { 4, false, mixerQuadP, true },      // MIXER_QUADP
-    #else
-        { 0, false, NULL, false },           // MIXER_QUADP
-    #endif
+    { 4, false, mixerQuadP, true },          // MIXER_QUADP
     { 4, false, mixerQuadX, true },          // MIXER_QUADX
 
     { 0, false, NULL, false },               // MIXER_BICOPTER

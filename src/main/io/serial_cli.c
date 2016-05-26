@@ -1691,6 +1691,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
         }
 
+#ifdef USE_SERVOS
         // print custom servo mixer if exists
         cliPrintf("smix reset\r\n");
 
@@ -1710,6 +1711,7 @@ static void cliDump(char *cmdline)
                 masterConfig.customServoMixer[i].box
             );
         }
+#endif // USE_SERVOS
 
 #endif
 
