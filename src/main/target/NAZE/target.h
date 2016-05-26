@@ -201,6 +201,8 @@
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define TARGET_MOTOR_COUNT 8
+
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32
 #undef TARGET_BOARD_IDENTIFIER

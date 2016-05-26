@@ -101,7 +101,6 @@ static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  1.0f, -0.666667f,  0.0f },     // LEFT
 };
 
-#ifndef DISABLE_UNCOMMON_MIXERS
 static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
     { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
@@ -109,6 +108,7 @@ static const motorMixer_t mixerQuadP[] = {
     { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
 };
 
+#ifndef DISABLE_UNCOMMON_MIXERS
 static const motorMixer_t mixerVtail4[] = {
     { 1.0f,  -0.58f,  0.58f, 1.0f },        // REAR_R
     { 1.0f,  -0.46f, -0.39f, -0.5f },       // FRONT_R
@@ -123,6 +123,14 @@ static const motorMixer_t mixerAtail4[] = {
     { 1.0f,  1.0f, -1.0f, -0.0f },          // FRONT_L
 };
 
+static const motorMixer_t mixerY4[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
+    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
+    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
+};
+
+#if (MAX_SUPPORTED_MOTORS >= 6)
 static const motorMixer_t mixerHex6H[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },     // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },     // FRONT_R
@@ -149,14 +157,9 @@ static const motorMixer_t mixerHex6P[] = {
     { 1.0f,  0.0f,      -1.0f,  1.0f },     // FRONT
     { 1.0f,  0.0f,       1.0f, -1.0f },     // REAR
 };
+#endif
 
-static const motorMixer_t mixerY4[] = {
-    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR_TOP CW
-    { 1.0f, -1.0f, -1.0f,  0.0f },          // FRONT_R CCW
-    { 1.0f,  0.0f,  1.0f,  1.0f },          // REAR_BOTTOM CCW
-    { 1.0f,  1.0f, -1.0f,  0.0f },          // FRONT_L CW
-};
-
+#if (MAX_SUPPORTED_MOTORS >= 8)
 static const motorMixer_t mixerOctoFlatP[] = {
     { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
     { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
@@ -179,17 +182,6 @@ static const motorMixer_t mixerOctoFlatX[] = {
     { 1.0f,  1.0f,  0.414178f, -1.0f },      // MIDREAR_L
 };
 
-#endif //DISABLE_UNCOMMON_MIXERS
-
-static const motorMixer_t mixerHex6X[] = {
-    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
-    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
-    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
-    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
-    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
-    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
-};
-
 static const motorMixer_t mixerOctoX8[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
     { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
@@ -200,6 +192,19 @@ static const motorMixer_t mixerOctoX8[] = {
     { 1.0f,  1.0f,  1.0f, -1.0f },          // UNDER_REAR_L
     { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
 };
+#endif
+#endif //DISABLE_UNCOMMON_MIXERS
+
+#if (MAX_SUPPORTED_MOTORS >= 6)
+static const motorMixer_t mixerHex6X[] = {
+    { 1.0f, -0.5f,  0.866025f,  1.0f },     // REAR_R
+    { 1.0f, -0.5f, -0.866025f,  1.0f },     // FRONT_R
+    { 1.0f,  0.5f,  0.866025f, -1.0f },     // REAR_L
+    { 1.0f,  0.5f, -0.866025f, -1.0f },     // FRONT_L
+    { 1.0f, -1.0f,  0.0f,      -1.0f },     // RIGHT
+    { 1.0f,  1.0f,  0.0f,       1.0f },     // LEFT
+};
+#endif
 
 static const motorMixer_t mixerSingleProp[] = {
     { 1.0f,  0.0f,  0.0f, 0.0f },
@@ -210,16 +215,12 @@ const mixer_t mixers[] = {
     // motors, use servo, motor mixer
     { 0, false, NULL, true },                // entry 0
     { 3, true,  mixerTricopter, true },      // MIXER_TRI
-    #ifndef DISABLE_UNCOMMON_MIXERS
-        { 4, false, mixerQuadP, true },      // MIXER_QUADP
-    #else
-        { 0, false, NULL, false },           // MIXER_QUADP
-    #endif
+    { 4, false, mixerQuadP, true },          // MIXER_QUADP
     { 4, false, mixerQuadX, true },          // MIXER_QUADX
 
     { 0, false, NULL, false },               // MIXER_BICOPTER
     { 0, false, NULL, false },               // MIXER_GIMBAL -> this mixer was never implemented in CF, use feature(FEATURE_SERVO_TILT) instead
-    #ifndef DISABLE_UNCOMMON_MIXERS
+    #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 6)
         { 6, false, mixerY6, true },         // MIXER_Y6
         { 6, false, mixerHex6P, true },      // MIXER_HEX6
     #else
@@ -227,34 +228,43 @@ const mixer_t mixers[] = {
         { 0, false, NULL, false },           // MIXER_HEX6
     #endif
     { 1, true,  mixerSingleProp, true },     // MIXER_FLYING_WING
-    #ifndef DISABLE_UNCOMMON_MIXERS
+    #if !defined(DISABLE_UNCOMMON_MIXERS)
         { 4, false, mixerY4, true },         // MIXER_Y4
     #else
         { 0, false, NULL, false },           // MIXER_Y4
     #endif
-    { 6, false, mixerHex6X, true },          // MIXER_HEX6X
-    { 8, false, mixerOctoX8, true },         // MIXER_OCTOX8
-    #ifndef DISABLE_UNCOMMON_MIXERS
+    #if (MAX_SUPPORTED_MOTORS >= 6)
+        { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+    #else
+        { 0, false, NULL, false },          // MIXER_HEX6X
+    #endif
+    #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
+        { 8, false, mixerOctoX8, true },     // MIXER_OCTOX8
         { 8, false, mixerOctoFlatP, true },  // MIXER_OCTOFLATP
         { 8, false, mixerOctoFlatX, true },  // MIXER_OCTOFLATX
     #else
+        { 0, false, NULL, false },           // MIXER_OCTOX8
         { 0, false, NULL, false },           // MIXER_OCTOFLATP
         { 0, false, NULL, false },           // MIXER_OCTOFLATX
     #endif
     { 1, true,  mixerSingleProp, true },     // * MIXER_AIRPLANE
     { 0, true,  NULL, false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
     { 0, true,  NULL, false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
-    #ifndef DISABLE_UNCOMMON_MIXERS
+    #if !defined(DISABLE_UNCOMMON_MIXERS)
         { 4, false, mixerVtail4, true },     // MIXER_VTAIL4
+    #if (MAX_SUPPORTED_MOTORS >= 6)
         { 6, false, mixerHex6H, true },      // MIXER_HEX6H
+    #else
+        { 0, false, NULL, false },           // MIXER_HEX6H
+    #endif
     #else
         { 0, false, NULL, false },           // MIXER_VTAIL4
         { 0, false, NULL, false },           // MIXER_HEX6H
     #endif
-    { 0, true,  NULL, false },              // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
-    { 0, false, NULL, false },              // MIXER_DUALCOPTER
-    { 0, false, NULL, false },             // MIXER_SINGLECOPTER
-    #ifndef DISABLE_UNCOMMON_MIXERS
+    { 0, true,  NULL, false },               // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
+    { 0, false, NULL, false },               // MIXER_DUALCOPTER
+    { 0, false, NULL, false },               // MIXER_SINGLECOPTER
+    #if !defined(DISABLE_UNCOMMON_MIXERS)
         { 4, false, mixerAtail4, true },     // MIXER_ATAIL4
     #else
         { 0, false, NULL, false },           // MIXER_ATAIL4
