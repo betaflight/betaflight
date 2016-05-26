@@ -233,7 +233,14 @@ void processRxDependentCoefficients(void) {
         if (rcData[axis] < rxConfig()->midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
-
+    if (FLIGHT_MODE(HEADFREE_MODE)) {
+        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+        float cosDiff = cos_approx(radDiff);
+        float sinDiff = sin_approx(radDiff);
+        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
+        rcCommand[PITCH] = rcCommand_PITCH;
+    }
 }
 
 void annexCode(void)
@@ -244,15 +251,6 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
     
-    if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        float cosDiff = cos_approx(radDiff);
-        float sinDiff = sin_approx(radDiff);
-        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
-        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
-        rcCommand[PITCH] = rcCommand_PITCH;
-    }
-
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
