@@ -116,37 +116,6 @@ static void switch_channel(void)
     if (++rf_ch_num >= V2X2_NFREQCHANNELS) rf_ch_num = 0;
 }
 
-void v202Nrf24Init(nrf24_protocol_t protocol)
-{
-    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // 2-bytes CRC
-
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00);      // No Auto Acknowledgment
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0xFF); // 4ms retransmit t/o, 15 tries
-    if (protocol == NRF24RX_V202_250K) {
-        NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
-    } else {
-        NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
-    }
-    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_RX_DR) | BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT));     // Clear data ready, data sent, and retransmit
-    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, V2X2_PAYLOAD_SIZE);  // bytes of data payload for pipe 0
-    NRF24L01_WriteReg(NRF24L01_17_FIFO_STATUS, 0x00); // Just in case, no real bits to write here
-#define RX_TX_ADDR_LEN 5
-    const uint8_t rx_tx_addr[RX_TX_ADDR_LEN] = {0x66, 0x88, 0x68, 0x68, 0x68};
-    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rx_tx_addr, RX_TX_ADDR_LEN);
-    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rx_tx_addr, RX_TX_ADDR_LEN);
-
-    NRF24L01_FlushTx();
-    NRF24L01_FlushRx();
-
-    rf_ch_num = 0;
-    bind_phase = PHASE_NOT_BOUND;
-    prepare_to_bind();
-    switch_channel();
-    NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
-}
-
 void v2x2_set_tx_id(uint8_t *id)
 {
     uint8_t sum;
@@ -247,6 +216,37 @@ nrf24_received_t readrx(uint8_t *packet)
 nrf24_received_t v202DataReceived(uint8_t *packet)
 {
     return readrx(packet);
+}
+
+void v202Nrf24Init(nrf24_protocol_t protocol)
+{
+    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // 2-bytes CRC
+
+    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00);      // No Auto Acknowledgment
+    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0xFF); // 4ms retransmit t/o, 15 tries
+    if (protocol == NRF24RX_V202_250K) {
+        NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
+    } else {
+        NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
+    }
+    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_RX_DR) | BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT));     // Clear data ready, data sent, and retransmit
+    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, V2X2_PAYLOAD_SIZE);  // bytes of data payload for pipe 0
+    NRF24L01_WriteReg(NRF24L01_17_FIFO_STATUS, 0x00); // Just in case, no real bits to write here
+#define RX_TX_ADDR_LEN 5
+    const uint8_t rx_tx_addr[RX_TX_ADDR_LEN] = {0x66, 0x88, 0x68, 0x68, 0x68};
+    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rx_tx_addr, RX_TX_ADDR_LEN);
+    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rx_tx_addr, RX_TX_ADDR_LEN);
+
+    NRF24L01_FlushTx();
+    NRF24L01_FlushRx();
+
+    rf_ch_num = 0;
+    bind_phase = PHASE_NOT_BOUND;
+    prepare_to_bind();
+    switch_channel();
+    NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
 void v202Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)

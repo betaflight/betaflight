@@ -54,12 +54,13 @@
  * hops between 4 channels that are set from the txId sent in the bind packet
  */
 
-#define CX10_RC_CHANNEL_COUNT             9
+#define RC_CHANNEL_COUNT 9
 
-#define CX10_PROTOCOL_PAYLOAD_SIZE       15
-#define CX10A_PROTOCOL_PAYLOAD_SIZE      19
-
-#define CX10_RF_BIND_CHANNEL           0x02
+enum {
+    RATE_LOW = 0,
+    RATE_MID = 1,
+    RATE_HIGH= 2,
+};
 
 #define FLAG_FLIP       0x10 // goes to rudder channel
 // flags1
@@ -79,10 +80,10 @@ typedef enum {
 
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
-
-
-#define ACK_TO_SEND_COUNT 8
+#define CX10_PROTOCOL_PAYLOAD_SIZE  15
+#define CX10A_PROTOCOL_PAYLOAD_SIZE 19
 static uint8_t payloadSize;
+#define ACK_TO_SEND_COUNT 8
 
 #define RX_TX_ADDR_LEN     5
 //STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0xcc, 0xcc, 0xcc, 0xcc, 0xcc};
@@ -91,46 +92,20 @@ STATIC_UNIT_TESTED uint8_t rxAddr[RX_TX_ADDR_LEN] = {0x49, 0x26, 0x87, 0x7d, 0x2
 #define TX_ID_LEN 4
 STATIC_UNIT_TESTED uint8_t txId[TX_ID_LEN];
 
-STATIC_UNIT_TESTED uint8_t cx10RfChannelIndex = 0;
+#define CX10_RF_BIND_CHANNEL           0x02
 #define RF_CHANNEL_COUNT 4
+STATIC_UNIT_TESTED uint8_t cx10RfChannelIndex = 0;
 STATIC_UNIT_TESTED uint8_t cx10RfChannels[RF_CHANNEL_COUNT]; // channels are set using txId from bind packet
 
 static uint32_t timeOfLastHop;
 static const uint32_t hopTimeout = 5000; // 5ms
-
-void cx10Nrf24Init(nrf24_protocol_t protocol)
-{
-    cx10Protocol = protocol;
-    protocolState = STATE_BIND;
-    payloadSize = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_PAYLOAD_SIZE : CX10A_PROTOCOL_PAYLOAD_SIZE;
-
-    NRF24L01_Initialize(0); // sets PWR_UP, no CRC
-
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0);
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0 only
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
-
-    NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
-    // RX_ADDR for pipes P2 to P5 are left at default values
-    NRF24L01_FlushRx();
-    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, txAddr, RX_TX_ADDR_LEN);
-    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxAddr, RX_TX_ADDR_LEN);
-
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
-    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize + 2); // payload + 2 bytes CRC
-
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
-
-    NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
-}
 
 /*
  * Returns true if it is a bind packet.
  */
 STATIC_UNIT_TESTED bool cx10CheckBindPacket(const uint8_t *packet)
 {
-    const bool bindPacket = (packet[0] == 0xaa);
+    const bool bindPacket = (packet[0] == 0xaa); // 10101010
     if (bindPacket) {
         txId[0] = packet[1];
         txId[1] = packet[2];
@@ -157,22 +132,22 @@ void cx10SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     rcData[NRF24_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);  // rudder
     const uint8_t flags1 = payload[13 + offset];
     const uint8_t rate = flags1 & FLAG_MODE_MASK; // takes values 0, 1, 2
-    if (rate == 0) {
-        rcData[NRF24_AUX1] = PWM_RANGE_MIN;
-    } else if (rate == 1) {
-        rcData[NRF24_AUX1] = PWM_RANGE_MIDDLE;
+    if (rate == RATE_LOW) {
+        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIN;
+    } else if (rate == RATE_MID) {
+        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIDDLE;
     } else {
-        rcData[NRF24_AUX1] = PWM_RANGE_MAX;
+        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MAX;
     }
     // flip flag is in YAW byte
-    rcData[NRF24_AUX2] = payload[12 + offset] & FLAG_FLIP ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+    rcData[RC_CHANNEL_FLIP] = payload[12 + offset] & FLAG_FLIP ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     const uint8_t flags2 = payload[14 + offset];
-    rcData[NRF24_AUX3] = flags2 & FLAG_PICTURE ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[NRF24_AUX4] = flags2 & FLAG_VIDEO ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[NRF24_AUX5] = flags1 & FLAG_HEADLESS ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+    rcData[RC_CHANNEL_PICTURE] = flags2 & FLAG_PICTURE ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+    rcData[RC_CHANNEL_VIDEO] = flags2 & FLAG_VIDEO ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+    rcData[RC_CHANNEL_HEADLESS] = flags1 & FLAG_HEADLESS ? PWM_RANGE_MAX : PWM_RANGE_MIN;
 }
 
-static void hopToNextChannel(void)
+static void cx10HopToNextChannel(void)
 {
     ++cx10RfChannelIndex;
     if (cx10RfChannelIndex >= RF_CHANNEL_COUNT) {
@@ -182,7 +157,7 @@ static void hopToNextChannel(void)
 }
 
 // The hopping channels are determined by the txId
-STATIC_UNIT_TESTED void setHoppingChannels(const uint8_t* txId)
+STATIC_UNIT_TESTED void cx10SetHoppingChannels(const uint8_t* txId)
 {
     cx10RfChannelIndex = 0;
     cx10RfChannels[0] = 0x03 + (txId[0] & 0x0F);
@@ -209,7 +184,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
             const bool bindPacket = cx10CheckBindPacket(payload);
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
-                setHoppingChannels(txId);
+                cx10SetHoppingChannels(txId);
                 ret = NRF24_RECEIVED_BIND;
                 protocolState = STATE_ACK;
                 ackCount = 0;
@@ -259,21 +234,48 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
             XN297_UnscramblePayload(payload, payloadSize + 2);
-            hopToNextChannel();
+            cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
             ret = NRF24_RECEIVED_DATA;
         }
         if (timeNowUs > timeOfLastHop + hopTimeout) {
-            hopToNextChannel();
+            cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
         }
     }
     return ret;
 }
 
+void cx10Nrf24Init(nrf24_protocol_t protocol)
+{
+    cx10Protocol = protocol;
+    protocolState = STATE_BIND;
+    payloadSize = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_PAYLOAD_SIZE : CX10A_PROTOCOL_PAYLOAD_SIZE;
+
+    NRF24L01_Initialize(0); // sets PWR_UP, no CRC
+
+    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0);
+    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0 only
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
+    NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
+
+    NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
+    // RX_ADDR for pipes P2 to P5 are left at default values
+    NRF24L01_FlushRx();
+    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, txAddr, RX_TX_ADDR_LEN);
+    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxAddr, RX_TX_ADDR_LEN);
+
+    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
+    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize + 2); // payload + 2 bytes CRC
+
+    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
+
+    NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
+}
+
 void cx10Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    rxRuntimeConfig->channelCount = CX10_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
     cx10Nrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
 }
 #endif

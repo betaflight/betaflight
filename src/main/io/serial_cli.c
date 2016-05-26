@@ -383,6 +383,7 @@ static const char * const lookupTableSerialRX[] = {
 #endif
 
 #ifdef USE_RX_NRF24
+// sync with nrf24_protocol_t
 static const char * const lookupTableNRF24RX[] = {
     "V202_250K",
     "V202_1M",
@@ -391,6 +392,7 @@ static const char * const lookupTableNRF24RX[] = {
     "CX10",
     "CX10A",
     "H8_3D",
+    "H8_3D_DEV",
 };
 #endif
 

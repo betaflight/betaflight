@@ -405,6 +405,8 @@ COMMON_SRC = \
             drivers/pwm_mapping.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
+            drivers/rx_nrf24l01.c \
+            drivers/rx_xn297.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
