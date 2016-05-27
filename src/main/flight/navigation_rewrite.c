@@ -1621,8 +1621,8 @@ void resetLandingDetector(void)
     
     // When descent starts the throttle is at hover and quickly drops to gain descend velocity,
     // Start with a fake low throttle average to avoid passing the test on that throttle drop.
-    landingThrSum = 10 * 1000;
-    landingThrSamples = 10;
+    landingThrSum = 8 * 1000;
+    landingThrSamples = 8;
 }
 
 bool isLandingDetected(void)
