@@ -1612,7 +1612,7 @@ void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t dista
 static uint32_t landingTimer;
 static bool hasHadSomeVelocity;
 static int32_t landingThrSum;
-static int16_t landingThrSamples;
+static int32_t landingThrSamples;
 
 void resetLandingDetector(void)
 {

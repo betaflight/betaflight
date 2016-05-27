@@ -468,7 +468,7 @@ static void applyMulticopterPositionController(uint32_t currentTime)
 /*-----------------------------------------------------------
  * Multicopter land detector
  *-----------------------------------------------------------*/
-bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity, int32_t * landingThrSum, int16_t * landingThrSamples)
+bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity, int32_t * landingThrSum, int32_t * landingThrSamples)
 {
     uint32_t currentTime = micros();
 
