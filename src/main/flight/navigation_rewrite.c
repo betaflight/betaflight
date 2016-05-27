@@ -1618,8 +1618,11 @@ void resetLandingDetector(void)
 {
     landingTimer = micros();
     hasHadSomeVelocity = false;
-    landingThrSum = 0;
-    landingThrSamples = 0;
+    
+    // When descent starts the throttle is at hover and quickly drops to gain descend velocity,
+    // Start with a fake low throttle average to avoid passing the test on that throttle drop.
+    landingThrSum = 10 * 1000;
+    landingThrSamples = 10;
 }
 
 bool isLandingDetected(void)
