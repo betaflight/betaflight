@@ -488,11 +488,10 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     bool minimalThrust = rcCommandAdjustedThrottle < posControl.navConfig->mc_min_fly_throttle;
     */
 
-    // We have likely landed if throttle is 100 units below average throttle
-    // TODO: rcCommandAdjustedThrottle never goes below min_throttle+1, so replace 1040+1 with min_throttle+1
-    *landingThrSum += rcCommandAdjustedThrottle;
+    // We have likely landed if throttle is 50 units below average descend throttle
     *landingThrSamples += 1;
-    bool minimalThrust= rcCommandAdjustedThrottle <= MAX(*landingThrSum / *landingThrSamples - 50, 1040+1);
+    *landingThrSum += rcCommandAdjustedThrottle;
+    bool minimalThrust= rcCommandAdjustedThrottle < *landingThrSum / *landingThrSamples - 50;
 
     bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
     
