@@ -486,14 +486,14 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     *landingThrSamples += 1;
     *landingThrSum += rcCommandAdjustedThrottle;
-    bool minimalThrust= rcCommandAdjustedThrottle < *landingThrSum / *landingThrSamples - 40;
+    bool isAtMinimalThrust= rcCommandAdjustedThrottle < *landingThrSum / *landingThrSamples - 40;
 
     // TODO: This setting is no longer needed, remove or reuse it for LAND_DETECTOR_TRIGGER_TIME_MS
     //posControl.navConfig->mc_min_fly_throttle;
 
-    bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
+    bool possibleLandingDetected = hasHadSomeVelocity && isAtMinimalThrust && !verticalMovement && !horizontalMovement;
     
-    navDebug[0] = *hasHadSomeVelocity*1000 + minimalThrust*100 + !verticalMovement*10 + !horizontalMovement*1;
+    navDebug[0] = *hasHadSomeVelocity*1000 + isAtMinimalThrust*100 + !verticalMovement*10 + !horizontalMovement*1;
     navDebug[1] = (*landingThrSum / *landingThrSamples) - rcCommandAdjustedThrottle;
     navDebug[2] = (currentTime - *landingTimer) / 1000;
 
