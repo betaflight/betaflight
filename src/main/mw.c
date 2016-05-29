@@ -173,7 +173,8 @@ bool isCalibrating(void)
 This function processes RX dependent coefficients when new RX commands are available
 Those are: TPA, throttle expo
 */
-void processRxDependentCoefficients(void) {
+static void updateRcCommands(void)
+{
 
     int32_t tmp, tmp2;
     int32_t axis, prop1 = 0, prop2;
@@ -233,6 +234,12 @@ void processRxDependentCoefficients(void) {
         if (rcData[axis] < rxConfig()->midrc)
             rcCommand[axis] = -rcCommand[axis];
     }
+
+    tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+    tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
+    tmp2 = tmp / 100;
+    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
         float cosDiff = cos_approx(radDiff);
@@ -243,14 +250,8 @@ void processRxDependentCoefficients(void) {
     }
 }
 
-void annexCode(void)
+static void updateLEDs(void)
 {
-    int32_t tmp, tmp2;
-    tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
-    
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
@@ -275,10 +276,6 @@ void annexCode(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
 }
 
 void mwDisarm(void)
@@ -630,7 +627,7 @@ void filterRc(void){
 }
 
 #if defined(BARO) || defined(SONAR)
-static bool haveProcessedAnnexCodeOnce = false;
+static bool haveUpdatedRcCommandsOnce = false;
 #endif
 
 void taskMainPidLoop(void)
@@ -646,15 +643,20 @@ void taskMainPidLoop(void)
 
     imuUpdateGyroAndAttitude();
 
-    annexCode();
+    updateRcCommands(); // this must be called here since applyAltHold directly manipulates rcCommands[]
 
     if (rxConfig()->rcSmoothing) {
         filterRc();
     }
 
 #if defined(BARO) || defined(SONAR)
-    haveProcessedAnnexCodeOnce = true;
+    haveUpdatedRcCommandsOnce = true;
 #endif
+
+    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
+    if (gyro.temperature) {
+        gyro.temperature(&telemTemperature1);
+    }
 
 #ifdef MAG
         if (sensors(SENSOR_MAG)) {
@@ -802,13 +804,13 @@ bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 void taskUpdateRxMain(void)
 {
     processRx();
-    processRxDependentCoefficients();
+    updateLEDs();
 
     isRXDataNew = true;
 
 #ifdef BARO
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
+    // updateRcCommands() sets rcCommand[], updateAltHoldState depends on valid rcCommand[] data.
+    if (haveUpdatedRcCommandsOnce) {
         if (sensors(SENSOR_BARO)) {
             updateAltHoldState();
         }
@@ -816,8 +818,8 @@ void taskUpdateRxMain(void)
 #endif
 
 #ifdef SONAR
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
+    // updateRcCommands() sets rcCommand[], updateAltHoldState depends on valid rcCommand[] data.
+    if (haveUpdatedRcCommandsOnce) {
         if (sensors(SENSOR_SONAR)) {
             updateSonarAltHoldState();
         }
