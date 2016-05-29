@@ -8,6 +8,11 @@
 
 #include <stdint.h>
 
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
 // Macro to define packed structures
 #ifdef __GNUC__
   #define MAVPACKED( __Declaration__ ) __Declaration__ __attribute__((packed))
@@ -217,5 +222,9 @@ typedef struct __mavlink_status {
 
 #define MAVLINK_BIG_ENDIAN 0
 #define MAVLINK_LITTLE_ENDIAN 1
+
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
 
 #endif /* MAVLINK_TYPES_H_ */
