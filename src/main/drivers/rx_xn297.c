@@ -32,6 +32,13 @@ static const uint8_t xn297_data_scramble[30] = {
     0xd3, 0xdc, 0x3f, 0x8e, 0xc5, 0x2f
 };
 
+static const uint16_t xn297_crc_xorout[26] = {
+    0x9BA7, 0x8BBB, 0x85E1, 0x3E8C, 0x451E, 0x18E6, 0x6B24, 0xE7AB,
+    0x3828, 0x814B, 0xD461, 0xF494, 0x2503, 0x691D, 0xFE8B, 0x9BA7,
+    0x8B17, 0x2920, 0x8B5F, 0x61B1, 0xD391, 0x7401, 0x2138, 0x129F,
+    0xB3A0, 0x2988
+};
+
 static uint8_t bitReverse(uint8_t bIn)
 {
     uint8_t bOut = 0;
@@ -49,6 +56,23 @@ void XN297_UnscramblePayload(uint8_t* data, int len)
     }
 }
 
+#define RX_TX_ADDR_LEN 5
+
+uint16_t XN297_UnscramblePayload(uint8_t *data, int len, const uint8_t *rxAddr)
+{
+    uint16_t crc = 0xb5d2;
+    if (rxAddr) {
+        for (int ii = 0; ii < RX_TX_ADDR_LEN; ++ii) {
+            crc = crc16_ccitt(crc, rxAddr[RX_TX_ADDR_LEN - 1 - ii]);
+        }
+    }
+    for (int ii = 0; ii < len; ++ii) {
+        crc = crc16_ccitt(crc, data[ii]);
+        data[ii] = bitReverse(data[ii] ^ xn297_data_scramble[ii]);
+    }
+    crc ^= xn297_crc_xorout[len];
+    return crc;
+}
 
 #define RX_TX_ADDR_LEN     5
 #define PROTOCOL_PAYLOAD_SIZE_15       15
@@ -68,8 +92,7 @@ uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
         packet[ii + RX_TX_ADDR_LEN] = bOut ^ xn297_data_scramble[ii];
         crc = crc16_ccitt(crc, packet[ii + RX_TX_ADDR_LEN]);
     }
-    const uint16_t crcXor = (len == PROTOCOL_PAYLOAD_SIZE_15) ? 0x9BA7 : 0x61B1;
-    crc ^= crcXor;
+    crc ^= xn297_crc_xorout[len];
     packet[RX_TX_ADDR_LEN + len] = crc >> 8;
     packet[RX_TX_ADDR_LEN + len + 1] = crc & 0xff;
     return NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);

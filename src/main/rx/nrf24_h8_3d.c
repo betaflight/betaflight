@@ -80,6 +80,7 @@ STATIC_UNIT_TESTED protocol_state_t protocolState;
 #define H8_3D_PROTOCOL_PAYLOAD_SIZE   20
 STATIC_UNIT_TESTED uint8_t payloadSize;
 
+#define CRC_LEN 2
 #define RX_TX_ADDR_LEN     5
 //STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0xc4, 0x57, 0x09, 0x65, 0x21};
 STATIC_UNIT_TESTED uint8_t rxTxAddrXN297[RX_TX_ADDR_LEN] = {0x41, 0xbd, 0x42, 0xd4, 0xc2}; // converted XN297 address
@@ -103,11 +104,14 @@ STATIC_UNIT_TESTED bool h8_3dCheckBindPacket(const uint8_t *payload)
 {
     bool bindPacket = false;
     if ((payload[5] == 0x00) && (payload[6] == 0x00) && (payload[7] == 0x01)) {
-        bindPacket = true;
-        txId[0] = payload[1];
-        txId[1] = payload[2];
-        txId[2] = payload[3];
-        txId[3] = payload[4];
+        const uint32_t checkSumTxId = (payload[1] + payload[2] + payload[3] + payload[4]) & 0xff;
+        if (checkSumTxId == payload[8]) {
+            bindPacket = true;
+            txId[0] = payload[1];
+            txId[1] = payload[2];
+            txId[2] = payload[3];
+            txId[3] = payload[4];
+        }
     }
     return bindPacket;
 }
@@ -124,10 +128,10 @@ STATIC_UNIT_TESTED uint16_t h8_3dConvertToPwm(uint8_t val, int16_t _min, int16_t
 
 void h8_3dSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
-    rcData[NRF24_THROTTLE] = h8_3dConvertToPwm(payload[9], 0, 0xff);
     rcData[NRF24_ROLL] = h8_3dConvertToPwm(payload[12], 0xbb, 0x43); // aileron
     rcData[NRF24_PITCH] = h8_3dConvertToPwm(payload[11], 0x43, 0xbb); // elevator
-    const int8_t yawByte = payload[10];
+    rcData[NRF24_THROTTLE] = h8_3dConvertToPwm(payload[9], 0, 0xff); // throttle
+    const int8_t yawByte = payload[10]; // rudder
     rcData[NRF24_YAW] = yawByte >= 0 ? h8_3dConvertToPwm(yawByte, -0x3c, 0x3c) : h8_3dConvertToPwm(yawByte, 0xbc, 0x44);
 
     const uint8_t flags = payload[17];
@@ -195,6 +199,17 @@ void h8_3dSetBound(const uint8_t* txId)
     NRF24L01_SetChannel(h8_3dRfChannels[0]);
 }
 
+bool crcOK(uint16_t crc, const unt8_t *payload)
+{
+    if (payload[payloadSize - CRC_LEN] != (crc >> 8)) {
+        return false;
+    }
+    if (payload[payloadSize - CRC_LEN + 1] != (crc & 0xff)) {
+        return false;
+    }
+    return true;
+}
+
 /*
  * This is called periodically by the scheduler.
  * Returns NRF24L01_RECEIVED_DATA if a data packet was received.
@@ -205,19 +220,23 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            XN297_UnscramblePayload(payload, payloadSize);
-            const bool bindPacket = h8_3dCheckBindPacket(payload);
-            if (bindPacket) {
-                ret = NRF24_RECEIVED_BIND;
-                h8_3dSetBound(txId);
+            const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize - CRC_LEN, rxTxAddrXN297);
+            if (crcOK(crc, payload) {
+                const bool bindPacket = h8_3dCheckBindPacket(payload);
+                if (bindPacket) {
+                    ret = NRF24_RECEIVED_BIND;
+                    h8_3dSetBound(txId);
+                }
             }
         }
         break;
     case STATE_DATA:
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            XN297_UnscramblePayload(payload, payloadSize);
-            ret = NRF24_RECEIVED_DATA;
+            const uint16_t crc = XN297_UnscramblePayload(payload - CRC_LEN, payloadSize, rxTxAddrXN297);
+            if (crcOK(crc, payload) {
+                ret = NRF24_RECEIVED_DATA;
+            }
         }
         break;
     }
@@ -234,7 +253,7 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
     h8_3dProtocol = protocol;
     protocolState = STATE_BIND;
 
-    NRF24L01_Initialize(0); // sets PWR_UP, no CRC
+    NRF24L01_Initialize(0); // sets PWR_UP, no CRC - hardware CRC not used for XN297
 
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0); // No auto acknowledgment
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
@@ -252,7 +271,7 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
     NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
     NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
 
-    payloadSize = H8_3D_PROTOCOL_PAYLOAD_SIZE + 2; // payload + 2 bytes CRC
+    payloadSize = H8_3D_PROTOCOL_PAYLOAD_SIZE + CRC_LEN; // payload + 2 bytes CRC
     NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize); // payload + 2 bytes CRC
 
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
