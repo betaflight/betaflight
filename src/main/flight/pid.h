@@ -61,6 +61,11 @@ typedef struct pidProfile_s {
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 
+struct controlRateConfig_s;
+union rollAndPitchTrims_u;
+struct rxConfig_s;
+typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig,
+        uint16_t max_angle_inclination, const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
 
 extern int16_t axisPID[FD_INDEX_COUNT];
 extern int32_t axisPID_P[FD_INDEX_COUNT], axisPID_I[FD_INDEX_COUNT], axisPID_D[FD_INDEX_COUNT];
