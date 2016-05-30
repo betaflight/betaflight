@@ -107,7 +107,7 @@ void ws2811LedStripHardwareInit(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_WS2811_DMA);
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
-
+    const hsvColor_t hsv_white = {  0, 255, 255};
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }

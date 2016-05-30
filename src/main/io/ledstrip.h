@@ -17,141 +17,117 @@
 
 #pragma once
 
-#define MAX_LED_STRIP_LENGTH 32
-#define CONFIGURABLE_COLOR_COUNT 16
-#define MODE_COUNT 6
-#define DIRECTIONS_COUNT 6
-#define SPECIAL_COLORS_COUNT 8
-
-#define LED_X_BIT_OFFSET 4
-#define LED_Y_BIT_OFFSET 0
-
-#define LED_XY_MASK (0x0F)
-
-#define GET_LED_X(ledConfig) ((ledConfig->xy >> LED_X_BIT_OFFSET) & LED_XY_MASK)
-#define GET_LED_Y(ledConfig) ((ledConfig->xy >> LED_Y_BIT_OFFSET) & LED_XY_MASK)
-
-#define CALCULATE_LED_X(x) ((x & LED_XY_MASK) << LED_X_BIT_OFFSET)
-#define CALCULATE_LED_Y(y) ((y & LED_XY_MASK) << LED_Y_BIT_OFFSET)
-
-
-#define CALCULATE_LED_XY(x,y) (CALCULATE_LED_X(x) | CALCULATE_LED_Y(y))
-
-typedef enum {
-    LED_DISABLED = 0,
-    LED_DIRECTION_NORTH      = (1 << 0),
-    LED_DIRECTION_EAST       = (1 << 1),
-    LED_DIRECTION_SOUTH      = (1 << 2),
-    LED_DIRECTION_WEST       = (1 << 3),
-    LED_DIRECTION_UP         = (1 << 4),
-    LED_DIRECTION_DOWN       = (1 << 5),
-    LED_FUNCTION_INDICATOR   = (1 << 6),
-    LED_FUNCTION_WARNING     = (1 << 7),
-    LED_FUNCTION_FLIGHT_MODE = (1 << 8),
-    LED_FUNCTION_ARM_STATE   = (1 << 9),
-    LED_FUNCTION_THROTTLE    = (1 << 10),
-    LED_FUNCTION_THRUST_RING = (1 << 11),
-    LED_FUNCTION_COLOR       = (1 << 12),
-    LED_FUNCTION_GPS         = (1 << 13),
-    LED_FUNCTION_RSSI        = (1 << 14),
-    LED_FUNCTION_BLINK       = (1 << 15),
-} ledFlag_e;
+#define LED_MAX_STRIP_LENGTH           32
+#define LED_CONFIGURABLE_COLOR_COUNT   16
+#define LED_MODE_COUNT                  6
+#define LED_DIRECTION_COUNT             6
+#define LED_FUNCTION_COUNT             10
+#define LED_SPECIAL_COLOR_COUNT         8
 
 #define LED_DIRECTION_BIT_OFFSET 0
-#define LED_DIRECTION_MASK ( \
-    LED_DIRECTION_NORTH | \
-    LED_DIRECTION_EAST | \
-    LED_DIRECTION_SOUTH | \
-    LED_DIRECTION_WEST | \
-    LED_DIRECTION_UP | \
-    LED_DIRECTION_DOWN \
-)
-#define LED_FUNCTION_BIT_OFFSET 6
-#define LED_FUNCTION_MASK ( \
-    LED_FUNCTION_INDICATOR | \
-    LED_FUNCTION_WARNING | \
-    LED_FUNCTION_FLIGHT_MODE | \
-    LED_FUNCTION_ARM_STATE | \
-    LED_FUNCTION_THROTTLE | \
-    LED_FUNCTION_THRUST_RING | \
-    LED_FUNCTION_COLOR | \
-    LED_FUNCTION_GPS | \
-    LED_FUNCTION_RSSI | \
-    LED_FUNCTION_BLINK \
-)
+#define LED_FUNCTION_BIT_OFFSET LED_DIRECTION_COUNT
 
 typedef enum {
-    MODE_ORIENTATION = 0,
-    MODE_HEADFREE,
-    MODE_HORIZON,
-    MODE_ANGLE,
-    MODE_MAG,
-    MODE_BARO,
-    SPECIAL
-} modeIds;
+    LED_MODE_ORIENTATION = 0,
+    LED_MODE_HEADFREE,
+    LED_MODE_HORIZON,
+    LED_MODE_ANGLE,
+    LED_MODE_MAG,
+    LED_MODE_BARO,
+    LED_SPECIAL
+} ledModeIndex_e;
 
 typedef enum {
-    SC_FUNCTION_DISMARED = 0,
-    SC_FUNCTION_ARMED,
-    SC_FUNCTION_ANIMATION,
-    SC_FUNCTION_BACKGROUND,
-    SC_FUNCTION_BLINKBACKGROUND,
-    SC_FUNCTION_GPSNOSTATS,
-    SC_FUNCTION_GPSNOLOCK,
-    SC_FUNCTION_GPSLOCKED
-} specialColorFunctionIds;
+    LED_SCOLOR_DISARMED = 0,
+    LED_SCOLOR_ARMED,
+    LED_SCOLOR_ANIMATION,
+    LED_SCOLOR_BACKGROUND,
+    LED_SCOLOR_BLINKBACKGROUND,
+    LED_SCOLOR_GPSNOSATS,
+    LED_SCOLOR_GPSNOLOCK,
+    LED_SCOLOR_GPSLOCKED
+} ledSpecialColorIds_e;
+
+typedef enum {
+    LED_DIRECTION_NORTH = 0,
+    LED_DIRECTION_EAST,
+    LED_DIRECTION_SOUTH,
+    LED_DIRECTION_WEST,
+    LED_DIRECTION_UP,
+    LED_DIRECTION_DOWN
+} ledDirectionId_e;
+
+#define LED_FLAG_DIRECTION(directionId) (1 << (LED_DIRECTION_BIT_OFFSET + (directionId)))
+// generate direction bit, used in initializers
+#define LED_FLAG_DIRECTION_MASK (((1 << LED_DIRECTION_COUNT) - 1) << LED_DIRECTION_BIT_OFFSET)
+
+typedef enum {
+    LED_FUNCTION_INDICATOR,
+    LED_FUNCTION_WARNING,
+    LED_FUNCTION_FLIGHT_MODE,
+    LED_FUNCTION_ARM_STATE,
+    LED_FUNCTION_THROTTLE,
+    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_COLOR,
+    LED_FUNCTION_GPS,
+    LED_FUNCTION_RSSI,
+    LED_FUNCTION_BLINK,
+} ledFunctionId_e;
+
+#define LED_FLAG_FUNCTION(functionId) (1 << (LED_FUNCTION_BIT_OFFSET + (functionId)))
+// generate direction bit, used in initializers
+#define LED_FLAG_FUNCTION_MASK (((1 << LED_FUNCTION_COUNT) - 1) << LED_FUNCTION_BIT_OFFSET)
 
 typedef struct modeColorIndexes_s {
-    uint8_t north;
-    uint8_t east;
-    uint8_t south;
-    uint8_t west;
-    uint8_t up;
-    uint8_t down;
+    uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
 
 typedef struct specialColorIndexes_s {
-    uint8_t disarmed;
-    uint8_t armed;
-    uint8_t animation;
-    uint8_t background;
-    uint8_t blink_background;
-    uint8_t gps_nosats;
-    uint8_t gps_nolock;
-    uint8_t gps_locked;
+    uint8_t color[LED_SPECIAL_COLOR_COUNT];
 } specialColorIndexes_t;
 
 typedef struct ledConfig_s {
     uint8_t xy;     // see LED_X/Y_MASK defines
     uint8_t color;  // see colors (config_master)
-    uint16_t flags; // see ledFlag_e
+    uint16_t flags; // see LED_FLAG_FUNCTION + LED_FLAG_DIRECTION
 } ledConfig_t;
 
-extern uint8_t ledCount;
-extern uint8_t ledsInRingCount;
+#define LED_X_BIT_OFFSET 4
+#define LED_Y_BIT_OFFSET 0
+#define LED_XY_MASK      0x0F
 
-PG_DECLARE_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs);
-PG_DECLARE_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors);
-PG_DECLARE_ARR(modeColorIndexes_t, MODE_COUNT, modeColors);
+static inline int ledGetX(const ledConfig_t *lcfg) { return (lcfg->xy >> LED_X_BIT_OFFSET) & LED_XY_MASK; }
+static inline int ledGetY(const ledConfig_t *lcfg) { return (lcfg->xy >> LED_Y_BIT_OFFSET) & LED_XY_MASK; }
+static inline void ledSetXY(ledConfig_t *lcfg, int x, int y) {
+    lcfg->xy = ((x & LED_XY_MASK) << LED_X_BIT_OFFSET) | ((y & LED_XY_MASK) << LED_Y_BIT_OFFSET);
+}
+#define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
+
+extern uint8_t ledCount;
+extern uint8_t ledRingCount;
+
+PG_DECLARE_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs);
+PG_DECLARE_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors);
+PG_DECLARE_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors);
 PG_DECLARE_ARR(specialColorIndexes_t, 1, specialColors);
 
 void ledStripInit(void);
 
-bool parseLedStripConfig(uint8_t ledIndex, const char *config);
+bool parseLedStripConfig(int ledIndex, const char *config);
 void updateLedStrip(void);
 void updateLedRing(void);
 
 void applyDefaultLedStripConfig(void);
-void generateLedConfig(uint8_t ledIndex, char *ledConfigBuffer, size_t bufferSize);
+void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize);
 
-bool parseColor(uint8_t index, const char *colorConfig);
+bool parseColor(int index, const char *colorConfig);
 void applyDefaultColors(void);
 
 void ledStripInit(void);
 void ledStripEnable(void);
 void reevalulateLedConfig(void);
 
-bool setModeColor(uint8_t modeIndex, uint8_t modeColorIndex, uint8_t colorIndex);
+bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 
 extern uint16_t rssi; // FIXME dependency on mw.c
 
