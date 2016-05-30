@@ -1609,20 +1609,14 @@ void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t dista
 /*-----------------------------------------------------------
  * NAV land detector
  *-----------------------------------------------------------*/
-static uint32_t landingTimer;
-static bool hasHadSomeVelocity;
-static int32_t landingThrSum;
-static int32_t landingThrSamples;
-
 void resetLandingDetector(void)
 {
-    landingTimer = micros();
-    hasHadSomeVelocity = false;
-    
-    // When descent starts the throttle is at hover and quickly drops to gain descend velocity,
-    // Start with a fake low throttle average to avoid passing the test on that throttle drop.
-    landingThrSum = 8 * 1000;
-    landingThrSamples = 8;
+    if (STATE(FIXED_WING)) { // FIXED_WING
+        resetFixedWingLandingDetector();
+    }
+    else {
+        resetMulticopterLandingDetector();
+    }
 }
 
 bool isLandingDetected(void)
@@ -1630,10 +1624,10 @@ bool isLandingDetected(void)
     bool landingDetected;
 
     if (STATE(FIXED_WING)) { // FIXED_WING
-        landingDetected = isFixedWingLandingDetected(&landingTimer);
+        landingDetected = isFixedWingLandingDetected();
     }
     else {
-        landingDetected = isMulticopterLandingDetected(&landingTimer, &hasHadSomeVelocity, &landingThrSum, &landingThrSamples);
+        landingDetected = isMulticopterLandingDetected();
     }
 
     return landingDetected;

@@ -348,13 +348,18 @@ void applyFixedWingPitchRollThrottleController(void)
 /*-----------------------------------------------------------
  * FixedWing land detector
  *-----------------------------------------------------------*/
-bool isFixedWingLandingDetected(uint32_t * landingTimer)
+static uint32_t landingTimer;
+
+void resetFixedWingLandingDetector(void)
+{
+    landingTimer = micros();
+}
+
+bool isFixedWingLandingDetected(void)
 {
     uint32_t currentTime = micros();
 
-    // TODO
-
-    *landingTimer = currentTime;
+    landingTimer = currentTime;
     return false;
 }
 
