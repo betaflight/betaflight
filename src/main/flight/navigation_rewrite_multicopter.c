@@ -468,10 +468,10 @@ static void applyMulticopterPositionController(uint32_t currentTime)
 /*-----------------------------------------------------------
  * Multicopter land detector
  *-----------------------------------------------------------*/
-bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity)
+bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity, int32_t * landingThrSum, int32_t * landingThrSamples)
 {
     uint32_t currentTime = micros();
-    
+
     // When descend stage is activated velocity is ~0, so wait until we have descended faster than -25cm/s
     if (!*hasHadSomeVelocity && posControl.actualState.vel.V.Z < -25.0f) *hasHadSomeVelocity = true;
 
@@ -481,13 +481,22 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     // check if we are moving horizontally
     bool horizontalMovement = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y)) > 100.0f;
 
-    // Throttle should be low enough
+    // We have likely landed if throttle is 40 units below average descend throttle
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
-    bool minimalThrust = rcCommandAdjustedThrottle < posControl.navConfig->mc_min_fly_throttle;
+    *landingThrSamples += 1;
+    *landingThrSum += rcCommandAdjustedThrottle;
+    bool isAtMinimalThrust= rcCommandAdjustedThrottle < *landingThrSum / *landingThrSamples - 40;
+
+    // TODO: This setting is no longer needed, remove or reuse it for LAND_DETECTOR_TRIGGER_TIME_MS
+    //posControl.navConfig->mc_min_fly_throttle;
+
+    bool possibleLandingDetected = hasHadSomeVelocity && isAtMinimalThrust && !verticalMovement && !horizontalMovement;
     
-    bool possibleLandingDetected = hasHadSomeVelocity && minimalThrust && !verticalMovement && !horizontalMovement;
-    
+    navDebug[0] = *hasHadSomeVelocity*1000 + isAtMinimalThrust*100 + !verticalMovement*10 + !horizontalMovement*1;
+    navDebug[1] = (*landingThrSum / *landingThrSamples) - rcCommandAdjustedThrottle;
+    navDebug[2] = (currentTime - *landingTimer) / 1000;
+
     // If we have surface sensor (for example sonar) - use it to detect touchdown
     if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surfaceMin >= 0) {
         // TODO: Come up with a clever way to let sonar increase detection performance, not just add extra safety.
