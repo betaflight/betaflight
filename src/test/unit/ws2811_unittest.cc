@@ -36,8 +36,7 @@ extern "C" {
 extern "C" {
 STATIC_UNIT_TESTED extern uint16_t dmaBufferOffset;
 
-STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(rgbColor24bpp_t *color);
-STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue);
+STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(uint8_t **dst, rgbColor24bpp_t color);
 }
 
 TEST(WS2812, updateDMABuffer) {
@@ -45,19 +44,13 @@ TEST(WS2812, updateDMABuffer) {
     rgbColor24bpp_t color1 = { .raw = {0xFF,0xAA,0x55} };
 
     // and
-    dmaBufferOffset = 0;
+    uint8_t *dst = ledStripDMABuffer;
 
     // when
-#if 0
-    updateLEDDMABuffer(color1.rgb.g);
-    updateLEDDMABuffer(color1.rgb.r);
-    updateLEDDMABuffer(color1.rgb.b);
-#else
-    fastUpdateLEDDMABuffer(&color1);
-#endif
+    fastUpdateLEDDMABuffer(&dst, color1);
 
     // then
-    EXPECT_EQ(24, dmaBufferOffset);
+    EXPECT_EQ(24, dst - ledStripDMABuffer);
 
     // and
     uint8_t byteIndex = 0;
@@ -94,9 +87,9 @@ TEST(WS2812, updateDMABuffer) {
 }
 
 extern "C" {
-rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c) {
+rgbColor24bpp_t hsvToRgb24(const hsvColor_t *c) {
     UNUSED(c);
-    return NULL;
+    return (rgbColor24bpp_t){.raw = {0,0,0}};
 }
 
 void ws2811LedStripHardwareInit(void) {}
