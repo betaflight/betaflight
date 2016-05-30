@@ -81,8 +81,10 @@ float calculateExpoPlus(int axis, const rxConfig_t *rxConfig) {
     if (axis == YAW && !rxConfig->superExpoYawMode) {
         propFactor = 1.0f;
     } else {
+        float rcFactor = (ABS(rcCommand[axis]) / 500.0f);
+
         superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
-        propFactor = constrainf(1.0f - ((superExpoFactor / 100.0f) * (ABS(rcCommand[axis]) / 500.0f)), 0.0f, 1.0f);
+        propFactor = constrainf(1.0f - ((superExpoFactor / 100.0f) * rcFactor * rcFactor * rcFactor), 0.0f, 1.0f);
     }
 
     return propFactor;
