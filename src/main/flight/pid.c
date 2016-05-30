@@ -106,8 +106,7 @@ uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile) {
 
     resetRate = (axis == YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
 
-    uint32_t dynamicFactor = (1 << 8) - constrain((ABS(gyroADC[axis]) << 6) / resetRate, 0, 1 << 8);
-
+    uint32_t dynamicFactor = ((resetRate << 16) / (resetRate + ABS(gyroADC[axis]))) >> 8;
     dynamicKi = (pidProfile->I8[axis] * dynamicFactor) >> 8;
 
     return dynamicKi;
