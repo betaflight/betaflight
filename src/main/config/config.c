@@ -398,7 +398,7 @@ static void resetConf(void)
 #endif
 
     featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_ONESHOT125);
+    featureSet(FEATURE_SUPEREXPO);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -461,8 +461,8 @@ static void resetConf(void)
     masterConfig.rxConfig.max_aux_channel = 6;
     masterConfig.rxConfig.superExpoFactor = 30;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
-    masterConfig.rxConfig.superExpoFactorYaw = 30;
-    masterConfig.rxConfig.superExpoYawMode = 0;
+    masterConfig.rxConfig.superExpoFactorYaw = 40;
+    masterConfig.rxConfig.superExpoYawMode = 1;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 

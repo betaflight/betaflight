@@ -70,6 +70,13 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+bool isAirmodeActive(void) {
+    return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
+}
+
+bool isSuperExpoActive(void) {
+    return (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) || feature(FEATURE_SUPEREXPO));
+}
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX

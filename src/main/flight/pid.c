@@ -209,7 +209,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
-        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
+        if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (luxPTermScale * kP * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
         } else {
             PTerm = luxPTermScale * RateError * kP * tpaFactor;
@@ -334,7 +334,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
-        if ((IS_RC_MODE_ACTIVE(BOXSUPEREXPO) && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
+        if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
             PTerm = (kP * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
         } else {
             PTerm = (RateError * kP * PIDweight[axis] / 100) >> 7;
