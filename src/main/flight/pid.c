@@ -74,19 +74,19 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
 }
 
-float calculateExpoPlus(int axis, const rxConfig_t *rxConfig, const controlRateConfig_t *controlRateConfig) {
-    float propFactor, superExpoFactor, rcFactor;
+float calculateRate(int axis, const controlRateConfig_t *controlRateConfig) {
+    float angleRate;
 
-    if (axis == YAW && !rxConfig->superExpoYawMode) {
-        propFactor = 1.0f;
+    if (isSuperExpoActive()) {
+        float rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / 500.0f) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
+        rcFactor = 1.0f / (1.0f - (rcFactor * (controlRateConfig->rates[axis] / 100.0f)));
+
+        angleRate = rcFactor * ((27 * rcCommand[axis]) / 16.0f);
     } else {
-        superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
-        rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / 500.0f) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
-
-        propFactor = constrainf(1.0f - ((superExpoFactor / 100.0f) * rcFactor * rcFactor * rcFactor), 0.0f, 1.0f);
+        angleRate = (float)((controlRateConfig->rates[axis] + 27) * rcCommand[axis]) / 16.0f;
     }
 
-    return propFactor;
+	return angleRate;
 }
 
 uint16_t getDynamicKp(int axis, const pidProfile_t *pidProfile) {
@@ -169,31 +169,26 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = controlRateConfig->rates[axis];
 
-        if (axis == FD_YAW) {
-            // YAW is always gyro-controlled (MAG correction is applied to rcCommand) 100dps to 1100dps max yaw rate
-            AngleRate = (float)((rate + 47) * rcCommand[YAW]) / 32.0f;
-         } else {
-             // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
-             AngleRate = (float)((rate + 27) * rcCommand[axis]) / 16.0f; // 200dps to 1200dps max roll/pitch rate
-             if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
-                // calculate error angle and limit the angle to the max inclination
+        // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
+        AngleRate = calculateRate(axis, controlRateConfig);
+
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+            // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-                const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
+            const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #else
-                const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
+            const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
 #endif
-                if (FLIGHT_MODE(ANGLE_MODE)) {
-                    // ANGLE mode - control is angle based, so control loop is needed
-                    AngleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
-                } else {
-                    // HORIZON mode - direct sticks control is applied to rate PID
-                    // mix up angle error to desired AngleRate to add a little auto-level feel
-                    AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f;
-                }
+            if (FLIGHT_MODE(ANGLE_MODE)) {
+                // ANGLE mode - control is angle based, so control loop is needed
+                AngleRate = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
+            } else {
+                // HORIZON mode - direct sticks control is applied to rate PID
+                // mix up angle error to desired AngleRate to add a little auto-level feel
+                AngleRate += errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f;
             }
         }
 
@@ -208,11 +203,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
-        if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (luxPTermScale * kP * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig, controlRateConfig));
-        } else {
-            PTerm = luxPTermScale * RateError * kP * tpaFactor;
-        }
+        PTerm = luxPTermScale * RateError * kP * tpaFactor;
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -295,31 +286,26 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = controlRateConfig->rates[axis];
 
         // -----Get the desired angle rate depending on flight mode
-        if (axis == FD_YAW) {
-            // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = ((int32_t)(rate + 47) * rcCommand[YAW]) >> 5;
-        } else {
-            AngleRateTmp = ((int32_t)(rate + 27) * rcCommand[axis]) >> 4;
-            if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
-                // calculate error angle and limit the angle to max configured inclination
+        AngleRateTmp = (int32_t)calculateRate(axis, controlRateConfig);
+
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+            // calculate error angle and limit the angle to max configured inclination
 #ifdef GPS
-                const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
+            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #else
-                const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
+            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
-                if (FLIGHT_MODE(ANGLE_MODE)) {
-                    // ANGLE mode - control is angle based, so control loop is needed
-                    AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
-                } else {
-                    // HORIZON mode - mix up angle error to desired AngleRateTmp to add a little auto-level feel,
-                    // horizonLevelStrength is scaled to the stick input
-                    AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
-                }
+            if (FLIGHT_MODE(ANGLE_MODE)) {
+                // ANGLE mode - control is angle based, so control loop is needed
+                AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+            } else {
+                // HORIZON mode - mix up angle error to desired AngleRateTmp to add a little auto-level feel,
+                // horizonLevelStrength is scaled to the stick input
+                AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
             }
         }
 
@@ -333,11 +319,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         uint16_t kP = (pidProfile->dynamic_pid) ? getDynamicKp(axis, pidProfile) : pidProfile->P8[axis];
 
         // -----calculate P component
-        if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (kP * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig, controlRateConfig))) >> 7;
-        } else {
-            PTerm = (RateError * kP * PIDweight[axis] / 100) >> 7;
-        }
+        PTerm = (RateError * kP * PIDweight[axis] / 100) >> 7;
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {

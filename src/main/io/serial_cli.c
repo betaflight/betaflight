@@ -704,9 +704,6 @@ const clivalue_t valueTable[] = {
     { "yaw_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
-    { "super_expo_factor",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.superExpoFactor, .config.minmax = {1, 100 } },
-    { "super_expo_factor_yaw",      VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.superExpoFactorYaw, .config.minmax = {1, 100 } },
-    { "super_expo_yaw",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.superExpoYawMode, .config.lookup = { TABLE_SUPEREXPO_YAW } },
     { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.rxConfig.airModeActivateThreshold, .config.minmax = {1000, 2000 } },
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
