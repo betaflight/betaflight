@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "platform.h"
+
 #if defined(STM32F10X)
 typedef enum
 {
@@ -40,20 +42,20 @@ typedef enum
   GPIO_Mode_OUT  = 0x01, // GPIO Output Mode
   GPIO_Mode_AF   = 0x02, // GPIO Alternate function Mode
   GPIO_Mode_AN   = 0x03  // GPIO Analog In/Out Mode
-}GPIOMode_TypeDef;
+} GPIOMode_TypeDef;
 
 typedef enum
 {
   GPIO_OType_PP = 0x00,
   GPIO_OType_OD = 0x01
-}GPIOOType_TypeDef;
+} GPIOOType_TypeDef;
 
 typedef enum
 {
   GPIO_PuPd_NOPULL = 0x00,
   GPIO_PuPd_UP     = 0x01,
   GPIO_PuPd_DOWN   = 0x02
-}GPIOPuPd_TypeDef;
+} GPIOPuPd_TypeDef;
 */
 
 typedef enum

@@ -17,16 +17,16 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= NAZE
+TARGET    ?= NAZE
 
 # Compile-time options
-OPTIONS		?=
+OPTIONS	  ?=
 
 # compile for OpenPilot BootLoader support
-OPBL ?=no
+OPBL      ?= no
 
 # Debugger optons, must be empty or GDB
-DEBUG ?=
+DEBUG     ?=
 
 # Insert the debugging hardfault debugger
 # releases should not be built with this flag as it does not disable pwm output
@@ -42,11 +42,11 @@ FLASH_SIZE ?=
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME			 = betaflight
+FORKNAME      = betaflight
 
-CC3D_TARGETS = CC3D CC3D_OPBL
+CC3D_TARGETS  = CC3D CC3D_OPBL
 
-VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 $(CC3D_TARGETS) CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENFLIGHTF1 ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO IRCFUSIONF3 AFROMINI SPRACINGF3MINI SPRACINGF3EVO DOGE SINGULARITY
+VALID_TARGETS = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 $(CC3D_TARGETS) CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENFLIGHTF1 ALIENFLIGHTF3 COLIBRI_RACE LUX_RACE MOTOLAB RMDO IRCFUSIONF3 AFROMINI SPRACINGF3MINI SPRACINGF3EVO DOGE SINGULARITY
 
 # Valid targets for OP VCP support
 VCP_VALID_TARGETS = $(CC3D_TARGETS)
@@ -313,6 +313,9 @@ COMMON_SRC = build_config.c \
 		   drivers/gyro_sync.c \
 		   drivers/dma.c \
 		   drivers/buf_writer.c \
+		   drivers/exti.c \
+		   drivers/io.c \
+		   drivers/rcc.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
@@ -913,7 +916,8 @@ $(TARGET_BIN): $(TARGET_ELF)
 	$(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	@echo LD $(notdir $@)
+	@$(CC) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF) 
 
 # Compile
