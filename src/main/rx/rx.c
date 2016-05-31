@@ -203,6 +203,7 @@ void rxInit(modeActivationCondition_t *modeActivationConditions)
 #endif
 
     if (feature(FEATURE_RX_MSP)) {
+        rxRefreshRate = 20000;
         rxMspInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
 
