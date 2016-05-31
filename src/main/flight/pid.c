@@ -74,16 +74,15 @@ void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
 }
 
-float calculateExpoPlus(int axis, const rxConfig_t *rxConfig) {
-    float propFactor;
-    float superExpoFactor;
+float calculateExpoPlus(int axis, const rxConfig_t *rxConfig, const controlRateConfig_t *controlRateConfig) {
+    float propFactor, superExpoFactor, rcFactor;
 
     if (axis == YAW && !rxConfig->superExpoYawMode) {
         propFactor = 1.0f;
     } else {
-        float rcFactor = (ABS(rcCommand[axis]) / 500.0f);
-
         superExpoFactor = (axis == YAW) ? rxConfig->superExpoFactorYaw : rxConfig->superExpoFactor;
+        rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / 500.0f) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
+
         propFactor = constrainf(1.0f - ((superExpoFactor / 100.0f) * rcFactor * rcFactor * rcFactor), 0.0f, 1.0f);
     }
 
@@ -210,7 +209,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
 
         // -----calculate P component
         if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (luxPTermScale * kP * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig));
+            PTerm = (luxPTermScale * kP * tpaFactor) * (AngleRate - gyroRate * calculateExpoPlus(axis, rxConfig, controlRateConfig));
         } else {
             PTerm = luxPTermScale * RateError * kP * tpaFactor;
         }
@@ -335,7 +334,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
 
         // -----calculate P component
         if ((isSuperExpoActive() && axis != YAW) || (axis == YAW && rxConfig->superExpoYawMode == SUPEREXPO_YAW_ALWAYS)) {
-            PTerm = (kP * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig))) >> 7;
+            PTerm = (kP * PIDweight[axis] / 100) * (AngleRateTmp - (int32_t)(gyroRate * calculateExpoPlus(axis, rxConfig, controlRateConfig))) >> 7;
         } else {
             PTerm = (RateError * kP * PIDweight[axis] / 100) >> 7;
         }

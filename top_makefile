@@ -14,6 +14,7 @@ ALL_TARGETS += rmdo
 ALL_TARGETS += ircfusionf3
 ALL_TARGETS += afromini
 ALL_TARGETS += doge
+ALL_TARGETS += singularity
 
 CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
 
@@ -33,6 +34,7 @@ clean_rmdo rmdo :                         opts := TARGET=RMDO
 clean_ircfusionf3 ircfusionf3 :           opts := TARGET=IRCFUSIONF3
 clean_afromini afromini :                 opts := TARGET=AFROMINI
 clean_doge doge :                         opts := TARGET=DOGE
+clean_singularity singularity :           opts := TARGET=SINGULARITY
 
 
 .PHONY: all clean
