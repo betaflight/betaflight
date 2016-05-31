@@ -182,6 +182,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &MotolabF3MPU6050Config;
 #endif
 
+#ifdef SINGULARITY
+    static const extiConfig_t singularityMPU6050Config = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
+            .gpioPort = GPIOC,
+            .gpioPin = Pin_13,
+            .exti_port_source = EXTI_PortSourceGPIOC,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_line = EXTI_Line13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    return &singularityMPU6050Config;
+#endif
+
 #ifdef ALIENFLIGHTF3
     // MPU_INT output on V1 PA15
     static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
