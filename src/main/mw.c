@@ -244,14 +244,14 @@ static void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookupPitchRoll(tmp);
+            rcCommand[axis] = rcLookupPitchRoll(tmp, currentControlRateProfile);
         } else if (axis == YAW) {
             if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
                 tmp -= masterConfig.rcControlsConfig.yaw_deadband;
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = rcLookupYaw(tmp, currentControlRateProfile) * -masterConfig.yaw_control_direction;
         }
         if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];

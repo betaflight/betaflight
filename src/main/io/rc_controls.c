@@ -76,7 +76,7 @@ bool isAirmodeActive(void) {
 }
 
 bool isSuperExpoActive(void) {
-    return (IS_RC_MODE_ACTIVE(BOXSUPEREXPO) || feature(FEATURE_SUPEREXPO));
+    return (feature(FEATURE_SUPEREXPO));
 }
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
@@ -503,13 +503,11 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         case ADJUSTMENT_RC_RATE:
             newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcRate8 = newValue;
-            generatePitchRollCurve(controlRateConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
         break;
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcExpo8 = newValue;
-            generatePitchRollCurve(controlRateConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
         break;
         case ADJUSTMENT_THROTTLE_EXPO:

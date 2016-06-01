@@ -141,7 +141,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 138;
+static const uint8_t EEPROM_CONF_VERSION = 139;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -310,15 +310,15 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcExpo8 = 70;
+    controlRateConfig->rcExpo8 = 10;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 20;
+    controlRateConfig->rcYawExpo8 = 10;
     controlRateConfig->tpa_breakpoint = 1650;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 50;
+        controlRateConfig->rates[axis] = 70;
     }
 
 }
@@ -460,10 +460,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
-    masterConfig.rxConfig.superExpoFactor = 30;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
-    masterConfig.rxConfig.superExpoFactorYaw = 40;
-    masterConfig.rxConfig.superExpoYawMode = 1;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
@@ -746,8 +743,6 @@ static bool isEEPROMContentValid(void)
 
 void activateControlRateConfig(void)
 {
-    generatePitchRollCurve(currentControlRateProfile);
-    generateYawCurve(currentControlRateProfile);
     generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
 }
 
