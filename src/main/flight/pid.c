@@ -49,6 +49,7 @@
 #include "config/runtime_config.h"
 
 extern uint8_t motorCount;
+extern bool motorLimitReached;
 uint32_t targetPidLooptime;
 
 int16_t axisPID[3];
@@ -60,9 +61,9 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
 
-static int32_t errorGyroI[3];
+static int32_t errorGyroI[3], errorGyroILimit[3];
 #ifndef SKIP_PID_LUXFLOAT
-static float errorGyroIf[3];
+static float errorGyroIf[3], errorGyroIfLimit[3];;
 #endif
 
 static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
@@ -173,7 +174,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
         AngleRate = calculateRate(axis, controlRateConfig);
 
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
             const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
@@ -214,6 +215,12 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile) : pidProfile->I8[axis];
 
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * kI, -250.0f, 250.0f);
+
+        if (motorLimitReached) {
+            errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
+        } else {
+            errorGyroIfLimit[axis] = ABS(errorGyroIf[axis]);
+        }
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -292,7 +299,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         // -----Get the desired angle rate depending on flight mode
         AngleRateTmp = (int32_t)calculateRate(axis, controlRateConfig);
 
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to max configured inclination
 #ifdef GPS
             const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
@@ -340,6 +347,12 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
+
+        if (motorLimitReached) {
+            errorGyroI[axis] = constrain(errorGyroI[axis], -errorGyroILimit[axis], errorGyroILimit[axis]);
+        } else {
+            errorGyroILimit[axis] = ABS(errorGyroI[axis]);
+        }
 
         ITerm = errorGyroI[axis] >> 13;
 

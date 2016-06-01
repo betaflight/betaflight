@@ -817,6 +817,7 @@ void mixTable(void)
     throttleRange = throttleMax - throttleMin;
 
     if (rollPitchYawMixRange > throttleRange) {
+        motorLimitReached = true;
         mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
@@ -827,6 +828,7 @@ void mixTable(void)
 
         if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
+        motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
@@ -857,11 +859,15 @@ void mixTable(void)
 
         // Experimental Code. Anti Desync feature for ESC's
         if (escAndServoConfig->escDesyncProtection) {
-            const int16_t maxThrottleStep = escAndServoConfig->escDesyncProtection / (1000 / targetPidLooptime);
-            static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
+            const int16_t maxThrottleStep = constrain(escAndServoConfig->escDesyncProtection / (1000 / targetPidLooptime), 5, 10000);
 
-            motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
-            motorPrevious[i] = motor[i];
+            // Only makes sense when it's within the range
+            if (maxThrottleStep < throttleRange) {
+                static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
+
+                motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
+                motorPrevious[i] = motor[i];
+            }
         }
     }
 
