@@ -19,15 +19,8 @@
 
 #pragma once
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_10
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
-
-#define BEEPER
-#define LED0
+#define LED0_PIN    PB12
+#define BEEPER      PB10
 
 #define GYRO
 #define ACC
@@ -50,8 +43,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
 
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA 0xffff
