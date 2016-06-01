@@ -231,6 +231,8 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
                 // prevent "yaw jump" during yaw correction
                 axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
             }
+
+            DTerm = 0.0f; // needed for blackbox
         } else {
             delta = -(gyroRate - lastRate[axis]);
             lastRate[axis] = gyroRate;
@@ -353,6 +355,8 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
                 // prevent "yaw jump" during yaw correction
                 axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
             }
+
+            DTerm = 0; // needed for blackbox
         } else {
             delta = -(gyroRate - lastRate[axis]);
             lastRate[axis] = gyroRate;
