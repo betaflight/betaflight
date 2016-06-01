@@ -174,7 +174,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_
         // ACRO mode, control is GYRO based, direct sticks control is applied to rate PID
         AngleRate = calculateRate(axis, controlRateConfig);
 
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
             const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
@@ -299,7 +299,7 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRate
         // -----Get the desired angle rate depending on flight mode
         AngleRateTmp = (int32_t)calculateRate(axis, controlRateConfig);
 
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to max configured inclination
 #ifdef GPS
             const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
