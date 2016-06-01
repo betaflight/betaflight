@@ -950,6 +950,21 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
                 sbufWriteU8(dst, ledConfig->color);
             }
             break;
+
+        case MSP_LED_STRIP_MODECOLOR:
+            for (int i = 0; i < LED_MODE_COUNT; i++) {
+                for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                    sbufWriteU8(dst, i);
+                    sbufWriteU8(dst, j);
+                    sbufWriteU8(dst, modeColors(i)->color[j]);
+                }
+            }
+            for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+                sbufWriteU8(dst, LED_MODE_COUNT);
+                sbufWriteU8(dst, j);
+                sbufWriteU8(dst, specialColors(0)->color[j]);
+            }
+            break;
 #endif
 
         case MSP_DATAFLASH_SUMMARY:
@@ -1441,11 +1456,22 @@ static int processInCommand(mspPacket_t *cmd)
 
 #ifdef LED_STRIP
         case MSP_SET_LED_COLORS:
+
             for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT && sbufBytesRemaining(src) >= 4; i++) {
                 hsvColor_t *color = colors(i);
-                color->h = sbufReadU16(src);
-                color->s = sbufReadU8(src);
-                color->v = sbufReadU8(src);
+
+                int h = sbufReadU16(src);
+                int s = sbufReadU8(src);
+                int v = sbufReadU8(src);
+
+                if (h > HSV_HUE_MAX || s > HSV_SATURATION_MAX || v > HSV_VALUE_MAX) {
+                    memset(color, 0, sizeof(*color));
+                    return -1;
+                }
+
+                color->h = h;
+                color->s = s;
+                color->v = v;
             }
             break;
 
@@ -1474,6 +1500,17 @@ static int processInCommand(mspPacket_t *cmd)
             reevalulateLedConfig();
         }
         break;
+
+        case MSP_SET_LED_STRIP_MODECOLOR:
+            while (sbufBytesRemaining(src) >= 3) {
+                ledModeIndex_e modeIdx = sbufReadU8(src);
+                int funIdx = sbufReadU8(src);
+                int color = sbufReadU8(src);
+
+                if (!setModeColor(modeIdx, funIdx, color))
+                    return -1;
+            }
+            break;
 #endif
 
         case MSP_REBOOT:
