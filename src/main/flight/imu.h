@@ -47,9 +47,6 @@ typedef struct imuConfig_s {
     uint8_t small_angle;                    // Angle used for mag hold threshold.
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
-    uint8_t gyro_sync;                      // Enable interrupt based loop
-    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
-    uint16_t gyro_sample_hz;                // The desired gyro sample frequency.
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

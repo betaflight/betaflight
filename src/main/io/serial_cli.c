@@ -650,9 +650,9 @@ const clivalue_t valueTable[] = {
 
     { "small_angle",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  180 } , PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle)},
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
-    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  8 } , PG_IMU_CONFIG, offsetof(imuConfig_t, pid_process_denom)},
-    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  1 } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyro_sync)},
-    { "gyro_sample_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  8000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyro_sample_hz)},
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  8 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, pid_process_denom)},
+    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  1 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_sync)},
+    { "gyro_sample_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  8000 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_sample_hz)},
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
     { "gyro_lowpass_level",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_type)},

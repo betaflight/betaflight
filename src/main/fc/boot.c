@@ -549,11 +549,11 @@ void init(void)
 
 #ifdef NAZE
     if (hardwareRevision < NAZE32_REV5) {
-        imuConfig()->gyro_sync = 0;
+        gyroConfig()->gyro_sync = 0;
     }
 #endif
 
-    if (!sensorsAutodetect(imuConfig()->gyro_sample_hz)) {
+    if (!sensorsAutodetect(gyroConfig()->gyro_sample_hz)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -566,10 +566,10 @@ void init(void)
     mspSerialInit();
 
     // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
-    imuConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
+    gyroConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
 
     uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
-    pidSetTargetLooptime(pidPeriodUs * imuConfig()->pid_process_denom);
+    pidSetTargetLooptime(pidPeriodUs * gyroConfig()->pid_process_denom);
     pidInitFilters(pidProfile());
 
 #ifdef USE_SERVOS

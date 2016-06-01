@@ -62,6 +62,21 @@ static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
 static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
 
+#if !defined(DEFAULT_GYRO_SAMPLE_HZ) && !defined(DEFAULT_PID_PROCESS_DENOM)
+
+#ifdef STM32F10X
+#define DEFAULT_PID_PROCESS_DENOM   1
+#define DEFAULT_GYRO_SAMPLE_HZ      1000
+#else
+#define DEFAULT_PID_PROCESS_DENOM   2
+#define DEFAULT_GYRO_SAMPLE_HZ      4000
+#endif
+#endif
+
+#if !defined(DEFAULT_GYRO_SYNC)
+#define DEFAULT_GYRO_SYNC           1
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
@@ -72,6 +87,10 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_lpf_hz = 90,    // software based lpf filter for gyro
     .gyro_soft_notch_hz = 0,
     .gyro_soft_notch_cutoff_hz = 130,
+
+    .gyro_sync = DEFAULT_GYRO_SYNC,
+    .pid_process_denom = DEFAULT_PID_PROCESS_DENOM,
+    .gyro_sample_hz = DEFAULT_GYRO_SAMPLE_HZ,
 
     .gyroMovementCalibrationThreshold = 32,
 );

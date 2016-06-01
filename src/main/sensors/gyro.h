@@ -41,7 +41,10 @@ typedef struct gyroConfig_s {
     uint8_t gyro_soft_type;                     // Gyro Filter Type
     uint16_t gyro_soft_lpf_hz;                  // Software based gyro filter in hz
     uint16_t gyro_soft_notch_hz;                // Biquad gyro notch hz
-    uint16_t gyro_soft_notch_cutoff_hz;            // Biquad gyro notch low cutoff in hz
+    uint16_t gyro_soft_notch_cutoff_hz;         // Biquad gyro notch low cutoff in hz
+    uint8_t gyro_sync;                          // Enable interrupt based loop
+    uint8_t pid_process_denom;                  // Processing denominator for PID controller vs gyro sampling rate
+    uint16_t gyro_sample_hz;                    // The desired gyro sample frequency.
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
