@@ -63,7 +63,7 @@ uint8_t PIDweight[3];
 
 static int32_t errorGyroI[3], errorGyroILimit[3];
 #ifndef SKIP_PID_LUXFLOAT
-static float errorGyroIf[3], errorGyroIfLimit[3];;
+static float errorGyroIf[3], errorGyroIfLimit[3];
 #endif
 
 static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
