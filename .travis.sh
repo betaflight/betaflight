@@ -23,7 +23,7 @@ CURL_PUB_BASEOPTS=(
 
 # A hacky way of running the unit tests at the same time as the normal builds.
 if [ $RUNTESTS ] ; then
-	make test
+	cd ./src/test && make test
 
 # A hacky way of building the docs at the same time as the normal builds.
 elif [ $PUBLISHDOCS ] ; then
