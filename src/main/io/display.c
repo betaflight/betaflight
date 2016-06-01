@@ -173,7 +173,8 @@ static void padHalfLineBuffer(void)
 #endif
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
-static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
+static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent)
+{
     uint8_t i, j;
 
     if (percent > 100)

@@ -56,7 +56,8 @@ uint8_t adjustmentStateMask = 0;
 
 #define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
-void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
+void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
+{
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
@@ -71,7 +72,8 @@ void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction,
 #endif
 }
 
-void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue) {
+void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue)
+{
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newFloatValue);
@@ -88,7 +90,8 @@ void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunc
 
 adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-void configureAdjustmentState(adjustmentRange_t *adjustmentRange) {
+void configureAdjustmentState(adjustmentRange_t *adjustmentRange)
+{
     uint8_t index = adjustmentRange->adjustmentIndex;
 
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
@@ -113,12 +116,14 @@ void configureAdjustmentState(adjustmentRange_t *adjustmentRange) {
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-static void setAdjustment(uint8_t* ptr, uint8_t adjustment, int delta, uint8_t min, uint8_t max) {
+static void setAdjustment(uint8_t* ptr, uint8_t adjustment, int delta, uint8_t min, uint8_t max)
+{
     *ptr = constrain((int)(*ptr)+delta, min ,max);
     blackboxLogInflightAdjustmentEvent(adjustment, *ptr);
 }
 
-void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
+void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
+{
 
     if (delta > 0) {
         beeperConfirmationBeeps(2);

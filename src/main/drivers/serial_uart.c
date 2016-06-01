@@ -95,7 +95,8 @@ void usartInitAllIOSignals(void)
 #endif
 }
 
-static void usartConfigurePinInversion(uartPort_t *uartPort) {
+static void usartConfigurePinInversion(uartPort_t *uartPort)
+{
 #if !defined(INVERTER) && !defined(STM32F303xC)
     UNUSED(uartPort);
 #else

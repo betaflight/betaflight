@@ -333,14 +333,16 @@ static inline void hottSendEAMResponse(void)
     hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
 }
 
-static void hottPrepareMessages(void) {
+static void hottPrepareMessages(void)
+{
     hottPrepareEAMResponse(&hottEAMMessage);
 #ifdef GPS
     hottPrepareGPSResponse(&hottGPSMessage);
 #endif
 }
 
-static void processBinaryModeRequest(uint8_t address) {
+static void processBinaryModeRequest(uint8_t address)
+{
 
 #ifdef HOTT_DEBUG
     static uint8_t hottBinaryRequests = 0;

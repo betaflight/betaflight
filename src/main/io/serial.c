@@ -141,7 +141,8 @@ static serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort) {
+serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort)
+{
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsage_t *candidate = &serialPortUsageList[index];
@@ -372,7 +373,8 @@ serialPort_t *openSerialPort(
     return serialPort;
 }
 
-void closeSerialPort(serialPort_t *serialPort) {
+void closeSerialPort(serialPort_t *serialPort)
+{
     serialPortUsage_t *serialPortUsage = findSerialPortUsageByPort(serialPort);
     if (!serialPortUsage) {
         // already closed

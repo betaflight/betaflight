@@ -584,7 +584,8 @@ void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *
 
 // update overflow callback list
 // some synchronization mechanism is neccesary to avoid disturbing other channels (BASEPRI used now)
-static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim) {
+static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim)
+{
     timerOvrHandlerRec_t **chain = &cfg->overflowCallbackActive;
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         for(int i = 0; i < CC_CHANNELS_PER_TIMER; i++)
@@ -656,7 +657,8 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
 }
 
 // enable/disable IRQ for low channel in dual configuration
-void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newState) {
+void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newState)
+{
     TIM_ITConfig(timHw->tim, TIM_IT_CCx(timHw->channel&~TIM_Channel_2), newState);
 }
 

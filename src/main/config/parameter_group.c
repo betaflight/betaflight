@@ -67,7 +67,8 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     }
 }
 
-void pgResetCurrent(const pgRegistry_t *reg) {
+void pgResetCurrent(const pgRegistry_t *reg)
+{
     if(pgIsSystem(reg)) {
         pgResetInstance(reg, reg->address);
     } else {

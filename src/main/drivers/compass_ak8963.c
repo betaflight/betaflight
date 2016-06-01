@@ -187,11 +187,13 @@ bool ak8963SensorCompleteRead(uint8_t *buf)
     return true;
 }
 #else
-bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) {
+bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
     return i2cRead(addr_, reg_, len, buf);
 }
 
-bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data) {
+bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
+{
     return i2cWrite(addr_, reg_, data);
 }
 #endif

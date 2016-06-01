@@ -551,7 +551,8 @@ int flashfsIdentifyStartOfFreeSpace()
 /**
  * Returns true if the file pointer is at the end of the device.
  */
-bool flashfsIsEOF() {
+bool flashfsIsEOF()
+{
     return tailAddress >= flashfsGetSize();
 }
 

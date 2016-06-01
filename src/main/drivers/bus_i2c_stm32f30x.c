@@ -68,7 +68,8 @@ static I2C_TypeDef *I2Cx = NULL;
 
 static bool i2cOverClock;
 
-void i2cSetOverclock(uint8_t OverClock) {
+void i2cSetOverclock(uint8_t OverClock)
+{
     i2cOverClock = (OverClock) ? true : false;
 }
 

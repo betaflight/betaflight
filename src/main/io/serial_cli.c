@@ -1533,7 +1533,8 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
     }
 }
 
-static void cliSdInfo(char *cmdline) {
+static void cliSdInfo(char *cmdline)
+{
     UNUSED(cmdline);
 
     cliPrint("SD card: ");
@@ -2190,7 +2191,8 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-static void cliReboot(void) {
+static void cliReboot(void)
+{
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
