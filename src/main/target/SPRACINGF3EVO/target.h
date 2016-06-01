@@ -19,13 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_8
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0_PIN    PB8
 
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
@@ -61,8 +57,6 @@
 //#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
-#define BEEPER
-#define LED0
 
 #define USB_IO
 
@@ -219,8 +213,7 @@
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

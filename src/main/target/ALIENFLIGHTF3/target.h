@@ -20,29 +20,17 @@
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define HW_GPIO     GPIOB
-#define HW_PIN      Pin_2
-#define HW_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define HW_PIN      PB2
 
 // LED's V1
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_4 // Blue LEDs - PB4
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_5  // Green LEDs - PB5
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0        PB4  // LED - PB4
+#define LED1        PB5  // LED - PB5
 
 // LED's V2
-#define LED0_GPIO_2   GPIOB
-#define LED0_PIN_2    Pin_8 // Blue LEDs - PB8
-#define LED0_PERIPHERAL_2 RCC_AHBPeriph_GPIOB
-#define LED1_GPIO_2   GPIOB
-#define LED1_PIN_2    Pin_9  // Green LEDs - PB9
-#define LED1_PERIPHERAL_2 RCC_AHBPeriph_GPIOB
+#define LED0_A      PB8  // LED - PB8
+#define LED1_A      PB9  // LED - PB9
 
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_5  // White LEDs - PA5
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER      PA5  // LED - PA5
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -77,10 +65,6 @@
 #define USE_MAG_AK8963
 
 #define MAG_AK8963_ALIGN CW0_DEG_FLIP
-
-#define BEEPER
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1 // Not connected - TX (PB6) RX PB7 (AF7)
@@ -160,16 +144,14 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
 
 // alternative defaults for AlienFlight F3 target
 #define ALIENFLIGHT
 #define HARDWARE_BIND_PLUG
 
 // Hardware bind plug at PB12 (Pin 25)
-#define BINDPLUG_PORT  GPIOB
-#define BINDPLUG_PIN   Pin_12
+#define BINDPLUG_PIN   PB12
 
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA 0xffff

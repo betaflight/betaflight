@@ -353,14 +353,12 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
-        .gpioPeripheral = BEEP_PERIPHERAL,
-        .gpioPin = BEEP_PIN,
-        .gpioPort = BEEP_GPIO,
+        .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
-        .gpioMode = Mode_Out_PP,
+        .isOD = false,
         .isInverted = true
 #else
-        .gpioMode = Mode_Out_OD,
+        .isOD = true,
         .isInverted = false
 #endif
     };

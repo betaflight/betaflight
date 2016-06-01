@@ -20,19 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define LED0_GPIO GPIOC
-#define LED0_PIN Pin_14 // PC14 (LED)
-#define LED0
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOC
-#define LED1_GPIO GPIOC
-#define LED1_PIN Pin_13 // PC13 (LED)
-#define LED1
-#define LED1_PERIPHERAL RCC_APB2Periph_GPIOC
-#define LED2_GPIO GPIOC
-#define LED2_PIN Pin_15 // PC15 (LED)
-#define LED2
-#define LED2_PERIPHERAL RCC_APB2Periph_GPIOC
-
+#define LED0_PIN PC14 // PC14 (LED)
+#define LED1_PIN PC13 // PC13 (LED)
+#define LED2_PIN PC15 // PC15 (LED)
 
 #define ACC
 #define USE_ACC_MPU6050
@@ -63,8 +53,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY

@@ -19,18 +19,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_5  // Green (Rev 1) / Red (Rev 2) - PB5
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0_PIN    PB4  // Blue (Rev 1 & 2) - PB4
+#define LED1_PIN    PB5  // Green (Rev 1) / Red (Rev 2) - PB5
 
-#define BEEP_GPIO   GPIOA  //USE PWM10 as beeper signal
-#define BEEP_PIN    Pin_1
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER      PA1
 #define BEEPER_INVERTED
-#define BEEPER
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -57,9 +50,6 @@
 #define USE_MAG_AK8975
 
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
-
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1 // Conn 1 - TX (PB6) RX PB7 (AF7)
@@ -167,8 +157,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT GPIOA
-#define BIND_PIN Pin_3
+#define BIND_PIN PA3
 
 
 // available IO pins (from schematics)
