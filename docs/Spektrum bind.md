@@ -58,6 +58,7 @@ In order to connect the satellite to a Flip32+, you have to wire the serial data
 | Satellite            | Remote         | Remark                                                   |
 | -------------------- | -------------- | -------------------------------------------------------- |
 | Orange R100          | Spektrum DX6i  | Bind value 3                                             |
+| Lemon RX DSMX        | Spektrum DX6i  | Bind value 9
 | Lemon RX DSM2/DSMX   | Spektrum DX8   | Bind value 5                                             |
 | Lemon RX DSMX        | Walkera Devo10 | Bind value 9, Deviation firmware 4.01 up to 12 channels  |
 | Lemon RX DSM2        | Walkera Devo7  | Bind value 9, Deviation firmware                         |
