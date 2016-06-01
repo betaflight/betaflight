@@ -22,13 +22,9 @@
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0_PIN    PB3
 
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER    PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
@@ -64,8 +60,6 @@
 #define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define SONAR
-#define BEEPER
-#define LED0
 
 #define USB_IO
 #define USB_CABLE_DETECTION
@@ -225,12 +219,10 @@
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define HARDWARE_BIND_PLUG
-#define BINDPLUG_PORT  BUTTON_B_PORT
-#define BINDPLUG_PIN   BUTTON_B_PIN
+#define BINDPLUG_PIN   PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -19,13 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SING"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0_PIN    PB3
 
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER      PC15
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 
@@ -41,9 +37,6 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-
-#define BEEPER
-#define LED0
 
 #define USE_VCP
 #define USE_USART1          // JST-SH Serial - TX (PA9) RX (PA10)
@@ -130,8 +123,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA15
-#define BIND_PORT GPIOA
-#define BIND_PIN Pin_15
+#define BIND_PIN PA15
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

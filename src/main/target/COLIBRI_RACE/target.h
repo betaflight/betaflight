@@ -21,21 +21,11 @@
 #define BST_DEVICE_NAME "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH 12
 
-#define LED0_GPIO   GPIOC
-#define LED0_PIN    Pin_15
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define LED0_PIN    PC15
+#define LED1_PIN    PC14
+#define LED2_PIN    PC13
 
-#define LED1_GPIO   GPIOC
-#define LED1_PIN    Pin_14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOC
-
-#define LED2_GPIO   GPIOC
-#define LED2_PIN    Pin_13
-#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
-
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_13
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define BEEPER      PB13
 #define BEEPER_INVERTED
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
@@ -86,11 +76,6 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
-
-#define BEEPER
-#define LED0
-#define LED1
-#define LED2
 
 #define USB_IO
 

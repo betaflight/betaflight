@@ -19,16 +19,10 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
-#define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
+#define LED0_PIN    PB3 // PB3 (LED)
+#define LED1_PIN    PB4 // PB4 (LED)
 
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART USART2
 
 #define MPU6000_CS_GPIO       GPIOB
@@ -73,12 +67,8 @@
 
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
-
 #define SONAR
-#define LED0
-#define LED1
 #define DISPLAY
-#define INVERTER
 
 #define USE_USART1
 #define USE_USART2
@@ -131,8 +121,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
 
 // IO - stm32f103RCT6 in 64pin package (TODO)
 #define TARGET_IO_PORTA 0xffff
