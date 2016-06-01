@@ -9,6 +9,13 @@ that is not recommended).
 By default, arming and disarming is done using stick positions.  (NOTE: this feature is disabled when using a
 switch to arm.)
 
+Arming is disabled if:
+- CLI is active in the configurator
+- The aircraft has landed in failsafe mode
+- Maximum arming angle is exceeded
+- Calibration is active
+- The system is overloaded
+
 ## Stick Positions
 
 The three stick positions are:
