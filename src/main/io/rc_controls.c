@@ -351,7 +351,8 @@ void rcModeUpdateActivated(modeActivationCondition_t *modeActivationConditions)
     rcModeActivationMask = newRcModeMask;
 }
 
-int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
+int32_t getRcStickDeflection(int32_t axis, uint16_t midrc)
+{
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 

@@ -38,7 +38,8 @@ static bool isConversionComplete = false;
 static bool isEOCConnected = true;
 
 // EXTI14 for BMP085 End of Conversion Interrupt
-void BMP085_EOC_EXTI_Handler(void) {
+void BMP085_EOC_EXTI_Handler(void)
+{
     if (EXTI_GetITStatus(EXTI_Line14) == SET) {
         EXTI_ClearITPendingBit(EXTI_Line14);
         isConversionComplete = true;
@@ -131,7 +132,8 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
 #define BMP085_ON
 #endif
 
-void bmp085InitXCLRGpio(const bmp085Config_t *config) {
+void bmp085InitXCLRGpio(const bmp085Config_t *config)
+{
     gpio_config_t gpio;
 
     RCC_APB2PeriphClockCmd(config->gpioAPB2Peripherals, ENABLE);

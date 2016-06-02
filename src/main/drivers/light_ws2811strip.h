@@ -35,11 +35,11 @@ void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(void);
 
-void setLedHsv(uint16_t index, const hsvColor_t *color);
-void getLedHsv(uint16_t index, hsvColor_t *color);
+void setLedHsv(int index, const hsvColor_t *color);
+void getLedHsv(int index, hsvColor_t *color);
 
-void scaleLedValue(uint16_t index, const uint8_t scalePercent);
-void setLedValue(uint16_t index, const uint8_t value);
+void scaleLedValue(int index, const uint8_t scalePercent);
+void setLedValue(int index, const uint8_t value);
 
 void setStripColor(const hsvColor_t *color);
 void setStripColors(const hsvColor_t *colors);
@@ -48,6 +48,3 @@ bool isWS2811LedStripReady(void);
 
 extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 extern volatile uint8_t ws2811LedDataTransferInProgress;
-
-extern const hsvColor_t hsv_white;
-extern const hsvColor_t hsv_black;

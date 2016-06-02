@@ -39,7 +39,8 @@ PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUN
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-void pgResetFn_controlRateProfiles(controlRateConfig_t *instance) {
+void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
+{
     for (int i = 0; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
         RESET_CONFIG(controlRateConfig_t, &instance[i],
             .rcRate8 = 90,

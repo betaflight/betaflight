@@ -19,6 +19,7 @@ TARGET		?= NAZE
 
 # Compile-time options
 OPTIONS		?=
+export OPTIONS
 
 # Debugger optons, must be empty or GDB
 DEBUG ?=
@@ -29,24 +30,40 @@ SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+
+# Detect travis Pull Request build
+ifeq ($(TRAVIS),true)                      # travis build
+ifneq ($(TRAVIS_PULL_REQUEST), false)      # building pull request
+OPTIONS += FAIL_ON_WARNINGS                # do not allow pull requests with warnings
+endif
+endif
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
 
 FORKNAME			 = cleanflight
 
-VALID_TARGETS	 = ALIENFLIGHTF1 ALIENFLIGHTF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC LUX_RACE MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY IRCFUSIONF3 
+64K_TARGETS  = CJMCU
+128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE OLIMEXINO RMDO
+256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC IRCFUSIONF3 LUX_RACE MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY
+
+F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY
+
+VALID_TARGETS = $(64K_TARGETS) $(128K_TARGETS) $(256K_TARGETS)
+
+VCP_TARGETS = CC3D ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO SPARKY SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
-ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
+ifeq ($(TARGET),$(filter $(TARGET),$(64K_TARGETS)))
 FLASH_SIZE = 64
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENFLIGHTF1 CC3D NAZE OLIMEXINO RMDO))
+else ifeq ($(TARGET),$(filter $(TARGET),$(128K_TARGETS)))
 FLASH_SIZE = 128
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC LUX_RACE MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY IRCFUSIONF3))
+else ifeq ($(TARGET),$(filter $(TARGET),$(256K_TARGETS)))
 FLASH_SIZE = 256
 else
-$(error FLASH_SIZE not configured for target)
+$(error FLASH_SIZE not configured for target $(TARGET))
 endif
 endif
 
@@ -65,12 +82,11 @@ LINKER_DIR	 = $(ROOT)/src/main/target
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
-FATFS_DIR	= $(ROOT)/lib/main/FatFS
-FATFS_SRC = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-ifeq ($(TARGET),$(filter $(TARGET),ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY IRCFUSIONF3))
+ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+# F3 TARGETS
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
@@ -94,7 +110,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(CMSIS_DIR)/CM1/CoreSupport \
 		   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
 
-ifneq ($(TARGET),$(filter $(TARGET),SPRACINGF3))
+ifeq ($(TARGET),$(filter $(TARGET),$(VCP_TARGETS)))
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(USBFS_DIR)/inc \
 		   $(ROOT)/src/main/vcp
@@ -106,29 +122,14 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
 
 endif
 
-ifeq ($(TARGET),SPRACINGF3MINI)
-INCLUDE_DIRS := $(INCLUDE_DIRS) \
-		   $(FATFS_DIR) \
-
-VPATH := $(VPATH):$(FATFS_DIR)
-endif
-
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS = -DSTM32F303xC -DSTM32F303
 TARGET_FLAGS = -D$(TARGET)
-ifeq ($(TARGET),CHEBUZZF3)
-# CHEBUZZ is a VARIANT of STM32F3DISCOVERY
-TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
-endif
-
-ifeq ($(TARGET),$(filter $(TARGET),RMDO IRCFUSIONF3))
-# RMDO and IRCFUSIONF3 are a VARIANT of SPRACINGF3
-TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3
-endif
 
 else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
+# TARGETS: EUSTM32F103RC PORT103R
 
 
 STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
@@ -160,6 +161,7 @@ DEVICE_FLAGS = -DSTM32F10X_HD -DSTM32F10X
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 else
+# F1 TARGETS
 
 STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
 
@@ -183,7 +185,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-ifeq ($(TARGET),CC3D)
+ifeq ($(TARGET),$(filter $(TARGET),$(VCP_TARGETS)))
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		   $(USBFS_DIR)/inc \
 		   $(ROOT)/src/main/vcp
@@ -201,7 +203,7 @@ ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
 DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
 
-endif
+endif #TARGETS
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
@@ -210,11 +212,21 @@ endif
 TARGET_DIR = $(ROOT)/src/main/target/$(TARGET)
 TARGET_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
+# VARIANTS
 ifeq ($(TARGET),ALIENFLIGHTF1)
 # ALIENFLIGHTF1 is a VARIANT of NAZE
 TARGET_FLAGS := $(TARGET_FLAGS) -DNAZE -DALIENFLIGHT
 TARGET_DIR = $(ROOT)/src/main/target/NAZE
 endif
+ifeq ($(TARGET),CHEBUZZF3)
+# CHEBUZZ is a VARIANT of STM32F3DISCOVERY
+TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
+endif
+ifeq ($(TARGET),$(filter $(TARGET),RMDO IRCFUSIONF3))
+# RMDO and IRCFUSIONF3 are a VARIANT of SPRACINGF3
+TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3
+endif
+
 
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
 		    $(TARGET_DIR)
@@ -737,13 +749,18 @@ OPTIMIZE	 = -O0
 LTO_FLAGS	 = $(OPTIMIZE)
 else
 OPTIMIZE	 = -Os
-LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
+LTO_FLAGS	 =  -flto -fuse-linker-plugin $(OPTIMIZE)
+endif
+
+ifneq ($(filter $(OPTIONS),FAIL_ON_WARNINGS),)
+WARN_FLAGS      += -Werror
 endif
 
 DEBUG_FLAGS	 = -ggdb3 -DDEBUG
 
 CFLAGS		 = $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
+		   $(WARN_FLAGS) \
 		   $(addprefix -D,$(OPTIONS)) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   $(DEBUG_FLAGS) \
@@ -757,10 +774,12 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -D'__FORKNAME__="$(FORKNAME)"' \
 		   -D'__TARGET__="$(TARGET)"' \
 		   -D'__REVISION__="$(REVISION)"' \
+		   -fverbose-asm -ffat-lto-objects \
 		   -save-temps=obj \
 		   -MMD -MP
 
 ASFLAGS		 = $(ARCH_FLAGS) \
+		   $(WARN_FLAGS) \
 		   -x assembler-with-cpp \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		  -MMD -MP
@@ -772,11 +791,12 @@ LDFLAGS		 = -lm \
 		   -lnosys \
 		   $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
+		   $(WARN_FLAGS) \
 		   $(DEBUG_FLAGS) \
 		   -static \
 		   -Wl,-gc-sections,-Map,$(TARGET_MAP) \
 		   -Wl,-L$(LINKER_DIR) \
-           -Wl,--cref \
+		   -Wl,--cref \
 		   -T$(LD_SCRIPT)
 
 ###############################################################################
@@ -879,7 +899,7 @@ help: Makefile
 ## test        : run the cleanflight test suite
 ## junittest   : run the cleanflight test suite, producing Junit XML result files.
 test junittest:
-	cd src/test && $(MAKE) $@ || true
+	cd src/test && $(MAKE) $@
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

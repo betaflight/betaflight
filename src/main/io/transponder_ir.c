@@ -115,7 +115,8 @@ void transponderUpdateData(uint8_t* transponderData)
     transponderIrUpdateData(transponderData);
 }
 
-void transponderTransmitOnce(void) {
+void transponderTransmitOnce(void)
+{
 
     if (!transponderInitialised) {
         return;

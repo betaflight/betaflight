@@ -348,7 +348,7 @@ static uint32_t packFlightModeFlags(void)
 #define BM(x) (1 << (x))
     const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX);
+        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) ;
     for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
         if((rcModeCopyMask & BM(i)) == 0)
             continue;
@@ -932,7 +932,7 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
 
 #ifdef LED_STRIP
         case MSP_LED_COLORS:
-            for (int i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
                 hsvColor_t *color = colors(i);
                 sbufWriteU16(dst, color->h);
                 sbufWriteU8(dst, color->s);
@@ -941,13 +941,28 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_LED_STRIP_CONFIG:
-            for (int i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+            for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
                 ledConfig_t *ledConfig = ledConfigs(i);
-                sbufWriteU16(dst, (ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-                sbufWriteU16(dst, (ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-                sbufWriteU8(dst, GET_LED_X(ledConfig));
-                sbufWriteU8(dst, GET_LED_Y(ledConfig));
+                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
+                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
+                sbufWriteU8(dst, ledGetX(ledConfig));
+                sbufWriteU8(dst, ledGetY(ledConfig));
                 sbufWriteU8(dst, ledConfig->color);
+            }
+            break;
+
+        case MSP_LED_STRIP_MODECOLOR:
+            for (int i = 0; i < LED_MODE_COUNT; i++) {
+                for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                    sbufWriteU8(dst, i);
+                    sbufWriteU8(dst, j);
+                    sbufWriteU8(dst, modeColors(i)->color[j]);
+                }
+            }
+            for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+                sbufWriteU8(dst, LED_MODE_COUNT);
+                sbufWriteU8(dst, j);
+                sbufWriteU8(dst, specialColors(0)->color[j]);
             }
             break;
 #endif
@@ -1441,17 +1456,28 @@ static int processInCommand(mspPacket_t *cmd)
 
 #ifdef LED_STRIP
         case MSP_SET_LED_COLORS:
-            for (int i = 0; i < CONFIGURABLE_COLOR_COUNT && sbufBytesRemaining(src) >= 4; i++) {
+
+            for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT && sbufBytesRemaining(src) >= 4; i++) {
                 hsvColor_t *color = colors(i);
-                color->h = sbufReadU16(src);
-                color->s = sbufReadU8(src);
-                color->v = sbufReadU8(src);
+
+                int h = sbufReadU16(src);
+                int s = sbufReadU8(src);
+                int v = sbufReadU8(src);
+
+                if (h > HSV_HUE_MAX || s > HSV_SATURATION_MAX || v > HSV_VALUE_MAX) {
+                    memset(color, 0, sizeof(*color));
+                    return -1;
+                }
+
+                color->h = h;
+                color->s = s;
+                color->v = v;
             }
             break;
 
         case MSP_SET_LED_STRIP_CONFIG: {
             int i = sbufReadU8(src);
-            if (len != (1 + 7) || i >= MAX_LED_STRIP_LENGTH)
+            if (len != (1 + 7) || i >= LED_MAX_STRIP_LENGTH)
                 return -1;
 
             ledConfig_t *ledConfig = ledConfigs(i);
@@ -1460,23 +1486,31 @@ static int processInCommand(mspPacket_t *cmd)
             // currently we're storing directions and functions in a uint16 (flags)
             // the msp uses 2 x uint16_t to cater for future expansion
             mask = sbufReadU16(src);
-            flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+            flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_FLAG_DIRECTION_MASK;
             mask = sbufReadU16(src);
-            flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+            flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FLAG_FUNCTION_MASK;
             ledConfig->flags = flags;
 
-            uint8_t xy;
-            mask = sbufReadU8(src);
-            xy = CALCULATE_LED_X(mask);
-            mask = sbufReadU8(src);
-            xy |= CALCULATE_LED_Y(mask);
-            ledConfig->xy = xy;
+            int x = sbufReadU8(src);
+            int y = sbufReadU8(src);
+            ledSetXY(ledConfig, x, y);
 
             ledConfig->color = sbufReadU8(src);
 
             reevalulateLedConfig();
         }
         break;
+
+        case MSP_SET_LED_STRIP_MODECOLOR:
+            while (sbufBytesRemaining(src) >= 3) {
+                ledModeIndex_e modeIdx = sbufReadU8(src);
+                int funIdx = sbufReadU8(src);
+                int color = sbufReadU8(src);
+
+                if (!setModeColor(modeIdx, funIdx, color))
+                    return -1;
+            }
+            break;
 #endif
 
         case MSP_REBOOT:

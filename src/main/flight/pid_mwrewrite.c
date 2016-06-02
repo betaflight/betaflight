@@ -112,7 +112,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         int32_t delta = -(gyroRate - lastRateForDelta[axis]);
         lastRateForDelta[axis] = gyroRate;
         // Divide delta by targetLooptime to get differential (ie dr/dt)
-        delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
+        delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 5;
         if (pidProfile->dterm_cut_hz) {
             // DTerm delta low pass filter
             delta = lrintf(applyBiQuadFilter((float)delta, &deltaFilterState[axis]));
@@ -120,7 +120,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
             // When DTerm low pass filter disabled apply moving average to reduce noise
             delta = filterApplyAverage(delta, DTERM_AVERAGE_COUNT, deltaState[axis]);
         }
-        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 6;
+        DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
         DTerm = constrain(DTerm, -PID_MAX_D, PID_MAX_D);
     }
 
@@ -139,7 +139,7 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
 {
     pidFilterIsSetCheck(pidProfile);
 
-    int8_t horizonLevelStrength;
+    int8_t horizonLevelStrength = 0;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));

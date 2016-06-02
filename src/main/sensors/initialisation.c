@@ -223,8 +223,13 @@ bool fakeGyroDetect(gyro_t *gyro)
 #endif
 
 #ifdef USE_FAKE_ACC
-static void fakeAccInit(void) {}
-static bool fakeAccRead(int16_t *accData) {
+static void fakeAccInit(struct acc_s *acc)
+{
+    UNUSED(acc);
+}
+
+static bool fakeAccRead(int16_t *accData)
+{
     memset(accData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
     return true;
 }

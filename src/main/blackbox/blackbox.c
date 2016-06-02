@@ -375,7 +375,8 @@ bool blackboxMayEditConfig()
     return blackboxState <= BLACKBOX_STATE_STOPPED;
 }
 
-static bool blackboxIsOnlyLoggingIntraframes() {
+static bool blackboxIsOnlyLoggingIntraframes()
+{
     return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
 }
 
@@ -1241,7 +1242,8 @@ static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
     return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
 }
 
-static bool blackboxShouldLogIFrame() {
+static bool blackboxShouldLogIFrame()
+{
     return blackboxPFrameIndex == 0;
 }
 

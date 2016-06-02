@@ -109,7 +109,8 @@ PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .rssi_scale = RSSI_SCALE_DEFAULT,
 );
 
-void pgResetFn_channelRanges(rxChannelRangeConfiguration_t *instance) {
+void pgResetFn_channelRanges(rxChannelRangeConfiguration_t *instance)
+{
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         instance[i].min = PWM_RANGE_MIN;
@@ -127,7 +128,8 @@ void pgResetFn_failsafeChannelConfigs(rxFailsafeChannelConfig_t *instance)
     }
 }
 
-static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
+static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
+{
     UNUSED(rxRuntimeConfig);
     UNUSED(channel);
 
@@ -143,7 +145,8 @@ void serialRxInit(rxConfig_t *rxConfig);
 
 static uint8_t validFlightChannelMask;
 
-STATIC_UNIT_TESTED void rxResetFlightChannelStatus(void) {
+STATIC_UNIT_TESTED void rxResetFlightChannelStatus(void)
+{
     validFlightChannelMask = REQUIRED_CHANNEL_MASK;
 }
 
@@ -203,6 +206,7 @@ void rxInit(modeActivationCondition_t *modeActivationConditions)
 #endif
 
     if (feature(FEATURE_RX_MSP)) {
+        rxRefreshRate = 20000;
         rxMspInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
 
@@ -301,7 +305,8 @@ bool rxAreFlightChannelsValid(void)
 {
     return rxFlightChannelsValid;
 }
-static bool isRxDataDriven(void) {
+static bool isRxDataDriven(void)
+{
     return !(feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM));
 }
 
@@ -640,7 +645,8 @@ void updateRSSI(uint32_t currentTime)
     }
 }
 
-void initRxRefreshRate(uint16_t *rxRefreshRatePtr) {
+void initRxRefreshRate(uint16_t *rxRefreshRatePtr)
+{
     *rxRefreshRatePtr = rxRefreshRate;
 }
 

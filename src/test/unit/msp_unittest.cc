@@ -103,8 +103,10 @@ extern "C" {
     PG_REGISTER_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs, PG_FAILSAFE_CHANNEL_CONFIG, 0);
     PG_REGISTER_ARR(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges, PG_CHANNEL_RANGE_CONFIG, 0);
     PG_REGISTER(motor3DConfig_t, motor3DConfig, PG_MOTOR_3D_CONFIG, 0);
-    PG_REGISTER_ARR(ledConfig_t, MAX_LED_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
-    PG_REGISTER_ARR(hsvColor_t, CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
+    PG_REGISTER_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
+    PG_REGISTER_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
+    PG_REGISTER_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
+    PG_REGISTER_ARR(specialColorIndexes_t, 1, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
@@ -425,6 +427,8 @@ TEST_F(MspTest, TestMspCommands)
         MSP_SDCARD_SUMMARY,             // 79 //out message         Get the state of the SD card
         MSP_BLACKBOX_CONFIG,            // 80 //out message         Get blackbox settings
         MSP_TRANSPONDER_CONFIG,         // 82 //out message         Get transponder settings
+        MSP_LED_STRIP_MODECOLOR,        // 85 //out message         Get LED strip mode_color settings
+        MSP_SET_LED_STRIP_MODECOLOR,    // 86 //out message         Set LED strip mode_color settings
         // Baseflight MSP commands (if enabled they exist in Cleanflight)
         MSP_RX_MAP,                     // 64 //out message get channel map (also returns number of channels total)
         // DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
@@ -531,6 +535,7 @@ attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclinat
 int16_t accSmooth[XYZ_AXIS_COUNT];
 // from ledstrip.c
 void reevalulateLedConfig(void) {}
+bool setModeColor(ledModeIndex_e , int , int ) { return true; }
 // from mixer.c
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];

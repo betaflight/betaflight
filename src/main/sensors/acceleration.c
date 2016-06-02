@@ -54,7 +54,8 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
     );
 }
 
-void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance) {
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+{
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_cut_hz = 15,
         .accz_lpf_cutoff = 5.0f,

@@ -87,15 +87,15 @@ feature CURRENT_METER
 
 Configure the current meter type using the `current_meter_type` settings here:
 
-| Value | Sensor Type            |
-| ----- | ---------------------- | 
-| 0     | None                   |
-| 1     | ADC/hardware sensor    |
-| 2     | Virtual sensor         |
+| Value   | Sensor Type            |
+| ------- | ---------------------- | 
+| NONE    | None                   |
+| ADC     | ADC/hardware sensor    |
+| VIRTUAL | Virtual sensor         |
 
 Configure capacity using the `battery_capacity` setting, in mAh units.
 
-If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `1` (this multiplies amperage sent to MSP by 10 and truncates negative values)).
+If you're using an OSD that expects the multiwii current meter output value, then set `multiwii_current_meter_output` to `ON` (this multiplies amperage sent to MSP by 10 and truncates negative values)).
 
 ### ADC Sensor
 
@@ -106,7 +106,7 @@ Use the following settings to adjust calibration:
 `current_meter_scale`
 `current_meter_offset`
 
-It is recommended to set `multiwii_current_meter_output` to `0` when calibrating ADC current sensor.
+It is recommended to set `multiwii_current_meter_output` to `OFF` when calibrating ADC current sensor.
 
 ### Virtual Sensor
 
@@ -120,7 +120,7 @@ The virtual sensor uses the throttle position to calculate an estimated current 
 There are two simple methods to tune these parameters:  one uses a battery charger and another depends on actual current measurements.
 
 #### Tuning Using Actual Current Measurements
-If you know your craft's current draw while disarmed (Imin) and at maximum throttle while armed (Imax), calculate the scaling factors as follows:
+If you know your craft's current draw (in Amperes) while disarmed (Imin) and at maximum throttle while armed (Imax), calculate the scaling factors as follows:
 ```
 current_meter_scale = (Imax - Imin) * 100000 / (Tmax + (Tmax * Tmax / 50))
 current_meter_offset = Imin * 100

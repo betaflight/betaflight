@@ -52,7 +52,8 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
     mspPortToReset->port = serialPort;
 }
 
-static mspPort_t* mspPortFindFree(void) {
+static mspPort_t* mspPortFindFree(void)
+{
     for(int i = 0; i < MAX_MSP_PORT_COUNT; i++)
         if(mspPorts[i].port == NULL)
             return &mspPorts[i];
@@ -130,7 +131,8 @@ static void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
     serialEndWrite(msp->port);
 }
 
-STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp) {
+STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
+{
     mspPacket_t command = {
         .buf = {
             .ptr = msp->inBuf,
