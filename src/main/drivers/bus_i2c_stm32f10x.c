@@ -355,6 +355,8 @@ void i2c_ev_handler(I2CDevice device) {
 
 void i2cInit(I2CDevice device) 
 {
+    I2Cx_device = device;
+    
     if (device == I2CINVALID)
         return;
 
