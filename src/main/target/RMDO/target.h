@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "RMDO" // Ready Made RC DoDo
 
-#define LED0_PIN    PB3
+#define LED0        PB3
 
 #define BEEPER      PC15
 #define BEEPER_INVERTED
