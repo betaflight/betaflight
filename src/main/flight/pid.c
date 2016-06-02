@@ -80,14 +80,14 @@ float calculateRate(int axis, const controlRateConfig_t *controlRateConfig) {
 
     if (isSuperExpoActive()) {
         float rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / 500.0f) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
-        rcFactor = 1.0f / (1.0f - (rcFactor * (controlRateConfig->rates[axis] / 100.0f)));
+        rcFactor = constrainf(1.0f / (1.0f - (rcFactor * (controlRateConfig->rates[axis] / 100.0f))), 0.01f, 1.00f);
 
         angleRate = rcFactor * ((27 * rcCommand[axis]) / 16.0f);
     } else {
         angleRate = (float)((controlRateConfig->rates[axis] + 27) * rcCommand[axis]) / 16.0f;
     }
 
-	return angleRate;
+	return constrainf(angleRate, -8190, 8290); // Rate limit protection
 }
 
 uint16_t getDynamicKp(int axis, const pidProfile_t *pidProfile) {
