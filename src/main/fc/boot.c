@@ -141,13 +141,12 @@ void SetSysClock(bool overclock);
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
 
-#ifndef CUSTOM_FLASHCHIP
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .i2c_highspeed = 1,
 );
-#else
-PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .i2c_highspeed = 1,
+#ifdef CUSTOM_FLASHCHIP
+PG_REGISTER(flashchipConfig_t, flashchipConfig, PG_DRIVER_FLASHCHIP_CONFIG, 0);
+PG_RESET_TEMPLATE(flashchipConfig_t, flashchipConfig,
     .flashchip_id = 0,
     .flashchip_nsect = 0,
     .flashchip_pps = 0,

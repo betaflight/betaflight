@@ -20,11 +20,6 @@
 typedef struct systemConfig_s {
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
     uint8_t i2c_highspeed;                   // Overclock i2c Bus for faster IMU readings
-#ifdef CUSTOM_FLASHCHIP
-    uint32_t flashchip_id;
-    uint16_t flashchip_nsect;
-    uint16_t flashchip_pps;
-#endif
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);

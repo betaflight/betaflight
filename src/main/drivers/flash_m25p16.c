@@ -23,15 +23,13 @@
 
 #ifdef USE_FLASH_M25P16
 
+#ifdef CUSTOM_FLASHCHIP
+#include "config/parameter_group.h"
+#endif
+
 #include "drivers/flash_m25p16.h"
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
-
-#ifdef CUSTOM_FLASHCHIP
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/config_system.h"
-#endif
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03
@@ -177,9 +175,9 @@ static bool m25p16_readIdentification()
         break;
         default:
 #ifdef CUSTOM_FLASHCHIP
-            if (chipID == systemConfig()->flashchip_id) {
-                geometry.sectors = systemConfig()->flashchip_nsect;
-                geometry.pagesPerSector = systemConfig()->flashchip_pps;
+            if (chipID == flashchipConfig()->flashchip_id) {
+                geometry.sectors = flashchipConfig()->flashchip_nsect;
+                geometry.pagesPerSector = flashchipConfig()->flashchip_pps;
                 break;
             }
 #endif
