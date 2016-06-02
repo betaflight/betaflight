@@ -509,7 +509,7 @@ bool isMulticopterLandingDetected(void)
     // check if we are moving horizontally
     bool horizontalMovement = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y)) > 100.0f;
 
-    // We have likely landed if throttle is 40 units below average descend throttle
+    // We have likely landed if throttle is 25 units below average descend throttle
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     bool isAtMinimalThrust = false;
@@ -517,13 +517,13 @@ bool isMulticopterLandingDetected(void)
     if (currentTime - landingDetectorStartedAt > 1000 * 1000) {
         landingThrSamples += 1;
         landingThrSum += rcCommandAdjustedThrottle;
-        isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
+        isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 25);
     }
 
     bool possibleLandingDetected = /*hasHadSomeVelocity &&*/ isAtMinimalThrust && !verticalMovement && !horizontalMovement;
     
     navDebug[0] = /*hasHadSomeVelocity * 1000 +*/ isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
-    navDebug[1] = rcCommandAdjustedThrottle - (landingThrSum / MAX(landingThrSamples, 1));
+    navDebug[1] = (landingThrSamples == 0) ? (navDebug[1] = 0) : (rcCommandAdjustedThrottle - (landingThrSum / MAX(landingThrSamples, 1)));
     navDebug[2] = (currentTime - landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
