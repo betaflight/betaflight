@@ -21,9 +21,14 @@ CURL_PUB_BASEOPTS=(
 	"--form" "github_repo=${TRAVIS_REPO_SLUG}"
 	"--form" "build_name=${BUILDNAME}" )
 
+# pass FAIL_ON_WARNINGS when building Pull Request
+if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+    OPTIONS="FAIL_ON_WARNINGS"
+fi
+
 # A hacky way of running the unit tests at the same time as the normal builds.
 if [ $RUNTESTS ] ; then
-	cd ./src/test && make test
+	cd ./src/test && make test OPTIONS="$OPTIONS"
 
 # A hacky way of building the docs at the same time as the normal builds.
 elif [ $PUBLISHDOCS ] ; then
@@ -64,6 +69,6 @@ else
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	else
-		make -j2
+		make -j2 OPTIONS="$OPTIONS"
 	fi
 fi

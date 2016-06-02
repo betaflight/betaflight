@@ -30,14 +30,6 @@ SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-
-# Detect travis Pull Request build
-ifeq ($(TRAVIS),true)                      # travis build
-ifneq ($(TRAVIS_PULL_REQUEST), false)      # building pull request
-OPTIONS += FAIL_ON_WARNINGS                # do not allow pull requests with warnings
-endif
-endif
-
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
