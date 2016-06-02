@@ -19,12 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "SDF3" // STM Discovery F3
 
-#define LED0_PIN    PE8 // Blue LEDs - PE8/PE12
+#define LED0        PE8 // Blue LEDs - PE8
 #define LED0_INVERTED
-#define LED1_PIN    PE10  // Orange LEDs - PE10/PE14
+#define LED1        PE10  // Orange LEDs - PE10
 #define LED1_INVERTED
 
-#define BEEPER      PE9 // Red LEDs - PE9/PE13
+#define BEEPER      PE9 // Red LEDs - PE9
 #define BEEPER_INVERTED
 
 #define USE_SPI

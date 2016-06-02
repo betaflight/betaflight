@@ -22,7 +22,7 @@
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA
 
-#define LED0_PIN    PB3
+#define LED0      PB3
 
 #define BEEPER    PC15
 #define BEEPER_INVERTED

@@ -19,8 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
-#define LED0_PIN    PB3 // PB3 (LED)
-#define LED1_PIN    PB4 // PB4 (LED)
+#define LED0        PB3 // PB3 (LED)
+#define LED1        PB4 // PB4 (LED)
 
 #define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART USART2

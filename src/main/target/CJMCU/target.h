@@ -20,9 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define LED0_PIN PC14 // PC14 (LED)
-#define LED1_PIN PC13 // PC13 (LED)
-#define LED2_PIN PC15 // PC15 (LED)
+#define LED0     PC14 // PC14 (LED)
+#define LED1     PC13 // PC13 (LED)
+#define LED2     PC15 // PC15 (LED)
 
 #define ACC
 #define USE_ACC_MPU6050
