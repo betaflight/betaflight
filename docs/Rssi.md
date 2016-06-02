@@ -1,8 +1,8 @@
 # RSSI
 
-RSSI is a measurement of signal strength and is very handy so you know when your aircraft isw going out of range or if it is suffering RF interference.
+RSSI is a measurement of signal strength and is very handy so you know when your aircraft is going out of range or if it is suffering RF interference.
 
-Some receivers have RSSI outputs.  3 types are supported.
+Some receivers have RSSI outputs. 3 types are supported.
 
 1. RSSI via PPM channel
 1. RSSI via Parallel PWM channel
@@ -20,9 +20,9 @@ set rssi_channel = 9
 Note: Some systems such as EZUHF invert the RSSI ( 0 = Full signal / 100 = Lost signal). To correct this problem you can invert the channel input so you will get a correct reading by using command:
 
 ```
-set rssi_ppm_invert = 1
+set rssi_ppm_invert = ON
 ```
-Default is set to "0" for normal operation ( 100 = Full signal / 0 = Lost signal).
+Default is set to "OFF" for normal operation ( 100 = Full signal / 0 = Lost signal).
 
 ## RSSI via Parallel PWM channel
 
@@ -36,8 +36,13 @@ A simple PPM->RSSI conditioner can easily be made. See the  PPM-RSSI conditionin
 
 Under CLI :
 - enable using the RSSI_ADC feature  :  `feature RSSI_ADC`
-- set the RSSI_SCALE parameter (between 1 and 255) to adjust RSSI level according to your configuration.
+- set the RSSI_SCALE parameter (between 1 and 255) to adjust RSSI level according to your configuration. The raw ADC value is divided by the value of this parameter.
 
+## RSSI_SCALE setup method:
+
+- set rssi_scale = 100. The displayed percentage will then be the raw ADC value.
+- turn on RX (close to board). RSSI value should vary a little.
+- Update rssi_scale to the maximum RSSI value previously measured.
 
 FrSky D4R-II and X8R supported.
 

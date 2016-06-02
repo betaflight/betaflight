@@ -8,6 +8,7 @@ The core set of recommended boards are:
 
 * [Seriously Pro SPRacingF3Mini](Board%20-%20SPRacingF3Mini.md)
 * [Seriously Pro SPRacingF3](Board%20-%20SPRacingF3.md)
+* [Seriously Pro SPRacingF3EVO](Board%20-%20SPRacingF3Evo.md)
 * [TBS Colibri Race](Board%20-%20ColibriRace.md)
 * [AlienFlightF3](Board%20-%20AlienFlight.md)
 * [TauLabs Sparky](Board%20-%20Sparky.md)

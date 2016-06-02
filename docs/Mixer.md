@@ -56,7 +56,7 @@ A low-pass filter can be enabled for the servos.  It may be useful for avoiding 
 Currently it can only be configured via the CLI:
 
 1. Use `set servo_lowpass_freq = nnn` to select the cutoff frequency.  Valid values range from 10 to 400.  This is a fraction of the loop frequency in 1/1000ths. For example, `40` means `0.040`.
-2. Use `set servo_lowpass_enable = 1` to enable filtering.
+2. Use `set servo_lowpass_enable = ON` to enable filtering.
 
 The cutoff frequency can be determined by the following formula:
 `Frequency = 1000 * servo_lowpass_freq / looptime`
@@ -241,7 +241,7 @@ smix 2 2 1 100 0 0 100 0  # Pitch / Elevator
 ```
 
 ### Example 5: Use motor output 0,1,2,4 because your output 3 is broken
-For this to work you have to make a dummy mmix for motor 3. We do this by just saying it has 0 impact on yaw,roll and pitch. 
+For this to work you have to make a dummy mmix for motor 3. We do this by just saying it has 0 impact on yaw, roll and pitch. 
 ```
 mixer custom
 mmix reset
