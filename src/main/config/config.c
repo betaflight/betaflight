@@ -141,7 +141,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 139;
+static const uint8_t EEPROM_CONF_VERSION = 140;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -310,6 +310,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
+    controlRateConfig->rcYawRate8 = 100;
     controlRateConfig->rcExpo8 = 10;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
@@ -399,7 +400,7 @@ static void resetConf(void)
 #endif
 
     featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_SUPEREXPO);
+    featureSet(FEATURE_SUPEREXPO_RATES);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile

@@ -19,7 +19,6 @@
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
 
-int16_t rcLookupPitchRoll(int32_t tmp, controlRateConfig_t *controlRateConfig);
-int16_t rcLookupYaw(int32_t tmp, controlRateConfig_t *controlRateConfig);
+int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate);
 int16_t rcLookupThrottle(int32_t tmp);
 

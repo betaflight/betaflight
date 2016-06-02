@@ -76,7 +76,7 @@ bool isAirmodeActive(void) {
 }
 
 bool isSuperExpoActive(void) {
-    return (feature(FEATURE_SUPEREXPO));
+    return (feature(FEATURE_SUPEREXPO_RATES));
 }
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
