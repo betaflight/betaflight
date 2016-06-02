@@ -261,14 +261,7 @@ static void updateLEDs(void)
         }
 
         if (isCalibrating() || isSystemOverloaded()) {
-            warningLedFlash();
             DISABLE_ARMING_FLAG(OK_TO_ARM);
-        } else {
-            if (ARMING_FLAG(OK_TO_ARM)) {
-                warningLedDisable();
-            } else {
-                warningLedFlash();
-            }
         }
 
         warningLedUpdate();

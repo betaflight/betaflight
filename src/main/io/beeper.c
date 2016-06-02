@@ -28,14 +28,13 @@
 #include "config/feature.h"
 
 #include "io/rc_controls.h"
+#include "io/statusindicator.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-
-#include "io/statusindicator.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -218,12 +217,9 @@ void beeper(beeperMode_e mode)
 
 void beeperSilence(void)
 {
-    BEEP_OFF;
-    warningLedDisable();
-    warningLedRefresh();
-
-
     beeperIsOn = 0;
+    BEEP_OFF;
+    warningLedBeeper(false);
 
     beeperNextToggleTime = 0;
     beeperPos = 0;
@@ -305,8 +301,7 @@ void beeperUpdate(void)
         beeperIsOn = 1;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_ON;
-            warningLedEnable();
-            warningLedRefresh();
+            warningLedBeeper(true);
             // if this was arming beep then mark time (for blackbox)
             if (
                 beeperPos == 0
@@ -319,8 +314,7 @@ void beeperUpdate(void)
         beeperIsOn = 0;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             BEEP_OFF;
-            warningLedDisable();
-            warningLedRefresh();
+            warningLedBeeper(false);
         }
     }
 
