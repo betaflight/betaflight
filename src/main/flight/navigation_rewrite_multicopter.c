@@ -469,29 +469,39 @@ static void applyMulticopterPositionController(uint32_t currentTime)
  * Multicopter land detector
  *-----------------------------------------------------------*/
 static uint32_t landingTimer;
-static bool hasHadSomeVelocity;
+static uint32_t landingDetectorStartedAt;
+//static bool hasHadSomeVelocity;
 static int32_t landingThrSum;
 static int32_t landingThrSamples;
 
 void resetMulticopterLandingDetector(void)
 {
     landingTimer = micros();
-    hasHadSomeVelocity = false;
+    // FIXME: This function is called some time before isMulticopterLandingDetected is first called
+    landingDetectorStartedAt = 0;
+    //hasHadSomeVelocity = false;
 
     // When descent starts the throttle is at hover and quickly drops to gain descend velocity,
     // Start with a fake low throttle average to avoid passing the test on that throttle drop.
-    landingThrSum = 8 * 1000;
-    landingThrSamples = 8;
+    //landingThrSum = 8 * 1000;
+    //landingThrSamples = 8;
+    
+    landingThrSum = 0;
+    landingThrSamples = 0;
 }
 
 bool isMulticopterLandingDetected(void)
 {
     uint32_t currentTime = micros();
+    
+    if (landingDetectorStartedAt == 0) {
+        landingDetectorStartedAt = currentTime;
+    }
 
     // When descend stage is activated velocity is ~0, so wait until we have descended faster than -25cm/s
-    if (!hasHadSomeVelocity) {
+    /*if (!hasHadSomeVelocity) {
         hasHadSomeVelocity = posControl.actualState.vel.V.Z < -25.0f;
-    }
+    }*/
 
     // Average climb rate should be low enough
     bool verticalMovement = fabsf(posControl.actualState.vel.V.Z) > 25.0f;
@@ -502,17 +512,21 @@ bool isMulticopterLandingDetected(void)
     // We have likely landed if throttle is 40 units below average descend throttle
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
-    landingThrSamples += 1;
-    landingThrSum += rcCommandAdjustedThrottle;
-    bool isAtMinimalThrust= rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
+    bool isAtMinimalThrust = false;
+    // Wait for 1 second so throttle has stabalized.
+    if (currentTime - landingDetectorStartedAt > 1000 * 1000) {
+        landingThrSamples += 1;
+        landingThrSum += rcCommandAdjustedThrottle;
+        isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
+    }
 
     // TODO: This setting is no longer needed, remove or reuse it for LAND_DETECTOR_TRIGGER_TIME_MS
     //posControl.navConfig->mc_min_fly_throttle;
 
-    bool possibleLandingDetected = hasHadSomeVelocity && isAtMinimalThrust && !verticalMovement && !horizontalMovement;
+    bool possibleLandingDetected = /*hasHadSomeVelocity &&*/ isAtMinimalThrust && !verticalMovement && !horizontalMovement;
     
-    navDebug[0] = hasHadSomeVelocity * 1000 + isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
-    navDebug[1] = (landingThrSum / landingThrSamples) - rcCommandAdjustedThrottle;
+    navDebug[0] = /*hasHadSomeVelocity * 1000 +*/ isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
+    navDebug[1] = rcCommandAdjustedThrottle - (landingThrSum / MAX(landingThrSamples, 1));
     navDebug[2] = (currentTime - landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
