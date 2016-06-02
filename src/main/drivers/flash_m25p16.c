@@ -189,6 +189,14 @@ static bool m25p16_readIdentification()
             geometry.totalSize = 0;
             return false;
     }
+#ifdef CUSTOM_FLASHCHIP
+    // Write back hard coded params. Eventually go away?
+    if (flashchipConfig()->flashchip_id == 0) {
+        flashchipConfig()->flashchip_id = chipID;
+        flashchipConfig()->flashchip_nsect = geometry.sectors;
+        flashchipConfig()->flashchip_pps = geometry.pagesPerSector;
+    }
+#endif
 
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
     geometry.totalSize = geometry.sectorSize * geometry.sectors;
