@@ -24,6 +24,10 @@
 
 #define BEEPER PB15 // PA15 (Beeper)
 
+#define USE_EXTI
+#define USE_MPU_DATA_READY_SIGNAL
+#define MPU_INT_EXTI PA3
+
 #define MPU6000_CS_GPIO       GPIOA
 #define MPU6000_CS_PIN        GPIO_Pin_4
 #define MPU6000_SPI_INSTANCE  SPI1

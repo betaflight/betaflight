@@ -28,6 +28,7 @@
 #define BEEPER      PB13
 #define BEEPER_INVERTED
 
+#define USE_EXTI
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
 #define MPU6500_CS_GPIO                  GPIOA
 #define MPU6500_CS_PIN                   GPIO_Pin_4
@@ -169,6 +170,8 @@
 
 
 // MPU6500 interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI PA5
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW

@@ -28,6 +28,7 @@
 #define U_ID_1 (*(uint32_t*)0x1FFFF7B0)
 #define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
 
+#define STM32F3
 #endif
 
 #ifdef STM32F10X
@@ -41,6 +42,7 @@
 #define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
+#define STM32F1
 #endif // STM32F10X
 
 #include "target.h"

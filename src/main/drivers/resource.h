@@ -35,4 +35,6 @@ typedef enum {
     RESOURCE_USART = 1 << 4,
     RESOURCE_ADC = 1 << 5,
     RESOURCE_EXTI = 1 << 6,
+    RESOURCE_I2C        = 1 << 7,
+    RESOURCE_SPI        = 1 << 8,
 } resourceType_t;

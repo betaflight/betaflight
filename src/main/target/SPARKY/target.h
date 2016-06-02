@@ -28,6 +28,8 @@
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU6050 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI PA15
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 

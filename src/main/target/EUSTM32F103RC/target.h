@@ -25,6 +25,7 @@
 #define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART USART2
 
+#define USE_EXTI
 #define MPU6000_CS_GPIO       GPIOB
 #define MPU6000_CS_PIN        GPIO_Pin_12
 #define MPU6000_SPI_INSTANCE  SPI2

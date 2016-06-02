@@ -369,7 +369,7 @@ void init(void)
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isOD = true;
         beeperConfig.isInverted = true;
     }
 #endif

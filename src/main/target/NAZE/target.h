@@ -27,14 +27,13 @@
 
 #define BEEPER      PA12 // PA12 (Beeper)
 
-#define BARO_XCLR_GPIO   GPIOC
-#define BARO_XCLR_PIN    Pin_13
-#define BARO_EOC_GPIO    GPIOC
-#define BARO_EOC_PIN     Pin_14
-#define BARO_APB2_PERIPHERALS RCC_APB2Periph_GPIOC
+#define BARO_XCLR_PIN    PC13
+#define BARO_EOC_PIN     PC14
 
 #define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART USART2
+
+#define USE_EXTI
 
 // SPI2
 // PB15 28 SPI2_MOSI

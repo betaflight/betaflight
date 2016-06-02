@@ -25,6 +25,8 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 
+#define USE_EXTI
+#define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO

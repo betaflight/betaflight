@@ -36,6 +36,7 @@
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
+#define USE_EXTI
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 
