@@ -633,7 +633,7 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t unsyncedPwm)
+void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm)
 {
     uint8_t i;
 
@@ -641,7 +641,7 @@ void writeMotors(uint8_t unsyncedPwm)
         pwmWriteMotor(i, motor[i]);
 
 
-    if (feature(FEATURE_ONESHOT125) && !unsyncedPwm) {
+    if (fastPwmProtocol && !unsyncedPwm) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -653,7 +653,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(1);
+    writeMotors(1,1);
 }
 
 void stopMotors(void)
