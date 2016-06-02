@@ -246,7 +246,7 @@ void resetNavConfig(navConfig_t * navConfig)
     // MC-specific
     navConfig->mc_max_bank_angle = 30;      // 30 deg
     navConfig->mc_hover_throttle = 1500;
-    navConfig->mc_min_fly_throttle = 1200;
+    navConfig->mc_auto_disarm_delay = 2000;
 
     // Fixed wing
     navConfig->fw_max_bank_angle = 20;      // 30 deg

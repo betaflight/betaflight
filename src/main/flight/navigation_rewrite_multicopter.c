@@ -520,9 +520,6 @@ bool isMulticopterLandingDetected(void)
         isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
     }
 
-    // TODO: This setting is no longer needed, remove or reuse it for LAND_DETECTOR_TRIGGER_TIME_MS
-    //posControl.navConfig->mc_min_fly_throttle;
-
     bool possibleLandingDetected = /*hasHadSomeVelocity &&*/ isAtMinimalThrust && !verticalMovement && !horizontalMovement;
     
     navDebug[0] = /*hasHadSomeVelocity * 1000 +*/ isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
@@ -542,7 +539,7 @@ bool isMulticopterLandingDetected(void)
         return false;
     }
     else {
-        return ((currentTime - landingTimer) > (LAND_DETECTOR_TRIGGER_TIME_MS * 1000)) ? true : false;
+        return ((currentTime - landingTimer) > (posControl.navConfig->mc_auto_disarm_delay * 1000)) ? true : false;
     }
 }
 

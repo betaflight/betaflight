@@ -115,7 +115,7 @@ typedef struct navConfig_s {
 
     uint8_t  mc_max_bank_angle;             // multicopter max banking angle (deg)
     uint16_t mc_hover_throttle;             // multicopter hover throttle
-    uint16_t mc_min_fly_throttle;           // multicopter minimum throttle to consider machine flying
+    uint16_t mc_auto_disarm_delay;          // multicopter safety delay for landing detector
 
     uint16_t fw_cruise_throttle;            // Cruise throttle
     uint16_t fw_min_throttle;               // Minimum allowed throttle in auto mode
