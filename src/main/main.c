@@ -375,7 +375,7 @@ void init(void)
 #endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
-        beeperConfig.gpioPin = Pin_2;
+		beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif
 
     beeperInit(&beeperConfig);
