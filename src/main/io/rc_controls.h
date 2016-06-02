@@ -136,6 +136,7 @@ typedef struct modeActivationCondition_s {
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
+    uint8_t rcYawRate8;
     uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;

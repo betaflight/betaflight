@@ -199,7 +199,7 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
-    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", "SUPEREXPO",
+    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", "SUPEREXPO_RATES",
     NULL
 };
 
@@ -695,6 +695,7 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  250 } },
+    { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  250 } },
     { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
     { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
     { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },

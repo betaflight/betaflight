@@ -45,7 +45,7 @@ typedef enum {
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
-    FEATURE_SUPEREXPO = 1 << 23,
+    FEATURE_SUPEREXPO_RATES = 1 << 23,
 } features_e;
 
 void handleOneshotFeatureChangeOnRestart(void);

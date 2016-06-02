@@ -46,16 +46,10 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
     }
 }
 
-int16_t rcLookupPitchRoll(int32_t tmp, controlRateConfig_t *controlRateConfig)
+int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate)
 {
     float tmpf = tmp / 100.0f;
-    return (int16_t)((2500.0f + (float)controlRateConfig->rcExpo8 * (tmpf * tmpf - 25.0f)) * tmpf * (float)(controlRateConfig->rcRate8) / 2500.0f );
-}
-
-int16_t rcLookupYaw(int32_t tmp, controlRateConfig_t *controlRateConfig)
-{
-    float tmpf = tmp / 100.0f;
-    return (int16_t)((2500.0f + (float)controlRateConfig->rcYawExpo8* (tmpf * tmpf - 25.0f)) * tmpf / 25.0f );
+    return (int16_t)((2500.0f + (float)expo * (tmpf * tmpf - 25.0f)) * tmpf * (float)(rate) / 2500.0f );
 }
 
 int16_t rcLookupThrottle(int32_t tmp)
