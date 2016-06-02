@@ -48,11 +48,10 @@ CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
 # Compiler flags for coverage instrumentation
-GCOV_CC_FLAGS := -fprofile-arcs -ftest-coverage
-GCOV_L_FLAGS  := -lgcov
+COVERAGE_FLAGS := --coverage
 
-C_FLAGS   += $(GCOV_CC_FLAGS) $(GCOV_L_FLAGS)
-CXX_FLAGS += $(GCOV_CC_FLAGS) $(GCOV_L_FLAGS) 
+C_FLAGS   += $(COVERAGE_FLAGS)
+CXX_FLAGS += $(COVERAGE_FLAGS)
 
 #enable fast Maths tests
 C_FLAGS   += -DFAST_MATH
