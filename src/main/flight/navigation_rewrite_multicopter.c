@@ -498,7 +498,7 @@ bool isMulticopterLandingDetected(void)
     // check if we are moving horizontally
     bool horizontalMovement = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y)) > 100.0f;
 
-    // We have likely landed if throttle is 25 units below average descend throttle
+    // We have likely landed if throttle is 40 units below average descend throttle
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     // Wait for 1 second so throttle has stabilized.
@@ -506,7 +506,7 @@ bool isMulticopterLandingDetected(void)
     if (currentTime - landingDetectorStartedAt > 1000 * 1000) {
         landingThrSamples += 1;
         landingThrSum += rcCommandAdjustedThrottle;
-        isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 25);
+        isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
     }
 
     bool possibleLandingDetected = isAtMinimalThrust && !verticalMovement && !horizontalMovement;
