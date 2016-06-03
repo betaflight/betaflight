@@ -33,16 +33,10 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
@@ -163,4 +157,5 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))

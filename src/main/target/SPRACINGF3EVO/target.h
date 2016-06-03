@@ -100,34 +100,22 @@
 #define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5 SPI2 (SDCard)
 
-#define SPI1_GPIO               GPIOB
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI1_NSS_PIN            Pin_9
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource9
-#define SPI1_SCK_PIN            Pin_3
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
-#define SPI1_MISO_PIN           Pin_4
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
-#define SPI1_MOSI_PIN           Pin_5
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
+#define SPI1_NSS_PIN            PB9
+#define SPI1_SCK_PIN            PB3
+#define SPI1_MISO_PIN           PB4
+#define SPI1_MOSI_PIN           PB5
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   GPIO_Pin_14
+#define SDCARD_DETECT_PIN                   PC14
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
 #define SDCARD_DETECT_GPIO_PORT             GPIOC
@@ -148,9 +136,7 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   SPI1_GPIO_PERIPHERAL
-#define MPU6500_CS_GPIO                  SPI1_GPIO
-#define MPU6500_CS_PIN                   GPIO_Pin_9
+#define MPU6500_CS_PIN                   PB9
 #define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_ADC
@@ -223,4 +209,4 @@
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))

@@ -98,16 +98,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
 
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
+#define I2C2_SCL_PIN         PA9
+#define I2C2_SDA_PIN         PA10
 
 // SPI3
 // PA15 38 SPI3_NSS

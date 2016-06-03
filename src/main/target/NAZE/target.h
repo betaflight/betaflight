@@ -46,7 +46,7 @@
 
 #define NAZE_SPI_INSTANCE     SPI2
 #define NAZE_SPI_CS_GPIO      GPIOB
-#define NAZE_SPI_CS_PIN       GPIO_Pin_12
+#define NAZE_SPI_CS_PIN       PB12
 #define NAZE_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:

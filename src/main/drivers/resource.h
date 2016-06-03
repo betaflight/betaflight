@@ -21,6 +21,7 @@ typedef enum {
     OWNER_TIMER,
     OWNER_SONAR,
     OWNER_SYSTEM,
+    OWNER_SDCARD
 } resourceOwner_t;
 
 

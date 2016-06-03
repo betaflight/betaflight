@@ -389,18 +389,16 @@ void init(void)
     bstInit(BST_DEVICE);
 #endif
 
-
-
 #ifdef USE_SPI
-    spiInit(SPI1);
-    spiInit(SPI2);
+    spiInit(SPIDEV_1);
+    spiInit(SPIDEV_2);
 #ifdef STM32F303xC
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_2) {
-        spiInit(SPI3);
+        spiInit(SPIDEV_3);
     }
 #else
-    spiInit(SPI3);
+    spiInit(SPIDEV_3);
 #endif
 #endif
 #endif
