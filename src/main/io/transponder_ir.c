@@ -34,7 +34,7 @@
 #include "drivers/usb_io.h"
 
 #include "io/transponder_ir.h"
-#include "config/config.h"
+#include "fc/config.h"
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;

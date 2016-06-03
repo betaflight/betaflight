@@ -28,7 +28,6 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 #include "config/profile.h"
@@ -41,9 +40,11 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include "io/rate_profile.h"
-#include "io/rc_controls.h"
-#include "io/rc_adjustments.h"
+#include "fc/rate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_adjustments.h"
+#include "fc/config.h"
+
 #include "io/beeper.h"
 #include "io/serial.h"
 

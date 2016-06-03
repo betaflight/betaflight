@@ -28,6 +28,8 @@ typedef enum {
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
 
+#define TASK_SELF -1
+
 typedef struct {
     const char * taskName;
     bool         isEnabled;
@@ -38,53 +40,6 @@ typedef struct {
     uint32_t     averageExecutionTime;
     uint32_t     latestDeltaTime;
 } cfTaskInfo_t;
-
-typedef enum {
-    /* Actual tasks */
-    TASK_SYSTEM = 0,
-    TASK_GYROPID,
-    TASK_ACCEL,
-    TASK_SERIAL,
-#ifdef BEEPER
-    TASK_BEEPER,
-#endif
-    TASK_BATTERY,
-    TASK_RX,
-#ifdef GPS
-    TASK_GPS,
-#endif
-#ifdef MAG
-    TASK_COMPASS,
-#endif
-#ifdef BARO
-    TASK_BARO,
-#endif
-#ifdef SONAR
-    TASK_SONAR,
-#endif
-#if defined(BARO) || defined(SONAR)
-    TASK_ALTITUDE,
-#endif
-#ifdef DISPLAY
-    TASK_DISPLAY,
-#endif
-#ifdef TELEMETRY
-    TASK_TELEMETRY,
-#endif
-#ifdef LED_STRIP
-    TASK_LEDSTRIP,
-#endif
-#ifdef TRANSPONDER
-    TASK_TRANSPONDER,
-#endif
-
-    /* Count of real tasks */
-    TASK_COUNT,
-
-    /* Service task IDs */
-    TASK_NONE = TASK_COUNT,
-    TASK_SELF
-} cfTaskId_e;
 
 typedef struct {
     /* Configuration */
@@ -109,14 +64,13 @@ typedef struct {
 #endif
 } cfTask_t;
 
-extern cfTask_t cfTasks[TASK_COUNT];
 extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
 
-void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
-void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
-void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
-uint32_t getTaskDeltaTime(cfTaskId_e taskId);
+void getTaskInfo(const int taskId, cfTaskInfo_t *taskInfo);
+void rescheduleTask(const int taskId, uint32_t newPeriodMicros);
+void setTaskEnabled(const int taskId, bool newEnabledState);
+uint32_t getTaskDeltaTime(const int taskId);
 
 void schedulerInit(void);
 void scheduler(void);

@@ -28,9 +28,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
-
 extern gyro_t gyro;
 
 uint32_t targetLooptime;

@@ -83,13 +83,13 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 //
 // configuration
 //
+
+#define FUNCTION_BAUD_RATE_COUNT 4 // FIXME OSD only needs 2, FC needs 4.
+
 typedef struct serialPortConfig_s {
     serialPortIdentifier_e identifier;
     uint16_t functionMask;
-    uint8_t msp_baudrateIndex;
-    uint8_t gps_baudrateIndex;
-    uint8_t blackbox_baudrateIndex;
-    uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
+    uint8_t baudRates[FUNCTION_BAUD_RATE_COUNT];
 } serialPortConfig_t;
 
 typedef struct serialConfig_s {

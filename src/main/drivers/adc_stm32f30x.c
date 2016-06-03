@@ -38,6 +38,30 @@
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 #endif
 
+#if defined(VBAT_ADC_GPIO)
+#define ADC1_GPIO             VBAT_ADC_GPIO
+#define ADC1_GPIO_PIN         VBAT_ADC_GPIO_PIN
+#define ADC1_CHANNEL          VBAT_ADC_CHANNEL
+#endif
+
+#if defined(RSSI_ADC_GPIO)
+#define ADC2_GPIO             RSSI_ADC_GPIO
+#define ADC2_GPIO_PIN         RSSI_ADC_GPIO_PIN
+#define ADC2_CHANNEL          RSSI_ADC_CHANNEL
+#endif
+
+#if defined(CURRENT_METER_ADC_GPIO)
+#define ADC3_GPIO             CURRENT_METER_ADC_GPIO
+#define ADC3_GPIO_PIN         CURRENT_METER_ADC_GPIO_PIN
+#define ADC3_CHANNEL          CURRENT_METER_ADC_CHANNEL
+#endif
+
+#if defined(EXTERNAL1_ADC_GPIO)
+#define ADC4_GPIO             EXTERNAL1_ADC_GPIO
+#define ADC4_GPIO_PIN         EXTERNAL1_ADC_GPIO_PIN
+#define ADC4_CHANNEL          EXTERNAL1_ADC_CHANNEL
+#endif
+
 void adcInit(drv_adc_config_t *init)
 {
     ADC_InitTypeDef ADC_InitStructure;
@@ -53,54 +77,54 @@ void adcInit(drv_adc_config_t *init)
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
 
-#ifdef VBAT_ADC_GPIO
-    if (init->enableVBat) {
-        GPIO_InitStructure.GPIO_Pin   = VBAT_ADC_GPIO_PIN;
-        GPIO_Init(VBAT_ADC_GPIO, &GPIO_InitStructure);
+#ifdef ADC1_GPIO
+    if (init->channelMask & ADC_CHANNEL1_ENABLE) {
+        GPIO_InitStructure.GPIO_Pin   = ADC1_GPIO_PIN;
+        GPIO_Init(ADC1_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
-        adcConfig[ADC_BATTERY].dmaIndex = adcChannelCount;
-        adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[ADC_BATTERY].enabled = true;
+        adcConfig[ADC_CHANNEL_1].adcChannel = ADC1_CHANNEL;
+        adcConfig[ADC_CHANNEL_1].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CHANNEL_1].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CHANNEL_1].enabled = true;
         adcChannelCount++;
     }
 #endif
 
-#ifdef RSSI_ADC_GPIO
-    if (init->enableRSSI) {
-        GPIO_InitStructure.GPIO_Pin = RSSI_ADC_GPIO_PIN;
-        GPIO_Init(RSSI_ADC_GPIO, &GPIO_InitStructure);
+#ifdef ADC2_GPIO
+    if (init->channelMask & ADC_CHANNEL2_ENABLE) {
+        GPIO_InitStructure.GPIO_Pin = ADC2_GPIO_PIN;
+        GPIO_Init(ADC2_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_RSSI].adcChannel = RSSI_ADC_CHANNEL;
-        adcConfig[ADC_RSSI].dmaIndex = adcChannelCount;
-        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[ADC_RSSI].enabled = true;
+        adcConfig[ADC_CHANNEL_2].adcChannel = ADC2_CHANNEL;
+        adcConfig[ADC_CHANNEL_2].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CHANNEL_2].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CHANNEL_2].enabled = true;
         adcChannelCount++;
     }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
-    if (init->enableCurrentMeter) {
-        GPIO_InitStructure.GPIO_Pin = CURRENT_METER_ADC_GPIO_PIN;
-        GPIO_Init(CURRENT_METER_ADC_GPIO, &GPIO_InitStructure);
+#ifdef ADC3_GPIO
+    if (init->channelMask & ADC_CHANNEL3_ENABLE) {
+        GPIO_InitStructure.GPIO_Pin = ADC3_GPIO_PIN;
+        GPIO_Init(ADC3_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
-        adcConfig[ADC_CURRENT].dmaIndex = adcChannelCount;
-        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[ADC_CURRENT].enabled = true;
+        adcConfig[ADC_CHANNEL_4].adcChannel = ADC3_CHANNEL;
+        adcConfig[ADC_CHANNEL_4].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CHANNEL_4].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CHANNEL_4].enabled = true;
         adcChannelCount++;
     }
 #endif
 
-#ifdef EXTERNAL1_ADC_GPIO
-    if (init->enableExternal1) {
-        GPIO_InitStructure.GPIO_Pin   = EXTERNAL1_ADC_GPIO_PIN;
-        GPIO_Init(EXTERNAL1_ADC_GPIO, &GPIO_InitStructure);
+#ifdef ADC4_GPIO
+    if (init->channelMask & ADC_CHANNEL4_ENABLE) {
+        GPIO_InitStructure.GPIO_Pin   = ADC4_GPIO_PIN;
+        GPIO_Init(ADC4_GPIO, &GPIO_InitStructure);
 
-        adcConfig[ADC_EXTERNAL1].adcChannel = EXTERNAL1_ADC_CHANNEL;
-        adcConfig[ADC_EXTERNAL1].dmaIndex = adcChannelCount;
-        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[ADC_EXTERNAL1].enabled = true;
+        adcConfig[ADC_CHANNEL_3].adcChannel = ADC4_CHANNEL;
+        adcConfig[ADC_CHANNEL_3].dmaIndex = adcChannelCount;
+        adcConfig[ADC_CHANNEL_3].sampleTime = ADC_SampleTime_601Cycles5;
+        adcConfig[ADC_CHANNEL_3].enabled = true;
         adcChannelCount++;
     }
 #endif

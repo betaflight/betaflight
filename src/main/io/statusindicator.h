@@ -20,4 +20,8 @@
 #define WARNING_LED_BLINK_DELAY  200000
 
 void warningLedBeeper(bool on);
+void warningLedPulse(void);
+
+void warningLedSetBlinkMask(uint32_t newBlinkMask);
+
 void warningLedUpdate(void);

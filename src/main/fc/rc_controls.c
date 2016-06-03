@@ -30,17 +30,18 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "config/config.h"
-#include "config/runtime_config.h"
 #include "config/feature.h"
 #include "config/config_reset.h"
+#include "config/profile.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -51,15 +52,14 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motor_and_servo.h"
-#include "io/rc_curves.h"
-
 #include "io/display.h"
+
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
 
-#include "mw.h"
+#include "fc/cleanflight_fc.h"
 
 #define AIRMODE_DEADBAND 12
 

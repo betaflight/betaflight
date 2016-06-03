@@ -32,9 +32,8 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "config/config.h"
 #include "config/feature.h"
+#include "config/profile.h"
 
 #include "flight/pid.h"
 
@@ -42,10 +41,11 @@
 
 #include "io/beeper.h"
 
-#include "io/rate_profile.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/rc_adjustments.h"
+#include "fc/rate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/rc_adjustments.h"
+#include "fc/config.h"
 
 PG_REGISTER_PROFILE(adjustmentProfile_t, adjustmentProfile, PG_ADJUSTMENT_PROFILE, 0);
 

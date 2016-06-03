@@ -25,12 +25,14 @@
 #include "build_config.h"
 
 #include "common/utils.h"
+#include "common/streambuf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/system.h"
+
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"
 #endif
@@ -44,43 +46,16 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_cli.h"
-#include "serial_msp.h"
 
-#include "config/config.h"
-#include "config/parameter_group.h"
+#include "msp/msp.h"
+#include "msp/msp_serial.h"
+
+#include "fc/config.h"
+
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
-
-PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
-
-void pgResetFn_serialConfig(serialConfig_t *serialConfig)
-{
-    memset(serialConfig, 0, sizeof(serialConfig_t));
-
-    serialPortConfig_t portConfig_Reset = {
-        .msp_baudrateIndex = BAUD_115200,
-        .gps_baudrateIndex = BAUD_57600,
-        .telemetry_baudrateIndex = BAUD_AUTO,
-        .blackbox_baudrateIndex = BAUD_115200,
-    };
-
-    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
-        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
-    }
-
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-
-#if defined(USE_VCP)
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
-
-    serialConfig->reboot_character = 'R';
-}
 
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
@@ -440,19 +415,6 @@ bool serialIsPortAvailable(serialPortIdentifier_e identifier)
     return false;
 }
 
-void handleSerial(void)
-{
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-
-    mspSerialProcess();
-}
-
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 {
     while (!isSerialTransmitBufferEmpty(serialPort)) {
@@ -460,18 +422,3 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
-void cliEnter(serialPort_t *serialPort);
-
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
-{
-#ifndef USE_CLI
-    UNUSED(serialPort);
-#else
-    if (receivedChar == '#') {
-        cliEnter(serialPort);
-    }
-#endif
-    if (receivedChar == serialConfig()->reboot_character) {
-        systemResetToBootloader();
-    }
-}

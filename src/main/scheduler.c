@@ -50,16 +50,16 @@ uint16_t averageSystemLoadPercent = 0;
 
 
 static int taskQueuePos = 0;
-static int taskQueueSize = 0;
-// No need for a linked list for the queue, since items are only inserted at startup
-#ifdef UNIT_TEST
-STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 2]; // 1 extra space so test code can check for buffer overruns
-#else
-static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
-#endif
+static unsigned int taskQueueSize = 0;
+
+extern cfTask_t* taskQueueArray[];
+extern const uint32_t taskQueueArraySize;
+extern const uint32_t taskCount;
+extern cfTask_t cfTasks[];
+
 STATIC_UNIT_TESTED void queueClear(void)
 {
-    memset(taskQueueArray, 0, sizeof(taskQueueArray));
+    memset(taskQueueArray, 0, taskQueueArraySize * sizeof(cfTask_t *));
     taskQueuePos = 0;
     taskQueueSize = 0;
 }
@@ -73,7 +73,7 @@ STATIC_UNIT_TESTED int queueSize(void)
 
 STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 {
-    for (int ii = 0; ii < taskQueueSize; ++ii) {
+    for (unsigned int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
             return true;
         }
@@ -83,10 +83,10 @@ STATIC_UNIT_TESTED bool queueContains(cfTask_t *task)
 
 STATIC_UNIT_TESTED bool queueAdd(cfTask_t *task)
 {
-    if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
+    if ((taskQueueSize >= taskCount) || queueContains(task)) {
         return false;
     }
-    for (int ii = 0; ii <= taskQueueSize; ++ii) {
+    for (unsigned int ii = 0; ii <= taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == NULL || taskQueueArray[ii]->staticPriority < task->staticPriority) {
             memmove(&taskQueueArray[ii+1], &taskQueueArray[ii], sizeof(task) * (taskQueueSize - ii));
             taskQueueArray[ii] = task;
@@ -99,7 +99,7 @@ STATIC_UNIT_TESTED bool queueAdd(cfTask_t *task)
 
 STATIC_UNIT_TESTED bool queueRemove(cfTask_t *task)
 {
-    for (int ii = 0; ii < taskQueueSize; ++ii) {
+    for (unsigned int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
             memmove(&taskQueueArray[ii], &taskQueueArray[ii+1], sizeof(task) * (taskQueueSize - ii));
             --taskQueueSize;
@@ -150,7 +150,7 @@ void taskSystem(void)
 }
 
 #ifndef SKIP_TASK_STATISTICS
-void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
+void getTaskInfo(const int taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
     taskInfo->isEnabled = queueContains(&cfTasks[taskId]);
@@ -163,17 +163,17 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 }
 #endif
 
-void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
+void rescheduleTask(const int taskId, uint32_t newPeriodMicros)
 {
-    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+    if (taskId == TASK_SELF || taskId < (int)taskCount) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
         task->desiredPeriod = MAX(100, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     }
 }
 
-void setTaskEnabled(cfTaskId_e taskId, bool enabled)
+void setTaskEnabled(const int taskId, bool enabled)
 {
-    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+    if (taskId == TASK_SELF || taskId < (int)taskCount) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
         if (enabled && task->taskFunc) {
             queueAdd(task);
@@ -183,9 +183,9 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
     }
 }
 
-uint32_t getTaskDeltaTime(cfTaskId_e taskId)
+uint32_t getTaskDeltaTime(const int taskId)
 {
-    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
+    if (taskId == TASK_SELF || taskId < (int)taskCount) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
         return task->taskLatestDeltaTime;
     } else {
@@ -196,7 +196,6 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 void schedulerInit(void)
 {
     queueClear();
-    queueAdd(&cfTasks[TASK_SYSTEM]);
 }
 
 void scheduler(void)

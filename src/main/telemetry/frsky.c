@@ -32,8 +32,6 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/system.h"
@@ -43,7 +41,10 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 
-#include "io/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/fc_serial.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

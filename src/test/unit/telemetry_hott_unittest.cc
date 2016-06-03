@@ -29,12 +29,13 @@ extern "C" {
     #include "common/axis.h"
 
     #include "config/parameter_group.h"
-    #include "config/runtime_config.h"
+    #include "config/profile.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
 
-    #include "io/rc_controls.h"
+    #include "fc/runtime_config.h"
+    #include "fc/rc_controls.h"
     #include "io/serial.h"
     #include "io/gps.h"
 

@@ -41,13 +41,12 @@
 #include "common/typeconversion.h"
 
 #include "config/parameter_group.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/feature.h"
 #include "config/profile.h"
 
-#include "io/rate_profile.h"
-#include "io/rc_controls.h"
+#include "fc/rate_profile.h"
+#include "fc/rc_controls.h"
+
 #include "io/display.h"
 #include "io/gps.h"
 
@@ -62,6 +61,10 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
+
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/fc_tasks.h"
 
 #include "scheduler.h"
 

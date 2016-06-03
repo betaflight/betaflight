@@ -19,6 +19,9 @@
 #include <stdint.h>
 
 #include <platform.h>
+
+#include "fc/fc_tasks.h"
+
 #include "scheduler.h"
 
 void taskMainPidLoopChecker(void);
@@ -39,7 +42,18 @@ void taskLedStrip(void);
 void taskTransponder(void);
 void taskSystem(void);
 
-cfTask_t cfTasks[TASK_COUNT] = {
+// No need for a linked list for the queue, since items are only inserted at startup
+#ifdef UNIT_TEST
+#define TASK_QUEUE_ARRAY_SIZE (TASK_COUNT + 2) // 1 extra space so test code can check for buffer overruns
+#else
+#define TASK_QUEUE_ARRAY_SIZE (TASK_COUNT + 1) // extra item for NULL pointer at end of queue
+#endif
+
+const uint32_t taskQueueArraySize = TASK_QUEUE_ARRAY_SIZE;
+const uint32_t taskCount = TASK_COUNT;
+cfTask_t* taskQueueArray[TASK_QUEUE_ARRAY_SIZE];
+
+cfTask_t cfTasks[] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,

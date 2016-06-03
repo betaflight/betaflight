@@ -25,8 +25,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "config/config.h"
+#include "config/profile.h"
 
 #include "io/gimbal.h"
 

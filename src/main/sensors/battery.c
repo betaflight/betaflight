@@ -29,17 +29,24 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/config_reset.h"
 #include "config/feature.h"
 
-#include "io/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+
 #include "io/beeper.h"
 
 #include "sensors/battery.h"
 
+
+// FIXME there is too much going on in here - the code is not re-usable and has lots of shared configuration, suggest splitting into these topics.
+// 1) voltage monitoring/adc conversion
+// 2) battery cell count detection and status (present or not)
+// 3) battery warnings (aka alarms)
+// 4) adc current sensor
+// 5) virtual current sensor (has a dependency on an RC control input)
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
 #define VBATT_LPF_FREQ  1.0f
@@ -191,31 +198,33 @@ int32_t currentSensorToCentiamps(uint16_t src)
     return (millivolts * 1000) / (int32_t)batteryConfig()->currentMeterScale; // current in 0.01A steps
 }
 
-void updateCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus)
+void updateCurrentMeter(int32_t lastUpdateAt)
 {
     static int32_t amperageRaw = 0;
+    static int64_t mAhdrawnRaw = 0;
+
+    amperageRaw -= amperageRaw / 8;
+    amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
+    amperage = currentSensorToCentiamps(amperageRaw / 8);
+
+    mAhdrawnRaw += (MAX(0, amperage) * lastUpdateAt) / 1000;
+    mAhDrawn = mAhdrawnRaw / (3600 * 100);
+}
+
+
+void updateVirtualCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus)
+{
     static int64_t mAhdrawnRaw = 0;
     int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
     int32_t throttleFactor = 0;
 
-    switch(batteryConfig()->currentMeterType) {
-        case CURRENT_SENSOR_ADC:
-            amperageRaw -= amperageRaw / 8;
-            amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
-            amperage = currentSensorToCentiamps(amperageRaw / 8);
-            break;
-        case CURRENT_SENSOR_VIRTUAL:
-            amperage = (int32_t)batteryConfig()->currentMeterOffset;
-            if (ARMING_FLAG(ARMED)) {
-                if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
-                    throttleOffset = 0;
-                throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-                amperage += throttleFactor * (int32_t)batteryConfig()->currentMeterScale  / 1000;
-            }
-            break;
-        case CURRENT_SENSOR_NONE:
-            amperage = 0;
-            break;
+
+    amperage = (int32_t)batteryConfig()->currentMeterOffset;
+    if (ARMING_FLAG(ARMED)) {
+        if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
+            throttleOffset = 0;
+        throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
+        amperage += throttleFactor * (int32_t)batteryConfig()->currentMeterScale  / 1000;
     }
 
     mAhdrawnRaw += (MAX(0, amperage) * lastUpdateAt) / 1000;

@@ -23,13 +23,14 @@
 
 #include "build_config.h"
 
+#include "config/parameter_group.h"
+#include "config/config_streamer.h"
+#include "config/profile.h"
+
 #include "common/maths.h"
 
 #include "drivers/system.h"
 
-#include "config/config.h"
-#include "config/parameter_group.h"
-#include "config/config_streamer.h"
 
 static const uint8_t EEPROM_CONF_VERSION = 112;
 

@@ -26,12 +26,12 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "config/config.h"
 #include "config/config_reset.h"
+#include "config/profile.h"
 
-#include "io/rc_curves.h"
-#include "io/rate_profile.h"
+//#include "fc/config.h"
+#include "fc/rc_curves.h"
+#include "fc/rate_profile.h"
 
 PG_REGISTER_PROFILE(rateProfileSelection_t, rateProfileSelection, PG_RATE_PROFILE_SELECTION, 0);
 PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);

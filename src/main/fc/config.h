@@ -17,7 +17,6 @@
 
 #pragma once
 
-#define MAX_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 
 // Keep synchronized with featureNames[] in serial_cli.c
@@ -59,5 +58,3 @@ void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
-
-bool canSoftwareSerialBeUsed(void);

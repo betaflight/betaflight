@@ -21,7 +21,6 @@
 #include <math.h>
 
 #include <platform.h>
-#include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -29,6 +28,7 @@
 #include "common/color.h"
 #include "common/utils.h"
 #include "common/filter.h"
+#include "common/streambuf.h"
 
 #include "config/parameter_group.h"
 
@@ -42,9 +42,14 @@
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
 
-#include "io/rc_controls.h"
-#include "io/rate_profile.h"
-#include "io/rc_adjustments.h"
+#include "fc/rc_controls.h"
+#include "fc/rate_profile.h"
+#include "fc/rc_adjustments.h"
+#include "fc/rc_curves.h"
+#include "fc/fc_serial.h"
+#include "fc/fc_tasks.h"
+
+#include "scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -55,16 +60,16 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/rc_curves.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 
+#include "msp/msp.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -81,8 +86,8 @@
 #include "flight/gtune.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 #include "config/feature.h"
 
 // June 2013     V2.2-dev
@@ -247,6 +252,35 @@ static void updateRcCommands(void)
     }
 }
 
+typedef enum {
+    ARM_PREV_NONE       = 0,
+    ARM_PREV_CLI        = 0x00205, //         0b1000000101  2 flashes - CLI active in the configurator
+    ARM_PREV_FAILSAFE   = 0x00815, //       0b100000010101  3 flashes - Failsafe mode
+    ARM_PREV_ANGLE      = 0x02055, //     0b10000001010101  4 flashes - Maximum arming angle exceeded
+    ARM_PREV_CALIB      = 0x08155, //   0b1000000101010101  5 flashes - Calibration active
+    ARM_PREV_OVERLOAD   = 0x20555  // 0b100000010101010101  6 flashes - System overload
+} armingPreventedReason_e;
+
+armingPreventedReason_e getArmingPreventionBlinkMask(void)
+{
+    if (isCalibrating()) {
+        return ARM_PREV_CALIB;
+    }
+    if (rcModeIsActive(BOXFAILSAFE) || failsafePhase() == FAILSAFE_LANDED) {
+        return ARM_PREV_FAILSAFE;
+    }
+    if (!imuIsAircraftArmable(armingConfig()->max_arm_angle)) {
+        return ARM_PREV_ANGLE;
+    }
+    if (cliMode) {
+        return ARM_PREV_CLI;
+    }
+    if (isSystemOverloaded()) {
+        return ARM_PREV_OVERLOAD;
+    }
+    return ARM_PREV_NONE;
+}
+
 static void updateLEDs(void)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -264,6 +298,8 @@ static void updateLEDs(void)
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
+        uint32_t nextBlinkMask = getArmingPreventionBlinkMask();
+        warningLedSetBlinkMask(nextBlinkMask);
         warningLedUpdate();
     }
 }
@@ -749,7 +785,15 @@ void taskUpdateAccelerometer(void)
 
 void taskHandleSerial(void)
 {
-    handleSerial();
+#ifdef USE_CLI
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
+#endif
+
+    mspSerialProcess();
 }
 
 #ifdef BEEPER
@@ -779,7 +823,16 @@ void taskUpdateBattery(void)
 
             throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
 
-            updateCurrentMeter(ibatTimeSinceLastServiced, throttleStatus);
+            switch(batteryConfig()->currentMeterType) {
+                case CURRENT_SENSOR_ADC:
+                    updateCurrentMeter(ibatTimeSinceLastServiced);
+                    break;
+                case CURRENT_SENSOR_VIRTUAL:
+                    updateVirtualCurrentMeter(ibatTimeSinceLastServiced, throttleStatus);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

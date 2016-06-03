@@ -46,16 +46,20 @@ extern "C" {
 
     #include "rx/rx.h"
 
-    #include "io/rc_controls.h"
-    #include "io/rate_profile.h"
-    #include "io/rc_adjustments.h"
+    #include "fc/rc_controls.h"
+    #include "fc/rate_profile.h"
+    #include "fc/rc_adjustments.h"
+
     #include "io/gps.h"
     #include "io/gimbal.h"
     #include "io/ledstrip.h"
-    #include "io/msp_protocol.h"
     #include "io/motor_and_servo.h"
     #include "io/transponder_ir.h"
     #include "io/serial.h"
+
+    #include "msp/msp_protocol.h"
+    #include "msp/msp.h"
+    #include "msp/msp_serial.h"
 
     #include "telemetry/telemetry.h"
     #include "telemetry/frsky.h"
@@ -75,10 +79,9 @@ extern "C" {
     #include "flight/failsafe.h"
 
     #include "config/parameter_group_ids.h"
-    #include "config/runtime_config.h"
-    #include "config/config.h"
+    #include "fc/runtime_config.h"
+    #include "config/profile.h"
 
-    #include "io/msp.h"
 }
 
 #include "unittest_macros.h"
@@ -110,6 +113,7 @@ extern "C" {
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 
     PG_REGISTER_PROFILE_WITH_RESET_FN(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     void pgResetFn_pidProfile(pidProfile_t *) {}
@@ -169,7 +173,7 @@ TEST_F(MspTest, TestMsp_API_VERSION)
 {
     cmd.cmd = MSP_API_VERSION;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(3, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_API_VERSION, reply.cmd);
@@ -182,7 +186,7 @@ TEST_F(MspTest, TestMsp_FC_VARIANT)
 {
     cmd.cmd = MSP_FC_VARIANT;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(FLIGHT_CONTROLLER_IDENTIFIER_LENGTH, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_FC_VARIANT, reply.cmd);
@@ -196,7 +200,7 @@ TEST_F(MspTest, TestMsp_FC_VERSION)
 {
     cmd.cmd = MSP_FC_VERSION;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(FLIGHT_CONTROLLER_VERSION_LENGTH, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_FC_VERSION, reply.cmd);
@@ -212,7 +216,7 @@ TEST_F(MspTest, TestMsp_PID_CONTROLLER)
 
     cmd.cmd = MSP_PID_CONTROLLER;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(1, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_PID_CONTROLLER, reply.cmd);
@@ -227,7 +231,7 @@ TEST_F(MspTest, TestMsp_SET_PID_CONTROLLER)
     cmd.cmd = MSP_SET_PID_CONTROLLER;
     *cmd.buf.end++ = PID_CONTROLLER_MWREWRITE;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(PID_CONTROLLER_MWREWRITE, pidProfile()->pidController);
 }
@@ -301,7 +305,7 @@ TEST_F(MspTest, TestMsp_PID)
     // use the MSP to write out the PID values
     cmd.cmd = MSP_PID;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(3 * PID_ITEM_COUNT, reply.buf.ptr - rbuf) << "Reply size";
     // check few values, just to make sure they have been written correctly
@@ -317,7 +321,7 @@ TEST_F(MspTest, TestMsp_PID)
     copyReplyDataToCmd();
     resetReply();
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     // check the values are as expected
     EXPECT_EQ(P8_ROLL, pidProfile()->P8[PIDROLL]);
@@ -365,7 +369,7 @@ TEST_F(MspTest, TestParameterGroup_BOARD_ALIGNMENT)
 
     cmd.cmd = MSP_BOARD_ALIGNMENT;
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(sizeof(boardAlignment_t), reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_BOARD_ALIGNMENT, reply.cmd);
@@ -385,7 +389,7 @@ TEST_F(MspTest, TestParameterGroup_BOARD_ALIGNMENT)
     copyReplyDataToCmd();
     resetReply();
 
-    EXPECT_GT(mspProcess(&cmd, &reply), 0);
+    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
     // check the values are as expected
     EXPECT_FLOAT_EQ(testBoardAlignment.rollDegrees, boardAlignment()->rollDegrees);
@@ -476,7 +480,7 @@ TEST_F(MspTest, TestMspCommands)
         resetPackets();
         cmd.cmd = outMessages[ii];
 
-        EXPECT_GT(mspProcess(&cmd, &reply), 0);
+        EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
 
         EXPECT_EQ(outMessages[ii], reply.cmd) << "Command index " << ii;
         EXPECT_LT(0, reply.result) << "Command index " << ii;
@@ -485,6 +489,8 @@ TEST_F(MspTest, TestMspCommands)
 
 // STUBS
 extern "C" {
+//
+mspPostProcessFuncPtr mspPostProcessFn = NULL;
 // from acceleration.c
 acc_t acc;                       // acc access functions
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired) {UNUSED(calibrationCyclesRequired);}
@@ -586,6 +592,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, ui
 void serialSetMode(serialPort_t *, portMode_t) {}
 
 void mspSerialProcess() {}
+int mspClientProcessInCommand(mspPacket_t *) { return false; }
 bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
 }
 

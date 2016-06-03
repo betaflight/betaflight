@@ -25,8 +25,9 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
 
-    #include "config/runtime_config.h"
     #include "config/parameter_group.h"
+
+    #include "fc/runtime_config.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
@@ -35,8 +36,8 @@ extern "C" {
     #include "sensors/gyro.h"
 
     #include "rx/rx.h"
-    #include "io/rc_controls.h"
-    #include "io/rate_profile.h"
+    #include "fc/rc_controls.h"
+    #include "fc/rate_profile.h"
 
     #include "flight/pid.h"
     #include "config/config_unittest.h"

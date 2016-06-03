@@ -31,7 +31,9 @@ extern "C" {
     #include "common/utils.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
     #include "config/config_eeprom.h"
+    #include "config/profile.h"
 
     #include "drivers/system.h"
     #include "drivers/sensor.h"
@@ -43,14 +45,12 @@ extern "C" {
 
     #include "rx/rx.h"
 
-    #include "io/msp_protocol.h"
     #include "io/serial.h"
-    #include "io/serial_msp.h"
-    #include "io/msp.h"
+    #include "msp/msp.h"
+    #include "msp/msp_protocol.h"
+    #include "msp/msp_serial.h"
 
-    #include "config/parameter_group_ids.h"
-    #include "config/runtime_config.h"
-    #include "config/config.h"
+    #include "fc/runtime_config.h"
 }
 
 #include "unittest_macros.h"
@@ -60,6 +60,8 @@ extern "C" {
 extern "C" {
     void mspSerialProcessReceivedCommand(mspPort_t *msp);
     extern mspPort_t mspPorts[];
+
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 }
 
 typedef struct mspHeader_s {
@@ -153,7 +155,7 @@ uint8_t msp_echo_data[]="PING\0PONG";
 uint8_t msp_request_data[]={0xbe, 0xef};
 uint8_t msp_reply_data[]={0x55,0xaa};
 
-int mspProcess(mspPacket_t *command, mspPacket_t *reply)
+int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply)
 {
     sbuf_t *src = &command->buf;
     sbuf_t *dst = &reply->buf;
@@ -176,6 +178,15 @@ int mspProcess(mspPacket_t *command, mspPacket_t *reply)
             return -1;
     }
     return 1;
+}
+
+int mspClientProcessCommand(mspPacket_t *command, mspPacket_t *reply)
+{
+    UNUSED(command);
+    UNUSED(reply);
+
+    // currently untested
+    return -1;
 }
 
 class SerialMspUnitTest : public ::testing::Test {
@@ -245,6 +256,7 @@ TEST_F(SerialMspUnitTest, Test_TestMspSerialInFraming)
 
 // STUBS
 extern "C" {
+void evaluateOtherData(serialPort_t *, uint8_t) {}
 void handleOneshotFeatureChangeOnRestart(void) {}
 void stopMotors(void) {}
 uint8_t armingFlags = 0;

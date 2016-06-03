@@ -26,14 +26,14 @@
 #include "common/axis.h"
 
 #include "config/parameter_group.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gpio.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"

@@ -25,8 +25,6 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "config/config.h"
-
 #include "config/profile.h"
 
 PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);

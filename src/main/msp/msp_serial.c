@@ -21,7 +21,6 @@
 
 #include "build_config.h"
 #include <platform.h>
-#include "config/runtime_config.h"
 #include "target.h"
 
 #include "common/streambuf.h"
@@ -29,19 +28,22 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
 
 #include "flight/mixer.h"
 
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+#include "fc/fc_serial.h"
 #include "io/serial.h"
-#include "io/msp.h"
-#include "io/serial_msp.h"
-#include "io/serial_4way.h"
+#include "msp/msp.h"
+#include "msp/msp_serial.h"
 
-STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+mspPostProcessFuncPtr mspPostProcessFn = NULL;
+
+mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 // assign serialPort to mspPort
 // free mspPort when serialPort is NULL
@@ -76,7 +78,7 @@ void mspSerialAllocatePorts(void)
             return;
         }
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL,
-                                                  baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
+                                                  baudRates[portConfig->baudRates[MSP_SERVER_BAUDRATE]], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
         } else {
@@ -115,11 +117,11 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, uint8_t *data, int len)
     return checksum;
 }
 
-static void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
+void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
 {
     serialBeginWrite(msp->port);
     int len = sbufBytesRemaining(&reply->buf);
-    uint8_t hdr[] = {'$', 'M', reply->result < 0 ? '!' : '>', len, reply->cmd};
+    uint8_t hdr[] = {'$', 'M', reply->result < 0 ? '!' : (reply->direction == OUTGOING ? '>' : '<'), len, reply->cmd};
     uint8_t csum = 0;                                       // initial checksum value
     serialWriteBuf(msp->port, hdr, sizeof(hdr));
     csum = mspSerialChecksumBuf(csum, hdr + 3, 2);          // checksum starts from len field
@@ -131,6 +133,36 @@ static void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
     serialEndWrite(msp->port);
 }
 
+
+static mspPacket_t *mspCreateMessage(void)
+{
+    static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
+    static mspPacket_t message = {
+        .buf = {
+            .ptr = outBuf,
+            .end = ARRAYEND(outBuf),
+        },
+        .cmd = -1,
+        .result = 0,
+    };
+
+    return &message;
+}
+
+static mspPacket_t *mspCreateOutgoing(void)
+{
+    mspPacket_t *reply = mspCreateMessage();
+    reply->direction = OUTGOING;
+    return reply;
+}
+
+static mspPacket_t *mspCreateIncoming(void)
+{
+    mspPacket_t *reply = mspCreateMessage();
+    reply->direction = INCOMING;
+    return reply;
+}
+
 STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
 {
     mspPacket_t command = {
@@ -139,23 +171,31 @@ STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
             .end = msp->inBuf + msp->dataSize,
         },
         .cmd = msp->cmdMSP,
+        .direction = msp->direction,
         .result = 0,
     };
 
-    static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
-    mspPacket_t reply = {
-        .buf = {
-            .ptr = outBuf,
-            .end = ARRAYEND(outBuf),
-        },
-        .cmd = -1,
-        .result = 0,
-    };
-    if(mspProcess(&command, &reply)) {
-        // reply should be sent back
-        sbufSwitchToReader(&reply.buf, outBuf);     // change streambuf direction
-        mspSerialResponse(msp, &reply);
+    mspPacket_t *reply = mspCreateOutgoing();
+
+    uint8_t *outBufHead = reply->buf.ptr;
+
+    int status = 0;
+    if (msp->direction == INCOMING) {
+        // SERVER
+        status = mspServerProcessCommand(&command, reply);
+    } else {
+#ifdef USE_MSP_CLIENT
+        // CLIENT
+        status = mspClientProcessCommand(&command, reply);
+#endif
     }
+
+    if (status) {
+        // reply should be sent back
+        sbufSwitchToReader(&reply->buf, outBufHead); // change streambuf direction
+        mspSerialResponse(msp, reply);
+    }
+
     msp->c_state = IDLE;
 }
 
@@ -172,7 +212,18 @@ static bool mspSerialProcessReceivedByte(mspPort_t *msp, uint8_t c)
             msp->c_state = (c == 'M') ? HEADER_ARROW : IDLE;
             break;
         case HEADER_ARROW:
-            msp->c_state = (c == '<') ? HEADER_SIZE : IDLE;
+            switch(c) {
+                case '<':
+                    msp->direction = INCOMING;
+                    msp->c_state = HEADER_SIZE;
+                    break;
+                case '>':
+                    msp->direction = OUTGOING;
+                    msp->c_state = HEADER_SIZE;
+                    break;
+                default:
+                    msp->c_state = IDLE;
+            }
             break;
         case HEADER_SIZE:
             if (c > MSP_PORT_INBUF_SIZE) {
@@ -213,11 +264,12 @@ void mspSerialProcess(void)
             continue;
         }
 
-        while (serialRxBytesWaiting(msp->port)) {
+        uint8_t bytesWaiting;
+        while ((bytesWaiting = serialRxBytesWaiting(msp->port))) {
             uint8_t c = serialRead(msp->port);
             bool consumed = mspSerialProcessReceivedByte(msp, c);
 
-            if (!consumed && !ARMING_FLAG(ARMED)) {
+            if (!consumed) {
                 evaluateOtherData(msp->port, c);
             }
 
@@ -226,22 +278,28 @@ void mspSerialProcess(void)
                 break; // process one command at a time so as not to block and handle modal command immediately
             }
         }
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-        if(mspEnterEsc4way) {
-            mspEnterEsc4way = false;
-            waitForSerialPortToFinishTransmitting(msp->port);
-            // esc4wayInit() was called in msp command
-            // modal switch to esc4way, will return only after 4way exit command
-            // port parameters are shared with esc4way, no need to close/reopen it
-            esc4wayProcess(msp->port);
-            // continue processing
+        if (mspPostProcessFn) {
+            mspPostProcessFn(msp);
+            mspPostProcessFn = NULL;
         }
-#endif
-        if (isRebootScheduled) {
-            waitForSerialPortToFinishTransmitting(msp->port);  // TODO - postpone reboot, allow all modules to react
-            stopMotors();
-            handleOneshotFeatureChangeOnRestart();
-            systemReset();
+
+        // TODO consider extracting this outside the loop and create a new loop in mspClientProcess and rename mspProcess to mspServerProcess
+        if (msp->c_state == IDLE && msp->commandSenderFn && !bytesWaiting) {
+
+            mspPacket_t *request = mspCreateIncoming();
+
+            uint8_t *outBufHead = request->buf.ptr;
+
+            bool shouldSend = msp->commandSenderFn(request); // FIXME rename to request builder
+
+            if (shouldSend) {
+                // reply should be sent back
+                sbufSwitchToReader(&request->buf, outBufHead); // change streambuf direction
+
+                mspSerialResponse(msp, request);
+            }
+
+            msp->commandSenderFn = NULL;
         }
     }
 }

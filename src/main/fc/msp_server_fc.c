@@ -24,7 +24,6 @@
 #include "build_config.h"
 #include "debug.h"
 #include <platform.h>
-#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -34,8 +33,6 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/feature.h"
 #include "config/profile.h"
 
@@ -53,10 +50,20 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "msp/msp.h"
+#include "msp/msp_protocol.h"
+#include "msp/msp_serial.h"
+
+#include "fc/rate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_adjustments.h"
+#include "fc/fc_tasks.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+
+#include "scheduler.h"
+
 #include "io/motor_and_servo.h"
-#include "io/rate_profile.h"
-#include "io/rc_controls.h"
-#include "io/rc_adjustments.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -64,8 +71,6 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/msp_protocol.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 
 #include "telemetry/telemetry.h"
@@ -89,14 +94,18 @@
 
 #include "blackbox/blackbox.h"
 
-#include "mw.h"
+#include "fc/cleanflight_fc.h"
 
 #include "version.h"
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
-#include "io/msp.h"
+#include "fc/msp_server_fc.h"
+
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+#include "io/serial_4way.h"
+#endif
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
@@ -149,12 +158,6 @@ static uint32_t activeBoxIds;
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-// cause reboot after MSP processing complete
-bool isRebootScheduled = false;
-// switch to 4wayIf (on current port)
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-bool mspEnterEsc4way = false;
-#endif
 static const char pidnames[] =
     "ROLL;"
     "PITCH;"
@@ -183,6 +186,37 @@ typedef enum {
     MSP_FLASHFS_BIT_READY        = 1,
     MSP_FLASHFS_BIT_SUPPORTED    = 2,
 } mspFlashfsFlags_e;
+
+const pgToMSPMapEntry_t pgToMSPMap[] =
+{
+    { PG_BOARD_ALIGNMENT, MSP_BOARD_ALIGNMENT, MSP_SET_BOARD_ALIGNMENT },
+    { PG_FAILSAFE_CONFIG, MSP_FAILSAFE_CONFIG, MSP_SET_FAILSAFE_CONFIG }
+};
+
+const uint8_t pgToMSPMapSize = ARRAYLEN(pgToMSPMap);
+
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+void msp4WayIfFn(mspPort_t *msp)
+{
+    waitForSerialPortToFinishTransmitting(msp->port);
+    // esc4wayInit() was called in msp command
+    // modal switch to esc4way, will return only after 4way exit command
+    // port parameters are shared with esc4way, no need to close/reopen it
+    esc4wayProcess(msp->port);
+    // continue processing
+}
+#endif
+
+void mspRebootFn(mspPort_t *msp)
+{
+    waitForSerialPortToFinishTransmitting(msp->port);  // TODO - postpone reboot, allow all modules to react
+    stopMotors();
+    handleOneshotFeatureChangeOnRestart();
+    systemReset();
+
+    // control should never return here.
+    while(1) ;
+}
 
 static const box_t *findBoxByBoxId(uint8_t boxId)
 {
@@ -453,82 +487,8 @@ static void serializeDataflashReadReply(mspPacket_t *reply, uint32_t address, in
 }
 #endif
 
-typedef struct pgToMSPMapEntry_s {
-    pgn_t pgn;
-    uint8_t mspId;
-    uint8_t mspIdForSet;
-} pgToMSPMapEntry_t;
-
-static const pgToMSPMapEntry_t pgToMSPMap[] =
-{
-    { PG_BOARD_ALIGNMENT, MSP_BOARD_ALIGNMENT, MSP_SET_BOARD_ALIGNMENT },
-    { PG_FAILSAFE_CONFIG, MSP_FAILSAFE_CONFIG, MSP_SET_FAILSAFE_CONFIG },
-};
-
-// criteria is passed by value; cast as (void *)
-// TODO - the search is quadratic, the code should first map mspId to pgN, then search for pgN
-uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria)
-{
-    int mspIdForSet = (intptr_t)criteria;
-
-    for (unsigned i = 0; i < ARRAYLEN(pgToMSPMap); i++) {
-        const pgToMSPMapEntry_t *entry = &pgToMSPMap[i];
-        if (entry->pgn == pgN(candidate) && entry->mspIdForSet == mspIdForSet) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// criteria is passed by value; cast as (void *)
-uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria)
-{
-    int mspId = (intptr_t)criteria;
-
-    for (unsigned i = 0; i < ARRAYLEN(pgToMSPMap); i++) {
-        const pgToMSPMapEntry_t *entry = &pgToMSPMap[i];
-        if (entry->pgn == pgN(candidate) && entry->mspId == mspId) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// process commands that match registered parameter_group
-static int processPgCommand(mspPacket_t *command, mspPacket_t *reply)
-{
-    sbuf_t *src = &command->buf;
-    sbuf_t *dst = &reply->buf;
-    int cmdLength = sbufBytesRemaining(src);
-
-    // MSP IN - read config structure
-    {
-        const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)(intptr_t)command->cmd);
-        if (reg) {
-            // this works for system and profile settings as
-            //  the profile index will be ignored by pgLoad if the reg is a system registration.
-            int stored = pgStore(reg, sbufPtr(dst), sbufBytesRemaining(dst), getCurrentProfile());
-            if(stored < 0)
-                return stored;
-            sbufAdvance(dst, stored);       // commit saved data
-            return 1;
-        }
-    }
-    // MSP OUT - write config structure
-    {
-        const pgRegistry_t *reg = pgMatcher(pgMatcherForMSPSet, (void*)(intptr_t)command->cmd);
-        if (reg != NULL) {
-            // this works for system and profile settings as
-            //  the profile index will be ignored by pgLoad if the reg is a system registration.
-            pgLoad(reg, sbufPtr(src), cmdLength, getCurrentProfile());
-            sbufAdvance(src, cmdLength);    // consume data explicitly
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
+// return positive for ACK, negative on error, zero for no reply
+int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
 {
     sbuf_t *dst = &reply->buf;
     sbuf_t *src = &cmd->buf;
@@ -923,10 +883,10 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
                 };
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
                 sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[0]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[1]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[2]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[3]);
             }
             break;
 
@@ -1037,7 +997,7 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_SET_4WAY_IF:
             // initialize 4way ESC interface, return number of ESCs available
             sbufWriteU8(dst, esc4wayInit());
-            mspEnterEsc4way = true;     // request protocol switch
+            mspPostProcessFn = msp4WayIfFn;
             break;
 #endif
 
@@ -1048,7 +1008,7 @@ static int processOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
 }
 
 // return positive for ACK, negative on error, zero for no reply
-static int processInCommand(mspPacket_t *cmd)
+int mspServerProcessInCommand(mspPacket_t *cmd)
 {
     sbuf_t * src = &cmd->buf;
     int len = sbufBytesRemaining(src);
@@ -1446,10 +1406,10 @@ static int processInCommand(mspPacket_t *cmd)
 
                 portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
-                portConfig->msp_baudrateIndex = sbufReadU8(src);
-                portConfig->gps_baudrateIndex = sbufReadU8(src);
-                portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                portConfig->baudRates[0] = sbufReadU8(src);
+                portConfig->baudRates[1] = sbufReadU8(src);
+                portConfig->baudRates[2] = sbufReadU8(src);
+                portConfig->baudRates[3] = sbufReadU8(src);
             }
             break;
         }
@@ -1514,7 +1474,7 @@ static int processInCommand(mspPacket_t *cmd)
 #endif
 
         case MSP_REBOOT:
-            isRebootScheduled = true;
+            mspPostProcessFn = mspRebootFn;
             break;
 
         default:
@@ -1527,26 +1487,4 @@ static int processInCommand(mspPacket_t *cmd)
 void mspInit(void)
 {
     initActiveBoxIds();
-}
-
-
-// handle received command, possibly generate reply.
-// return nonzero when reply was generated (including reported error)
-int mspProcess(mspPacket_t *command, mspPacket_t *reply)
-{
-    // initialize reply by default
-    reply->cmd = command->cmd;
-    int status;
-    do {
-        if((status = processInCommand(command)) != 0)
-            break;
-        if((status = processOutCommand(command, reply)) != 0)
-            break;
-        if((status = processPgCommand(command, reply)) != 0)
-            break;
-        // command was not handled, return error
-        status = -1;
-    } while(0);
-    reply->result = status;
-    return status;
 }

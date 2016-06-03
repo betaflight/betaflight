@@ -65,18 +65,21 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "fc/rc_controls.h"
+#include "fc/fc_serial.h"
+
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/motor_and_servo.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-#include "io/msp.h"
-#include "io/serial_msp.h"
+#include "fc/msp_server_fc.h"
+#include "msp/msp.h"
+#include "msp/msp_serial.h"
 #include "io/serial_cli.h"
 
 #include "sensors/sensors.h"
@@ -99,8 +102,8 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 #include "config/config_system.h"
 #include "config/feature.h"
 
@@ -108,6 +111,7 @@
 #include "hardware_revision.h"
 #endif
 
+#include "fc/fc_tasks.h"
 #include "scheduler.h"
 
 extern uint8_t motorControlEnable;
@@ -476,16 +480,16 @@ void init(void)
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
-    adc_params.enableVBat = feature(FEATURE_VBAT);
-    adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
-    adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
-    adc_params.enableExternal1 = false;
+    adc_params.channelMask =
+            (feature(FEATURE_VBAT) << ADC_CHANNEL1_BIT)
+            | (feature(FEATURE_RSSI_ADC) << ADC_CHANNEL2_BIT)
+            | (feature(FEATURE_CURRENT_METER) << ADC_CHANNEL3_BIT);
 #ifdef OLIMEXINO
-    adc_params.enableExternal1 = true;
+    adc_params.channelMask |= (1 << ADC_CHANNEL4_BIT);
 #endif
 #ifdef NAZE
     // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
+    adc_params.channelMask |= ((hardwareRevision >= NAZE32_REV5) << ADC_CHANNEL4_BIT);
 #endif
 
     adcInit(&adc_params);
@@ -679,6 +683,7 @@ int main(void) {
 
     // Setup scheduler
     schedulerInit();
+    setTaskEnabled(TASK_SYSTEM, true);
     setTaskEnabled(TASK_GYROPID, true);
     rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
     setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
