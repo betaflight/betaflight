@@ -68,11 +68,8 @@ uint32_t i2cTimeoutUserCallback(void)
 	return false;
 }
 
-static I2CDevice I2Cx_device;
-
 void i2cInit(I2CDevice device)
 {
-    I2Cx_device = device;
     
 	i2cDevice_t *i2c;
 	i2c = &(i2cHardwareMap[device]);
@@ -113,7 +110,7 @@ uint16_t i2cGetErrorCounter(void)
 	return i2cErrorCount;
 }
 
-bool i2cWriteByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
+bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
 	addr_ <<= 1;
 
@@ -179,7 +176,7 @@ bool i2cWriteByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data
 	return true;
 }
 
-bool i2cReadByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
 	addr_ <<= 1;
 
@@ -251,21 +248,6 @@ bool i2cReadByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, 
 
 	    /* If all operations OK */
 	return true;
-}
-
-bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
-{
-    return i2cWriteBufferByDevice(I2Cx_device, addr_, reg_, len_, data);
-}
-
-bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
-{
-    return i2cWriteByDevice(I2Cx_device, addr_, reg, data);
-}
-
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
-{
-    return i2cReadByDevice(I2Cx_device, addr_, reg, len, buf);    
 }
 
 #endif

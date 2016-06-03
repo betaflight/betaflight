@@ -68,9 +68,6 @@ static i2cDevice_t i2cHardwareMap[] = {
 #endif
 };
 
-// Copy of device index for reinit, etc purposes
-static I2CDevice I2Cx_device;
-
 static volatile uint16_t i2cErrorCount = 0;
 
 static i2cState_t i2cState[] = {
@@ -113,7 +110,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
     return false;
 }
 
-bool i2cWriteBufferByDevice(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data) 
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data) 
 {
     
     if (device == I2CINVALID)
@@ -155,12 +152,12 @@ bool i2cWriteBufferByDevice(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8
     return !(state->error);
 }
 
-bool i2cWriteByDevice(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data) 
+bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data) 
 {
-    return i2cWriteBufferByDevice(device, addr_, reg_, 1, &data);
+    return i2cWriteBuffer(device, addr_, reg_, 1, &data);
 }
 
-bool i2cReadByDevice(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) 
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) 
 {
     if (device == I2CINVALID)
         return false;
@@ -355,8 +352,6 @@ void i2c_ev_handler(I2CDevice device) {
 
 void i2cInit(I2CDevice device) 
 {
-    I2Cx_device = device;
-    
     if (device == I2CINVALID)
         return;
 
@@ -460,21 +455,6 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOHi(scl); // Set bus scl high
     delayMicroseconds(10);
     IOHi(sda); // Set bus sda high
-}
-
-bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
-{
-    return i2cWriteBufferByDevice(I2Cx_device, addr_, reg_, len_, data);
-}
-
-bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data)
-{
-    return i2cWriteByDevice(I2Cx_device, addr_, reg, data);    
-}
-
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
-{
-    return i2cReadByDevice(I2Cx_device, addr_, reg, len, buf);
 }
 
 #endif

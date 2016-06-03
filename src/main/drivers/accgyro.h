@@ -17,6 +17,10 @@
 
 #pragma once
 
+#ifndef MPU_I2C_INSTANCE
+#define MPU_I2C_INSTANCE I2C_DEVICE
+#endif
+
 extern uint16_t acc_1G; // FIXME move into acc_t
 
 typedef struct gyro_s {

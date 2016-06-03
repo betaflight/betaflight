@@ -56,6 +56,10 @@ static volatile bool mpuDataReady;
 static bool detectSPISensorsAndUpdateDetectionResult(void);
 #endif
 
+#ifndef MPU_I2C_INSTANCE
+#define MPU_I2C_INSTANCE I2C_DEVICE
+#endif
+
 mpuDetectionResult_t mpuDetectionResult;
 
 mpuConfiguration_t mpuConfiguration;
@@ -239,13 +243,13 @@ void mpuIntExtiInit(void)
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
 {
-    bool ack = i2cRead(MPU_ADDRESS, reg, length, data);
+	bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
 {
-    bool ack = i2cWrite(MPU_ADDRESS, reg, data);
+	bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
 }
 

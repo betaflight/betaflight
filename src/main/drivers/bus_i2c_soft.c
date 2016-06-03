@@ -175,8 +175,10 @@ void i2cInit(I2CDevice device)
 	IOConfigGPIO(sda, IOCFG_OUT_OD);
 }
 
-bool i2cWriteBuffer(uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 {
+    UNUSED(device);
+    
 	int i;
 	if (!I2C_Start()) {
 		i2cErrorCount++;
@@ -201,8 +203,10 @@ bool i2cWriteBuffer(uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 	return true;
 }
 
-bool i2cWrite(uint8_t addr, uint8_t reg, uint8_t data)
+bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
 {
+    UNUSED(device);
+    
 	if (!I2C_Start()) {
 		return false;
 	}
@@ -220,8 +224,10 @@ bool i2cWrite(uint8_t addr, uint8_t reg, uint8_t data)
 	return true;
 }
 
-bool i2cRead(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
 {
+    UNUSED(device);
+    
 	if (!I2C_Start()) {
 		return false;
 	}
@@ -255,22 +261,6 @@ uint16_t i2cGetErrorCounter(void)
 {
 	return i2cErrorCount;
 }
-
-bool i2cWriteBufferByDevice(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
-{
-    return i2cWriteBuffer(addr_, reg_, len_, data);
-}
-
-bool i2cWriteByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
-{
-    return i2cWrite(addr_, reg, data);
-}
-
-bool i2cReadByDevice(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
-{
-    return i2cRead(addr_, reg, len, buf);
-}
-
 
 #endif
 
