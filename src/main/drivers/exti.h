@@ -18,18 +18,35 @@
 
 #pragma once
 
+// old EXTI interface, to be replaced
 typedef struct extiConfig_s {
 #ifdef STM32F303
-    uint32_t gpioAHBPeripherals;
+	uint32_t gpioAHBPeripherals;
 #endif
 #ifdef STM32F10X
-    uint32_t gpioAPB2Peripherals;
+	uint32_t gpioAPB2Peripherals;
 #endif
-    uint16_t gpioPin;
-    GPIO_TypeDef *gpioPort;
+	uint16_t gpioPin;
+	GPIO_TypeDef *gpioPort;
 
-    uint8_t exti_port_source;
-    uint32_t exti_line;
-    uint8_t exti_pin_source;
-    IRQn_Type exti_irqn;
+	uint8_t exti_port_source;
+	uint32_t exti_line;
+	uint8_t exti_pin_source;
+	IRQn_Type exti_irqn;
 } extiConfig_t;
+
+// new io EXTI interface
+#include "drivers/io.h"
+typedef struct extiCallbackRec_s extiCallbackRec_t;
+typedef void extiHandlerCallback(extiCallbackRec_t *self);
+
+struct extiCallbackRec_s {
+	extiHandlerCallback *fn;
+};
+
+void EXTIInit(void);
+
+void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn);
+void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, EXTITrigger_TypeDef trigger);
+void EXTIRelease(IO_t io);
+void EXTIEnable(IO_t io, bool enable);

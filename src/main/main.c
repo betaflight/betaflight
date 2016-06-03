@@ -56,6 +56,8 @@
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/io.h"
+#include "drivers/exti.h"
 
 #include "rx/rx.h"
 
@@ -193,6 +195,13 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_EXTI
+    EXTIInit();
+#endif
+    
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
