@@ -19,7 +19,7 @@
 
 #pragma once
 
-#define LED0_PIN    PB12
+#define LED0    PB12
 #define BEEPER      PB10
 
 #define GYRO

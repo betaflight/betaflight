@@ -22,8 +22,8 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define LED0_PIN    PB3 // PB3 (LED)
-#define LED1_PIN    PB4 // PB4 (LED)
+#define LED0    PB3 // PB3 (LED)
+#define LED1    PB4 // PB4 (LED)
 
 #define BEEPER      PA12 // PA12 (Beeper)
 

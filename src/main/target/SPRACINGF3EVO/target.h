@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 
-#define LED0_PIN    PB8
+#define LED0    PB8
 
 #define BEEPER      PC15
 #define BEEPER_INVERTED

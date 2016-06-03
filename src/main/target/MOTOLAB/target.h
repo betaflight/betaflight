@@ -20,8 +20,8 @@
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 #define USE_CLI
 
-#define LED0_PIN    PB5 // Blue LEDs - PB5
-//#define LED1_PIN    PB9 // Green LEDs - PB9
+#define LED0    PB5 // Blue LEDs - PB5
+//#define LED1    PB9 // Green LEDs - PB9
 
 #define BEEPER      PA0
 #define BEEPER_INVERTED

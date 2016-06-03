@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "IFF3"
 
-#define LED0_PIN    PB3
+#define LED0    PB3
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 

@@ -19,9 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "103R"
 
-#define LED0_PIN    PB3 // PB3 (LED)
-#define LED1_PIN    PB4 // PB4 (LED)
-#define LED2_PIN    PD2 // PD2 (LED) - Labelled LED4
+#define LED0    PB3 // PB3 (LED)
+#define LED1    PB4 // PB4 (LED)
+#define LED2    PD2 // PD2 (LED) - Labelled LED4
 
 #define BEEPER      PA12 // PA12 (Beeper)
 

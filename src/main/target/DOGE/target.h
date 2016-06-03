@@ -20,13 +20,13 @@
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
 // tqfp48 pin 34
-#define LED0_PIN    PA13
+#define LED0    PA13
 
 // tqfp48 pin 37
-#define LED1_PIN    PA14
+#define LED1    PA14
 
 // tqfp48 pin 38
-#define LED2_PIN    Pa15
+#define LED2    Pa15
 
 #define BEEPER      PB2
 #define BEEPER_INVERTED

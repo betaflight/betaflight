@@ -20,9 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "LUX"
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define LED0_PIN    PC15
-#define LED1_PIN    PC14
-#define LED2_PIN    PC13
+#define LED0    PC15
+#define LED1    PC14
+#define LED2    PC13
 
 #define BEEPER      PB13
 #define BEEPER_INVERTED
