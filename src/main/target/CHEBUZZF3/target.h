@@ -41,16 +41,8 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
-#define SDCARD_DETECT_PIN                    GPIO_Pin_14
-#define SDCARD_DETECT_EXTI_LINE              EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
-#define SDCARD_DETECT_GPIO_PORT              GPIOC
-#define SDCARD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
-#define SDCARD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
-#define SDCARD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
-
+#define SDCARD_DETECT_PIN                    PC14
 #define SDCARD_SPI_INSTANCE                  SPI2
-#define SDCARD_SPI_CS_GPIO                   SPI2_GPIO
 #define SDCARD_SPI_CS_PIN                    SPI2_NSS_PIN
 
 // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
@@ -126,27 +118,9 @@
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
 #define GPS
-#define LED_STRIP
-#if 1
-#define LED_STRIP_TIMER TIM16
-#else
-// alternative LED strip configuration, tested working.
-#define LED_STRIP_TIMER TIM1
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_6
-#define WS2811_PIN                      GPIO_Pin_8
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
-#define WS2811_TIMER                    TIM1
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#endif
 
 #define BLACKBOX
-#define GTUNE
+//#define GTUNE
 #define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS

@@ -44,16 +44,8 @@
 
 #define USE_SD_CARD
 
-#define SD_DETECT_PIN                    GPIO_Pin_14
-#define SD_DETECT_EXTI_LINE              EXTI_Line14
-#define SD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
-#define SD_DETECT_GPIO_PORT              GPIOC
-#define SD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
-#define SD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
-#define SD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
-
-#define SD_CS_GPIO          GPIOB
-#define SD_CS_PIN           GPIO_Pin_12
+#define SD_DETECT_PIN       PC14
+#define SD_CS_PIN           PB12
 #define SD_SPI_INSTANCE     SPI2
 
 //#define USE_FLASHFS
@@ -78,9 +70,7 @@
 #define USE_GYRO_L3GD20
 
 #define L3GD20_SPI                      SPI1
-#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
-#define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   GPIO_Pin_3
+#define L3GD20_CS_PIN                   PE3
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
 
@@ -88,9 +78,7 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_SPI_INSTANCE               SPI2
-#define SDCARD_SPI_CS_GPIO                GPIOB
-#define SDCARD_SPI_CS_PIN                 GPIO_Pin_12
-#define SDCARD_SPI_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
+#define SDCARD_SPI_CS_PIN                 PB12
 // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
 // Divide to under 25MHz for normal operation:

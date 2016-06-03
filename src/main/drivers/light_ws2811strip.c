@@ -23,6 +23,7 @@
  *
  * Currently the timings are 0 = 350ns high/800ns and 1 = 700ns high/650ns low.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,6 +36,8 @@
 #include "common/colorconversion.h"
 #include "drivers/dma.h"
 #include "drivers/light_ws2811strip.h"
+
+#ifdef LED_STRIP
 
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
@@ -170,3 +173,4 @@ void ws2811UpdateStrip(void)
     ws2811LedStripDMAEnable();
 }
 
+#endif
