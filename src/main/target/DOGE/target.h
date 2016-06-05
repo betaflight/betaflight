@@ -20,23 +20,15 @@
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
 // tqfp48 pin 34
-#define LED0_GPIO   GPIOA
-#define LED0_PIN    Pin_13
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED0    PA13
 
 // tqfp48 pin 37
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED1    PA14
 
 // tqfp48 pin 38
-#define LED2_GPIO   GPIOA
-#define LED2_PIN    Pin_15
-#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED2    Pa15
 
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_2
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define BEEPER      PB2
 #define BEEPER_INVERTED
 
 // tqfp48 pin 3
@@ -103,11 +95,6 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define BEEPER
-#define LED0
-#define LED1
-#define LED2
-
 #define USB_IO
 #define USE_VCP
 #define USE_USART1
@@ -160,6 +147,8 @@
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
 
 // mpu_int definition in sensors/initialisation.c
+#define USE_EXTI
+#define MPU_INT_EXTI PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -193,7 +182,6 @@
 
 #define SPEKTRUM_BIND
 // Use UART3 for speksat
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

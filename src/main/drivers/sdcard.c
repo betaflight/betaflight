@@ -24,7 +24,7 @@
 #include "platform.h"
 
 #include "nvic.h"
-#include "gpio.h"
+#include "io.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
@@ -37,8 +37,8 @@
     #define SDCARD_PROFILING
 #endif
 
-#define SET_CS_HIGH          GPIO_SetBits(SDCARD_SPI_CS_GPIO,   SDCARD_SPI_CS_PIN)
-#define SET_CS_LOW           GPIO_ResetBits(SDCARD_SPI_CS_GPIO, SDCARD_SPI_CS_PIN)
+#define SET_CS_HIGH          IOHi(sdcardDetectPin)
+#define SET_CS_LOW           IOLo(sdcardDetectPin)
 
 #define SDCARD_INIT_NUM_DUMMY_BYTES 10
 #define SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY 8
@@ -117,25 +117,23 @@ static sdcard_t sdcard;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
+static IO_t sdcardDetectPin = IO_NONE;
+
 void sdcardInsertionDetectDeinit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = SDCARD_DETECT_PIN;
-    GPIO_Init(SDCARD_DETECT_GPIO_PORT, &GPIO_InitStructure);
+	sdcardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+	IOInit(sdcardDetectPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOConfigGPIO(sdcardDetectPin, SPI_IO_CS_CFG); 
 #endif
 }
 
 void sdcardInsertionDetectInit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = SDCARD_DETECT_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(SDCARD_DETECT_GPIO_PORT, &GPIO_InitStructure);
+    sdcardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+	IOInit(sdcardDetectPin, OWNER_SDCARD, RESOURCE_INPUT);
+    IOConfigGPIO(sdcardDetectPin, SPI_IO_CS_CFG); 
 #endif
 }
 
@@ -148,7 +146,7 @@ bool sdcard_isInserted(void)
 
 #ifdef SDCARD_DETECT_PIN
 
-    result = (GPIO_ReadInputData(SDCARD_DETECT_GPIO_PORT) & SDCARD_DETECT_PIN) != 0;
+    result = IORead(sdcardDetectPin) != 0;
 
 #ifdef SDCARD_DETECT_INVERTED
     result = !result;

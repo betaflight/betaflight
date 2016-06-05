@@ -18,25 +18,13 @@
 
 #pragma once
 
+#include "drivers/io.h"
+
 // old EXTI interface, to be replaced
 typedef struct extiConfig_s {
-#ifdef STM32F303
-	uint32_t gpioAHBPeripherals;
-#endif
-#ifdef STM32F10X
-	uint32_t gpioAPB2Peripherals;
-#endif
-	uint16_t gpioPin;
-	GPIO_TypeDef *gpioPort;
-
-	uint8_t exti_port_source;
-	uint32_t exti_line;
-	uint8_t exti_pin_source;
-	IRQn_Type exti_irqn;
+	ioTag_t io;
 } extiConfig_t;
 
-// new io EXTI interface
-#include "drivers/io.h"
 typedef struct extiCallbackRec_s extiCallbackRec_t;
 typedef void extiHandlerCallback(extiCallbackRec_t *self);
 

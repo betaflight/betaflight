@@ -397,7 +397,7 @@ NAZE_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/flash_m25p16.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
-		   drivers/light_led_stm32f10x.c \
+		   drivers/light_led.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
@@ -407,7 +407,6 @@ NAZE_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
-		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
@@ -443,7 +442,7 @@ EUSTM32F103RC_SRC = startup_stm32f10x_hd_gcc.S \
 		   drivers/flash_m25p16.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
-		   drivers/light_led_stm32f10x.c \
+		   drivers/light_led.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
@@ -453,7 +452,6 @@ EUSTM32F103RC_SRC = startup_stm32f10x_hd_gcc.S \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
-		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
@@ -474,7 +472,7 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
-		   drivers/light_led_stm32f10x.c \
+		   drivers/light_led.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
@@ -484,7 +482,6 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
-		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
@@ -500,13 +497,12 @@ CJMCU_SRC = \
 		   drivers/bus_i2c_stm32f10x.c \
 		   drivers/compass_hmc5883l.c \
 		   drivers/gpio_stm32f10x.c \
-		   drivers/light_led_stm32f10x.c \
+		   drivers/light_led.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
-		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
@@ -532,7 +528,7 @@ CC3D_SRC = \
 		   drivers/flash_m25p16.c \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/inverter.c \
-		   drivers/light_led_stm32f10x.c \
+		   drivers/light_led.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/pwm_mapping.c \
@@ -542,7 +538,6 @@ CC3D_SRC = \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
-		   drivers/sound_beeper_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f10x.c \
@@ -559,13 +554,12 @@ STM32F30x_COMMON_SRC += \
 		   drivers/bus_spi.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/gpio_stm32f30x.c \
-		   drivers/light_led_stm32f30x.c \
+		   drivers/light_led.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
 		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
-		   drivers/sound_beeper_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
 		   drivers/timer.c \
 		   drivers/timer_stm32f30x.c

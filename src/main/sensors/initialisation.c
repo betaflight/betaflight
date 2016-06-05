@@ -84,26 +84,19 @@ uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NON
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
 {
+#if defined(MPU_INT_EXTI)
+    static const extiConfig_t mpuIntExtiConfig = { .io = IO_TAG(MPU_INT_EXTI) };
+    return &mpuIntExtiConfig;
+#endif
+    
 #ifdef NAZE
     // MPU_INT output on rev4 PB13
     static const extiConfig_t nazeRev4MPUIntExtiConfig = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
-            .gpioPin = Pin_13,
-            .gpioPort = GPIOB,
-            .exti_port_source = GPIO_PortSourceGPIOB,
-            .exti_line = EXTI_Line13,
-            .exti_pin_source = GPIO_PinSource13,
-            .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PB13)
     };
     // MPU_INT output on rev5 hardware PC13
     static const extiConfig_t nazeRev5MPUIntExtiConfig = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-            .gpioPin = Pin_13,
-            .gpioPort = GPIOC,
-            .exti_port_source = GPIO_PortSourceGPIOC,
-            .exti_line = EXTI_Line13,
-            .exti_pin_source = GPIO_PinSource13,
-            .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC13)
     };
 
 #ifdef AFROMINI
@@ -111,118 +104,29 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #else
     if (hardwareRevision < NAZE32_REV5) {
         return &nazeRev4MPUIntExtiConfig;
-    } else {
+    }
+    else {
         return &nazeRev5MPUIntExtiConfig;
     }
 #endif
 #endif
 
-#if defined(SPRACINGF3) || defined(SPRACINGF3MINI) || defined(SPRACINGF3EVO)
-    static const extiConfig_t spRacingF3MPUIntExtiConfig = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-            .gpioPort = GPIOC,
-            .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOC,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
-    };
-    return &spRacingF3MPUIntExtiConfig;
-#endif
-
-#if defined(CC3D)
-    static const extiConfig_t cc3dMPUIntExtiConfig = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,
-            .gpioPort = GPIOA,
-            .gpioPin = Pin_3,
-            .exti_port_source = GPIO_PortSourceGPIOA,
-            .exti_pin_source = GPIO_PinSource3,
-            .exti_line = EXTI_Line3,
-            .exti_irqn = EXTI3_IRQn
-    };
-    return &cc3dMPUIntExtiConfig;
-#endif
-
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
-    static const extiConfig_t RaceMPUIntExtiConfig = {
-         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
-         .gpioPort = GPIOA,
-         .gpioPin = Pin_5,
-         .exti_port_source = EXTI_PortSourceGPIOA,
-         .exti_pin_source = EXTI_PinSource5,
-         .exti_line = EXTI_Line5,
-         .exti_irqn = EXTI9_5_IRQn
-    };
-    return &RaceMPUIntExtiConfig;
-#endif
-
-#if defined(DOGE)
-    static const extiConfig_t dogeMPUIntExtiConfig = {
-         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-         .gpioPort = GPIOC,
-         .gpioPin = Pin_13,
-         .exti_port_source = EXTI_PortSourceGPIOC,
-         .exti_pin_source = EXTI_PinSource13,
-         .exti_line = EXTI_Line13,
-         .exti_irqn = EXTI15_10_IRQn
-    };
-    return &dogeMPUIntExtiConfig;
-#endif
-
-#if defined(MOTOLAB) || defined(SPARKY)
-    static const extiConfig_t MotolabF3MPU6050Config = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
-            .gpioPort = GPIOA,
-            .gpioPin = Pin_15,
-            .exti_port_source = EXTI_PortSourceGPIOA,
-            .exti_pin_source = EXTI_PinSource15,
-            .exti_line = EXTI_Line15,
-            .exti_irqn = EXTI15_10_IRQn
-    };
-    return &MotolabF3MPU6050Config;
-#endif
-
-#ifdef SINGULARITY
-    static const extiConfig_t singularityMPU6050Config = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-            .gpioPort = GPIOC,
-            .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOC,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
-    };
-    return &singularityMPU6050Config;
-#endif
-
 #ifdef ALIENFLIGHTF3
     // MPU_INT output on V1 PA15
     static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
-            .gpioPort = GPIOA,
-            .gpioPin = Pin_15,
-            .exti_port_source = EXTI_PortSourceGPIOA,
-            .exti_pin_source = EXTI_PinSource15,
-            .exti_line = EXTI_Line15,
-            .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PA15)
     };
     // MPU_INT output on V2 PB13
     static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
-            .gpioPort = GPIOB,
-            .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOB,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PB13)
     };
     if (hardwareRevision == AFF3_REV_1) {
         return &alienFlightF3V1MPUIntExtiConfig;
-    } else {
+    }
+    else {
         return &alienFlightF3V2MPUIntExtiConfig;
     }
 #endif
-
     return NULL;
 }
 
@@ -534,23 +438,20 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 
 #ifdef USE_BARO_BMP085
 
-    const bmp085Config_t *bmp085Config = NULL;
+	const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-    static const bmp085Config_t defaultBMP085Config = {
-            .gpioAPB2Peripherals = BARO_APB2_PERIPHERALS,
-            .xclrGpioPin = BARO_XCLR_PIN,
-            .xclrGpioPort = BARO_XCLR_GPIO,
-            .eocGpioPin = BARO_EOC_PIN,
-            .eocGpioPort = BARO_EOC_GPIO
-    };
-    bmp085Config = &defaultBMP085Config;
+	static const bmp085Config_t defaultBMP085Config = {
+		.xclrIO = IO_TAG(BARO_XCLR_PIN),
+		.eocIO = IO_TAG(BARO_EOC_PIN),
+	};
+	bmp085Config = &defaultBMP085Config;
 #endif
 
 #ifdef NAZE
-    if (hardwareRevision == NAZE32) {
-        bmp085Disable(bmp085Config);
-    }
+	if (hardwareRevision == NAZE32) {
+		bmp085Disable(bmp085Config);
+	}
 #endif
 
 #endif

@@ -19,13 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "RMDO" // Ready Made RC DoDo
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0    PB3
 
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
@@ -54,8 +50,6 @@
 #define USE_FLASH_M25P16
 
 #define SONAR
-#define BEEPER
-#define LED0
 
 #define USE_USART1
 #define USE_USART2
@@ -151,8 +145,7 @@
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

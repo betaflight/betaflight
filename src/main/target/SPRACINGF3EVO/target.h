@@ -19,19 +19,17 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_8
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0    PB8
 
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
+#define USE_EXTI
+#define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -61,8 +59,6 @@
 //#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
-#define BEEPER
-#define LED0
 
 #define USB_IO
 
@@ -104,43 +100,23 @@
 #define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5 SPI2 (SDCard)
 
-#define SPI1_GPIO               GPIOB
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI1_NSS_PIN            Pin_9
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource9
-#define SPI1_SCK_PIN            Pin_3
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
-#define SPI1_MISO_PIN           Pin_4
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
-#define SPI1_MOSI_PIN           Pin_5
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
+#define SPI1_NSS_PIN            PB9
+#define SPI1_SCK_PIN            PB3
+#define SPI1_MISO_PIN           PB4
+#define SPI1_MOSI_PIN           PB5
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   GPIO_Pin_14
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
-#define SDCARD_DETECT_GPIO_PORT             GPIOC
-#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
-#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
-
+#define SDCARD_DETECT_PIN                   PC14
 #define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 
 // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
@@ -152,9 +128,7 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   SPI1_GPIO_PERIPHERAL
-#define MPU6500_CS_GPIO                  SPI1_GPIO
-#define MPU6500_CS_PIN                   GPIO_Pin_9
+#define MPU6500_CS_PIN                   PB9
 #define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_ADC
@@ -219,8 +193,7 @@
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -228,4 +201,4 @@
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))

@@ -353,14 +353,12 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
-        .gpioPeripheral = BEEP_PERIPHERAL,
-        .gpioPin = BEEP_PIN,
-        .gpioPort = BEEP_GPIO,
+        .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
-        .gpioMode = Mode_Out_PP,
+        .isOD = false,
         .isInverted = true
 #else
-        .gpioMode = Mode_Out_OD,
+        .isOD = true,
         .isInverted = false
 #endif
     };
@@ -371,13 +369,13 @@ void init(void)
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isOD = true;
         beeperConfig.isInverted = true;
     }
 #endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
-        beeperConfig.gpioPin = Pin_2;
+		beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif
 
     beeperInit(&beeperConfig);
@@ -391,18 +389,16 @@ void init(void)
     bstInit(BST_DEVICE);
 #endif
 
-
-
 #ifdef USE_SPI
-    spiInit(SPI1);
-    spiInit(SPI2);
+    spiInit(SPIDEV_1);
+    spiInit(SPIDEV_2);
 #ifdef STM32F303xC
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_2) {
-        spiInit(SPI3);
+        spiInit(SPIDEV_3);
     }
 #else
-    spiInit(SPI3);
+    spiInit(SPIDEV_3);
 #endif
 #endif
 #endif

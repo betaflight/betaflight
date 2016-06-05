@@ -20,22 +20,17 @@
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 #define USE_CLI
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_5 // Blue LEDs - PB5
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_9  // Green LEDs - PB9
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0    PB5 // Blue LEDs - PB5
+//#define LED1    PB9 // Green LEDs - PB9
 
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_0
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER      PA0
 #define BEEPER_INVERTED
-#define BEEPER
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
 // MPU6050 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI PA15
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
@@ -64,8 +59,6 @@
 
 //#define MAG
 //#define USE_MAG_HMC5883
-
-#define LED0
 
 #define USE_VCP
 #define USE_USART1
@@ -185,8 +178,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PB4
-#define BIND_PORT GPIOB
-#define BIND_PIN Pin_4
+#define BIND_PIN PB4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
