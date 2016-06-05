@@ -7,7 +7,7 @@
 *.hex -crlf -diff
 *.elf -crlf -diff
 *.ld text
-Makefile text
+Makefile eol=lf
 *.bat eol=crlf
 *.txt text
-*.sh text
+*.sh eol=lf
