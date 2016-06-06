@@ -18,11 +18,19 @@
 void max7456_hardwareReset(void);
 void max7456_init(void);
 
+void max7456_resetFont(void);
+
 uint8_t max7456_readStatus(void);
 bool max7456_isOSDEnabled(void);
 
 void max7456_clearScreen(void);
 void max7456_clearScreenAtNextVSync(void);
-void max7456_fillScreen(void);
+
+void max7456_showFont(void);
+
 void max7465_print(uint8_t x, uint8_t y, char *message);
 
+void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c);
+
+
+void max7456_fillScreen(void);

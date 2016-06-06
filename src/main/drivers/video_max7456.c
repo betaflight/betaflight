@@ -26,7 +26,10 @@
 #include "drivers/video_max7456.h"
 #include "drivers/bus_spi.h"
 #include "drivers/gpio.h"
+#include "drivers/light_led.h"
 #include "drivers/system.h"
+
+#include "osd/fonts/font_max7456_12x18.h"
 
 #define MAX7456_MODE_MASK_PAL 0x40
 #define MAX7456_CENTER_PAL 0x8
@@ -91,7 +94,7 @@
 #define MAX7456_STAT_BIT_LOS_OF_SYNC            (1 << 2)
 #define MAX7456_STAT_BIT_HSYNC_INACTIVE         (1 << 3)
 #define MAX7456_STAT_BIT_VSYNC_INACTIVE         (1 << 4)
-#define MAX7456_STAT_BIT_CHAR_MEM_READY         (1 << 5)
+#define MAX7456_STAT_BIT_CHAR_MEM_BUSY          (1 << 5)
 #define MAX7456_STAT_BIT_RESET_MODE             (1 << 6)
 #define MAX7456_STAT_BIT_NA                     (1 << 7)
 
@@ -131,7 +134,7 @@ uint8_t max7456_screenRows;
 #define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
 #define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
 
-void max7456_send(uint8_t address, uint8_t data)
+static void max7456_write(uint8_t address, uint8_t data)
 {
     ENABLE_MAX7456;
 
@@ -141,7 +144,7 @@ void max7456_send(uint8_t address, uint8_t data)
     DISABLE_MAX7456;
 }
 
-uint8_t max7456_read(uint8_t address)
+static uint8_t max7456_read(uint8_t address)
 {
     uint8_t result;
 
@@ -155,7 +158,7 @@ uint8_t max7456_read(uint8_t address)
     return result;
 }
 
-void max7456_setVideoMode(videoMode_e mode)
+static void max7456_setVideoMode(videoMode_e mode)
 {
     videoMode = mode;
     switch(mode)
@@ -181,7 +184,7 @@ bool max7456_isOSDEnabled(void)
     return osdEnabled;
 }
 
-bool max7456_isResetComplete(void)
+static bool max7456_isResetComplete(void)
 {
     uint8_t result = max7456_read(MAX7456_REG_STAT_READ);
     debug[3] = result;
@@ -191,12 +194,12 @@ bool max7456_isResetComplete(void)
     return resetComplete;
 }
 
-void max7456_softReset()
+static void max7456_softReset()
 {
     static uint32_t resetWait = 0;
 
     // force soft reset on Max7456
-    max7456_send(MAX7456_REG_VM0, MAX7456_VM0_BIT_SOFTWARE_RESET); // without video mode
+    max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_SOFTWARE_RESET); // without video mode
     delay(100);
 
     while(!max7456_isResetComplete()) {
@@ -219,6 +222,11 @@ void max7456_hardwareReset(void)
     digitalHi(MAX7456_NRST_GPIO, MAX7456_NRST_PIN);
 }
 
+void max7456_disableOSD(void)
+{
+    max7456_write(MAX7456_REG_VM0, max7456_videoModeMask); // MAX7456_VM0_BIT_OSD_ENABLE unset.
+}
+
 void max7456_init()
 {
     // device is rated for 10mhz max
@@ -228,23 +236,69 @@ void max7456_init()
 
     max7456_softReset();
 
-    max7456_send(MAX7456_REG_OSDM, 0x00);
+    max7456_write(MAX7456_REG_OSDM, 0x00);
     //read black level register
     uint8_t blackLevelResult = max7456_read(MAX7456_REG_OSDBL_READ);
 
     // set all rows to same charactor black/white level
     uint8_t row;
     for(row = 0; row < max7456_screenRows; row++) {
-        max7456_send(MAX7456_REG_RB0 + row, BWBRIGHTNESS);
+        max7456_write(MAX7456_REG_RB0 + row, BWBRIGHTNESS);
     }
 
-    max7456_send(MAX7456_REG_VM0, MAX7456_VM0_BIT_OSD_ENABLE | max7456_videoModeMask);
+    max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_OSD_ENABLE | max7456_videoModeMask);
     delay(100);
 
     // Set black level
     uint8_t blackLevelValue = (blackLevelResult & 0xef); // Set bit 4 to zero 11101111 (bit is 0 based index)
 
-    max7456_send(MAX7456_REG_OSDBL, blackLevelValue);
+    max7456_write(MAX7456_REG_OSDBL, blackLevelValue);
+}
+
+#define MAX7456_CHARACTER_BUFFER_SIZE 54
+static void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
+{
+    // cannot update font NVM with OSD enabled.
+    max7456_disableOSD();
+
+    // a short delay is required after disabling the OSD before sending the character index otherwise the CMAH register is not updated.
+    delay(20);
+    max7456_write(MAX7456_REG_CMAH, characterIndex);
+
+    // transfer character bitmap to character buffer in shadow ram
+    for(uint8_t i = 0; i < MAX7456_CHARACTER_BUFFER_SIZE; i++)
+    {
+      max7456_write(MAX7456_REG_CMAL, i); // set start address low
+      max7456_write(MAX7456_REG_CMDI, characterBitmap[i]);
+    }
+
+    // transfer character buffer from shadow ram to NVM
+    max7456_write(MAX7456_REG_CMM, 0xA0); // must use b1010xxxx
+
+    // wait until bit 5 in the status register returns to 0 (12ms)
+    while ((max7456_read(MAX7456_REG_STAT_READ) & MAX7456_STAT_BIT_CHAR_MEM_BUSY) != 0x00);
+
+    delay(20);
+
+    max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_OSD_ENABLE | MAX7456_VM0_BIT_VSYNC_ENABLE | max7456_videoModeMask);
+
+}
+
+void max7456_resetFont(void)
+{
+    LED0_ON;
+
+    const uint8_t *characterBitmap;
+
+    for(int index = 0; index < 256; index++){
+        characterBitmap = &font_max7456_12x18[index * FONT_MAX7456_12x18_BYTES_PER_CHARACTER];
+
+        LED0_TOGGLE;
+        max7456_setFontCharacter(index, characterBitmap);
+        delay(20);
+      }
+    LED0_OFF;
+
 }
 
 uint8_t max7456_readStatus(void)
@@ -281,6 +335,7 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
 }
 
 
+// the default max7456 font
 static const uint8_t fontToASCIIMapping[] = {
     ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E', // 0x00 - 0x0F
     'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', // 0x10 - 0x1F
@@ -289,6 +344,8 @@ static const uint8_t fontToASCIIMapping[] = {
     ')', '.', '?', ';', ':', ',', '\'', '/', '"', '-', '<','>', '@'                 // 0x40 - 0x4F
 };
 
+#ifdef USE_MAX7456_DEFAULT_FONT
+// for default max7456 font
 static const uint8_t asciiToFontMapping[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  0  -  15
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  16 -  31
@@ -299,6 +356,26 @@ static const uint8_t asciiToFontMapping[] = {
     0x00, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, //  96 - 111  "`abcdefghijklmno"
     0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x00, 0x00, 0x00, 0x00, 0x00, // 112 - 127  "pqrstuvwxyz{|}~ "
 };
+#else
+// for cleanflight font
+
+// details:
+// first character in font is the space character.  some characters (A-Z, 0-9, etc) are at their usual ascii positions in the font.
+// lower case alpha characters are mapped to upper case.
+// unmapped characters are mapped to the first character (space).
+// cleanflight logo appears at 0xed, 0xee, 0xef (line 1) and 0xfd, 0xfe, 0xff
+
+static const uint8_t asciiToFontMapping[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //    0 -  15
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //   16 -  31
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2e, 0x00, //   32 -  47 " !"#$%&'()*+,-./"
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x00, 0x00, 0x3c, 0x00, 0x3e, 0x00, //   48 -  63 "0123456789:;<=>?"
+    0x00, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, //   64 -  79 "@ABCDEFGHIJKLMNO"
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x00, 0x00, 0x00, 0x00, 0x00, //   80 -  95 "PQRSTUVWXYZ[\]^_"
+    0x00, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, //   96 - 111 "`abcdefghijklmno"
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x00, 0x00, 0x00, 0x00, 0x00, //  112 - 127 "pqrstuvwxyz{|}~ "
+};
+#endif
 
 
 static uint8_t cursorX = 0;
@@ -345,12 +422,25 @@ void max7456_fillScreen(void)
     }
 }
 
+
+void max7456_showFont(void)
+{
+    int c = 0, y = 2;
+    while (c < 256) {
+        for (uint8_t x = 0; x < 24 && c < 256; x++) {
+            max7456_setCharacterAtPosition(x + 3, y, c++);
+        }
+        y++;
+    }
+}
+
 void max7456_clearScreen(void)
 {
     uint8_t dmmStatus = max7456_read(MAX7456_REG_DMM_READ);
 
     dmmStatus |= MAX7456_DMM_BIT_CLEAR;
-    max7456_send(MAX7456_REG_DMM, dmmStatus);
+    max7456_write(MAX7456_REG_DMM, dmmStatus);
+    delay(20);
 }
 
 void max7456_clearScreenAtNextVSync(void)
@@ -359,5 +449,6 @@ void max7456_clearScreenAtNextVSync(void)
 
     dmmStatus |= MAX7456_DMM_BIT_CLEAR;
     dmmStatus |= MAX7456_DMM_BIT_VSYNC_CLEAR;
-    max7456_send(MAX7456_REG_DMM, dmmStatus);
+    max7456_write(MAX7456_REG_DMM, dmmStatus);
+    delay(20);
 }

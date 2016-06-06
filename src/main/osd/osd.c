@@ -43,13 +43,29 @@
 #include "sensors/battery.h"
 
 #include "drivers/system.h"
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
 #include "drivers/video_max7456.h"
 
+#include "osd/config.h"
+
+#include "osd/fonts/font_max7456_12x18.h"
 #include "osd/fc_state.h"
+
+#include "osd/osd.h"
+
+PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 
 void osdDisplaySplash(void)
 {
-    max7465_print(9, 10, "CLEANFLIGHT");
+    max7456_setCharacterAtPosition(14, 5, FONT_CHARACTER_CF_LOGO1_1x1);
+    max7456_setCharacterAtPosition(15, 5, FONT_CHARACTER_CF_LOGO1_1x2);
+    max7456_setCharacterAtPosition(16, 5, FONT_CHARACTER_CF_LOGO1_1x3);
+    max7456_setCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO1_2x1);
+    max7456_setCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO1_2x2);
+    max7456_setCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO1_2x3);
+
+    max7465_print(10, 7, "CLEANFLIGHT");
 }
 
 void osdClearScreen(void)
@@ -59,6 +75,31 @@ void osdClearScreen(void)
 
 void osdInit(void)
 {
+    LED0_ON;
+    delay(500);
+    max7456_hardwareReset();
+    LED0_OFF;
+
+
+    max7456_init();
+
+    if (osdFontConfig()->fontVersion != FONT_VERSION) {
+        // before
+        max7456_showFont();
+        delay(5000);
+
+        max7456_resetFont();
+
+        // after
+        max7456_showFont();
+        delay(5000);
+
+        osdFontConfig()->fontVersion = FONT_VERSION;
+        writeEEPROM();
+
+        max7456_clearScreen();
+    }
+
     osdDisplaySplash();
 }
 
@@ -101,9 +142,10 @@ void osdUpdate(void)
 
 
 /*
-    tfp_sprintf(lineBuffer, "12V:%3d.%dV", batteryStates[1].vbat / 10, batteryStates[1].vbat % 10);
+    // TODO rework ADC and battery code to provide volt meters
+    tfp_sprintf(lineBuffer, "12V:%3d.%dV", voltMeters[0].voltage / 10, voltMeters[0].voltage % 10);
     max7465_print(2, 12, lineBuffer);
-    tfp_sprintf(lineBuffer, " 5V:%3d.%dV", batteryStates[2].vbat / 10, batteryStates[2].vbat % 10);
+    tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltMeters[1].voltage / 10, voltMeters[1].voltage % 10);
     max7465_print(2, 13, lineBuffer);
 */
     tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);

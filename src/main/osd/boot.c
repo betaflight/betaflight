@@ -157,13 +157,6 @@ void init(void)
 
     adcInit(&adc_params);
 
-    LED0_ON;
-    delay(500);
-    max7456_hardwareReset();
-    LED0_OFF;
-
-    max7456_init();
-
     osdInit();
 
     flashLed();
