@@ -121,7 +121,7 @@ extern uint8_t PIDweight[3];
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
-static filterStatePt1_t filteredCycleTimeState;
+static pt1Filter_t filteredCycleTimeState;
 uint16_t filteredCycleTime;
 
 extern pidControllerFuncPtr pid_controller;
@@ -662,7 +662,7 @@ void taskMainPidLoop(void)
     dT = (float)cycleTime * 0.000001f;
 
     // Calculate average cycle time and average jitter
-    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
+    filteredCycleTime = pt1FilterApply4(&filteredCycleTimeState, cycleTime, 1, dT);
 
 #ifdef DEBUG_CYCLE_TIME
     debug[0] = cycleTime;

@@ -24,21 +24,32 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
-#define M_LN2_FLOAT	0.69314718055994530942f
-#define M_PI_FLOAT	3.14159265358979323846f
+#define M_LN2_FLOAT 0.69314718055994530942f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
-// PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
-float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dT)
+// PT1 Low Pass filter
+void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 {
+    filter->RC = 1.0f / ( 2.0f * M_PIf * f_cut );
+    filter->dT = dT;
+}
 
-	// Pre calculate and store RC
-	if (!filter->RC) {
-		filter->RC = 1.0f / ( 2.0f * (float)M_PI * f_cut );
-	}
+float pt1FilterApply(pt1Filter_t *filter, float input)
+{
+    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
+    return filter->state;
+}
 
-    filter->state = filter->state + dT / (filter->RC + dT) * (input - filter->state);
+float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
+{
+    // Pre calculate and store RC
+    if (!filter->RC) {
+        filter->RC = 1.0f / ( 2.0f * M_PIf * f_cut );
+        filter->dT = dT;
+    }
+
+    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
 
     return filter->state;
 }
@@ -54,7 +65,7 @@ void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
     float a0, a1, a2, b0, b1, b2;
 
     /* setup variables */
-    omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    omega = 2 * M_PIf * filterCutFreq / sampleRate;
     sn = sinf(omega);
     cs = cosf(omega);
     alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
