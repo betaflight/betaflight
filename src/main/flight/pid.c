@@ -79,7 +79,7 @@ float calculateRate(int axis, const controlRateConfig_t *controlRateConfig) {
     float angleRate;
 
     if (isSuperExpoActive()) {
-        float rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / 500.0f) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
+        float rcFactor = (axis == YAW) ? (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcYawRate8 / 100.0f))) : (ABS(rcCommand[axis]) / (500.0f * (controlRateConfig->rcRate8 / 100.0f)));
         rcFactor = 1.0f / (constrainf(1.0f - (rcFactor * (controlRateConfig->rates[axis] / 100.0f)), 0.01f, 1.00f));
 
         angleRate = rcFactor * ((27 * rcCommand[axis]) / 16.0f);

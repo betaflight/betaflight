@@ -1181,156 +1181,159 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rcExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
             break;
         case 14:
-            blackboxPrintfHeaderLine("rcYawExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawExpo8);
+            blackboxPrintfHeaderLine("rcYawRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);
             break;
         case 15:
-            blackboxPrintfHeaderLine("thrMid:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrMid8);
+            blackboxPrintfHeaderLine("rcYawExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawExpo8);
             break;
         case 16:
-            blackboxPrintfHeaderLine("thrExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrExpo8);
+            blackboxPrintfHeaderLine("thrMid:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrMid8);
             break;
         case 17:
-            blackboxPrintfHeaderLine("dynThrPID:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].dynThrPID);
+            blackboxPrintfHeaderLine("thrExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrExpo8);
             break;
         case 18:
-            blackboxPrintfHeaderLine("tpa_breakpoint:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].tpa_breakpoint);
+            blackboxPrintfHeaderLine("dynThrPID:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].dynThrPID);
             break;
         case 19:
+            blackboxPrintfHeaderLine("tpa_breakpoint:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].tpa_breakpoint);
+            break;
+        case 20:
             blackboxPrintfHeaderLine("rates:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[ROLL],
                                      masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[PITCH],
                                      masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[YAW]);
             break;
-        case 20:
+        case 21:
             blackboxPrintfHeaderLine("looptime:%d", targetLooptime);
             break;
-        case 21:
+        case 22:
             blackboxPrintfHeaderLine("pidController:%d", masterConfig.profile[masterConfig.current_profile_index].pidProfile.pidController);
             break;
-        case 22:
+        case 23:
             blackboxPrintfHeaderLine("rollPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[ROLL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[ROLL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[ROLL]);
             break;
-        case 23:
+        case 24:
             blackboxPrintfHeaderLine("pitchPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PITCH],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PITCH],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PITCH]);
             break;
-        case 24:
+        case 25:
             blackboxPrintfHeaderLine("yawPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[YAW],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[YAW],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[YAW]);
             break;
-        case 25:
+        case 26:
             blackboxPrintfHeaderLine("altPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDALT],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDALT],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDALT]);
             break;
-        case 26:
+        case 27:
             blackboxPrintfHeaderLine("posPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOS],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOS],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOS]);
             break;
-        case 27:
+        case 28:
             blackboxPrintfHeaderLine("posrPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOSR],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOSR],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOSR]);
             break;
-        case 28:
+        case 29:
             blackboxPrintfHeaderLine("navrPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDNAVR],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDNAVR],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDNAVR]);
             break;
-        case 29:
+        case 30:
             blackboxPrintfHeaderLine("levelPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL]);
             break;
-        case 30:
+        case 31:
             blackboxPrintfHeaderLine("magPID:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDMAG]);
             break;
-        case 31:
+        case 32:
             blackboxPrintfHeaderLine("velPID:%d,%d,%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDVEL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDVEL],
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDVEL]);
             break;
-        case 32:
+        case 33:
             blackboxPrintfHeaderLine("yaw_p_limit:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
             break;
-        case 33:
+        case 34:
             blackboxPrintfHeaderLine("yaw_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
             break;
-        case 34:
+        case 35:
             blackboxPrintfHeaderLine("dterm_average_count:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
             break;
-        case 35:
+        case 36:
             blackboxPrintfHeaderLine("dynamic_pid:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pid);
             break;
-        case 36:
+        case 37:
             blackboxPrintfHeaderLine("rollPitchItermResetRate:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
             break;
-        case 37:
+        case 38:
             blackboxPrintfHeaderLine("yawItermResetRate:%d",
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
             break;
-        case 38:
+        case 39:
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
             break;
-        case 39:
+        case 40:
             blackboxPrintfHeaderLine("airmode_activate_throttle:%d",
                                      masterConfig.rxConfig.airModeActivateThreshold);
             break;
-        case 40:
+        case 41:
             blackboxPrintfHeaderLine("deadband:%d", masterConfig.rcControlsConfig.deadband);
             break;
-        case 41:
+        case 42:
             blackboxPrintfHeaderLine("yaw_deadband:%d", masterConfig.rcControlsConfig.yaw_deadband);
             break;
-        case 42:
+        case 43:
             blackboxPrintfHeaderLine("gyro_lpf:%d", masterConfig.gyro_lpf);
             break;
-        case 43:
+        case 44:
             blackboxPrintfHeaderLine("gyro_lowpass_hz:%d", (int)(masterConfig.gyro_soft_lpf_hz * 100.0f));
             break;
-        case 44:
+        case 45:
             blackboxPrintfHeaderLine("acc_lpf_hz:%d", (int)(masterConfig.acc_lpf_hz * 100.0f));
             break;
-        case 45:
+        case 46:
             blackboxPrintfHeaderLine("acc_hardware:%d", masterConfig.acc_hardware);
             break;
-        case 46:
+        case 47:
             blackboxPrintfHeaderLine("baro_hardware:%d", masterConfig.baro_hardware);
             break;
-        case 47:
+        case 48:
             blackboxPrintfHeaderLine("mag_hardware:%d", masterConfig.mag_hardware);
             break;
-        case 48:
+        case 49:
             blackboxPrintfHeaderLine("gyro_cal_on_first_arm:%d", masterConfig.gyro_cal_on_first_arm);
             break;
-        case 49:
+        case 50:
             blackboxPrintfHeaderLine("vbat_pid_compensation:%d", masterConfig.batteryConfig.vbatPidCompensation);
             break;
-        case 50:
+        case 51:
             blackboxPrintfHeaderLine("rc_smoothing:%d", masterConfig.rxConfig.rcSmoothing);
             break;
-        case 51:
+        case 52:
             blackboxPrintfHeaderLine("features:%d", masterConfig.enabledFeatures);
             break;
         default:
