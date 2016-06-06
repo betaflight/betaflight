@@ -9,6 +9,13 @@ that is not recommended).
 By default, arming and disarming is done using stick positions.  (NOTE: this feature is disabled when using a
 switch to arm.)
 
+Arming is disabled if:
+- CLI is active in the configurator
+- The aircraft has landed in failsafe mode
+- Maximum arming angle is exceeded
+- Calibration is active
+- The system is overloaded
+
 ## Stick Positions
 
 The three stick positions are:
@@ -52,7 +59,7 @@ from trying to yaw during arming/disarming while on the ground, your yaw input w
 throttle is LOW (i.e. below the `min_check` setting).
 
 For tricopters, you may want to retain the ability to yaw while on the ground, so that you can verify that your tail
-servo is working correctly before takeoff. You can do this by setting `tri_unarmed_servo` to `1` on the CLI (this is the
+servo is working correctly before takeoff. You can do this by setting `tri_unarmed_servo` to `ON` on the CLI (this is the
 default). If you are having issues with your tail rotor contacting the ground during arm/disarm, you can set this to
 `0` instead. Check this table to decide which setting will suit you:
 
@@ -67,13 +74,13 @@ default). If you are having issues with your tail rotor contacting the ground du
         <th></th><th>Throttle low</th><th>Throttle normal</th><th>Throttle low</th><th>Throttle normal</th>
     </tr>
     <tr>
-        <td rowspan="2">tri_unarmed_servo = 0</td><td>No</td><td>No</td><td>No</td><td>Yes</td>
+        <td rowspan="2">tri_unarmed_servo = OFF</td><td>No</td><td>No</td><td>No</td><td>Yes</td>
     </tr>
     <tr>
         <td>No</td><td>No</td><td>No</td><td>Yes</td>
     </tr>
     <tr>
-        <td rowspan="2">tri_unarmed_servo = 1</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td>
+        <td rowspan="2">tri_unarmed_servo = ON</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td>
     </tr>
     <tr>
         <td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td>

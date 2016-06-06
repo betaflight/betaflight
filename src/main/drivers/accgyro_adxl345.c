@@ -56,7 +56,7 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(void);
+static void adxl345Init(acc_t *acc);
 static bool adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
@@ -78,7 +78,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     return true;
 }
 
-static void adxl345Init(void)
+static void adxl345Init(acc_t *acc)
 {
     if (useFifo) {
         uint8_t fifoDepth = 16;
@@ -91,7 +91,7 @@ static void adxl345Init(void)
         i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
         i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
     }
-    acc_1G = 265; // 3.3V operation // FIXME verify this is supposed to be 265, not 256. Typo?
+    acc->acc_1G = 256;
 }
 
 uint8_t acc_samples = 0;

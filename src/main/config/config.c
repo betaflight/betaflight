@@ -18,18 +18,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stddef.h>
 
 #include <platform.h>
 
 #include "build_config.h"
 
-#include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config.h"
+#include "config/config_eeprom.h"
+#include "config/feature.h"
+#include "config/profile.h"
+#include "config/config_reset.h"
+#include "config/config_system.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -40,48 +44,32 @@
 #include "io/rate_profile.h"
 #include "io/rc_controls.h"
 #include "io/rc_adjustments.h"
+#include "io/beeper.h"
+#include "io/serial.h"
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/ledstrip.h"
-
-#include "blackbox/blackbox_io.h"
-#include "blackbox/blackbox.h"
-
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/altitudehold.h"
+#include "flight/pid.h"
 #include "flight/navigation.h"
 
-#include "config/config.h"
-#include "config/config_eeprom.h"
-#include "config/feature.h"
-#include "config/profile.h"
-#include "config/config_reset.h"
-#include "config/config_system.h"
 
 // FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
+#include "io/motor_and_servo.h"
 
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
 
-#ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
-#define FIRST_PORT_INDEX 1
-#define SECOND_PORT_INDEX 0
-#else
-#define FIRST_PORT_INDEX 0
-#define SECOND_PORT_INDEX 1
-#endif
 
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
@@ -93,9 +81,14 @@ STATIC_UNIT_TESTED void resetConf(void)
 
     setControlRateProfile(0);
 
+    parseRcChannels("AETR1234", rxConfig());
+
     featureClearAll();
 
-    featureSet(DEFAULT_RX_FEATURE);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_BLACKBOX);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
+#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -103,33 +96,17 @@ STATIC_UNIT_TESTED void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
-    featureSet(FEATURE_FAILSAFE);
-
-    parseRcChannels("AETR1234", rxConfig());
-
-    featureSet(FEATURE_BLACKBOX);
-
 #if defined(COLIBRI_RACE)
     // alternative defaults settings for COLIBRI RACE targets
     imuConfig()->looptime = 1000;
-    featureSet(FEATURE_ONESHOT125);
-    featureSet(FEATURE_LED_STRIP);
 #endif
 
-#ifdef SPRACINGF3EVO
-    featureSet(FEATURE_TRANSPONDER);
-    featureSet(FEATURE_RSSI_ADC);
-    featureSet(FEATURE_CURRENT_METER);
-    featureSet(FEATURE_TELEMETRY);
-#endif
-
-    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
-#ifdef ALIENWII32
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_MOTOR_STOP);
-# ifdef ALIENWIIF3
+    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
+#ifdef ALIENFLIGHT
+#ifdef ALIENFLIGHTF3
     serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     batteryConfig()->vbatscale = 20;
+    sensorSelectionConfig()->mag_hardware = MAG_NONE;            // disabled by default
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
@@ -139,16 +116,16 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorAndServoConfig()->maxthrottle = 2000;
     motorAndServoConfig()->motor_pwm_rate = 32000;
     imuConfig()->looptime = 2000;
-    pidProfile()->pidController = 3;
-    pidProfile()->P8[PIDROLL] = 36;
-    pidProfile()->P8[PIDPITCH] = 36;
+    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
-    currentControlRateProfile->rates[ROLL] = 20;
+    mixerConfig()->yaw_jump_prevention_limit = YAW_JUMP_PREVENTION_LIMIT_HIGH;
+    currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[PITCH] = 20;
-    currentControlRateProfile->rates[YAW] = 100;
+    currentControlRateProfile->rates[ROLL] = 20;
+    currentControlRateProfile->rates[YAW] = 20;
     parseRcChannels("TAER1234", rxConfig());
+
     *customMotorMixer(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixer(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixer(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
@@ -170,7 +147,7 @@ STATIC_UNIT_TESTED void resetConf(void)
     }
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
     activateControlRateConfig();
 
@@ -187,11 +164,9 @@ void activateConfig(void)
     useFailsafeConfig();
     setAccelerationTrims(&sensorTrims()->accZero);
 
-    mixerUseConfigs(
 #ifdef USE_SERVOS
-        servoProfile()->servoConf
+    mixerUseConfigs(servoProfile()->servoConf);
 #endif
-    );
 
     recalculateMagneticDeclination();
 
@@ -210,7 +185,7 @@ void activateConfig(void)
     );
 }
 
-void validateAndFixConfig(void)
+static void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
         featureSet(DEFAULT_RX_FEATURE);
@@ -232,6 +207,13 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM);
     }
 
+    // The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
+    // The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
+    if (armingConfig()->retarded_arm && mixerConfig()->pid_at_min_throttle) {
+        mixerConfig()->pid_at_min_throttle = 0;
+    }
+
+
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
     if (imuConfig()->gyroSync && imuConfig()->gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
@@ -239,7 +221,9 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
+
+#if defined(LED_STRIP)
+#if (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0
 #ifdef USE_SOFTSERIAL1
@@ -254,39 +238,35 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_UART3) && featureConfigured(FEATURE_DISPLAY)) {
-        featureClear(FEATURE_DISPLAY);
-    }
-#endif
-
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#ifdef TELEMETRY
-    telemetryConfig()->telemetry_inversion = 1;
-#endif
-#endif
-
-    /*
-     * The retarded_arm setting is incompatible with pid_at_min_throttle because full roll causes the craft to roll over on the ground.
-     * The pid_at_min_throttle implementation ignores yaw on the ground, but doesn't currently ignore roll when retarded_arm is enabled.
-     */
-    if (armingConfig()->retarded_arm && mixerConfig()->pid_at_min_throttle) {
-        mixerConfig()->pid_at_min_throttle = 0;
-    }
-
-#if defined(LED_STRIP) && defined(TRANSPONDER) && !defined(UNIT_TEST)
+#if defined(TRANSPONDER) && !defined(UNIT_TEST)
     if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
         featureClear(FEATURE_LED_STRIP);
     }
 #endif
+#endif // LED_STRIP
 
+#if defined(CC3D)
+#if defined(DISPLAY) && defined(USE_UART3)
+    if (featureConfigured(FEATURE_DISPLAY) && doesConfigurationUsePort(SERIAL_PORT_UART3)) {
+        featureClear(FEATURE_DISPLAY);
+    }
+#endif
 
-#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_SOFTSERIAL)) {
         featureClear(FEATURE_SONAR);
     }
 #endif
+
+#if defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+    // shared pin
+    if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
+        featureClear(FEATURE_SONAR);
+        featureClear(FEATURE_SOFTSERIAL);
+        featureClear(FEATURE_RSSI_ADC);
+    }
+#endif
+#endif // CC3D
 
 #if defined(COLIBRI_RACE)
     serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;

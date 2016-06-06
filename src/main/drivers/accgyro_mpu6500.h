@@ -16,6 +16,7 @@
  */
 
 #define MPU6500_WHO_AM_I_CONST              (0x70)
+#define MPU9250_WHO_AM_I_CONST              (0x71)
 
 #define MPU6500_BIT_RESET                   (0x80)
 
@@ -24,5 +25,5 @@
 bool mpu6500AccDetect(acc_t *acc);
 bool mpu6500GyroDetect(gyro_t *gyro);
 
-void mpu6500AccInit(void);
+void mpu6500AccInit(acc_t *acc);
 void mpu6500GyroInit(uint8_t lpf);

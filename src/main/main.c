@@ -30,6 +30,7 @@
 #include "common/atomic.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/streambuf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -74,6 +75,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/msp.h"
 #include "io/serial_msp.h"
 #include "io/serial_cli.h"
 
@@ -93,6 +95,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -250,16 +253,23 @@ void init(void)
 #endif
     i2cSetOverclock(systemConfig()->i2c_highspeed);
 
+    systemInit();
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
 
-    systemInit();
-
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
-
-    ledInit();
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_1) {
+        ledInit(false);
+    } else {
+        ledInit(true);
+    }
+#else
+    ledInit(false);
+#endif
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
@@ -316,10 +326,9 @@ void init(void)
 
     serialInit(feature(FEATURE_SOFTSERIAL));
 
-#ifdef USE_SERVOS
-    mixerInit(customMotorMixer(0), customServoMixer(0));
-#else
     mixerInit(customMotorMixer(0));
+#ifdef USE_SERVOS
+    mixerInitServos(customServoMixer(0));
 #endif
 
     memset(&pwm_params, 0, sizeof(pwm_params));
@@ -410,6 +419,15 @@ void init(void)
 #ifdef USE_SPI
     spiInit(SPI1);
     spiInit(SPI2);
+#ifdef STM32F303xC
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_2) {
+        spiInit(SPI3);
+    }
+#else
+    spiInit(SPI3);
+#endif
+#endif
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -481,7 +499,7 @@ void init(void)
     }
 #endif
 
-    gyroUpdateSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+    gyroSetSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
@@ -504,6 +522,7 @@ void init(void)
     imuInit();
 
     mspInit();
+    mspSerialInit();
 
 #ifdef USE_CLI
     cliInit();
@@ -674,7 +693,7 @@ int main(void) {
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#ifdef SPRACINGF3EVO
+#if defined(MPU6500_SPI_INSTANCE) && defined(USE_MAG_AK8963)
     // fixme temporary solution for AK6983 via slave I2C on MPU9250
     rescheduleTask(TASK_COMPASS, 1000000 / 40);
 #endif

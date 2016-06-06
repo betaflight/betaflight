@@ -104,6 +104,8 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
 // stubs
 extern "C" {
 
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
+
 void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}
 

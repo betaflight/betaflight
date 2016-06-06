@@ -81,6 +81,7 @@
 #include "flight/gtune.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
@@ -153,6 +154,7 @@ static void cliMap(char *cmdline);
 #ifdef LED_STRIP
 static void cliLed(char *cmdline);
 static void cliColor(char *cmdline);
+static void cliModeColor(char *cmdline);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -252,6 +254,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
+    CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dump", "dump configuration",
@@ -589,7 +592,7 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
-    { "gyro_soft_lpf",              VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
+    { "gyro_soft_lpf",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  128 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold)},
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_kp)},
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_ki)},
@@ -1204,24 +1207,23 @@ static void cliRxRange(char *cmdline)
 static void cliLed(char *cmdline)
 {
     int i;
-    char *ptr;
     char ledConfigBuffer[20];
 
     if (isEmpty(cmdline)) {
-        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
             cliPrintf("led %u %s\r\n", i, ledConfigBuffer);
         }
     } else {
-        ptr = cmdline;
+        char *ptr = cmdline;
         i = atoi(ptr);
-        if (i < MAX_LED_STRIP_LENGTH) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseLedStripConfig(i, ++ptr)) {
+        if (i < LED_MAX_STRIP_LENGTH) {
+            ptr = strchr(ptr, ' ');
+            if (!ptr || !parseLedStripConfig(i, ptr + 1)) {
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, MAX_LED_STRIP_LENGTH - 1);
+            cliShowArgumentRangeError("index", 0, LED_MAX_STRIP_LENGTH - 1);
         }
     }
 }
@@ -1229,10 +1231,9 @@ static void cliLed(char *cmdline)
 static void cliColor(char *cmdline)
 {
     int i;
-    char *ptr;
 
     if (isEmpty(cmdline)) {
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             cliPrintf("color %u %d,%u,%u\r\n",
                 i,
                 colors(i)->h,
@@ -1241,16 +1242,57 @@ static void cliColor(char *cmdline)
             );
         }
     } else {
-        ptr = cmdline;
+        char *ptr = cmdline;
         i = atoi(ptr);
-        if (i < CONFIGURABLE_COLOR_COUNT) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseColor(i, ++ptr)) {
+        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+            ptr = strchr(ptr, ' ');
+            if (!ptr || !parseColor(i, ptr + 1)) {
                 cliShowParseError();
             }
         } else {
-            cliShowArgumentRangeError("index", 0, CONFIGURABLE_COLOR_COUNT - 1);
+            cliShowArgumentRangeError("index", 0, LED_CONFIGURABLE_COLOR_COUNT - 1);
         }
+    }
+}
+
+static void cliModeColor(char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        for (int i = 0; i < LED_MODE_COUNT; i++) {
+            for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                int colorIndex = modeColors(i)->color[j];
+                cliPrintf("mode_color %u %u %u\r\n", i, j, colorIndex);
+            }
+        }
+
+        for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+            int colorIndex = specialColors(0)->color[j];
+            cliPrintf("mode_color %u %u %u\r\n", LED_SPECIAL, j, colorIndex);
+        }
+    } else {
+        enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
+        int args[ARGS_COUNT];
+        int argNo = 0;
+        char* ptr = strtok(cmdline, " ");
+        while (ptr && argNo < ARGS_COUNT) {
+            args[argNo++] = atoi(ptr);
+            ptr = strtok(NULL, " ");
+        }
+
+        if (ptr != NULL || argNo != ARGS_COUNT) {
+            cliShowParseError();
+            return;
+        }
+
+        int modeIdx  = args[MODE];
+        int funIdx = args[FUNCTION];
+        int color = args[COLOR];
+        if(!setModeColor(modeIdx, funIdx, color)) {
+            cliShowParseError();
+            return;
+        }
+        // values are validated
+        cliPrintf("mode_color %u %u %u\r\n", modeIdx, funIdx, color);
     }
 }
 #endif
@@ -1491,7 +1533,8 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
     }
 }
 
-static void cliSdInfo(char *cmdline) {
+static void cliSdInfo(char *cmdline)
+{
     UNUSED(cmdline);
 
     cliPrint("SD card: ");
@@ -1778,6 +1821,9 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
+
+        cliPrint("\r\n\r\n# mode_color\r\n");
+        cliModeColor("");
 #endif
         printSectionBreak();
         dumpValues(MASTER_VALUE);
@@ -2145,7 +2191,8 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-static void cliReboot(void) {
+static void cliReboot(void)
+{
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);

@@ -157,5 +157,5 @@ cleanflight.
 
 See also
 --------
-Modes.md describes the user visible implementation for the cleanflight
+[Modes.md](../Modes.md) describes the user visible implementation for the cleanflight
 modes extension.

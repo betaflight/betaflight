@@ -105,7 +105,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         }
 
         // Anti windup protection
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (rcModeIsActive(BOXAIRMODE)) {
             if (STATE(ANTI_WINDUP) || motorLimitReached) {
                 lastITerm[axis] = constrain(lastITerm[axis], -ITermLimit[axis], ITermLimit[axis]);
             } else {
@@ -175,7 +175,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
     //YAW
     rc = (int32_t)rcCommand[YAW] * (2 * controlRateConfig->rates[YAW] + 30)  >> 5;
-#ifdef ALIENWII32
+#ifdef ALIENWFLIGHT
     error = rc - gyroADC[FD_YAW];
 #else
     error = rc - (gyroADC[FD_YAW] / 4);

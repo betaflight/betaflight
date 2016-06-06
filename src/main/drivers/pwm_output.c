@@ -29,6 +29,10 @@
 
 #include "pwm_output.h"
 
+#include "common/maths.h"
+
+#define MAX_PWM_OUTPUT_PORTS MAX(MAX_MOTORS, MAX_SERVOS)
+
 typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
 typedef struct {

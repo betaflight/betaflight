@@ -70,7 +70,7 @@ extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // constants to scale pidLuxFloat so output is same as pidMultiWiiRewrite
 static const float luxPTermScale = 1.0f / 128;
 static const float luxITermScale = 1000000.0f / 0x1000000;
-static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 256;
+static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 512;
 static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrewrite does not scale according to the gyro model gyro.scale
 
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
@@ -95,7 +95,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
     // Anti windup protection
-    if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+    if (rcModeIsActive(BOXAIRMODE)) {
         if (STATE(ANTI_WINDUP) || motorLimitReached) {
             ITerm = constrainf(ITerm, -ITermLimitf[axis], ITermLimitf[axis]);
         } else {
@@ -141,7 +141,7 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 {
     pidFilterIsSetCheck(pidProfile);
 
-    float horizonLevelStrength;
+    float horizonLevelStrength = 0;
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the most deflected stick position
         const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));

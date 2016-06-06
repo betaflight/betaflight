@@ -128,7 +128,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_APB2PeriphClockCmd(UART1_APB2_PERIPHERALS, ENABLE);
 #endif
 #ifdef UART1_AHB_PERIPHERALS
-    RCC_APB2PeriphClockCmd(UART1_AHB_PERIPHERALS, ENABLE);
+    RCC_AHBPeriphClockCmd(UART1_AHB_PERIPHERALS, ENABLE);
 #endif
 
     gpio.speed = Speed_2MHz;

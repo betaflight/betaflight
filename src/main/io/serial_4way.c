@@ -39,13 +39,8 @@
 #include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
-
-#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-# include "io/serial_4way_avrootloader.h"
-#endif
-#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
-# include "io/serial_4way_stk500v2.h"
-#endif
+#include "io/serial_4way_avrootloader.h"
+#include "io/serial_4way_stk500v2.h"
 
 #define USE_TXRX_LED
 
@@ -88,8 +83,9 @@
 
 static uint8_t escCount;
 uint8_t escSelected;
-
 escHardware_t escHardware[MAX_PWM_MOTORS];
+
+bool esc4wayExitRequested = false;
 
 static escDeviceInfo_t deviceInfo;
 
@@ -98,7 +94,8 @@ static bool isMcuConnected(void)
     return deviceInfo.signature != 0;
 }
 
-static void setDisconnected(void) {
+static void setDisconnected(void)
+{
     deviceInfo.signature = 0;
 }
 
@@ -243,7 +240,8 @@ typedef enum {
   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE. */
-uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data) {
+uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
+{
         int i;
 
         crc = crc ^ ((uint16_t)data << 8);
@@ -328,7 +326,8 @@ static void writeByteCrc(uint8_t b)
 // handle 4way interface on serial port
 // esc4wayStart / esc4wayRelease in called internally
 // 256 bytes buffer is allocated on stack
-void esc4wayProcess(serialPort_t *serial) {
+void esc4wayProcess(serialPort_t *serial)
+{
     uint8_t command;
     uint16_t addr;
     int inLen;

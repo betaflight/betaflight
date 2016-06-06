@@ -67,7 +67,8 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     }
 }
 
-void pgResetCurrent(const pgRegistry_t *reg) {
+void pgResetCurrent(const pgRegistry_t *reg)
+{
     if(pgIsSystem(reg)) {
         pgResetInstance(reg, reg->address);
     } else {
@@ -82,6 +83,14 @@ void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profile
     const int take = MIN(size, pgSize(reg));
     memcpy(pgOffset(reg, profileIndex), from, take);
 }
+
+int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex)
+{
+    const int take = MIN(size, pgSize(reg));
+    memcpy(to, pgOffset(reg, profileIndex), take);
+    return take;
+}
+
 
 void pgResetAll(uint8_t profileCount)
 {

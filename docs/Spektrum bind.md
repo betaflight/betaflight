@@ -2,7 +2,7 @@
 
 Spektrum bind with hardware bind plug support.
  
-The Spektrum bind code is actually enabled for the NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY, CC3D, ALIENWIIF1, ALIENWIIF3 targets.
+The Spektrum bind code is actually enabled for the NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY, CC3D, ALIENFLIGHTF1, ALIENFLIGHTF3 targets.
 
 ## Configure the bind code
 
@@ -20,7 +20,7 @@ This is to activate the hardware bind plug feature
 
 ## Hardware
 
-The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienWii32 firmware is built. The hardware bind plug is expected between the defined bind pin and ground. 
+The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during building of the firmware. BINDPLUG_PORT and BINDPLUG_PIN also need to be defined (please see above). This is done automatically if the AlienFlight firmware is built. The hardware bind plug is expected between the defined bind pin and ground. 
 
 ## Function
 
@@ -34,13 +34,13 @@ Please refer to the satellite receiver documentation for more details of the spe
 
 ## Table with spektrum_sat_bind parameter value
 
-| Value | Receiver mode     | Notes              |
-| ----- | ------------------| -------------------|
-| 3     | DSM2 1024bit/22ms |                    |
-| 5     | DSM2 2048bit/11ms | default AlienWii32 |
-| 7     | DSMX 1024bit/22ms |                    |
-| 8     | DSMX 2048bit/22ms | Used by new DXe    |
-| 9     | DSMX 2048bit/11ms |                    |
+| Value | Receiver mode     | Notes               |
+| ----- | ------------------| --------------------|
+| 3     | DSM2 1024bit/22ms |                     |
+| 5     | DSM2 2048bit/11ms | default AlienFlight |
+| 7     | DSMX 1024bit/22ms |                     |
+| 8     | DSMX 2048bit/22ms | Used by new DXe     |
+| 9     | DSMX 2048bit/11ms |                     |
 
 
 ### Supported Hardware
@@ -58,6 +58,7 @@ In order to connect the satellite to a Flip32+, you have to wire the serial data
 | Satellite            | Remote         | Remark                                                   |
 | -------------------- | -------------- | -------------------------------------------------------- |
 | Orange R100          | Spektrum DX6i  | Bind value 3                                             |
+| Lemon RX DSMX        | Spektrum DX6i  | Bind value 9
 | Lemon RX DSM2/DSMX   | Spektrum DX8   | Bind value 5                                             |
 | Lemon RX DSMX        | Walkera Devo10 | Bind value 9, Deviation firmware 4.01 up to 12 channels  |
 | Lemon RX DSM2        | Walkera Devo7  | Bind value 9, Deviation firmware                         |

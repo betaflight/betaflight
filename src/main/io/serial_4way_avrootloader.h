@@ -20,6 +20,8 @@
 
 #pragma once
 
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+
 void BL_SendBootInit(void);
 uint8_t BL_ConnectEx(escDeviceInfo_t *pDeviceInfo);
 uint8_t BL_SendCMDKeepAlive(void);
@@ -30,3 +32,5 @@ uint8_t BL_WriteFlash(ioMem_t *pMem);
 uint8_t BL_ReadFlashATM(ioMem_t *pMem);
 uint8_t BL_ReadFlashSIL(ioMem_t *pMem);
 void BL_SendCMDRunRestartBootloader(void);
+
+#endif

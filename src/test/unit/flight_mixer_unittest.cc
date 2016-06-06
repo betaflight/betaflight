@@ -45,6 +45,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
+    #include "flight/servos.h"
 
     #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
@@ -55,7 +56,8 @@ extern "C" {
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);
 
-    void mixerInit(motorMixer_t *initialCustomMixers, servoMixer_t *initialCustomServoMixers);
+    void mixerInit(motorMixer_t *initialCustomMixers);
+    void mixerInitServos(servoMixer_t *initialCustomServoMixers);
     void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 
     PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
@@ -249,7 +251,8 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 
     configureMixer(MIXER_TRI);
 
-    mixerInit(customMotorMixer(0), customServoMixer(0));
+    mixerInit(customMotorMixer(0));
+    mixerInitServos(customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -282,7 +285,8 @@ TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 
     configureMixer(MIXER_QUADX);
 
-    mixerInit(customMotorMixer(0), customServoMixer(0));
+    mixerInit(customMotorMixer(0));
+    mixerInitServos(customServoMixer(0));
 
     // and
     pwmIOConfiguration_t pwmIOConfiguration = {
@@ -371,7 +375,8 @@ TEST_F(CustomMixerIntegrationTest, TestCustomMixer)
 
     configureMixer(MIXER_CUSTOM_AIRPLANE);
 
-    mixerInit(customMotorMixer(0), customServoMixer(0));
+    mixerInit(customMotorMixer(0));
+    mixerInitServos(customServoMixer(0));
 
     pwmIOConfiguration_t pwmIOConfiguration = {
             .servoCount = 6,
@@ -474,6 +479,8 @@ void pwmWriteServo(uint8_t index, uint16_t value) {
     }
     updatedServoCount++;
 }
+
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 bool failsafeIsActive(void) {
     return false;
