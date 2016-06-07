@@ -181,6 +181,8 @@
 #undef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "AWF1" // AlienFlight F1.
 #undef BOARD_HAS_VOLTAGE_DIVIDER
+#define ALIENFLIGHT
+
 #define HARDWARE_BIND_PLUG
 
 // Hardware bind plug at PB5 (Pin 41)

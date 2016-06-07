@@ -154,7 +154,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
     }
 #endif
 
-#ifdef USE_GYRO_SPI_MPU9250
+#ifdef  USE_GYRO_SPI_MPU9250
     if (mpu9250SpiDetect()) {
         mpuDetectionResult.sensor = MPU_9250_SPI;
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;

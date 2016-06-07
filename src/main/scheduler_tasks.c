@@ -57,7 +57,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
         .taskFunc = taskMainPidLoopCheck,
+#if defined(STM32F4)
+        .desiredPeriod = 125,
+#else
         .desiredPeriod = 1000,
+#endif
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
 

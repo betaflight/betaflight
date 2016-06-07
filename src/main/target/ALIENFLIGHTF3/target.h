@@ -18,6 +18,8 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
+#define ALIENFLIGHT
+
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN      PB2
 

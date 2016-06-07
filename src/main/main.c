@@ -329,20 +329,20 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    if (masterConfig.fast_pwm_protocol == PWM_TYPE_ONESHOT125) {
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
         featureSet(FEATURE_ONESHOT125);
     } else {
         featureClear(FEATURE_ONESHOT125);
     }
 
-    pwm_params.useFastPwm = (masterConfig.fast_pwm_protocol != PWM_TYPE_CONVENTIONAL) ? true : false;  // Configurator feature abused for enabling Fast PWM
-    pwm_params.pwmProtocolType = masterConfig.fast_pwm_protocol;
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  // Configurator feature abused for enabling Fast PWM
+    pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500 && !pwm_params.useFastPwm)
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -351,6 +351,7 @@ void init(void)
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
+    syncMotors(pwm_params.useUnsyncedPwm && pwm_params.motorPwmRate != PWM_TYPE_BRUSHED);
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
     if (!feature(FEATURE_ONESHOT125))
