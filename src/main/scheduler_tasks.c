@@ -198,13 +198,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_BST
-    [TASK_BST_READ_WRITE] = {
-        .taskName = "BST_MASTER_WRITE",
-        .taskFunc = taskBstReadWrite,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-
     [TASK_BST_MASTER_PROCESS] = {
         .taskName = "BST_MASTER_PROCESS",
         .taskFunc = taskBstMasterProcess,

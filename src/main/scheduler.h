@@ -83,7 +83,6 @@ typedef enum {
     TASK_OSD,
 #endif
 #ifdef USE_BST
-    TASK_BST_READ_WRITE,
     TASK_BST_MASTER_PROCESS,
 #endif
 

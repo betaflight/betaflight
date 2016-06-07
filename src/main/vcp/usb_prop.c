@@ -358,5 +358,17 @@ uint8_t *Virtual_Com_Port_SetLineCoding(uint16_t Length)
     return (uint8_t *)&linecoding;
 }
 
+/*******************************************************************************
+ * Function Name  : Virtual_Com_Port_GetBaudRate.
+ * Description    : Get the current baudrate
+ * Input          : None.
+ * Output         : None.
+ * Return         : baudrate in bps
+ *******************************************************************************/
+uint32_t Virtual_Com_Port_GetBaudRate(void)
+{
+    return linecoding.bitrate;
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

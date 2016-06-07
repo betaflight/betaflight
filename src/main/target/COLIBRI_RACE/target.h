@@ -43,6 +43,11 @@
 #define MPU6500_CS_PIN                   GPIO_Pin_4
 #define MPU6500_SPI_INSTANCE             SPI1
 
+#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+#define MPU6000_CS_GPIO				 GPIOA
+#define MPU6000_CS_PIN				 GPIO_Pin_4
+#define MPU6000_SPI_INSTANCE             SPI1
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
@@ -60,11 +65,15 @@
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW270_DEG
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
 #define ACC
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW270_DEG
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
@@ -73,7 +82,9 @@
 #define USE_BARO_MS5611
 
 #define MAG
+#define USE_MPU9250_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
 #define BEEPER
@@ -155,6 +166,7 @@
 #define GPS
 //#define GTUNE
 #define LED_STRIP
+#define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
 #define LED_STRIP_TIMER TIM16
 
@@ -181,8 +193,4 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_1WIRE
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_10
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_11
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

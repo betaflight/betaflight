@@ -748,35 +748,6 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 #endif
 
-void acroPlusApply(void) {
-    int axis;
-
-    for (axis = 0; axis < 2; axis++) {
-        int16_t factor;
-        fix12_t wowFactor;
-        int16_t rcCommandDeflection = constrain(rcCommand[axis], -500, 500); // Limit stick input to 500 (rcCommand 100)
-        int16_t acroPlusStickOffset = rxConfig->acroPlusOffset * 5;
-        int16_t motorRange = escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle;
-        if (feature(FEATURE_3D)) motorRange = (motorRange - (flight3DConfig->deadband3d_high - flight3DConfig->deadband3d_low)) / 2;
-
-        /* acro plus factor handling */
-        if (rxConfig->acroPlusFactor && ABS(rcCommandDeflection) > acroPlusStickOffset + 10) {
-            if (rcCommandDeflection > 0) {
-                rcCommandDeflection -= acroPlusStickOffset;
-            } else {
-                rcCommandDeflection += acroPlusStickOffset;
-            }
-            wowFactor = qConstruct(ABS(rcCommandDeflection) * rxConfig->acroPlusFactor / 100, 500);
-            factor = qMultiply(wowFactor, (rcCommandDeflection * motorRange) / 500);
-            wowFactor = Q12 - wowFactor;
-        } else {
-            wowFactor = Q12;
-            factor = 0;
-        }
-        axisPID[axis] = factor + qMultiply(wowFactor, axisPID[axis]);
-    }
-}
-
 void mixTable(void)
 {
     uint32_t i;
@@ -784,10 +755,6 @@ void mixTable(void)
     static fix12_t mixReduction;
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
-
-    if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-        acroPlusApply();
-    }
 
     if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
         // prevent "yaw jump" during yaw correction

@@ -290,7 +290,6 @@ static const char pidnames[] =
     "MAG;"
     "VEL;";
 
-#define DATA_BUFFER_SIZE						64
 #define BOARD_IDENTIFIER_LENGTH				4
 
 typedef struct box_e {
@@ -332,8 +331,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
-uint8_t readData[DATA_BUFFER_SIZE];
-uint8_t writeData[DATA_BUFFER_SIZE];
+extern uint8_t readData[DATA_BUFFER_SIZE];
+extern uint8_t writeData[DATA_BUFFER_SIZE];
 
 /*************************************************************************************************/
 uint8_t writeBufferPointer = 1;
@@ -354,7 +353,12 @@ static void bstWrite32(uint32_t data)
 	bstWrite16((uint16_t)(data >> 16));
 }
 
-uint8_t readBufferPointer = 3;
+uint8_t readBufferPointer = 4;
+static uint8_t bstCurrentAddress(void)
+{
+	return readData[0];
+}
+
 static uint8_t bstRead8(void)
 {
     return readData[readBufferPointer++] & 0xff;
@@ -376,12 +380,12 @@ static uint32_t bstRead32(void)
 
 static uint8_t bstReadDataSize(void)
 {
-	return readData[0]-4;
+	return readData[1]-5;
 }
 
 static uint8_t bstReadCRC(void)
 {
-	return readData[readData[0]];
+	return readData[readData[1]+1];
 }
 
 static void s_struct(uint8_t *cb, uint8_t siz)
@@ -495,6 +499,7 @@ static void bstWriteDataflashReadReply(uint32_t address, uint8_t size)
 
 /*************************************************************************************************/
 #define BST_USB_COMMANDS										0x0A
+#define BST_GENERAL_HEARTBEAT									0x0B
 #define BST_USB_DEVICE_INFO_REQUEST							0x04	//Handshake
 #define BST_USB_DEVICE_INFO_FRAME								0x05	//Handshake
 #define BST_READ_COMMANDS									0x26
@@ -695,29 +700,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			bstWrite8(currentControlRateProfile->rcYawExpo8);
 			break;
 	    case BST_PID:
-			if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) { // convert float stuff into uint8_t to keep backwards compatability with all 8-bit shit with new pid
-				for (i = 0; i < 3; i++) {
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.P_f[i] * 10.0f), 0, 250));
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.I_f[i] * 100.0f), 0, 250));
-					bstWrite8(constrain(lrintf(currentProfile->pidProfile.D_f[i] * 1000.0f), 0, 100));
-				}
-				for (i = 3; i < PID_ITEM_COUNT; i++) {
-					if (i == PIDLEVEL) {
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.A_level * 10.0f), 0, 250));
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.H_level * 10.0f), 0, 250));
-						bstWrite8(constrain(lrintf(currentProfile->pidProfile.H_sensitivity), 0, 250));
-					} else {
-						bstWrite8(currentProfile->pidProfile.P8[i]);
-						bstWrite8(currentProfile->pidProfile.I8[i]);
-						bstWrite8(currentProfile->pidProfile.D8[i]);
-					}
-				}
-			} else {
-				for (i = 0; i < PID_ITEM_COUNT; i++) {
-					bstWrite8(currentProfile->pidProfile.P8[i]);
-					bstWrite8(currentProfile->pidProfile.I8[i]);
-					bstWrite8(currentProfile->pidProfile.D8[i]);
-				}
+			for (i = 0; i < PID_ITEM_COUNT; i++) {
+			    bstWrite8(currentProfile->pidProfile.P8[i]);
+				bstWrite8(currentProfile->pidProfile.I8[i]);
+				bstWrite8(currentProfile->pidProfile.D8[i]);
 			}
 			break;
 	    case BST_PIDNAMES:
@@ -999,7 +985,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 			// we do not know how to handle the (valid) message, indicate error BST
 			return false;
 	}
-	bstSlaveWrite(writeData);
+	//bstSlaveWrite(writeData);
 	return true;
 }
 
@@ -1061,30 +1047,11 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			pidSetController(currentProfile->pidProfile.pidController);
 			break;
 		case BST_SET_PID:
-			if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController)) {
-				for (i = 0; i < 3; i++) {
-					currentProfile->pidProfile.P_f[i] = (float)bstRead8() / 10.0f;
-					currentProfile->pidProfile.I_f[i] = (float)bstRead8() / 100.0f;
-					currentProfile->pidProfile.D_f[i] = (float)bstRead8() / 1000.0f;
-					}
-					for (i = 3; i < PID_ITEM_COUNT; i++) {
-						if (i == PIDLEVEL) {
-							currentProfile->pidProfile.A_level = (float)bstRead8() / 10.0f;
-							currentProfile->pidProfile.H_level = (float)bstRead8() / 10.0f;
-							currentProfile->pidProfile.H_sensitivity = bstRead8();
-						} else {
-							currentProfile->pidProfile.P8[i] = bstRead8();
-							currentProfile->pidProfile.I8[i] = bstRead8();
-							currentProfile->pidProfile.D8[i] = bstRead8();
-						}
-					}
-				} else {
-					for (i = 0; i < PID_ITEM_COUNT; i++) {
-						currentProfile->pidProfile.P8[i] = bstRead8();
-						currentProfile->pidProfile.I8[i] = bstRead8();
-						currentProfile->pidProfile.D8[i] = bstRead8();
-					}
-				}
+		    for (i = 0; i < PID_ITEM_COUNT; i++) {
+			    currentProfile->pidProfile.P8[i] = bstRead8();
+				currentProfile->pidProfile.I8[i] = bstRead8();
+				currentProfile->pidProfile.D8[i] = bstRead8();
+			}
 			break;
 	    case BST_SET_MODE_RANGE:
 	        i = bstRead8();
@@ -1236,7 +1203,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			if (ARMING_FLAG(ARMED)) {
 				ret = BST_FAILED;
 				bstWrite8(ret);
-				bstSlaveWrite(writeData);
+				//bstSlaveWrite(writeData);
 				return ret;
 			}
 			writeEEPROM();
@@ -1465,7 +1432,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 			ret = BST_FAILED;
 	}
 	bstWrite8(ret);
-	bstSlaveWrite(writeData);
+	//bstSlaveWrite(writeData);
 	if(ret == BST_FAILED)
 		return false;
 	return true;
@@ -1482,18 +1449,19 @@ static bool bstSlaveUSBCommandFeedback(/*uint8_t bstFeedback*/)
 	bstWrite8(FC_VERSION_MINOR);								//Firmware ID
 	bstWrite8(0x00);
 	bstWrite8(0x00);
-	bstSlaveWrite(writeData);
+	//bstSlaveWrite(writeData);
 	return true;
 }
 
 /*************************************************************************************************/
-bool slaveModeOn = false;
-static void bstSlaveProcessInCommand(void)
+#define BST_RESET_TIME			1.2*1000*1000 //micro-seconds
+uint32_t resetBstTimer = 0;
+bool needResetCheck = true;
+
+void bstProcessInCommand(void)
 {
-	if(bstSlaveRead(readData)) {
-		slaveModeOn = true;
-		readBufferPointer = 1;
-		//Check if the CRC match
+	readBufferPointer = 2;
+	if(bstCurrentAddress() == CLEANFLIGHT_FC) {
 		if(bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
 			uint8_t i;
 			writeBufferPointer = 1;
@@ -1519,8 +1487,23 @@ static void bstSlaveProcessInCommand(void)
 					break;
 			}
 		}
-	} else {
-		slaveModeOn = false;
+	} else if(bstCurrentAddress() == 0x00) {
+		if(bstReadCRC() == CRC8 && bstRead8()==BST_GENERAL_HEARTBEAT) {
+			resetBstTimer = micros();
+			needResetCheck = true;
+		}
+	}
+}
+
+void resetBstChecker(void)
+{
+	if(needResetCheck) {
+		uint32_t currentTimer = micros();
+		if(currentTimer >= (resetBstTimer + BST_RESET_TIME))
+		{
+			bstTimeoutUserCallback();
+			needResetCheck = false;
+		}
 	}
 }
 
@@ -1555,26 +1538,13 @@ void taskBstMasterProcess(void)
 		if(sensors(SENSOR_GPS) && !bstWriteBusy())
 			writeGpsPositionPrameToBST();
 	}
-}
-
-void taskBstCheckCommand(void) 
-{
-	//Check if the BST input command available to out address
-	bstSlaveProcessInCommand();
-
+	bstMasterWriteLoop();
 	if (isRebootScheduled) {
 		stopMotors();
 		handleOneshotFeatureChangeOnRestart();
 		systemReset();
 	}
-}
-
-void bstMasterWriteLoop(void);
-void taskBstReadWrite(void)
-{
-	taskBstCheckCommand();
-	if(!slaveModeOn)
-		bstMasterWriteLoop();
+	resetBstChecker();
 }
 
 /*************************************************************************************************/

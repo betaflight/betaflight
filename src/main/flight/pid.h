@@ -20,7 +20,11 @@
 
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 300                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX 400                 // Maximum value for yaw P limiter
+
+#define PID_LAST_RATE_COUNT 7
+#define ITERM_RESET_THRESHOLD 20
+#define ITERM_RESET_THRESHOLD_YAW 10
 
 typedef enum {
     PIDROLL,
@@ -37,8 +41,7 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_MW23,
-    PID_CONTROLLER_MWREWRITE,
+    PID_CONTROLLER_MWREWRITE = 1,
     PID_CONTROLLER_LUX_FLOAT,
     PID_COUNT
 } pidControllerType_e;
@@ -54,6 +57,12 @@ typedef enum {
     RESET_ITERM_AND_REDUCE_PID
 } pidErrorResetOption_e;
 
+typedef enum {
+    SUPEREXPO_YAW_OFF = 0,
+    SUPEREXPO_YAW_ON,
+    SUPEREXPO_YAW_ALWAYS
+} pidSuperExpoYaw_e;
+
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
 
 typedef struct pidProfile_s {
@@ -63,17 +72,16 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
-    float P_f[3];                           // float p i and d factors for lux float pid controller
-    float I_f[3];
-    float D_f[3];
-    float A_level;
-    float H_level;
     uint8_t H_sensitivity;
 
     float dterm_lpf_hz;                     // Delta Filter in hz
-    uint8_t deltaMethod;                    // Alternative delta Calculation
+    float yaw_lpf_hz;                       // Additional yaw filter when yaw axis too noisy
+    uint16_t rollPitchItermResetRate;       // Experimental threshold for resetting iterm for pitch and roll on certain rates
+    uint8_t rollPitchItermResetAlways;      // Reset Iterm also without SUPER EXPO
+    uint16_t yawItermResetRate;             // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
+    uint8_t dterm_differentiator;
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

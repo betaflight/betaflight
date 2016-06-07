@@ -135,7 +135,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 129;
+static const uint8_t EEPROM_CONF_VERSION = 133;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -148,14 +148,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
-    pidProfile->P8[ROLL] = 42;
-    pidProfile->I8[ROLL] = 40;
+    pidProfile->P8[ROLL] = 45;
+    pidProfile->I8[ROLL] = 30;
     pidProfile->D8[ROLL] = 18;
-    pidProfile->P8[PITCH] = 54;
-    pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 22;
+    pidProfile->P8[PITCH] = 45;
+    pidProfile->I8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 90;
-    pidProfile->I8[YAW] = 50;
+    pidProfile->I8[YAW] = 40;
     pidProfile->D8[YAW] = 0;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
@@ -169,31 +169,23 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 30;
-    pidProfile->I8[PIDLEVEL] = 30;
+    pidProfile->P8[PIDLEVEL] = 50;
+    pidProfile->I8[PIDLEVEL] = 50;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 120;
-    pidProfile->I8[PIDVEL] = 45;
-    pidProfile->D8[PIDVEL] = 1;
+    pidProfile->P8[PIDVEL] = 55;
+    pidProfile->I8[PIDVEL] = 55;
+    pidProfile->D8[PIDVEL] = 75;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->dterm_average_count = 4;
-    pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
-    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
+    pidProfile->yaw_lpf_hz = 70.0f;
+    pidProfile->dterm_differentiator = 1;
+    pidProfile->rollPitchItermResetRate = 200;
+    pidProfile->rollPitchItermResetAlways = 0;
+    pidProfile->yawItermResetRate = 50;
+    pidProfile->dterm_lpf_hz = 70.0f;    // filtering ON by default
 
-    pidProfile->P_f[ROLL] = 1.1f;
-    pidProfile->I_f[ROLL] = 0.4f;
-    pidProfile->D_f[ROLL] = 0.01f;
-    pidProfile->P_f[PITCH] = 1.4f;
-    pidProfile->I_f[PITCH] = 0.4f;
-    pidProfile->D_f[PITCH] = 0.01f;
-    pidProfile->P_f[YAW] = 2.5f;
-    pidProfile->I_f[YAW] = 0.4f;
-    pidProfile->D_f[YAW] = 0.00f;
-    pidProfile->A_level = 4.0f;
-    pidProfile->H_level = 4.0f;
-    pidProfile->H_sensitivity = 75;
+    pidProfile->H_sensitivity = 75;  // TODO - Cleanup during next EEPROM changes
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -273,6 +265,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmaxcellvoltage = 43;
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
+    batteryConfig->vbathysteresis = 1;
     batteryConfig->vbatPidCompensation = 0;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
@@ -313,7 +306,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcExpo8 = 70;
+    controlRateConfig->rcExpo8 = 60;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 0;
@@ -321,7 +314,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->tpa_breakpoint = 1500;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 0;
+        controlRateConfig->rates[axis] = 50;
     }
 
 }
@@ -388,7 +381,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -434,7 +427,7 @@ static void resetConf(void)
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 0;                 // 256HZ default
     masterConfig.gyro_sync_denom = 8;
-    masterConfig.gyro_soft_lpf_hz = 60;
+    masterConfig.gyro_soft_lpf_hz = 80.0f;
 
     masterConfig.pid_process_denom = 1;
 
@@ -466,7 +459,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.rxConfig.midrc = 1500;
-    masterConfig.rxConfig.mincheck = 1040;
+    masterConfig.rxConfig.mincheck = 1080;
     masterConfig.rxConfig.maxcheck = 1900;
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
@@ -483,8 +476,9 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
-    masterConfig.rxConfig.acroPlusFactor = 30;
-    masterConfig.rxConfig.acroPlusOffset = 40;
+    masterConfig.rxConfig.superExpoFactor = 30;
+    masterConfig.rxConfig.superExpoFactorYaw = 30;
+    masterConfig.rxConfig.superExpoYawMode = 0;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
@@ -623,6 +617,13 @@ static void resetConf(void)
 
     featureSet(FEATURE_VBAT);
     featureSet(FEATURE_FAILSAFE);
+#endif
+
+#ifdef SPRACINGF3EVO
+    featureSet(FEATURE_TRANSPONDER);
+    featureSet(FEATURE_RSSI_ADC);
+    featureSet(FEATURE_CURRENT_METER);
+    featureSet(FEATURE_TELEMETRY);
 #endif
 
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
