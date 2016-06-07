@@ -44,6 +44,8 @@ typedef enum {
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
+    FEATURE_AIRMODE = 1 << 22,
+    FEATURE_SUPEREXPO_RATES = 1 << 23,
 } features_e;
 
 void handleOneshotFeatureChangeOnRestart(void);
@@ -60,8 +62,8 @@ void beeperOffClear(uint32_t mask);
 void beeperOffClearAll(void);
 uint32_t getBeeperOffMask(void);
 void setBeeperOffMask(uint32_t mask);
-uint32_t getPreferedBeeperOffMask(void);
-void setPreferedBeeperOffMask(uint32_t mask);
+uint32_t getPreferredBeeperOffMask(void);
+void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 

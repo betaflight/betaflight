@@ -34,19 +34,44 @@
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
+#include "drivers/pwm_rx.h"
 
 #include <common/printf.h>
+#include "common/axis.h"
 
 #include "io/rc_controls.h"
 
 #include "sensors/battery.h"
+#include "sensors/sensors.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
 
 #include "io/ledstrip.h"
+#include "io/beeper.h"
+#include "io/escservo.h"
+#include "io/gimbal.h"
+#include "io/serial.h"
+#include "io/gps.h"
+#include "io/vtx.h"
 
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
+
+#include "telemetry/telemetry.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -244,6 +269,19 @@ const ledConfig_t defaultLedStripConfig[] = {
     { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
     { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
     { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
+};
+#elif defined(USE_COLIBTI_RACE_LED_DEFAULT_CONFIG)
+const ledConfig_t defaultLedStripConfig[] = {
+	{ CALCULATE_LED_XY( 0,  0), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 0,  1), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 0,  8), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 7,  15), 6, LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 8,  15), 6, LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 7,  14), 6, LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 8,  14), 6, LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 15,  8), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 15,  1), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+	{ CALCULATE_LED_XY( 15,  0), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
 };
 #else
 const ledConfig_t defaultLedStripConfig[] = {
@@ -903,7 +941,7 @@ void updateLedStrip(void)
         return;
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXLEDLOW)) {
+    if (IS_RC_MODE_ACTIVE(BOXLEDLOW) && !(masterConfig.ledstrip_visual_beeper && isBeeperOn())) {
         if (ledStripEnabled) {
             ledStripDisable();
             ledStripEnabled = false;

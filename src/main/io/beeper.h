@@ -53,3 +53,4 @@ uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
+bool isBeeperOn(void);

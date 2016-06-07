@@ -16,7 +16,9 @@ targets=("PUBLISHMETA=True" \
     "TARGET=IRCFUSIONF3" \
     "TARGET=ALIENFLIGHTF1" \
     "TARGET=ALIENFLIGHTF3" \
-    "TARGET=DOGE")
+    "TARGET=DOGE" \
+    "TARGET=SINGULARITY" \
+    "TARGET=FURYF3")
 
 #fake a travis build environment
 export TRAVIS_BUILD_NUMBER=$(date +%s)
@@ -26,6 +28,9 @@ export TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/simulated}
 for target in "${targets[@]}"
 do
 	unset RUNTESTS PUBLISHMETA TARGET
+  echo
+  echo
+  echo "BUILDING '$target'"
 	eval "export $target"
 	make -f Makefile clean
 	./.travis.sh

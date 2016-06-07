@@ -71,10 +71,6 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-#define INVERTER
-#define BEEPER
-#define DISPLAY
-
 #define USE_VCP
 #define USE_USART1
 #define USE_USART3
@@ -117,28 +113,31 @@
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define SONAR
-#define USE_SERVOS
-#define USE_CLI
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-
-#undef DISPLAY
-#undef SONAR
-//#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
-#undef BARO
-//#undef BLACKBOX
-#undef GPS
-//#endif
-#define SKIP_CLI_COMMAND_HELP
-
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-#define USE_QUATERNION
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define INVERTER
+#define BEEPER
+#define DISPLAY
+#define BLACKBOX
+#define TELEMETRY
+#define SERIAL_RX
+#define USE_SERVOS
+#define USE_CLI
+#define SONAR
+//#define GPS
+
+#undef BARO
+
+#ifdef CC3D_OPBL
+#define SKIP_CLI_COMMAND_HELP
+//#define SKIP_PID_LUXFLOAT
+#undef DISPLAY
+#undef SONAR
+#undef GPS
+#endif
+
