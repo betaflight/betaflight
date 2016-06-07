@@ -74,7 +74,11 @@
 #include "config/config_master.h"
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
+#ifdef STM32F4
+#define BRUSHLESS_MOTORS_PWM_RATE 2000
+#else
 #define BRUSHLESS_MOTORS_PWM_RATE 400
+#endif
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -95,6 +99,15 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
     #ifdef STM32F10X_HD
         #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
     #endif
+
+    #if defined(STM32F40_41xxx)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+    #endif
+
+    #if defined (STM32F411xE)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+    #endif
+
 #endif
 
 #if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
@@ -131,9 +144,10 @@ size_t custom_flash_memory_address = 0;
 #define CONFIG_START_FLASH_ADDRESS (custom_flash_memory_address)
 #else
 // use the last flash pages for storage
+#ifndef CONFIG_START_FLASH_ADDRESS 
 #define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 #endif
-
+#endif
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 static uint32_t activeFeaturesLatch = 0;
@@ -994,7 +1008,13 @@ void writeEEPROM(void)
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
             if (wordOffset % FLASH_PAGE_SIZE == 0) {
-                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
+#if defined(STM32F40_41xxx)
+	            status = FLASH_EraseSector(FLASH_Sector_8, VoltageRange_3); //0x08080000 to 0x080A0000
+#elif defined (STM32F411xE)
+	            status = FLASH_EraseSector(FLASH_Sector_7, VoltageRange_3); //0x08060000 to 0x08080000
+#else
+	            status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
+#endif
                 if (status != FLASH_COMPLETE) {
                     break;
                 }
