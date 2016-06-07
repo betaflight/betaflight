@@ -68,15 +68,8 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
     PWM11.14 used for servos
 */
 
-enum {
-    MAP_TO_PPM_INPUT = 1,
-    MAP_TO_PWM_INPUT,
-    MAP_TO_MOTOR_OUTPUT,
-    MAP_TO_SERVO_OUTPUT,
-};
-
 #if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R)
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
     PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),     // Swap to servo if needed
@@ -91,7 +84,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -109,7 +102,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),      // motor #1
     PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
@@ -124,7 +117,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -144,7 +137,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #ifdef CC3D
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #1
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #2
@@ -159,7 +152,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -175,7 +168,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
@@ -190,7 +183,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -205,7 +198,7 @@ static const uint16_t airPWM[] = {
     PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
     0xFFFF
 };
-static const uint16_t multiPPM_BP6[] = {
+const uint16_t multiPPM_BP6[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #1
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #2
@@ -219,7 +212,7 @@ static const uint16_t multiPPM_BP6[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM_BP6[] = {
+const uint16_t multiPWM_BP6[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -234,7 +227,7 @@ static const uint16_t multiPWM_BP6[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM_BP6[] = {
+const uint16_t airPPM_BP6[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
@@ -248,7 +241,7 @@ static const uint16_t airPPM_BP6[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM_BP6[] = {
+const uint16_t airPWM_BP6[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -265,7 +258,7 @@ static const uint16_t airPWM_BP6[] = {
 #endif
 
 #ifdef CJMCU
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8), // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -274,7 +267,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -288,17 +281,17 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
         0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
         0xFFFF
 };
 #endif
 
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -313,7 +306,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     // prevent crashing, but do nothing
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -328,7 +321,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -343,7 +336,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     // prevent crashing, but do nothing
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -360,7 +353,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
 
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM15
@@ -376,7 +369,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -390,19 +383,19 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     // TODO
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     // TODO
     0xFFFF
 };
 #endif
 
 #ifdef SPRACINGF3
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
 
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -420,7 +413,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -440,7 +433,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
     PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
@@ -457,7 +450,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
     PWM2  | (MAP_TO_PWM_INPUT << 8),
     PWM3  | (MAP_TO_PWM_INPUT << 8),
@@ -479,7 +472,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #ifdef SPRACINGF3EVO
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
 
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -495,7 +488,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -509,7 +502,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
     PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
@@ -524,7 +517,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
     PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
     PWM4  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
@@ -540,7 +533,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #if defined(MOTOLAB)
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM9  | (MAP_TO_PPM_INPUT << 8), // PPM input
 
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -554,7 +547,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -566,19 +559,19 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     // TODO
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     // TODO
     0xFFFF
 };
 #endif
 
 #if defined(SINGULARITY)
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -592,7 +585,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -605,7 +598,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -619,7 +612,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
@@ -634,7 +627,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #ifdef SPRACINGF3MINI
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
 
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -650,7 +643,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -664,7 +657,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
     PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
@@ -679,7 +672,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     PWM2  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
     PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
     PWM4  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
@@ -695,7 +688,7 @@ static const uint16_t airPWM[] = {
 #endif
 
 #ifdef DOGE
-static const uint16_t multiPPM[] = {
+const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -708,7 +701,7 @@ static const uint16_t multiPPM[] = {
     0xFFFF
 };
 
-static const uint16_t multiPWM[] = {
+const uint16_t multiPWM[] = {
     // prevent crashing, but do nothing
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -721,7 +714,7 @@ static const uint16_t multiPWM[] = {
     0xFFFF
 };
 
-static const uint16_t airPPM[] = {
+const uint16_t airPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -734,7 +727,7 @@ static const uint16_t airPPM[] = {
     0xFFFF
 };
 
-static const uint16_t airPWM[] = {
+const uint16_t airPWM[] = {
     // prevent crashing, but do nothing
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -748,7 +741,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-static const uint16_t * const hardwareMaps[] = {
+const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
     airPWM,
@@ -756,7 +749,7 @@ static const uint16_t * const hardwareMaps[] = {
 };
 
 #ifdef CC3D
-static const uint16_t * const hardwareMapsBP6[] = {
+const uint16_t * const hardwareMapsBP6[] = {
     multiPWM_BP6,
     multiPPM_BP6,
     airPWM_BP6,
@@ -766,16 +759,17 @@ static const uint16_t * const hardwareMapsBP6[] = {
 
 static pwmOutputConfiguration_t pwmOutputConfiguration;
 
-pwmOutputConfiguration_t *pwmGetOutputConfiguration(void){
+pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
+{
     return &pwmOutputConfiguration;
 }
+
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
     const uint16_t *setup;
 
     int channelIndex = 0;
-
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
 

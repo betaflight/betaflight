@@ -117,7 +117,7 @@ void spiInitDevice(SPIDevice device)
 	IOInit(IOGetByTag(spi->miso), OWNER_SYSTEM, RESOURCE_SPI);
 	IOInit(IOGetByTag(spi->mosi), OWNER_SYSTEM, RESOURCE_SPI);
     
-#if defined(STM32F303xC) || defined(STM32F40_41xxx) || defined(STM32F411xE)
+#if defined(STM32F303xC) || defined(STM32F4)
 	if (spi->sdcard) {
 		IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG, spi->af);
 		IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
@@ -161,7 +161,7 @@ void spiInitDevice(SPIDevice device)
 	}
 
 #ifdef STM32F303xC
-	    // Configure for 8-bit reads.
+	// Configure for 8-bit reads.
 	SPI_RxFIFOThresholdConfig(spi->dev, SPI_RxFIFOThreshold_QF);
 #endif
 
@@ -193,7 +193,7 @@ bool spiInit(SPIDevice device)
 		break;
 #endif
 	case SPIDEV_3:
-#if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F40_41xxx) || defined(STM32F411xE))
+#if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F4))
 		spiInitDevice(device);
 		return true;
 #else

@@ -39,13 +39,23 @@ static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
 
-// I2C2
-// SCL  PB10
-// SDA  PB11
-// I2C1
-// SCL  PB6
-// SDA  PB7
+#define GPIO_AF_I2C GPIO_AF_I2C1
 
+#ifdef STM32F4
+
+#if defined(USE_I2C_PULLUP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#else
+#define IOCFG_I2C IOCFG_AF_OD
+#endif
+
+#ifndef I2C1_SCL 
+#define I2C1_SCL PB8 
+#endif
+#ifndef I2C1_SDA 
+#define I2C1_SDA PB9 
+#endif
+#else
 #ifndef I2C1_SCL 
 #define I2C1_SCL PB6 
 #endif
@@ -53,11 +63,22 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define I2C1_SDA PB7 
 #endif
 
+#endif
+
 #ifndef I2C2_SCL 
 #define I2C2_SCL PB10 
 #endif
 #ifndef I2C2_SDA 
 #define I2C2_SDA PB11
+#endif
+
+#ifdef STM32F4
+#ifndef I2C3_SCL 
+#define I2C3_SCL PA8
+#endif
+#ifndef I2C3_SDA 
+#define I2C3_SDA PB4 
+#endif
 #endif
 
 static i2cDevice_t i2cHardwareMap[] = {

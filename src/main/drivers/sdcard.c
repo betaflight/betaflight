@@ -405,22 +405,32 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
     spiTransferByte(SDCARD_SPI_INSTANCE, multiBlockWrite ? SDCARD_MULTIPLE_BLOCK_WRITE_START_TOKEN : SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
 
     if (useDMAForTx) {
+#ifdef SDCARD_DMA_CHANNEL_TX
         // Queue the transmission of the sector payload
+#ifdef SDCARD_DMA_CLK
+        RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE);
+#endif
         DMA_InitTypeDef DMA_InitStructure;
 
         DMA_StructInit(&DMA_InitStructure);
+#ifdef SDCARD_DMA_CHANNEL
+        DMA_InitStructure.DMA_Channel = SDCARD_DMA_CHANNEL;
+        DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) buffer;
+        DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+#else
+        DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+        DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
+        DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+#endif
         DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
         DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
-        DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
         DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
         DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
 
         DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-        DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
         DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 
         DMA_InitStructure.DMA_BufferSize = SDCARD_BLOCK_SIZE;
-        DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
         DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 
         DMA_DeInit(SDCARD_DMA_CHANNEL_TX);
@@ -429,7 +439,9 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
         DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
 
         SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
-    } else {
+#endif
+    }
+    else {
         // Send the first chunk now
         spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, SDCARD_NON_DMA_CHUNK_SIZE);
     }
@@ -542,7 +554,15 @@ void sdcard_init(bool useDMA)
     spiTransfer(SDCARD_SPI_INSTANCE, NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES);
 
     // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles:
+    int time = 0;
     while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
+        if (time > 10) {
+            sdcard.state = SDCARD_STATE_NOT_PRESENT;
+            sdcard.failureCount++;
+            return;
+        }
+        delay(1000);
+        time++;
     }
 
     sdcard.operationStartTime = millis();
@@ -697,8 +717,14 @@ bool sdcard_poll(void)
             // Have we finished sending the write yet?
             sendComplete = false;
 
+#ifdef SDCARD_DMA_CHANNEL_TX
+#ifdef SDCARD_DMA_CHANNEL
+            if (useDMAForTx && DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
+                DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
+#else
             if (useDMAForTx && DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
                 DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
+#endif
 
                 DMA_Cmd(SDCARD_DMA_CHANNEL_TX, DISABLE);
 
@@ -715,7 +741,7 @@ bool sdcard_poll(void)
 
                 sendComplete = true;
             }
-
+#endif
             if (!useDMAForTx) {
                 // Send another chunk
                 spiTransfer(SDCARD_SPI_INSTANCE, NULL, sdcard.pendingOperation.buffer + SDCARD_NON_DMA_CHUNK_SIZE * sdcard.pendingOperation.chunkIndex, SDCARD_NON_DMA_CHUNK_SIZE);
