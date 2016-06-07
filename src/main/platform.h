@@ -22,6 +22,7 @@
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_gpio.h"
 #include "core_cm4.h"
+#include "common_stm32f4xx.h"
 
 // Chip Unique ID on F405
 #define U_ID_0 (*(uint32_t*)0x1fff7a10)

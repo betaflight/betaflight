@@ -246,7 +246,8 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 			    $(USBFS_DIR)/inc \
 			    $(CMSIS_DIR)/CM4/CoreSupport \
 			    $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-			    $(ROOT)/src/main/vcpf4
+			    $(ROOT)/src/main/vcpf4 \
+			    $(ROOT)/src/main/platform
 
 ifeq ($(TARGET),$(filter $(TARGET),$(SDCARD_TARGETS)))
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
@@ -512,7 +513,7 @@ STM32F30x_COMMON_SRC = \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led.c \
 		   drivers/pwm_mapping.c \
@@ -527,6 +528,7 @@ STM32F30x_COMMON_SRC = \
 
 STM32F4xx_COMMON_SRC = \
 		   startup_stm32f40xx.s \
+		   platform/system_stm32f4xx.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/adc.c \
 		   drivers/adc_stm32f4xx.c \
@@ -567,7 +569,7 @@ NAZE_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \

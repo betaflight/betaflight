@@ -31,9 +31,8 @@
 
 #include "drivers/system.h"
 
-#if defined (STM32F4)
-#define DELAY_LIMIT 10
-#else#define DELAY_LIMIT 100
+#ifndef SCHEDULER_DELAY_LIMIT
+#define SCHEDULER_DELAY_LIMIT 100
 #endif
 
 static cfTask_t *currentTask = NULL;
@@ -142,7 +141,7 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
 {
     if (taskId == TASK_SELF || taskId < TASK_COUNT) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
-        task->desiredPeriod = MAX(DELAY_LIMIT, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
+	    task->desiredPeriod = MAX(SCHEDULER_DELAY_LIMIT, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     }
 }
 
