@@ -135,13 +135,11 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
-#ifdef STM32F303xC
-// from system_stm32f30x.c
-void SetSysClock(void);
-#endif
 #ifdef STM32F10X
 // from system_stm32f10x.c
 void SetSysClock(bool overclock);
+#else 
+void SetSysClock(void);
 #endif
 
 typedef enum {
@@ -169,19 +167,20 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-#ifdef STM32F303
+#ifdef STM32F3
     // start fpu
     SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
-#endif
-
-#ifdef STM32F303xC
     SetSysClock();
 #endif
-#ifdef STM32F10X
+#ifdef STM32F1
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
     SetSysClock(0); // TODO - Remove from config in the future
 #endif
+#ifdef STM32F4
+    SetSysClock();
+#endif
+
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
     systemInit();
@@ -198,18 +197,20 @@ void init(void)
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
-#ifdef USE_EXTI
-    EXTIInit();
-#endif
-    
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
-    } else {
+    }
+    else {
         ledInit(true);
     }
 #else
     ledInit(false);
+#endif
+    LED2_ON;
+    
+#ifdef USE_EXTI
+    EXTIInit();
 #endif
 
 #ifdef SPRACINGF3MINI
@@ -302,6 +303,12 @@ void init(void)
 #ifdef STM32F303xC
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
+#if defined(USE_USART2) && defined(STM32F40_41xxx)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
+#if defined(USE_USART6) && defined(STM32F40_41xxx)
+    pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
+#endif    
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -431,7 +438,6 @@ void init(void)
     }
 #endif
 
-
 #ifdef USE_I2C
 #if defined(NAZE)
     if (hardwareRevision != NAZE32_SP) {
@@ -477,7 +483,13 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf, masterConfig.gyro_sync_denom)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
+                masterConfig.acc_hardware, 
+                masterConfig.mag_hardware, 
+                masterConfig.baro_hardware, 
+                masterConfig.mag_declination, 
+                masterConfig.gyro_lpf, 
+                masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -486,6 +498,8 @@ void init(void)
 
     LED1_ON;
     LED0_OFF;
+    LED2_OFF;
+    
     for (i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
@@ -670,7 +684,8 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) {
+void main_init(void) 
+{
     init();
 
     /* Setup scheduler */
@@ -771,7 +786,8 @@ int main(void)
  * cause of the fault.
  * The function ends with a BKPT instruction to force control back into the debugger
  */
-void hard_fault_handler_c(unsigned long *hardfault_args){
+void hard_fault_handler_c(unsigned long *hardfault_args)
+{
   volatile unsigned long stacked_r0 ;
   volatile unsigned long stacked_r1 ;
   volatile unsigned long stacked_r2 ;
@@ -822,6 +838,8 @@ void hard_fault_handler_c(unsigned long *hardfault_args){
 #else
 void HardFault_Handler(void)
 {
+    LED2_ON;
+
     // fall out of the sky
     uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
     if ((systemState & requiredStateForMotors) == requiredStateForMotors) {
@@ -835,6 +853,14 @@ void HardFault_Handler(void)
     }
 #endif
 
-    while (1);
+    LED1_OFF;
+    LED0_OFF;
+
+    while (1) {
+#ifdef LED2
+        delay(50);
+        LED2_TOGGLE;
+#endif
+    }
 }
 #endif
