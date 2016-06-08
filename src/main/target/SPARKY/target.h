@@ -126,6 +126,7 @@
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define LED_STRIP
 #if 1
