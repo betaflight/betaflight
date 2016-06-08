@@ -430,7 +430,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     //
     // PPM PORT - Also USART2 RX
     //
-    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn,    0, Mode_AF_PP, GPIO_PinSource2, GPIO_AF_1},
+    { TIM2, GPIOA, Pin_3, TIM_Channel_4, TIM2_IRQn,    0, Mode_AF_PP, GPIO_PinSource3, GPIO_AF_1},
 
     // Main outputs 8 PWM
 

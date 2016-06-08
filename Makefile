@@ -800,8 +800,6 @@ SPRACINGF3MINI_SRC	 = \
 RGFC_COMMON_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/accgyro_mpu.c \
-		   drivers/accgyro_mpu6500.c \
-		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sonar_hcsr04.c \
@@ -811,7 +809,7 @@ RGFC_COMMON_SRC = \
 
 RGFC_OSD_SRC = \
 		   $(RGFC_COMMON_SRC) \
-		   drivers/compass_hmc5883l.c \
+		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
@@ -820,6 +818,7 @@ RGFC_OSD_SRC = \
 
 RGFC_LE_SRC = \
 		   $(RGFC_COMMON_SRC) \
+		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
 		   io/asyncfatfs/asyncfatfs.c \

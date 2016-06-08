@@ -657,7 +657,7 @@ static const uint16_t multiPPM[] = {
 };
 
 static const uint16_t multiPWM[] = {
-	PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
+	PWM1  | (MAP_TO_PWM_INPUT    << 8), // PPM input
 
 	PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -677,24 +677,24 @@ static const uint16_t airPPM[] = {
 	PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+	PWM6  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM7  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM9  | (MAP_TO_SERVO_OUTPUT << 8),
 	0xFFFF
 };
 
 static const uint16_t airPWM[] = {
-	PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
+	PWM1  | (MAP_TO_PWM_INPUT    << 8), // PPM input
 
 	PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
 	PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-	PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+	PWM6  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM7  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
+	PWM9  | (MAP_TO_SERVO_OUTPUT << 8),
 	0xFFFF
 };
 #endif

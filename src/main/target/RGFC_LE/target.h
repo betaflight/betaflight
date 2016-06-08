@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "RGLE" // rgFC_OSD
+#define TARGET_BOARD_IDENTIFIER "RGLE" // rgFC_LE
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_1  // Blue (Rev 1 & 2) - PB4
@@ -29,12 +29,12 @@
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_8
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
-//#define BEEPER_INVERTED
+#define BEEPER_INVERTED
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
-#define MPU6500_CS_GPIO                  GPIOB
-#define MPU6500_CS_PIN                   GPIO_Pin_2
-#define MPU6500_SPI_INSTANCE             SPI2
+#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
+#define MPU6000_CS_GPIO                  GPIOB
+#define MPU6000_CS_PIN                   GPIO_Pin_2
+#define MPU6000_SPI_INSTANCE             SPI2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -42,6 +42,8 @@
 
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI1_NSS_PIN	        GPIO_Pin_12
+//#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource12
 #define SPI1_SCK_PIN            GPIO_Pin_3
 #define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
 #define SPI1_MISO_PIN           GPIO_Pin_4
@@ -51,6 +53,8 @@
 
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN	        GPIO_Pin_2
+//#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource2
 #define SPI2_SCK_PIN            GPIO_Pin_13
 #define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 #define SPI2_MISO_PIN           GPIO_Pin_14
@@ -63,14 +67,14 @@
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define GYRO
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW90_DEG
+//#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6500_ALIGN CW180_DEG
 
 #define ACC
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW90_DEG
+//#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6500_ALIGN CW180_DEG
 
 //#define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
@@ -88,13 +92,13 @@
 
 #define SDCARD_DETECT_INVERTED
 
-//#define SDCARD_DETECT_PIN                   GPIO_Pin_14
-//#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
-//#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
-//#define SDCARD_DETECT_GPIO_PORT             GPIOC
-//#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
-//#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
-//#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
+#define SDCARD_DETECT_PIN                   GPIO_Pin_14
+#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
+#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
+#define SDCARD_DETECT_GPIO_PORT             GPIOC
+#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
+#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
 
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_GPIO                  GPIOB
