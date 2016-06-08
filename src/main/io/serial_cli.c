@@ -499,7 +499,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
-    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) }
+    { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif

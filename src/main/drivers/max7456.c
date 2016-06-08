@@ -57,6 +57,7 @@ void max7456_init(uint8_t system) {
     //Minimum spi clock period for max7456 is 100ns (10Mhz)
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
 
+    delay(1000);
     // force soft reset on Max7456
     ENABLE_MAX7456;
     max7456_send(VM0_reg, max7456_reset);

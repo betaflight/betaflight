@@ -179,22 +179,13 @@ void print_vtx_freq(uint16_t pos, uint8_t col) {
 void print_pid(uint16_t pos, uint8_t col, int pid_term) {
     switch(col) {
         case 0:
-            if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-                sprintf(string_buffer, "%d", (int)(currentProfile->pidProfile.P_f[pid_term] * 10.0));
-            else
-                sprintf(string_buffer, "%d", currentProfile->pidProfile.P8[pid_term]);
+            sprintf(string_buffer, "%d", currentProfile->pidProfile.P8[pid_term]);
             break;
         case 1:
-            if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-                sprintf(string_buffer, "%d", (int)(currentProfile->pidProfile.I_f[pid_term] * 100.0));
-            else
-                sprintf(string_buffer, "%d", currentProfile->pidProfile.I8[pid_term]);
+            sprintf(string_buffer, "%d", currentProfile->pidProfile.I8[pid_term]);
             break;
         case 2:
-            if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-                sprintf(string_buffer, "%d", (int)(currentProfile->pidProfile.D_f[pid_term] * 1000.0));
-            else
-                sprintf(string_buffer, "%d", currentProfile->pidProfile.D8[pid_term]);
+            sprintf(string_buffer, "%d", currentProfile->pidProfile.D8[pid_term]);
             break;
         default:
             return;
@@ -274,53 +265,16 @@ void update_int_pid(bool inc, uint8_t col, int pid_term) {
     }
 }
 
-void update_float_pid(bool inc, uint8_t col, int pid_term) {
-    void* ptr;
-    float diff;
-
-    switch(col) {
-        case 0:
-            ptr = &currentProfile->pidProfile.P_f[pid_term];
-            diff = 0.1;
-            break;
-        case 1:
-            ptr = &currentProfile->pidProfile.I_f[pid_term];
-            diff = 0.01;
-            break;
-        case 2:
-            ptr = &currentProfile->pidProfile.D_f[pid_term];
-            diff = 0.001;
-            break;
-    }
-
-    if (inc) {
-        if (*(float*)ptr < 100.0)
-            *(float*)ptr += diff;
-    } else {
-        if (*(float*)ptr > 0.0)
-            *(float*)ptr -= diff;
-    }
-}
-
 void update_roll_pid(bool inc, uint8_t col) {
-    if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-        update_float_pid(inc, col, ROLL);
-    else
-        update_int_pid(inc, col, ROLL);
+    update_int_pid(inc, col, ROLL);
 }
 
 void update_pitch_pid(bool inc, uint8_t col) {
-    if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-        update_float_pid(inc, col, PITCH);
-    else
-        update_int_pid(inc, col, PITCH);
+    update_int_pid(inc, col, PITCH);
 }
 
 void update_yaw_pid(bool inc, uint8_t col) {
-    if (IS_PID_CONTROLLER_FP_BASED(currentProfile->pidProfile.pidController))
-        update_float_pid(inc, col, YAW);
-    else
-        update_int_pid(inc, col, YAW);
+    update_int_pid(inc, col, YAW);
 }
 
 void update_roll_rate(bool inc, uint8_t col) {

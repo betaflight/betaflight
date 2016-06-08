@@ -194,7 +194,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
 #define SERIAL_RX
-#define GTUNE
+//#define GTUNE
 #define USE_CLI
 #define OSD
 #define LED0
