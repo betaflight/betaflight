@@ -17,7 +17,7 @@
  
 #pragma once
 
-#define USE_SERVOS
+//#define USE_SERVOS
 #define USE_CLI
 #define SERIAL_RX
 #define BLACKBOX
@@ -37,8 +37,8 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
+//#define DISPLAY
+//#define DISPLAY_ARMED_BITMAP
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP

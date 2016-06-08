@@ -109,7 +109,8 @@ SRC_DIR		  = $(ROOT)/src/main
 OBJECT_DIR	  = $(ROOT)/obj/main
 BIN_DIR		  = $(ROOT)/obj
 CMSIS_DIR	  = $(ROOT)/lib/main/CMSIS
-INCLUDE_DIRS  = $(SRC_DIR)
+INCLUDE_DIRS  = $(SRC_DIR) \
+				$(ROOT)/src/main/platform
 LINKER_DIR	  = $(ROOT)/src/main/target
 
 # Search path for sources
@@ -245,8 +246,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 			    $(USBFS_DIR)/inc \
 			    $(CMSIS_DIR)/CM4/CoreSupport \
 			    $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-			    $(ROOT)/src/main/vcpf4 \
-			    $(ROOT)/src/main/platform
+			    $(ROOT)/src/main/vcpf4 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(SDCARD_TARGETS)))
 INCLUDE_DIRS := $(INCLUDE_DIRS) \
@@ -428,7 +428,6 @@ COMMON_SRC = \
 		   drivers/light_led.c \
 		   drivers/serial_uart.c \
 		   drivers/timer.c \
-		   drivers/dma.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
@@ -504,16 +503,19 @@ STM32F10x_COMMON_SRC = \
 		   drivers/gpio_stm32f10x.c \
 		   drivers/adc_stm32f10x.c \
 		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/dma.c \
 		   drivers/inverter.c 
 
 STM32F30x_COMMON_SRC = \
 		   startup_stm32f30x_md_gcc.S \
+		   platform/system_stm32f30x.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
+		   drivers/dma.c \
 		   drivers/timer_stm32f30x.c 
 
 STM32F4xx_COMMON_SRC = \
