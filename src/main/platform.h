@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "platform/common.h"
+
 #if defined(STM32F40_41xxx) || defined (STM32F411xE)
 #include "stm32f4xx_conf.h"
 #include "stm32f4xx_rcc.h"
