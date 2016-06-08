@@ -44,6 +44,7 @@
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_bst.h"
@@ -69,6 +70,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -311,8 +313,14 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    pwm_params.useFastPwm = feature(FEATURE_ONESHOT125);  // Configurator feature abused for enabling Fast PWM
-    pwm_params.fastPwmProtocolType = masterConfig.fast_pwm_protocol;
+    if (masterConfig.fast_pwm_protocol == PWM_TYPE_ONESHOT125) {
+        featureSet(FEATURE_ONESHOT125);
+    } else {
+        featureClear(FEATURE_ONESHOT125);
+    }
+
+    pwm_params.useFastPwm = (masterConfig.fast_pwm_protocol != PWM_TYPE_CONVENTIONAL) ? true : false;  // Configurator feature abused for enabling Fast PWM
+    pwm_params.pwmProtocolType = masterConfig.fast_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
@@ -390,6 +398,10 @@ void init(void)
 #endif
 #endif
 
+#ifdef VTX
+    vtxInit();
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -414,6 +426,11 @@ void init(void)
     }
 #endif
 
+#if defined(FURYF3) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
+    }
+#endif
 
 #ifdef USE_I2C
 #if defined(NAZE)
@@ -473,7 +490,7 @@ void init(void)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
-        if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
+        if (!(getBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
         delay(25);
         BEEP_OFF;
     }

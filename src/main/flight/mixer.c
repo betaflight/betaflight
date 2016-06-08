@@ -633,7 +633,7 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t unsyncedPwm)
+void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm)
 {
     uint8_t i;
 
@@ -641,7 +641,7 @@ void writeMotors(uint8_t unsyncedPwm)
         pwmWriteMotor(i, motor[i]);
 
 
-    if (feature(FEATURE_ONESHOT125) && !unsyncedPwm) {
+    if (fastPwmProtocol && !unsyncedPwm) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -653,7 +653,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(1);
+    writeMotors(1,1);
 }
 
 void stopMotors(void)
@@ -761,11 +761,6 @@ void mixTable(void)
 
     bool isFailsafeActive = failsafeIsActive(); // TODO - Find out if failsafe checks are really needed here in mixer code
 
-    if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
-        // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
-    }
-
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
     int16_t rollPitchYawMix[MAX_SUPPORTED_MOTORS];
     int16_t rollPitchYawMixMax = 0; // assumption: symetrical about zero.
@@ -829,7 +824,7 @@ void mixTable(void)
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        if (!escAndServoConfig->escDesyncProtection) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
 
         if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
@@ -859,6 +854,19 @@ void mixTable(void)
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                 motor[i] = escAndServoConfig->mincommand;
+            }
+        }
+
+        // Experimental Code. Anti Desync feature for ESC's
+        if (escAndServoConfig->escDesyncProtection) {
+            const int16_t maxThrottleStep = constrain(escAndServoConfig->escDesyncProtection / (1000 / targetPidLooptime), 5, 10000);
+
+            // Only makes sense when it's within the range
+            if (maxThrottleStep < throttleRange) {
+                static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
+
+                motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
+                motorPrevious[i] = motor[i];
             }
         }
     }

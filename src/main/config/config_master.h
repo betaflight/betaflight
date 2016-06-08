@@ -34,7 +34,7 @@ typedef struct master_t {
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t fast_pwm_protocol;              // Fast Pwm Protocol
+    uint8_t fast_pwm_protocol;              // Pwm Protocol
     uint8_t use_unsyncedPwm;                // unsync fast pwm protocol from PID loop
 
 #ifdef USE_SERVOS
@@ -119,6 +119,7 @@ typedef struct master_t {
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 
 #ifdef TRANSPONDER
@@ -131,6 +132,15 @@ typedef struct master_t {
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
+#ifdef VTX
+    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
+    uint8_t vtx_channel; //1-8
+    uint8_t vtx_mode; //0=ch+band 1=mhz
+    uint16_t vtx_mhz; //5740
+
+    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+#endif
+
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
@@ -138,7 +148,7 @@ typedef struct master_t {
 #endif
 
     uint32_t beeper_off_flags;
-    uint32_t prefered_beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

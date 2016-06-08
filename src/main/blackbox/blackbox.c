@@ -60,6 +60,7 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -1180,22 +1181,22 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rcExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
             break;
         case 14:
-            blackboxPrintfHeaderLine("rcYawExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawExpo8);
+            blackboxPrintfHeaderLine("rcYawRate:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);
             break;
         case 15:
-            blackboxPrintfHeaderLine("thrMid:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrMid8);
+            blackboxPrintfHeaderLine("rcYawExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawExpo8);
             break;
         case 16:
-            blackboxPrintfHeaderLine("thrExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrExpo8);
+            blackboxPrintfHeaderLine("thrMid:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrMid8);
             break;
         case 17:
-            blackboxPrintfHeaderLine("dynThrPID:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].dynThrPID);
+            blackboxPrintfHeaderLine("thrExpo:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].thrExpo8);
             break;
         case 18:
-            blackboxPrintfHeaderLine("tpa_breakpoint:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].tpa_breakpoint);
+            blackboxPrintfHeaderLine("dynThrPID:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].dynThrPID);
             break;
         case 19:
-            blackboxPrintfHeaderLine("superExpoFactor:%d, %d", masterConfig.rxConfig.superExpoFactor, masterConfig.rxConfig.superExpoFactorYaw);
+            blackboxPrintfHeaderLine("tpa_breakpoint:%d", masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].tpa_breakpoint);
             break;
         case 20:
             blackboxPrintfHeaderLine("rates:%d,%d,%d",
@@ -1280,24 +1281,24 @@ static bool blackboxWriteSysinfo()
                                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
             break;
         case 36:
-            blackboxPrintfHeaderLine("dynamic_pterm:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pterm);
+            blackboxPrintfHeaderLine("dynamic_pid:%d",
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pid);
             break;
         case 37:
             blackboxPrintfHeaderLine("rollPitchItermResetRate:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermResetRate);
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
             break;
         case 38:
             blackboxPrintfHeaderLine("yawItermResetRate:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermResetRate);
+                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
             break;
         case 39:
             blackboxPrintfHeaderLine("dterm_lpf_hz:%d",
                                      (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
             break;
         case 40:
-            blackboxPrintfHeaderLine("iterm_reset_offset:%d",
-                                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.itermResetOffset);
+            blackboxPrintfHeaderLine("airmode_activate_throttle:%d",
+                                     masterConfig.rxConfig.airModeActivateThreshold);
             break;
         case 41:
             blackboxPrintfHeaderLine("deadband:%d", masterConfig.rcControlsConfig.deadband);
@@ -1333,9 +1334,6 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rc_smoothing:%d", masterConfig.rxConfig.rcSmoothing);
             break;
         case 52:
-            blackboxPrintfHeaderLine("superExpoYawMode:%d", masterConfig.rxConfig.superExpoYawMode);
-            break;
-        case 53:
             blackboxPrintfHeaderLine("features:%d", masterConfig.enabledFeatures);
             break;
         default:

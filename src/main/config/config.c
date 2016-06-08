@@ -54,6 +54,7 @@
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -140,7 +141,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 135;
+static const uint8_t EEPROM_CONF_VERSION = 140;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -154,14 +155,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidController = 1;
 
     pidProfile->P8[ROLL] = 45;
-    pidProfile->I8[ROLL] = 35;
-    pidProfile->D8[ROLL] = 18;
+    pidProfile->I8[ROLL] = 40;
+    pidProfile->D8[ROLL] = 15;
     pidProfile->P8[PITCH] = 45;
-    pidProfile->I8[PITCH] = 35;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->I8[PITCH] = 40;
+    pidProfile->D8[PITCH] = 15;
     pidProfile->P8[YAW] = 90;
-    pidProfile->I8[YAW] = 40;
-    pidProfile->D8[YAW] = 0;
+    pidProfile->I8[YAW] = 45;
+    pidProfile->D8[YAW] = 20;
     pidProfile->P8[PIDALT] = 50;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 0;
@@ -184,12 +185,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermResetRate = 200;
-    pidProfile->rollPitchItermResetAlways = 0;
-    pidProfile->yawItermResetRate = 50;
-    pidProfile->itermResetOffset = 15;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 45;
     pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
-    pidProfile->dynamic_pterm = 1;
+    pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -238,6 +237,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
+    escAndServoConfig->escDesyncProtection = 10000;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -310,15 +310,16 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcExpo8 = 60;
+    controlRateConfig->rcYawRate8 = 100;
+    controlRateConfig->rcExpo8 = 10;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
     controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 20;
+    controlRateConfig->rcYawExpo8 = 10;
     controlRateConfig->tpa_breakpoint = 1650;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 50;
+        controlRateConfig->rates[axis] = 70;
     }
 
 }
@@ -332,7 +333,6 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
 
 void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
     mixerConfig->servo_lowpass_freq = 400;
@@ -385,7 +385,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(PIKOBLX)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(PIKOBLX) || defined(SINGULARITY) || defined(FURYF3)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -400,7 +400,7 @@ static void resetConf(void)
 #endif
 
     featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_ONESHOT125);
+    featureSet(FEATURE_SUPEREXPO_RATES);
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -461,9 +461,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
-    masterConfig.rxConfig.superExpoFactor = 30;
-    masterConfig.rxConfig.superExpoFactorYaw = 30;
-    masterConfig.rxConfig.superExpoYawMode = 0;
+    masterConfig.rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
 
@@ -488,7 +486,7 @@ static void resetConf(void)
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    masterConfig.fast_pwm_protocol = 0;
+    masterConfig.fast_pwm_protocol = 1;
     masterConfig.use_unsyncedPwm = 0;
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;
@@ -565,6 +563,14 @@ static void resetConf(void)
 #ifdef LED_STRIP
     applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
+    masterConfig.ledstrip_visual_beeper = 0;
+#endif
+
+#ifdef VTX
+    masterConfig.vtx_band = 4;    //Fatshark/Airwaves
+    masterConfig.vtx_channel = 1; //CH1
+    masterConfig.vtx_mode = 0;    //CH+BAND mode
+    masterConfig.vtx_mhz = 5740;  //F0
 #endif
 
 #ifdef SPRACINGF3
@@ -586,6 +592,13 @@ static void resetConf(void)
     masterConfig.blackbox_device = 0;
 #endif
 
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
+#if defined(FURYF3)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 2;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
@@ -629,7 +642,6 @@ static void resetConf(void)
     currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    masterConfig.mixerConfig.yaw_jump_prevention_limit = 500;
     currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
@@ -685,6 +697,19 @@ static void resetConf(void)
     masterConfig.customMotorMixer[7].yaw = -1.0f;
 #endif
 
+    // alternative defaults settings for SINGULARITY target
+#if defined(SINGULARITY)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 1;
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+    
+    masterConfig.batteryConfig.vbatscale = 77;
+
+    featureSet(FEATURE_RX_SERIAL);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+#endif
+
     // copy first profile into remaining profile
     for (i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
@@ -726,8 +751,6 @@ static bool isEEPROMContentValid(void)
 
 void activateControlRateConfig(void)
 {
-    generatePitchRollCurve(currentControlRateProfile);
-    generateYawCurve(currentControlRateProfile);
     generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
 }
 
@@ -1117,12 +1140,12 @@ void setBeeperOffMask(uint32_t mask)
     masterConfig.beeper_off_flags = mask;
 }
 
-uint32_t getPreferedBeeperOffMask(void)
+uint32_t getPreferredBeeperOffMask(void)
 {
-    return masterConfig.prefered_beeper_off_flags;
+    return masterConfig.preferred_beeper_off_flags;
 }
 
-void setPreferedBeeperOffMask(uint32_t mask)
+void setPreferredBeeperOffMask(uint32_t mask)
 {
-    masterConfig.prefered_beeper_off_flags = mask;
+    masterConfig.preferred_beeper_off_flags = mask;
 }

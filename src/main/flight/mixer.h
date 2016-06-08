@@ -19,9 +19,6 @@
 
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
-#define YAW_JUMP_PREVENTION_LIMIT_LOW 80
-#define YAW_JUMP_PREVENTION_LIMIT_HIGH 500
-
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
@@ -71,7 +68,6 @@ typedef struct mixer_s {
 
 typedef struct mixerConfig_s {
     int8_t yaw_motor_direction;
-    uint16_t yaw_jump_prevention_limit;     // make limit configurable (original fixed value was 100)
 #ifdef USE_SERVOS
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
@@ -189,12 +185,11 @@ extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isMixerUsingServos(void);
 void writeServos(void);
 void filterServos(void);
-bool motorLimitReached;
 #endif
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-
+bool motorLimitReached;
 struct escAndServoConfig_s;
 struct rxConfig_s;
 
@@ -218,6 +213,6 @@ int servoDirection(int servoIndex, int fromChannel);
 #endif
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
-void writeMotors(uint8_t unsyncedPwm);
+void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm);
 void stopMotors(void);
 void StopPwmAllMotors(void);

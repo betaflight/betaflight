@@ -65,7 +65,7 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -101,6 +101,8 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
+#define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
+
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
 int16_t magHold;
@@ -113,14 +115,10 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
-extern bool antiWindupProtection;
 
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -246,14 +244,14 @@ static void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookupPitchRoll(tmp);
+            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcExpo8, currentControlRateProfile->rcRate8);
         } else if (axis == YAW) {
             if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
                 tmp -= masterConfig.rcControlsConfig.yaw_deadband;
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookupYaw(tmp) * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcYawExpo8, currentControlRateProfile->rcYawRate8) * -masterConfig.yaw_control_direction;;
         }
         if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
@@ -456,6 +454,7 @@ void updateMagHold(void)
 void processRx(void)
 {
     static bool armedBeeperOn = false;
+    static bool wasAirmodeIsActivated;
 
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
@@ -477,27 +476,17 @@ void processRx(void)
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+
+    if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
+        if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) wasAirmodeIsActivated = true; // Prevent Iterm from being reset
+    } else {
+        wasAirmodeIsActivated = false;
+    }
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
-    if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
-            if (rollPitchStatus == CENTERED) {
-                antiWindupProtection = true;
-            } else {
-                antiWindupProtection = false;
-            }
-        } else {
-            if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-                pidResetErrorGyroState(RESET_ITERM);
-            } else {
-                pidResetErrorGyroState(RESET_ITERM_AND_REDUCE_PID);
-            }
-        }
-    } else {
-        pidResetErrorGyroState(RESET_DISABLE);
-        antiWindupProtection = false;
+    if (throttleStatus == THROTTLE_LOW && !wasAirmodeIsActivated) {
+        pidResetErrorGyroState();
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -640,6 +629,9 @@ void processRx(void)
     }
 #endif
 
+#ifdef VTX
+    vtxUpdateActivatedChannel();
+#endif
 }
 
 void subTaskPidController(void)
@@ -750,7 +742,7 @@ void subTaskMotorUpdate(void)
 #endif
 
     if (motorControlEnable) {
-        writeMotors(masterConfig.use_unsyncedPwm);
+        writeMotors(masterConfig.fast_pwm_protocol, masterConfig.use_unsyncedPwm);
     }
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }

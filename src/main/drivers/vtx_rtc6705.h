@@ -15,21 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Author: Giles Burgess (giles@multiflite.co.uk)
+ *
+ * This source code is provided as is and can be used/modified so long
+ * as this header is maintained with the file at all times.
+ */
+
 #pragma once
 
-typedef enum {
-  PWM_TYPE_CONVENTIONAL = 0,
-  PWM_TYPE_ONESHOT125,
-  PWM_TYPE_ONESHOT42,
-  PWM_TYPE_MULTISHOT
-} FastPwmProtocolTypes_e;
+#include <stdint.h>
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
+#define RTC6705_BAND_MIN    1
+#define RTC6705_BAND_MAX    5
+#define RTC6705_CHANNEL_MIN 1
+#define RTC6705_CHANNEL_MAX 8
+#define RTC6705_FREQ_MIN    5600
+#define RTC6705_FREQ_MAX    5950
 
-void pwmWriteServo(uint8_t index, uint16_t value);
-
-bool isMotorBrushed(uint16_t motorPwmRate);
-void pwmDisableMotors(void);
-void pwmEnableMotors(void);
+bool rtc6705Init();
+void rtc6705SetChannel(uint8_t band, uint8_t channel);
+void rtc6705SetFreq(uint16_t freq);
