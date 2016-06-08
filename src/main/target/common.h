@@ -17,30 +17,10 @@
  
 #pragma once
 
-#define USE_SERVOS
-#define USE_CLI
-#define SERIAL_RX
-#define BLACKBOX
-
-#if (FLASH_SIZE > 64)
-#define GPS
-#define GPS_PROTO_NMEA
-#define GPS_PROTO_UBLOX
-#define GPS_PROTO_I2C_NAV
-#define GPS_PROTO_NAZA
-
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_SMARTPORT
-#define TELEMETRY_LTM
-#endif
-
-#if (FLASH_SIZE > 128)
-#define DISPLAY
-#define DISPLAY_ARMED_BITMAP
+#ifdef STM32F4
+#define TASK_GYROPID_DESIRED_PERIOD 125
+#define SCHEDULER_DELAY_LIMIT 10
 #else
-#define SKIP_CLI_COMMAND_HELP
-#define SKIP_RX_MSP
-#define DISABLE_UNCOMMON_MIXERS
+#define TASK_GYROPID_DESIRED_PERIOD 1000
+#define SCHEDULER_DELAY_LIMIT 100
 #endif

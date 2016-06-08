@@ -45,10 +45,6 @@ void taskBstReadWrite(void);
 void taskBstMasterProcess(void);
 #endif
 
-#ifndef TASK_GYROPID_DESIRED_PERIOD
-#define TASK_GYROPID_DESIRED_PERIOD 1000
-#endif
-
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",

@@ -31,10 +31,6 @@
 
 #include "drivers/system.h"
 
-#ifndef SCHEDULER_DELAY_LIMIT
-#define SCHEDULER_DELAY_LIMIT 100
-#endif
-
 static cfTask_t *currentTask = NULL;
 
 static uint32_t totalWaitingTasks;
