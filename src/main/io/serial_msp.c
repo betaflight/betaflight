@@ -57,6 +57,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
 
@@ -124,7 +125,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
-#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(RGFC_OSD) || defined(RGFC_LE)
+#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(FURYF3) || defined(RGFC_OSD) || defined(RGFC_LE)
                 masterConfig.acc_hardware = 0;
 #else
                 masterConfig.acc_hardware = 1;
@@ -152,7 +153,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
             if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
             if (looptime < 250) {
-                masterConfig.pid_process_denom = 3;
+                masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
                 if (currentProfile->pidProfile.pidController == 2) {
                     masterConfig.pid_process_denom = 3;
@@ -171,8 +172,6 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
         }
 #endif
-
-        if (!(masterConfig.use_multiShot || masterConfig.use_oneshot42) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125)) masterConfig.pid_process_denom = 3;
     }
 }
 
@@ -217,8 +216,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOXSUPEREXPO, "SUPER EXPO;", 29 },
-    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 30},
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -544,8 +542,7 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
-    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOXSUPEREXPO;
+    if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
     if (sensors(SENSOR_BARO)) {
@@ -651,8 +648,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) << BOXSUPEREXPO;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));
@@ -1309,7 +1305,7 @@ static bool processInCommand(void)
         break;
     case MSP_SET_PID_CONTROLLER:
         oldPid = currentProfile->pidProfile.pidController;
-        currentProfile->pidProfile.pidController = read8();
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
         pidSetController(currentProfile->pidProfile.pidController);
         if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
@@ -1861,6 +1857,10 @@ void mspProcess(void)
             waitForSerialPortToFinishTransmitting(candidatePort->port);
             stopMotors();
             handleOneshotFeatureChangeOnRestart();
+            // On real flight controllers, systemReset() will do a soft reset of the device,
+            // reloading the program.  But to support offline testing this flag needs to be
+            // cleared so that the software doesn't continuously attempt to reboot itself.
+            isRebootScheduled = false;
             systemReset();
         }
     }

@@ -182,6 +182,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &MotolabF3MPU6050Config;
 #endif
 
+#ifdef SINGULARITY
+    static const extiConfig_t singularityMPU6050Config = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
+            .gpioPort = GPIOC,
+            .gpioPin = Pin_13,
+            .exti_port_source = EXTI_PortSourceGPIOC,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_line = EXTI_Line13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+    return &singularityMPU6050Config;
+#endif
+
 #ifdef ALIENFLIGHTF3
     // MPU_INT output on V1 PA15
     static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
@@ -210,6 +223,19 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     }
 #endif
 
+#if defined(FURYF3)
+    static const extiConfig_t FURYF3MPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_3,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource3,
+            .exti_line = EXTI_Line3,
+            .exti_irqn = EXTI3_IRQn
+    };
+    return &FURYF3MPUIntExtiConfig;
+#endif
+
 #if defined(RGFC_OSD) || defined(RGFC_LE)
     static const extiConfig_t rgfcRev1MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
@@ -224,10 +250,12 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &rgfcRev1MPUIntExtiConfig;
 #endif
 
+
     return NULL;
 }
 
 #ifdef USE_FAKE_GYRO
+int16_t fake_gyro_values[XYZ_AXIS_COUNT] = { 0,0,0 };
 static void fakeGyroInit(uint16_t lpf)
 {
     UNUSED(lpf);
@@ -235,7 +263,10 @@ static void fakeGyroInit(uint16_t lpf)
 
 static bool fakeGyroRead(int16_t *gyroADC)
 {
-    memset(gyroADC, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
+    for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+        gyroADC[i] = fake_gyro_values[i];
+    }
+
     return true;
 }
 
@@ -250,14 +281,19 @@ bool fakeGyroDetect(gyro_t *gyro)
     gyro->init = fakeGyroInit;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
+    gyro->scale = 1.0f / 16.4f;
     return true;
 }
 #endif
 
 #ifdef USE_FAKE_ACC
+int16_t fake_acc_values[XYZ_AXIS_COUNT] = {0,0,0};
 static void fakeAccInit(void) {}
 static bool fakeAccRead(int16_t *accData) {
-    memset(accData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
+    for(int i=0;i<XYZ_AXIS_COUNT;++i) {
+        accData[i] = fake_acc_values[i];
+    }
+
     return true;
 }
 

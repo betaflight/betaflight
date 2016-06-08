@@ -26,26 +26,8 @@
 
 #include "config/config.h"
 
-int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];     // lookup table for expo & RC rate PITCH+ROLL
-int16_t lookupYawRC[YAW_LOOKUP_LENGTH];     // lookup table for expo & RC rate YAW
-int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];   // lookup table for expo & mid THROTTLE
-
-
-void generatePitchRollCurve(controlRateConfig_t *controlRateConfig)
-{
-    uint8_t i;
-
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++)
-        lookupPitchRollRC[i] = (2500 + controlRateConfig->rcExpo8 * (i * i - 25)) * i * (int32_t) controlRateConfig->rcRate8 / 2500;
-}
-
-void generateYawCurve(controlRateConfig_t *controlRateConfig)
-{
-    uint8_t i;
-
-    for (i = 0; i < YAW_LOOKUP_LENGTH; i++)
-        lookupYawRC[i] = (2500 + controlRateConfig->rcYawExpo8 * (i * i - 25)) * i / 25;
-}
+#define THROTTLE_LOOKUP_LENGTH 12
+static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
 {
@@ -63,3 +45,17 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
         lookupThrottleRC[i] = minThrottle + (int32_t) (escAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 }
+
+int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate)
+{
+    float tmpf = tmp / 100.0f;
+    return (int16_t)((2500.0f + (float)expo * (tmpf * tmpf - 25.0f)) * tmpf * (float)(rate) / 2500.0f );
+}
+
+int16_t rcLookupThrottle(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 100;
+    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
+}
+

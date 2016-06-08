@@ -28,6 +28,7 @@
 #define M_PI_FLOAT	3.14159265358979323846f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
 float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dT) {
@@ -56,44 +57,36 @@ void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
     omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
     sn = sinf(omega);
     cs = cosf(omega);
-    alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+    //this is wrong, should be hyperbolic sine
+    //alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+    alpha = sn / (2 * BIQUAD_Q);
 
-    b0 = (1 - cs) /2;
+    b0 = (1 - cs) / 2;
     b1 = 1 - cs;
-    b2 = (1 - cs) /2;
+    b2 = (1 - cs) / 2;
     a0 = 1 + alpha;
     a1 = -2 * cs;
     a2 = 1 - alpha;
 
     /* precompute the coefficients */
-    newState->b0 = b0 /a0;
-    newState->b1 = b1 /a0;
-    newState->b2 = b2 /a0;
-    newState->a1 = a1 /a0;
-    newState->a2 = a2 /a0;
+    newState->b0 = b0 / a0;
+    newState->b1 = b1 / a0;
+    newState->b2 = b2 / a0;
+    newState->a1 = a1 / a0;
+    newState->a2 = a2 / a0;
 
     /* zero initial samples */
-    newState->x1 = newState->x2 = 0;
-    newState->y1 = newState->y2 = 0;
+    newState->d1 = newState->d2 = 1;
 }
 
 /* Computes a biquad_t filter on a sample */
-float applyBiQuadFilter(float sample, biquad_t *state)
+float applyBiQuadFilter(float sample, biquad_t *state) //direct form 2 transposed
 {
     float result;
 
-    /* compute result */
-    result = state->b0 * sample + state->b1 * state->x1 + state->b2 * state->x2 -
-        state->a1 * state->y1 - state->a2 * state->y2;
-
-    /* shift x1 to x2, sample to x1 */
-    state->x2 = state->x1;
-    state->x1 = sample;
-
-    /* shift y1 to y2, result to y1 */
-    state->y2 = state->y1;
-    state->y1 = result;
-
+    result = state->b0 * sample + state->d1;
+    state->d1 = state->b1 * sample - state->a1 * result + state->d2;
+    state->d2 = state->b2 * sample - state->a2 * result;
     return result;
 }
 

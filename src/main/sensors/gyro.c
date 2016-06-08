@@ -38,6 +38,7 @@
 
 uint16_t calibratingG = 0;
 int32_t gyroADC[XYZ_AXIS_COUNT];
+float gyroADCf[XYZ_AXIS_COUNT];
 int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static gyroConfig_t *gyroConfig;
@@ -151,17 +152,20 @@ void gyroUpdate(void)
 
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
-    if (gyroLpfCutFreq) {
-        if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
-
-        if (gyroFilterStateIsSet) {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = lrintf(applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]));
-        }
-    }
-
     if (!isGyroCalibrationComplete()) {
         performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();
+
+    if (gyroLpfCutFreq) {
+        if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
+
+        if (gyroFilterStateIsSet) {
+            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++){
+                gyroADCf[axis] = applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]);
+                gyroADC[axis] = lrintf(gyroADCf[axis]);
+            }
+        }
+    }
 }

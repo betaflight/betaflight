@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#define ENABLE_DEBUG_OLED_PAGE
+#define ENABLE_DEBUG_OLED_PAGE
 
 typedef enum {
     PAGE_WELCOME,
@@ -24,6 +24,9 @@ typedef enum {
     PAGE_SENSORS,
     PAGE_RX,
     PAGE_PROFILE,
+#ifndef SKIP_TASK_STATISTICS
+    PAGE_TASKS,
+#endif
 #ifdef GPS
     PAGE_GPS,
 #endif
