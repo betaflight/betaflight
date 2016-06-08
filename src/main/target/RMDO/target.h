@@ -142,12 +142,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define BLACKBOX
-//#define GTUNE
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
+#undef GPS
 
 #define SPEKTRUM_BIND
 // USART3,
