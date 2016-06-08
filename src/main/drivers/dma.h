@@ -15,6 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef STM32F4
+typedef void(*dmaCallbackHandlerFuncPtr)(DMA_Stream_TypeDef *stream);
+
+typedef enum {
+    DMA1_ST2_HANDLER = 0,
+    DMA1_ST7_HANDLER,
+} dmaHandlerIdentifier_e;
+
+typedef struct dmaHandlers_s {
+    dmaCallbackHandlerFuncPtr dma1Stream2IRQHandler;
+    dmaCallbackHandlerFuncPtr dma1Stream7IRQHandler;
+} dmaHandlers_t;
+
+#else
+
 typedef void (*dmaCallbackHandlerFuncPtr)(DMA_Channel_TypeDef *channel);
 
 typedef enum {
@@ -30,6 +45,7 @@ typedef struct dmaHandlers_s {
     dmaCallbackHandlerFuncPtr dma1Channel6IRQHandler;
     dmaCallbackHandlerFuncPtr dma1Channel7IRQHandler;
 } dmaHandlers_t;
+#endif
 
 void dmaInit(void);
 void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback);

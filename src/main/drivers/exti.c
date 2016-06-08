@@ -4,9 +4,8 @@
 
 #include "platform.h"
 
-#include "drivers/nvic.h"
-#include "drivers/io_impl.h"
-
+#include "nvic.h"
+#include "io_impl.h"
 #include "exti.h"
 
 #ifdef USE_EXTI
@@ -23,32 +22,38 @@ extiChannelRec_t extiChannelRecs[16];
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
 static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
 
-#if defined(STM32F10X)
+#if defined(STM32F1) || defined(STM32F4)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
-    EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn, EXTI4_IRQn,
-    EXTI9_5_IRQn, EXTI15_10_IRQn
+    EXTI0_IRQn, 
+    EXTI1_IRQn, 
+    EXTI2_IRQn, 
+    EXTI3_IRQn, 
+    EXTI4_IRQn,
+    EXTI9_5_IRQn, 
+    EXTI15_10_IRQn
 };
-#elif defined(STM32F303xC)
+#elif defined(STM32F3)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
-    EXTI0_IRQn, EXTI1_IRQn, EXTI2_TS_IRQn, EXTI3_IRQn, EXTI4_IRQn,
-    EXTI9_5_IRQn, EXTI15_10_IRQn
+    EXTI0_IRQn, 
+    EXTI1_IRQn, 
+    EXTI2_TS_IRQn, 
+    EXTI3_IRQn, 
+    EXTI4_IRQn,
+    EXTI9_5_IRQn, 
+    EXTI15_10_IRQn
 };
 #else
 # warning "Unknown CPU"
 #endif
 
 
-
-
 void EXTIInit(void)
 {
-    // TODO - stm32F303
-
-#ifdef STM32F10X
+#if defined(STM32F1)
     // enable AFIO for EXTI support
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
-#ifdef STM32F303xC
+#if defined(STM32F3) || defined(STM32F4)
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
@@ -75,6 +80,8 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, EXTITrigger_Typ
     GPIO_EXTILineConfig(IO_GPIO_PortSource(io), IO_GPIO_PinSource(io));
 #elif defined(STM32F303xC)
     SYSCFG_EXTILineConfig(IO_EXTI_PortSourceGPIO(io), IO_EXTI_PinSource(io));
+#elif defined(STM32F4)
+	SYSCFG_EXTILineConfig(IO_EXTI_PortSourceGPIO(io), IO_EXTI_PinSource(io));
 #else
 # warning "Unknown CPU"
 #endif
@@ -116,7 +123,7 @@ void EXTIRelease(IO_t io)
 
 void EXTIEnable(IO_t io, bool enable)
 {
-#if defined(STM32F10X)
+#if defined(STM32F1) || defined(STM32F4)
     uint32_t extiLine = IO_EXTI_Line(io);
     if(!extiLine)
         return;
@@ -161,9 +168,9 @@ void EXTI_IRQHandler(void)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler);
-#if defined(STM32F10X)
+#if defined(STM32F1)
 _EXTI_IRQ_HANDLER(EXTI2_IRQHandler);
-#elif defined(STM32F303xC)
+#elif defined(STM32F3) || defined(STM32F4)
 _EXTI_IRQ_HANDLER(EXTI2_TS_IRQHandler);
 #else
 # warning "Unknown CPU"

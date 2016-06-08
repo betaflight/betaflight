@@ -399,7 +399,7 @@ static void serializeSDCardSummaryReply(void)
 
 #ifdef USE_SDCARD
     uint8_t flags = 1 /* SD card supported */ ;
-    uint8_t state;
+    uint8_t state = 0;
 
     serialize8(flags);
 

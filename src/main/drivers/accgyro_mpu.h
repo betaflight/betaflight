@@ -137,11 +137,19 @@ enum gyro_fsr_e {
     INV_FSR_2000DPS,
     NUM_GYRO_FSR
 };
+
+enum fchoice_b {
+    FCB_DISABLED = 0,
+    FCB_8800_32,
+    FCB_3600_32
+};
+
 enum clock_sel_e {
     INV_CLK_INTERNAL = 0,
     INV_CLK_PLL,
     NUM_CLK
 };
+
 enum accel_fsr_e {
     INV_FSR_2G = 0,
     INV_FSR_4G,
@@ -156,7 +164,8 @@ typedef enum {
     MPU_60x0,
     MPU_60x0_SPI,
     MPU_65xx_I2C,
-    MPU_65xx_SPI
+    MPU_65xx_SPI,
+    MPU_9250_SPI
 } detectedMPUSensor_e;
 
 typedef enum {

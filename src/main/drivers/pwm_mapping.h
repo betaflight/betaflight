@@ -60,6 +60,10 @@ typedef struct drv_pwm_config_s {
 #ifdef STM32F303xC
     bool useUART3;
 #endif
+#ifdef STM32F4
+    bool useUART2;
+    bool useUART6;
+#endif
     bool useVbat;
     bool useFastPwm;
     bool useUnsyncedPwm;
@@ -71,7 +75,6 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
-    uint8_t pwmProtocolType;
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif
@@ -79,12 +82,19 @@ typedef struct drv_pwm_config_s {
     bool useBuzzerP6;
 #endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
+    uint8_t pwmProtocolType;
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
     sonarGPIOConfig_t *sonarGPIOConfig;
 } drv_pwm_config_t;
 
+enum {
+    MAP_TO_PPM_INPUT    = 1,
+    MAP_TO_PWM_INPUT,
+    MAP_TO_MOTOR_OUTPUT,
+    MAP_TO_SERVO_OUTPUT,
+};
 
 typedef enum {
   PWM_PF_NONE = 0,
@@ -126,7 +136,16 @@ enum {
     PWM13,
     PWM14,
     PWM15,
-    PWM16
+    PWM16, 
+    PWM17,
+    PWM18,
+    PWM19,
+    PWM20
 };
+
+extern const uint16_t multiPPM[];
+extern const uint16_t multiPWM[];
+extern const uint16_t airPPM[];
+extern const uint16_t airPWM[];
 
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);

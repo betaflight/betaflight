@@ -95,7 +95,7 @@ ak8963Configuration_t ak8963config;
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 // FIXME pretend we have real MPU9250 support
-#ifdef MPU6500_SPI_INSTANCE
+#if defined(MPU6500_SPI_INSTANCE) && !defined(MPU9250_SPI_INSTANCE)
 #define MPU9250_SPI_INSTANCE
 #define verifympu9250WriteRegister mpu6500WriteRegister
 #define mpu9250WriteRegister mpu6500WriteRegister

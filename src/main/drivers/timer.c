@@ -535,8 +535,24 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
+#if defined (STM32F40_41xxx)
+	if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+	}
+	else {
+		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
+	}
+#elif defined (STM32F411xE)
+	if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+	}
+	else {
+		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
+	}
+#else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-
+#endif 
+    
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
@@ -553,6 +569,19 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 #if defined(STM32F10X)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_IRQn);
+        break;
+#endif
+#if defined (STM32F40_41xxx)
+    case TIM1_CC_IRQn:
+        timerNVICConfigure(TIM1_UP_TIM10_IRQn);
+        break;
+    case TIM8_CC_IRQn:
+        timerNVICConfigure(TIM8_UP_TIM13_IRQn);
+        break;
+#endif
+#if defined (STM32F411xE)
+    case TIM1_CC_IRQn:
+        timerNVICConfigure(TIM1_UP_TIM10_IRQn);
         break;
 #endif
 #ifdef STM32F303xC
@@ -823,8 +852,6 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     }
 }
 
-
-
 static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 {
     uint16_t capture;
@@ -917,6 +944,13 @@ _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
 # if defined(STM32F10X)
 _TIM_IRQ_HANDLER(TIM1_UP_IRQHandler, 1);       // timer can't be shared
 # endif
+# if defined(STM32F40_41xxx) || defined (STM32F411xE)
+#  if USED_TIMERS & TIM_N(10)
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQHandler, 1, 10);  // both timers are in use
+#  else
+_TIM_IRQ_HANDLER(TIM1_UP_TIM10_IRQHandler, 1);     // timer10 is not used
+#  endif
+# endif
 # ifdef STM32F303xC
 #  if USED_TIMERS & TIM_N(16)
 _TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQHandler, 1, 16);  // both timers are in use
@@ -934,6 +968,9 @@ _TIM_IRQ_HANDLER(TIM3_IRQHandler, 3);
 #if USED_TIMERS & TIM_N(4)
 _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #endif
+#if USED_TIMERS & TIM_N(5)
+_TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
+#endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 # if defined(STM32F10X_XL)
@@ -941,6 +978,24 @@ _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);
 # else  // f10x_hd, f30x
 _TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
 # endif
+# if defined(STM32F40_41xxx)
+#  if USED_TIMERS & TIM_N(13)
+_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
+#  else
+_TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);     // timer13 is not used
+#  endif
+# endif
+# if defined (STM32F411xE)
+# endif
+#endif
+#if USED_TIMERS & TIM_N(9)
+_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
+#endif
+#  if USED_TIMERS & TIM_N(11)
+_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
+#  endif
+#if USED_TIMERS & TIM_N(12)
+_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
 #if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
@@ -979,6 +1034,12 @@ void timerInit(void)
     }
 #endif
 
+#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
+    }
+#endif
 // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;

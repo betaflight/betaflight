@@ -45,6 +45,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/gyro_sync.h"
 
 #include "drivers/barometer.h"
@@ -267,7 +268,21 @@ bool detectGyro(void)
             }
 #endif
             ; // fallthrough
+        
+    case GYRO_MPU9250:
+#ifdef USE_GYRO_SPI_MPU9250
 
+        if (mpu9250SpiGyroDetect(&gyro))
+        {
+            gyroHardware = GYRO_MPU9250;
+#ifdef GYRO_MPU9250_ALIGN
+            gyroAlign = GYRO_MPU9250_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
         case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
             if (fakeGyroDetect(&gyro)) {
@@ -632,7 +647,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250)
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 
