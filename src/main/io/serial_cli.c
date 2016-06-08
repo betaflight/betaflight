@@ -2051,23 +2051,26 @@ static void cliDump(char *cmdline)
         
         if (dumpMask & DUMP_ALL) {
             uint8_t activeProfile = masterConfig.current_profile_index;
-            uint8_t currentRateIndex = currentProfile->activeRateProfile;
             uint8_t profileCount;
-            uint8_t rateCount;
             for (profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
                 cliDumpProfile(profileCount);
+
+                uint8_t currentRateIndex = currentProfile->activeRateProfile;
+                uint8_t rateCount;
                 for (rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
                     cliDumpRateProfile(rateCount);
+
+                cliPrint("\r\n# restore original rateprofile selection\r\n");
+
+                changeControlRateProfile(currentRateIndex);
+                cliRateProfile("");
             }
 
-            cliPrint("\r\n# restore original profile / rateprofile selection\r\n");
+            cliPrint("\r\n# restore original profile selection\r\n");
 
             changeProfile(activeProfile);
             cliProfile("");
             printSectionBreak();
-
-            changeControlRateProfile(currentRateIndex);
-            cliRateProfile("");
 
             cliPrint("\r\n# save configuration\r\nsave\r\n");
         } else {
