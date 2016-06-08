@@ -150,13 +150,9 @@
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
 
-//#define BLACKBOX
-#define SERIAL_RX
-//#define GPS
-//#define GTUNE
-//#define DISPLAY
-#define USE_SERVOS
-#define USE_CLI
+#undef BLACKBOX
+#undef GPS
+#undef DISPLAY
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND

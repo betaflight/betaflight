@@ -40,14 +40,6 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define BLACKBOX
-#define GPS
-#define GTUNE
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT  GPIOA

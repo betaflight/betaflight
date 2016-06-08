@@ -166,14 +166,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

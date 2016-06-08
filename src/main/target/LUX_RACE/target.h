@@ -127,9 +127,6 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 
 #define LED_STRIP_TIMER TIM16
@@ -152,11 +149,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define TELEMETRY
-#define SERIAL_RX
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define USE_SERVOS
-#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART1, PC5

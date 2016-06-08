@@ -141,7 +141,6 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define GPS
 #define LED_STRIP
 #if 1
 #define LED_STRIP_TIMER TIM16
@@ -161,9 +160,3 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #endif
 
-#define BLACKBOX
-#define GTUNE
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI

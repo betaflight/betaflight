@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
-#define USE_CLI
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_5 // Blue LEDs - PB5
@@ -118,14 +117,9 @@
 //#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
 #define SENSORS_SET (SENSOR_ACC)
 
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-//#define GPS
-//#define GTUNE
+#undef GPS
 #define DISPLAY
-#define USE_SERVOS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
