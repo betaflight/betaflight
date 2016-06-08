@@ -101,7 +101,7 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
         .exti_irqn = EXTI0_IRQn
     };
     return &sonarHardware;
-#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI)
+#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI) || defined(FURYF3)
     UNUSED(batteryConfig);
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )

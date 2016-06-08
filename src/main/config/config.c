@@ -385,7 +385,7 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(SINGULARITY)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(SINGULARITY) || defined(FURYF3)
     featureSet(FEATURE_RX_PPM);
 #endif
 
@@ -592,6 +592,13 @@ static void resetConf(void)
     masterConfig.blackbox_device = 0;
 #endif
 
+    masterConfig.blackbox_rate_num = 1;
+    masterConfig.blackbox_rate_denom = 1;
+#endif
+
+#if defined(FURYF3)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = 2;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
