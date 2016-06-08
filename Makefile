@@ -5,11 +5,10 @@
 # this stuff is worth it, you can buy me a beer in return
 ###############################################################################
 #
-# Makefile for building the cleanflight firmware.
+# Makefile for building the betaflight firmware.
 #
 # Invoke this with 'make help' to see the list of supported targets.
 #
-
 ###############################################################################
 
 
@@ -421,6 +420,15 @@ COMMON_SRC = \
 		   drivers/exti.c \
 		   drivers/io.c \
 		   drivers/rcc.c \
+		   drivers/bus_spi.c \
+		   drivers/adc.c \
+		   drivers/pwm_mapping.c \
+		   drivers/pwm_output.c \
+		   drivers/pwm_rx.c \
+		   drivers/light_led.c \
+		   drivers/serial_uart.c \
+		   drivers/timer.c \
+		   drivers/dma.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
@@ -490,64 +498,36 @@ VCPF4_SRC = \
 STM32F10x_COMMON_SRC = \
 		   startup_stm32f10x_md_gcc.S \
 		   drivers/serial_softserial.c \
-		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f10x.c \
 		   drivers/system_stm32f10x.c \
-		   drivers/pwm_mapping.c \
-		   drivers/pwm_output.c \
-		   drivers/pwm_rx.c \
-		   drivers/timer.c \
-		   drivers/dma.c \
 		   drivers/timer_stm32f10x.c \
 		   drivers/gpio_stm32f10x.c \
-		   drivers/adc.c \
 		   drivers/adc_stm32f10x.c \
-		   drivers/bus_spi.c \
 		   drivers/bus_i2c_stm32f10x.c \
-		   drivers/light_led.c \
 		   drivers/inverter.c 
 
 STM32F30x_COMMON_SRC = \
 		   startup_stm32f30x_md_gcc.S \
-		   drivers/adc.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
-		   drivers/bus_spi.c \
 		   drivers/display_ug2864hsweg01.c \
 		   drivers/gpio_stm32f30x.c \
-		   drivers/light_led.c \
-		   drivers/pwm_mapping.c \
-		   drivers/pwm_output.c \
-		   drivers/pwm_rx.c \
-		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f30x.c \
 		   drivers/system_stm32f30x.c \
-		   drivers/timer.c \
-		   drivers/timer_stm32f30x.c \
-		   drivers/dma.c 
+		   drivers/timer_stm32f30x.c 
 
 STM32F4xx_COMMON_SRC = \
 		   startup_stm32f40xx.s \
 		   platform/system_stm32f4xx.c \
 		   drivers/accgyro_mpu.c \
-		   drivers/adc.c \
 		   drivers/adc_stm32f4xx.c \
-		   drivers/adc.c \
 		   drivers/adc_stm32f4xx.c \
 		   drivers/bus_i2c_stm32f10x.c \
-		   drivers/bus_spi.c \
 		   drivers/gpio_stm32f4xx.c \
 		   drivers/inverter.c \
-		   drivers/light_led.c \
-		   drivers/pwm_mapping.c \
-		   drivers/pwm_output.c \
-		   drivers/pwm_rx.c \
 		   drivers/serial_softserial.c \
-		   drivers/serial_uart.c \
 		   drivers/serial_uart_stm32f4xx.c \
-		   drivers/sound_beeper.c \
 		   drivers/system_stm32f4xx.c \
-		   drivers/timer.c \
 		   drivers/timer_stm32f4xx.c \
 		   drivers/dma_stm32f4xx.c \
 		   drivers/flash_m25p16.c \
@@ -774,7 +754,7 @@ RMDO_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_bmp280.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
@@ -793,7 +773,7 @@ SPRACINGF3_SRC = \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
@@ -820,7 +800,7 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_ak8963.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \
@@ -860,7 +840,7 @@ SPRACINGF3MINI_SRC	 = \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.h \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
