@@ -110,7 +110,7 @@ OBJECT_DIR	  = $(ROOT)/obj/main
 BIN_DIR		  = $(ROOT)/obj
 CMSIS_DIR	  = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS  = $(SRC_DIR) \
-				$(ROOT)/src/main/platform
+				$(ROOT)/src/main/target
 LINKER_DIR	  = $(ROOT)/src/main/target
 
 # Search path for sources
@@ -508,7 +508,7 @@ STM32F10x_COMMON_SRC = \
 
 STM32F30x_COMMON_SRC = \
 		   startup_stm32f30x_md_gcc.S \
-		   platform/system_stm32f30x.c \
+		   target/system_stm32f30x.c \
 		   drivers/adc_stm32f30x.c \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/display_ug2864hsweg01.c \
@@ -520,7 +520,7 @@ STM32F30x_COMMON_SRC = \
 
 STM32F4xx_COMMON_SRC = \
 		   startup_stm32f40xx.s \
-		   platform/system_stm32f4xx.c \
+		   target/system_stm32f4xx.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/adc_stm32f4xx.c \
 		   drivers/adc_stm32f4xx.c \

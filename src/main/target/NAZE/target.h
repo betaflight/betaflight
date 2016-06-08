@@ -20,6 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 #define USE_HARDWARE_REVISION_DETECTION
 
+/* remove some options from common.h due to flash size */
+#undef GPS
+
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0    PB3 // PB3 (LED)
