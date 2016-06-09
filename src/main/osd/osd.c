@@ -260,7 +260,7 @@ void osdHardwareCheck(void)
     }
 
     if (checkCount == 5) {
-        max7456_clearScreen();
+        osdClearScreen();
     }
 
 #ifdef FACTORY_TEST
