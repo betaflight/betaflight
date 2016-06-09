@@ -518,7 +518,6 @@ static void resetConf(void)
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    masterConfig.use_unsyncedPwm = false;
     
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;
