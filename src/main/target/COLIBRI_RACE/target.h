@@ -21,6 +21,8 @@
 #define BST_DEVICE_NAME "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH 12
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC 0
+ 
 #define LED0    PC15
 #define LED1    PC14
 #define LED2    PC13

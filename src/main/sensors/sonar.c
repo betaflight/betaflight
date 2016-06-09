@@ -97,7 +97,9 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 		.echoIO = IO_TAG(PB0),
     };
     return &sonarHardware;
-#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI)
+    
+// TODO - move sonar pin selection to CLI
+#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI) || defined(FURYF3)
     UNUSED(batteryConfig);
     static const sonarHardware_t const sonarHardware = {
         .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )

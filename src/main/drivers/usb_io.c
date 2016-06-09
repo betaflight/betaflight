@@ -29,7 +29,9 @@
 
 #ifdef USB_IO
 
+#ifdef USB_DETECT_PIN
 static IO_t usbDetectPin = IO_NONE;
+#endif
 
 void usbCableDetectDeinit(void)
 {

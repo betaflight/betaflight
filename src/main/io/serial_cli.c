@@ -582,13 +582,11 @@ const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "unsynced_fast_pwm",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "fast_pwm_protocol",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
 #ifdef CC3D
     { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
 #endif
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200,  32000 } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE, &masterConfig.motor_pwm_rate, .config.minmax = { 0, 32000 } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },

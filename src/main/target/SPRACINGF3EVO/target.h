@@ -19,6 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC 0
+ 
 #define LED0    PB8
 
 #define BEEPER      PC15
