@@ -109,16 +109,8 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-
-#define BLACKBOX
-#define GTUNE
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 #define SPEKTRUM_BIND
 // USART2, PA3

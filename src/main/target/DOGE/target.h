@@ -157,9 +157,6 @@
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 
 // tqfp48 pin 16
@@ -177,10 +174,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // Use UART3 for speksat

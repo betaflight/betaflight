@@ -181,15 +181,6 @@
 //#define WS2811_DMA_CHANNEL            DMA1_Channel3
 //#define WS2811_IRQ                    DMA1_Channel3_IRQn
 
-#define BLACKBOX
-//#define DISPLAY
-#define GPS
-//#define GTUNE
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PORT            GPIOA
@@ -203,9 +194,10 @@
 #define BINDPLUG_PORT        GPIOB
 #define BINDPLUG_PIN         PB2
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_FEATURES (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
 
-#define USE_QUATERNION
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA      0xffff
 #define TARGET_IO_PORTB      0xffff

@@ -16,6 +16,7 @@
  */
 
 #pragma once
+
 #define TARGET_BOARD_IDENTIFIER "REVO" //Call it a revo for now so it connects to RFC for testing.
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define CONFIG_SERIALRX_PROVIDER SERIALRX_SBUS
@@ -139,15 +140,7 @@
 #define CURRENT_METER_ADC_PIN       PC3
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_13
 
-#define GPS
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-//#define GTUNE
-#define USE_QUAD_MIXER_ONLY
-#define USE_CLI
-
-#define USE_QUATERNION
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

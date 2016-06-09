@@ -132,14 +132,6 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
-#define BLACKBOX
-#define GPS
-#define GTUNE
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f103RCT6 in 64pin package

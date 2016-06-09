@@ -74,6 +74,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifndef DEFAULT_RX_FEATURE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #ifdef STM32F4
 #define BRUSHLESS_MOTORS_PWM_RATE 2000
@@ -408,16 +412,11 @@ static void resetConf(void)
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
 
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#ifdef CONFIG_RX_PPM
-    featureSet(FEATURE_RX_PPM);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
 #endif
-
-//#if defined(SPRACINGF3MINI)
-//    featureSet(FEATURE_DISPLAY);
-//#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -425,8 +424,8 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
-    featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_SUPEREXPO_RATES);
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -605,7 +604,6 @@ static void resetConf(void)
 #endif
 
 #ifdef SPRACINGF3
-    featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
@@ -633,16 +631,6 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.maxthrottle = 1980;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
     masterConfig.batteryConfig.vbatmincellvoltage = 30;
-
-    featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_FAILSAFE);
-#endif
-
-#ifdef SPRACINGF3EVO
-    featureSet(FEATURE_TRANSPONDER);
-    featureSet(FEATURE_RSSI_ADC);
-    featureSet(FEATURE_CURRENT_METER);
-    featureSet(FEATURE_TELEMETRY);
 #endif
 
 #if defined(TARGET_CONFIG)
@@ -650,8 +638,6 @@ static void resetConf(void)
 #endif
     
 #if defined(ALIENFLIGHT) 
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_MOTOR_STOP);
     featureClear(FEATURE_ONESHOT125);
 #ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
@@ -675,65 +661,24 @@ static void resetConf(void)
     currentControlRateProfile->rates[FD_YAW] = 20;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
-    //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    masterConfig.customMotorMixer[0].throttle = 1.0f;
-    masterConfig.customMotorMixer[0].roll = -0.414178f;
-    masterConfig.customMotorMixer[0].pitch = 1.0f;
-    masterConfig.customMotorMixer[0].yaw = -1.0f;
-
-    //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    masterConfig.customMotorMixer[1].throttle = 1.0f;
-    masterConfig.customMotorMixer[1].roll = -0.414178f;
-    masterConfig.customMotorMixer[1].pitch = -1.0f;
-    masterConfig.customMotorMixer[1].yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    masterConfig.customMotorMixer[2].throttle = 1.0f;
-    masterConfig.customMotorMixer[2].roll = 0.414178f;
-    masterConfig.customMotorMixer[2].pitch = 1.0f;
-    masterConfig.customMotorMixer[2].yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    masterConfig.customMotorMixer[3].throttle = 1.0f;
-    masterConfig.customMotorMixer[3].roll = 0.414178f;
-    masterConfig.customMotorMixer[3].pitch = -1.0f;
-    masterConfig.customMotorMixer[3].yaw = -1.0f;
-
-    //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    masterConfig.customMotorMixer[4].throttle = 1.0f;
-    masterConfig.customMotorMixer[4].roll = -1.0f;
-    masterConfig.customMotorMixer[4].pitch = -0.414178f;
-    masterConfig.customMotorMixer[4].yaw = -1.0f;
-
-    //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    masterConfig.customMotorMixer[5].throttle = 1.0f;
-    masterConfig.customMotorMixer[5].roll = 1.0f;
-    masterConfig.customMotorMixer[5].pitch = -0.414178f;
-    masterConfig.customMotorMixer[5].yaw = 1.0f;
-
-    //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    masterConfig.customMotorMixer[6].throttle = 1.0f;
-    masterConfig.customMotorMixer[6].roll = -1.0f;
-    masterConfig.customMotorMixer[6].pitch = 0.414178f;
-    masterConfig.customMotorMixer[6].yaw = 1.0f;
-
-    //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    masterConfig.customMotorMixer[7].throttle = 1.0f;
-    masterConfig.customMotorMixer[7].roll = 1.0f;
-    masterConfig.customMotorMixer[7].pitch = 0.414178f;
-    masterConfig.customMotorMixer[7].yaw = -1.0f;
+    masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    masterConfig.customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    masterConfig.customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    masterConfig.customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
 #endif
 
-    // alternative defaults settings for SINGULARITY target
 #if defined(SINGULARITY)
-    featureSet(FEATURE_BLACKBOX);
+    // alternative defaults settings for SINGULARITY target
     masterConfig.blackbox_device = 1;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
     
     masterConfig.batteryConfig.vbatscale = 77;
 
-    featureSet(FEATURE_RX_SERIAL);
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 

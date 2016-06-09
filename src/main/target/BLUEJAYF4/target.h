@@ -140,16 +140,8 @@
 #define VBAT_ADC_PIN           PC3
 #define VBAT_ADC_CHANNEL       ADC_Channel_13
 
-#define GPS
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define AUTOTUNE
-#define USE_QUAD_MIXER_ONLY
-#define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define USE_QUATERNION
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

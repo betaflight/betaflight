@@ -910,6 +910,7 @@ ALIENFLIGHTF4_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8963.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f4xx.c \
 		   drivers/sdcard.c \
@@ -925,6 +926,7 @@ BLUEJAYF4_SRC = \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_ms5611.c \
+		   drivers/display_ug2864hsweg01.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
 		   io/asyncfatfs/asyncfatfs.c \
@@ -938,6 +940,7 @@ REVO_SRC = \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCPF4_SRC)
@@ -946,6 +949,7 @@ KKNGF4_SRC = \
            $(STM32F4xx_COMMON_SRC) \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/barometer_ms5611.c \
+		   drivers/display_ug2864hsweg01.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC) \
 		   $(VCPF4_SRC)

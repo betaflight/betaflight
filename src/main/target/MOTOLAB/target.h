@@ -113,13 +113,8 @@
 //#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
 #define SENSORS_SET (SENSOR_ACC)
 
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
-//#define GPS
-//#define GTUNE
+#undef GPS
 #define DISPLAY
-#define USE_SERVOS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 

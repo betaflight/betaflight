@@ -21,6 +21,9 @@
 #define BST_DEVICE_NAME "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH 12
 
+#ifdef CONFIG_FASTLOOP_PREFERRED_ACC
+#undef CONFIG_FASTLOOP_PREFERRED_ACC
+#endif
 #define CONFIG_FASTLOOP_PREFERRED_ACC 0
  
 #define LED0    PC15
@@ -125,6 +128,7 @@
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 
+#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_GPIO               GPIOC
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
 #define VBAT_ADC_CHANNEL            ADC_Channel_6
@@ -141,9 +145,6 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 #define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
@@ -169,10 +170,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
