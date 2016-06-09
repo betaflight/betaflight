@@ -20,6 +20,8 @@
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 #define USE_CLI
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC 0
+ 
 #define LED0    PB5 // Blue LEDs - PB5
 //#define LED1    PB9 // Green LEDs - PB9
 
