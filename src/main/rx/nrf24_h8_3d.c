@@ -181,12 +181,16 @@ static void h8_3dHopToNextChannel(void)
 // The hopping channels are determined by the txId
 void h8_3dSetHoppingChannels(const uint8_t* txId)
 {
-    // Kludge to allow bugged deviation TX H8_3D implementation to work
-    const int bitShift = h8_3dProtocol == NRF24RX_H8_3D_DEVIATION ? 8 : 4;
-    h8_3dRfChannels[0] = 0x06 + ((txId[0]>>bitShift) +(txId[0] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[1] = 0x15 + ((txId[1]>>bitShift) +(txId[1] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[2] = 0x24 + ((txId[2]>>bitShift) +(txId[2] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[3] = 0x33 + ((txId[3]>>bitShift) +(txId[3] & 0x0f)) % 0x0f;
+#ifndef XXX
+    for (int ii = 0; ii < H8_3D_RF_CHANNEL_COUNT; ++ii) {
+        h8_3dRfChannels[ii] = 0x06 + (0x0f * ii) + ((txId[ii] >> 4) + (txId[ii] & 0x0f)) % 0x0f;
+    }
+#else
+    h8_3dRfChannels[0] = 0x06 + ((txId[0]>>4) + (txId[0] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[1] = 0x15 + ((txId[1]>>4) + (txId[1] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[2] = 0x24 + ((txId[2]>>4) + (txId[2] & 0x0f)) % 0x0f;
+    h8_3dRfChannels[3] = 0x33 + ((txId[3]>>4) + (txId[3] & 0x0f)) % 0x0f;
+#endif
 }
 
 void h8_3dSetBound(const uint8_t* txId)
@@ -199,7 +203,7 @@ void h8_3dSetBound(const uint8_t* txId)
     NRF24L01_SetChannel(h8_3dRfChannels[0]);
 }
 
-bool crcOK(uint16_t crc, const unt8_t *payload)
+bool crcOK(uint16_t crc, const uint8_t *payload)
 {
     if (payload[payloadSize - CRC_LEN] != (crc >> 8)) {
         return false;
@@ -221,7 +225,7 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize - CRC_LEN, rxTxAddrXN297);
-            if (crcOK(crc, payload) {
+            if (crcOK(crc, payload)) {
                 const bool bindPacket = h8_3dCheckBindPacket(payload);
                 if (bindPacket) {
                     ret = NRF24_RECEIVED_BIND;
@@ -234,7 +238,7 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const uint16_t crc = XN297_UnscramblePayload(payload - CRC_LEN, payloadSize, rxTxAddrXN297);
-            if (crcOK(crc, payload) {
+            if (crcOK(crc, payload)) {
                 ret = NRF24_RECEIVED_DATA;
             }
         }

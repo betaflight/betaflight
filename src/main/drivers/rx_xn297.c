@@ -49,12 +49,13 @@ static uint8_t bitReverse(uint8_t bIn)
     return bOut;
 }
 
-void XN297_UnscramblePayload(uint8_t* data, int len)
+/*void XN297_UnscramblePayload(uint8_t* data, int len)
 {
     for (uint8_t ii = 0; ii < len; ++ii) {
         data[ii] = bitReverse(data[ii] ^ xn297_data_scramble[ii]);
     }
 }
+*/
 
 #define RX_TX_ADDR_LEN 5
 
@@ -74,10 +75,6 @@ uint16_t XN297_UnscramblePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     return crc;
 }
 
-#define RX_TX_ADDR_LEN     5
-#define PROTOCOL_PAYLOAD_SIZE_15       15
-#define PROTOCOL_PAYLOAD_SIZE_19       19
-
 uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
 {
     uint8_t packet[NRF24L01_MAX_PAYLOAD_SIZE];
@@ -87,7 +84,6 @@ uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
         crc = crc16_ccitt(crc, packet[ii]);
     }
     for (int ii = 0; ii < len; ++ii) {
-        // bit-reverse bytes in packet
         const uint8_t bOut = bitReverse(data[ii]);
         packet[ii + RX_TX_ADDR_LEN] = bOut ^ xn297_data_scramble[ii];
         crc = crc16_ccitt(crc, packet[ii + RX_TX_ADDR_LEN]);

@@ -400,6 +400,7 @@ COMMON_SRC = \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_soft.c \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
             drivers/pwm_mapping.c \
@@ -570,61 +571,6 @@ TARGET_SRC += \
             hardware_revision.c \
             $(HIGHEND_SRC) \
             $(COMMON_SRC)
-=======
-		   vcp/hw_config.c \
-		   vcp/stm32_it.c \
-		   vcp/usb_desc.c \
-		   vcp/usb_endp.c \
-		   vcp/usb_istr.c \
-		   vcp/usb_prop.c \
-		   vcp/usb_pwr.c \
-		   drivers/serial_usb_vcp.c
-
-NAZE_SRC = startup_stm32f10x_md_gcc.S \
-		   drivers/accgyro_adxl345.c \
-		   drivers/accgyro_bma280.c \
-		   drivers/accgyro_l3g4200d.c \
-		   drivers/accgyro_mma845x.c \
-		   drivers/accgyro_mpu.c \
-		   drivers/accgyro_mpu3050.c \
-		   drivers/accgyro_mpu6050.c \
-		   drivers/accgyro_mpu6500.c \
-		   drivers/accgyro_spi_mpu6500.c \
-		   drivers/adc.c \
-		   drivers/adc_stm32f10x.c \
-		   drivers/barometer_bmp085.c \
-		   drivers/barometer_ms5611.c \
-		   drivers/barometer_bmp280.c \
-		   drivers/bus_spi.c \
-		   drivers/bus_spi_soft.c \
-		   drivers/bus_i2c_stm32f10x.c \
-		   drivers/compass_hmc5883l.c \
-		   drivers/compass_mag3110.c \
-		   drivers/compass_ak8975.c \
-		   drivers/display_ug2864hsweg01.h \
-		   drivers/flash_m25p16.c \
-		   drivers/gpio_stm32f10x.c \
-		   drivers/inverter.c \
-		   drivers/light_led_stm32f10x.c \
-		   drivers/light_ws2811strip.c \
-		   drivers/light_ws2811strip_stm32f10x.c \
-		   drivers/sonar_hcsr04.c \
-		   drivers/sonar_srf10.c \
-		   drivers/pwm_mapping.c \
-		   drivers/pwm_output.c \
-		   drivers/pwm_rx.c \
-		   drivers/serial_softserial.c \
-		   drivers/serial_uart.c \
-		   drivers/serial_uart_stm32f10x.c \
-		   drivers/sound_beeper_stm32f10x.c \
-		   drivers/system_stm32f10x.c \
-		   drivers/timer.c \
-		   drivers/timer_stm32f10x.c \
-		   io/flashfs.c \
-		   hardware_revision.c \
-		   $(HIGHEND_SRC) \
-		   $(COMMON_SRC)
->>>>>>> NRF24 support for iNav.
 
 ALIENFLIGHTF1_SRC = $(NAZE_SRC)
 

@@ -180,7 +180,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
-            XN297_UnscramblePayload(payload, payloadSize + 2);
+            XN297_UnscramblePayload(payload, payloadSize + 2, rxAddr);
             const bool bindPacket = cx10CheckBindPacket(payload);
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
@@ -233,7 +233,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
-            XN297_UnscramblePayload(payload, payloadSize + 2);
+            XN297_UnscramblePayload(payload, payloadSize + 2, rxAddr);
             cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
             ret = NRF24_RECEIVED_DATA;
