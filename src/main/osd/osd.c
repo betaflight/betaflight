@@ -46,11 +46,9 @@
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/video_textscreen.h"
-#include "drivers/video_max7456.h"
 
 #include "osd/config.h"
 
-#include "osd/fonts/font_max7456_12x18.h"
 #include "osd/fc_state.h"
 
 #include "osd/osd.h"
@@ -58,8 +56,6 @@
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 
 textScreen_t osdTextScreen;
-char textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
-const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
 typedef struct osdCursor_s {
     uint8_t x;
@@ -97,7 +93,7 @@ void osdSetCursor(uint8_t x, uint8_t y)
 }
 
 // software cursor, handles line wrapping and row wrapping, resets to 0,0 when the end of the screen is reached
-void osdAdvanceCursor(void)
+static void osdAdvanceCursor(void)
 {
     cursor.x++;
     if (cursor.x >= osdTextScreen.width) {
@@ -130,12 +126,7 @@ void osdPrintAt(uint8_t x, uint8_t y, char *message)
 
 void osdDisplaySplash(void)
 {
-    osdSetRawCharacterAtPosition(14, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x1);
-    osdSetRawCharacterAtPosition(15, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x2);
-    osdSetRawCharacterAtPosition(16, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x3);
-    osdSetRawCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x1);
-    osdSetRawCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x2);
-    osdSetRawCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x3);
+    osdHardwareDrawLogo();
 
     osdPrintAt(10, 7, "CLEANFLIGHT");
 }
@@ -159,54 +150,16 @@ void osdClearScreen(void)
 
 void osdInit(void)
 {
-    LED0_ON;
-    delay(500);
-    max7456_hardwareReset();
-    LED0_OFF;
+    osdHardwareInit();
 
-
-    max7456_init();
-
-    textScreen_t *max7456TextScreen = max7456_getTextScreen();
-    osdSetTextScreen(max7456TextScreen);
     osdClearScreen();
 
-    if (osdFontConfig()->fontVersion != FONT_VERSION) {
-        // before
-        max7456_showFont();
-        delay(5000);
-
-        max7456_resetFont();
-
-        // after
-        max7456_showFont();
-        delay(5000);
-
-        osdFontConfig()->fontVersion = FONT_VERSION;
-        writeEEPROM();
-
-        max7456_clearScreen();
-    }
-
     osdDisplaySplash();
-    max7456_writeScreen(&osdTextScreen, textScreenBuffer);
+    osdHardwareUpdate();
 }
 
 void osdUpdate(void)
 {
-    debug[2] = max7456_readStatus();
-
-//    if (debug[2] == 0) {
-//        max7456_init();
-//    }
-
-//    max7456_fillScreen();
-//
-//    max7465_print(2, 1, "1234567890 ()");
-//    max7465_print(2, 2, ".?;:,'/\"-<>@");
-//    max7465_print(2, 3, "ABCDEFGHIJKLM");
-//    max7465_print(2, 4, "NOPQRSTUVWXYZ");
-
     char lineBuffer[31];
     tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
     osdPrintAt(2, 2, lineBuffer);
@@ -246,26 +199,6 @@ void osdUpdate(void)
     tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
     osdPrintAt(18, 14, lineBuffer);
 
-    max7456_writeScreen(&osdTextScreen, textScreenBuffer);
+    osdHardwareUpdate();
 }
 
-void osdHardwareCheck(void)
-{
-    static int checkCount = 0;
-
-    checkCount++;
-
-    if (!max7456_isOSDEnabled()) {
-        max7456_init();
-    }
-
-    if (checkCount == 5) {
-        osdClearScreen();
-    }
-
-#ifdef FACTORY_TEST
-    if (checkCount == 10) {
-        max7456_init();
-    }
-#endif
-}

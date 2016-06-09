@@ -763,6 +763,7 @@ SPRACINGF1OSD_SRC = \
 		   drivers/flash_m25p16.c \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
+		   osd/osd_max7456.c \
 		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
@@ -773,6 +774,7 @@ SPRACINGF3OSD_SRC = \
 		   drivers/flash_m25p16.c \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
+		   osd/osd_max7456.c \
 		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)

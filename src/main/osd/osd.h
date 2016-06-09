@@ -21,7 +21,29 @@ typedef struct osdFontConfig_s {
 
 PG_DECLARE(osdFontConfig_t, osdFontConfig);
 
-void osdInit(void);
+extern const uint8_t *asciiToFontMapping;
 
+extern textScreen_t osdTextScreen;
+extern char textScreenBuffer[];
+
+//
+// OSD API
+//
+
+void osdInit(void);
 void osdUpdate(void);
+void osdSetTextScreen(textScreen_t *textScreen);
+void osdClearScreen(void);
+void osdResetCursor(void);
+void osdSetCursor(uint8_t x, uint8_t y);
+void osdPrint(char *message);
+void osdPrintAt(uint8_t x, uint8_t y, char *message);
+void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
+
+//
+// To be implemented by hardware specific OSD code using hardware drivers.
+//
+void osdHardwareInit(void);
+void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
+void osdHardwareDrawLogo(void);

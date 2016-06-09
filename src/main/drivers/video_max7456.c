@@ -334,34 +334,10 @@ uint8_t max7456_readStatus(void)
     return result;
 }
 
-void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
-{
-    uint32_t linepos;
-    uint8_t char_address_hi, char_address_lo;
-
-    //find start address position
-    linepos = y * 30 + x;
-
-    // divide 16 bits into hi & lo uint8_t
-    char_address_hi = linepos >> 8;
-    char_address_lo = linepos;
-
-    ENABLE_MAX7456;
-
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
-    spiTransferByte(MAX7456_SPI_INSTANCE, char_address_hi);
-
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
-    spiTransferByte(MAX7456_SPI_INSTANCE, char_address_lo);
-
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMDI);
-    spiTransferByte(MAX7456_SPI_INSTANCE, c);
-
-    DISABLE_MAX7456;
-}
-
 void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
 {
+    // Note: Not using VSYNC yet.
+
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
@@ -390,66 +366,34 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
     DISABLE_MAX7456;
 }
 
-static uint8_t cursorX = 0;
-static uint8_t cursorY = 0;
-
-void max7456_resetCursor(void)
-{
-    cursorX = 0;
-    cursorY = 0;
-}
-
-void max7456_setCursor(uint8_t x, uint8_t y)
-{
-    cursorX = x;
-    cursorY = y;
-}
-
-// software cursor, handles line wrapping and row wrapping, resets to 0,0 when the end of the screen is reached
-void max7456_advanceCursor(void)
-{
-    cursorX++;
-    if (cursorX >= max7456Screen.width) {
-        cursorY++;
-        cursorX = 0;
-        if (cursorY > max7456Screen.height) {
-            cursorY = 0;
-        }
-    }
-}
-
-void max7456_print(char *message)
-{
-    char *charPtr = message;
-
-    while(*charPtr) {
-
-        max7456_setCharacterAtPosition(cursorX, cursorY, *charPtr++);
-        max7456_advanceCursor();
-
-        charPtr++;
-    }
-}
-
-void max7465_printAt(uint8_t x, uint8_t y, char *message)
-{
-    max7456_setCursor(x, y);
-    max7456_print(message);
-}
-
-void max7456_fillScreen(void)
-{
-    uint8_t c = 0;
-    for (uint8_t y = 0; y < max7456_screenRows; y++) {
-        for (uint8_t x = 0; x < 30; x++) {
-            max7456_setCharacterAtPosition(x, y, c % 256);
-            c++;
-        }
-    }
-}
-
-
 // show the entire font in the middle of the screen.
+
+
+void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
+{
+    uint32_t linepos;
+    uint8_t char_address_hi, char_address_lo;
+
+    //find start address position
+    linepos = y * 30 + x;
+
+    // divide 16 bits into hi & lo uint8_t
+    char_address_hi = linepos >> 8;
+    char_address_lo = linepos;
+
+    ENABLE_MAX7456;
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
+    spiTransferByte(MAX7456_SPI_INSTANCE, char_address_hi);
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
+    spiTransferByte(MAX7456_SPI_INSTANCE, char_address_lo);
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMDI);
+    spiTransferByte(MAX7456_SPI_INSTANCE, c);
+
+    DISABLE_MAX7456;
+}
 
 void max7456_showFont(void)
 {
