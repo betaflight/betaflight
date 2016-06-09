@@ -95,26 +95,17 @@ typedef struct
 #define LSM303DLHC_DRDY_PIN                  GPIO_Pin_2                  /* PE.02 */
 #define LSM303DLHC_DRDY_GPIO_PORT            GPIOE                       /* GPIOE */
 #define LSM303DLHC_DRDY_GPIO_CLK             RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_DRDY_EXTI_LINE            EXTI_Line2
-#define LSM303DLHC_DRDY_EXTI_PORT_SOURCE     EXTI_PortSourceGPIOE
-#define LSM303DLHC_DRDY_EXTI_PIN_SOURCE      EXTI_PinSource2
-#define LSM303DLHC_DRDY_EXTI_IRQn            EXTI2_TS_IRQn
+#define LSM303DLHC_DRDY_IO                   PE2
 
 #define LSM303DLHC_I2C_INT1_PIN              GPIO_Pin_4                  /* PE.04 */
 #define LSM303DLHC_I2C_INT1_GPIO_PORT        GPIOE                       /* GPIOE */
 #define LSM303DLHC_I2C_INT1_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_LINE        EXTI_Line4
-#define LSM303DLHC_I2C_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_PIN_SOURCE  EXTI_PinSource4
-#define LSM303DLHC_I2C_INT1_EXTI_IRQn        EXTI4_IRQn
+#define LSM303DLHC_I2C_INT1_IO               PE4
 
 #define LSM303DLHC_I2C_INT2_PIN              GPIO_Pin_5                  /* PE.05 */
 #define LSM303DLHC_I2C_INT2_GPIO_PORT        GPIOE                       /* GPIOE */
 #define LSM303DLHC_I2C_INT2_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_LINE        EXTI_Line5
-#define LSM303DLHC_I2C_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_PIN_SOURCE  EXTI_PinSource5ss
-#define LSM303DLHC_I2C_INT2_EXTI_IRQn        EXTI9_5_IRQn
+#define LSM303DLHC_I2C_INT2_IO               PE5
 
 /******************************************************************************/
 /*************************** START REGISTER MAPPING  **************************/

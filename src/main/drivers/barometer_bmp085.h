@@ -23,6 +23,9 @@ typedef struct bmp085Config_s {
     GPIO_TypeDef *xclrGpioPort;
     uint16_t eocGpioPin;
     GPIO_TypeDef *eocGpioPort;
+
+    ioTag_t xclrIO;
+    ioTag_t eocIO;
 } bmp085Config_t;
 
 bool bmp085Detect(const bmp085Config_t *config, baro_t *baro);

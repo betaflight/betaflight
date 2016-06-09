@@ -26,8 +26,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready, no MAG
-
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -112,6 +110,7 @@
 #define USE_SERVOS
 #define TELEMETRY
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // USART3,

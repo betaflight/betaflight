@@ -119,15 +119,15 @@
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_TRIGGER_GPIO          GPIOA
 #define SONAR_ECHO_PIN              Pin_1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_IO            PA2
+#define SONAR_ECHO_IO               PA1
 
 #define LED_STRIP
 #if 1

@@ -89,20 +89,14 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
             .gpioPin = Pin_13,
             .gpioPort = GPIOB,
-            .exti_port_source = GPIO_PortSourceGPIOB,
-            .exti_line = EXTI_Line13,
-            .exti_pin_source = GPIO_PinSource13,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PB13),
     };
     // MPU_INT output on rev5 hardware PC13
     static const extiConfig_t nazeRev5MPUIntExtiConfig = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
             .gpioPin = Pin_13,
             .gpioPort = GPIOC,
-            .exti_port_source = GPIO_PortSourceGPIOC,
-            .exti_line = EXTI_Line13,
-            .exti_pin_source = GPIO_PinSource13,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PC13),
     };
 
     if (hardwareRevision < NAZE32_REV5) {
@@ -117,10 +111,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
             .gpioPort = GPIOC,
             .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOC,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PC13),
     };
     return &spRacingF3MPUIntExtiConfig;
 #endif
@@ -130,10 +121,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOA,
             .gpioPort = GPIOA,
             .gpioPin = Pin_3,
-            .exti_port_source = GPIO_PortSourceGPIOA,
-            .exti_pin_source = GPIO_PinSource3,
-            .exti_line = EXTI_Line3,
-            .exti_irqn = EXTI3_IRQn
+            .io = IO_TAG(PA3),
     };
     return &cc3dMPUIntExtiConfig;
 #endif
@@ -143,10 +131,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,
             .gpioPin = Pin_15,
-            .exti_port_source = EXTI_PortSourceGPIOA,
-            .exti_pin_source = EXTI_PinSource15,
-            .exti_line = EXTI_Line15,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PA15),
     };
     return &MotolabF3MPUIntExtiConfig;
 #endif
@@ -156,10 +141,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
          .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
          .gpioPort = GPIOA,
          .gpioPin = Pin_5,
-         .exti_port_source = EXTI_PortSourceGPIOA,
-         .exti_pin_source = EXTI_PinSource5,
-         .exti_line = EXTI_Line5,
-         .exti_irqn = EXTI9_5_IRQn
+         .io = IO_TAG(PA5),
     };
     return &colibriRaceMPUIntExtiConfig;
 #endif
@@ -170,20 +152,14 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,
             .gpioPin = Pin_15,
-            .exti_port_source = EXTI_PortSourceGPIOA,
-            .exti_pin_source = EXTI_PinSource15,
-            .exti_line = EXTI_Line15,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PA15),
     };
     // MPU_INT output on V2 PB13
     static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
             .gpioPort = GPIOB,
             .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOB,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
+            .io = IO_TAG(PB13),
     };
     if (hardwareRevision == AFF3_REV_1) {
         return &alienFlightF3V1MPUIntExtiConfig;
@@ -590,20 +566,14 @@ static void detectMag(magSensor_e magHardwareToUse)
             .gpioPort = GPIOB,
 
             /* Disabled for v4 needs more work.
-            .exti_port_source = GPIO_PortSourceGPIOB,
-            .exti_pin_source = GPIO_PinSource12,
-            .exti_line = EXTI_Line12,
-            .exti_irqn = EXTI15_10_IRQn
+            .intIO = IO_TAG(PB12),
             */
     };
     static const hmc5883Config_t nazeHmc5883Config_v5 = {
             .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
             .gpioPin = Pin_14,
             .gpioPort = GPIOC,
-            .exti_port_source = GPIO_PortSourceGPIOC,
-            .exti_line = EXTI_Line14,
-            .exti_pin_source = GPIO_PinSource14,
-            .exti_irqn = EXTI15_10_IRQn
+            .intIO = IO_TAG(PC14),
     };
     if (hardwareRevision < NAZE32_REV5) {
         hmc5883Config = &nazeHmc5883Config_v1_v4;
@@ -617,10 +587,7 @@ static void detectMag(magSensor_e magHardwareToUse)
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPin = Pin_14,
         .gpioPort = GPIOC,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource14,
-        .exti_line = EXTI_Line14,
-        .exti_irqn = EXTI15_10_IRQn
+        .intIO = IO_TAG(PC14),
     };
 
     hmc5883Config = &spRacingF3Hmc5883Config;

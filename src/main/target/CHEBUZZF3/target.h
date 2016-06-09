@@ -54,12 +54,9 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_PIN                    GPIO_Pin_14
-#define SDCARD_DETECT_EXTI_LINE              EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
 #define SDCARD_DETECT_GPIO_PORT              GPIOC
 #define SDCARD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
-#define SDCARD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
-#define SDCARD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
+#define SDCARD_DETECT_IO                     PC14
 
 #define SDCARD_SPI_INSTANCE                  SPI2
 #define SDCARD_SPI_CS_GPIO                   SPI2_GPIO

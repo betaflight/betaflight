@@ -34,6 +34,7 @@
 #include "gpio.h"
 #include "bus_i2c.h"
 #include "light_led.h"
+#include "drivers/exti.h"
 
 #include "sensor.h"
 #include "compass.h"
@@ -122,14 +123,14 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 static const hmc5883Config_t *hmc5883Config = NULL;
 
-void MAG_DATA_READY_EXTI_Handler(void)
+#ifdef USE_MAG_DATA_READY_SIGNAL
+
+static IO_t intIO;
+static extiCallbackRec_t hmc5883_extiCallbackRec;
+
+void hmc5883_extiHandler(extiCallbackRec_t* cb)
 {
-    if (EXTI_GetITStatus(hmc5883Config->exti_line) == RESET) {
-        return;
-    }
-
-    EXTI_ClearITPendingBit(hmc5883Config->exti_line);
-
+    UNUSED(cb);
 #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
     // Measure the delta between calls to the interrupt handler
     // currently should be around 65/66 milli seconds / 15hz output rate
@@ -145,32 +146,16 @@ void MAG_DATA_READY_EXTI_Handler(void)
     lastCalledAt = now;
 #endif
 }
+#endif
 
 static void hmc5883lConfigureDataReadyInterruptHandling(void)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-    if (!(hmc5883Config->exti_port_source && hmc5883Config->exti_pin_source)) {
+    if (!(hmc5883Config->intIO)) {
         return;
     }
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#ifdef STM32F303xC
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-#ifdef STM32F10X
-    gpioExtiLineConfig(hmc5883Config->exti_port_source, hmc5883Config->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(hmc5883Config->exti_port_source, hmc5883Config->exti_pin_source);
-#endif
-
+    intIO = IOGetByTag(hmc5883Config->intIO);
 #ifdef ENSURE_MAG_DATA_READY_IS_HIGH
     uint8_t status = GPIO_ReadInputDataBit(hmc5883Config->gpioPort, hmc5883Config->gpioPin);
     if (!status) {
@@ -178,24 +163,9 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
     }
 #endif
 
-    registerExtiCallbackHandler(hmc5883Config->exti_irqn, MAG_DATA_READY_EXTI_Handler);
-
-    EXTI_ClearITPendingBit(hmc5883Config->exti_line);
-
-    EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = hmc5883Config->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = EXTI_Trigger_Falling;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = hmc5883Config->exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MAG_DATA_READY);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MAG_DATA_READY);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    EXTIHandlerInit(&hmc5883_extiCallbackRec, hmc5883_extiHandler);
+    EXTIConfig(intIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(intIO, true);
 #endif
 }
 

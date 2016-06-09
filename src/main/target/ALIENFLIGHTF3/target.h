@@ -46,8 +46,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 
@@ -162,6 +160,7 @@
 //#define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // UART2, PA3
