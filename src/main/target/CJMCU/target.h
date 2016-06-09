@@ -47,28 +47,21 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define SERIAL_RX
-//#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN   PA3
 
-// Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
-#define USE_QUAD_MIXER_ONLY
 
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define USE_SERVOS
 #else
+// Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
+#define USE_QUAD_MIXER_ONLY
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #endif
-
-//#undef USE_CLI
-#define GTUNE
-//#define BLACKBOX
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA 0xffff

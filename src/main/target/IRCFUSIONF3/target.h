@@ -102,14 +102,6 @@
 #define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
-#define SERIAL_RX
-#define USE_SERVOS
-#define TELEMETRY
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PIN   PB11

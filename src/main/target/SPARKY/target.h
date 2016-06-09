@@ -110,14 +110,7 @@
 #define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
-#define DISPLAY
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define LED_STRIP
 #if 1

@@ -30,11 +30,11 @@
 #define MPU_INT_EXTI PA3
 
 #define MPU6000_CS_GPIO       GPIOA
-#define MPU6000_CS_PIN        GPIO_Pin_4
+#define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
 
 #define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
+#define M25P16_CS_PIN         PB12
 #define M25P16_SPI_INSTANCE   SPI2
 
 #define USE_FLASHFS
@@ -117,13 +117,8 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define DISPLAY
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 #define SONAR
-//#define GPS
+#undef GPS
 
 #undef BARO
 
@@ -132,7 +127,6 @@
 //#define SKIP_PID_LUXFLOAT
 #undef DISPLAY
 #undef SONAR
-#undef GPS
 #endif
 
 // IO - from schematics

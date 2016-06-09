@@ -117,15 +117,6 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
-#define GPS
-
-#define BLACKBOX
-//#define GTUNE
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -17,12 +17,27 @@
  
 #pragma once
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC 1
-
 #ifdef STM32F4
 #define TASK_GYROPID_DESIRED_PERIOD 125
 #define SCHEDULER_DELAY_LIMIT 10
 #else
 #define TASK_GYROPID_DESIRED_PERIOD 1000
 #define SCHEDULER_DELAY_LIMIT 100
+#endif
+
+#define SERIAL_RX
+#define USE_CLI
+
+#if (FLASH_SIZE > 64)
+#define BLACKBOX
+#define GPS
+#define TELEMETRY
+#define USE_SERVOS
+#endif
+
+#if (FLASH_SIZE > 128)
+#define DISPLAY
+#else
+#define SKIP_CLI_COMMAND_HELP
+#define SKIP_RX_MSP
 #endif
