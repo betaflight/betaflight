@@ -23,6 +23,7 @@
 
 #include <debug.h>
 
+#include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
 #include "drivers/bus_spi.h"
 #include "drivers/gpio.h"
@@ -106,12 +107,6 @@
 #define MAX7456_DMM_BIT_VSYNC_CLEAR             (1 << 1)
 #define MAX7456_DMM_BIT_AUTO_INCREMENT          (1 << 0)
 
-#define MAX7456_PAL_CHARACTER_COUNT 480 // 16 x 30
-#define MAX7456_PAL_ROW_COUNT 16
-
-#define MAX7456_NTSC_CHARACTER_COUNT 390 //13 x 30
-#define MAX7456_NTSC_ROW_COUNT 13
-
 #ifndef WHITEBRIGHTNESS
   #define WHITEBRIGHTNESS 0x01
 #endif
@@ -133,6 +128,35 @@ uint8_t max7456_screenRows;
 
 #define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
 #define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
+
+textScreen_t max7456Screen;
+
+#if 0
+// for factory max7456 font
+static const uint8_t max7456_defaultFont_asciiToFontMapping[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  0  -  15
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  16 -  31
+    0x00, 0x00, 0x48, 0x00, 0x00, 0x00, 0x00, 0x46, 0x3F, 0x40, 0x00, 0x00, 0x45, 0x49, 0x41, 0x47, //  32 -  47  " !"#$%&'()*+,-./"
+    0x0A, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x44, 0x43, 0x4A, 0x00, 0x4B, 0x42, //  48 -  63  "0123456789:;<=>?"
+    0x4C, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, //  64 -  79  "@ABCDEFGHIJKLMNO"
+    0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x00, 0x46, 0x00, 0x00, 0x00, //  80 -  95  "PQRSTUVWXYZ[\]^_"
+    0x00, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, //  96 - 111  "`abcdefghijklmno"
+    0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x00, 0x00, 0x00, 0x00, 0x00, // 112 - 127  "pqrstuvwxyz{|}~ "
+};
+
+static const uint8_t max7456_defaultFont_fontToASCIIMapping[] = {
+    ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E', // 0x00 - 0x0F
+    'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', // 0x10 - 0x1F
+    'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', // 0x20 - 0x2F
+    'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '(', // 0x30 - 0x3F
+    ')', '.', '?', ';', ':', ',', '\'', '/', '"', '-', '<','>', '@'                 // 0x40 - 0x4F
+};
+#endif
+
+textScreen_t *max7456_getTextScreen(void)
+{
+    return &max7456Screen;
+}
 
 static void max7456_write(uint8_t address, uint8_t data)
 {
@@ -165,13 +189,15 @@ static void max7456_setVideoMode(videoMode_e mode)
     {
         case VIDEO_NTSC:
             max7456_videoModeMask = MAX7456_MODE_MASK_NTSC;
-            max7456_screenRows = MAX7456_NTSC_ROW_COUNT;
+            max7456Screen.height = MAX7456_NTSC_ROW_COUNT;
             break;
          case VIDEO_PAL:
             max7456_videoModeMask = MAX7456_MODE_MASK_PAL;
-            max7456_screenRows = MAX7456_PAL_ROW_COUNT;
+            max7456Screen.height = MAX7456_PAL_ROW_COUNT;
             break;
     }
+
+    max7456Screen.width = MAX7456_COLUMN_COUNT;
 }
 
 bool max7456_isOSDEnabled(void)
@@ -334,81 +360,81 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
     DISABLE_MAX7456;
 }
 
+void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
+{
+    ENABLE_MAX7456;
 
-// the default max7456 font
-static const uint8_t fontToASCIIMapping[] = {
-    ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E', // 0x00 - 0x0F
-    'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', // 0x10 - 0x1F
-    'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', // 0x20 - 0x2F
-    'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '(', // 0x30 - 0x3F
-    ')', '.', '?', ';', ':', ',', '\'', '/', '"', '-', '<','>', '@'                 // 0x40 - 0x4F
-};
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_DMM_BIT_8BIT_ENABLE | MAX7456_DMM_BIT_AUTO_INCREMENT);
 
-#ifdef USE_MAX7456_DEFAULT_FONT
-// for default max7456 font
-static const uint8_t asciiToFontMapping[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  0  -  15
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  16 -  31
-    0x00, 0x00, 0x48, 0x00, 0x00, 0x00, 0x00, 0x46, 0x3F, 0x40, 0x00, 0x00, 0x45, 0x49, 0x41, 0x47, //  32 -  47  " !"#$%&'()*+,-./"
-    0x0A, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x44, 0x43, 0x4A, 0x00, 0x4B, 0x42, //  48 -  63  "0123456789:;<=>?"
-    0x4C, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, //  64 -  79  "@ABCDEFGHIJKLMNO"
-    0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x00, 0x46, 0x00, 0x00, 0x00, //  80 -  95  "PQRSTUVWXYZ[\]^_"
-    0x00, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, //  96 - 111  "`abcdefghijklmno"
-    0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x00, 0x00, 0x00, 0x00, 0x00, // 112 - 127  "pqrstuvwxyz{|}~ "
-};
-#else
-// for cleanflight font
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
+    spiTransferByte(MAX7456_SPI_INSTANCE, 0);
 
-// details:
-// first character in font is the space character.  some characters (A-Z, 0-9, etc) are at their usual ascii positions in the font.
-// lower case alpha characters are mapped to upper case.
-// unmapped characters are mapped to the first character (space).
-// cleanflight logo appears at 0xed, 0xee, 0xef (line 1) and 0xfd, 0xfe, 0xff
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
+    spiTransferByte(MAX7456_SPI_INSTANCE, 0);
 
-static const uint8_t asciiToFontMapping[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //    0 -  15
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //   16 -  31
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2e, 0x00, //   32 -  47 " !"#$%&'()*+,-./"
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x00, 0x00, 0x3c, 0x00, 0x3e, 0x00, //   48 -  63 "0123456789:;<=>?"
-    0x00, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, //   64 -  79 "@ABCDEFGHIJKLMNO"
-    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x00, 0x00, 0x00, 0x00, 0x00, //   80 -  95 "PQRSTUVWXYZ[\]^_"
-    0x00, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, //   96 - 111 "`abcdefghijklmno"
-    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x00, 0x00, 0x00, 0x00, 0x00, //  112 - 127 "pqrstuvwxyz{|}~ "
-};
-#endif
+    for (int y = 0; y < textScreen->height; y++) {
+        unsigned int rowOffset = (y * textScreen->width);
+        char *buffer = &screenBuffer[rowOffset];
 
+        for (int x = 0; x < textScreen->width; x++) {
+            // TODO ensure 0xFF is replaced with ' ' to avoid early termination of auto-increment mode.
+            spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMDI);
+            spiTransferByte(MAX7456_SPI_INSTANCE, *buffer++);
+        }
+    }
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMDI);
+    spiTransferByte(MAX7456_SPI_INSTANCE, 0xFF); // terminate auto-increment
+
+    DISABLE_MAX7456;
+}
 
 static uint8_t cursorX = 0;
 static uint8_t cursorY = 0;
 
-void max7465_advanceCursor(void)
+void max7456_resetCursor(void)
+{
+    cursorX = 0;
+    cursorY = 0;
+}
+
+void max7456_setCursor(uint8_t x, uint8_t y)
+{
+    cursorX = x;
+    cursorY = y;
+}
+
+// software cursor, handles line wrapping and row wrapping, resets to 0,0 when the end of the screen is reached
+void max7456_advanceCursor(void)
 {
     cursorX++;
-    if (cursorX >= 30) {
+    if (cursorX >= max7456Screen.width) {
         cursorY++;
         cursorX = 0;
-        if (cursorY > max7456_screenRows) {
+        if (cursorY > max7456Screen.height) {
             cursorY = 0;
         }
     }
 }
 
-void max7465_print(uint8_t x, uint8_t y, char *message)
+void max7456_print(char *message)
 {
-    cursorX = x;
-    cursorY = y;
-
     char *charPtr = message;
 
     while(*charPtr) {
 
-        uint8_t mappedCharacter = asciiToFontMapping[(uint8_t)*charPtr];
-        max7456_setCharacterAtPosition(cursorX, cursorY, mappedCharacter);
-
-        max7465_advanceCursor();
+        max7456_setCharacterAtPosition(cursorX, cursorY, *charPtr++);
+        max7456_advanceCursor();
 
         charPtr++;
     }
+}
+
+void max7465_printAt(uint8_t x, uint8_t y, char *message)
+{
+    max7456_setCursor(x, y);
+    max7456_print(message);
 }
 
 void max7456_fillScreen(void)
@@ -422,6 +448,8 @@ void max7456_fillScreen(void)
     }
 }
 
+
+// show the entire font in the middle of the screen.
 
 void max7456_showFont(void)
 {

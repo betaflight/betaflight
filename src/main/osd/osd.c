@@ -45,6 +45,7 @@
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
+#include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
 
 #include "osd/config.h"
@@ -56,21 +57,104 @@
 
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 
+textScreen_t osdTextScreen;
+char textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
+const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
+
+typedef struct osdCursor_s {
+    uint8_t x;
+    uint8_t y;
+} osdCursor_t;
+
+static osdCursor_t cursor = {0, 0};
+
+// Does not move the cursor.
+void osdSetCharacterAtPosition(uint8_t x, uint8_t y, char c)
+{
+    uint8_t mappedCharacter = asciiToFontMapping[(uint8_t)c];
+
+    unsigned int offset = (y * osdTextScreen.width) + x;
+    textScreenBuffer[offset] = mappedCharacter;
+}
+
+// Does not move the cursor.
+void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c)
+{
+    unsigned int offset = (y * osdTextScreen.width) + x;
+    textScreenBuffer[offset] = c;
+}
+
+void osdResetCursor(void)
+{
+    cursor.x = 0;
+    cursor.y = 0;
+}
+
+void osdSetCursor(uint8_t x, uint8_t y)
+{
+    cursor.x = x;
+    cursor.y = y;
+}
+
+// software cursor, handles line wrapping and row wrapping, resets to 0,0 when the end of the screen is reached
+void osdAdvanceCursor(void)
+{
+    cursor.x++;
+    if (cursor.x >= osdTextScreen.width) {
+        cursor.y++;
+        cursor.x = 0;
+        if (cursor.y > osdTextScreen.height) {
+            cursor.y = 0;
+        }
+    }
+}
+
+void osdPrint(char *message)
+{
+    char *charPtr = message;
+
+    while(*charPtr) {
+        osdSetCharacterAtPosition(cursor.x, cursor.y, *charPtr);
+        osdAdvanceCursor();
+
+        charPtr++;
+    }
+}
+
+void osdPrintAt(uint8_t x, uint8_t y, char *message)
+{
+    osdSetCursor(x, y);
+    osdPrint(message);
+}
+
+
 void osdDisplaySplash(void)
 {
-    max7456_setCharacterAtPosition(14, 5, FONT_CHARACTER_CF_LOGO1_1x1);
-    max7456_setCharacterAtPosition(15, 5, FONT_CHARACTER_CF_LOGO1_1x2);
-    max7456_setCharacterAtPosition(16, 5, FONT_CHARACTER_CF_LOGO1_1x3);
-    max7456_setCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO1_2x1);
-    max7456_setCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO1_2x2);
-    max7456_setCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO1_2x3);
+    osdSetRawCharacterAtPosition(14, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x1);
+    osdSetRawCharacterAtPosition(15, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x2);
+    osdSetRawCharacterAtPosition(16, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x3);
+    osdSetRawCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x1);
+    osdSetRawCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x2);
+    osdSetRawCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x3);
 
-    max7465_print(10, 7, "CLEANFLIGHT");
+    osdPrintAt(10, 7, "CLEANFLIGHT");
+}
+
+void osdSetTextScreen(textScreen_t *textScreen)
+{
+    osdTextScreen = *textScreen;
 }
 
 void osdClearScreen(void)
 {
-    max7456_clearScreen();
+    uint8_t mappedSpaceCharacter = asciiToFontMapping[(uint8_t)' '];
+
+    int offset = 0;
+    for (int y = 0; y < osdTextScreen.height; y++) {
+        for (int x = 0; x < osdTextScreen.width; x++) {
+            textScreenBuffer[offset++] = mappedSpaceCharacter;
+        }
+    }
 }
 
 void osdInit(void)
@@ -82,6 +166,10 @@ void osdInit(void)
 
 
     max7456_init();
+
+    textScreen_t *max7456TextScreen = max7456_getTextScreen();
+    osdSetTextScreen(max7456TextScreen);
+    osdClearScreen();
 
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
@@ -101,6 +189,7 @@ void osdInit(void)
     }
 
     osdDisplaySplash();
+    max7456_writeScreen(&osdTextScreen, textScreenBuffer);
 }
 
 void osdUpdate(void)
@@ -120,7 +209,7 @@ void osdUpdate(void)
 
     char lineBuffer[31];
     tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
-    max7465_print(2, 2, lineBuffer);
+    osdPrintAt(2, 2, lineBuffer);
 
     char *flightMode;
     if (fcStatus.fcState & (1 << FC_STATE_ANGLE)) {
@@ -138,7 +227,7 @@ void osdUpdate(void)
         fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
         flightMode
     );
-    max7465_print(18, 2, lineBuffer);
+    osdPrintAt(18, 2, lineBuffer);
 
 
 /*
@@ -149,13 +238,15 @@ void osdUpdate(void)
     max7465_print(2, 13, lineBuffer);
 */
     tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);
-    max7465_print(18, 12, lineBuffer);
+    osdPrintAt(18, 12, lineBuffer);
     tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
-    max7465_print(18, 13, lineBuffer);
+    osdPrintAt(18, 13, lineBuffer);
     tfp_sprintf(lineBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
-    max7465_print(2, 14, lineBuffer);
+    osdPrintAt(2, 14, lineBuffer);
     tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
-    max7465_print(18, 14, lineBuffer);
+    osdPrintAt(18, 14, lineBuffer);
+
+    max7456_writeScreen(&osdTextScreen, textScreenBuffer);
 }
 
 void osdHardwareCheck(void)

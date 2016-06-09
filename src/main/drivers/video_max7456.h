@@ -15,6 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#define MAX7456_COLUMN_COUNT 30
+
+#define MAX7456_PAL_ROW_COUNT 16
+#define MAX7456_PAL_CHARACTER_COUNT (MAX7456_COLUMN_COUNT * MAX7456_PAL_ROW_COUNT)
+
+#define MAX7456_NTSC_ROW_COUNT 13
+#define MAX7456_NTSC_CHARACTER_COUNT (MAX7456_COLUMN_COUNT * MAX7456_NTSC_ROW_COUNT)
+
+//
+// These methods talk to the hardware directly, ignoring the OSD screen buffer.
+// TODO Delete unused methods.
+//
+
+
 void max7456_hardwareReset(void);
 void max7456_init(void);
 
@@ -28,9 +43,17 @@ void max7456_clearScreenAtNextVSync(void);
 
 void max7456_showFont(void);
 
-void max7465_print(uint8_t x, uint8_t y, char *message);
+void max7465_printAt(uint8_t x, uint8_t y, char *message);
 
 void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c);
+void max7456_setCharacterAtCursor(uint8_t c);
 
 
 void max7456_fillScreen(void);
+
+//
+// Text Screen API
+//
+
+textScreen_t *max7456_getTextScreen(void);
+void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer);

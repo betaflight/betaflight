@@ -15,18 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// generated with MAX7456 Glyph Editor
+#pragma once
 
-#define FONT_MAX7456_12x18_BYTES_PER_CHARACTER 64 // FIXME actually only the first 54 bytes are used.  data is currently stored this way because of the way the font generators generate there c source.
-extern const uint8_t font_max7456_12x18[16384];
-
-const uint8_t font_max7456_12x18_asciiToFontMapping[128];
-
-#define FONT_CHARACTER_CF_LOGO_W3xH2__1x1 0x01
-#define FONT_CHARACTER_CF_LOGO_W3xH2__1x2 0x02
-#define FONT_CHARACTER_CF_LOGO_W3xH2__1x3 0x03
-#define FONT_CHARACTER_CF_LOGO_W3xH2__2x1 0x11
-#define FONT_CHARACTER_CF_LOGO_W3xH2__2x2 0x12
-#define FONT_CHARACTER_CF_LOGO_W3xH2__2x3 0x13
-
-#define FONT_VERSION 1
+typedef struct textScreen_s {
+    uint8_t width;
+    uint8_t height;
+} textScreen_t;

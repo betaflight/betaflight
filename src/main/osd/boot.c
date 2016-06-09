@@ -47,6 +47,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
 #include "drivers/usb_io.h"
 
