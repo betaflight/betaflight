@@ -41,12 +41,25 @@ void failureMode(failureMode_e mode);
 void systemReset(void);
 void systemResetToBootloader(void);
 bool isMPUSoftReset(void);
+void cycleCounterInit(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz
+
 extern uint32_t hse_value;
 
 typedef void extiCallbackHandlerFunc(void);
+
+typedef struct extiCallbackHandlerConfig_s {
+    IRQn_Type irqn;
+    extiCallbackHandlerFunc* fn;
+} extiCallbackHandlerConfig_t;
+
+#ifndef EXTI_CALLBACK_HANDLER_COUNT
+#define EXTI_CALLBACK_HANDLER_COUNT 1
+#endif
+
+extern extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
 
 void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
 void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
