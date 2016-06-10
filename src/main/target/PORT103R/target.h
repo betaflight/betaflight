@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "103R"
 
 #define LED0    PB3 // PB3 (LED)

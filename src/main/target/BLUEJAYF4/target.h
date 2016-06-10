@@ -16,6 +16,9 @@
  */
 
 #pragma once
+
+#include "common_stm32f4.h"
+
 #define TARGET_BOARD_IDENTIFIER "BJF4"
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)

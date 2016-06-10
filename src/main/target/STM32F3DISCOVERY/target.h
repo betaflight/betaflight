@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "SDF3" // STM Discovery F3
 
 #define LED0    PE8 // Blue LEDs - PE8/PE12

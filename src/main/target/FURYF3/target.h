@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "FURY"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC 1

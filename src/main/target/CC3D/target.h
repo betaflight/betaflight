@@ -14,6 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
+
+#include "common_stm32f3.h"
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 

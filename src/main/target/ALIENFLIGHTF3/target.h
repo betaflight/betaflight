@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
 #define ALIENFLIGHT
 

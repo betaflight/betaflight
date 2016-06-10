@@ -79,11 +79,6 @@
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
-#ifdef STM32F4
-#define BRUSHLESS_MOTORS_PWM_RATE 2000
-#else
-#define BRUSHLESS_MOTORS_PWM_RATE 400
-#endif
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -485,11 +480,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_ppm_invert = 0;
     masterConfig.rxConfig.rcSmoothing = 0;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
-#ifdef STM32F4
-	masterConfig.rxConfig.max_aux_channel = 99;
-#else
-    masterConfig.rxConfig.max_aux_channel = 6;
-#endif
+    masterConfig.rxConfig.max_aux_channel = RXCCONFIG_MAX_AUX_CH;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);

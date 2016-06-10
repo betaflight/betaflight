@@ -16,6 +16,9 @@
  */
 
 #pragma once
+
+#include "common_stm32f4.h"
+
 #define TARGET_BOARD_IDENTIFIER "AFF4"
 #define ALIENFLIGHT
 
