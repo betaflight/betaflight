@@ -135,13 +135,6 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
-#ifdef STM32F10X
-// from system_stm32f10x.c
-void SetSysClock(bool overclock);
-#else 
-void SetSysClock(void);
-#endif
-
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
     SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
@@ -167,24 +160,13 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-#ifdef STM32F3
-    // start fpu
-    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
-    SetSysClock();
-#endif
-#ifdef STM32F1
-    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
-    // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(0); // TODO - Remove from config in the future
-#endif
-#ifdef STM32F4
-    SetSysClock();
-#endif
+    systemInit();
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    systemInit();
-
+    // initialize IO (needed for all IO operations)
+	IOInitGlobal();
+    
     debugMode = masterConfig.debug_mode;
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -193,9 +175,6 @@ void init(void)
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
-
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
 
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {

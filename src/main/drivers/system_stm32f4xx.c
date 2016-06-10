@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,6 +23,8 @@
 #include "platform.h"
 
 #include "gpio.h"
+#include "nvic.h"
+#include "system.h"
 
 
 #include "exti.h"
@@ -35,6 +38,7 @@
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+void SetSysClock(void);
 
 void systemReset(void)
 {
@@ -81,11 +85,9 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 		0, ENABLE
     );
 
-    RCC_AHB2PeriphClockCmd(
-        0, ENABLE);
+    RCC_AHB2PeriphClockCmd(0, ENABLE);
 #ifdef STM32F40_41xxx
-    RCC_AHB3PeriphClockCmd(
-        0, ENABLE);
+    RCC_AHB3PeriphClockCmd(0, ENABLE);
 #endif
     RCC_APB1PeriphClockCmd(
         RCC_APB1Periph_TIM2 |
@@ -165,4 +167,30 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+void systemInit(void)
+{
+    SetSysClock();
+
+    // Configure NVIC preempt/priority groups
+	NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);
+
+    // cache RCC->CSR value to use it in isMPUSoftreset() and others
+	cachedRccCsrValue = RCC->CSR;
+
+    /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
+	extern void *isr_vector_table_base;
+	NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
+	RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
+    
+	RCC_ClearFlag();
+
+	enableGPIOPowerUsageAndNoiseReductions();
+
+    // Init cycle counter
+	cycleCounterInit();
+
+	memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
+	// SysTick
+	SysTick_Config(SystemCoreClock / 1000);
+}
 
