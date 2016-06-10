@@ -190,6 +190,30 @@ static const struct {
 };
 
 
+// 4x4 grid
+struct quadMotorCoordinateOffset_s {
+    uint8_t x;
+    uint8_t y;
+} quadMotorCoordinateOffsets[4] = {
+    {3, 2},
+    {3, 0},
+    {0, 2},
+    {0, 0}
+};
+
+void osdDisplayMotors(void)
+{
+    const int maxMotors = 4; // just quad for now
+    for (int i = 0; i < maxMotors; i++) {
+        if (!fcMotors[i]) {
+            continue; // skip unused/uninitialsed motors.
+        }
+        int percent = scaleRange(fcMotors[i], 1000, 2000, 0, 100); // FIXME should use min/max command as used by the FC.
+
+        osdHardwareDisplayMotor(quadMotorCoordinateOffsets[i].x, quadMotorCoordinateOffsets[i].y, percent);
+    }
+}
+
 void osdUpdate(void)
 {
     char lineBuffer[31];
@@ -297,6 +321,8 @@ void osdUpdate(void)
             osdPrintAt(11, 4, "NO CAMERA");
         }
     }
+
+    osdDisplayMotors();
 
     osdHardwareUpdate();
 }

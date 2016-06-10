@@ -48,3 +48,4 @@ void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);
 bool osdIsCameraConnected(void);
+void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent);

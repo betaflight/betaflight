@@ -25,3 +25,5 @@
 #include "osd/fc_state.h"
 
 fcStatus_t fcStatus;
+
+uint16_t fcMotors[OSD_MAX_MOTORS];

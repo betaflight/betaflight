@@ -46,6 +46,8 @@
 
 /*
     This is a simple first-cut implementation of an MSP client so that the OSD can talk to the FC.
+
+    Later on, we'll configure the frequency of each command.
 */
 
 #define MSP_CLIENT_TIMEOUT_INTERVAL (500 * 1000) // 1/2 second
@@ -61,7 +63,8 @@ bool mspRequestFCSimpleCommandSender(mspPacket_t *request)
 
 static uint8_t commandsToSend[] = {
     MSP_STATUS,
-    MSP_ANALOG
+    MSP_ANALOG,
+    MSP_MOTOR
 };
 
 void mspClientProcess(void)
@@ -113,6 +116,12 @@ int mspClientProcessInCommand(mspPacket_t *cmd)
             fcStatus.rssi = scaleRange(sbufReadU16(src), 0, 1023, 0, 1000);
             fcStatus.amperage = sbufReadU16(src);
             break;
+
+        case MSP_MOTOR:
+            for (unsigned i = 0; i < 8 && i < OSD_MAX_MOTORS; i++) {
+                fcMotors[i] = sbufReadU16(src);
+            }
+        break;
 
         default:
             // we do not know how to handle the (valid) message, try another message handler

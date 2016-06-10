@@ -33,6 +33,8 @@
 #include <platform.h>
 #include "debug.h"
 
+#include "common/maths.h"
+
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -348,6 +350,13 @@ void osdHardwareDrawLogo(void)
     osdSetRawCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x1);
     osdSetRawCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x2);
     osdSetRawCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x3);
+}
+
+void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
+{
+    uint8_t c = FONT_CHARACTER_MOTOR_OFF - (MIN(percent, 99) / 10);
+
+    osdSetRawCharacterAtPosition(13 + x, 12 + y, c);
 }
 
 bool osdIsCameraConnected(void)

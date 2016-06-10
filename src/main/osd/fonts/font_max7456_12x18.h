@@ -29,4 +29,19 @@ const uint8_t font_max7456_12x18_asciiToFontMapping[128];
 #define FONT_CHARACTER_CF_LOGO_W3xH2__2x2 0x12
 #define FONT_CHARACTER_CF_LOGO_W3xH2__2x3 0x13
 
+//
+// small circles, in 1/8th increments.
+//
+#define FONT_CHARACTER_MOTOR_8_8 0x04 // complete circle
+#define FONT_CHARACTER_MOTOR_7_8 0x05
+#define FONT_CHARACTER_MOTOR_6_8 0x06
+#define FONT_CHARACTER_MOTOR_5_8 0x07
+#define FONT_CHARACTER_MOTOR_4_8 0x08 // semi-circle
+#define FONT_CHARACTER_MOTOR_3_8 0x09
+#define FONT_CHARACTER_MOTOR_2_8 0x0a
+#define FONT_CHARACTER_MOTOR_1_8 0x0b
+#define FONT_CHARACTER_MOTOR_0_8 0x0c // line
+#define FONT_CHARACTER_MOTOR_OFF 0x0d // circle outline
+
+
 #define FONT_VERSION 1

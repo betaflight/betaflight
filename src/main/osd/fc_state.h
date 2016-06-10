@@ -66,3 +66,6 @@ typedef struct fcStatus_s {
 } fcStatus_t;
 
 extern fcStatus_t fcStatus;
+
+#define OSD_MAX_MOTORS 8
+extern uint16_t fcMotors[OSD_MAX_MOTORS];
