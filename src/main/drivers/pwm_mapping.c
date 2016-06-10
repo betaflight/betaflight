@@ -68,75 +68,6 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
     PWM11.14 used for servos
 */
 
-#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R)
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),     // Swap to servo if needed
-    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),
-    PWM7  | (MAP_TO_PWM_INPUT << 8),
-    PWM8  | (MAP_TO_PWM_INPUT << 8),     // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),      // motor #1 or servo #1 (swap to servo if needed)
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2 or servo #2 (swap to servo if needed)
-    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1 or #3
-    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM13 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),      // motor #1
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
-    PWM5  | (MAP_TO_SERVO_OUTPUT  << 8),      // servo #5
-    PWM6  | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM7  | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM8  | (MAP_TO_SERVO_OUTPUT  << 8),      // servo #8
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),
-    PWM7  | (MAP_TO_PWM_INPUT << 8),
-    PWM8  | (MAP_TO_PWM_INPUT << 8),     // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),      // motor #1
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
-    0xFFFF
-};
-#endif
-
-
 const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
@@ -176,11 +107,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         i++; // next index is for PPM
 
 #ifdef CC3D
-if (init->useBuzzerP6) {
-	setup = hardwareMapsBP6[i];
-} else {
-	setup = hardwareMaps[i];
-}
+    setup = init->useBuzzerP6 ? hardwareMapsBP6[i] : hardwareMaps[i];
 #else
     setup = hardwareMaps[i];
 #endif
@@ -357,7 +284,6 @@ if (init->useBuzzerP6) {
             if (type == MAP_TO_PWM_INPUT && timerHardwarePtr->tim == TIM4) {
                 continue;
             }
-
         }
 #endif
 
@@ -374,16 +300,16 @@ if (init->useBuzzerP6) {
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #ifdef CC3D
-	        if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
-            	// Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
-            	if (timerHardwarePtr->tim == TIM2)
-            		continue;
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+                // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
+                if (timerHardwarePtr->tim == TIM2)
+                    continue;
             }
 #endif
             if (init->useFastPwm) {
                 pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->pwmProtocolType, init->motorPwmRate, init->idlePulse);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
-	        } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
             } else {
