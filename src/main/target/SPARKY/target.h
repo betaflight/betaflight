@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
 #define LED0    PB4  // Blue (Rev 1 & 2) - PB4

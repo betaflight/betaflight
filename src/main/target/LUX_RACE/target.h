@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "LUX"
 #define BOARD_HAS_VOLTAGE_DIVIDER
 

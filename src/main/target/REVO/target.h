@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f4.h"
+
 #define TARGET_BOARD_IDENTIFIER "REVO"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC 1

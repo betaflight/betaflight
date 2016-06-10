@@ -17,7 +17,11 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "SRF3"
+
+#define CONFIG_FASTLOOP_PREFERRED_ACC 0
 
 #define LED0    PB3
 

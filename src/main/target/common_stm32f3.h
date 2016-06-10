@@ -14,34 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#define TARGET_BOARD_IDENTIFIER "AFF3" // AFro F3
-
-#include "common_stm32f3.h"
-
+ 
 #pragma once
 
-#define LED0    PB12
-#define BEEPER      PB10
+#define TASK_GYROPID_DESIRED_PERIOD 1000
+#define SCHEDULER_DELAY_LIMIT 100
 
-#define GYRO
-#define ACC
-
-#define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define SERIAL_PORT_COUNT 3
-
-#define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN   PA3
-
-// IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define RXCCONFIG_MAX_AUX_CH 6
+#define BRUSHLESS_MOTORS_PWM_RATE 400

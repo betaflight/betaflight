@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "OLI1" // Olimexino
 
 //#define OLIMEXINO_UNCUT_LED1_E_JUMPER

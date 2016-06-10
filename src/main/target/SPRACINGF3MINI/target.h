@@ -17,7 +17,11 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "SRFM"
+
+#define CONFIG_FASTLOOP_PREFERRED_ACC 0
 
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA

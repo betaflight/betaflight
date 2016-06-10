@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common_stm32f3.h"
+
 #define TARGET_BOARD_IDENTIFIER "CLBR"
 #define BST_DEVICE_NAME "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH 12
