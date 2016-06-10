@@ -86,7 +86,7 @@ cfTask_t cfTasks[] = {
     [TASK_UPDATE_FC_STATE] = {
         .taskName = "UPDATE_FC_STATE",
         .taskFunc = taskUpdateFCState,
-        .desiredPeriod = 1000000 / 30,      // 10 Hz
+        .desiredPeriod = 1000000 / 30,      // 30 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
