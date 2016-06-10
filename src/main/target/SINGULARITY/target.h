@@ -19,6 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "SING"
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC 1
+
 #define LED0    PB3
 
 #define BEEPER      PC15
@@ -85,7 +87,7 @@
 #define RTC6705_SPI_INSTANCE    SPI1
 
 #define M25P16_CS_GPIO          GPIOB
-#define M25P16_CS_PIN           GPIO_Pin_12
+#define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
 #define USE_ADC
@@ -128,4 +130,13 @@
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+//#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+// !!TODO - check the following line is correct
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(16) |TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+

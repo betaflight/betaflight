@@ -28,7 +28,7 @@
 #define LED1    PA14
 
 // tqfp48 pin 38
-#define LED2    Pa15
+#define LED2    PA15
 
 #define BEEPER      PB2
 #define BEEPER_INVERTED
@@ -36,7 +36,7 @@
 // tqfp48 pin 3
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MPU6500_CS_GPIO                  GPIOC
-#define MPU6500_CS_PIN                   GPIO_Pin_14
+#define MPU6500_CS_PIN                   PC14
 #define MPU6500_SPI_INSTANCE             SPI1
 
 // tqfp48 pin 25
@@ -52,25 +52,25 @@
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 39
-#define SPI1_SCK_PIN            GPIO_Pin_3
+#define SPI1_SCK_PIN            PB3
 #define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
 // tqfp48 pin 40
-#define SPI1_MISO_PIN           GPIO_Pin_4
+#define SPI1_MISO_PIN           PB4
 #define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
 // tqfp48 pin 41
-#define SPI1_MOSI_PIN           GPIO_Pin_5
+#define SPI1_MOSI_PIN           PB5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 26
-#define SPI2_SCK_PIN            GPIO_Pin_13
+#define SPI2_SCK_PIN            PB13
 #define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 // tqfp48 pin 27
-#define SPI2_MISO_PIN           GPIO_Pin_14
+#define SPI2_MISO_PIN           PB14
 #define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
 // tqfp48 pin 28
-#define SPI2_MOSI_PIN           GPIO_Pin_15
+#define SPI2_MOSI_PIN           PB15
 #define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 // timer definitions in drivers/timer.c
@@ -181,3 +181,16 @@
 #define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// !!TODO - check the TARGET_IO_PORTs are correct
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+

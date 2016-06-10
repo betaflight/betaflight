@@ -140,4 +140,11 @@ extern const uint16_t multiPWM[];
 extern const uint16_t airPPM[];
 extern const uint16_t airPWM[];
 
+#ifdef CC3D
+extern const uint16_t multiPPM_BP6[];
+extern const uint16_t multiPWM_BP6[];
+extern const uint16_t airPPM_BP6[];
+extern const uint16_t airPWM_BP6[];
+#endif
+
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);
