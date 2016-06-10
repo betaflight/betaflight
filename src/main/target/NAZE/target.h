@@ -170,10 +170,10 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-// alternative defaults for AlienWii32 F1 target
+// alternative defaults for AlienFlight F1 target
 #ifdef ALIENFLIGHT
 #undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "AWF1" // AlienFlight F1.
+#define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
 #undef BOARD_HAS_VOLTAGE_DIVIDER
 #define ALIENFLIGHT
 #define DEFAULT_FEATURES (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)

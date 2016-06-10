@@ -652,6 +652,7 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
+    masterConfig.motor_pwm_protocol = PWM_TYPE_BRUSHED;
     currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
