@@ -73,6 +73,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifndef DEFAULT_RX_FEATURE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
@@ -382,16 +386,11 @@ static void resetConf(void)
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
 
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(LUX_RACE) || defined(DOGE) || defined(PIKOBLX) || defined(SINGULARITY) || defined(FURYF3)
-    featureSet(FEATURE_RX_PPM);
+    featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES);
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
 #endif
-
-//#if defined(SPRACINGF3MINI)
-//    featureSet(FEATURE_DISPLAY);
-//#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -399,8 +398,8 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
-    featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_SUPEREXPO_RATES);
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
@@ -574,7 +573,6 @@ static void resetConf(void)
 #endif
 
 #ifdef SPRACINGF3
-    featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
@@ -597,7 +595,6 @@ static void resetConf(void)
 #endif
 
 #if defined(FURYF3)
-    featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 2;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
@@ -609,16 +606,6 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.maxthrottle = 1980;
     masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
     masterConfig.batteryConfig.vbatmincellvoltage = 30;
-
-    featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_FAILSAFE);
-#endif
-
-#ifdef SPRACINGF3EVO
-    featureSet(FEATURE_TRANSPONDER);
-    featureSet(FEATURE_RSSI_ADC);
-    featureSet(FEATURE_CURRENT_METER);
-    featureSet(FEATURE_TELEMETRY);
 #endif
 
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
@@ -699,14 +686,12 @@ static void resetConf(void)
 
     // alternative defaults settings for SINGULARITY target
 #if defined(SINGULARITY)
-    featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
     
     masterConfig.batteryConfig.vbatscale = 77;
 
-    featureSet(FEATURE_RX_SERIAL);
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 
@@ -823,7 +808,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
+        featureSet(FEATURE_RX_PARALLEL_PWM);
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
