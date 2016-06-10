@@ -377,9 +377,13 @@ void init(void)
 #endif
 
 #ifdef USE_SPI
+#ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
+#endif
+#ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);
-#ifdef STM32F303xC
+#endif
+#ifdef USE_SPI_DEVICE_3
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_2) {
         spiInit(SPIDEV_3);

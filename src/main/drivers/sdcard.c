@@ -15,8 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "sdcard.h"
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,6 +27,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
 
+#include "sdcard.h"
 #include "sdcard_standard.h"
 
 #ifdef USE_SDCARD
@@ -37,8 +36,8 @@
     #define SDCARD_PROFILING
 #endif
 
-#define SET_CS_HIGH          IOHi(sdcardDetectPin)
-#define SET_CS_LOW           IOLo(sdcardDetectPin)
+#define SET_CS_HIGH          IOHi(sdCardCsPin)
+#define SET_CS_LOW           IOLo(sdCardCsPin)
 
 #define SDCARD_INIT_NUM_DUMMY_BYTES 10
 #define SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY 8
@@ -117,23 +116,27 @@ static sdcard_t sdcard;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
-static IO_t sdcardDetectPin = IO_NONE;
+#ifdef SDCARD_DETECT_PIN
+static IO_t sdCardDetectPin = IO_NONE;
+#endif
+
+static IO_t sdCardCsPin = IO_NONE;
 
 void sdcardInsertionDetectDeinit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-	sdcardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
-	IOInit(sdcardDetectPin, OWNER_SYSTEM, RESOURCE_SPI);
-    IOConfigGPIO(sdcardDetectPin, SPI_IO_CS_CFG); 
+    sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+    IOInit(sdCardDetectPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOConfigGPIO(sdCardDetectPin, IOCFG_IN_FLOATING); 
 #endif
 }
 
 void sdcardInsertionDetectInit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-    sdcardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
-	IOInit(sdcardDetectPin, OWNER_SDCARD, RESOURCE_INPUT);
-    IOConfigGPIO(sdcardDetectPin, SPI_IO_CS_CFG); 
+    sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+    IOInit(sdCardDetectPin, OWNER_SDCARD, RESOURCE_INPUT);
+    IOConfigGPIO(sdCardDetectPin, IOCFG_IPU); 
 #endif
 }
 
@@ -146,7 +149,7 @@ bool sdcard_isInserted(void)
 
 #ifdef SDCARD_DETECT_PIN
 
-    result = IORead(sdcardDetectPin) != 0;
+    result = IORead(sdCardDetectPin) != 0;
 
 #ifdef SDCARD_DETECT_INVERTED
     result = !result;
@@ -542,6 +545,12 @@ void sdcard_init(bool useDMA)
     (void) useDMA;
 #endif
 
+#ifdef SDCARD_SPI_CS_PIN
+    sdCardCsPin = IOGetByTag(IO_TAG(SDCARD_SPI_CS_PIN));
+    IOInit(sdCardCsPin, OWNER_SDCARD, RESOURCE_SPI);
+    IOConfigGPIO(sdCardCsPin, SPI_IO_CS_CFG);
+#endif // SDCARD_SPI_CS_PIN
+    
     // Max frequency is initially 400kHz
     spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
 
@@ -550,19 +559,17 @@ void sdcard_init(bool useDMA)
 
     // Transmit at least 74 dummy clock cycles with CS high so the SD card can start up
     SET_CS_HIGH;
-
+        
     spiTransfer(SDCARD_SPI_INSTANCE, NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES);
 
     // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles:
-    int time = 0;
+    int time = 100000;
     while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
-        if (time > 10) {
+        if (time-- == 0) {
             sdcard.state = SDCARD_STATE_NOT_PRESENT;
             sdcard.failureCount++;
             return;
         }
-        delay(1000);
-        time++;
     }
 
     sdcard.operationStartTime = millis();
