@@ -50,6 +50,8 @@
 #define MAX7456_NRST_GPIO               GPIOB
 #define MAX7456_NRST_PIN                Pin_2
 
+#define EXTI_CALLBACK_HANDLER_COUNT 3 // LOS, HSYNC, VSYNC
+
 #define USE_FLASHFS
 #define USE_FLASHTOOLS
 #define USE_FLASH_M25P16

@@ -37,6 +37,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "common/printf.h"
+#include "common/utils.h"
 
 #include "fc/rc_controls.h" // FIXME dependency on FC code for throttle status
 
@@ -158,11 +159,96 @@ void osdInit(void)
     osdHardwareUpdate();
 }
 
+#define OSD_HZ(hz) ((int32_t)((1000 * 1000) / (hz)))
+#define OSD_MS(ms) ((int32_t)(1000 * (ms)))
+
+typedef enum {
+    tim1Hz,
+    tim2Hz,
+    tim5Hz,
+    tim10Hz,
+    timTimerCount
+} timId_e;
+
+typedef struct timerState_s {
+    uint32_t val;
+    bool toggle;  // toggled when the timer is updated/due.
+    uint8_t counter;  // incremented when the timer is updated/due.
+} timerState_t;
+
+timerState_t timerState[timTimerCount];
+
+static const struct {
+    int8_t timId;
+    uint32_t delay;
+} timerTable[] = {
+    // LAYER 1
+    { tim1Hz,  OSD_HZ(1)  }, // for slow flashing messages                         (e.g. camera not connected)
+    { tim2Hz,  OSD_HZ(2)  }, // for low urgency alarms                             (e.g. altitude to high)
+    { tim5Hz,  OSD_HZ(5)  }, // for medium urgency alarms                          (e.g. battery low)
+    { tim10Hz, OSD_HZ(10) }, // for high urgency alarms and eye-catching effects.  (e.g. fc disconnection, battery critical)
+};
+
+
 void osdUpdate(void)
 {
     char lineBuffer[31];
-    tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
-    osdPrintAt(2, 2, lineBuffer);
+
+    osdClearScreen();
+
+    uint32_t now = micros();
+
+    // test all timers, setting corresponding bits
+    uint32_t timActive = 0;
+    for(timId_e timId = 0; timId < timTimerCount; timId++) {
+        if(cmp32(now, timerState[timId].val) < 0)
+            continue;  // not ready yet
+        timActive |= 1 << timId;
+        // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
+        // max delay is limited to 5s
+        if(cmp32(now, timerState[timId].val) >= OSD_MS(100) || cmp32(now, timerState[timId].val) < OSD_HZ(5000) ) {
+            timerState[timId].val = now;
+        }
+    }
+
+    // update all timers
+    for(unsigned i = 0; i < ARRAYLEN(timerTable); i++) {
+        int timId = timerTable[i].timId;
+
+        bool updateNow = timActive & (1 << timId);
+        if (!updateNow) {
+            continue;
+        }
+        timerState[timId].toggle = !timerState[timId].toggle;
+        timerState[timId].counter++;
+        timerState[timId].val += timerTable[i].delay;
+    }
+
+    //
+    // flash the logo for a few seconds
+    // then leave it on for a few more before turning it off
+    //
+
+    static bool splashDone = false;
+    if (!splashDone) {
+        if (
+            (timerState[tim1Hz].counter > 3 && timerState[tim1Hz].counter < 6) ||
+            (timerState[tim1Hz].counter <= 3 && timerState[tim10Hz].toggle)
+        ) {
+            osdDisplaySplash();
+        }
+
+        if (timerState[tim1Hz].counter >= 10) {
+            splashDone = true;
+        }
+    }
+
+    bool showNowOrFlashWhenFCCommunicationTimeout = !fcStatus.communicationTimeout || (fcStatus.communicationTimeout && timerState[tim10Hz].toggle);
+
+    if (showNowOrFlashWhenFCCommunicationTimeout) {
+        tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
+        osdPrintAt(2, 2, lineBuffer);
+    }
 
     char *flightMode;
     if (fcStatus.fcState & (1 << FC_STATE_ANGLE)) {
@@ -172,15 +258,17 @@ void osdUpdate(void)
     } else if (fcStatus.fcState & (1 << FC_STATE_ARM)) {
         flightMode  = "ACRO";
     } else  {
-        flightMode  = "OFF";
+        flightMode  = " OFF";
     }
 
-    tfp_sprintf(lineBuffer, "%1s %1s %4s",
-        fcStatus.fcState & (1 << FC_STATE_MAG) ? "M" : "",
-        fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
-        flightMode
-    );
-    osdPrintAt(18, 2, lineBuffer);
+    if (showNowOrFlashWhenFCCommunicationTimeout) {
+        tfp_sprintf(lineBuffer, "%1s %1s %4s",
+            fcStatus.fcState & (1 << FC_STATE_MAG) ? "M" : "",
+            fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
+            flightMode
+        );
+        osdPrintAt(20, 2, lineBuffer);
+    }
 
 
 /*
@@ -192,12 +280,23 @@ void osdUpdate(void)
 */
     tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);
     osdPrintAt(18, 12, lineBuffer);
-    tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
-    osdPrintAt(18, 13, lineBuffer);
+
+
+    if (showNowOrFlashWhenFCCommunicationTimeout) {
+        tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
+        osdPrintAt(18, 13, lineBuffer);
+    }
+
     tfp_sprintf(lineBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
     osdPrintAt(2, 14, lineBuffer);
     tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
     osdPrintAt(18, 14, lineBuffer);
+
+    if (timerState[tim2Hz].toggle) {
+        if (!osdIsCameraConnected()) {
+            osdPrintAt(11, 4, "NO CAMERA");
+        }
+    }
 
     osdHardwareUpdate();
 }

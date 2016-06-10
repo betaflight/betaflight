@@ -203,7 +203,7 @@ static void max7456_setVideoMode(videoMode_e mode)
 bool max7456_isOSDEnabled(void)
 {
     uint8_t result = max7456_read(MAX7456_REG_VM0_READ);
-    debug[3] = result;
+    //debug[3] = result;
 
     bool osdEnabled = (result & MAX7456_VM0_BIT_OSD_ENABLE) != 0;
 
@@ -213,7 +213,7 @@ bool max7456_isOSDEnabled(void)
 static bool max7456_isResetComplete(void)
 {
     uint8_t result = max7456_read(MAX7456_REG_STAT_READ);
-    debug[3] = result;
+    //debug[3] = result;
 
     bool resetComplete = (result & MAX7456_STAT_BIT_RESET_MODE) == 0;
 

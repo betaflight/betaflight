@@ -30,8 +30,10 @@
 #include "config/parameter_group_ids.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 #include "common/streambuf.h"
 
+#include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/buf_writer.h"
 
@@ -41,6 +43,12 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
+
+/*
+    This is a simple first-cut implementation of an MSP client so that the OSD can talk to the FC.
+*/
+
+#define MSP_CLIENT_TIMEOUT_INTERVAL (500 * 1000) // 1/2 second
 
 uint8_t commandToSend;
 
@@ -71,6 +79,13 @@ void mspClientProcess(void)
     if (index >= sizeof(commandsToSend)) {
         index = 0;
     }
+
+
+    //
+    // handle timeout of received data.
+    //
+    uint32_t now = micros();
+    fcStatus.communicationTimeout = (cmp32(now, fcStatus.lastReplyAt) >= MSP_CLIENT_TIMEOUT_INTERVAL);
 }
 
 // return positive for ACK, negative on error, zero for no reply
@@ -78,6 +93,8 @@ int mspClientProcessInCommand(mspPacket_t *cmd)
 {
     sbuf_t * src = &cmd->buf;
     int len = sbufBytesRemaining(src);
+
+    fcStatus.lastReplyAt = micros();
 
     UNUSED(len);
 

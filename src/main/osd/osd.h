@@ -47,3 +47,4 @@ void osdHardwareInit(void);
 void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);
+bool osdIsCameraConnected(void);
