@@ -55,6 +55,10 @@ typedef struct extiCallbackHandlerConfig_s {
     extiCallbackHandlerFunc* fn;
 } extiCallbackHandlerConfig_t;
 
+#ifndef EXTI_CALLBACK_HANDLER_COUNT
+#define EXTI_CALLBACK_HANDLER_COUNT 1
+#endif
+
 extern extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
 
 void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
