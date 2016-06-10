@@ -43,6 +43,7 @@
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
+#include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
 
@@ -119,26 +120,13 @@ static const extiConfig_t max7456HSYNCExtiConfig = {
 };
 #endif
 
-bool max7456ExtiHandler(const extiConfig_t *extiConfig, int debugIndex)
+static bool max7456ExtiHandler(const extiConfig_t *extiConfig)
 {
     if (EXTI_GetITStatus(extiConfig->exti_line) == RESET) {
         return false;
     }
 
     EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    /*
-    // Measure the delta in micro seconds between calls to the interrupt handler
-    static uint32_t lastCalledAt[3] = {0, 0, 0};
-    static int32_t callDelta[3] = {0, 0, 0};
-
-    uint32_t now = micros();
-    callDelta[debugIndex] = now - lastCalledAt[debugIndex];
-
-    debug[debugIndex] = callDelta[debugIndex];
-
-    lastCalledAt[debugIndex] = now;
-    */
 
     return true;
 }
@@ -166,7 +154,7 @@ void updateLOSState(void)
 void LOS_EXTI_Handler(void)
 {
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456LOSExtiConfig, 0);
+    bool set = max7456ExtiHandler(&max7456LOSExtiConfig);
     callCount++;
     if (!set) {
         return;
@@ -180,7 +168,7 @@ void LOS_EXTI_Handler(void)
 void VSYNC_EXTI_Handler(void)
 {
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456VSYNCExtiConfig, 1);
+    bool set = max7456ExtiHandler(&max7456VSYNCExtiConfig);
     callCount++;
     if (!set) {
         return;
@@ -199,7 +187,7 @@ void VSYNC_EXTI_Handler(void)
 void HSYNC_EXTI_Handler(void)
 {
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456HSYNCExtiConfig, 2);
+    bool set = max7456ExtiHandler(&max7456HSYNCExtiConfig);
     callCount++;
     if (!set) {
         return;
@@ -268,7 +256,7 @@ void osdHardwareInit(void)
     max7456_hardwareReset();
     LED0_OFF;
 
-    max7456_init();
+    max7456_init(osdVideoConfig()->videoMode);
 
     max7456_extiInit(&max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
     max7456_extiInit(&max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Rising);
@@ -330,12 +318,12 @@ void osdHardwareCheck(void)
     checkCount++;
 
     if (!max7456_isOSDEnabled()) {
-        max7456_init();
+        max7456_init(osdVideoConfig()->videoMode);
     }
 
 #ifdef FACTORY_TEST
     if (checkCount == 10) {
-        max7456_init();
+        max7456_init(osdVideoConfig()->videoMode);
     }
 #endif
 
@@ -356,7 +344,7 @@ void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
 {
     uint8_t c = FONT_CHARACTER_MOTOR_OFF - (MIN(percent, 99) / 10);
 
-    osdSetRawCharacterAtPosition(13 + x, 12 + y, c);
+    osdSetRawCharacterAtPosition(13 + x, osdTextScreen.height - 4 + y, c);
 }
 
 bool osdIsCameraConnected(void)

@@ -169,6 +169,12 @@
 #define MSP_SET_LED_STRIP_MODECOLOR     87 //in  message         Set LED strip mode_color settings
 
 //
+// OSD specific
+//
+#define MSP_OSD_VIDEO_CONFIG            180
+#define MSP_SET_OSD_VIDEO_CONFIG        181
+
+//
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)

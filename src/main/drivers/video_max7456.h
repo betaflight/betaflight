@@ -31,7 +31,7 @@
 
 
 void max7456_hardwareReset(void);
-void max7456_init(void);
+void max7456_init(videoMode_e videoMode);
 
 void max7456_resetFont(void);
 

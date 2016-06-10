@@ -21,6 +21,13 @@ typedef struct osdFontConfig_s {
 
 PG_DECLARE(osdFontConfig_t, osdFontConfig);
 
+typedef struct osdVideoConfig_s {
+    uint8_t videoMode;
+    // other settings like horizontal/vertical offsets, sync modes, etc probably belong here in the future.
+} osdVideoConfig_t;
+
+PG_DECLARE(osdVideoConfig_t, osdVideoConfig);
+
 extern const uint8_t *asciiToFontMapping;
 
 extern textScreen_t osdTextScreen;

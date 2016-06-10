@@ -23,6 +23,7 @@
 
 #include <debug.h>
 
+#include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
 #include "drivers/bus_spi.h"
@@ -116,13 +117,6 @@
 
 #define BWBRIGHTNESS ((BLACKBRIGHTNESS << 2) | WHITEBRIGHTNESS)
 
-typedef enum {
-    VIDEO_NTSC = 0,
-    VIDEO_PAL = 1
-} videoMode_e;
-
-videoMode_e videoMode;
-
 uint8_t max7456_videoModeMask;
 uint8_t max7456_screenRows;
 
@@ -182,10 +176,9 @@ static uint8_t max7456_read(uint8_t address)
     return result;
 }
 
-static void max7456_setVideoMode(videoMode_e mode)
+static void max7456_setVideoMode(videoMode_e videoMode)
 {
-    videoMode = mode;
-    switch(mode)
+    switch(videoMode)
     {
         case VIDEO_NTSC:
             max7456_videoModeMask = MAX7456_MODE_MASK_NTSC;
@@ -253,12 +246,12 @@ void max7456_disableOSD(void)
     max7456_write(MAX7456_REG_VM0, max7456_videoModeMask); // MAX7456_VM0_BIT_OSD_ENABLE unset.
 }
 
-void max7456_init()
+void max7456_init(videoMode_e videoMode)
 {
     // device is rated for 10mhz max
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
 
-    max7456_setVideoMode(VIDEO_PAL);
+    max7456_setVideoMode(videoMode);
 
     max7456_softReset();
 

@@ -37,6 +37,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "common/printf.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "fc/rc_controls.h" // FIXME dependency on FC code for throttle status
@@ -46,6 +47,7 @@
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
+#include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 
 #include "osd/config.h"
@@ -55,6 +57,13 @@
 #include "osd/osd.h"
 
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig, PG_OSD_VIDEO_CONFIG, 0);
+
+PG_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig,
+        // the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
+        // Also most PAL screens can also display NTSC but not vice-versa.
+    .videoMode = VIDEO_NTSC,
+);
 
 textScreen_t osdTextScreen;
 
@@ -195,10 +204,10 @@ struct quadMotorCoordinateOffset_s {
     uint8_t x;
     uint8_t y;
 } quadMotorCoordinateOffsets[4] = {
-    {3, 2},
-    {3, 0},
-    {0, 2},
-    {0, 0}
+    {3, 3},
+    {3, 1},
+    {0, 3},
+    {0, 1}
 };
 
 void osdDisplayMotors(void)
@@ -248,30 +257,17 @@ void osdUpdate(void)
         timerState[timId].val += timerTable[i].delay;
     }
 
-    //
-    // flash the logo for a few seconds
-    // then leave it on for a few more before turning it off
-    //
-
-    static bool splashDone = false;
-    if (!splashDone) {
-        if (
-            (timerState[tim1Hz].counter > 3 && timerState[tim1Hz].counter < 6) ||
-            (timerState[tim1Hz].counter <= 3 && timerState[tim10Hz].toggle)
-        ) {
-            osdDisplaySplash();
-        }
-
-        if (timerState[tim1Hz].counter >= 10) {
-            splashDone = true;
-        }
-    }
-
     bool showNowOrFlashWhenFCCommunicationTimeout = !fcStatus.communicationTimeout || (fcStatus.communicationTimeout && timerState[tim10Hz].toggle);
+
+    //
+    // top
+    //
+
+    int row = 1; // zero based.
 
     if (showNowOrFlashWhenFCCommunicationTimeout) {
         tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
-        osdPrintAt(2, 2, lineBuffer);
+        osdPrintAt(2, row, lineBuffer);
     }
 
     char *flightMode;
@@ -291,9 +287,43 @@ void osdUpdate(void)
             fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
             flightMode
         );
-        osdPrintAt(20, 2, lineBuffer);
+        osdPrintAt(20, row, lineBuffer);
     }
 
+    //
+    // middle
+    //
+
+    //
+    // flash the logo for a few seconds
+    // then leave it on for a few more before turning it off
+    //
+
+    static bool splashDone = false;
+    if (!splashDone) {
+        if (
+            (timerState[tim1Hz].counter > 3 && timerState[tim1Hz].counter < 6) ||
+            (timerState[tim1Hz].counter <= 3 && timerState[tim10Hz].toggle)
+        ) {
+            osdDisplaySplash();
+        }
+
+        if (timerState[tim1Hz].counter >= 10) {
+            splashDone = true;
+        }
+    }
+
+    if (timerState[tim2Hz].toggle && splashDone) {
+        if (!osdIsCameraConnected()) {
+            osdPrintAt(11, 4, "NO CAMERA");
+        }
+    }
+
+    //
+    // bottom
+    //
+
+    row = osdTextScreen.height - 3;
 
 /*
     // TODO rework ADC and battery code to provide volt meters
@@ -303,24 +333,22 @@ void osdUpdate(void)
     max7465_print(2, 13, lineBuffer);
 */
     tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);
-    osdPrintAt(18, 12, lineBuffer);
+    osdPrintAt(18, row, lineBuffer);
 
+    row++;
 
     if (showNowOrFlashWhenFCCommunicationTimeout) {
         tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
-        osdPrintAt(18, 13, lineBuffer);
+        osdPrintAt(18, row, lineBuffer);
     }
+
+    row++;
 
     tfp_sprintf(lineBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
-    osdPrintAt(2, 14, lineBuffer);
+    osdPrintAt(2, row, lineBuffer);
     tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
-    osdPrintAt(18, 14, lineBuffer);
+    osdPrintAt(18, row, lineBuffer);
 
-    if (timerState[tim2Hz].toggle) {
-        if (!osdIsCameraConnected()) {
-            osdPrintAt(11, 4, "NO CAMERA");
-        }
-    }
 
     osdDisplayMotors();
 

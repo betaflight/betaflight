@@ -36,6 +36,7 @@
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/video_textscreen.h"
 
 #include "fc/rc_controls.h" // FIXME virtual current sensor needs it
 #include "sensors/battery.h"
@@ -51,6 +52,7 @@
 #include "scheduler.h"
 
 #include "osd/config.h"
+#include "osd/osd.h"
 #include "osd/osd_serial.h"
 #include "osd/msp_server_osd.h"
 
@@ -149,7 +151,8 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_VOLTAGE_METER_CONFIG:
-            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {  // FIXME update for multiple voltage sources  i.e.  use `i` and support at least OSD VBAT, OSD 12V, OSD 5V
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                // FIXME update for multiple voltage sources  i.e.  use `i` and support at least OSD VBAT, OSD 12V, OSD 5V
                 sbufWriteU8(dst, batteryConfig()->vbatscale);
                 sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
                 sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
@@ -189,6 +192,10 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, 0);
             sbufWriteU32(dst, 0);
             sbufWriteU32(dst, 0);
+            break;
+
+        case MSP_OSD_VIDEO_CONFIG:
+            sbufWriteU8(dst, osdVideoConfig()->videoMode); // 0 = NTSC, 1 = PAL
             break;
 
         default:
@@ -259,6 +266,10 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
 
         case MSP_REBOOT:
             mspPostProcessFn = mspRebootFn;
+            break;
+
+        case MSP_SET_OSD_VIDEO_CONFIG:
+            osdVideoConfig()->videoMode = sbufReadU8(src);
             break;
 
         default:
