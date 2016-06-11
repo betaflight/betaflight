@@ -148,7 +148,7 @@ void updateLOSState(void)
 
     max7456State.los = status != 0;
 
-    debug[0] = max7456State.los;
+    //debug[0] = max7456State.los;
 }
 
 void LOS_EXTI_Handler(void)
@@ -180,8 +180,8 @@ void VSYNC_EXTI_Handler(void)
     max7456State.lineCounter = 0;
 
 
-    debug[1] = max7456State.frameCounter;
-    debug[3] = max7456State.maxLinesDetected;
+    //debug[1] = max7456State.frameCounter;
+    //debug[3] = max7456State.maxLinesDetected;
 }
 
 void HSYNC_EXTI_Handler(void)
@@ -194,7 +194,7 @@ void HSYNC_EXTI_Handler(void)
     }
     max7456State.lineCounter++;
 
-    debug[2] = max7456State.lineCounter;
+    //debug[2] = max7456State.lineCounter;
 }
 
 typedef void (*handlerFuncPtr)(void);
