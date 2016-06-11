@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "REVO" //Call it a revo for now so it connects to RFC for testing.
+#define TARGET_BOARD_IDENTIFIER "FYF4" //Call it a revo for now so it connects to RFC for testing.
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define CONFIG_SERIALRX_PROVIDER SERIALRX_SBUS
 #define CONFIG_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
@@ -26,7 +26,7 @@
 #define CONFIG_MSP_PORT 2
 #define CONFIG_RX_SERIAL_PORT 1
 
-#define USBD_PRODUCT_STRING "KopterKontrolNG"
+#define USBD_PRODUCT_STRING "FURYF4"
 
 #define LED0 PB5
 #define LED1 PB4
@@ -36,16 +36,24 @@
 #define INVERTER PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART USART1
 
-#define MPU6000_CS_PIN        PA4
-#define MPU6000_SPI_INSTANCE  SPI1
+#define MPU6000_CS_PIN                   PA4
+#define MPU6000_SPI_INSTANCE             SPI1
 
-#define ACC
-#define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW180_DEG
+#define MPU6500_CS_PIN                   PA4
+#define MPU6500_SPI_INSTANCE             SPI1
 
-#define GYRO
 #define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW180_DEG
+#define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW180_DEG
+
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN CW180_DEG
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN CW180_DEG
 
 // MPU6000 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
@@ -57,10 +65,15 @@
 #define USE_BARO_MS5611
 #define MS5611_I2C_INSTANCE I2CDEV_1
 
-//#define USE_SDCARD
+#define USE_SDCARD
 
 #define SDCARD_DETECT_INVERTED
 
+#define SDCARD_DETECT_PIN                   PD2
+#define SDCARD_SPI_INSTANCE                 SPI3
+#define SDCARD_SPI_CS_PIN                   PB3
+
+/*
 #define SDCARD_DETECT_PIN                   PD2
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
@@ -69,6 +82,7 @@
 
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PB3
+*/
 
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
@@ -85,7 +99,7 @@
 #define M25P16_CS_PIN         PB3
 #define M25P16_SPI_INSTANCE   SPI3
 
-#define USABLE_TIMER_CHANNEL_COUNT 5  //  chane to 6
+#define USABLE_TIMER_CHANNEL_COUNT 5
 
 #define USE_VCP
 #define VBUS_SENSING_PIN PC5
