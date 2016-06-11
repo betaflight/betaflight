@@ -99,6 +99,8 @@
   * @{
   */
 
+#ifndef NAZE32PRO
+
 #include "stm32f30x.h"
 
 uint32_t hse_value = HSE_VALUE;
@@ -370,3 +372,4 @@ void SetSysClock(void)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
+#endif

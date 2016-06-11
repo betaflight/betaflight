@@ -19,6 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
+
 #define LED0    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
 #define LED1    PE10  // Orange LEDs - PE10/PE14
@@ -68,7 +70,7 @@
 #define L3GD20_SPI                      SPI1
 #define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
 #define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   GPIO_Pin_3
+#define L3GD20_CS_PIN                   PE3
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG
@@ -124,3 +126,11 @@
 #define TARGET_IO_PORTD (BIT(2))
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOF)
+

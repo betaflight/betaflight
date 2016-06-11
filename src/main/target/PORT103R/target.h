@@ -26,9 +26,9 @@
 #define BEEPER      PA12 // PA12 (Beeper)
 
 #define BARO_XCLR_GPIO   GPIOC
-#define BARO_XCLR_PIN    Pin_13
+#define BARO_XCLR_PIN    PC13
 #define BARO_EOC_GPIO    GPIOC
-#define BARO_EOC_PIN     Pin_14
+#define BARO_EOC_PIN     PC14
 #define BARO_APB2_PERIPHERALS RCC_APB2Periph_GPIOC
 
 #define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
@@ -39,7 +39,7 @@
 
 #define PORT103R_SPI_INSTANCE     SPI2
 #define PORT103R_SPI_CS_GPIO      GPIOB
-#define PORT103R_SPI_CS_PIN       GPIO_Pin_12
+#define PORT103R_SPI_CS_PIN       PB12
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
 #define M25P16_CS_GPIO        PORT103R_SPI_CS_GPIO
@@ -127,10 +127,8 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define LED0
-
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -139,3 +137,10 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))
+
+
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+
