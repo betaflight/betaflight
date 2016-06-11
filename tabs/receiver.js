@@ -244,7 +244,7 @@ TABS.receiver.initialize = function (callback) {
                 context.moveTo(midx, midy);
                 context.quadraticCurveTo(midxr, midyr, 200, 0);
                 context.lineWidth = 2;
-				context.strokeStyle = '#59aa29';
+				context.strokeStyle = '#ffbb00';
                 context.stroke();
             }, 0);
         }).trigger('input');
@@ -277,7 +277,7 @@ TABS.receiver.initialize = function (callback) {
                 context.moveTo(0, rateHeight);
                 context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 200, rateHeight - ratey);
                 context.lineWidth = 2;
-				context.strokeStyle = '#59aa29';
+				context.strokeStyle = '#ffbb00';
                 context.stroke();
             }, 0);
         }).trigger('input');

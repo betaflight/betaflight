@@ -60,22 +60,22 @@ a.disabled {
 .cf_doc_version_bt a {
     padding: 1px 9px 1px 9px;
     margin-top: -45px;
-    background-color: #59aa29;
+    background-color: #ffbb00;
     border-radius: 3px;
-    border: 1px solid #4c8829;
-    color: #fff;
+    border: 1px solid #e8b423;
+    color: #000;
     float: right;
     font-family: 'open_sansbold', Arial;
     font-size: 10px;
     line-height: 17px;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     display: block;
 }
 
 .cf_doc_version_bt a:hover {
-    background-color: #6ac435;
+    background-color: #fecb3f;
     transition: all ease 0.2s;
 }
 
@@ -450,7 +450,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #log a {
     font-weight: regular;
-    color: #59aa29;
+    color: #ffbb00;
 }
 
 #log a:hover {
@@ -482,7 +482,7 @@ input[type="number"]::-webkit-inner-spin-button {
     float: left;
     height: calc(100% - 150px);
     width: 200px;
-    border-right: 4px solid #59aa29;
+    border-right: 4px solid #ffbb00;
     background-color: #2e2e2e;
     transition: all 0.2s;
 
@@ -551,14 +551,16 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #tabs li.active a {
-    background-color: #59aa29;
-    color: #fff;
+    background-color: #ffbb00;
+    color: #000;
     transition: none;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.45);
+
 }
 
 #tabs li.active a:hover {
     cursor: default;
-    background-color: #59aa29;
+    background-color: #ffbb00;
 }
 
 .tabicon {
@@ -911,7 +913,7 @@ li.active .ic_mission {
 .data-loading {
     width: 100%;
     height: 100%;
-    background-image: url('../images/loading-bars.svg');
+    background-image: url('../images/loading-spin.svg');
     background-repeat: no-repeat;
     background-position: center 45%;
 }
@@ -938,7 +940,7 @@ dialog {
 
 /* Tab Title */
 .tab_title {
-    border-bottom: 1px solid #59aa29;
+    border-bottom: 1px solid #ffbb00;
     font-size: 20px;
     line-height: 24px;
     height: 30px;
@@ -987,14 +989,14 @@ dialog {
     margin-top: 0px;
     margin-bottom: 0px;
     margin-right: 20px;
-    background-color: #59aa29;
+    background-color: #ffbb00;
     border-radius: 3px;
-    border: 1px solid #4c8829;
-    color: #fff;
+    border: 1px solid #dba718;
+    color: #000;
     float: right;
     font-family: 'open_sansbold', Arial;
     font-size: 12px;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
     display: block;
     cursor: pointer;
     transition: all ease 0.2s;
@@ -1005,12 +1007,12 @@ dialog {
 }
 
 .content_toolbar .btn a:hover {
-    background-color: #6ac435;
+    background-color: #ffcc3e;
     transition: all ease 0.2s;
 }
 
 .content_toolbar .btn a:active {
-    background-color: #4d9324;
+    background-color: #ffbb00;
     transition: all ease 0.0s;
     box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
 }
@@ -1136,7 +1138,7 @@ dialog {
 }
 
 .gui_note {
-    background: #ffffdd;
+    background: #fff6de;
 }
 
 .gui_warning .gui_box_titlebar {
@@ -1150,7 +1152,7 @@ dialog {
 }
 
 .gui_note .gui_box_titlebar {
-    background-color: #cccc00;
+    background-color: #ffbb00;
     background-image: linear-gradient(-45deg, rgba(255, 255, 255, .3) 10%, transparent 10%, transparent 20%,
         rgba(255, 255, 255, .3) 20%, rgba(255, 255, 255, .3) 30%, transparent 30%, transparent 40%,
         rgba(255, 255, 255, .3) 40%, rgba(255, 255, 255, .3) 50%, transparent 50%, transparent 60%,
@@ -1206,10 +1208,10 @@ dialog {
     margin-top: 9px;
     margin-bottom: 0px;
     margin-right: 20px;
-    background-color: #59aa29;
+    background-color: #ffbb00;
     border-radius: 3px;
-    border: 1px solid #4c8829;
-    color: #fff;
+    border: 1px solid #dba718;
+    color: #000;
     float: right;
     font-family: 'open_sansbold', Arial;
     font-size: 12px;
@@ -1224,7 +1226,7 @@ dialog {
 }
 
 .fixed_band .save_btn a:hover {
-    background-color: #6ac435;
+    background-color: #ffcc3f;
     transition: all ease 0.2s;
 }
 
@@ -1240,10 +1242,10 @@ dialog {
 .default_btn a {
     padding: 5px 0px 5px 0px;
     text-align: center;
-    background-color: #fff;
+    background-color: #fff6de;
     border-radius: 4px;
-    border: 1px solid #59aa29;
-    color: #59aa29;
+    border: 1px solid #dba718;
+    color: #000;
     font-family: 'open_sanssemibold', Arial;
     font-size: 12px;
     line-height: 13px;
@@ -1253,16 +1255,16 @@ dialog {
 }
 
 .default_btn a:hover {
-    background-color: #6ac435;
-    color: #fff;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    background-color: #ffcc3f;
+    color: #000;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
     transition: all ease 0.2s;
     text-decoration:none;
 
 }
 
 .default_btn a:active {
-    background-color: #4d9324;
+    background-color: #ffcc3f;
     transition: all ease 0.0s;
     box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
 }
@@ -1292,10 +1294,10 @@ dialog {
 }
 
 .small a:hover {
-    background-color: #6ac435;
-    color: #fff;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
-    border: 1px solid #59aa29;
+    background-color: #ffbb00;
+    color: #000;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
+    border: 1px solid #ffbb00;
     transition: all ease 0.2s;
 }
 
@@ -1306,18 +1308,18 @@ dialog {
 }
 
 .green a {
-    background-color: #59aa29;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
-    color: #fff;
-    border: 1px solid #59aa29;
+    background-color: #ffbb00;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
+    color: #000;
+    border: 1px solid #dba718;
     transition: all ease 0.2s;
 }
 
 .green a:hover {
-    background-color: #6ac435;
-    border: 1px solid #4d9324;
-    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
-    color: #fff;
+    background-color: #ffcc3f;
+    border: 1px solid #dba718;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.25);
+    color: #000;
     transition: all ease 0.2s;
 }
 
@@ -1356,7 +1358,7 @@ dialog {
 }
 
 .gps_true {
-    background-color: #59aa29;
+    background-color: #ffbb00;
     padding: 1px 7px 2px 7px;
     border-radius: 3px;
     color: #FFFFFF;
@@ -1392,8 +1394,8 @@ dialog {
 }
 
 .connect_b a.connect {
-    background-color: #56ac1d;
-    border: 1px solid #5bbb1b;
+    background-color: #ffbb00;
+    border: 1px solid #dba718;
     background-image: url(images/icons/cf_icon_usb2_white.svg);
     background-repeat: no-repeat;
     background-size: 44px;
@@ -1402,7 +1404,7 @@ dialog {
 }
 
 .connect_b a.connect:hover {
-    background-color: #68c02e;
+    background-color: #ffcc3f;
 }
 
 .connect_b a.connect.active {
@@ -1516,7 +1518,7 @@ dialog {
 
 
 .dataflash-free_global {
-    background-color: #59AA29;
+    background-color: #ffbb00;
     border-radius: 4px;
 }
 
@@ -1626,7 +1628,7 @@ dialog {
     position: relative;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.20);
     border-radius: 0px;
-    background-color: #59AA29;
+    background-color: #ffbb00;
     /* border-radius: 4px; */
     margin-top: 0px;
 }
