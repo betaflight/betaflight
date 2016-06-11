@@ -14,22 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 #pragma once
 
-typedef enum {
-  PWM_TYPE_CONVENTIONAL = 0,
-  PWM_TYPE_ONESHOT125,
-  PWM_TYPE_ONESHOT42,
-  PWM_TYPE_MULTISHOT
-} FastPwmProtocolTypes_e;
+#include "drivers/vtx_rtc6705.h"
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
+#define VTX_BAND_MIN    						1
+#define VTX_BAND_MAX    						5
+#define VTX_CHANNEL_MIN 						1
+#define VTX_CHANNEL_MAX 						8
+#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT 	10
 
-void pwmWriteServo(uint8_t index, uint16_t value);
+typedef struct vtxChannelActivationCondition_s {
+    uint8_t auxChannelIndex;
+    uint8_t band;
+    uint8_t channel;
+    channelRange_t range;
+} vtxChannelActivationCondition_t;
 
-bool isMotorBrushed(uint16_t motorPwmRate);
-void pwmDisableMotors(void);
-void pwmEnableMotors(void);
+void vtxInit();
+void vtxIncrementBand();
+void vtxDecrementBand();
+void vtxIncrementChannel();
+void vtxDecrementChannel();
+void vtxUpdateActivatedChannel();

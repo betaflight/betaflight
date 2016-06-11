@@ -34,8 +34,8 @@ typedef struct master_t {
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t use_oneshot42;                  // Oneshot42
-    uint8_t use_multiShot;                  // multishot
+    uint8_t fast_pwm_protocol;              // Pwm Protocol
+    uint8_t use_unsyncedPwm;                // unsync fast pwm protocol from PID loop
 
 #ifdef USE_SERVOS
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
@@ -56,9 +56,9 @@ typedef struct master_t {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
-    float gyro_soft_lpf_hz;                 // Biqyad gyro lpf hz
+    uint8_t gyro_soft_lpf_hz;               // Biqyad gyro lpf hz
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -119,6 +119,7 @@ typedef struct master_t {
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 
 #ifdef TRANSPONDER
@@ -136,6 +137,15 @@ typedef struct master_t {
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
+#ifdef VTX
+    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
+    uint8_t vtx_channel; //1-8
+    uint8_t vtx_mode; //0=ch+band 1=mhz
+    uint16_t vtx_mhz; //5740
+
+    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+#endif
+
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
@@ -143,7 +153,7 @@ typedef struct master_t {
 #endif
 
     uint32_t beeper_off_flags;
-    uint32_t prefered_beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
