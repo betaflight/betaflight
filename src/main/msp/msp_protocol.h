@@ -168,6 +168,10 @@
 #define MSP_LED_STRIP_MODECOLOR         86 //out message         Get LED strip mode_color settings
 #define MSP_SET_LED_STRIP_MODECOLOR     87 //in  message         Set LED strip mode_color settings
 
+#define MSP_VOLTAGE_METERS              92 //out message         Voltage (per meter)
+#define MSP_CURRENT_METERS              93 //out message         Amperage (per meter)
+#define MSP_BATTERY_STATES              94 //out message         Connected/Disconnected, Voltage, Current Used (per battery)
+
 //
 // OSD specific
 //
@@ -196,6 +200,7 @@
 
 // DEPRECATED - See MSP_API_VERSION and MSP_MIXER
 #define MSP_IDENT                100    //out message         mixerMode + multiwii version + protocol version + capability variable
+#define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 
 
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -207,7 +212,6 @@
 #define MSP_COMP_GPS             107    //out message         distance home, direction home
 #define MSP_ATTITUDE             108    //out message         2 angles 1 heading
 #define MSP_ALTITUDE             109    //out message         altitude, variometer
-#define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
 #define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)

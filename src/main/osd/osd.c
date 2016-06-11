@@ -44,6 +44,7 @@
 
 #include "sensors/battery.h"
 
+#include "drivers/adc.h"
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
@@ -330,17 +331,18 @@ void osdUpdate(void)
 
     row = osdTextScreen.height - 3;
 
-/*
-    // TODO rework ADC and battery code to provide volt meters
-    tfp_sprintf(lineBuffer, "12V:%3d.%dV", voltMeters[0].voltage / 10, voltMeters[0].voltage % 10);
-    max7465_print(2, 12, lineBuffer);
-    tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltMeters[1].voltage / 10, voltMeters[1].voltage % 10);
-    max7465_print(2, 13, lineBuffer);
-*/
+    uint8_t voltage12v = batteryAdcToVoltage(adcGetChannel(ADC_12V));
+    tfp_sprintf(lineBuffer, "12V:%3d.%dV", voltage12v / 10, voltage12v % 10);
+    osdPrintAt(2, row, lineBuffer);
+
     tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);
     osdPrintAt(18, row, lineBuffer);
 
     row++;
+
+    uint8_t voltage5v = batteryAdcToVoltage(adcGetChannel(ADC_5V));
+    tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltage5v / 10, voltage5v % 10);
+    osdPrintAt(2, row, lineBuffer);
 
     if (showNowOrFlashWhenFCCommunicationTimeout) {
         tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);

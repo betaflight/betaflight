@@ -34,6 +34,7 @@
 #include "common/maths.h"
 #include "common/streambuf.h"
 
+#include "drivers/adc.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/video_textscreen.h"
@@ -183,8 +184,8 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
                 sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_MSP_SERVER]);
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_MSP_CLIENT]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[RESERVED1_BAUDRATE]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[RESERVED2_BAUDRATE]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_RESERVED1]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_RESERVED2]);
             }
             break;
 
@@ -201,6 +202,36 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, 0);
             break;
 
+        case MSP_BATTERY_STATES:
+            // write out battery states, once for each battery
+            sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
+            sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+            sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            break;
+
+        case MSP_CURRENT_METERS:
+            // write out amperage, once for each current meter.
+            sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+            break;
+
+        case MSP_VOLTAGE_METERS:
+            // write out voltage, once for each meter.
+            for (int i = 0; i < 3; i++) {
+                // FIXME hack that needs cleanup, see issue #2221
+                // This works for now, but the vbat scale also changes the 12V and 5V readings.
+                switch(i) {
+                    case 0:
+                        sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+                        break;
+                    case 1:
+                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_12V)), 0, 255));
+                        break;
+                    case 2:
+                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_5V)), 0, 255));
+                        break;
+                }
+            }
+            break;
         case MSP_OSD_VIDEO_CONFIG:
             sbufWriteU8(dst, osdVideoConfig()->videoMode); // 0 = NTSC, 1 = PAL
             break;
@@ -265,8 +296,8 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
                 portConfig->functionMask = sbufReadU16(src);
                 portConfig->baudRates[BAUDRATE_MSP_SERVER] = sbufReadU8(src);
                 portConfig->baudRates[BAUDRATE_MSP_CLIENT] = sbufReadU8(src);
-                portConfig->baudRates[RESERVED1_BAUDRATE] = sbufReadU8(src);
-                portConfig->baudRates[RESERVED2_BAUDRATE] = sbufReadU8(src);
+                portConfig->baudRates[BAUDRATE_RESERVED1] = sbufReadU8(src);
+                portConfig->baudRates[BAUDRATE_RESERVED2] = sbufReadU8(src);
             }
             break;
         }

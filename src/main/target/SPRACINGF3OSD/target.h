@@ -78,6 +78,7 @@
 #define USE_MSP_CLIENT
 
 #define USE_ADC
+#define DEBUG_ADC_CHANNELS
 
 // 12v
 #define ADC1_GPIO               GPIOA
