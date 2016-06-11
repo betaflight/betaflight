@@ -249,6 +249,14 @@ void max7456_extiInit(const extiConfig_t *extiConfig, handlerFuncPtr handlerFn, 
     EXTI_Init(&EXTIInit);
 }
 
+void osdHardwareApplyConfiguration(void)
+{
+    max7456_init(osdVideoConfig()->videoMode);
+
+    textScreen_t *max7456TextScreen = max7456_getTextScreen();
+    osdSetTextScreen(max7456TextScreen);
+}
+
 void osdHardwareInit(void)
 {
     LED0_ON;
@@ -256,7 +264,7 @@ void osdHardwareInit(void)
     max7456_hardwareReset();
     LED0_OFF;
 
-    max7456_init(osdVideoConfig()->videoMode);
+    osdHardwareApplyConfiguration();
 
     max7456_extiInit(&max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
     max7456_extiInit(&max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Rising);
@@ -281,19 +289,16 @@ void osdHardwareInit(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_OSD_HSYNC);
     NVIC_Init(&NVIC_InitStructure);
 
-    textScreen_t *max7456TextScreen = max7456_getTextScreen();
-    osdSetTextScreen(max7456TextScreen);
-
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
         max7456_showFont();
-        delay(5000);
+        delay(5000); // give the user a chance to power off before changing
 
         max7456_resetFont();
 
         // after
         max7456_showFont();
-        delay(5000);
+        delay(5000); // give the user a chance to power off after changing
 
         osdFontConfig()->fontVersion = FONT_VERSION;
         writeEEPROM();

@@ -975,25 +975,25 @@ static void cliSerial(char *cmdline)
                 if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.baudRates[MSP_SERVER_BAUDRATE] = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_MSP_SERVER] = baudRateIndex;
                 break;
             case 1:
                 if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.baudRates[GPS_BAUDRATE] = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_GPS] = baudRateIndex;
                 break;
             case 2:
                 if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.baudRates[TELEMETRY_BAUDRATE] = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_TELEMETRY] = baudRateIndex;
                 break;
             case 3:
                 if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
                     continue;
                 }
-                portConfig.baudRates[BLACKBOX_BAUDRATE] = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_BLACKBOX] = baudRateIndex;
                 break;
         }
 

@@ -38,6 +38,7 @@ extern char textScreenBuffer[];
 //
 
 void osdInit(void);
+void osdApplyConfiguration(void);
 void osdUpdate(void);
 void osdSetTextScreen(textScreen_t *textScreen);
 void osdClearScreen(void);
@@ -51,6 +52,7 @@ void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
 // To be implemented by hardware specific OSD code using hardware drivers.
 //
 void osdHardwareInit(void);
+void osdHardwareApplyConfiguration(void);
 void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);

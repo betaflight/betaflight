@@ -273,7 +273,7 @@ void configureLtmTelemetryPort(void)
     if (!portConfig) {
         return;
     }
-    baudRate_e baudRateIndex = portConfig->baudRates[TELEMETRY_BAUDRATE];
+    baudRate_e baudRateIndex = portConfig->baudRates[BAUDRATE_TELEMETRY];
     if (baudRateIndex == BAUD_AUTO) {
         baudRateIndex = BAUD_19200;
     }

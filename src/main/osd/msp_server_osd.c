@@ -76,6 +76,13 @@ void mspRebootFn(mspPort_t *msp)
     systemReset();
 }
 
+void mspApplyVideoConfigurationFn(mspPort_t *msp)
+{
+    waitForSerialPortToFinishTransmitting(msp->port);
+    osdApplyConfiguration();
+}
+
+
 int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
 {
     sbuf_t *dst = &reply->buf;
@@ -174,8 +181,8 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
                 };
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
                 sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[MSP_SERVER_BAUDRATE]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[MSP_CLIENT_BAUDRATE]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_MSP_SERVER]);
+                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[BAUDRATE_MSP_CLIENT]);
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[RESERVED1_BAUDRATE]);
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[RESERVED2_BAUDRATE]);
             }
@@ -256,8 +263,8 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
 
                 portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
-                portConfig->baudRates[MSP_SERVER_BAUDRATE] = sbufReadU8(src);
-                portConfig->baudRates[MSP_CLIENT_BAUDRATE] = sbufReadU8(src);
+                portConfig->baudRates[BAUDRATE_MSP_SERVER] = sbufReadU8(src);
+                portConfig->baudRates[BAUDRATE_MSP_CLIENT] = sbufReadU8(src);
                 portConfig->baudRates[RESERVED1_BAUDRATE] = sbufReadU8(src);
                 portConfig->baudRates[RESERVED2_BAUDRATE] = sbufReadU8(src);
             }
@@ -270,6 +277,7 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
 
         case MSP_SET_OSD_VIDEO_CONFIG:
             osdVideoConfig()->videoMode = sbufReadU8(src);
+            mspPostProcessFn = mspApplyVideoConfigurationFn;
             break;
 
         default:

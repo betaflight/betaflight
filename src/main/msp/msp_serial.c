@@ -78,7 +78,7 @@ void mspSerialAllocatePorts(void)
             return;
         }
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL,
-                                                  baudRates[portConfig->baudRates[MSP_SERVER_BAUDRATE]], MODE_RXTX, SERIAL_NOT_INVERTED);
+                                                  baudRates[portConfig->baudRates[BAUDRATE_MSP_SERVER]], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
         } else {

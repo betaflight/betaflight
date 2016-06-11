@@ -233,7 +233,7 @@ void gpsInit(void)
         return;
     }
 
-    while (gpsInitData[gpsData.baudrateIndex].baudrateIndex != gpsPortConfig->baudRates[GPS_BAUDRATE]) {
+    while (gpsInitData[gpsData.baudrateIndex].baudrateIndex != gpsPortConfig->baudRates[BAUDRATE_GPS]) {
         gpsData.baudrateIndex++;
         if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
             gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX;

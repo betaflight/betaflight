@@ -18,8 +18,8 @@
 #pragma once
 
 typedef enum {
-    MSP_SERVER_BAUDRATE = 0,
-    GPS_BAUDRATE,
-    BLACKBOX_BAUDRATE,
-    TELEMETRY_BAUDRATE
+    BAUDRATE_MSP_SERVER = 0,
+    BAUDRATE_GPS,
+    BAUDRATE_BLACKBOX,
+    BAUDRATE_TELEMETRY
 } functionBaudRate_e;

@@ -168,6 +168,11 @@ void osdInit(void)
     osdHardwareUpdate();
 }
 
+void osdApplyConfiguration(void)
+{
+    osdHardwareApplyConfiguration();
+}
+
 #define OSD_HZ(hz) ((int32_t)((1000 * 1000) / (hz)))
 #define OSD_MS(ms) ((int32_t)(1000 * (ms)))
 
