@@ -70,16 +70,11 @@ typedef struct {
     uint8_t irq;
     uint8_t outputEnable;
     GPIO_Mode gpioInputMode;
-#ifdef STM32F3
+#if defined(STM32F3) || defined(STM32F4)
     uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
     uint8_t alternateFunction;
-    uint8_t outputInverted;
 #endif
-#ifdef STM32F4
-    uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
-    uint8_t alternateFunction;
     uint8_t outputInverted;
-#endif
 } timerHardware_t;
 
 extern const timerHardware_t timerHardware[];

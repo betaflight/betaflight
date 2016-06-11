@@ -102,8 +102,9 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->outputInverted);
 
-    if (timerHardware->outputEnable)
+    if (timerHardware->outputEnable) {
         TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
+    }
     TIM_Cmd(timerHardware->tim, ENABLE);
 
     switch (timerHardware->channel) {
