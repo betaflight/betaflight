@@ -73,10 +73,12 @@ typedef struct {
 #ifdef STM32F3
     uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
     uint8_t alternateFunction;
+    uint8_t outputInverted;
 #endif
 #ifdef STM32F4
     uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
     uint8_t alternateFunction;
+    uint8_t outputInverted;
 #endif
 } timerHardware_t;
 
