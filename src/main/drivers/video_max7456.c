@@ -23,6 +23,7 @@
 
 #include <debug.h>
 
+#include "drivers/exti.h"
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
@@ -124,6 +125,10 @@ uint8_t max7456_screenRows;
 #define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
 
 textScreen_t max7456Screen;
+max7456State_t max7456State;
+static const extiConfig_t *max7456LOSExtiConfig;
+static const extiConfig_t *max7456VSYNCExtiConfig;
+static const extiConfig_t *max7456HSYNCExtiConfig;
 
 #if 0
 // for factory max7456 font
@@ -146,6 +151,165 @@ static const uint8_t max7456_defaultFont_fontToASCIIMapping[] = {
     ')', '.', '?', ';', ':', ',', '\'', '/', '"', '-', '<','>', '@'                 // 0x40 - 0x4F
 };
 #endif
+
+
+static bool max7456ExtiHandler(const extiConfig_t *extiConfig)
+{
+    if (EXTI_GetITStatus(extiConfig->exti_line) == RESET) {
+        return false;
+    }
+
+    EXTI_ClearITPendingBit(extiConfig->exti_line);
+
+    return true;
+}
+
+
+void max7456_updateLOSState(void)
+{
+    // "LOS goes high when the VIN sync pulse is lost for 32 consecutive lines. LOS goes low when 32 consecutive valid sync pulses are received."
+    uint8_t status = GPIO_ReadInputDataBit(max7456LOSExtiConfig->gpioPort, max7456LOSExtiConfig->gpioPin);
+
+    max7456State.los = status != 0;
+
+    //debug[0] = max7456State.los;
+}
+
+void LOS_EXTI_Handler(void)
+{
+    static uint32_t callCount = 0;
+    bool set = max7456ExtiHandler(max7456LOSExtiConfig);
+    callCount++;
+    if (!set) {
+        return;
+    }
+
+    max7456State.losCounter++;
+
+    max7456_updateLOSState();
+}
+
+void VSYNC_EXTI_Handler(void)
+{
+    static uint32_t callCount = 0;
+    bool set = max7456ExtiHandler(max7456VSYNCExtiConfig);
+    callCount++;
+    if (!set) {
+        return;
+    }
+
+    max7456State.vSyncDetected = true;
+
+    max7456State.frameCounter++;
+    if (max7456State.lineCounter > max7456State.maxLinesDetected) {
+        max7456State.maxLinesDetected = max7456State.lineCounter;
+    }
+    max7456State.lineCounter = 0;
+
+    /* Time between VSYNC pulses can be measured using the code below.
+     * NTSC: ~16673us (60 FPS), PAL: ~19990us (50FPS)
+     */
+    /*
+    static bool shouldStartMeasuring = true;
+
+    if (shouldStartMeasuring) {
+        TIME_SECTION_BEGIN(2);
+    } else {
+        TIME_SECTION_END(2);
+    }
+    shouldStartMeasuring = !shouldStartMeasuring;
+    */
+
+
+
+    //debug[1] = max7456State.frameCounter;
+    //debug[3] = max7456State.maxLinesDetected;
+}
+
+void HSYNC_EXTI_Handler(void)
+{
+    static uint32_t callCount = 0;
+    bool set = max7456ExtiHandler(max7456HSYNCExtiConfig);
+    callCount++;
+    if (!set) {
+        return;
+    }
+
+    max7456State.hSyncDetected = true;
+
+
+    max7456State.lineCounter++;
+
+    //debug[2] = max7456State.lineCounter;
+}
+
+
+typedef void (*handlerFuncPtr)(void);
+
+void max7456_extiInit(const extiConfig_t *extiConfig, handlerFuncPtr handlerFn, EXTITrigger_TypeDef trigger)
+{
+    gpio_config_t gpio;
+
+#ifdef STM32F303
+    if (extiConfig->gpioAHBPeripherals) {
+        RCC_AHBPeriphClockCmd(extiConfig->gpioAHBPeripherals, ENABLE);
+    }
+#endif
+#ifdef STM32F10X
+    if (extiConfig->gpioAPB2Peripherals) {
+        RCC_APB2PeriphClockCmd(extiConfig->gpioAPB2Peripherals, ENABLE);
+    }
+#endif
+
+    gpio.pin = extiConfig->gpioPin;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_IN_FLOATING;
+    gpioInit(extiConfig->gpioPort, &gpio);
+
+#ifdef STM32F10X
+    // enable AFIO for EXTI support
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+#endif
+
+#ifdef STM32F303xC
+    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+#endif
+
+#ifdef STM32F10X
+    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
+#endif
+
+#ifdef STM32F303xC
+    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
+#endif
+
+    registerExtiCallbackHandler(extiConfig->exti_irqn, handlerFn);
+
+    EXTI_ClearITPendingBit(extiConfig->exti_line);
+
+    EXTI_InitTypeDef EXTIInit;
+    EXTIInit.EXTI_Line = extiConfig->exti_line;
+    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTIInit.EXTI_Trigger = trigger;
+    EXTIInit.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTIInit);
+}
+
+void max7456_extiConfigure(
+    const extiConfig_t *losExtiConfig,
+    const extiConfig_t *vSyncExtiConfig,
+    const extiConfig_t *hSyncExtiConfig
+)
+{
+    max7456LOSExtiConfig = losExtiConfig;
+    max7456VSYNCExtiConfig = vSyncExtiConfig;
+    max7456HSYNCExtiConfig = hSyncExtiConfig;
+
+    max7456_extiInit(max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
+    max7456_extiInit(max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Falling);
+    max7456_extiInit(max7456HSYNCExtiConfig, HSYNC_EXTI_Handler, EXTI_Trigger_Falling);
+}
 
 textScreen_t *max7456_getTextScreen(void)
 {
@@ -327,10 +491,18 @@ uint8_t max7456_readStatus(void)
     return result;
 }
 
+//#define DEBUG_MAX7456_DM_UPDATE
+
+#ifdef DEBUG_MAX7456_DM_UPDATE
+#define MAX7456_TIME_SECTION_END(index) TIME_SECTION_END(index)
+#define MAX7456_TIME_SECTION_BEGIN(index) TIME_SECTION_BEGIN(index)
+#else
+#define MAX7456_TIME_SECTION_END(index) while(0) {}
+#define MAX7456_TIME_SECTION_BEGIN(index) while(0) {}
+#endif
+
 void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
 {
-    // Note: Not using VSYNC yet.
-
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
@@ -342,9 +514,31 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
     spiTransferByte(MAX7456_SPI_INSTANCE, 0);
 
+    //
+    // It takes about 4600us to transfer the contents of the screen buffer via SPI to the MAX7456
+    // (See DEBUG_MAX7456_DM_UPDATE)
+
+    max7456State.vSyncDetected = false;
+
     for (int y = 0; y < textScreen->height; y++) {
         unsigned int rowOffset = (y * textScreen->width);
         char *buffer = &screenBuffer[rowOffset];
+
+        if (y == 8) {
+            MAX7456_TIME_SECTION_END(1);
+            // wait for next frame to send the remaining rows
+            max7456State.vSyncDetected = false;
+        }
+
+        while (!max7456State.vSyncDetected) {
+            // Wait for VSYNC pulse and ISR to update the state.
+        }
+
+        if (y == 0) {
+            MAX7456_TIME_SECTION_BEGIN(1);
+        } else if (y == 8) {
+            MAX7456_TIME_SECTION_BEGIN(2);
+        }
 
         for (int x = 0; x < textScreen->width; x++) {
             // TODO ensure 0xFF is replaced with ' ' to avoid early termination of auto-increment mode.
@@ -356,7 +550,14 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMDI);
     spiTransferByte(MAX7456_SPI_INSTANCE, 0xFF); // terminate auto-increment
 
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
+    spiTransferByte(MAX7456_SPI_INSTANCE, 0x00); // disable 8bit mode and auto increment, enabled above.
+
+    MAX7456_TIME_SECTION_END(2);
+
     DISABLE_MAX7456;
+
+
 }
 
 // show the entire font in the middle of the screen.

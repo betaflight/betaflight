@@ -53,6 +53,7 @@
 
 #include "osd/osd.h"
 
+
 char textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
@@ -120,135 +121,6 @@ static const extiConfig_t max7456HSYNCExtiConfig = {
 };
 #endif
 
-static bool max7456ExtiHandler(const extiConfig_t *extiConfig)
-{
-    if (EXTI_GetITStatus(extiConfig->exti_line) == RESET) {
-        return false;
-    }
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    return true;
-}
-
-typedef struct max7456State_s {
-    bool los;
-    uint32_t losCounter;
-    uint32_t frameCounter;
-    uint16_t lineCounter;
-    uint16_t maxLinesDetected;
-} max7456State_t;
-
-max7456State_t max7456State;
-
-void updateLOSState(void)
-{
-    // "LOS goes high when the VIN sync pulse is lost for 32 consecutive lines. LOS goes low when 32 consecutive valid sync pulses are received."
-    uint8_t status = GPIO_ReadInputDataBit(max7456LOSExtiConfig.gpioPort, max7456LOSExtiConfig.gpioPin);
-
-    max7456State.los = status != 0;
-
-    //debug[0] = max7456State.los;
-}
-
-void LOS_EXTI_Handler(void)
-{
-    static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456LOSExtiConfig);
-    callCount++;
-    if (!set) {
-        return;
-    }
-
-    max7456State.losCounter++;
-
-    updateLOSState();
-}
-
-void VSYNC_EXTI_Handler(void)
-{
-    static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456VSYNCExtiConfig);
-    callCount++;
-    if (!set) {
-        return;
-    }
-    max7456State.frameCounter++;
-    if (max7456State.lineCounter > max7456State.maxLinesDetected) {
-        max7456State.maxLinesDetected = max7456State.lineCounter;
-    }
-    max7456State.lineCounter = 0;
-
-
-    //debug[1] = max7456State.frameCounter;
-    //debug[3] = max7456State.maxLinesDetected;
-}
-
-void HSYNC_EXTI_Handler(void)
-{
-    static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(&max7456HSYNCExtiConfig);
-    callCount++;
-    if (!set) {
-        return;
-    }
-    max7456State.lineCounter++;
-
-    //debug[2] = max7456State.lineCounter;
-}
-
-typedef void (*handlerFuncPtr)(void);
-
-void max7456_extiInit(const extiConfig_t *extiConfig, handlerFuncPtr handlerFn, EXTITrigger_TypeDef trigger)
-{
-    gpio_config_t gpio;
-
-#ifdef STM32F303
-    if (extiConfig->gpioAHBPeripherals) {
-        RCC_AHBPeriphClockCmd(extiConfig->gpioAHBPeripherals, ENABLE);
-    }
-#endif
-#ifdef STM32F10X
-    if (extiConfig->gpioAPB2Peripherals) {
-        RCC_APB2PeriphClockCmd(extiConfig->gpioAPB2Peripherals, ENABLE);
-    }
-#endif
-
-    gpio.pin = extiConfig->gpioPin;
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(extiConfig->gpioPort, &gpio);
-
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#ifdef STM32F303xC
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-#ifdef STM32F10X
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-    registerExtiCallbackHandler(extiConfig->exti_irqn, handlerFn);
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = extiConfig->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = trigger;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-}
-
 void osdHardwareApplyConfiguration(void)
 {
     max7456_init(osdVideoConfig()->videoMode);
@@ -266,9 +138,7 @@ void osdHardwareInit(void)
 
     osdHardwareApplyConfiguration();
 
-    max7456_extiInit(&max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
-    max7456_extiInit(&max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Rising);
-    max7456_extiInit(&max7456HSYNCExtiConfig, HSYNC_EXTI_Handler, EXTI_Trigger_Rising);
+    max7456_extiConfigure(&max7456LOSExtiConfig, &max7456VSYNCExtiConfig, &max7456HSYNCExtiConfig);
 
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -309,6 +179,7 @@ void osdHardwareInit(void)
 
 void osdHardwareUpdate(void)
 {
+
 #if 0
     debug[3] = max7456_readStatus();
 #endif
@@ -332,7 +203,7 @@ void osdHardwareCheck(void)
     }
 #endif
 
-    updateLOSState();
+    max7456_updateLOSState();
 }
 
 void osdHardwareDrawLogo(void)
@@ -356,3 +227,4 @@ bool osdIsCameraConnected(void)
 {
     return !max7456State.los;
 }
+

@@ -233,6 +233,8 @@ void osdUpdate(void)
 {
     char lineBuffer[31];
 
+    TIME_SECTION_BEGIN(0);
+
     osdClearScreen();
 
     uint32_t now = micros();
@@ -359,6 +361,9 @@ void osdUpdate(void)
 
     osdDisplayMotors();
 
+    TIME_SECTION_END(0);
+
     osdHardwareUpdate();
+
 }
 

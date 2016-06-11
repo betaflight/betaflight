@@ -24,16 +24,33 @@
 #define MAX7456_NTSC_ROW_COUNT 13
 #define MAX7456_NTSC_CHARACTER_COUNT (MAX7456_COLUMN_COUNT * MAX7456_NTSC_ROW_COUNT)
 
+typedef struct max7456State_s {
+    bool los;
+    uint32_t losCounter;
+    uint32_t frameCounter;
+    uint16_t lineCounter;
+    uint16_t maxLinesDetected;
+
+    volatile bool vSyncDetected;
+    volatile bool hSyncDetected;
+} max7456State_t;
+
+extern max7456State_t max7456State;
+
+void max7456_hardwareReset(void);
+void max7456_init(videoMode_e videoMode);
+void max7456_extiConfigure(
+    const extiConfig_t *losExtiConfig,
+    const extiConfig_t *vSyncExtiConfig,
+    const extiConfig_t *hSyncExtiConfig
+);
+void max7456_resetFont(void);
+void max7456_updateLOSState(void);
+
 //
 // These methods talk to the hardware directly, ignoring the OSD screen buffer.
 // TODO Delete unused methods.
 //
-
-
-void max7456_hardwareReset(void);
-void max7456_init(videoMode_e videoMode);
-
-void max7456_resetFont(void);
 
 uint8_t max7456_readStatus(void);
 bool max7456_isOSDEnabled(void);
@@ -47,7 +64,6 @@ void max7465_printAt(uint8_t x, uint8_t y, char *message);
 
 void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c);
 void max7456_setCharacterAtCursor(uint8_t c);
-
 
 void max7456_fillScreen(void);
 
