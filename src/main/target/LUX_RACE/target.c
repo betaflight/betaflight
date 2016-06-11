@@ -61,7 +61,6 @@ const uint16_t airPWM[] = {
     0xFFFF
 };
 
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            0, Mode_AF_PP_PD,   GPIO_PinSource8,  GPIO_AF_6}, // PWM1 - PA8
 
