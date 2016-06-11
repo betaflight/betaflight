@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC 1
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0    PB4  // Blue (Rev 1 & 2) - PB4
 #define LED1    PB5  // Green (Rev 1) / Red (Rev 2) - PB5

@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC 1
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA
