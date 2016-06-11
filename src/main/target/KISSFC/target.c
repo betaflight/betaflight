@@ -48,7 +48,7 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1,  TIM1_CC_IRQn,           1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_6, PWM_INVERTED},
+    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_6, PWM_INVERTED},
     { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource0,  GPIO_AF_2, PWM_INVERTED},
     { TIM15, GPIOB, Pin_14, TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_1, PWM_INVERTED},
     { TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_1, PWM_INVERTED},

@@ -24,15 +24,7 @@
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED | SERIAL_BIDIR)
 
 #define LED0    PB1
-//#define LED0_GPIO   GPIOB
-//#define LED0_PIN    Pin_1
-//#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-
 #define BEEPER    PB13
-//#define BEEP_GPIO   GPIOB
-//#define BEEP_PIN    Pin_13
-//#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
-//#define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
 
@@ -100,8 +92,6 @@
 
 
 #define SPEKTRUM_BIND
-// USART2,
-//#define BIND_PORT  GPIOB
 #define BIND_PIN   PB4
 
 #define TARGET_IO_PORTA 0xffff
