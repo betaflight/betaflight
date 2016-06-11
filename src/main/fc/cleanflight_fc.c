@@ -664,8 +664,10 @@ void taskMainPidLoop(void)
     // Calculate average cycle time and average jitter
     filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 1, dT);
 
+#ifdef DEBUG_CYCLE_TIME
     debug[0] = cycleTime;
     debug[1] = cycleTime - filteredCycleTime;
+#endif
 
     imuUpdateGyroAndAttitude();
 
