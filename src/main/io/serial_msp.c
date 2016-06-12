@@ -1752,10 +1752,6 @@ static bool processInCommand(void)
         esc4wayProcess(currentPort->port);
         // former used MSP uart is still active
         // proceed as usual with MSP commands
-        // esc4wayInit() was called in msp command
-        // modal switch to esc4way, will return only after 4way exit command
-        // port parameters are shared with esc4way, no need to close/reopen it
-        // continue processing
         break;
 #endif
     default:
