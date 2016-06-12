@@ -93,9 +93,7 @@
 
 #include "serial_msp.h"
 
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
-#endif
 
 static serialPort_t *mspSerialPort;
 
@@ -1740,7 +1738,7 @@ static bool processInCommand(void)
         // switch all motor lines HI
         // reply the count of ESC found
         headSerialReply(1);
-        serialize8(Initialize4WayInterface());
+        serialize8(esc4wayInit());
         // because we do not come back after calling Process4WayInterface
         // proceed with a success reply first
         tailSerialReply();
@@ -1751,9 +1749,13 @@ static bool processInCommand(void)
         // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
         // bootloader mode before try to connect any ESC
         // Start to activate here
-        Process4WayInterface(currentPort, writer);
+        esc4wayProcess(currentPort->port);
         // former used MSP uart is still active
         // proceed as usual with MSP commands
+        // esc4wayInit() was called in msp command
+        // modal switch to esc4way, will return only after 4way exit command
+        // port parameters are shared with esc4way, no need to close/reopen it
+        // continue processing
         break;
 #endif
     default:
