@@ -145,7 +145,7 @@ void IOToggle(IO_t io)
     if(!io)
         return;
     // check pin state and use BSRR accordinly to avoid race condition
-    uint16_t mask = IO_Pin(io);
+    uint32_t mask = IO_Pin(io);
     if(IO_GPIO(io)->ODR & mask)
         mask <<= 16;   // bit is set, shift mask to reset half
     IO_GPIO(io)->BSRR = mask;
