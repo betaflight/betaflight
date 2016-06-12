@@ -50,7 +50,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 	{ RCC_AHB1(GPIOD) },
 	{ RCC_AHB1(GPIOE) },
 	{ RCC_AHB1(GPIOF) },
-}; 
+};
 # endif
 
 ioRec_t* IO_Rec(IO_t io)
@@ -116,7 +116,7 @@ uint32_t IO_EXTI_Line(IO_t io)
 #elif defined(STM32F303xC)
 	return IO_GPIOPinIdx(io);
 #elif defined(STM32F40_41xxx) || defined(STM32F411xE)
-	return 1 << IO_GPIOPinIdx(io);    
+	return 1 << IO_GPIOPinIdx(io);
 #else
 # error "Unknown target type"
 #endif
@@ -171,14 +171,20 @@ void IOToggle(IO_t io)
 {
 	if (!io)
 		return;
-	// check pin state and use BSRR accordinly to avoid race condition
-	uint16_t mask = IO_Pin(io);
+	uint32_t mask = IO_Pin(io);
+	// Read pin state from ODR but write to BSRR because it only changes the pins
+	// high in the mask value rather than all pins. XORing ODR directly risks
+	// setting other pins incorrectly because it change all pins' state.
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
-	IO_GPIO(io)->ODR ^= mask;
+	if (IO_GPIO(io)->ODR & mask) {
+		IO_GPIO(io)->BSRRH = mask;
+	} else {
+		IO_GPIO(io)->BSRRL = mask;
+	}
 #else
 	if (IO_GPIO(io)->ODR & mask)
 		mask <<= 16;   // bit is set, shift mask to reset half
-    
+
 	IO_GPIO(io)->BSRR = mask;
 #endif
 }
@@ -210,7 +216,7 @@ resourceType_t IOGetResources(IO_t io)
 	return ioRec->resourcesUsed;
 }
 
-#if defined(STM32F10X) 
+#if defined(STM32F10X)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
@@ -275,13 +281,15 @@ ioRec_t ioRecs[DEFIO_IO_USED_COUNT];
 void IOInitGlobal(void) {
 	ioRec_t *ioRec = ioRecs;
 
-	for (unsigned port = 0; port < ARRAYLEN(ioDefUsedMask); port++)
-		for (unsigned pin = 0; pin < sizeof(ioDefUsedMask[0]) * 8; pin++)
+	for (unsigned port = 0; port < ARRAYLEN(ioDefUsedMask); port++) {
+		for (unsigned pin = 0; pin < sizeof(ioDefUsedMask[0]) * 8; pin++) {
 			if (ioDefUsedMask[port] & (1 << pin)) {
 				ioRec->gpio = (GPIO_TypeDef *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
 				ioRec->pin = 1 << pin;
 				ioRec++;
 			}
+		}
+	}
 }
 
 IO_t IOGetByTag(ioTag_t tag)
