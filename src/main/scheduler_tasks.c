@@ -22,14 +22,15 @@
 #include <platform.h>
 #include "scheduler.h"
 
+void taskSystem(void);
 void taskMainPidLoopCheck(void);
 void taskUpdateAccelerometer(void);
-void taskHandleSerial(void);
 void taskUpdateAttitude(void);
-void taskUpdateBeeper(void);
-void taskUpdateBattery(void);
 bool taskUpdateRxCheck(uint32_t currentDeltaTime);
 void taskUpdateRxMain(void);
+void taskHandleSerial(void);
+void taskUpdateBattery(void);
+void taskUpdateBeeper(void);
 void taskProcessGPS(void);
 void taskUpdateCompass(void);
 void taskUpdateBaro(void);
@@ -39,7 +40,6 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
-void taskSystem(void);
 #ifdef USE_BST
 void taskBstReadWrite(void);
 void taskBstMasterProcess(void);
@@ -61,13 +61,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
 
-    [TASK_ATTITUDE] = {
-        .taskName = "ATTITUDE",
-        .taskFunc = taskUpdateAttitude,
-        .desiredPeriod = 1000000 / 100,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
@@ -75,10 +68,32 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
+    [TASK_ATTITUDE] = {
+        .taskName = "ATTITUDE",
+        .taskFunc = taskUpdateAttitude,
+        .desiredPeriod = 1000000 / 100,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_RX] = {
+        .taskName = "RX",
+        .checkFunc = taskUpdateRxCheck,
+        .taskFunc = taskUpdateRxMain,
+        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
         .taskFunc = taskHandleSerial,
         .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+
+    [TASK_BATTERY] = {
+        .taskName = "BATTERY",
+        .taskFunc = taskUpdateBattery,
+        .desiredPeriod = 1000000 / 50,      // 50 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
@@ -90,21 +105,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-
-    [TASK_RX] = {
-        .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
-        .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
 
 #ifdef GPS
     [TASK_GPS] = {

@@ -152,6 +152,20 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
 
+#define LED_STRIP
+#define LED_STRIP_TIMER TIM16
+#define WS2811_GPIO                     GPIOB
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
+#define WS2811_GPIO_AF                  GPIO_AF_1
+#define WS2811_PIN                      GPIO_Pin_8 // TIM16_CH1
+#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_TIMER                    TIM16
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
+#define WS2811_DMA_CHANNEL              DMA1_Channel3
+#define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
 #define BLACKBOX
 #define GPS
 //#define GTUNE
@@ -162,22 +176,4 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
-#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
-#ifdef USE_VCP
-#define USE_SERIAL_1WIRE_VCP
-#else
-#define USE_SERIAL_1WIRE
-#endif
-#endif
-
-#ifdef USE_SERIAL_1WIRE
-// STM32F3DISCOVERY TX - PD5 connects to UART RX
-#define S1W_TX_GPIO         GPIOD
-#define S1W_TX_PIN          GPIO_Pin_5
-// STM32F3DISCOVERY RX - PD6 connects to UART TX
-#define S1W_RX_GPIO         GPIOD
-#define S1W_RX_PIN          GPIO_Pin_6
-#endif
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

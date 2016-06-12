@@ -57,6 +57,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
 
@@ -92,14 +93,7 @@
 
 #include "serial_msp.h"
 
-#ifdef USE_SERIAL_1WIRE
-#include "io/serial_1wire.h"
-#endif
-
-#ifdef USE_SERIAL_1WIRE_VCP
-#include "io/serial_1wire_vcp.h"
-#endif
-#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
 #endif
 
@@ -131,7 +125,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
                 masterConfig.mag_hardware = 1;
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
-#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO)
+#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(FURYF3)
                 masterConfig.acc_hardware = 0;
 #else
                 masterConfig.acc_hardware = 1;
@@ -159,7 +153,7 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
             if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
             if (looptime < 250) {
-                masterConfig.pid_process_denom = 3;
+                masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
                 if (currentProfile->pidProfile.pidController == 2) {
                     masterConfig.pid_process_denom = 3;
@@ -178,8 +172,6 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.pid_process_denom = 1;
         }
 #endif
-
-        if (!(masterConfig.use_multiShot || masterConfig.use_oneshot42) && ((masterConfig.gyro_sync_denom * gyroSampleRate) == 125)) masterConfig.pid_process_denom = 3;
     }
 }
 
@@ -224,8 +216,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOXSUPEREXPO, "SUPER EXPO;", 29 },
-    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 30},
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -551,8 +542,7 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
-    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOXSUPEREXPO;
+    if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
     if (sensors(SENSOR_BARO)) {
@@ -658,8 +648,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSUPEREXPO)) << BOXSUPEREXPO;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));
@@ -1316,7 +1305,7 @@ static bool processInCommand(void)
         break;
     case MSP_SET_PID_CONTROLLER:
         oldPid = currentProfile->pidProfile.pidController;
-        currentProfile->pidProfile.pidController = read8();
+        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
         pidSetController(currentProfile->pidProfile.pidController);
         if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
@@ -1745,117 +1734,7 @@ static bool processInCommand(void)
         isRebootScheduled = true;
         break;
 
-#ifdef USE_SERIAL_1WIRE
-    case MSP_SET_1WIRE:
-        // get channel number
-        i = read8();
-        // we do not give any data back, assume channel number is transmitted OK
-        if (i == 0xFF) {
-            // 0xFF -> preinitialize the Passthrough
-            // switch all motor lines HI
-            usb1WireInitialize();
-            // reply the count of ESC found
-            headSerialReply(2);
-            serialize8(escCount);
-            serialize8(currentPort->port->identifier);
-            // and come back right afterwards
-            // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-            // bootloader mode before try to connect any ESC
-
-            return true;
-        } else if (i < escCount) {
-            // Check for channel number 0..ESC_COUNT-1
-            // because we do not come back after calling usb1WirePassthrough
-            // proceed with a success reply first
-            headSerialReply(0);
-            tailSerialReply();
-            // flush the transmit buffer
-            bufWriterFlush(writer);
-            // wait for all data to send
-            waitForSerialPortToFinishTransmitting(currentPort->port);
-            // Start to activate here
-            // motor 1 => index 0
-
-            // search currentPort portIndex
-            /* next lines seems to be unnecessary, because the currentPort always point to the same mspPorts[portIndex]
-            uint8_t portIndex;
-            for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-                if (currentPort == &mspPorts[portIndex]) {
-                    break;
-                }
-            }
-            */
-            // *mspReleasePortIfAllocated(mspSerialPort); // CloseSerialPort also marks currentPort as UNUSED_PORT
-            usb1WirePassthrough(i);
-            // Wait a bit more to let App read the 0 byte and/or switch baudrate
-            // 2ms will most likely do the job, but give some grace time
-            delay(10);
-            // rebuild/refill currentPort structure, does openSerialPort if marked UNUSED_PORT - used ports are skiped
-            // *mspAllocateSerialPorts(&masterConfig.serialConfig);
-            /* restore currentPort and mspSerialPort
-            setCurrentPort(&mspPorts[portIndex]); // not needed same index will be restored
-            */
-            // former used MSP uart is active again
-            // restore MSP_SET_1WIRE as current command for correct headSerialReply(0)
-            //currentPort->cmdMSP = MSP_SET_1WIRE;
-        } else if (i == 0xFE) {
-               usb1WireDeInitialize();
-        } else {
-           // ESC channel higher than max. allowed
-           headSerialError(0);
-        }
-        // proceed as usual with MSP commands
-        // and wait to switch to next channel
-        // rem: App needs to call MSP_BOOT to deinitialize Passthrough
-        break;
-#endif
-
-#ifdef USE_SERIAL_1WIRE_VCP
-    case MSP_SET_1WIRE:
-        // get channel number
-        i = read8();
-        // we do not give any data back, assume channel number is transmitted OK
-        if (i == 0xFF) {
-            // 0xFF -> preinitialize the Passthrough
-            // switch all motor lines HI
-            usb1WireInitializeVcp();
-            // reply the count of ESC found
-            headSerialReply(2);
-            serialize8(escCount);
-            serialize8(currentPort->port->identifier);
-            // and come back right afterwards
-            // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-            // bootloader mode before try to connect any ESC
-
-            return true;
-        } else if (i < escCount) {
-            // Check for channel number 0..ESC_COUNT-1
-            // because we do not come back after calling usb1WirePassthrough
-            // proceed with a success reply first
-            headSerialReply(0);
-            tailSerialReply();
-            // flush the transmit buffer
-            bufWriterFlush(writer);
-            // wait for all data to send
-            waitForSerialPortToFinishTransmitting(currentPort->port);
-            // Start to activate here
-            // motor 1 => index 0
-            usb1WirePassthroughVcp(currentPort, writer, i);
-            // Wait a bit more to let App switch baudrate
-            delay(10);
-            // former used MSP uart is still active
-            // proceed as usual with MSP commands
-            // and wait to switch to next channel
-            // rem: App needs to call MSP_SET_1WIRE(0xFE) to deinitialize Passthrough
-        } else if (i == 0xFE) {
-            usb1WireDeInitializeVcp();
-        } else {
-            // ESC channel higher than max. allowed
-            headSerialError(0);
-        }
-    break;
-#endif
-#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_SET_4WAY_IF:
         // get channel number
         // switch all motor lines HI
@@ -1978,6 +1857,10 @@ void mspProcess(void)
             waitForSerialPortToFinishTransmitting(candidatePort->port);
             stopMotors();
             handleOneshotFeatureChangeOnRestart();
+            // On real flight controllers, systemReset() will do a soft reset of the device,
+            // reloading the program.  But to support offline testing this flag needs to be
+            // cleared so that the software doesn't continuously attempt to reboot itself.
+            isRebootScheduled = false;
             systemReset();
         }
     }

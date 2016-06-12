@@ -13,30 +13,26 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author 4712
  */
+
+/*
+ * Author: Giles Burgess (giles@multiflite.co.uk)
+ *
+ * This source code is provided as is and can be used/modified so long
+ * as this header is maintained with the file at all times.
+ */
+
 #pragma once
 
-#include "platform.h"
-#ifdef USE_SERIAL_1WIRE_VCP
-#include "drivers/serial.h"
-#include "drivers/buf_writer.h"
-#include "drivers/pwm_mapping.h"
-#include "io/serial_msp.h"
+#include <stdint.h>
 
-extern uint8_t escCount;
+#define RTC6705_BAND_MIN    1
+#define RTC6705_BAND_MAX    5
+#define RTC6705_CHANNEL_MIN 1
+#define RTC6705_CHANNEL_MAX 8
+#define RTC6705_FREQ_MIN    5600
+#define RTC6705_FREQ_MAX    5950
 
-typedef struct {
-    GPIO_TypeDef* gpio;
-    uint16_t pinpos;
-    uint16_t pin;
-    gpio_config_t gpio_config_INPUT;
-    gpio_config_t gpio_config_OUTPUT;
-} escHardware_t;
-
-void usb1WireInitializeVcp(void);
-void usb1WireDeInitializeVcp(void);
-void usb1WirePassthroughVcp(mspPort_t *mspPort, bufWriter_t *bufwriter, uint8_t escIndex);
-#endif
-
+bool rtc6705Init();
+void rtc6705SetChannel(uint8_t band, uint8_t channel);
+void rtc6705SetFreq(uint16_t freq);

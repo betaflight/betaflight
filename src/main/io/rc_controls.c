@@ -49,6 +49,7 @@
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
+#include "io/vtx.h"
 
 #include "io/display.h"
 
@@ -70,6 +71,13 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+bool isAirmodeActive(void) {
+    return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
+}
+
+bool isSuperExpoActive(void) {
+    return (feature(FEATURE_SUPEREXPO_RATES));
+}
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX
@@ -122,15 +130,6 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
     }
 
     return THROTTLE_HIGH;
-}
-
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
-{
-    if (((rcData[PITCH] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODEDEADBAND)))
-            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODEDEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODEDEADBAND))))
-        return CENTERED;
-
-    return NOT_CENTERED;
 }
 
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
@@ -303,6 +302,21 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
         displayEnablePageCycling();
+    }
+#endif
+
+#ifdef VTX
+    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
+        vtxIncrementBand();
+    }
+    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
+        vtxDecrementBand();
+    }
+    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
+        vtxIncrementChannel();
+    }
+    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
+        vtxDecrementChannel();
     }
 #endif
 
@@ -489,13 +503,11 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         case ADJUSTMENT_RC_RATE:
             newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcRate8 = newValue;
-            generatePitchRollCurve(controlRateConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
         break;
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcExpo8 = newValue;
-            generatePitchRollCurve(controlRateConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
         break;
         case ADJUSTMENT_THROTTLE_EXPO:

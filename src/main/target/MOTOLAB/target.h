@@ -121,6 +121,7 @@
 #define TELEMETRY
 #define BLACKBOX
 #define SERIAL_RX
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 //#define GPS
 //#define GTUNE
 #define DISPLAY
@@ -188,20 +189,4 @@
 #define BIND_PORT GPIOB
 #define BIND_PIN Pin_4
 
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
-#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
-#ifdef USE_VCP
-#define USE_SERIAL_1WIRE_VCP
-#else
-#define USE_SERIAL_1WIRE
-#endif
-#endif
-
-#ifdef USE_SERIAL_1WIRE
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_6
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_7
-#endif
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

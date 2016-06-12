@@ -71,10 +71,6 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-#define INVERTER
-#define BEEPER
-#define DISPLAY
-
 #define USE_VCP
 #define USE_USART1
 #define USE_USART3
@@ -117,47 +113,32 @@
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define SONAR
-#define USE_SERVOS
-#define USE_CLI
-
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
-#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
-#ifdef USE_VCP
-#define USE_SERIAL_1WIRE_VCP
-#else
-#define USE_SERIAL_1WIRE
-#endif
-#endif
-
-#ifdef USE_SERIAL_1WIRE
-// FlexPort (pin 21/22, TX/RX respectively):
-// Note, FlexPort has 10k pullups on both TX and RX
-// JST Pin3 TX - connect to external UART/USB RX
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_10
-// JST Pin4 RX - connect to external UART/USB TX
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_11
-#endif
-
-#undef DISPLAY
-#undef SONAR
-//#if defined(OPBL) && defined(USE_SERIAL_1WIRE)
-#undef BARO
-//#undef BLACKBOX
-#undef GPS
-//#endif
-#define SKIP_CLI_COMMAND_HELP
-
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-#define USE_QUATERNION
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define INVERTER
+#define BEEPER
+#define DISPLAY
+#define BLACKBOX
+#define TELEMETRY
+#define SERIAL_RX
+#define USE_SERVOS
+#define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define SONAR
+//#define GPS
+
+#undef BARO
+
+#ifdef CC3D_OPBL
+#define SKIP_CLI_COMMAND_HELP
+//#define SKIP_PID_LUXFLOAT
+#undef DISPLAY
+#undef SONAR
+#undef GPS
+#endif
+

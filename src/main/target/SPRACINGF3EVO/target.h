@@ -40,11 +40,11 @@
 
 
 #define GYRO
-//#define USE_FAKE_GYRO
+#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
 #define ACC
-//#define USE_FAKE_ACC
+#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN CW180_DEG
@@ -53,12 +53,12 @@
 #define BARO
 #define USE_BARO_BMP280
 
-#define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
-#define USE_MAG_AK8963
+//#define MAG
+//#define USE_MPU9250_MAG // Enables bypass configuration
+//#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
-#define MAG_AK8963_ALIGN CW90_DEG_FLIP
+//#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
 #define BEEPER
@@ -206,8 +206,6 @@
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -217,23 +215,12 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_FEATURES (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
+
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
 
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
-#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
-#ifdef USE_VCP
-#define USE_SERIAL_1WIRE_VCP
-#else
-#define USE_SERIAL_1WIRE
-#endif
-#endif
-
-#define S1W_TX_GPIO         UART1_GPIO
-#define S1W_TX_PIN          UART1_TX_PIN
-#define S1W_RX_GPIO         UART1_GPIO
-#define S1W_RX_PIN          UART1_RX_PIN
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

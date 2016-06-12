@@ -36,6 +36,7 @@
 #include "io/escservo.h"
 #include "rx/rx.h"
 #include "io/rc_controls.h"
+#include "io/vtx.h"
 
 #include "io/gimbal.h"
 #include "io/gps.h"
