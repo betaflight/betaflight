@@ -313,7 +313,7 @@ COMMON_SRC = build_config.c \
 
 HIGHEND_SRC = \
             blackbox/blackbox.c \
-            blackbox/blackbox_io.c
+            blackbox/blackbox_io.c \
             common/colorconversion.c \
             flight/navigation_rewrite.c \
             flight/navigation_rewrite_multicopter.c \
@@ -334,7 +334,7 @@ HIGHEND_SRC = \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
-            telemetry/ltm.c \
+            telemetry/ltm.c
 
 VCP_SRC = \
             vcp/hw_config.c \
