@@ -9,18 +9,17 @@
 }
 
 .tab-auxiliary .range .marker, .tab-auxiliary .channel-slider .noUi-connect {
-    background: #59AA29;
-    background: #92b67c;
+    background: #ffbb00;
     border-radius: 3px;
 }
 
 .tab-auxiliary .mode.on .info {
-    background: #59aa29;
-    color: white;
+    background: #ffbb00;
+    color: black;
 }
 
 .tab-auxiliary .mode.on:nth-child(odd) .info {
-    background: #59aa29;
+    background: #ffbb00;
 }
 
 .tab-auxiliary .mode.off .info {
