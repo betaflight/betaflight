@@ -72,12 +72,14 @@
 #define NRF24_IRQ_PIN                   GPIO_Pin_8
 #define NRF24_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
 #define USE_RX_NRF24
 #define USE_RX_V202
 #define USE_RX_SYMA
 #define USE_RX_CX10
 #define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+
+#define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
+//#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define DEFAULT_FEATURES FEATURE_MOTOR_STOP
 
@@ -86,7 +88,6 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY

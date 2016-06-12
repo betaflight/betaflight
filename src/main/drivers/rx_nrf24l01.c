@@ -61,7 +61,9 @@ static const softSPIDevice_t softSPIDevice = {
 };
 #endif
 
+#ifdef USE_NRF24_SOFTSPI
 static bool useSoftSPI = false;
+#endif
 void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType)
 {
     static bool hardwareInitialised = false;
@@ -69,12 +71,12 @@ void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType)
     if (hardwareInitialised) {
         return;
     }
-#ifdef USE_NRF24_SOFTSPI
     if (spiType == NFR24L01_SOFTSPI) {
+#ifdef USE_NRF24_SOFTSPI
         useSoftSPI = true;
         softSpiInit(&softSPIDevice);
-    }
 #endif
+    }
     // Note: Nordic Semiconductor uses 'CSN', STM uses 'NSS'
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -108,9 +110,12 @@ void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType)
 
 uint8_t nrf24TransferByte(uint8_t data)
 {
+#ifdef USE_NRF24_SOFTSPI
     if (useSoftSPI) {
         return softSpiTransferByte(&softSPIDevice, data);
-    } else {
+    } else
+#endif
+    {
 #ifdef NRF24_SPI_INSTANCE
         return spiTransferByte(NRF24_SPI_INSTANCE, data);
 #else
