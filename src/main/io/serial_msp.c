@@ -296,7 +296,7 @@ static uint32_t read32(void)
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialBeginWrite(mspSerialPort);
-    
+
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -871,6 +871,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentControlRateProfile->tpa_breakpoint);
         serialize8(currentControlRateProfile->rcYawExpo8);
         break;
+    case MSP_SUPER_EXPO:
+        headSerialReply(3);
+        serialize8(masterConfig.rxConfig.superExpoFactor);
+        serialize8(masterConfig.rxConfig.superExpoYawMode);
+        serialize8(masterConfig.rxConfig.superExpoFactorYaw);
+        break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
         for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1355,7 +1361,6 @@ static bool processInCommand(void)
             headSerialError(0);
         }
         break;
-
     case MSP_SET_RC_TUNING:
         if (currentPort->dataSize >= 10) {
             currentControlRateProfile->rcRate8 = read8();
@@ -1375,6 +1380,11 @@ static bool processInCommand(void)
         } else {
             headSerialError(0);
         }
+        break;
+    case MSP_SET_SUPER_EXPO:
+        masterConfig.rxConfig.superExpoFactor = read8();
+        masterConfig.rxConfig.superExpoYawMode = read8();
+        masterConfig.rxConfig.superExpoFactorYaw = read8();
         break;
     case MSP_SET_MISC:
         tmp = read16();
