@@ -136,8 +136,7 @@ void IOWrite(IO_t io, bool hi)
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 	if (hi) {
 		IO_GPIO(io)->BSRRL = IO_Pin(io);
-	}
-	else {
+	} else {
 		IO_GPIO(io)->BSRRH = IO_Pin(io);
 	}
 #else
@@ -172,7 +171,7 @@ void IOToggle(IO_t io)
 	if (!io)
 		return;
 	// check pin state and use BSRR accordinly to avoid race condition
-	uint16_t mask = IO_Pin(io);
+	uint32_t mask = IO_Pin(io);
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 	IO_GPIO(io)->ODR ^= mask;
 #else
