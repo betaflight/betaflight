@@ -827,7 +827,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
             // If close to home - reset home position and land
             if (posControl.homeDistance < posControl.navConfig->min_rth_distance) {
                 setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
-                setDesiredPosition(&posControl.actualState.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z);
+                setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
 
                 return NAV_FSM_EVENT_SWITCH_TO_RTH_3D_LANDING;   // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
             }
@@ -842,7 +842,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
                     calculateFarAwayTarget(&targetHoldPos, posControl.actualState.yaw, 100000.0f);  // 1km away
                 }
 
-                setDesiredPosition(&targetHoldPos, 0, NAV_POS_UPDATE_XY);
+                setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
 
                 return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT
             }
