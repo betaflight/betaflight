@@ -26,7 +26,6 @@
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/atomic.h"
 #include "common/maths.h"
 
 #include "drivers/nvic.h"
@@ -45,6 +44,7 @@
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_bst.h"
@@ -70,6 +70,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -177,7 +178,7 @@ void init(void)
 #ifdef STM32F10X
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(masterConfig.emf_avoidance);
+    SetSysClock(0); // TODO - Remove from config in the future
 #endif
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
@@ -312,18 +313,20 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    if (masterConfig.use_oneshot42) {
-        pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
-        masterConfig.use_multiShot = false;
+    if (masterConfig.fast_pwm_protocol == PWM_TYPE_ONESHOT125) {
+        featureSet(FEATURE_ONESHOT125);
     } else {
-        pwm_params.useMultiShot = masterConfig.use_multiShot ? true : false;
+        featureClear(FEATURE_ONESHOT125);
     }
+
+    pwm_params.useFastPwm = (masterConfig.fast_pwm_protocol != PWM_TYPE_CONVENTIONAL) ? true : false;  // Configurator feature abused for enabling Fast PWM
+    pwm_params.pwmProtocolType = masterConfig.fast_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
+    if (pwm_params.motorPwmRate > 500 && !pwm_params.useFastPwm)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -395,6 +398,10 @@ void init(void)
 #endif
 #endif
 
+#ifdef VTX
+    vtxInit();
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -419,6 +426,11 @@ void init(void)
     }
 #endif
 
+#if defined(FURYF3) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
+    }
+#endif
 
 #ifdef USE_I2C
 #if defined(NAZE)
@@ -478,7 +490,7 @@ void init(void)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
-        if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
+        if (!(getBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1)))) BEEP_ON;
         delay(25);
         BEEP_OFF;
     }
@@ -658,7 +670,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-int main(void) {
+void main_init(void) {
     init();
 
     /* Setup scheduler */
@@ -698,6 +710,10 @@ int main(void) {
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#ifdef SPRACINGF3EVO
+    // fixme temporary solution for AK6983 via slave I2C on MPU9250
+    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+#endif
 #endif
 #ifdef BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
@@ -725,13 +741,85 @@ int main(void) {
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-
-    while (1) {
-        scheduler();
-        processLoopback();
-    }
 }
 
+void main_step(void)
+{
+    scheduler();
+    processLoopback();
+}
+
+#ifndef NOMAIN
+int main(void)
+{
+    main_init();
+    while(1) {
+        main_step();
+    }
+}
+#endif
+
+
+#ifdef DEBUG_HARDFAULTS
+//from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/
+/**
+ * hard_fault_handler_c:
+ * This is called from the HardFault_HandlerAsm with a pointer the Fault stack
+ * as the parameter. We can then read the values from the stack and place them
+ * into local variables for ease of reading.
+ * We then read the various Fault Status and Address Registers to help decode
+ * cause of the fault.
+ * The function ends with a BKPT instruction to force control back into the debugger
+ */
+void hard_fault_handler_c(unsigned long *hardfault_args){
+  volatile unsigned long stacked_r0 ;
+  volatile unsigned long stacked_r1 ;
+  volatile unsigned long stacked_r2 ;
+  volatile unsigned long stacked_r3 ;
+  volatile unsigned long stacked_r12 ;
+  volatile unsigned long stacked_lr ;
+  volatile unsigned long stacked_pc ;
+  volatile unsigned long stacked_psr ;
+  volatile unsigned long _CFSR ;
+  volatile unsigned long _HFSR ;
+  volatile unsigned long _DFSR ;
+  volatile unsigned long _AFSR ;
+  volatile unsigned long _BFAR ;
+  volatile unsigned long _MMAR ;
+
+  stacked_r0 = ((unsigned long)hardfault_args[0]) ;
+  stacked_r1 = ((unsigned long)hardfault_args[1]) ;
+  stacked_r2 = ((unsigned long)hardfault_args[2]) ;
+  stacked_r3 = ((unsigned long)hardfault_args[3]) ;
+  stacked_r12 = ((unsigned long)hardfault_args[4]) ;
+  stacked_lr = ((unsigned long)hardfault_args[5]) ;
+  stacked_pc = ((unsigned long)hardfault_args[6]) ;
+  stacked_psr = ((unsigned long)hardfault_args[7]) ;
+
+  // Configurable Fault Status Register
+  // Consists of MMSR, BFSR and UFSR
+  _CFSR = (*((volatile unsigned long *)(0xE000ED28))) ;
+
+  // Hard Fault Status Register
+  _HFSR = (*((volatile unsigned long *)(0xE000ED2C))) ;
+
+  // Debug Fault Status Register
+  _DFSR = (*((volatile unsigned long *)(0xE000ED30))) ;
+
+  // Auxiliary Fault Status Register
+  _AFSR = (*((volatile unsigned long *)(0xE000ED3C))) ;
+
+  // Read the Fault Address Registers. These may not contain valid values.
+  // Check BFARVALID/MMARVALID to see if they are valid values
+  // MemManage Fault Address Register
+  _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+  // Bus Fault Address Register
+  _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
+
+  __asm("BKPT #0\n") ; // Break into the debugger
+}
+
+#else
 void HardFault_Handler(void)
 {
     // fall out of the sky
@@ -749,3 +837,4 @@ void HardFault_Handler(void)
 
     while (1);
 }
+#endif
