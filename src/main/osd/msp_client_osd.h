@@ -15,4 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+typedef struct mspClientStatus_s {
+    uint32_t lastReplyAt;            // in micro-seconds.
+    bool timeoutOccured;
+} mspClientStatus_t;
+
+extern mspClientStatus_t mspClientStatus;
+
 void mspClientProcess(void);

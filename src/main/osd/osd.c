@@ -54,6 +54,7 @@
 #include "osd/config.h"
 
 #include "osd/fc_state.h"
+#include "osd/msp_client_osd.h"
 
 #include "osd/osd.h"
 
@@ -265,7 +266,7 @@ void osdUpdate(void)
         timerState[timId].val += timerTable[i].delay;
     }
 
-    bool showNowOrFlashWhenFCCommunicationTimeout = !fcStatus.communicationTimeout || (fcStatus.communicationTimeout && timerState[tim10Hz].toggle);
+    bool showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
 
     //
     // top
@@ -273,7 +274,7 @@ void osdUpdate(void)
 
     int row = 1; // zero based.
 
-    if (showNowOrFlashWhenFCCommunicationTimeout) {
+    if (showNowOrFlashWhenFCTimeoutOccured) {
         tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
         osdPrintAt(2, row, lineBuffer);
     }
@@ -289,7 +290,7 @@ void osdUpdate(void)
         flightMode  = " OFF";
     }
 
-    if (showNowOrFlashWhenFCCommunicationTimeout) {
+    if (showNowOrFlashWhenFCTimeoutOccured) {
         tfp_sprintf(lineBuffer, "%1s %1s %4s",
             fcStatus.fcState & (1 << FC_STATE_MAG) ? "M" : "",
             fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
@@ -346,7 +347,7 @@ void osdUpdate(void)
     tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltage5v / 10, voltage5v % 10);
     osdPrintAt(2, row, lineBuffer);
 
-    if (showNowOrFlashWhenFCCommunicationTimeout) {
+    if (showNowOrFlashWhenFCTimeoutOccured) {
         tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
         osdPrintAt(18, row, lineBuffer);
     }

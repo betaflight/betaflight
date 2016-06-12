@@ -44,6 +44,8 @@
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 
+#include "osd/msp_client_osd.h"
+
 /*
     This is a simple first-cut implementation of an MSP client so that the OSD can talk to the FC.
 
@@ -67,6 +69,8 @@ static uint8_t commandsToSend[] = {
     MSP_MOTOR
 };
 
+mspClientStatus_t mspClientStatus;
+
 void mspClientProcess(void)
 {
     static uint8_t index = 0;
@@ -88,7 +92,7 @@ void mspClientProcess(void)
     // handle timeout of received data.
     //
     uint32_t now = micros();
-    fcStatus.communicationTimeout = (cmp32(now, fcStatus.lastReplyAt) >= MSP_CLIENT_TIMEOUT_INTERVAL);
+    mspClientStatus.timeoutOccured = (cmp32(now, mspClientStatus.lastReplyAt) >= MSP_CLIENT_TIMEOUT_INTERVAL);
 }
 
 // return positive for ACK, negative on error, zero for no reply
@@ -97,7 +101,7 @@ int mspClientProcessInCommand(mspPacket_t *cmd)
     sbuf_t * src = &cmd->buf;
     int len = sbufBytesRemaining(src);
 
-    fcStatus.lastReplyAt = micros();
+    mspClientStatus.lastReplyAt = micros();
 
     UNUSED(len);
 

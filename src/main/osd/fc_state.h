@@ -48,9 +48,6 @@ typedef enum {
 
 
 typedef struct fcStatus_s {
-    uint32_t lastReplyAt;            // in micro-seconds.
-    bool communicationTimeout;
-
     // MSP_STATUS
     uint16_t cycleTime;
     uint16_t i2cErrors;

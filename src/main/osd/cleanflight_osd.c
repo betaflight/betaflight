@@ -95,7 +95,13 @@ void taskHardwareWatchdog(void)
 
 void taskStatusLed(void)
 {
-    warningLedPulse();
+    if (mspClientStatus.timeoutOccured) {
+        warningLedCode(3);
+    } else if (!osdIsCameraConnected()) {
+        warningLedCode(2);
+    } else {
+        warningLedPulse();
+    }
     warningLedUpdate();
 }
 
