@@ -58,6 +58,8 @@ TABS.setup.initialize = function (callback) {
         // check if we have magnetometer
         if (!bit_check(CONFIG.activeSensors, 2)) {
             $('a.calibrateMag').addClass('disabled');
+            $('default_btn').addClass('disabled');
+
         }
 
         self.initializeInstruments();
