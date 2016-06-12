@@ -350,7 +350,7 @@ void init(void)
 #endif
     };
 #ifdef AFROMINI
-    beeperConfig.gpioMode = Mode_Out_PP;   // AFROMINI override
+    beeperConfig.isOD = true;
     beeperConfig.isInverted = true;
 #endif
 #ifdef NAZE
