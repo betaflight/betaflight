@@ -203,10 +203,10 @@
 
 #define TARGET_MOTOR_COUNT 8
 
-// alternative defaults for AlienWii32 F1 target
-#ifdef ALIENWII32
+// alternative defaults for ALIENFLIGHTF1 F1 target
+#ifdef ALIENFLIGHTF1
 #undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "AWF1" // AlienWii32 F1.
+#define TARGET_BOARD_IDENTIFIER "AFF1" // ALIENFLIGHTF1
 #undef BOARD_HAS_VOLTAGE_DIVIDER
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
@@ -216,7 +216,7 @@
 // Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PORT  GPIOB
 #define BINDPLUG_PIN   Pin_5
-#endif // ALIENWII32
+#endif // ALIENFLIGHTF1
 
 #ifdef MICROSKYSKY
 #undef TARGET_BOARD_IDENTIFIER

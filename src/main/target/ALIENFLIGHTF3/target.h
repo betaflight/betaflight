@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AWF3" // AlienWii32 F3.
+#define TARGET_BOARD_IDENTIFIER "AFF3" // ALIENFLIGHTF3
 
 #define LED0
 #define LED0_GPIO   GPIOB
@@ -116,8 +116,7 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-// alternative defaults for AlienWii32 F3 target
-#define ALIENWII32
+// alternative defaults for ALIENFLIGHTF3 target
 #define HARDWARE_BIND_PLUG
 
 // Hardware bind plug at PB12 (Pin 25)
