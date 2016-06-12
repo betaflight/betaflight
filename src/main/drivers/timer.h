@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "io.h"
+
 #if !defined(USABLE_TIMER_CHANNEL_COUNT)
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #endif
@@ -64,14 +66,12 @@ typedef struct timerOvrHandlerRec_s {
 
 typedef struct {
     TIM_TypeDef *tim;
-    GPIO_TypeDef *gpio;
-    uint16_t pin;
+    ioTag_t pin;
     uint8_t channel;
     uint8_t irq;
     uint8_t outputEnable;
-    GPIO_Mode gpioInputMode;
+    ioConfig_t ioMode;
 #if defined(STM32F3) || defined(STM32F4)
-    uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
     uint8_t alternateFunction;
 #endif
     uint8_t outputInverted;
@@ -106,7 +106,7 @@ volatile timCCR_t* timerChCCR(const timerHardware_t* timHw);
 volatile timCCR_t* timerChCCRLo(const timerHardware_t* timHw);
 volatile timCCR_t* timerChCCRHi(const timerHardware_t* timHw);
 void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh);
-void timerChConfigGPIO(const timerHardware_t* timHw, GPIO_Mode mode);
+void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode);
 
 void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn);
 void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn);
