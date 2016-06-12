@@ -58,15 +58,17 @@
 #include "drivers/compass_mag3110.h"
 
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/sonar_srf10.h"
 
 #include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/initialisation.h"
 
 #ifdef NAZE
@@ -83,7 +85,7 @@ extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
 
-uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
@@ -731,6 +733,30 @@ retry:
     sensorsSet(SENSOR_MAG);
 }
 
+#ifdef SONAR
+/*
+ * Detect which rangefinder is present
+ */
+static rangefinderType_e detectRangefinder(void)
+{
+    rangefinderType_e rangefinderType = RANGEFINDER_NONE;
+    if (feature(FEATURE_SONAR)) {
+        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+        // since there is no way to detect it
+        rangefinderType = RANGEFINDER_HCSR04;
+    }
+#ifdef USE_SONAR_SRF10
+    if (srf10_detect()) {
+        // if an SFR10 sonar rangefinder is detected then use it in preference to the assumed HC-SR04
+        rangefinderType = RANGEFINDER_SRF10;
+    }
+#endif
+    detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;
+    sensorsSet(SENSOR_SONAR);
+    return rangefinderType;
+}
+#endif
+
 static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
@@ -782,6 +808,11 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t g
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
     }
+
+#ifdef SONAR
+    const rangefinderType_e rangefinderType = detectRangefinder();
+    rangefinderInit(rangefinderType);
+#endif
 
     return true;
 }

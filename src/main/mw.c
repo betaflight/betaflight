@@ -45,7 +45,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -731,7 +731,7 @@ void taskUpdateBaro(void)
 void taskUpdateSonar(void)
 {
     if (sensors(SENSOR_SONAR)) {
-        sonarUpdate();
+        rangefinderUpdate();
     }
 
     //updatePositionEstimator_SonarTopic(currentTime);

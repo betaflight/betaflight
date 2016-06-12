@@ -21,13 +21,14 @@
 #include "platform.h"
 #include "build_config.h"
 
+#if defined(SONAR) && defined(USE_SONAR_SRF10)
+
 #include "drivers/system.h"
 #include "drivers/bus_i2c.h"
 
-#include "drivers/sonar.h"
+#include "drivers/rangefinder.h"
 #include "drivers/sonar_srf10.h"
 
-#if defined(SONAR) && defined(USE_SONAR_SRF10)
 
 // Technical specification is at: http://robot-electronics.co.uk/htm/srf10tech.htm
 #define SRF10_MAX_RANGE_CM 600 // 6m, from SFR10 spec sheet
@@ -82,7 +83,7 @@
 #define SRF10_RangeValue6m 139 // maximum range
 #define SRF10_RangeValue11m 0xFF // exceeds actual maximum range
 
-STATIC_UNIT_TESTED volatile int32_t srf10measurementCm = SONAR_OUT_OF_RANGE;
+STATIC_UNIT_TESTED volatile int32_t srf10measurementCm = RANGEFINDER_OUT_OF_RANGE;
 static int16_t minimumFiringIntervalMs;
 static uint32_t timeOfLastMeasurementMs;
 
@@ -117,11 +118,11 @@ bool srf10_detect()
     return false;
 }
 
-void srf10_init(sonarRange_t *sonarRange)
+void srf10_init(rangefinder_t *rangefinder)
 {
-    sonarRange->maxRangeCm = SRF10_MAX_RANGE_CM;
-    sonarRange->detectionConeDeciDegrees = SRF10_DETECTION_CONE_DECIDEGREES;
-    sonarRange->detectionConeExtendedDeciDegrees = SRF10_DETECTION_CONE_EXTENDED_DECIDEGREES;
+    rangefinder->maxRangeCm = SRF10_MAX_RANGE_CM;
+    rangefinder->detectionConeDeciDegrees = SRF10_DETECTION_CONE_DECIDEGREES;
+    rangefinder->detectionConeExtendedDeciDegrees = SRF10_DETECTION_CONE_EXTENDED_DECIDEGREES;
     // set up the SRF10 hardware for a range of 6m
     minimumFiringIntervalMs = SRF10_MinimumFiringIntervalFor600cmRangeMs;
     i2c_srf10_send_byte(SRF10_WRITE_MaxGainRegister, SRF10_COMMAND_SetGain_Max);
@@ -145,7 +146,7 @@ void srf10_start_reading(void)
         const uint8_t highByte = i2c_srf10_read_byte(SRF10_READ_RangeHighByte);
         srf10measurementCm =  highByte << 8 | lowByte;
         if (srf10measurementCm > SRF10_MAX_RANGE_CM) {
-            srf10measurementCm = SONAR_OUT_OF_RANGE;
+            srf10measurementCm = RANGEFINDER_OUT_OF_RANGE;
         }
     }
     const uint32_t timeNowMs = millis();

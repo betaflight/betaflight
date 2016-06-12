@@ -21,11 +21,13 @@
 #include <platform.h>
 #include "build_config.h"
 
+#if defined(SONAR)
+
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/nvic.h"
 
-#include "drivers/sonar.h"
+#include "drivers/rangefinder.h"
 #include "drivers/sonar_hcsr04.h"
 
 #define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
@@ -42,7 +44,6 @@
  *
  */
 
-#if defined(SONAR)
 STATIC_UNIT_TESTED volatile int32_t hcsr04SonarPulseTravelTime = 0;
 sonarHcsr04Hardware_t sonarHcsr04Hardware;
 
@@ -133,11 +134,11 @@ void hcsr04_set_sonar_hardware(void)
 #endif
 }
 
-void hcsr04_init(sonarRange_t *sonarRange)
+void hcsr04_init(rangefinder_t *rangefinder)
 {
-    sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
-    sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
-    sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
+    rangefinder->maxRangeCm = HCSR04_MAX_RANGE_CM;
+    rangefinder->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
+    rangefinder->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
 }
 
 /*
@@ -175,7 +176,7 @@ int32_t hcsr04_get_distance(void)
     // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
     int32_t distance = hcsr04SonarPulseTravelTime / 59;
     if (distance > HCSR04_MAX_RANGE_CM) {
-        distance = SONAR_OUT_OF_RANGE;
+        distance = RANGEFINDER_OUT_OF_RANGE;
     }
     return distance;
 }

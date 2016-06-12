@@ -63,7 +63,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
-#include "sensors/sonar.h"
+#include "sensors/rangefinder.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
@@ -711,7 +711,7 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_SONAR_ALTITUDE:
         headSerialReply(4);
 #if defined(SONAR)
-        serialize32(sonarGetLatestAltitude());
+        serialize32(rangefinderGetLatestAltitude());
 #else
         serialize32(0);
 #endif

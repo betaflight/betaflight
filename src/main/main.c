@@ -65,7 +65,6 @@
 #include "io/display.h"
 
 #include "sensors/sensors.h"
-#include "sensors/sonar.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
@@ -122,6 +121,7 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
+const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -450,12 +450,6 @@ void init(void)
             &masterConfig.flight3DConfig,
             &masterConfig.escAndServoConfig
         );
-#endif
-
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
-        sonarInit();
-    }
 #endif
 
 #ifdef LED_STRIP

@@ -94,6 +94,7 @@ uint8_t cliMode = 0;
 #ifdef USE_CLI
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 
@@ -195,20 +196,26 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#ifndef CJMCU
+#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
 };
 
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR)
+// sync with gyroSensor_e
+static const char * const gyroNames[] = { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE"};
+// sync with accelerationSensor_e
+static const char * const accNames[] = { "None", "", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE"};
+// sync with baroSensor_e
+static const char * const baroNames[] = { "", "None", "BMP085", "MS5611", "BMP280", "FAKE"};
+// sync with magSensor_e
+static const char * const magNames[] = { "None", "", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "FAKE"};
+// sycn with rangefinderType_e
+static const char * const rangefinderNames[] = { "None", "HCSR04", "SRF10"};
 
-static const char * const sensorHardwareNames[4][11] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
-    { "", "None", "BMP085", "MS5611", "BMP280", "FAKE", NULL },
-    { "", "None", "HMC5883", "AK8975", "FAKE", NULL }
-};
+static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames};
+
 #endif
 
 typedef struct {
@@ -2484,21 +2491,15 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
-#ifndef CJMCU
-    uint8_t i;
-    uint32_t mask;
-    uint32_t detectedSensorsMask = sensorsMask();
+#if (FLASH_SIZE > 64)
+    const uint32_t detectedSensorsMask = sensorsMask();
 
-    for (i = 0; ; i++) {
+    for (int i = 0; i < SENSOR_INDEX_COUNT; i++) {
 
-        if (sensorTypeNames[i] == NULL)
-            break;
-
-        mask = (1 << i);
+        const uint32_t mask = (1 << i);
         if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
-            const char *sensorHardware;
-            uint8_t sensorHardwareIndex = detectedSensors[i];
-            sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+            const int sensorHardwareIndex = detectedSensors[i];
+            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
 
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
 
@@ -2511,9 +2512,9 @@ static void cliStatus(char *cmdline)
     cliPrint("\r\n");
 
 #ifdef USE_I2C
-    uint16_t i2cErrorCounter = i2cGetErrorCounter();
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
 #else
-    uint16_t i2cErrorCounter = 0;
+    const uint16_t i2cErrorCounter = 0;
 #endif
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
