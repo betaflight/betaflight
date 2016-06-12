@@ -51,7 +51,7 @@ static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 static uint8_t allocatedOutputPortCount = 0;
 
 static bool pwmMotorsEnabled = true;
-static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
+static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t ouputPolarity)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
 
@@ -60,7 +60,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = value;
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+    TIM_OCInitStructure.TIM_OCPolarity = ouputPolarity ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
     switch (channel) {
@@ -100,10 +100,11 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     configTimeBase(timerHardware->tim, period, mhz);
     pwmGPIOConfig(timerHardware->gpio, timerHardware->pin, Mode_AF_PP);
 
-    pwmOCConfig(timerHardware->tim, timerHardware->channel, value);
+    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->outputInverted);
 
-    if (timerHardware->outputEnable)
+    if (timerHardware->outputEnable) {
         TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
+    }
     TIM_Cmd(timerHardware->tim, ENABLE);
 
     switch (timerHardware->channel) {

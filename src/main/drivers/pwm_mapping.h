@@ -97,6 +97,7 @@ typedef enum {
   PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
+enum {PWM_INVERTED = 1};
 
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
