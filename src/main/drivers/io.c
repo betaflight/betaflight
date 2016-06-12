@@ -171,8 +171,22 @@ void IOToggle(IO_t io)
 {
 	if (!io)
 		return;
-	uint16_t mask = IO_Pin(io);
-	IO_GPIO(io)->ODR ^= mask;
+	uint32_t mask = IO_Pin(io);
+	// Read pin state from ODR but write to BSRR because it only changes the pins
+	// high in the mask value rather than all pins. XORing ODR directly risks
+	// setting other pins incorrectly because it change all pins' state.
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+	if (IO_GPIO(io)->ODR & mask) {
+		IO_GPIO(io)->BSRRH = mask;
+	} else {
+		IO_GPIO(io)->BSRRL = mask;
+	}
+#else
+	if (IO_GPIO(io)->ODR & mask)
+		mask <<= 16;   // bit is set, shift mask to reset half
+
+	IO_GPIO(io)->BSRR = mask;
+#endif
 }
 
 // claim IO pin, set owner and resources
