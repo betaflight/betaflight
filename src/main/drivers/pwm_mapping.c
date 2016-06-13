@@ -248,6 +248,9 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef CC3D
+        // This part of code is unnecessary and can be removed - timer clash is resolved by forcing configuration with the same
+        // timer tick rate - PWM_TIMER_MHZ
+        /*
         if (init->useParallelPWM) {
             // Skip PWM inputs that conflict with timers used outputs.
             if ((type == MAP_TO_SERVO_OUTPUT || type == MAP_TO_MOTOR_OUTPUT) && (timerHardwarePtr->tim == TIM2 || timerHardwarePtr->tim == TIM3)) {
@@ -258,6 +261,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             }
 
         }
+        */
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
