@@ -1112,8 +1112,8 @@ all: binary
 all_targets:
 	for build_target in $(VALID_TARGETS); do \
 		echo "Building $$build_target" && \
-		make clean && \
-		make -j TARGET=$$build_target || \
+		$(MAKE) clean && \
+		$(MAKE) -j TARGET=$$build_target || \
 		break; \
 		echo "Building $$build_target succeeded."; \
 	done
