@@ -161,9 +161,9 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
 TARGET_FLAGS    = -D$(TARGET)
-## End F3 targets
-##
-## Start F4 targets
+# End F3 targets
+#
+# Start F4 targets
 else ifeq ($(TARGET),$(filter $(TARGET), $(F4_TARGETS)))
 
 #STDPERIPH
@@ -255,9 +255,9 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
 TARGET_FLAGS = -D$(TARGET)
-## End F4 targets
-##
-## Start F1 targets
+# End F4 targets
+#
+# Start F1 targets
 else
 
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
@@ -302,9 +302,9 @@ endif
 DEVICE_FLAGS    += -DSTM32F10X
 
 endif
-##
-## End F1 targets
-##
+#
+# End F1 targets
+#
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
