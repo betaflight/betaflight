@@ -16,6 +16,7 @@ ALL_TARGETS += afromini
 ALL_TARGETS += doge
 ALL_TARGETS += singularity
 ALL_TARGETS += furyf3
+ALL_TARGETS += sirinfpv
 
 CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
 
@@ -37,6 +38,7 @@ clean_afromini afromini :                 opts := TARGET=AFROMINI
 clean_doge doge :                         opts := TARGET=DOGE
 clean_singularity singularity :           opts := TARGET=SINGULARITY
 clean_furyf3 furyf3 :                     opts := TARGET=FURYF3
+clean_sirinfpv sirinfpv:                  opts := TARGET=SIRINFPV
 
 
 .PHONY: all clean

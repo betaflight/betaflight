@@ -60,6 +60,7 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"

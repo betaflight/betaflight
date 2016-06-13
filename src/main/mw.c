@@ -65,6 +65,8 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
+
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -960,6 +962,15 @@ void taskTransponder(void)
 {
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
+    }
+}
+#endif
+
+#ifdef OSD
+void taskUpdateOsd(void)
+{
+    if (feature(FEATURE_OSD)) {
+        updateOsd();
     }
 }
 #endif

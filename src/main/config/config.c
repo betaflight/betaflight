@@ -54,6 +54,7 @@
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -390,6 +391,29 @@ static void resetConf(void)
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
+#endif
+
+#ifdef SIRINFPV
+    featureSet(FEATURE_OSD);
+    featureSet(FEATURE_RX_SERIAL);
+    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    //masterConfig.batteryConfig.vbatscale = 20;
+    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
+#endif
+
+#ifdef OSD
+    masterConfig.vtx_channel = 19;
+    masterConfig.osdProfile.system = 0;
+    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] = -29;
+    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]        = -59;
+    masterConfig.osdProfile.item_pos[OSD_TIMER]             = -39;
+    masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]      = -9;
+    masterConfig.osdProfile.item_pos[OSD_CPU_LOAD]          = 26;
+    masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]       = 1;
+    masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]   = -80;
+    masterConfig.osdProfile.item_pos[OSD_ARMED]             = -107;
+    masterConfig.osdProfile.item_pos[OSD_DISARMED]          = -109;
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
