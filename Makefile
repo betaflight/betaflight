@@ -65,11 +65,16 @@ FEATURES        =
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
 
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
-VALID_TARGETS   = $(notdir $(wildcard $(ROOT)/src/main/target/*))
-VALID_TARGETS  := $(filter-out $(notdir $(wildcard $(ROOT)/src/main/target/*.*)), $(VALID_TARGETS)) 
+VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
+VALID_TARGETS  := $(subst ./src/main/target/,, $(VALID_TARGETS)) 
+VALID_TARGETS  := $(subst /,, $(VALID_TARGETS)) 
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
-$(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
+$(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
+endif
+
+ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)),)
+$(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, or F411. Have you prepared a valid target.mk?)
 endif
 
 128K_TARGETS  = $(F1_TARGETS) 
@@ -77,7 +82,7 @@ endif
 512K_TARGETS  = $(F411_TARGETS)
 1024K_TARGETS = $(F405_TARGETS)
 
-# Configure default flash sizes for the targets (largest size specified gets hit first)
+# Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(FLASH_SIZE),)
 ifeq ($(TARGET),$(filter $(TARGET),$(1024K_TARGETS)))
 FLASH_SIZE = 1024
@@ -479,7 +484,6 @@ STM32F4xx_COMMON_SRC = \
 			drivers/dma_stm32f4xx.c 
 
 # check if target.mk supplied
-ifneq ($(TARGET_SRC),)
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 TARGET_SRC := $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
 
@@ -514,16 +518,7 @@ endif
 ifneq ($(filter VCP,$(FEATURES)),)
 TARGET_SRC += $(VCP_SRC)
 endif
-
-# end target.mk supplied - now know the source was supplied above.
-else 
-ifeq ($($(TARGET)_SRC),)
-$(error Target source files not found. Have you prepared a target.mk?)
-else 
-TARGET_SRC = $($(TARGET)_SRC)
-endif
 # end target specific make file checks
-endif
 
 
 # Search path and source files for the ST stdperiph library
@@ -645,37 +640,51 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all         : default task; compile C code, build firmware
+## all               : default task; compile C code, build firmware
 all: binary
 
-## all_targets : build all valid target platforms
+## all_targets       : build all valid target platforms
 all_targets:
 	for build_target in $(VALID_TARGETS); do \
+		echo "" && \
 		echo "Building $$build_target" && \
-		$(MAKE) clean && \
-		$(MAKE) -j TARGET=$$build_target || \
+		$(MAKE) -j TARGET=$$build_target clean && \
+		$(MAKE) -j binary hex TARGET=$$build_target || \
 		break; \
 		echo "Building $$build_target succeeded."; \
 	done
 
-## clean       : clean up all temporary / machine-generated files
+## clean             : clean up all temporary / machine-generated files
 clean:
 	rm -f $(CLEAN_ARTIFACTS)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
+
+## clean_test        : clean up all temporary / machine-generated files (tests)
+clean_test:
 	cd src/test && $(MAKE) clean || true
+
+## clean_all_targets : clean all valid target platforms
+clean_all_targets:
+	for clean_target in $(VALID_TARGETS); do \
+		echo "" && \
+		echo "Cleaning $$clean_target" && \
+		$(MAKE) -j TARGET=$$clean_target clean || \
+		break; \
+		echo "Cleaning $$clean_target succeeded."; \
+	done
 
 flash_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	echo -n 'R' >$(SERIAL_DEVICE)
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## flash       : flash firmware (.hex) onto flight controller
+## flash             : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	st-flash --reset write $< 0x08000000
 
-## st-flash    : flash firmware (.bin) onto flight controller
+## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
 binary: $(TARGET_BIN)
@@ -685,17 +694,17 @@ unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## unbrick     : unbrick flight controller
+## unbrick           : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
-## cppcheck    : run static analysis on C source code
+## cppcheck          : run static analysis on C source code
 cppcheck: $(CSOURCES)
 	$(CPPCHECK)
 
 cppcheck-result.xml: $(CSOURCES)
 	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
-## help        : print this help message and exit
+## help              : print this help message and exit
 help: Makefile
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
@@ -707,11 +716,11 @@ help: Makefile
 	@echo ""
 	@sed -n 's/^## //p' $<
 
-## targets     : print a list of all valid target platforms (for consumption by scripts)
+## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
 	@echo $(VALID_TARGETS)
 
-## test        : run the cleanflight test suite
+## test              : run the cleanflight test suite
 test:
 	cd src/test && $(MAKE) test || true
 
