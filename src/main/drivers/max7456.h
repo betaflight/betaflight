@@ -17,11 +17,6 @@
 
 #pragma once
 
-#define DATAOUT 11              // MOSI
-#define DATAIN  12              // MISO
-#define SPICLOCK  13            // sck
-#define VSYNC 2                 // INT0
-
 #ifndef WHITEBRIGHTNESS
   #define WHITEBRIGHTNESS 0x01
 #endif
@@ -32,16 +27,16 @@
 #define BWBRIGHTNESS ((BLACKBRIGHTNESS << 2) | WHITEBRIGHTNESS)
 
 //MAX7456 opcodes
-#define DMM_reg   0x04
-#define DMAH_reg  0x05
-#define DMAL_reg  0x06
-#define DMDI_reg  0x07
-#define VM0_reg   0x00
-#define VM1_reg   0x01
+#define DMM_REG   0x04
+#define DMAH_REG  0x05
+#define DMAL_REG  0x06
+#define DMDI_REG  0x07
+#define VM0_REG   0x00
+#define VM1_REG   0x01
 
 // video mode register 0 bits
 #define VIDEO_BUFFER_DISABLE 0x01
-//#define MAX7456_RESET 0x02
+#define MAX7456_RESET 0x02
 #define VERTICAL_SYNC_NEXT_VSYNC 0x04
 #define OSD_ENABLE 0x08
 #define SYNC_MODE_AUTO 0x00
@@ -78,9 +73,9 @@
 #define BACKGROUND_MODE_GRAY 0x40
 
 //MAX7456 commands
-#define CLEAR_display 0x04
-#define CLEAR_display_vert 0x06
-#define END_string 0xff
+#define CLEAR_DISPLAY 0x04
+#define CLEAR_DISPLAY_VERT 0x06
+#define END_STRING 0xff
 
 
 #define MAX7456ADD_VM0          0x00  //0b0011100// 00 // 00             ,0011100
@@ -115,10 +110,9 @@
 #define MAX7456ADD_OSDBL        0x6c
 #define MAX7456ADD_STAT         0xA0
 
-// Selectable by video mode
-//uint8_t ENABLE_display;
-//uint8_t ENABLE_display_vert;
-//uint8_t DISABLE_display;
+#define NVM_RAM_SIZE            54
+#define WRITE_NVR               0xA0
+#define STATUS_REG_NVR_BUSY     0x20
 
 extern uint16_t max_screen_size;
 char screen[480];

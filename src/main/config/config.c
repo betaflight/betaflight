@@ -403,7 +403,7 @@ static void resetConf(void)
 #endif
 
 #ifdef OSD
-    masterConfig.vtx_channel = 0;
+    masterConfig.vtx_channel = 19;
     masterConfig.osdProfile.system = 0;
     masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] = -29;
     masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]        = -59;

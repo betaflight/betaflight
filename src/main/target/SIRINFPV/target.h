@@ -189,19 +189,16 @@
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
-#define USE_QUAD_MIXER_ONLY
+//#define USE_QUAD_MIXER_ONLY
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define TELEMETRY
 #define SERIAL_RX
-//#define GTUNE
 #define USE_CLI
 #define OSD
 #define LED0
 
-#define USE_SERIAL_1WIRE
+#define USE_SERVOS
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
-#define S1W_TX_GPIO         UART1_GPIO
-#define S1W_TX_PIN          UART1_TX_PIN
-#define S1W_RX_GPIO         UART1_GPIO
-#define S1W_RX_PIN          UART1_RX_PIN
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

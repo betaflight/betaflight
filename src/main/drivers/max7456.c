@@ -48,7 +48,6 @@ uint8_t max7456_send(uint8_t add, uint8_t data) {
 
 
 void max7456_init(uint8_t system) {
-    uint8_t max7456_reset=0x02;
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
     uint16_t x;
@@ -60,7 +59,7 @@ void max7456_init(uint8_t system) {
     delay(1000);
     // force soft reset on Max7456
     ENABLE_MAX7456;
-    max7456_send(VM0_reg, max7456_reset);
+    max7456_send(VM0_REG, MAX7456_RESET);
     delay(100);
 
     srdata = max7456_send(0xA0, 0xFF);
@@ -81,8 +80,6 @@ void max7456_init(uint8_t system) {
             break;
     }
 
-    max7456_reset |= video_signal_type;
-
     if (video_signal_type) { //PAL
         max_screen_size = 480;
         max_screen_rows = 16;
@@ -97,7 +94,7 @@ void max7456_init(uint8_t system) {
     }
 
     // make sure the Max7456 is enabled
-    max7456_send(VM0_reg, OSD_ENABLE | video_signal_type);
+    max7456_send(VM0_REG, OSD_ENABLE | video_signal_type);
 
     DISABLE_MAX7456;
     delay(100);
@@ -159,10 +156,6 @@ void max7456_draw_screen_fast(void) {
     }
 }
 
-#define NVM_RAM_SIZE 54
-#define WRITE_NVR 0xA0
-#define STATUS_REG_NVR_BUSY 0x20
-
 
 void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     uint8_t x;
@@ -171,7 +164,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     ENABLE_MAX7456;
 
     // disable display
-    max7456_send(VM0_reg, video_signal_type);
+    max7456_send(VM0_REG, video_signal_type);
 
     max7456_send(MAX7456ADD_CMAH, char_address); // set start address high
 
@@ -186,7 +179,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     // wait until bit 5 in the status register returns to 0 (12ms)
     while ((spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456ADD_STAT) & STATUS_REG_NVR_BUSY) != 0);
 
-    max7456_send(VM0_reg, video_signal_type | 0x0C);
+    max7456_send(VM0_REG, video_signal_type | 0x0C);
     DISABLE_MAX7456;
     max7456_lock = 0;
 }
