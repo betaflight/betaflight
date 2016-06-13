@@ -73,12 +73,6 @@
 #define USE_VCP
 #define USE_USART1
 #define USE_USART3
-#define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 4
-
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
 #define USART3_RX_PIN Pin_11
 #define USART3_TX_PIN Pin_10
@@ -93,18 +87,18 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
+#if defined(CC3D_NRF24) || defined(CC3D_OPBL_NRF24)
 #define USE_RX_NRF24
-#ifdef USE_RX_NRF24
+#endif
 
+#ifdef USE_RX_NRF24
 #define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
 #define DEFAULT_FEATURES FEATURE_SOFTSPI
 #define USE_RX_SYMA
-#ifdef CC3D_OPBL
 #define USE_RX_V202
 #define USE_RX_CX10
 #define USE_RX_H8_3D
 #define USE_RX_REF
-#endif
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
 #define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
@@ -133,6 +127,17 @@
 #define NRF24_MOSI_PIN                  GPIO_Pin_1
 #define NRF24_MISO_GPIO                 GPIOB
 #define NRF24_MISO_PIN                  GPIO_Pin_0
+
+#define SERIAL_PORT_COUNT 3
+
+#else
+
+#define USE_SOFTSERIAL1
+#define SERIAL_PORT_COUNT 4
+
+#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 #endif // USE_RX_NRF24
 
 
@@ -188,18 +193,27 @@
 #undef TELEMETRY_SMARTPORT
 
 #ifdef CC3D_OPBL
+#ifdef USE_RX_NRF24
+#define TARGET_MOTOR_COUNT 4
 #undef USE_SERVOS
+#endif
 #undef BLACKBOX
 #undef TELEMETRY
 #undef TELEMETRY_LTM
-#undef SERIAL_RX
-#undef SPEKTRUM_BIND
-#define LED_STRIP
+#endif
+
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
-#undef BLACKBOX
+#define SKIP_RX_MSP
+#undef SERIAL_RX
+#undef SPEKTRUM_BIND
+#undef TELEMETRY
+#undef TELEMETRY_LTM
+#ifndef CC3D_OPBL
+#define LED_STRIP
 #endif
 #endif
+
 
 // DEBUG
 //#define HIL

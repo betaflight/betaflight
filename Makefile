@@ -62,16 +62,11 @@ FEATURES        =
 ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 
-<<<<<<< HEAD
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
-=======
-# Valid targets for OP BootLoader support
-OPBL_TARGETS = CC3D_OPBL CC3D_OPBL_NRF24
->>>>>>> Tidied protocols and added H8_3D protocol.
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
@@ -337,27 +332,8 @@ ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
 endif
 
-<<<<<<< HEAD
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
-=======
-ifeq ($(TARGET),$(filter $(TARGET), $(CC3D_TARGETS)))
-TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D
-ifeq ($(TARGET),CC3D_PPM1)
-TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_PPM1
-CC3D_PPM1_SRC = $(CC3D_SRC)
-endif
-ifeq ($(TARGET),CC3D_OPBL)
-TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D_OPBL
-CC3D_OPBL_SRC = $(CC3D_SRC)
-endif
-TARGET_DIR = $(ROOT)/src/main/target/CC3D
-endif
-
-ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
-OPBL=yes
-endif
->>>>>>> Tidied protocols and added H8_3D protocol.
 
 ifeq ($(OPBL),yes)
 TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
@@ -403,11 +379,11 @@ COMMON_SRC = \
             drivers/bus_spi_soft.c \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
+            drivers/rx_nrf24l01.c \
+            drivers/rx_xn297.c \
             drivers/pwm_mapping.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_xn297.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -435,6 +411,7 @@ COMMON_SRC = \
             rx/nrf24_syma.c \
             rx/nrf24_v202.c \
             rx/nrf24_h8_3d.c \
+            rx/nrf24_ref.c \
             rx/pwm.c \
             rx/rx.c \
             rx/sbus.c \
@@ -528,7 +505,6 @@ STM32F4xx_COMMON_SRC = \
             startup_stm32f40xx.s \
             target/system_stm32f4xx.c \
             drivers/accgyro_mpu.c \
-<<<<<<< HEAD
             drivers/adc_stm32f4xx.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
@@ -551,47 +527,6 @@ endif
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 TARGET_SRC += \
-=======
-            drivers/accgyro_mpu3050.c \
-            drivers/accgyro_mpu6050.c \
-            drivers/accgyro_mpu6500.c \
-            drivers/accgyro_spi_mpu6500.c \
-            drivers/barometer_bmp085.c \
-            drivers/barometer_bmp280.c \
-            drivers/barometer_ms5611.c \
-            drivers/compass_ak8975.c \
-            drivers/compass_hmc5883l.c \
-            drivers/compass_mag3110.c \
-            drivers/flash_m25p16.c \
-            drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f10x.c \
-            drivers/sonar_hcsr04.c \
-            drivers/sonar_srf10.c \
-            io/flashfs.c \
-            hardware_revision.c \
-            $(HIGHEND_SRC) \
-            $(COMMON_SRC)
-
-ALIENFLIGHTF1_SRC = $(NAZE_SRC)
-
-EUSTM32F103RC_SRC = \
-            $(STM32F10x_COMMON_SRC) \
-            drivers/accgyro_adxl345.c \
-            drivers/accgyro_bma280.c \
-            drivers/accgyro_l3g4200d.c \
-            drivers/accgyro_mma845x.c \
-            drivers/accgyro_mpu.c \
-            drivers/accgyro_mpu3050.c \
-            drivers/accgyro_mpu6050.c \
-            drivers/accgyro_spi_mpu6000.c \
-            drivers/accgyro_spi_mpu6500.c \
-            drivers/barometer_bmp085.c \
-            drivers/barometer_bmp280.c \
-            drivers/barometer_ms5611.c \
-            drivers/compass_ak8975.c \
-            drivers/compass_hmc5883l.c \
-            drivers/compass_mag3110.c \
->>>>>>> NRF24 support for iNav.
             drivers/flash_m25p16.c \
             io/flashfs.c
 endif

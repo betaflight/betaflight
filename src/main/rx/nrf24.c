@@ -29,6 +29,7 @@
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
 #include "rx/nrf24_h8_3d.h"
+#include "rx/nrf24_ref.h"
 
 
 uint16_t nrf24RcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -87,6 +88,13 @@ STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
         protocolInit = h8_3dInit;
         protocolDataReceived = h8_3dDataReceived;
         protocolSetRcDataFromPayload = h8_3dSetRcDataFromPayload;
+        break;
+#endif
+#ifdef USE_RX_REF
+    case NRF24RX_REF:
+        protocolInit = refInit;
+        protocolDataReceived = refDataReceived;
+        protocolSetRcDataFromPayload = refSetRcDataFromPayload;
         break;
 #endif
     default:

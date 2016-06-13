@@ -30,6 +30,7 @@ typedef enum {
     NRF24RX_CX10,
     NRF24RX_CX10A,
     NRF24RX_H8_3D,
+    NRF24RX_REF,
     NRF24RX_PROTOCOL_COUNT
 } nrf24_protocol_t;
 

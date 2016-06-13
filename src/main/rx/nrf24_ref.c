@@ -28,7 +28,7 @@
 #include "drivers/system.h"
 
 #include "rx/nrf24.h"
-//#include "rx/nrf24_ref.h"
+#include "rx/nrf24_ref.h"
 
 
 
@@ -43,8 +43,17 @@
  * uses channel 0x4c
  *
  * Data Phase
- * uses address received in bind packet
- * hops between 4 channels generated from address received in bind packet
+ * uses the address received in bind packet
+ * hops between 4 RF channels generated from the address received in bind packet
+ *
+ * There are 16 channels: eight 10-bit analog channels, two 8-bit analog channels, and six digital channels as follows:
+ *
+ * Channels 0 to 3, are the AETR channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
+ * Channel AUX1 by deviation convention is used for rate, values 1000, 1500, 2000
+ * Channels AUX2 to AUX6 are binary channels, values 1000 or 2000,
+ *     by deviation convention used for flip, picture, video, headless, and return to home
+ * Channels AUX7 to AUX10 are analog channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
+ * Channels AUX11 and AUX12 are analog channels, values 1000 to 2000 with resolution of 4 (8-bit channels)
  */
 
 #define RC_CHANNEL_COUNT 16
