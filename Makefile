@@ -987,6 +987,16 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 ## all         : default task; compile C code, build firmware
 all: binary
 
+## all_targets : build all valid target platforms
+all_targets:
+	for build_target in $(VALID_TARGETS); do \
+		echo "Building $$build_target" && \
+		make clean && \
+		make -j TARGET=$$build_target || \
+		break; \
+		echo "Building $$build_target succeeded."; \
+	done
+
 ## clean       : clean up all temporary / machine-generated files
 clean:
 	rm -f $(CLEAN_ARTIFACTS)
@@ -1035,6 +1045,10 @@ help: Makefile
 	@echo "Valid TARGET values are: $(VALID_TARGETS)"
 	@echo ""
 	@sed -n 's/^## //p' $<
+
+## targets     : print a list of all valid target platforms (for consumption by scripts)
+targets:
+	@echo $(VALID_TARGETS)
 
 ## test        : run the cleanflight test suite
 test:
