@@ -21,7 +21,7 @@
 
 #include "platform.h"
 #include "system.h"
-
+#include "common/utils.h"
 #include "gpio.h"
 
 #include "sensor.h"
@@ -38,6 +38,7 @@
 
 void adcInit(drv_adc_config_t *init)
 {
+    UNUSED(init);
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
     GPIO_InitTypeDef GPIO_InitStructure;
