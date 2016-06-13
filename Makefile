@@ -286,36 +286,6 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 TARGET_FLAGS = -D$(TARGET)
 ## End F4 targets
 ##
-## Start EUSTM32F103RC PORT103R targets
-else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
-
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-EXCLUDES        = stm32f10x_crc.c \
-                  stm32f10x_cec.c \
-                  stm32f10x_can.c
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
-
-# Search path and source files for the CMSIS sources
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
-                  $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
-
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(STDPERIPH_DIR)/inc \
-                   $(CMSIS_DIR)/CM3/CoreSupport \
-                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
-
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
-
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
-TARGET_FLAGS    = -D$(TARGET) -pedantic
-DEVICE_FLAGS    = -DSTM32F10X_HD -DSTM32F10X
-
-DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
-## End EUSTM32F103RC PORT103R targets
-##
 ## Start F1 targets
 else
 
@@ -354,7 +324,13 @@ endif
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS    = -D$(TARGET) -pedantic
-DEVICE_FLAGS    = -DSTM32F10X_MD -DSTM32F10X
+
+ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
+DEVICE_FLAGS    = -DSTM32F10X_MD 
+else
+DEVICE_FLAGS    = -DSTM32F10X_HD
+endif
+DEVICE_FLAGS    += -DSTM32F10X
 
 endif
 ##
