@@ -54,20 +54,19 @@ INCLUDE_DIRS    = $(SRC_DIR) \
 LINKER_DIR      = $(ROOT)/src/main/target
 
 # default xtal value for F4 targets
-HSE_VALUE     = 8000000
+HSE_VALUE       = 8000000
 
 # used for turning on features like VCP and SDCARD
-FEATURES      =
-
-F405_TARGETS  = 
-F411_TARGETS  =
+FEATURES        =
 
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
-F4_TARGETS    = $(F405_TARGETS) $(F411_TARGETS)
+F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
 
-VALID_TARGETS = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
+#VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
+VALID_TARGETS   = $(notdir $(wildcard $(ROOT)/src/main/target/*))
+VALID_TARGETS  := $(filter-out $(notdir $(wildcard $(ROOT)/src/main/target/*.*)), $(VALID_TARGETS)) 
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
@@ -313,19 +312,6 @@ endif
 
 TARGET_DIR     = $(ROOT)/src/main/target/$(TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
-
-# VARIANTS
-
-ifeq ($(TARGET),CHEBUZZF3)
-# CHEBUZZ is a VARIANT of STM32F3DISCOVERY
-TARGET_FLAGS := $(TARGET_FLAGS) -DSTM32F3DISCOVERY
-endif
-
-ifeq ($(TARGET),$(filter $(TARGET), $(NAZE_TARGETS)))
-# VARIANTS of NAZE
-TARGET_FLAGS := $(TARGET_FLAGS) -DNAZE -D$(TARGET)
-TARGET_DIR = $(ROOT)/src/main/target/NAZE
-endif
 
 ifeq ($(OPBL),yes)
 TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
