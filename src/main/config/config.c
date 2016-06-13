@@ -652,12 +652,6 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 #endif
 
-#if defined(FURYF3)
-    masterConfig.blackbox_device = 2;
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
-#endif
-
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
     masterConfig.escAndServoConfig.minthrottle = 1025;
@@ -829,7 +823,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM);
+        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
