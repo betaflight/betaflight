@@ -239,8 +239,8 @@ Use the `input_filtering_mode` CLI setting to select a mode.
 
 | Value | Meaning   |
 | ----- | --------- |
-| 0     | Disabled  |
-| 1     | Enabled   |
+| OFF   | Disabled  |
+| ON    | Enabled   |
 
 ## Receiver configuration.
 
