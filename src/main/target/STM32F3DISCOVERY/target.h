@@ -19,50 +19,29 @@
 
 #define TARGET_BOARD_IDENTIFIER "SDF3" // STM Discovery F3
 
-#define LED0_GPIO   GPIOE
-#define LED0_PIN    Pin_8|Pin_12 // Blue LEDs - PE8/PE12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
+
+#define LED0    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1_GPIO   GPIOE
-#define LED1_PIN    Pin_10|Pin_14  // Orange LEDs - PE10/PE14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define LED1    PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEP_GPIO   GPIOE
-#define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
-#define BEEPER_INVERTED
-
-
+#define BEEPER      PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define USE_SD_CARD
 
-#define SD_DETECT_PIN                    GPIO_Pin_14
-#define SD_DETECT_EXTI_LINE              EXTI_Line14
-#define SD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
-#define SD_DETECT_GPIO_PORT              GPIOC
-#define SD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
-#define SD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
-#define SD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
-
-#define SD_CS_GPIO          GPIOB
-#define SD_CS_PIN           GPIO_Pin_12
+#define SD_DETECT_PIN       PC14
+#define SD_CS_PIN           PB12
 #define SD_SPI_INSTANCE     SPI2
 
 //#define USE_FLASHFS
@@ -87,9 +66,7 @@
 #define USE_GYRO_L3GD20
 
 #define L3GD20_SPI                      SPI1
-#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
-#define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   GPIO_Pin_3
+#define L3GD20_CS_PIN                   PE3
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
 
@@ -97,9 +74,7 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_SPI_INSTANCE               SPI2
-#define SDCARD_SPI_CS_GPIO                GPIOB
-#define SDCARD_SPI_CS_PIN                 GPIO_Pin_12
-#define SDCARD_SPI_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
+#define SDCARD_SPI_CS_PIN                 PB12
 // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
 // Divide to under 25MHz for normal operation:
@@ -117,10 +92,6 @@
 
 #define MAG
 #define USE_MAG_HMC5883
-
-#define BEEPER
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1
@@ -166,14 +137,23 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - 303 in 100pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0x00ff
+
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD)
+

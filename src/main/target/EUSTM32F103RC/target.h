@@ -19,18 +19,13 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_4 // PB4 (LED)
-#define LED1_PERIPHERAL RCC_APB2Periph_GPIOB
+#define LED0    PB3 // PB3 (LED)
+#define LED1    PB4 // PB4 (LED)
 
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER    PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART USART2
 
+#define USE_EXTI
 #define MPU6000_CS_GPIO       GPIOB
 #define MPU6000_CS_PIN        GPIO_Pin_12
 #define MPU6000_SPI_INSTANCE  SPI2
@@ -73,12 +68,8 @@
 
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
-
 #define SONAR
-#define LED0
-#define LED1
 #define DISPLAY
-#define INVERTER
 
 #define USE_USART1
 #define USE_USART2
@@ -118,18 +109,22 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 
-#define BLACKBOX
-#define GTUNE
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
+
+// IO - stm32f103RCT6 in 64pin package (TODO)
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))
+
+
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+

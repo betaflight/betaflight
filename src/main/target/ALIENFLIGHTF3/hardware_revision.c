@@ -20,11 +20,10 @@
 #include <stdlib.h>
 
 #include "platform.h"
-
 #include "build_config.h"
 
 #include "drivers/system.h"
-#include "drivers/gpio.h"
+#include "drivers/io.h"
 
 #include "hardware_revision.h"
 
@@ -36,15 +35,18 @@ static const char * const hardwareRevisionNames[] = {
 
 uint8_t hardwareRevision = UNKNOWN;
 
+static IO_t HWDetectPin = IO_NONE;
+
 void detectHardwareRevision(void)
 {
-    gpio_config_t cfg = {HW_PIN, Mode_IPU, Speed_2MHz};
-    RCC_AHBPeriphClockCmd(HW_PERIPHERAL, ENABLE);
-    gpioInit(HW_GPIO, &cfg);
+	HWDetectPin = IOGetByTag(IO_TAG(HW_PIN));
+    IOInit(HWDetectPin, OWNER_SYSTEM, RESOURCE_INPUT);
+    IOConfigGPIO(HWDetectPin, IOCFG_IPU);
 
     // Check hardware revision
     delayMicroseconds(10);  // allow configuration to settle
-    if (digitalIn(HW_GPIO, HW_PIN)) {
+
+    if (IORead(HWDetectPin)) {
         hardwareRevision = AFF3_REV_1;
     } else {
         hardwareRevision = AFF3_REV_2;

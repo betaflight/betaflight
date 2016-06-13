@@ -32,9 +32,10 @@
 #include "common/maths.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "exti.h"
 #include "bus_spi.h"
+
 #include "gyro_sync.h"
 
 #include "sensor.h"
@@ -96,9 +97,10 @@ static bool mpuSpi6000InitDone = false;
 #define MPU6000_REV_D9 0x59
 #define MPU6000_REV_D10 0x5A
 
-#define DISABLE_MPU6000       GPIO_SetBits(MPU6000_CS_GPIO,   MPU6000_CS_PIN)
-#define ENABLE_MPU6000        GPIO_ResetBits(MPU6000_CS_GPIO, MPU6000_CS_PIN)
+#define DISABLE_MPU6000       IOHi(mpuSpi6000CsPin)
+#define ENABLE_MPU6000        IOLo(mpuSpi6000CsPin)
 
+static IO_t mpuSpi6000CsPin = IO_NONE;
 
 bool mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {
@@ -154,6 +156,12 @@ bool mpu6000SpiDetect(void)
     uint8_t in;
     uint8_t attemptsRemaining = 5;
 
+#ifdef MPU6000_CS_PIN     
+    mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
+#endif
+    IOInit(mpuSpi6000CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
+    
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
 
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);

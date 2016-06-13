@@ -23,18 +23,12 @@
 //#define OLIMEXINO_UNCUT_LED2_E_JUMPER
 
 #ifdef OLIMEXINO_UNCUT_LED1_E_JUMPER
-#define LED0_GPIO   GPIOA
-#define LED0_PIN    Pin_5 // D13, PA5/SPI1_SCK/ADC5 - "LED1" on silkscreen, Green
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOA
-#define LED0
+#define LED0    PA5 // D13, PA5/SPI1_SCK/ADC5 - "LED1" on silkscreen, Green
 #endif
 
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
 // "LED2" is using one of the PWM pins (CH2/PWM2), so we must not use PWM2 unless the jumper is cut.  @See pwmInit()
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
-#define LED1_PERIPHERAL RCC_APB2Periph_GPIOA
-#define LED1
+#define LED1    PA1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
 #endif
 
 #define GYRO
@@ -104,12 +98,18 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
-#define GPS
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+//#define LED_STRIP
+//#define LED_STRIP_TIMER TIM3
 
-#define TELEMETRY
-#define SERIAL_RX
-#define BLACKBOX
-#define USE_SERVOS
-#define USE_CLI
+// IO - assuming all IOs on smt32f103rb LQFP64 package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+
+
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+

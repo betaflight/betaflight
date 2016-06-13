@@ -19,19 +19,14 @@
 
 #define TARGET_BOARD_IDENTIFIER "SIRF"
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_2
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_1
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
-
-#define USABLE_TIMER_CHANNEL_COUNT 6
+#define LED0                            PB2
+#define BEEPER                          PA1
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT
 
+#define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
+#define MPU_INT_EXTI                    PA8
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
@@ -48,28 +43,17 @@
 #define ACC_MPU6000_ALIGN CW180_DEG
 #define GYRO_MPU6000_ALIGN CW180_DEG
 
-#define MPU6000_CS_GPIO GPIOA
-#define MPU6000_CS_PIN GPIO_Pin_4
-#define MPU6000_SPI_INSTANCE SPI1
+#define MPU6000_CS_PIN                  PA4
+#define MPU6000_SPI_INSTANCE            SPI1
 
 // MPU6500
-#define ACC_MPU6500_ALIGN CW90_DEG
-#define GYRO_MPU6500_ALIGN CW90_DEG
+#define ACC_MPU6500_ALIGN               CW90_DEG
+#define GYRO_MPU6500_ALIGN              CW90_DEG
 
-#define MPU6500_CS_GPIO GPIOA
-#define MPU6500_CS_PIN GPIO_Pin_4
-#define MPU6500_SPI_INSTANCE SPI1
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-
-
-#define BEEPER
+#define MPU6500_CS_PIN                  PA4
+#define MPU6500_SPI_INSTANCE            SPI1
 
 #define USB_IO
-
-//#define USB_CABLE_DETECTION
-//#define USB_DETECT_PIN                   GPIO_Pin_2
-//#define USB_DETECT_GPIO_PORT             GPIOB
-//#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
 
 #define USE_VCP
 #define USE_USART1
@@ -102,46 +86,27 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
+#undef  USE_I2C
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 #define USE_SPI_DEVICE_3
 
-#define SPI1_GPIO               GPIOA
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
-#define SPI1_NSS_PIN            Pin_4
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
-#define SPI1_SCK_PIN            Pin_5
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource5
-#define SPI1_MISO_PIN           Pin_6
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource6
-#define SPI1_MOSI_PIN           Pin_7
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
-#define SPI3_GPIO               GPIOB
-#define SPI3_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI3_NSS_GPIO           GPIOA
-#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI3_NSS_PIN            GPIO_Pin_15
-#define SPI3_NSS_PIN_SOURCE     GPIO_PinSource15
-#define SPI3_SCK_PIN            GPIO_Pin_3
-#define SPI3_SCK_PIN_SOURCE     GPIO_PinSource3
-#define SPI3_MISO_PIN           GPIO_Pin_4
-#define SPI3_MISO_PIN_SOURCE    GPIO_PinSource4
-#define SPI3_MOSI_PIN           GPIO_Pin_5
-#define SPI3_MOSI_PIN_SOURCE    GPIO_PinSource5
+#define SPI3_NSS_PIN            PA15
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
 
 #define USE_MAX7456
 #define MAX7456_CS_GPIO          GPIOA
@@ -196,9 +161,22 @@
 #define SERIAL_RX
 #define USE_CLI
 #define OSD
-#define LED0
+
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_SERVOS
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  (TIM_N(3) | TIM_N(4))
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOB)
+

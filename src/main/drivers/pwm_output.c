@@ -51,7 +51,7 @@ static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 static uint8_t allocatedOutputPortCount = 0;
 
 static bool pwmMotorsEnabled = true;
-static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
+static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t ouputPolarity)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
 
@@ -60,7 +60,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value)
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = value;
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+    TIM_OCInitStructure.TIM_OCPolarity = ouputPolarity ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
     switch (channel) {
@@ -100,10 +100,11 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     configTimeBase(timerHardware->tim, period, mhz);
     pwmGPIOConfig(timerHardware->gpio, timerHardware->pin, Mode_AF_PP);
 
+    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->outputInverted);
 
-    pwmOCConfig(timerHardware->tim, timerHardware->channel, value);
-    if (timerHardware->outputEnable)
+    if (timerHardware->outputEnable) {
         TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
+    }
     TIM_Cmd(timerHardware->tim, ENABLE);
 
     switch (timerHardware->channel) {
@@ -187,11 +188,6 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-bool isMotorBrushed(uint16_t motorPwmRate)
-{
-    return (motorPwmRate > 500);
-}
-
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
     uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
@@ -206,7 +202,7 @@ void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motor
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
 
-void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t fastPwmProtocolType, uint16_t motorPwmRate, uint8_t useUnsyncedPwm, uint16_t idlePulse)
+void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t fastPwmProtocolType, uint16_t motorPwmRate, uint16_t idlePulse)
 {
     uint32_t timerMhzCounter;
 
@@ -222,7 +218,7 @@ void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
             timerMhzCounter = MULTISHOT_TIMER_MHZ;
     }
 
-    if (useUnsyncedPwm) {
+    if (motorPwmRate > 0) {
         uint32_t hz = timerMhzCounter * 1000000;
         motors[motorIndex] = pwmOutConfig(timerHardware, timerMhzCounter, hz / motorPwmRate, idlePulse);
     } else {

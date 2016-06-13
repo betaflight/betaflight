@@ -115,15 +115,15 @@ int32_t accelSummedSamples500Hz[3];
 
 void lsm303dlhcAccInit(void)
 {
-    i2cWrite(LSM303DLHC_ACCEL_ADDRESS, CTRL_REG5_A, BOOT);
+	i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG5_A, BOOT);
 
     delay(100);
 
-    i2cWrite(LSM303DLHC_ACCEL_ADDRESS, CTRL_REG1_A, ODR_1344_HZ | AXES_ENABLE);
+	i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG1_A, ODR_1344_HZ | AXES_ENABLE);
 
     delay(10);
 
-    i2cWrite(LSM303DLHC_ACCEL_ADDRESS, CTRL_REG4_A, FULLSCALE_4G);
+	i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG4_A, FULLSCALE_4G);
 
     delay(100);
 
@@ -135,7 +135,7 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
-    bool ack = i2cRead(LSM303DLHC_ACCEL_ADDRESS, AUTO_INCREMENT_ENABLE | OUT_X_L_A, 6, buf);
+    bool ack = i2cRead(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, AUTO_INCREMENT_ENABLE | OUT_X_L_A, 6, buf);
 
     if (!ack) {
         return false;
@@ -160,7 +160,7 @@ bool lsm303dlhcAccDetect(acc_t *acc)
     bool ack;
     uint8_t status;
 
-    ack = i2cRead(LSM303DLHC_ACCEL_ADDRESS, LSM303DLHC_STATUS_REG_A, 1, &status);
+    ack = i2cRead(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, LSM303DLHC_STATUS_REG_A, 1, &status);
     if (!ack)
         return false;
 

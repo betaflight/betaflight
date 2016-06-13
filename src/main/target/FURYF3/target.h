@@ -17,18 +17,17 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FURY"
+#define TARGET_BOARD_IDENTIFIER "FYF3"
 
-#define LED0
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0_GPIO   GPIOC
-#define LED0_PIN    Pin_14
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define MPU_INT_EXTI PC4
+#define USE_EXTI
+#define CONFIG_PREFER_ACC_ON
+ 
+#define LED0 	    PC14
 
-#define BEEPER
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER 		PC15
 #define BEEPER_INVERTED
 
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
@@ -39,27 +38,24 @@
 #define GYRO
 #define ACC
 
-#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6000_CS_GPIO                  GPIOA
-#define MPU6000_CS_PIN                   GPIO_Pin_4
+#define MPU6000_CS_PIN                   PA4
 #define MPU6000_SPI_INSTANCE             SPI1
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO                  GPIOA
-#define MPU6500_CS_PIN                   GPIO_Pin_4
+#define MPU6500_CS_PIN                   PA4
 #define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW180_DEG  // changedkb 270
+#define GYRO_MPU6000_ALIGN CW180_DEG
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW180_DEG  // changedkb 270
+#define ACC_MPU6000_ALIGN CW180_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW90_DEG  // changedkb 270
+#define GYRO_MPU6500_ALIGN CW90_DEG
+
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW90_DEG  // changedkb 270
+#define ACC_MPU6500_ALIGN CW90_DEG
 
 #define BARO
 #define USE_BARO_MS5611
@@ -69,21 +65,14 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
-//#define M25P16_CS_GPIO          GPIOB
-//#define M25P16_CS_PIN           GPIO_Pin_12
+//#define M25P16_CS_PIN           PB12
 //#define M25P16_SPI_INSTANCE     SPI2
 
 #define USE_SDCARD
@@ -91,11 +80,9 @@
 
 #define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   GPIO_Pin_2
+#define SDCARD_DETECT_PIN                   PB2
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
-#define SDCARD_DETECT_GPIO_PORT             GPIOB
-#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
 #define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOB
 #define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
 
@@ -158,16 +145,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-#define I2C1_SCL_GPIO        GPIOB
-#define I2C1_SCL_GPIO_AF     GPIO_AF_4
-#define I2C1_SCL_PIN         GPIO_Pin_8
-#define I2C1_SCL_PIN_SOURCE  GPIO_PinSource8
-#define I2C1_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOB
-#define I2C1_SDA_GPIO        GPIOB
-#define I2C1_SDA_GPIO_AF     GPIO_AF_4
-#define I2C1_SDA_PIN         GPIO_Pin_9
-#define I2C1_SDA_PIN_SOURCE  GPIO_PinSource9
-#define I2C1_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOB
+#define I2C1_SCL_PIN         PB8
+#define I2C1_SDA_PIN         PB9
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -204,20 +183,25 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define BLACKBOX
-#define DISPLAY
-#define GPS
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
 #define SONAR
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define DEFAULT_FEATURES FEATURE_BLACKBOX
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTF	(BIT(4))
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+

@@ -19,30 +19,24 @@
 
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+ 
 // tqfp48 pin 34
-#define LED0_GPIO   GPIOA
-#define LED0_PIN    Pin_13
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED0    PA13
 
 // tqfp48 pin 37
-#define LED1_GPIO   GPIOA
-#define LED1_PIN    Pin_14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED1    PA14
 
 // tqfp48 pin 38
-#define LED2_GPIO   GPIOA
-#define LED2_PIN    Pin_15
-#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED2    PA15
 
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_2
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define BEEPER      PB2
 #define BEEPER_INVERTED
 
 // tqfp48 pin 3
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MPU6500_CS_GPIO                  GPIOC
-#define MPU6500_CS_PIN                   GPIO_Pin_14
+#define MPU6500_CS_PIN                   PC14
 #define MPU6500_SPI_INSTANCE             SPI1
 
 // tqfp48 pin 25
@@ -58,25 +52,25 @@
 #define SPI1_GPIO               GPIOB
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 39
-#define SPI1_SCK_PIN            GPIO_Pin_3
+#define SPI1_SCK_PIN            PB3
 #define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
 // tqfp48 pin 40
-#define SPI1_MISO_PIN           GPIO_Pin_4
+#define SPI1_MISO_PIN           PB4
 #define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
 // tqfp48 pin 41
-#define SPI1_MOSI_PIN           GPIO_Pin_5
+#define SPI1_MOSI_PIN           PB5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 26
-#define SPI2_SCK_PIN            GPIO_Pin_13
+#define SPI2_SCK_PIN            PB13
 #define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 // tqfp48 pin 27
-#define SPI2_MISO_PIN           GPIO_Pin_14
+#define SPI2_MISO_PIN           PB14
 #define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
 // tqfp48 pin 28
-#define SPI2_MOSI_PIN           GPIO_Pin_15
+#define SPI2_MOSI_PIN           PB15
 #define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 // timer definitions in drivers/timer.c
@@ -102,11 +96,6 @@
 #define BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
-
-#define BEEPER
-#define LED0
-#define LED1
-#define LED2
 
 #define USB_IO
 #define USE_VCP
@@ -160,15 +149,14 @@
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
 
 // mpu_int definition in sensors/initialisation.c
+#define USE_EXTI
+#define MPU_INT_EXTI PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
-#define BLACKBOX
-#define GPS
-//#define GTUNE
 #define LED_STRIP
 
 // tqfp48 pin 16
@@ -186,15 +174,23 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // Use UART3 for speksat
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// !!TODO - check the TARGET_IO_PORTs are correct
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+

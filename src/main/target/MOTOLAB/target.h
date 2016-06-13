@@ -20,22 +20,19 @@
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 #define USE_CLI
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_5 // Blue LEDs - PB5
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_9  // Green LEDs - PB9
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+ 
+#define LED0    PB5 // Blue LEDs - PB5
+//#define LED1    PB9 // Green LEDs - PB9
 
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_0
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER      PA0
 #define BEEPER_INVERTED
-#define BEEPER
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
 // MPU6050 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI PA15
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
@@ -56,7 +53,7 @@
 #define ACC_MPU6000_ALIGN CW180_DEG
 
 #define MPU6000_CS_GPIO GPIOB
-#define MPU6000_CS_PIN GPIO_Pin_12
+#define MPU6000_CS_PIN PB12
 #define MPU6000_SPI_INSTANCE SPI2
 
 //#define BARO
@@ -64,8 +61,6 @@
 
 //#define MAG
 //#define USE_MAG_HMC5883
-
-#define LED0
 
 #define USE_VCP
 #define USE_USART1
@@ -99,33 +94,26 @@
 
 #define I2C2_SCL_GPIO        GPIOA
 #define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
+#define I2C2_SCL_PIN         PA9
 #define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
 #define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 #define I2C2_SDA_GPIO        GPIOA
 #define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
+#define I2C2_SDA_PIN         PA10
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
+#define M25P16_CS_PIN         PB12
 #define M25P16_SPI_INSTANCE   SPI2
 
 //#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
 #define SENSORS_SET (SENSOR_ACC)
 
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-//#define GPS
-//#define GTUNE
+#undef GPS
 #define DISPLAY
-#define USE_SERVOS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
@@ -186,7 +174,20 @@
 
 #define SPEKTRUM_BIND
 // USART2, PB4
-#define BIND_PORT GPIOB
-#define BIND_PIN Pin_4
+#define BIND_PIN PB4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+// #define TARGET_IO_PORTF (BIT(0)|BIT(1))
+// !!TODO - check the following line is correct
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
+
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM17)
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)

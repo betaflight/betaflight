@@ -17,17 +17,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AFro F3
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
+
 #pragma once
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define BEEP_GPIO   GPIOB
-#define BEEP_PIN    Pin_10
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOB
-
-#define BEEPER
-#define LED0
+#define LED0    PB12
+#define BEEPER      PB10
 
 #define GYRO
 #define ACC
@@ -40,15 +35,20 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
-#define BLACKBOX
-#define GPS
-#define GTUNE
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
-
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN   PA3
+
+// IO - assuming 303 in 64pin package, TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
