@@ -370,7 +370,6 @@ function sensor_status(sensors_detected) {
 function have_sensor(sensors_detected, sensor_code) {
     switch(sensor_code) {
         case 'acc':
-        case 'gyro':
             return bit_check(sensors_detected, 0);
         case 'baro':
             return bit_check(sensors_detected, 1);
@@ -380,6 +379,8 @@ function have_sensor(sensors_detected, sensor_code) {
             return bit_check(sensors_detected, 3);
         case 'sonar':
             return bit_check(sensors_detected, 4);
+          case 'gyro':
+            return true; // Gyro status is never reported by FC
     }
     return false;
 }
