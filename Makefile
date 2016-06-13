@@ -66,8 +66,8 @@ F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
 
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
-VALID_TARGETS  := $(subst ./src/main/target/,, $(VALID_TARGETS)) 
-VALID_TARGETS  := $(subst /,, $(VALID_TARGETS)) 
+VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS))) 
+VALID_TARGETS  := $(sort $(VALID_TARGETS))
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
