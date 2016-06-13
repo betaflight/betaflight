@@ -144,7 +144,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_RX_PIN))
+        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_RX_PIN)))
             continue;
 #endif
 
@@ -163,7 +163,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerHardwarePtr->tim == LED_STRIP_TIMER)
                 continue;
 #if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (CheckGPIOPinSource(timerHardwarePtr->pin, WS2811_GPIO, WS2811_PIN_SOURCE)
+            if (CheckGPIOPinSource(timerHardwarePtr->pin, WS2811_GPIO, WS2811_PIN_SOURCE))
                 continue;
 #endif
         }
