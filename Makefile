@@ -66,6 +66,12 @@ F3_TARGETS    = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE DOGE FURYF3 IRCFUSIONF3 KIS
 F4_TARGETS    = $(F405_TARGETS) $(F405_TARGETS_16) $(F411_TARGETS)
 VALID_TARGETS = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 
+#
+# Things we will build
+#
+ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
+$(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
+endif
 
 64K_TARGETS   = CJMCU
 128K_TARGETS  = $(CC3D_TARGETS) AFROMINI ALIENFLIGHTF1 NAZE OLIMEXINO RMDO
@@ -170,9 +176,9 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
 TARGET_FLAGS    = -D$(TARGET)
-## End F3 targets
-##
-## Start F4 targets
+# End F3 targets
+
+# Start F4 targets
 else ifeq ($(TARGET),$(filter $(TARGET), $(F4_TARGETS)))
 
 #STDPERIPH
@@ -269,9 +275,9 @@ $(error Unknown MCU for F4 target)
 endif
 
 TARGET_FLAGS = -D$(TARGET)
-## End F4 targets
-##
-## Start EUSTM32F103RC PORT103R targets
+# End F4 targets
+
+# Start EUSTM32F103RC PORT103R targets
 else ifeq ($(TARGET),$(filter $(TARGET),EUSTM32F103RC PORT103R))
 
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
@@ -299,9 +305,9 @@ TARGET_FLAGS    = -D$(TARGET) -pedantic
 DEVICE_FLAGS    = -DSTM32F10X_HD -DSTM32F10X
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
-## End EUSTM32F103RC PORT103R targets
-##
-## Start F1 targets
+# End EUSTM32F103RC PORT103R targets
+
+# Start F1 targets
 else
 
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
@@ -342,9 +348,7 @@ TARGET_FLAGS    = -D$(TARGET) -pedantic
 DEVICE_FLAGS    = -DSTM32F10X_MD -DSTM32F10X
 
 endif
-##
-## End F1 targets
-##
+# End F1 targets
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
@@ -1050,13 +1054,6 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
-#
-# Things we will build
-#
-ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
-$(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
-endif
-
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
@@ -1101,20 +1098,26 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all         : default task; compile C code, build firmware
+## all           : default task; compile C code, build firmware
 all: binary
 
-## all_targets : build all valid target platforms
-all_targets:
+## build_all     : build all valid target platforms
+build_all:
 	for build_target in $(VALID_TARGETS); do \
 		echo "Building $$build_target" && \
-		$(MAKE) clean && \
 		$(MAKE) -j TARGET=$$build_target || \
 		break; \
 		echo "Building $$build_target succeeded."; \
 	done
 
-## clean       : clean up all temporary / machine-generated files
+## clean_all     : clean output for all valid target platforms
+clean_all:
+	for build_target in $(VALID_TARGETS); do \
+		echo "Cleaning output for $$build_target" && \
+		$(MAKE) clean TARGET=$$build_target; \
+	done
+
+## clean         : clean up all temporary / machine-generated files
 clean:
 	rm -f $(CLEAN_ARTIFACTS)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
@@ -1125,13 +1128,13 @@ flash_$(TARGET): $(TARGET_HEX)
 	echo -n 'R' >$(SERIAL_DEVICE)
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## flash       : flash firmware (.hex) onto flight controller
+## flash         : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	st-flash --reset write $< 0x08000000
 
-## st-flash    : flash firmware (.bin) onto flight controller
+## st-flash      : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
 binary: $(TARGET_BIN)
@@ -1141,17 +1144,17 @@ unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
-## unbrick     : unbrick flight controller
+## unbrick       : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
-## cppcheck    : run static analysis on C source code
+## cppcheck      : run static analysis on C source code
 cppcheck: $(CSOURCES)
 	$(CPPCHECK)
 
 cppcheck-result.xml: $(CSOURCES)
 	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
-## help        : print this help message and exit
+## help          : print this help message and exit
 help: Makefile
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
@@ -1163,16 +1166,16 @@ help: Makefile
 	@echo ""
 	@sed -n 's/^## //p' $<
 
-## targets     : print a list of all valid target platforms (for consumption by scripts)
-targets:
+## print_targets : print a list of all valid target platforms (for consumption by scripts)
+print_targets:
 	@echo $(VALID_TARGETS)
 
-## test        : run the cleanflight test suite
+## test          : run the cleanflight test suite
 test:
 	cd src/test && $(MAKE) test || true
 
 # rebuild everything when makefile changes
-$(TARGET_OBJS) : Makefile
+$(TARGET_OBJS): Makefile
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
