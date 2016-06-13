@@ -6,8 +6,6 @@ typedef enum {
     OWNER_PWMINPUT,
     OWNER_PPMINPUT,
     OWNER_PWMOUTPUT_MOTOR,
-    OWNER_PWMOUTPUT_FAST,
-    OWNER_PWMOUTPUT_ONESHOT,
     OWNER_PWMOUTPUT_SERVO,
     OWNER_SOFTSERIAL_RX,
     OWNER_SOFTSERIAL_TX,
@@ -23,7 +21,8 @@ typedef enum {
     OWNER_SYSTEM,
     OWNER_SDCARD,
     OWNER_FLASH,
-    OWNER_USB
+    OWNER_USB,
+    OWNER_BEEPER    
 } resourceOwner_t;
 
 // Currently TIMER should be shared resource (softserial dualtimer and timerqueue needs to allocate timer channel, but pin can be used for other function)
@@ -41,3 +40,4 @@ typedef enum {
     RESOURCE_I2C        = 1 << 7,
     RESOURCE_SPI        = 1 << 8,
 } resourceType_t;
+
