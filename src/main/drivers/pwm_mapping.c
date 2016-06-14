@@ -23,6 +23,8 @@
 #include "platform.h"
 
 #include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 #include "timer.h"
 
 #include "pwm_output.h"
@@ -91,6 +93,16 @@ pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
     return &pwmOutputConfiguration;
 }
 
+bool CheckGPIOPin(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
+{
+    return IO_GPIOBYTAG(tag) == gpio && IO_PINBYTAG(tag) == pin;
+}
+
+bool CheckGPIOPinSource(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
+{
+    return IO_GPIOBYTAG(tag) == gpio && IO_GPIO_PinSource(IOGetByTag(tag)) == pin;
+}
+
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
@@ -99,7 +111,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     int channelIndex = 0;
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
-
+       
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
         i = 2; // switch to air hardware config
@@ -132,7 +144,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
+        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_RX_PIN)))
             continue;
 #endif
 
@@ -151,7 +163,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerHardwarePtr->tim == LED_STRIP_TIMER)
                 continue;
 #if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (timerHardwarePtr->gpio == WS2811_GPIO && timerHardwarePtr->gpioPinSource == WS2811_PIN_SOURCE)
+            if (CheckGPIOPinSource(timerHardwarePtr->pin, WS2811_GPIO, WS2811_PIN_SOURCE))
                 continue;
 #endif
         }
@@ -159,28 +171,28 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef VBAT_ADC_GPIO
-        if (init->useVbat && timerHardwarePtr->gpio == VBAT_ADC_GPIO && timerHardwarePtr->pin == VBAT_ADC_GPIO_PIN) {
+        if (init->useVbat && CheckGPIOPin(timerHardwarePtr->pin, VBAT_ADC_GPIO, VBAT_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef RSSI_ADC_GPIO
-        if (init->useRSSIADC && timerHardwarePtr->gpio == RSSI_ADC_GPIO && timerHardwarePtr->pin == RSSI_ADC_GPIO_PIN) {
+        if (init->useRSSIADC && CheckGPIOPin(timerHardwarePtr->pin, RSSI_ADC_GPIO, RSSI_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && timerHardwarePtr->gpio == CURRENT_METER_ADC_GPIO && timerHardwarePtr->pin == CURRENT_METER_ADC_GPIO_PIN) {
+        if (init->useCurrentMeterADC && CheckGPIOPin(timerHardwarePtr->pin, CURRENT_METER_ADC_GPIO, CURRENT_METER_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef SONAR
-        if (init->sonarGPIOConfig && timerHardwarePtr->gpio == init->sonarGPIOConfig->gpio &&
+        if (init->sonarGPIOConfig && 
             (
-                timerHardwarePtr->pin == init->sonarGPIOConfig->triggerPin ||
-                timerHardwarePtr->pin == init->sonarGPIOConfig->echoPin
+                CheckGPIOPin(timerHardwarePtr->pin, init->sonarGPIOConfig->gpio, init->sonarGPIOConfig->triggerPin) ||
+                CheckGPIOPin(timerHardwarePtr->pin, init->sonarGPIOConfig->gpio, init->sonarGPIOConfig->echoPin)
             )
         ) {
             continue;

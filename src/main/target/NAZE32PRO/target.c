@@ -72,20 +72,19 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource8,  GPIO_AF_6, 0}, // PA8 - AF6
-    { TIM1,  GPIOA, Pin_9,  TIM_Channel_2, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource9,  GPIO_AF_6, 0}, // PA9 - AF6
-    { TIM1,  GPIOA, Pin_10, TIM_Channel_3, TIM1_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource10, GPIO_AF_6, 0}, // PA10 - AF6
-    { TIM3,  GPIOB, Pin_4,  TIM_Channel_1, TIM3_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource4,  GPIO_AF_2, 0}, // PB4 - AF2
-    { TIM4,  GPIOB, Pin_6,  TIM_Channel_1, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource6,  GPIO_AF_2, 0}, // PB6 - AF2 - not working yet
-    { TIM4,  GPIOB, Pin_7,  TIM_Channel_2, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource7,  GPIO_AF_2, 0}, // PB7 - AF2 - not working yet
-    { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource8,  GPIO_AF_2, 0}, // PB8 - AF2
-    { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,               0, Mode_AF_PP_PD, GPIO_PinSource9,  GPIO_AF_2, 0}, // PB9 - AF2
-
-    { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP,    GPIO_PinSource0,  GPIO_AF_2}, // PA0 - untested
-    { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP,    GPIO_PinSource1,  GPIO_AF_2, 0}, // PA1 - untested
-    { TIM15, GPIOA, Pin_2,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP,    GPIO_PinSource2,  GPIO_AF_9, 0}, // PA2 - untested
-    { TIM15, GPIOA, Pin_3,  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, Mode_AF_PP,    GPIO_PinSource3,  GPIO_AF_9, 0}, // PA3 - untested
-    { TIM16, GPIOA, Pin_6,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP,    GPIO_PinSource6,  GPIO_AF_1, 0}, // PA6 - untested
-    { TIM17, GPIOA, Pin_7,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP,    GPIO_PinSource7,  GPIO_AF_1, 0} // PA7 - untested
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, GPIO_AF_6, 0}, // PA8 - AF6
+    { TIM1,  IO_TAG(PA9),  TIM_Channel_2, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, GPIO_AF_6, 0}, // PA9 - AF6
+    { TIM1,  IO_TAG(PA10), TIM_Channel_3, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, GPIO_AF_6, 0}, // PA10 - AF6
+    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP_PD, GPIO_AF_2, 0}, // PB4 - AF2
+    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               0, IOCFG_AF_PP_PD, GPIO_AF_2, 0}, // PB6 - AF2 - not working yet
+    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               0, IOCFG_AF_PP_PD, GPIO_AF_2, 0}, // PB7 - AF2 - not working yet
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               0, IOCFG_AF_PP_PD, GPIO_AF_2, 0}, // PB8 - AF2
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               0, IOCFG_AF_PP_PD, GPIO_AF_2, 0}, // PB9 - AF2
+    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2, 0}, // PA0 - untested
+    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2, 0}, // PA1 - untested
+    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP,    GPIO_AF_9, 0}, // PA2 - untested
+    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP,    GPIO_AF_9, 0}, // PA3 - untested
+    { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP,    GPIO_AF_1, 0}, // PA6 - untested
+    { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP,    GPIO_AF_1, 0}  // PA7 - untested
 };
 

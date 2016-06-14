@@ -1,6 +1,7 @@
 
 #include <stdbool.h>
 #include <platform.h>
+#include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
@@ -72,19 +73,19 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 0, GPIO_Mode_AF, GPIO_PinSource8, GPIO_AF_TIM1, 0},            // PWM1  - PA8  RC1
-    { TIM1, GPIOB, Pin_0, TIM_Channel_2, TIM1_CC_IRQn, 0, GPIO_Mode_AF, GPIO_PinSource0, GPIO_AF_TIM1, 0},            // PWM2  - PB0  RC2
-    { TIM1, GPIOB, Pin_1, TIM_Channel_3, TIM1_CC_IRQn, 0, GPIO_Mode_AF, GPIO_PinSource1, GPIO_AF_TIM1, 0},            // PWM3  - PB1  RC3
-    { TIM8, GPIOB, Pin_14,TIM_Channel_2, TIM8_CC_IRQn, 0, GPIO_Mode_AF, GPIO_PinSource14, GPIO_AF_TIM8, 0},          // PWM4  - PA14 RC4
-    { TIM8, GPIOB, Pin_15,TIM_Channel_3, TIM8_CC_IRQn, 0, GPIO_Mode_AF, GPIO_PinSource15, GPIO_AF_TIM8, 0},          // PWM5  - PA15 RC5
+    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1, 0},            // PWM1  - PA8  RC1
+    { TIM1, IO_TAG(PB0), TIM_Channel_2, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1, 0},            // PWM2  - PB0  RC2
+    { TIM1, IO_TAG(PB1), TIM_Channel_3, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1, 0},            // PWM3  - PB1  RC3
+    { TIM8, IO_TAG(PB14),TIM_Channel_2, TIM8_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM8, 0},          // PWM4  - PA14 RC4
+    { TIM8, IO_TAG(PB15),TIM_Channel_3, TIM8_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM8, 0},          // PWM5  - PA15 RC5
 
-    { TIM4, GPIOB, Pin_8, TIM_Channel_3, TIM4_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource8, GPIO_AF_TIM4, 0},               // PWM6  - PB8  OUT1
-    { TIM4, GPIOB, Pin_9, TIM_Channel_4, TIM4_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource9, GPIO_AF_TIM4, 0},               // PWM7  - PB9  OUT2
-    { TIM5, GPIOA, Pin_0, TIM_Channel_1, TIM5_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource0, GPIO_AF_TIM5, 0},               // PWM8  - PA0  OUT3
-    { TIM5, GPIOA, Pin_1, TIM_Channel_2, TIM5_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource1, GPIO_AF_TIM5, 0},               // PWM9  - PA1  OUT4
-    { TIM3, GPIOC, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource6, GPIO_AF_TIM3, 0},               // PWM10 - PC6  OUT5
-    { TIM3, GPIOC, Pin_7, TIM_Channel_2, TIM3_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource7, GPIO_AF_TIM3, 0},               // PWM11 - PC7  OUT6
-    { TIM3, GPIOC, Pin_8, TIM_Channel_3, TIM3_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource8, GPIO_AF_TIM3, 0},               // PWM13 - PC8  OUT7
-    { TIM3, GPIOC, Pin_9, TIM_Channel_4, TIM3_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource9, GPIO_AF_TIM3, 0},               // PWM13 - PC9  OUT8
+    { TIM4, IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM4, 0},               // PWM6  - PB8  OUT1
+    { TIM4, IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM4, 0},               // PWM7  - PB9  OUT2
+    { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5, 0},               // PWM8  - PA0  OUT3
+    { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5, 0},               // PWM9  - PA1  OUT4
+    { TIM3, IO_TAG(PC6), TIM_Channel_1, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},               // PWM10 - PC6  OUT5
+    { TIM3, IO_TAG(PC7), TIM_Channel_2, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},               // PWM11 - PC7  OUT6
+    { TIM3, IO_TAG(PC8), TIM_Channel_3, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},               // PWM13 - PC8  OUT7
+    { TIM3, IO_TAG(PC9), TIM_Channel_4, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},               // PWM13 - PC9  OUT8
 };
 
