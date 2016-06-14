@@ -168,6 +168,15 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
 #define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
 
+#define MSP_OSD_CONFIG                  84 //in message          Get osd settings
+#define MSP_SET_OSD_CONFIG              85 //out message         Set osd settings
+
+#define MSP_OSD_CHAR_READ               86 //in message          Get osd settings
+#define MSP_OSD_CHAR_WRITE              87 //out message         Set osd settings
+
+#define MSP_VTX_CONFIG                  88 //in message          Get vtx settings
+#define MSP_SET_VTX_CONFIG              89 //out message         Set vtx settings
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //

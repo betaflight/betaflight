@@ -72,6 +72,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "sensors/sensors.h"
@@ -134,6 +135,7 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
+void osdInit(void);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -467,6 +469,12 @@ void init(void)
     }
 #endif
 
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
+
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
                 masterConfig.acc_hardware, 
                 masterConfig.mag_hardware, 
@@ -736,6 +744,9 @@ void main_init(void)
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
