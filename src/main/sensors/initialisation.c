@@ -90,45 +90,10 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &mpuIntExtiConfig;
 #endif
     
-#ifdef NAZE
-    // MPU_INT output on rev4 PB13
-    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
-        .io = IO_TAG(PB13)
-    };
-    // MPU_INT output on rev5 hardware PC13
-    static const extiConfig_t nazeRev5MPUIntExtiConfig = {
-        .io = IO_TAG(PC13)
-    };
-
-#ifdef AFROMINI
-    return &nazeRev5MPUIntExtiConfig;
-#else
-    if (hardwareRevision < NAZE32_REV5) {
-        return &nazeRev4MPUIntExtiConfig;
-    }
-    else {
-        return &nazeRev5MPUIntExtiConfig;
-    }
-#endif
-#endif
-
-#ifdef ALIENFLIGHTF3
-    // MPU_INT output on V1 PA15
-    static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
-        .io = IO_TAG(PA15)
-    };
-    // MPU_INT output on V2 PB13
-    static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
-        .io = IO_TAG(PB13)
-    };
-    if (hardwareRevision == AFF3_REV_1) {
-        return &alienFlightF3V1MPUIntExtiConfig;
-    }
-    else {
-        return &alienFlightF3V2MPUIntExtiConfig;
-    }
-#endif
-    return NULL;
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    return selectMPUIntExtiConfigByHardwareRevision();
+#else    return NULL;
+#endif    
 }
 
 #ifdef USE_FAKE_GYRO

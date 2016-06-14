@@ -8,7 +8,7 @@
 
 // IO pin identification
 // make sure that ioTag_t can't be assigned into IO_t without warning
-typedef uint8_t ioTag_t;          // packet tag to specify IO pin
+typedef uint8_t ioTag_t;       // packet tag to specify IO pin
 typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t pointer, but this may change
 
 // NONE initializer for IO_t variable
