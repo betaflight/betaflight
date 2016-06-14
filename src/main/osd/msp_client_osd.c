@@ -83,7 +83,7 @@ void mspClientProcess(void)
     mspPorts[1].commandSenderFn = mspRequestFCSimpleCommandSender;
 
     index++;
-    if (index >= sizeof(commandsToSend)) {
+    if (index >= ARRAYLEN(commandsToSend)) {
         index = 0;
     }
 
