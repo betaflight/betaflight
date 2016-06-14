@@ -11,8 +11,6 @@
 
 #include "platform.h"
 
-#include "i2c_bst.h"
-
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
