@@ -1,6 +1,6 @@
 # Configuration
 
-Cleanflight is configured primarily using the Cleanflight Configurator GUI.
+INAV is configured primarily using the INAV Configurator GUI.
 
 Both the command line interface and GUI are accessible by connecting to a serial port on the target,
 be it a USB virtual serial port, physical hardware UART port or a SoftSerial port.
@@ -15,21 +15,21 @@ __Due to ongoing development, the fact that the GUI cannot yet backup all your s
 
 ## GUI
 
-![Cleanflight Gui](Screenshots/cleanflight-gui.png)
+![INAV Gui](Screenshots/cleanflight-gui.png)
 
 The GUI tool is the preferred way of configuration.  The GUI tool also includes a terminal which
 can be used to interact with the CLI.
 
-[Cleanflight Configurator on Chrome store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
+[INAV Configurator on Chrome store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
 
 If you cannot use the latest version of the GUI to access the FC due to firmware compatibility issues you can still access the FC via the CLI to backup your settings, or you can install an old version of the configurator.
 
 Old versions of the configurator can be downloaded from the configurator releases page: https://github.com/cleanflight/cleanflight-configurator/releases
 See the README file that comes with the configurator for installation instructions.
- 
+
 
 ## CLI
 
-Cleanflight can also be configured by a command line interface.
+INAV can also be configured by a command line interface.
 
 See the CLI section of the documentation for more details.

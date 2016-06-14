@@ -34,18 +34,18 @@ can cause the flight log to drop frames and contain errors.
 
 The Blackbox is typically used on tricopters and quadcopters. Although it will work on hexacopters and octocopters,
 because these craft have more motors to record, they must transmit more data to the flight log. This can increase the
-number of dropped frames. Although the browser-based log viewer supports hexacopters and octocopters, the command-line 
+number of dropped frames. Although the browser-based log viewer supports hexacopters and octocopters, the command-line
 `blackbox_render` tool currently only supports tri- and quadcopters.
 
-Cleanflight's `looptime` setting decides how frequently an update is saved to the flight log. The default looptime on
-Cleanflight is 3500. If you're using a looptime smaller than about 2400, you may experience some dropped frames due to
+INAV's `looptime` setting decides how frequently an update is saved to the flight log. The default looptime on
+INAV is 2000us. If you're using a looptime smaller than about 2400, you may experience some dropped frames due to
 the high required data rate. In that case you will need to reduce the sampling rate in the Blackbox settings, or
 increase your logger's baudrate to 250000. See the later section on configuring the Blackbox feature for details.
 
 ## Setting up logging
 
-First, you must enable the Blackbox feature. In the [Cleanflight Configurator][] enter the Configuration tab,
-tick the "BLACKBOX" feature at the bottom of the page, and click "Save and reboot" 
+First, you must enable the Blackbox feature. In the [INAV Configurator][] enter the Configuration tab,
+tick the "BLACKBOX" feature at the bottom of the page, and click "Save and reboot"
 
 Now you must decide which device to store your flight logs on. You can either transmit the log data over a serial port
 to an external logging device like the [OpenLog serial data logger][] to be recorded to a microSDHC card, or if you have
@@ -59,9 +59,9 @@ flights to a MicroSD card.
 The OpenLog ships from SparkFun with standard "OpenLog 3" firmware installed. Although this original OpenLog firmware
 will work with the Blackbox, in order to reduce the number of dropped frames it should be reflashed with the
 higher performance [OpenLog Blackbox firmware][]. The special Blackbox variant of the OpenLog firmware also ensures that
-the OpenLog is using Cleanflight compatible settings, and defaults to 115200 baud.
+the OpenLog is using INAV compatible settings, and defaults to 115200 baud.
 
-You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware), 
+You can find the Blackbox version of the OpenLog firmware [here](https://github.com/cleanflight/blackbox-firmware),
 along with instructions for installing it onto your OpenLog.
 
 [OpenLog serial data logger]: https://www.sparkfun.com/products/9530
@@ -95,11 +95,11 @@ First, tell the Blackbox to log using a serial port (rather than to an onboard d
 Configurator's CLI tab, enter `set blackbox_device=SERIAL` to switch logging to serial, and
 save.
 
-You need to let Cleanflight know which of [your serial ports][] you connect your OpenLog to (i.e. the Blackbox port),
+You need to let INAV know which of [your serial ports][] you connect your OpenLog to (i.e. the Blackbox port),
 which you can do on the Configurator's Ports tab.
 
 You should use a hardware serial port (such as UART1 on the Naze32, the two-pin Tx/Rx header in the center of the
-board). SoftSerial ports can be used for the Blackbox. However, because they are limited to 19200 baud, your logging 
+board). SoftSerial ports can be used for the Blackbox. However, because they are limited to 19200 baud, your logging
 rate will need to be severely reduced to compensate. Therefore the use of SoftSerial is not recommended.
 
 When using a hardware serial port, Blackbox should be set to at least 115200 baud on that port. When using fast
@@ -124,7 +124,7 @@ telemetry pins.
 
 Pin RC3 on the side of the board is UART2's Tx pin. If Blackbox is configured on UART2, MSP can still be used on UART1
 when the board is armed, which means that the Configurator will continue to work simultaneously with Blackbox logging.
-Note that in `PARALLEL_PWM` mode this leaves the board with 6 input channels as RC3 and RC4 pins are used by UART2 as Tx and Rx. Cleanflight automatically shifts logical channel mapping for you when UART2 is enabled in `Ports` tab so you'll have to shift receiver pins that are connected to Naze32 pins 3 to 6 by two.
+Note that in `PARALLEL_PWM` mode this leaves the board with 6 input channels as RC3 and RC4 pins are used by UART2 as Tx and Rx. INAV automatically shifts logical channel mapping for you when UART2 is enabled in `Ports` tab so you'll have to shift receiver pins that are connected to Naze32 pins 3 to 6 by two.
 
 The OpenLog tolerates a power supply of between 3.3V and 12V. If you are powering your Naze32 with a standard 5V BEC,
 then you can use a spare motor header's +5V and GND pins to power the OpenLog with.
@@ -192,19 +192,19 @@ On the Configurator's CLI tab, you must enter `set blackbox_device=SPIFLASH` to 
 then save.
 
 [your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
-[Cleanflight Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
+[INAV Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
 
 ## Configuring the Blackbox
 
-The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 
+The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control
 the rate at which data is logged. These two together form a fraction (`blackbox_rate_num / blackbox_rate_denom`) which
-decides what portion of the flight controller's control loop iterations should be logged. The default is 1/1 which logs 
+decides what portion of the flight controller's control loop iterations should be logged. The default is 1/1 which logs
 every iteration.
 
 If you're using a slower MicroSD card, you may need to reduce your logging rate to reduce the number of corrupted
 logged frames that `blackbox_decode` complains about. A rate of 1/2 is likely to work for most craft.
 
-You can change the logging rate settings by entering the CLI tab in the [Cleanflight Configurator][] and using the `set`
+You can change the logging rate settings by entering the CLI tab in the [INAV Configurator][] and using the `set`
 command, like so:
 
 ```
@@ -232,8 +232,8 @@ not diagnose flight problems like vibration or PID setting issues.
 
 The Blackbox starts recording data as soon as you arm your craft, and stops when you disarm.
 
-If your craft has a buzzer attached, you can use Cleanflight's arming beep to synchronize your Blackbox log with your
-flight video. Cleanflight's arming beep is a "long, short" pattern. The beginning of the first long beep will be shown 
+If your craft has a buzzer attached, you can use INAV's arming beep to synchronize your Blackbox log with your
+flight video. INAV's arming beep is a "long, short" pattern. The beginning of the first long beep will be shown
 as a blue line in the flight data log, which you can sync against your recorded audio track.
 
 You should wait a few seconds after disarming your craft to allow the Blackbox to finish saving its data.
@@ -246,7 +246,7 @@ tools will ask you to pick which one of these flights you want to display/decode
 Don't insert or remove the SD card while the OpenLog is powered up.
 
 ### Usage - Dataflash chip
-After your flights, you can use the [Cleanflight Configurator][] to download the contents of the dataflash to your
+After your flights, you can use the [INAV Configurator][] to download the contents of the dataflash to your
 computer. Go to the "dataflash" tab and click the "save flash to file..." button. Saving the log can take 2 or 3
 minutes.
 
@@ -259,10 +259,10 @@ nothing will be recorded.
 
 ### Usage - Logging switch
 If you're recording to an onboard flash chip, you probably want to disable Blackbox recording when not required in order
-to save storage space. To do this, you can add a Blackbox flight mode to one of your AUX channels on the Configurator's 
+to save storage space. To do this, you can add a Blackbox flight mode to one of your AUX channels on the Configurator's
 modes tab. Once you've added a mode, Blackbox will only log flight data when the mode is active.
 
-A log header will always be recorded at arming time, even if logging is paused. You can freely pause and resume logging 
+A log header will always be recorded at arming time, even if logging is paused. You can freely pause and resume logging
 while in flight.
 
 ## Viewing recorded logs

@@ -1,6 +1,6 @@
 # Buzzer
 
-Cleanflight supports a buzzer which is used for the following purposes:
+INAV supports a buzzer which is used for the following purposes:
 
  * Low and critical battery alarms (when battery monitoring enabled)
  * Arm/disarm tones (and warning beeps while armed)
@@ -12,7 +12,7 @@ Cleanflight supports a buzzer which is used for the following purposes:
 
 If the arm/disarm is via the control stick, holding the stick in the disarm position will sound a repeating tone.  This can be used as a lost-model locator.
 
-Three beeps immediately after powering the board means that the gyroscope calibration has completed successfully. Cleanflight calibrates the gyro automatically upon every power-up. It is important that the copter stay still on the ground until the three beeps sound, so that gyro calibration isn't thrown off. If you move the copter significantly during calibration, Cleanflight will detect this, and will automatically re-start the calibration once the copter is still again. This will delay the "three beeps" tone. If you move the copter just a little bit, the gyro calibration may be incorrect, and the copter may not fly correctly. In this case, the gyro calibration can be performed manually via [stick command](Controls.md), or you may simply power cycle the board.
+Three beeps immediately after powering the board means that the gyroscope calibration has completed successfully. INAV calibrates the gyro automatically upon every power-up. It is important that the copter stay still on the ground until the three beeps sound, so that gyro calibration isn't thrown off. If you move the copter significantly during calibration, INAV will detect this, and will automatically re-start the calibration once the copter is still again. This will delay the "three beeps" tone. If you move the copter just a little bit, the gyro calibration may be incorrect, and the copter may not fly correctly. In this case, the gyro calibration can be performed manually via [stick command](Controls.md), or you may simply power cycle the board.
 
 There is a special arming tone used if a GPS fix has been attained, and there's a "ready" tone sounded after a GPS fix has been attained (only happens once).  The tone sounded via the TX-AUX-switch will count out the number of satellites (if GPS fix).
 
@@ -24,7 +24,7 @@ Buzzer is enabled by default on platforms that have buzzer connections.
 
 Buzzer tone sequences (square wave generation) are made so that : 1st, 3rd, 5th, .. are the delays how long the beeper is on and 2nd, 4th, 6th, .. are the delays how long beeper is off. Delays are in milliseconds/10 (i.e., 5 => 50ms).
 
-Sequences available in Cleanflight v1.9 and above are :
+Sequences:
 
     0    GYRO_CALIBRATED       20, 10, 20, 10, 20, 10	Gyro is calibrated
     1    RX_LOST_LANDING       10, 10, 10, 10, 10, 40, 40, 10, 40, 10, 40, 40, 10, 10, 10, 10, 10, 70    SOS morse code
@@ -33,7 +33,7 @@ Sequences available in Cleanflight v1.9 and above are :
     4    ARMING                30, 5, 5, 5		Arming the board
     5    ARMING_GPS_FIX        5, 5, 15, 5, 5, 5, 15, 30	Arming and GPS has fix
     6    BAT_CRIT_LOW          50, 2		Battery is critically low (repeats)
-    7    BAT_LOW               25, 50		Battery is getting low (repeats) 
+    7    BAT_LOW               25, 50		Battery is getting low (repeats)
     8    NULL                  multi beeps		GPS status (sat count)
     9    RX_SET                10, 10		RX is set (when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled)
     10   ACC_CALIBRATION       5, 5, 5, 5		ACC inflight calibration completed

@@ -1,6 +1,6 @@
 # GPS
 
-GPS features in Cleanflight are experimental.  Please share your findings with the developers.
+GPS features in INAV are experimental.  Please share your findings with the developers.
 
 GPS works best if the GPS receiver is mounted above and away from other sources of interference.
 
@@ -19,7 +19,7 @@ Enable the GPS from the CLI as follows:
 1. connect your GPS to the serial port configured for GPS.
 1. save and reboot.
 
-Note:  GPS packet loss has been observed at 115200.  Try using 57600 if you experience this.
+Note:  GPS packet loss has been observed at 115200.  Try using 38400 is enough in most of the cases.
 
 For the connections step check the Board documentation for pins and port numbers.
 
@@ -87,7 +87,7 @@ Set `Protocol Out` to `0+1`
 Set `Buadrate` to `57600` `115200`
 Press `Send`
 
-This will immediatly "break" communication to the GPS. Since you haven't saved the new baudrate setting to the non-volatile memory you need to change the baudrate you communicate to the GPS without resetting the GPS. So `Disconnect`, Change baud rate to match, then `Connect`. 
+This will immediatly "break" communication to the GPS. Since you haven't saved the new baudrate setting to the non-volatile memory you need to change the baudrate you communicate to the GPS without resetting the GPS. So `Disconnect`, Change baud rate to match, then `Connect`.
 
 Click on `PRT` in the Configuration view again and inspect the packet console to make sure messages are being sent and acknowledged.
 
@@ -131,7 +131,7 @@ Select `Save current configuration` and click `Send`.
 
 ### UBlox Navigation model
 
-If GPS auto configuration is used Cleanflight will use `Airborne<1G` when `gps_nav_model=LOW_G` and `Airborne<4G` when `gps_nav_model=HIGH_G`.
+If GPS auto configuration is used INAV will use `Airborne<1G` when `gps_nav_model=LOW_G` and `Airborne<4G` when `gps_nav_model=HIGH_G`.
 
 From the UBlox documentation:
 
@@ -141,8 +141,8 @@ From the UBlox documentation:
 
 ## Hardware
 
-There are many GPS receivers available on the market. 
-Below are some examples of user-tested hardware. 
+There are many GPS receivers available on the market.
+Below are some examples of user-tested hardware.
 
 ### Ublox
 

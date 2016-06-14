@@ -6,16 +6,14 @@ Clean-code version of baseflight flight-controller - flight controllers are used
 
 This fork differs from baseflight in that it attempts to use modern software development practices which result in:
 
-1. greater reliability through code robustness and automated testing. 
+1. greater reliability through code robustness and automated testing.
 2. easier maintenance through code cleanliness.
-3. easier to develop new features. 
+3. easier to develop new features.
 4. easier to re-use code though code de-coupling and modularisation.
 
 The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
 
 ## Additional Features
-
-Cleanflight also has additional features not found in baseflight.
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
 * Oneshot ESC support.
@@ -50,11 +48,11 @@ http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
 ## Installation
 
-See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md 
+See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md
 
 ## Documentation
 
-There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs 
+There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs
 
 If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
 
@@ -70,7 +68,7 @@ Etiquette: Don't ask to ask and please wait around long enough for a reply - som
 
 ## Videos
 
-There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instructions and other related videos.
+There is a dedicated INAV youtube channel which has progress update videos, flight demonstrations, instructions and other related videos.
 
 https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
 
@@ -78,7 +76,7 @@ Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
-To configure Cleanflight you should use the Cleanflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure INAV you should use the INAV-configurator GUI tool (Windows/OSX/Linux) that can be found here:
 
 https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
 
@@ -113,7 +111,5 @@ https://travis-ci.org/cleanflight/cleanflight
 
 [![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
 
-## Cleanflight Releases
+## INAV Releases
 https://github.com/cleanflight/cleanflight/releases
-
-

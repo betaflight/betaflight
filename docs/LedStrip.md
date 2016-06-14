@@ -1,6 +1,6 @@
 # LED Strip
 
-Cleanflight supports the use of addressable LED strips.  Addressable LED strips allow each LED in the strip to
+INAV supports the use of addressable LED strips.  Addressable LED strips allow each LED in the strip to
 be programmed with a unique and independant color.  This is far more advanced than the normal RGB strips which
 require that all the LEDs in the strip show the same color.
 
@@ -234,7 +234,7 @@ the same time.  Thrust should normally be combined with Color or Mode/Orientatio
 
 #### Thrust ring state
 
-This mode is allows you to use a 12, 16 or 24 leds ring (e.g. NeoPixel ring) for an afterburner effect. When armed the leds use the following sequences: 2 On, 4 Off, 2 On, 4 Off, and so on.  The light pattern rotates clockwise as throttle increases. 
+This mode is allows you to use a 12, 16 or 24 leds ring (e.g. NeoPixel ring) for an afterburner effect. When armed the leds use the following sequences: 2 On, 4 Off, 2 On, 4 Off, and so on.  The light pattern rotates clockwise as throttle increases.
 
 A better effect is acheived when LEDs configured for thrust ring have no other functions.
 
@@ -242,7 +242,7 @@ LED direction and X/Y positions are irrelevant for thrust ring LED state.  The o
 
 Each LED of the ring can be a different color. The color can be selected between the 16 colors availables.
 
-For example, led 0 is set as a `R`ing thrust state led in color 13 as follow. 
+For example, led 0 is set as a `R`ing thrust state led in color 13 as follow.
 
 ```
 led 0 2,2::R:13
@@ -258,7 +258,7 @@ x,y position and directions are ignored when using this mode.
 
 Other modes will override or combine with the color mode.
 
-For example, to set led 0 to always use color 10 you would issue this command. 
+For example, to set led 0 to always use color 10 you would issue this command.
 
 ```
 led 0 0,0::C:10
@@ -407,13 +407,13 @@ Which translates into the following positions:
 
 ```
      6             3
-      \           / 
-       \   5-4   / 
+      \           /
+       \   5-4   /
       7 \ FRONT / 2
-        | 12-15 | 
+        | 12-15 |
       8 /  BACK \ 1
        /  10-11  \
-      /           \ 
+      /           \
      9             0
 ```
 
@@ -421,7 +421,7 @@ LEDs 0,3,6 and 9 should be placed underneath the quad, facing downwards.
 LEDs 1-2, 4-5, 7-8 and 10-11 should be positioned so the face east/north/west/south, respectively.
 LEDs 12-13 should be placed facing down, in the middle
 LEDs 14-15 should be placed facing up, in the middle
- 
+
 ### Exmple 28 LED config
 
 ```
@@ -463,7 +463,7 @@ led 27 2,9:S:FWT:0
 ```
        16-18  9-11
 19-21 \           / 6-8
-       \  12-15  / 
+       \  12-15  /
         \ FRONT /
         /  BACK \
        /         \

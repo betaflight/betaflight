@@ -38,10 +38,10 @@ Continue with the Installation and accept all autodetected dependencies.
 
 ----------
 
-versions do matter, 4.8-2014-q2 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/+download - preferrebly as a ZIP-File. 
+versions do matter, 4.8-2014-q2 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/+download - preferrebly as a ZIP-File.
 
 
-Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm-none-eabi-4_8-2014q2```. 
+Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm-none-eabi-4_8-2014q2```.
 
 ![GNU ARM Toolchain Setup](assets/008.toolchain.png)
 
@@ -51,9 +51,9 @@ add the "bin" subdirectory to the PATH Windows environment variable: ```%PATH%;C
 
 ![GNU ARM Toolchain Setup](assets/010.toolchain_path.png)
 
-## Checkout and compile Cleanflight
+## Checkout and compile INAV
 
-Head over to the Cleanflight Github page and grab the URL of the GIT Repository: "https://github.com/cleanflight/cleanflight.git"
+Head over to the INAV Github page and grab the URL of the GIT Repository: "https://github.com/cleanflight/cleanflight.git"
 
 Open the Cygwin-Terminal, navigate to your development folder and use the git commandline to checkout the repository:
 
@@ -65,7 +65,7 @@ git clone https://github.com/cleanflight/cleanflight.git
 
 ![GIT Checkout](assets/012.git_checkout.png)
 
-To compile your Cleanflight binaries, enter the cleanflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
+To compile your INAV binaries, enter the cleanflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
 
 ```bash
 cd cleanflight
@@ -84,7 +84,7 @@ arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
 arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
 ```
 
-You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+You can use the INAV-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
 
 ## Updating and rebuilding
 

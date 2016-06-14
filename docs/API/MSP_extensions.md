@@ -1,7 +1,7 @@
 # MSP Extensions
 
-Cleanflight includes a number of extensions to the MultiWii Serial Protocol (MSP). This document describes 
-those extensions in order that 3rd party tools may identify cleanflight firmware and react appropriately.
+INAV includes a number of extensions to the MultiWii Serial Protocol (MSP). This document describes 
+those extensions in order that 3rd party tools may identify INAV firmware and react appropriately.
 
 Issue the MSP_API_VERSION command to find out if the firmware supports them.
 
@@ -28,7 +28,7 @@ Unassigned slots have rangeStartStep == rangeEndStep. Each element contains the 
 | rangeStartStep | uint8 | The start value for this element in 'blocks' of 25  where 0 == 900 and 48 == 2100 |
 | rangeEndStep | uint8 | The end value for this element in 'blocks' of 25 where 0 == 900 and 48 == 2100 |
 
-Thus, for a cleanflight firmware with 40 slots 160 bytes would be returned in response to MSP\_MODE\_RANGES,
+Thus, for a INAV firmware with 40 slots 160 bytes would be returned in response to MSP\_MODE\_RANGES,
 
 ### MSP\_SET\_MODE\_RANGE
 
@@ -52,7 +52,7 @@ sending this message for all auxiliary slots.
 
 ### Implementation Notes
 
-* The client should make no assumptions about the number of slots available. Rather, the number should be computed 
+* The client should make no assumptions about the number of slots available. Rather, the number should be computed
   from the size of the MSP\_MODE\_RANGES message divided by the size of the returned data element (4 bytes);
 * The client should ensure that all changed items are returned to the flight controller, including those where a
   switch or range has been disabled;
@@ -86,7 +86,7 @@ Unassigned slots have rangeStartStep == rangeEndStep. Each element contains the 
 | adjustmentFunction | uint8 | See below |
 | auxSwitchChannelIndex | uint8 | The Aux channel number used to perform the function (indexed from 0) |
 
-Thus, for a cleanflight firmware with 12 slots 72 bytes would be returned in response to MSP\_ADJUSTMENT\_RANGES,
+Thus, for a INAV firmware with 12 slots 72 bytes would be returned in response to MSP\_ADJUSTMENT\_RANGES,
 
 ### MSP\_SET\_ADJUSTMENT\_RANGE
 
@@ -128,7 +128,7 @@ note: it would be ideal to disable this when armed
 The FC maintains internal state for each adjustmentStateIndex, currently 4 simultaneous adjustment states are maintained.  Multiple adjustment ranges
 can be configured to use the same state but care should be taken not to send multiple adjustment ranges that when active would confict.
 
-e.g.  Configuring two identical adjustment ranges using the same slot would conflict, but configuring two adjustment ranges that used 
+e.g.  Configuring two identical adjustment ranges using the same slot would conflict, but configuring two adjustment ranges that used
 only one half of the possible channel range each but used the same adjustmentStateIndex would not conflict.
 
 The FC does NOT check for conflicts.
@@ -139,7 +139,7 @@ There are many adjustments that can be made, the numbers of them and their use i
 
 ### Implementation Notes
 
-* The client should make no assumptions about the number of slots available. Rather, the number should be computed 
+* The client should make no assumptions about the number of slots available. Rather, the number should be computed
   from the size of the MSP\_ADJUSTMENT\_RANGES message divided by the size of the returned data element (6 bytes);
 * The client should ensure that all changed items are returned to the flight controller, including those where a
   switch or range has been disabled;
@@ -150,12 +150,12 @@ There are many adjustments that can be made, the numbers of them and their use i
 
 The following MSP commands are replaced by the MSP\_MODE\_RANGES and
 MSP\_SET\_MODE\_RANGE extensions, and are not recognised by
-cleanflight.
+INAV.
 
 * MSP\_BOX
 * MSP\_SET\_BOX
 
 See also
 --------
-Modes.md describes the user visible implementation for the cleanflight
+Modes.md describes the user visible implementation for the INAV
 modes extension.

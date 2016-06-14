@@ -1,6 +1,6 @@
 # Navigation
 
-Navigation system in Cleanflight is responsible for assisting the pilot allowing altitude and position hold, return-to-home and waypoint flight.
+Navigation system in INAV is responsible for assisting the pilot allowing altitude and position hold, return-to-home and waypoint flight.
 
 ## NAV ALTHOLD mode - altitude hold
 
