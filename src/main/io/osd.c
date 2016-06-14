@@ -477,7 +477,8 @@ void show_menu(void) {
     uint16_t pos;
     col_t *col;
     row_t *row;
-    int16_t cursor_x, cursor_y;
+    int16_t cursor_x = 0;
+    int16_t cursor_y = 0;
 
     if (activating_menu) {
         if (sticks[YAW] < 60 && sticks[YAW] > 40 && sticks[PITCH] > 40 && sticks[PITCH] < 60 && sticks[ROLL] > 40 && sticks[ROLL] < 60)
