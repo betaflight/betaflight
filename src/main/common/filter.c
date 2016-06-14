@@ -25,7 +25,6 @@
 #include "common/maths.h"
 
 #define M_LN2_FLOAT	0.69314718055994530942f
-#define M_PI_FLOAT	3.14159265358979323846f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
@@ -54,7 +53,7 @@ void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
     float a0, a1, a2, b0, b1, b2;
 
     /* setup variables */
-    omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    omega = 2 * M_PIf * filterCutFreq / sampleRate;
     sn = sinf(omega);
     cs = cosf(omega);
     alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
