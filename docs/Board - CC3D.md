@@ -12,7 +12,7 @@ have an on-board USB to uart adapter which connect to the processor's serial por
 
 The board cannot currently be used for hexacopters/octocopters.
 
-Tricopter & Airplane support is untested, please report success or failure if you try it. 
+Tricopter & Airplane support is untested, please report success or failure if you try it.
 
 # Pinouts
 
@@ -30,6 +30,7 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SE
 | 8   | PPM Input | Enable `feature RX_PPM` |
 
 *Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input.
+
 NOTE: for the CC3D\_PPM1 build PPM input is on Pin 3 and RSSI\_ADC is on Pin 8
 
 The 6 pin RC_Output connector has the following pinouts when used in RX_PPM/RX_SERIAL mode
@@ -49,7 +50,7 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PARALLEL_
 | --- | ---------| ------|
 | 1   | Ground   |       |
 | 2   | +5V      |       |
-| 3   | Unused   |       | 
+| 3   | Unused   |       |
 | 4   | CH1      |       |
 | 5   | CH2      |       |
 | 6   | CH3      |       |
@@ -106,10 +107,10 @@ You cannot use USART3 and I2C at the same time.
 
 # Flashing
 
-There are two primary ways to get Cleanflight onto a CC3D board.
+There are two primary ways to get INAV onto a CC3D board.
 
 * Single binary image mode - best mode if you don't want to use OpenPilot.
-* OpenPilot Bootloader compatible image mode - best mode if you want to switch between OpenPilot and Cleanflight.
+* OpenPilot Bootloader compatible image mode - best mode if you want to switch between OpenPilot and INAV.
 
 ## Single binary image mode.
 
@@ -144,14 +145,14 @@ If you have a JLink debugger, you can use JLinkExe to flash the open pilot bootl
 Here's an example session:
 
 ```
-$ /Applications/SEGGER/JLink/JLinkExe 
+$ /Applications/SEGGER/JLink/JLinkExe
 SEGGER J-Link Commander V4.90c ('?' for help)
 Compiled Aug 29 2014 09:52:38
 DLL version V4.90c, compiled Aug 29 2014 09:52:33
 Firmware: J-Link ARM-OB STM32 compiled Aug 22 2012 19:52:04
 Hardware: V7.00
-S/N: -1 
-Feature(s): RDI,FlashDL,FlashBP,JFlash,GDBFull 
+S/N: -1
+Feature(s): RDI,FlashDL,FlashBP,JFlash,GDBFull
 VTarget = 3.300V
 Info: Could not measure total IR len. TDO is constant high.
 Info: Could not measure total IR len. TDO is constant high.
@@ -189,5 +190,5 @@ Info: J-Link: Flash download: Flash download into internal flash skipped. Flash 
 Info: J-Link: Flash download: Total time needed: 0.898s (Prepare: 0.709s, Compare: 0.128s, Erase: 0.000s, Program: 0.000s, Verify: 0.000s, Restore: 0.059s)
 O.K.
 J-Link>q
-$ 
+$
 ```

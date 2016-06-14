@@ -68,7 +68,7 @@ http://www.futaba-rc.com/systems/futk8100-8j/
 #### OpenTX S.BUS configuration
 
 If using OpenTX set the transmitter module to D16 mode and ALSO select CH1-16 on the transmitter before binding to allow reception
-of all 16 channels. 
+of all 16 channels.
 
 OpenTX 2.09, which is shipped on some Taranis X9D Plus transmitters, has a bug - [issue:1701](https://github.com/opentx/opentx/issues/1701).
 The bug prevents use of all 16 channels.  Upgrade to the latest OpenTX version to allow correct reception of all 16 channels,
@@ -124,7 +124,7 @@ firmware on the tx to make use of these extra channels.
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
- 
+
 ## Configuration
 
 There are 3 features that control receiver mode:
@@ -160,9 +160,9 @@ A flight channel can either be AUTOMATIC or HOLD, an AUX channel can either be S
 
 * AUTOMATIC - Flight channels are set to safe values (low throttle, mid position for yaw/pitch/roll).
 * HOLD - Channel holds the last value.
-* SET - Channel is set to a specific configured value. 
+* SET - Channel is set to a specific configured value.
 
-The default mode is AUTOMATIC for flight channels and HOLD for AUX channels. 
+The default mode is AUTOMATIC for flight channels and HOLD for AUX channels.
 
 The rxfail command can be used in conjunction with mode ranges to trigger various actions.
 
@@ -197,11 +197,11 @@ WARNING: Always make sure you test the behavior is as expected after configuring
 
 #### `rx_min_usec`
 
-The lowest channel value considered valid.  e.g. PWM/PPM pulse length 
+The lowest channel value considered valid.  e.g. PWM/PPM pulse length
 
 #### `rx_max_usec`
 
-The highest channel value considered valid.  e.g. PWM/PPM pulse length 
+The highest channel value considered valid.  e.g. PWM/PPM pulse length
 
 ### Serial RX
 
@@ -248,13 +248,13 @@ Set failsafe on the throttle channel in the receiver settings (via transmitter m
 This is the prefered way, since this is *much faster* detected by the FC then a channel that sends no pulses (OFF).
 
 __NOTE:__
-One or more control channels may be set to OFF to signal a failsafe condition to the FC, all other channels *must* be set to either HOLD or OFF. 
+One or more control channels may be set to OFF to signal a failsafe condition to the FC, all other channels *must* be set to either HOLD or OFF.
 Do __NOT USE__ the mode indicated with FAILSAFE instead, as this combination is NOT handled correctly by the FC.
 
 ## Receiver Channel Range Configuration.
 
 If you have a transmitter/receiver, that output a non-standard pulse range (i.e. 1070-1930 as some Spektrum receivers)
-you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by Cleanflight.
+you could use rx channel range configuration to map actual range of your transmitter to 1000-2000 as expected by INAV.
 
 The low and high value of a channel range are often referred to as 'End-points'.  e.g. 'End-point adjustments / EPA'.
 
@@ -272,7 +272,7 @@ save
 ```
 
 Now reboot your FC, connect the configurator, go to the `Receiver` tab move sticks on your transmitter and note min and
-max values of first 4 channels. Take caution as you can accidentally arm your craft. Best way is to move one channel at 
+max values of first 4 channels. Take caution as you can accidentally arm your craft. Best way is to move one channel at
 a time.
 
 Go to CLI and set the min and max values with the following command:

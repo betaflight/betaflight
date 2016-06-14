@@ -1,6 +1,6 @@
 # Modes
 
-Cleanflight has various modes that can be toggled on or off.  Modes can be enabled/disabled by stick positions,
+INAV has various modes that can be toggled on or off.  Modes can be enabled/disabled by stick positions,
 auxillary receiver channels and other events such as failsafe detection.
 
 | MSP ID  | CLI ID | Short Name | Function                                                             |
@@ -35,7 +35,7 @@ auxillary receiver channels and other events such as failsafe detection.
 
 In this mode, the "head" of the multicopter is always pointing to the same direction as when the feature was activated. This means that when the multicopter rotates around the Z axis (yaw), the controls will always respond according the same "head" direction.
 
-With this mode it is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction. 
+With this mode it is easier to control the multicopter, even fly it with the physical head towards you since the controls always respond the same. This is a friendly mode to new users of multicopters and can prevent losing the control when you don't know the head direction.
 
 ### GPS Return To Home
 
@@ -73,7 +73,7 @@ When a channel is within a specifed range the corresponding mode is enabled.
 
 Use the GUI configuration tool to allow easy configuration when channel.
 
-### CLI 
+### CLI
 
 There is a CLI command, `aux` that allows auxillary configuration.  It takes 5 arguments as follows:
 
@@ -88,10 +88,9 @@ If the low and high position are the same then the values are ignored.
 e.g.
 
 Configure AUX range slot 0 to enable ARM when AUX1 is withing 1700 and 2100.
- 
+
 ```
 aux 0 0 0 1700 2100
 ```
 
 You can display the AUX configuration by using the `aux` command with no arguments.
-

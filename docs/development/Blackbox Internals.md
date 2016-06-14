@@ -2,7 +2,7 @@
 
 The Blackbox is designed to record the raw internal state of the flight controller at near-maximum rate. By logging the
 raw inputs and outputs of key flight systems, the Blackbox log aims to allow the offline bench-top simulation, debugging,
-and testing of flight control algorithms using data collected from real flights. 
+and testing of flight control algorithms using data collected from real flights.
 
 A typical logging regime might capture 30 different state variables (for an average of 28 bytes per frame) at a sample
 rate of 900Hz. That's about 25,000 bytes per second, which is 250,000 baud with a typical 8-N-1 serial encoding.
@@ -11,7 +11,7 @@ rate of 900Hz. That's about 25,000 bytes per second, which is 250,000 baud with 
 
 Please refer to the source code to clarify anything this document leaves unclear:
 
-* Cleanflight's Blackbox logger: [blackbox.c](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox.c),
+* INAV's Blackbox logger: [blackbox.c](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox.c),
 [blackbox_io.c](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox_io.c),
 [blackbox_fielddefs.h](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox_fielddefs.h)
 * [C implementation of the Blackbox log decoder](https://github.com/cleanflight/blackbox-tools/blob/master/src/parser.c)
@@ -36,7 +36,7 @@ iteration.
 
 Each main frame must contain at least two fields, "loopIteration" which records the index of the current main loop
 iteration (starting at zero for the first logged iteration), and "time" which records the timestamp of the beginning of
-the main loop in microseconds (this needn't start at zero, on Cleanflight it represents the system uptime).
+the main loop in microseconds (this needn't start at zero, on INAV it represents the system uptime).
 
 There are two kinds of main frames, "I" and "P". "I", or "intra" frames are like video keyframes. They can be decoded
 without reference to any previous frame, so they allow log decoding to be resynchronized in the event of log damage. "P"
@@ -50,7 +50,7 @@ intra/inter encoding system.
 
 The "H" or "home" frame records the lat/lon of a reference point. The "G" or "GPS" frame records the current state of
 the GPS system (current position, altitude etc.) based on the reference point. The reference point can be updated
-(infrequently) during the flight, and is logged whenever it changes. 
+(infrequently) during the flight, and is logged whenever it changes.
 
 To allow "G" frames to continue be decoded in the event that an "H" update is dropped from the log, the "H" frame is
 logged periodically even if it has not changed (say, every 10 seconds). This caps the duration of unreadble "G" frames
@@ -65,7 +65,7 @@ All Slow frames are logged as intraframes. An interframe encoding scheme can't b
 damaged frame causes all subsequent interframes to be undecodable. Because Slow frames are written so infrequently, one
 missing Slow frame could invalidate minutes worth of Slow state.
 
-On Cleanflight, Slow frames are currently used to log data like the user-chosen flight mode and the current failsafe
+On INAV, Slow frames are currently used to log data like the user-chosen flight mode and the current failsafe
 state.
 
 ### Event frames: E
@@ -74,9 +74,9 @@ controller "state". Instead, we log it as a state *transition* . This data is lo
 frame payload begins with a single byte "event type" field. The format of the rest of the payload is not encoded in the
 flight log, so its interpretation is left up to an agreement of the writer and the decoder.
 
-For example, one event that Cleanflight logs is that the user has adjusted a system setting (such as a PID setting)
-using Cleanflight's inflight adjustments feature. The event payload notes which setting was adjusted and the new value
-for the setting. 
+For example, one event that INAV logs is that the user has adjusted a system setting (such as a PID setting)
+using INAV's inflight adjustments feature. The event payload notes which setting was adjusted and the new value
+for the setting.
 
 Because these setting updates are so rare, it would be wasteful to treat the settings as "state" and log the fact that
 the setting had not been changed during every logging iteration. It would be infeasible to periodically log the system
@@ -94,7 +94,7 @@ the raw field value. Finally, the encoder is used to transform the value into by
 ### Field predictors
 The job of the predictor is to bring the value to be encoded as close to zero as possible. The predictor may be based
 on the values seen for the field in a previous frame, or some other value such as a fixed value or a value recorded in
-the log headers. For example, the battery voltage values in "I" intraframes in Cleanflight use a reference voltage that
+the log headers. For example, the battery voltage values in "I" intraframes in INAV use a reference voltage that
 is logged as part of the headers as a predictor. This assumes that battery voltages will be broadly similar to the
 initial pack voltage of the flight (e.g. 4S battery voltages are likely to lie within a small range for the whole
 flight). In "P" interframes, the battery voltage will instead use the previously-logged voltage as a predictor, because
@@ -125,7 +125,7 @@ history is a better predictor of the next value than the previous value on its o
 or motor measurements).
 
 #### Predict minthrottle (4)
-This predictor subtracts the value of "minthrottle" which is included in the log header. In Cleanflight, motors always
+This predictor subtracts the value of "minthrottle" which is included in the log header. In INAV, motors always
 lie in the range of `[minthrottle ... maxthrottle]` when the craft is armed, so this predictor is used for the first
 motor value in intraframes.
 
@@ -142,12 +142,12 @@ This predictor is set to the corresponding latitude or longitude field from the 
 a preceding "H" frame). If no preceding "H" frame exists, the value is marked as invalid.
 
 #### Predict 1500 (8)
-This predictor is set to a fixed value of 1500. It is preferred for logging servo values in intraframes, since these 
+This predictor is set to a fixed value of 1500. It is preferred for logging servo values in intraframes, since these
 typically lie close to the midpoint of 1500us.
 
 #### Predict vbatref (9)
 This predictor is set to the "vbatref" field written in the log header. It is used when logging intraframe battery
-voltages in Cleanflight, since these are expected to be broadly similar to the first battery voltage seen during
+voltages in INAV, since these are expected to be broadly similar to the first battery voltage seen during
 arming.
 
 #### Predict last main-frame time (10)
@@ -192,7 +192,7 @@ Here are some example values encoded using variable-byte encoding:
 | 128         | 0x80 0x01       |
 | 129         | 0x81 0x01       |
 | 23456       | 0xA0 0xB7 0x01  |
- 
+
 #### Signed variable byte (0)
 This encoding applies a pre-processing step to fold negative values into positive ones, then the resulting unsigned
 number is encoded using unsigned variable byte encoding. The folding is accomplished by "ZigZag" encoding, which is
@@ -219,7 +219,7 @@ Here are some example integers encoded using ZigZag encoding:
 
 #### Neg 14-bit (3)
 The value is negated, treated as an unsigned 14 bit integer, then encoded using unsigned variable byte encoding. This
-bizarre encoding is used in Cleanflight for battery pack voltages. This is because battery voltages are measured using a
+bizarre encoding is used in INAV for battery pack voltages. This is because battery voltages are measured using a
 14-bit ADC, with a predictor which is set to the battery voltage during arming, which is expected to be higher than any
 voltage experienced during flight. After the predictor is subtracted, the battery voltage will almost certainly be below
 zero.
@@ -233,7 +233,7 @@ number of bytes. If the bitstream isn't aligned on a byte boundary by the time t
 or the end of the frame is reached, the final byte is padded with zeros byte-align the stream. This encoding requires
 more CPU time than the other encodings because of the bit juggling involved in writing the bitstream.
 
-When this encoder is chosen to encode all of the values in Cleanflight interframes, it saves about 10% bandwidth
+When this encoder is chosen to encode all of the values in INAV interframes, it saves about 10% bandwidth
 compared to using a mixture of the other encodings, but uses too much CPU time to be practical.
 
 [The basic encoding algorithm is defined on Wikipedia](https://en.wikipedia.org/wiki/Elias_delta_coding). Given these
@@ -242,13 +242,13 @@ utility functions:
 ```c
 /* Write `bitCount` bits from the least-significant end of the `bits` integer to the bitstream. The most-significant bit
  * will be written first
- */ 
+ */
 void writeBits(uint32_t bits, unsigned int bitCount);
 
 /* Returns the number of bits needed to hold the top-most 1-bit of the integer 'i'. 'i' must not be zero. */
 unsigned int numBitsToStoreInteger(uint32_t i);
 ```
- 
+
 This is our reference implementation of Elias Delta:
 
 ```c
@@ -262,10 +262,10 @@ void writeU32EliasDeltaInternal(uint32_t value)
 
     // Use unary to encode the number of bits we'll need to write the length of the value
     writeBits(0, lengthOfValueLen - 1);
-    
+
     // Now write the length of the value
     writeBits(valueLen, lengthOfValueLen);
-    
+
     // Having now encoded the position of the top bit of value, write its remaining bits
     writeBits(value, valueLen - 1);
 }
@@ -278,7 +278,7 @@ void writeU32EliasDelta(uint32_t value)
 {
     /* We can't encode value==0, so we need to add 1 to the value before encoding
      *
-     * That would make it impossible to encode MAXINT, so use 0xFFFFFFFF as an escape 
+     * That would make it impossible to encode MAXINT, so use 0xFFFFFFFF as an escape
      * code with an additional bit to choose between MAXINT-1 or MAXINT.
      */
     if (value >= 0xFFFFFFFE) {
@@ -346,7 +346,7 @@ This would be encoded:
 
 ```
 0b00010100, 0x04, 0x08
-``` 
+```
 
 #### TAG2_3S32 (7)
 A 2-bit header is written, followed by 3 signed field values of up to 32 bits each. The header value is based on the
@@ -400,7 +400,7 @@ number of bits required to encode that field as follows:
 | 2            | 8 bits           | [-128...127]     |
 | 3            | 16 bits          | [-32768...32767] |
 
-This header is followed by the actual field values in order, written as if the output stream was a bit-stream, with the 
+This header is followed by the actual field values in order, written as if the output stream was a bit-stream, with the
 most-significant bit of the first field ending up in the most-significant bits of the first written byte. If the number
 of nibbles written is odd, the final byte has its least-significant nibble set to zero.
 
@@ -440,7 +440,7 @@ log payload data, and finally an optional "log end" event ("E" frame).
 
 A single log file can be comprised of one or more logging sessions. Each session may be preceded and followed by any
 amount of non-Blackbox data. This data is ignored by the Blackbox log decoding tools. This allows for the logging device
-to be alternately used by the Blackbox and some other system (such as MSP) without requiring the ability to begin a 
+to be alternately used by the Blackbox and some other system (such as MSP) without requiring the ability to begin a
 separate log file for each separate activity.
 
 ### Log start marker
@@ -449,14 +449,14 @@ used to discover the beginning of the flight log if the log begins partway throu
 string, it is not expected to occur by accident in any sequence of random bytes from other log device users.
 
 ### Log header
-The header is comprised of a sequence of lines of plain ASCII text. Each header line has the format `H fieldname:value` 
+The header is comprised of a sequence of lines of plain ASCII text. Each header line has the format `H fieldname:value`
 and ends with a '\n'. The overall header does not have a terminator to separate it from the log payload
 (the header implicitly ends when a line does not begin with an 'H' character).
 
 The header can contain some of these fields:
 
 #### Data version (required)
-When the interpretation of the Blackbox header changes due to Blackbox specification updates, the log version is 
+When the interpretation of the Blackbox header changes due to Blackbox specification updates, the log version is
 incremented to allow backwards-compatibility in the decoder:
 
 ```
@@ -502,7 +502,7 @@ if (iteration % I_INTERVAL == 0)
 
 if ((iteration % I_INTERVAL + num - 1) % denom < num)
 	return 'P';
-	
+
 return '.'; // i.e. don't log this iteration
 ```
 
@@ -524,7 +524,7 @@ Because Blackbox records the internal flight controller state, the interpretatio
 on knowing which flight controller recorded it. To accomodate this, the name of the flight controller should be recorded:
 
 ```
-H Firmware type:Cleanflight
+H Firmware type:INAV
 ```
 
 More details should be included to help narrow down the precise flight-controller version (but these are not required):
@@ -570,11 +570,11 @@ H Field X encoding:1,1,0,0...
 This header provides the reference voltage that will be used by predictor #9.
 
 #### minthrottle
-This header provides the minimum value sent by Cleanflight to the ESCs when armed, it is used by predictor #4.
+This header provides the minimum value sent by INAV to the ESCs when armed, it is used by predictor #4.
 
 #### Additional headers
 The decoder ignores headers that it does not understand, so you can freely add any headers that you require in order to
-properly interpret the meaning of the logged values. 
+properly interpret the meaning of the logged values.
 
 For example, to create a graphical displays of RC sticks and motor percentages, the Blackbox rendering tool requires
 the additional headers "rcRate" and "maxthrottle". In order to convert raw gyroscope, accelerometer and voltage readings

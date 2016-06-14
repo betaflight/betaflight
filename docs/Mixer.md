@@ -1,6 +1,6 @@
 # Mixer
 
-Cleanflight supports a number of mixing configurations as well as custom mixing.  Mixer configurations determine how the servos and motors work together to control the aircraft.
+INAV supports a number of mixing configurations as well as custom mixing.  Mixer configurations determine how the servos and motors work together to control the aircraft.
 
 ## Configuration
 
@@ -44,14 +44,14 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 
 ## Servo configuration
 
-The cli `servo` command defines the settings for the servo outputs. 
+The cli `servo` command defines the settings for the servo outputs.
 The cli mixer `smix` command controllers how the mixer maps internal FC data (RC input, PID stabilisation output, channel forwarding, etc) to servo outputs.
 
 ## Servo filtering
 
 A low-pass filter can be enabled for the servos.  It may be useful for avoiding structural modes in the airframe, for example.  
 
-### Configuration 
+### Configuration
 
 Currently it can only be configured via the CLI:
 
@@ -75,19 +75,19 @@ One method for tuning the filter cutoff is as follows:
 
 4. If the oscillations are dampened within roughly a second or are no longer present, then you are done.  Be sure to run `save`.
 
-## Custom Motor Mixing 
+## Custom Motor Mixing
 
 Custom motor mixing allows for completely customized motor configurations. Each motor must be defined with a custom mixing table for that motor. The mix must reflect how close each motor is with reference to the CG (Center of Gravity) of the flight controller. A motor closer to the CG of the flight controller will need to travel less distance than a motor further away.  
 
 Steps to configure custom mixer in the CLI:
 
 1. Use `mixer custom` to enable the custom mixing.
-2. Use `mmix reset` to erase the any existing custom mixing. 
-3. Issue a `mmix` statement for each motor. 
+2. Use `mmix reset` to erase the any existing custom mixing.
+3. Issue a `mmix` statement for each motor.
 
-The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW` 
+The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW`
 
-| Mixing table parameter | Definition | 
+| Mixing table parameter | Definition |
 | ---------------------- | ---------- |
 | n	| Motor ordering number |
 | THROTTLE	| All motors that are used in this configuration are set to 1.0. Unused set to 0.0. |
@@ -95,7 +95,7 @@ The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW`
 | PITCH	| Indicates the pitch authority this motor has over the flight controller. Also accepts values nominally from 1.0 to -1.0. |
 | YAW	| Indicates the direction of the motor rotation in relationship with the flight controller. 1.0 = CCW -1.0 = CW. |
 
-Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers. 
+Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers.
 
 ## Custom Servo Mixing
 
@@ -105,11 +105,11 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 |----|--------------|
 | 0  | GIMBAL PITCH |
 | 1  | GIMBAL ROLL |
-| 2  | ELEVATOR / SINGLECOPTER_4 | 
+| 2  | ELEVATOR / SINGLECOPTER_4 |
 | 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
 | 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
 | 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
-| 6  | THROTTLE (Based ONLY on the first motor output) | 
+| 6  | THROTTLE (Based ONLY on the first motor output) |
 | 7  | FLAPS |
 
 
@@ -130,7 +130,7 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
 
-Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers. 
+Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 
 ## Servo Reversing
 
@@ -144,8 +144,8 @@ i.e. when mixing rudder servo slot (`5`) using Stabilised YAW input source (`2`)
 
 `smix reverse` is a per-profile setting.  So ensure you configure it for your profiles as required.
 
-### Example 1: A KK2.0 wired motor setup 
-Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme. 
+### Example 1: A KK2.0 wired motor setup
+Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme.
 
 ```
 KK2.0 Motor Layout
@@ -164,28 +164,28 @@ KK2.0 Motor Layout
 5. Use `mmix 2 1.0, -1.0,  1.0, -1.0` for the Rear Right motor. It has negative roll, provides positive pitch when the speed is increased and turns CW.
 6. Use `mmix 3 1.0,  1.0,  1.0,  1.0` for the Rear Left motor. Increasing motor speed imparts positive roll, positive pitch and turns CCW.
 
-### Example 2: A HEX-U Copter 
+### Example 2: A HEX-U Copter
 
-Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much less force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC. 
+Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much less force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC.
 
-``` 
+```
 HEX6-U
 
-.4........3. 
+.4........3.
 ............
-.5...FC...2. 
+.5...FC...2.
 ............
 ...6....1...
 ```
 
 |Command| Roll | Pitch | Yaw |
-| ----- | ---- | ----- | --- | 
+| ----- | ---- | ----- | --- |
 | Use `mmix 0 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
-| Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW | 
-| Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW | 
-| Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  | 
-| Use `mmix 4 1.0,  1.0,  0.0, -1.0` | full positive | none | CW | 
-| Use `mmix 5 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW | 
+| Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW |
+| Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW |
+| Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  |
+| Use `mmix 4 1.0,  1.0,  0.0, -1.0` | full positive | none | CW |
+| Use `mmix 5 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW |
 
 ### Example 3: Custom tricopter
 
@@ -210,7 +210,7 @@ smix reverse 5 2 r
 Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
 Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
-Note: You can look at the Motors tab in [Cleanflight Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
+Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
 
 | Pins | Outputs          |
 |------|------------------|

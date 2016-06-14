@@ -13,7 +13,7 @@ if found please report via the [github issue tracker](https://github.com/cleanfl
 | 4     | SOFTSERIAL1  | RC5 / PA6  | RC6 / PA7          |                                                                                             |
 | 5     | SOFTSERIAL2  | RC7 / PB0  | RC8 / PB1          |                                                                                             |
 
-* You cannot use USART1/TX/TELEM pins at the same time. 
+* You cannot use USART1/TX/TELEM pins at the same time.
 * You may encounter flashing problems if you have something connected to the RX/TX pins.  Try disconnecting RX/TX.
 
 ## Pinouts
@@ -24,10 +24,10 @@ The 10 pin RC I/O connector has the following pinouts when used in RX_PPM/RX_SER
 | --- | ---------- | --------------------------- | -------------------------------- |
 | 1   |            | Ground                      |                                  |
 | 2   | Circle     | +5V                         |                                  |
-| 3   | 1          | RX_PPM                      | Enable `feature RX_PPM`          | 
-| 4   | 2          | RSSI_ADC                    | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input | 
-| 5   | 3          | USART2 TX                   |                                  | 
-| 6   | 4          | USART2 RX                   |                                  | 
+| 3   | 1          | RX_PPM                      | Enable `feature RX_PPM`          |
+| 4   | 2          | RSSI_ADC                    | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input |
+| 5   | 3          | USART2 TX                   |                                  |
+| 6   | 4          | USART2 RX                   |                                  |
 | 7   | 5          | LED_STRIP                   | Enable `feature LED_STRIP`       |
 | 8   | 6          | unused                      |                                  |
 | 9   | 7          | Sonar Trigger               |                                  |
@@ -49,9 +49,9 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 + Apply power to the board
 + Remove the short on the board
 
-### Cleanflight configurator
-+ Select the correct hardware and the desired release of the Clearflight firmware
-+ Put a check in the "No reboot sequence" 
+### INAV configurator
++ Select the correct hardware and the desired release of the INAV firmware
++ Put a check in the "No reboot sequence"
 + Flash firmware
 
 ```
@@ -66,4 +66,3 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 |O                 O|
 \-------[USB]-------/
 ```
-

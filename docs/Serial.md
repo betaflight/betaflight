@@ -1,8 +1,8 @@
 # Serial
 
-Cleanflight has enhanced serial port flexibility but configuration is slightly more complex as a result.
+INAV has enhanced serial port flexibility but configuration is slightly more complex as a result.
 
-Cleanflight has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
+INAV has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
 Not all functions can be used on all ports due to hardware pin mapping, conflicting features, hardware, and software
 constraints.
 
@@ -23,17 +23,17 @@ These are sometimes referred to as FTDI boards.  FTDI is just a common manufactu
 When selecting a USB to UART converter choose one that has DTR exposed as well as a selector for 3.3v and 5v since they are more useful.
 
 Examples:
- 
+
  * [FT232RL FTDI USB To TTL Serial Converter Adapter](http://www.banggood.com/FT232RL-FTDI-USB-To-TTL-Serial-Converter-Adapter-Module-For-Arduino-p-917226.html)
  * [USB To TTL / COM Converter Module buildin-in CP2102](http://www.banggood.com/Wholesale-USB-To-TTL-Or-COM-Converter-Module-Buildin-in-CP2102-New-p-27989.html)
 
-Both SoftSerial and UART ports can be connected to your computer via USB to UART converter boards. 
+Both SoftSerial and UART ports can be connected to your computer via USB to UART converter boards.
 
 ## Serial Configuration
 
 Serial port configuration is best done via the configurator.
 
-Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be also be enabled. 
+Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be also be enabled.
 
 ### Constraints
 
@@ -59,7 +59,7 @@ You can use the CLI for configuration but the commands are reserved for develope
 The `serial` CLI command takes 6 arguments.
 
 1. Identifier
-1. Function bitmask (see serialPortFunction_e in the source) 
+1. Function bitmask (see serialPortFunction_e in the source)
 1. MSP baud rate
 1. GPS baud rate
 1. Telemetry baud rate (auto baud allowed)
@@ -80,4 +80,3 @@ The allowable baud rates are as follows:
 | 5          | 115200    |
 | 6          | 230400    |
 | 7          | 250000    |
-

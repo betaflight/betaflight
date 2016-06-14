@@ -1,7 +1,7 @@
 # Building in Ubuntu
 
 Building for Ubuntu platform is remarkably easy. The only trick to understand is that the Ubuntu toolchain,
-which they are downstreaming from Debian, is not compatible with Cleanflight. We suggest that you take an
+which they are downstreaming from Debian, is not compatible with INAV. We suggest that you take an
 alternative PPA from Terry Guo, found here:
 https://launchpad.net/~terry.guo/+archive/ubuntu/gcc-arm-embedded
 
@@ -50,7 +50,7 @@ make TARGET=NAZE
 You'll see a set of files being compiled, and finally linked, yielding both an ELF and then a HEX:
 ```
 ...
-arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf 
+arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
    text    data     bss     dec     hex filename
   97164     320   11080  108564   1a814 ./obj/main/cleanflight_NAZE.elf
 arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
@@ -58,7 +58,7 @@ $ ls -la obj/cleanflight_NAZE.hex
 -rw-rw-r-- 1 pim pim 274258 Jan 12 21:45 obj/cleanflight_NAZE.hex
 ```
 
-You can use the Cleanflight-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+You can use the INAV-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
 
 ## Bricked/Bad build?
 

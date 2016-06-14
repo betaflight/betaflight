@@ -22,7 +22,7 @@ profile <index>
 
 # Rate Profiles
 
-Cleanflight supports rate profiles in addition to regular profiles.
+INAV supports rate profiles in addition to regular profiles.
 
 Rate profiles contain settings that adjust how your craft behaves based on control input.
 
@@ -31,7 +31,7 @@ Three rate profiles are supported.
 Rate profiles can be selected while flying using the inflight adjustments feature.
 
 Each normal profile has a setting called 'default_rate_profile`.  When a profile is activated the
-corresponding rate profile is also activated. 
+corresponding rate profile is also activated.
 
 Profile 0 has a default rate profile of 0.
 Profile 1 has a default rate profile of 1.

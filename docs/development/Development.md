@@ -34,7 +34,7 @@ Ideally, there should be tests for any new code. However, since this is a legacy
 
 If you want to make changes and want to make sure it's tested then focus on the minimal set of changes required to add a test.
 
-Tests currently live in the `test` folder and they use the google test framework. 
+Tests currently live in the `test` folder and they use the google test framework.
 The tests are compiled and run natively on your development machine and not on the target platform.
 This allows you to develop tests and code and actually execute it to make sure it works without needing a development board or simulator.
 
@@ -74,7 +74,7 @@ https://help.github.com/articles/creating-a-pull-request/
 
 The main flow for a contributing is as follows:
 
-1. Login to github, go to the cleanflight repository and press `fork`.
+1. Login to github, go to the INAV repository and press `fork`.
 2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
 3. `cd cleanflight`
 4. `git checkout master`
@@ -95,8 +95,6 @@ Later, you can get the changes from the cleanflight repo into your `master` bran
 3. `git fetch cleanflight`
 4. `git merge cleanflight/master`
 5. `git push origin master` is an optional step that will update your fork on github
- 
+
 
 You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
-
-

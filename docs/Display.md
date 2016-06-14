@@ -1,6 +1,6 @@
 # Display
 
-Cleanflight supports displays to provide information to you about your aircraft and cleanflight state.
+INAV supports displays to provide information to you about your aircraft and cleanflight state.
 
 When the aircraft is armed the display does not update so flight is not affected.  When disarmed the display cycles between various pages.
 
@@ -29,7 +29,7 @@ before they work.  Choose wisely!
 
 Links to displays:
 
- * [banggood.com](http://www.banggood.com/0_96-Inch-4Pin-White-IIC-I2C-OLED-Display-Module-12864-LED-For-Arduino-p-958196.html) 0.96 Inch 4Pin White IIC I2C OLED Display Module 12864 LED For Arduino 
+ * [banggood.com](http://www.banggood.com/0_96-Inch-4Pin-White-IIC-I2C-OLED-Display-Module-12864-LED-For-Arduino-p-958196.html) 0.96 Inch 4Pin White IIC I2C OLED Display Module 12864 LED For Arduino
  * [banggood.com](http://www.banggood.com/0_96-Inch-4Pin-IIC-I2C-Blue-OLED-Display-Module-For-Arduino-p-969147.html) 0.96 Inch 4Pin IIC I2C Blue OLED Display Module For Arduino
  * [wide.hk](http://www.wide.hk/products.php?product=I2C-0.96%22-OLED-display-module-%28-compatible-Arduino-%29) I2C 0.96" OLED display module
  * [witespyquad.gostorego.com](http://witespyquad.gostorego.com/accessories/readytofly-1-oled-128x64-pid-tuning-display-i2c.html) ReadyToFlyQuads 1" OLED Display
@@ -68,5 +68,3 @@ More can be read about this procedure here: http://www.multiwii.com/forum/viewto
 Connect +5v, Ground, I2C SDA and I2C SCL from the flight controller to the display.
 
 On Naze32 rev 5 boards the SDA and SCL pads are underneath the board.
-
-

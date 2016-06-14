@@ -6,7 +6,7 @@ The algorithm has been originally developed by Mohammad Hefny (mohammad.hefny@gm
 > http://diydrones.com/profiles/blogs/zero-pid-tunes-for-multirotors-part-2
 > http://www.multiwii.com/forum/viewtopic.php?f=8&t=5190
 
-The G-Tune functionality for Cleanflight is ported from the Harakiri firmware.
+The G-Tune functionality for INAV is ported from the Harakiri firmware.
 
 ## Safety preamble: _Use at your own risk_
 

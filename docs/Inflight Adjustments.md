@@ -1,6 +1,6 @@
 # In-flight Adjustments
 
-With Cleanflight it's possible to make adjustments to various settings by using AUX channels from your transmitter while the aircraft is flying.
+With INAV it's possible to make adjustments to various settings by using AUX channels from your transmitter while the aircraft is flying.
 
 ## Warning
 
@@ -12,7 +12,7 @@ Changing settings during flight can make your aircraft unstable and crash if you
 * Make small adjustments and fly carefully to test your adjustment.
 * Give yourself enough flying space and time to adjust to how your changes affect the behaviour of the aircraft.
 * Remember to set adjustment channel switches/pots to the center position before powering on your TX and your aircraft.
-* If possible configure switch warnings on your transitter for dedicated adjustment switches. 
+* If possible configure switch warnings on your transitter for dedicated adjustment switches.
 * A momentary 3 position switch is the best choice of switch for this - i.e. one that re-centers itself when you let go of it.
 
 ## Overview
@@ -51,7 +51,7 @@ When the switch is returned to the center position the value will not be increas
 Each time you can press the switch high/low and then return it to the middle the value will change at least once, you do not have to wait before pressing the switch again if you want to increase/decrease at a faster rate.  While the adjustment switch held is high/low, the adjustment function applies and increases/decreases the value being adjusted twice a second and the flight controller will beep shorter/longer, respectively. The system works similar to how a keyboard repeat delay works.
 
 Hint: With OpenTX transmitters you can combine two momentary OFF-ON switches to control a single channel.  You could make it so that a momentary switch on the left of your transmitter decreases the value and a momentary switch on the right increases the value.  Experiment with your mixer!
- 
+
 
 ## Configuration
 
@@ -62,7 +62,7 @@ The CLI command `adjrange` is used to configure adjustment ranges.
 
 Show the current ranges using:
 
-`adjrange` 
+`adjrange`
 
 Configure a range using:
 
@@ -74,8 +74,8 @@ Configure a range using:
 | -------- | ----- |-------- |
 | Index | 0 - 11 | Select the adjustment range to configure |
 | Slot | 0 - 3 | Select the adjustment slot to use |
-| Range Channel | 0 based index, AUX1 = 0, AUX2 = 1 | The AUX channel to use to select an adjustment for a switch/pot | 
-| Range Start | 900 - 2100. Steps of 25, e.g. 900, 925, 950... | Start of range | 
+| Range Channel | 0 based index, AUX1 = 0, AUX2 = 1 | The AUX channel to use to select an adjustment for a switch/pot |
+| Range Start | 900 - 2100. Steps of 25, e.g. 900, 925, 950... | Start of range |
 | Range End | 900 - 2100 | End of range |
 | Adjustment function | 0 - 11 | See Adjustment function table |
 | Adjustment channel | 0 based index, AUX1 = 0, AUX2 = 1 | The channel that is controlled by a 3 Position switch/Pot |
@@ -86,7 +86,7 @@ Normally Range Channel and Slot values are grouped together over multiple adjust
 
 The Range Channel and the Adjustment Channel can be the same channel.  This is useful when you want a single 3 Position switch to be dedicated
 to a single adjustment function regardless of other switch positions.
- 
+
 The adjustment function is applied to the adjustment channel when range channel is between the range values.
 The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
 

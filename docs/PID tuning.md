@@ -61,15 +61,15 @@ If you are getting oscillations starting at say 3/4 throttle, set tpa breakpoint
 
 ## PID controllers
 
-Cleanflight has 3 built-in PID controllers which each have different flight behavior. Each controller requires
+INAV has 3 built-in PID controllers which each have different flight behavior. Each controller requires
 different PID settings for best performance, so if you tune your craft using one PID controller, those settings will
 likely not work well on any of the other controllers.
 
-You can change between PID controllers by running `set pid_controller=x` on the CLI tab of the Cleanflight
+You can change between PID controllers by running `set pid_controller=x` on the CLI tab of the INAV
 Configurator, where `x` is the controller you want to use. Please read these notes first before trying one
 out.
 
-Note that older Cleanflight versions had 6 pid controllers, experimental and old ones were removed in 1.11.0 / API 1.14.0.
+Note that older INAV versions had 6 pid controllers, experimental and old ones were removed in 1.11.0 / API 1.14.0.
 
 ### PID controller "MW23"
 
@@ -77,14 +77,14 @@ This PID Controller is a direct port of the PID controller from MultiWii 2.3 and
 
 The algorithm is handling roll and pitch differently to yaw. Users with problems on yaw authority should try this one.
 
-In Horizon and Angle modes, this controller uses both the LEVEL "P" and "I" settings in order to tune the 
+In Horizon and Angle modes, this controller uses both the LEVEL "P" and "I" settings in order to tune the
 auto-leveling corrections in a similar way to the way that P and I settings are applied to roll and yaw axes in the acro
 flight modes. The LEVEL "D" term is used as a limiter to constrain the maximum correction applied by the LEVEL "P" term.
 
 ### PID controller "MWREWRITE"
 
 This is a newer PID controller that is derived from the one in MultiWii 2.3 and later. It works better from
-all accounts, and fixes some inherent problems in the way the old one worked. From reports, tuning is apparently easier, 
+all accounts, and fixes some inherent problems in the way the old one worked. From reports, tuning is apparently easier,
 and it tolerates a wider range of PID values well.
 
 In Angle mode, this controller uses the LEVEL "P" PID setting to decide how strong the auto-level correction should
@@ -98,7 +98,7 @@ This is a new floating point based PID controller. MW23 and MWREWRITE use intege
 slower 8-bit MultiWii controllers, but is less precise.
 
 This controller has code that attempts to compensate for variations in the looptime, which should mean that the PIDs
-don't have to be retuned when the looptime setting changes. 
+don't have to be retuned when the looptime setting changes.
 
 There were initially some problems with horizon mode, and sluggishness in acro mode, that were recently fixed by
 nebbian in v1.6.0.
@@ -115,9 +115,9 @@ the Angle mode. Note: There is currently a bug in the Configurator which shows t
 shows as 0.03 rather than 3.0).
 
 The transition between self-leveling and acro behavior in Horizon mode is controlled by the "sensitivity_horizon"
-parameter which is labeled "LEVEL Derivative" in the Cleanflight Configurator GUI. This sets the percentage of your
+parameter which is labeled "LEVEL Derivative" in the INAV Configurator GUI. This sets the percentage of your
 stick travel that should have self-leveling applied to it, so smaller values cause more of the stick area to fly using
-only the gyros. The default is 75% 
+only the gyros. The default is 75%
 
 For example, at a setting of "100" for "sensitivity_horizon", 100% self-leveling strength will be applied at center
 stick, 50% self-leveling will be applied at 50% stick, and no self-leveling will be applied at 100% stick. If
@@ -128,7 +128,7 @@ stick, and no self-leveling will be applied at 75% stick and onwards.
 
 ### RC Rate
 
-An overall multiplier on the RC stick inputs for pitch, rol;, and yaw. 
+An overall multiplier on the RC stick inputs for pitch, rol;, and yaw.
 
 On PID Controller MW23 can be used to set the "feel" around center stick for small control movements. (RC Expo also affects this).For PID Controllers MWREWRITE and LUX, this basically sets the baseline stick sensitivity
 

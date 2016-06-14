@@ -1,20 +1,20 @@
 # Getting Started
 
-This is a step-by-step guide that can help a person that has never used Cleanflight before set up a flight controller and the aircraft around it for flight. Basic RC knowledge is required, though. A total beginner should first familiarize themselves with concepts and techniques of RC before using this (e.g. basic controls, soldering, transmitter operation etc). One could use [RCGroups](http://www.rcgroups.com/forums/index.php) and/or [the Youtube show FliteTest](https://www.youtube.com/user/flitetest) for this.
+This is a step-by-step guide that can help a person that has never used INAV before set up a flight controller and the aircraft around it for flight. Basic RC knowledge is required, though. A total beginner should first familiarize themselves with concepts and techniques of RC before using this (e.g. basic controls, soldering, transmitter operation etc). One could use [RCGroups](http://www.rcgroups.com/forums/index.php) and/or [the Youtube show FliteTest](https://www.youtube.com/user/flitetest) for this.
 
 DISCLAIMER: This documents is a work in progress. We cannot guarantee the safety or success of your project. At this point the document is only meant to be a helping guide, not an authoritative checklist of everything you should do to be safe and successful. Always exercise common sense, critical thinking and caution.
 
-Read the [Introduction](Introduction.md) chapter for an overview of Cleanflight and how the community works.
+Read the [Introduction](Introduction.md) chapter for an overview of INAV and how the community works.
 
 ## Hardware
 
 NOTE: Flight Controllers are typically equipped with accelerometers. These devices are sensitive to shocks. When the device is not yet installed  to an aircraft, it has very little mass by itself. If you drop or bump the controller, a big force will be applied on its accelerometers, which could potentially damage them. Bottom line: Handle the board very carefully until it's installed on an aircraft!
 
-For an overview of the hardware Cleanflight (hereby CF) can run on, see [Boards.md](Boards.md). For information about specific boards, see the board specific documentation.
+For an overview of the hardware INAV (hereby CF) can run on, see [Boards.md](Boards.md). For information about specific boards, see the board specific documentation.
 
 * Assuming that you have a flight controller board (hereby FC) in hand, you should first read through the manual that it came with. You can skip the details about software setup, as we'll cover that here.
 
-* Decide how you'll connect your receiver by reading the [receiver](Rx.md) chapter, and how many pins you need on the outputs (to connect ESCs and servos) by reading about [Mixers](Mixer.md). 
+* Decide how you'll connect your receiver by reading the [receiver](Rx.md) chapter, and how many pins you need on the outputs (to connect ESCs and servos) by reading about [Mixers](Mixer.md).
 
 * If you're interested in monitoring your flight battery with CF, see [Battery Monitoring](Battery.md).
 
@@ -32,11 +32,11 @@ For an overview of the hardware Cleanflight (hereby CF) can run on, see [Boards.
 
 ## Software setup
 
-Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [Cleanflight Configurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) to it, and start it.
+Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [INAV Configurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) to it, and start it.
 
 Then follow these instructions for [Installation](Installation.md) of the firmware to the FC.
 
-## Cleanflight Configuration
+## INAV Configuration
 
 Your FC should now be running CF, and you should be able to connect to it using the Configurator. If that is not the case, please go back to the previous sections and follow the steps carefully.
 
@@ -49,7 +49,7 @@ Now, there are two ways to [configure CF](Configuration.md); via  the Configurat
 
 * On your PC, connect to the Configurator, and go to the first tab. Check that the board animation is moving properly when you move the actual board. Do an accelerometer calibration.
 
-* Configuration tab: Select your aircraft configuration (e.g. Quad X), and go through each option in the tab to check if relevant for you. 
+* Configuration tab: Select your aircraft configuration (e.g. Quad X), and go through each option in the tab to check if relevant for you.
 
   * E.g. you may want to enable ONESHOT125 for Oneshot-capable ESCs.
   * You may need RX_PPM if you're using an RC Receiver with PPM output etc.
@@ -64,11 +64,11 @@ Now, there are two ways to [configure CF](Configuration.md); via  the Configurat
     * Minimum Command - This is the "idle" signal level that will be sent to the ESCs when the craft is disarmed, which should not cause the motors to spin. A typical value would be 1000.
   * Finally, click Save and Reboot.
 
-* Receiver tab: 
-    * Check that the channel inputs move according to your Tx inputs. 
+* Receiver tab:
+    * Check that the channel inputs move according to your Tx inputs.
     * Check that the Channel map is correct along with the RSSI Channel, if you use that.
     * Verify the range of each channel goes from ~1000 to ~2000.  See also [controls](Controls.md). and `rx_min_usec` and `rx_max_usec`.
-    * You can also set EXPO here instead of your Tx. 
+    * You can also set EXPO here instead of your Tx.
     * Click Save!
 * Modes tab: Setup the desired modes. See the [modes](Modes.md) chapter for what each mode does, but for the beginning you mainly need HORIZON, if any.
 
@@ -105,4 +105,3 @@ Some advanced configurations and features are documented in the following pages,
 * [Telemetry](Telemetry.md)
 * [Using a Display](Display.md)
 * [Using a LED strip](LedStrip.md)
-* [Migrating from baseflight](Migrating from baseflight.md)

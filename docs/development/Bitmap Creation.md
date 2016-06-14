@@ -1,6 +1,6 @@
 # Bitmaps
 
-The bitmapDecompress function in Cleanflight is currently designed to work with RLE compressed monochrome bitmaps.
+The bitmapDecompress function in INAV is currently designed to work with RLE compressed monochrome bitmaps.
 
 ## Image format
 
@@ -14,7 +14,7 @@ Example Photoshop new image settings:
 
 ## Compression and HEX conversion
 
-Your new bitmap file will need to be converted to run-length encoding compressed hexidecimal. The [Gabotronics Image to HEX Converter v1.03](http://www.gabotronics.com/download/resources/bmp-converter.zip) works very nicely for this. 
+Your new bitmap file will need to be converted to run-length encoding compressed hexidecimal. The [Gabotronics Image to HEX Converter v1.03](http://www.gabotronics.com/download/resources/bmp-converter.zip) works very nicely for this.
 The proper settings are shown in the screenshot below:
 
 ![Photoshop](assets/gabotronics.jpg)

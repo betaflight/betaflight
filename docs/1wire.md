@@ -26,7 +26,7 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
 ## Usage
 
-  - Plug in the USB cable and connect to your board with the CleanFlight configurator.
+  - Plug in the USB cable and connect to your board with the INAV configurator.
 
     - For boards without a built in USB/UART adapter, you'll need to plug an external one in. Here is how you wire up the CC3D. Plug your USB/UART adapter into the Flexi port:
 
@@ -34,9 +34,9 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
   - Open the BlHeli Suite.
 
-  - Ensure you have selected the correct Atmel or SILABS "Cleanflight" option under the "Select ATMEL / SILABS Interface" menu option.
+  - Ensure you have selected the correct Atmel or SILABS "INAV" option under the "Select ATMEL / SILABS Interface" menu option.
 
-  - Ensure you have port for your external USB/UART adapter selected, if you're using one, otherwise pick the same COM port that you normally use for Cleanflight.
+  - Ensure you have port for your external USB/UART adapter selected, if you're using one, otherwise pick the same COM port that you normally use for INAV.
 
   - Click "Connect" and wait for the connection to complete. If you get a COM error, hit connect again. It will probably work.
 

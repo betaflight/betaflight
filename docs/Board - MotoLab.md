@@ -25,7 +25,7 @@ Both boards use the STM32F303 microcontroller and have the following features:
 
 # Flashing
 
-The MotoLab boards use the internal DFU USB interface on the STM32F3 microcontroller which is not compatible with the Cleanflight configurator flashing tool.
+The MotoLab boards use the internal DFU USB interface on the STM32F3 microcontroller which is not compatible with the INAV configurator flashing tool.
 
 Instead, on Windows you can use the Impulse Flashing Utility from ImpulseRC, available here:
 
@@ -91,7 +91,7 @@ make TARGET=MOTOLAB clean
 make TARGET=MOTOLAB binary
 ```
 
-To completely erase the flash, create an all-zero file with this command on linux: 
+To completely erase the flash, create an all-zero file with this command on linux:
 ```
 dd if=/dev/zero of=zero.bin bs=1 count=262144
 ```
@@ -99,4 +99,3 @@ dd if=/dev/zero of=zero.bin bs=1 count=262144
 ## Todo
 
 Pinout documentation
-

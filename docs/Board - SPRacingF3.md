@@ -1,6 +1,6 @@
 # Board - SPRacingF3
 
-The Seriously Pro Racing MOF3 board (SPRacingF3) is the first board designed specifically for Cleanflight.
+The Seriously Pro Racing MOF3 board (SPRacingF3) is the first board designed specifically for INAV.
 
 Full details available on the website, here:
 
@@ -18,7 +18,7 @@ http://seriouslypro.com/spracingf3
 * Dedicated I2C port for connection of OLED display without needing flight battery.
 * Battery monitoring ports for voltage and current.
 * Buzzer port for audible warnings and notifications.
-* Solder pads in addition to connectors for Sonar, PPM, RSSI, Current, GPIO, LED Strip, 3.3v, 
+* Solder pads in addition to connectors for Sonar, PPM, RSSI, Current, GPIO, LED Strip, 3.3v,
 * Developer friendly debugging port (SWD) and boot mode selection, unbrickable bootloader.
 * Symmetrical design for a super tidy wiring.
 * Wire up using using pin headers, JST-SH sockets or solder pads. Use either right-angled or straight pin-headers.
@@ -63,9 +63,9 @@ When RX_PPM/RX_SERIAL is used the IO_1 pinout is as follows.
 | 1   | Ground         |                                              |
 | 2   | VCC_IN         | Voltage as-supplied by BEC.                  |
 | 3   | RX_PPM         | Enable `feature RX_PPM`                      |
-| 4   | GPIO           |                                              | 
-| 5   | SoftSerial1_RX |                                              | 
-| 6   | SoftSerial1_TX |                                              | 
+| 4   | GPIO           |                                              |
+| 5   | SoftSerial1_RX |                                              |
+| 6   | SoftSerial1_TX |                                              |
 | 7   | LED_STRIP      | Enable `feature LED_STRIP`                   |
 | 8   | VCC            | 3.3v output for LOW CURRENT application only |
 
@@ -91,9 +91,9 @@ When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 | 1   | Ground                    |                                              |
 | 2   | VCC_IN                    | Voltage as-supplied by BEC.                  |
 | 3   | RX_SERIAL                 | UART3 RX                                     |
-| 4   |                           | UART3_TX                                     | 
-| 5   | SONAR_TRIG/SoftSerial2_RX | Enable `feature SONAR/SOFTSERIAL`     | 
-| 6   | SONAR_ECHO/SoftSerial2_TX | Enable `feature SONAR/SOFTSERIAL`     | 
+| 4   |                           | UART3_TX                                     |
+| 5   | SONAR_TRIG/SoftSerial2_RX | Enable `feature SONAR/SOFTSERIAL`     |
+| 6   | SONAR_ECHO/SoftSerial2_TX | Enable `feature SONAR/SOFTSERIAL`     |
 | 7   | ADC_1                     | Current Sensor                               |
 | 8   | ADC_2                     | RSSI                                         |
 
@@ -125,4 +125,3 @@ The port cannot be used at the same time as UART2.
 | 2   | NRST           | Voltage as-supplied by BEC OR USB, always on |
 | 3   | SWDIO          |                                              |
 | 4   | SWDCLK         |                                              |
-

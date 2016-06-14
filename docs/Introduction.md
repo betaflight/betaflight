@@ -1,10 +1,10 @@
-# Cleanflight
+# INAV
 
-![Cleanflight](assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
+![INAV](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088858-102-inav.png)
 
 Welcome to CleanFlight!
 
-Cleanflight is an community project which attempts to deliver flight controller firmware and related tools.
+INAV is an community project which attempts to deliver flight controller firmware and related tools.
 
 ## Primary Goals
 

@@ -1,6 +1,6 @@
 # Board - CJMCU
 
-The CJMCU is a tiny (80mm) board running a STM32F103, which contains a 3-Axis Compass (HMC5883L) 
+The CJMCU is a tiny (80mm) board running a STM32F103, which contains a 3-Axis Compass (HMC5883L)
 and an Accelerometer/Gyro (MPU6050).
 
 This board does not have an onboard USB-Serial converter, so an external adapter is needed.
@@ -60,7 +60,7 @@ USART2 is the following pins.
 
 In standard QUADX configuration, the motors are mapped:
 
-| Cleanflight | CJMCU  |
+| INAV | CJMCU  |
 | ----------- | ------ |
 | Motor 1     | Motor3 |
 | Motor 2     | Motor2 |
@@ -89,19 +89,19 @@ You will need a USB -> Serial UART adapter. Connect:
 | RX                | TX                         |
 | TX                | RX                         |
 
-When first connected this should power up the board, and will be in bootloader mode. If this does not happen, check 
+When first connected this should power up the board, and will be in bootloader mode. If this does not happen, check
 the charge switch is set to POW.
-After the flashing process has been completed, this will allow access via the cleanflight configurator to change 
+After the flashing process has been completed, this will allow access via the INAV configurator to change 
 settings or flash a new firmware.
 
-WARNING: If the motors are connected and the board boots into the bootloader, they will start 
+WARNING: If the motors are connected and the board boots into the bootloader, they will start
 to spin after around 20 seconds, it is recommended not to connect the motors until the board
 is flashed.
 
 # Flashing
 
 To flash the board:
- * Open Cleanflight Configurator
+ * Open INAV Configurator
  * Choose the latest CJMCU firmware from the list.
  * Select "Load Firmware [Online]" and wait for the firmware to download.
  * Tick "No Reboot Sequence" and "Full Chip Erase"
@@ -138,8 +138,7 @@ The two nearby LEDs will show the status of charging:
 
 # Helpful Hints
 
- * If you are only using a 4 channel RX, in the auxiliary configuration tab, you can add a "Horizon" mode range around 1500 
+ * If you are only using a 4 channel RX, in the auxiliary configuration tab, you can add a "Horizon" mode range around 1500
  for one of the the AUX channels which will result in it being always on
  * Enabling the feature MOTOR_STOP helps with crashes so it doesn't try to keep spinning on its back
  * When the power runs low, the quad will start jumping around a bit, if the flight behaviour seems strange, check your batteries charge
-

@@ -10,7 +10,7 @@ The Sparky is a very low cost and very powerful board.
 * MPU9150 I2C Acc/Gyro/Mag
 * Baro
 
-Tested with revision 1 & 2 boards. 
+Tested with revision 1 & 2 boards.
 
 ## TODO
 
@@ -43,7 +43,7 @@ https://github.com/cleanflight/cleanflight/releases and store it on your Hardriv
 
 In your DfuSE folder go to BIN and start DfuFileMgr.exe
 Select: "I want to GENERATE a DFUfile from S19,HEX or BIN files" press OK
-Press: "S19 or Hex.." 
+Press: "S19 or Hex.."
 Go to the folder where you saved the cleanflight_SPARKY.hex file, select it  and press open
 (you might need to change the filetype in the DfuSE explorer window to "hex Files (*.hex)" to be able to see the file)
 Press: "Generate" and select the .dfu output file and location
@@ -74,7 +74,7 @@ The status bar will show the upload progress and confirm that the upload is comp
 
 ```
 
-Disconnect and reconnect the board from USB and continue to configure it via the Cleanflight configurator as per normal
+Disconnect and reconnect the board from USB and continue to configure it via the INAV configurator as per normal
 
 
 ## Via Device Firmware Upload (DFU, USB) - Mac OS X / Linux
@@ -146,7 +146,7 @@ Resetting USB to switch back to runtime mode
 ```
 On Linux you might want to take care that the modemmanager isn't trying to use your sparky as modem getting it into bootloader mode while doing so. In doubt you probably want to uninstall it. It could also be good idea to get udev fixed. It looks like teensy did just that -> http://www.pjrc.com/teensy/49-teensy.rules (untested)
 
-To make a full chip erase you can use a file created by 
+To make a full chip erase you can use a file created by
 ```
 dd if=/dev/zero of=zero.bin bs=1 count=262144
 ```
@@ -196,12 +196,12 @@ WARNING: Double check the output of your voltage divider using a voltmeter *befo
 For a 3Cell battery divider the following circuit works:
 
 `Battery (+) ---< R1 >--- PWM9 ---< R2 >--- Battery (-)`
- 
+
 * R1 = 8k2 (Grey Red Red)
 * R2 = 2k0 (Red Black Red)
- 
+
 This gives a 2.2k for an 11.2v battery.  The `vbat_scale` for this divider should be set around `52`.
 
 ## Current Monitoring
 
-Connect a current sensor to PWM8/PA7 that gives a range between 0v and 3.3v out (MAX). 
+Connect a current sensor to PWM8/PA7 that gives a range between 0v and 3.3v out (MAX).
