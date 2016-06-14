@@ -50,7 +50,7 @@ OBJECT_DIR      = $(ROOT)/obj/main
 BIN_DIR         = $(ROOT)/obj
 CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
-				  $(ROOT)/src/main/target
+                  $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target
 
 # default xtal value for F4 targets
@@ -65,18 +65,18 @@ OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
-VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)  
+VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
 else
-BASE_TARGET	   := $(TARGET)
+BASE_TARGET    := $(TARGET)
 endif
 
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
-OPBL 			= yes
+OPBL            = yes
 endif
 
 # silently ignore if the file is not present. Allows for target specific.
@@ -92,8 +92,8 @@ ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)),)
 $(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, or F411. Have you prepared a valid target.mk?)
 endif
 
-128K_TARGETS  = $(F1_TARGETS) 
-256K_TARGETS  = $(F3_TARGETS) 
+128K_TARGETS  = $(F1_TARGETS)
+256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS)
 1024K_TARGETS = $(F405_TARGETS)
 
@@ -143,34 +143,34 @@ ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f30x_crc.c \
-				  stm32f30x_can.c
+                  stm32f30x_can.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 VPATH           := $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
-				  $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
+                  $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(STDPERIPH_DIR)/inc \
-				   $(CMSIS_DIR)/CM1/CoreSupport \
-				   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+                   $(STDPERIPH_DIR)/inc \
+                   $(CMSIS_DIR)/CM1/CoreSupport \
+                   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(USBFS_DIR)/inc \
-				   $(ROOT)/src/main/vcp
+                   $(USBFS_DIR)/inc \
+                   $(ROOT)/src/main/vcp
 
 VPATH           := $(VPATH):$(USBFS_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC)\
-						$(USBPERIPH_SRC)
+                        $(USBPERIPH_SRC)
 endif
 
 ifneq ($(filter SDCARD, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(FATFS_DIR) \
+                   $(FATFS_DIR) \
 
 VPATH           := $(VPATH):$(FATFS_DIR)
 endif
@@ -189,25 +189,25 @@ else ifeq ($(TARGET),$(filter $(TARGET), $(F4_TARGETS)))
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4xx_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f4xx_crc.c \
-				  stm32f4xx_can.c \
-				  stm32f4xx_fmc.c \
-				  stm32f4xx_sai.c \
-				  stm32f4xx_cec.c \
-				  stm32f4xx_dsi.c \
-				  stm32f4xx_flash_ramfunc.c \
-				  stm32f4xx_fmpi2c.c \
-				  stm32f4xx_lptim.c \
-				  stm32f4xx_qspi.c \
-				  stm32f4xx_spdifrx.c \
-				  stm32f4xx_cryp.c \
-				  stm32f4xx_cryp_aes.c \
-				  stm32f4xx_hash_md5.c \
-				  stm32f4xx_cryp_des.c \
-				  stm32f4xx_rtc.c \
-				  stm32f4xx_hash.c \
-				  stm32f4xx_dbgmcu.c \
-				  stm32f4xx_cryp_tdes.c \
-				  stm32f4xx_hash_sha1.c
+                  stm32f4xx_can.c \
+                  stm32f4xx_fmc.c \
+                  stm32f4xx_sai.c \
+                  stm32f4xx_cec.c \
+                  stm32f4xx_dsi.c \
+                  stm32f4xx_flash_ramfunc.c \
+                  stm32f4xx_fmpi2c.c \
+                  stm32f4xx_lptim.c \
+                  stm32f4xx_qspi.c \
+                  stm32f4xx_spdifrx.c \
+                  stm32f4xx_cryp.c \
+                  stm32f4xx_cryp_aes.c \
+                  stm32f4xx_hash_md5.c \
+                  stm32f4xx_cryp_des.c \
+                  stm32f4xx_rtc.c \
+                  stm32f4xx_hash.c \
+                  stm32f4xx_dbgmcu.c \
+                  stm32f4xx_cryp_tdes.c \
+                  stm32f4xx_hash_sha1.c
 
 
 ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
@@ -222,10 +222,10 @@ USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
 USBOTG_DIR  = $(ROOT)/lib/main/STM32_USB_OTG_Driver
 USBOTG_SRC  = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
 EXCLUDES    = usb_bsp_template.c \
-			  usb_conf_template.c \
-			  usb_hcd_int.c \
-			  usb_hcd.c \
-			  usb_otg.c
+              usb_conf_template.c \
+              usb_hcd_int.c \
+              usb_hcd.c \
+              usb_otg.c
 
 USBOTG_SRC  := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
 USBCDC_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/cdc
@@ -235,27 +235,27 @@ USBCDC_SRC  := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 VPATH       := $(VPATH):$(USBOTG_DIR)/src:$(USBCORE_DIR)/src:$(USBCDC_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
-						$(USBOTG_SRC) \
-						$(USBCORE_SRC) \
-						$(USBCDC_SRC)
+                        $(USBOTG_SRC) \
+                        $(USBCORE_SRC) \
+                        $(USBCDC_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
-				  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
+                  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(STDPERIPH_DIR)/inc \
-				   $(USBOTG_DIR)/inc \
-				   $(USBCORE_DIR)/inc \
-				   $(USBCDC_DIR)/inc \
-				   $(USBFS_DIR)/inc \
-				   $(CMSIS_DIR)/CM4/CoreSupport \
-				   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
-				   $(ROOT)/src/main/vcpf4
+                   $(STDPERIPH_DIR)/inc \
+                   $(USBOTG_DIR)/inc \
+                   $(USBCORE_DIR)/inc \
+                   $(USBCDC_DIR)/inc \
+                   $(USBFS_DIR)/inc \
+                   $(CMSIS_DIR)/CM4/CoreSupport \
+                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+                   $(ROOT)/src/main/vcpf4
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(FATFS_DIR)
+                   $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
@@ -282,32 +282,32 @@ else
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f10x_crc.c \
-				  stm32f10x_cec.c \
-				  stm32f10x_can.c
+                  stm32f10x_cec.c \
+                  stm32f10x_can.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 # Search path and source files for the CMSIS sources
 VPATH           := $(VPATH):$(CMSIS_DIR)/CM3/CoreSupport:$(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
-				  $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
+                  $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(STDPERIPH_DIR)/inc \
-				   $(CMSIS_DIR)/CM3/CoreSupport \
-				   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+                   $(STDPERIPH_DIR)/inc \
+                   $(CMSIS_DIR)/CM3/CoreSupport \
+                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(USBFS_DIR)/inc \
-				   $(ROOT)/src/main/vcp
+                   $(USBFS_DIR)/inc \
+                   $(ROOT)/src/main/vcp
 
 VPATH           := $(VPATH):$(USBFS_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
-						$(USBPERIPH_SRC)
+                        $(USBPERIPH_SRC)
 
 endif
 
@@ -316,7 +316,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS   := -D$(TARGET) -pedantic $(TARGET_FLAGS)
 
 ifeq ($(DEVICE_FLAGS),)
-DEVICE_FLAGS    = -DSTM32F10X_MD 
+DEVICE_FLAGS    = -DSTM32F10X_MD
 endif
 DEVICE_FLAGS   += -DSTM32F10X
 
@@ -352,155 +352,155 @@ else
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-				   $(TARGET_DIR)
+                   $(TARGET_DIR)
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 COMMON_SRC = \
-			build_config.c \
-			debug.c \
-			version.c \
-			$(TARGET_DIR_SRC) \
-			main.c \
-			mw.c \
-			scheduler.c \
-			scheduler_tasks.c \
-			common/encoding.c \
-			common/filter.c \
-			common/maths.c \
-			common/printf.c \
-			common/typeconversion.c \
-			config/config.c \
-			config/runtime_config.c \
-			drivers/adc.c \
-			drivers/buf_writer.c \
-			drivers/bus_i2c_soft.c \
-			drivers/bus_spi.c \
-			drivers/exti.c \
-			drivers/gyro_sync.c \
-			drivers/io.c \
-			drivers/light_led.c \
-			drivers/pwm_mapping.c \
-			drivers/pwm_output.c \
-			drivers/pwm_rx.c \
-			drivers/rcc.c \
-			drivers/serial.c \
-			drivers/serial_uart.c \
-			drivers/sound_beeper.c \
-			drivers/system.c \
-			drivers/timer.c \
-			flight/altitudehold.c \
-			flight/failsafe.c \
-			flight/imu.c \
-			flight/mixer.c \
-			flight/pid.c \
-			io/beeper.c \
-			io/rc_controls.c \
-			io/rc_curves.c \
-			io/serial.c \
-			io/serial_4way.c \
-			io/serial_4way_avrootloader.c \
-			io/serial_4way_stk500v2.c \
-			io/serial_cli.c \
-			io/serial_msp.c \
-			io/statusindicator.c \
-			rx/ibus.c \
-			rx/jetiexbus.c \
-			rx/msp.c \
-			rx/pwm.c \
-			rx/rx.c \
-			rx/sbus.c \
-			rx/spektrum.c \
-			rx/sumd.c \
-			rx/sumh.c \
-			rx/xbus.c \
-			sensors/acceleration.c \
-			sensors/battery.c \
-			sensors/boardalignment.c \
-			sensors/compass.c \
-			sensors/gyro.c \
-			sensors/initialisation.c \
-			$(CMSIS_SRC) \
-			$(DEVICE_STDPERIPH_SRC)
+            build_config.c \
+            debug.c \
+            version.c \
+            $(TARGET_DIR_SRC) \
+            main.c \
+            mw.c \
+            scheduler.c \
+            scheduler_tasks.c \
+            common/encoding.c \
+            common/filter.c \
+            common/maths.c \
+            common/printf.c \
+            common/typeconversion.c \
+            config/config.c \
+            config/runtime_config.c \
+            drivers/adc.c \
+            drivers/buf_writer.c \
+            drivers/bus_i2c_soft.c \
+            drivers/bus_spi.c \
+            drivers/exti.c \
+            drivers/gyro_sync.c \
+            drivers/io.c \
+            drivers/light_led.c \
+            drivers/pwm_mapping.c \
+            drivers/pwm_output.c \
+            drivers/pwm_rx.c \
+            drivers/rcc.c \
+            drivers/serial.c \
+            drivers/serial_uart.c \
+            drivers/sound_beeper.c \
+            drivers/system.c \
+            drivers/timer.c \
+            flight/altitudehold.c \
+            flight/failsafe.c \
+            flight/imu.c \
+            flight/mixer.c \
+            flight/pid.c \
+            io/beeper.c \
+            io/rc_controls.c \
+            io/rc_curves.c \
+            io/serial.c \
+            io/serial_4way.c \
+            io/serial_4way_avrootloader.c \
+            io/serial_4way_stk500v2.c \
+            io/serial_cli.c \
+            io/serial_msp.c \
+            io/statusindicator.c \
+            rx/ibus.c \
+            rx/jetiexbus.c \
+            rx/msp.c \
+            rx/pwm.c \
+            rx/rx.c \
+            rx/sbus.c \
+            rx/spektrum.c \
+            rx/sumd.c \
+            rx/sumh.c \
+            rx/xbus.c \
+            sensors/acceleration.c \
+            sensors/battery.c \
+            sensors/boardalignment.c \
+            sensors/compass.c \
+            sensors/gyro.c \
+            sensors/initialisation.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC)
 
 HIGHEND_SRC = \
-			blackbox/blackbox.c \
-			blackbox/blackbox_io.c \
-			common/colorconversion.c \
-			drivers/display_ug2864hsweg01.c \
-			flight/gtune.c \
-			flight/navigation.c \
-			flight/gps_conversion.c \
-			io/gps.c \
-			io/ledstrip.c \
-			io/display.c \
-			sensors/sonar.c \
-			sensors/barometer.c \
-			telemetry/telemetry.c \
-			telemetry/frsky.c \
-			telemetry/hott.c \
-			telemetry/smartport.c \
-			telemetry/ltm.c
+            blackbox/blackbox.c \
+            blackbox/blackbox_io.c \
+            common/colorconversion.c \
+            drivers/display_ug2864hsweg01.c \
+            flight/gtune.c \
+            flight/navigation.c \
+            flight/gps_conversion.c \
+            io/gps.c \
+            io/ledstrip.c \
+            io/display.c \
+            sensors/sonar.c \
+            sensors/barometer.c \
+            telemetry/telemetry.c \
+            telemetry/frsky.c \
+            telemetry/hott.c \
+            telemetry/smartport.c \
+            telemetry/ltm.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
-			vcpf4/stm32f4xx_it.c \
-			vcpf4/usb_bsp.c \
-			vcpf4/usbd_desc.c \
-			vcpf4/usbd_usr.c \
-			vcpf4/usbd_cdc_vcp.c \
-			drivers/serial_usb_vcp.c
+            vcpf4/stm32f4xx_it.c \
+            vcpf4/usb_bsp.c \
+            vcpf4/usbd_desc.c \
+            vcpf4/usbd_usr.c \
+            vcpf4/usbd_cdc_vcp.c \
+            drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
-			vcp/hw_config.c \
-			vcp/stm32_it.c \
-			vcp/usb_desc.c \
-			vcp/usb_endp.c \
-			vcp/usb_istr.c \
-			vcp/usb_prop.c \
-			vcp/usb_pwr.c \
-			drivers/serial_usb_vcp.c \
-			drivers/usb_io.c
+            vcp/hw_config.c \
+            vcp/stm32_it.c \
+            vcp/usb_desc.c \
+            vcp/usb_endp.c \
+            vcp/usb_istr.c \
+            vcp/usb_prop.c \
+            vcp/usb_pwr.c \
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 endif
 
 STM32F10x_COMMON_SRC = \
-			startup_stm32f10x_md_gcc.S \
-			drivers/adc_stm32f10x.c \
-			drivers/bus_i2c_stm32f10x.c \
-			drivers/dma.c \
-			drivers/gpio_stm32f10x.c \
-			drivers/inverter.c \
-			drivers/serial_softserial.c \
-			drivers/serial_uart_stm32f10x.c \
-			drivers/system_stm32f10x.c \
-			drivers/timer_stm32f10x.c
+            startup_stm32f10x_md_gcc.S \
+            drivers/adc_stm32f10x.c \
+            drivers/bus_i2c_stm32f10x.c \
+            drivers/dma.c \
+            drivers/gpio_stm32f10x.c \
+            drivers/inverter.c \
+            drivers/serial_softserial.c \
+            drivers/serial_uart_stm32f10x.c \
+            drivers/system_stm32f10x.c \
+            drivers/timer_stm32f10x.c
 
 STM32F30x_COMMON_SRC = \
-			startup_stm32f30x_md_gcc.S \
-			target/system_stm32f30x.c \
-			drivers/adc_stm32f30x.c \
-			drivers/bus_i2c_stm32f30x.c \
-			drivers/dma.c \
-			drivers/gpio_stm32f30x.c \
-			drivers/light_ws2811strip_stm32f30x.c \
-			drivers/serial_uart_stm32f30x.c \
-			drivers/system_stm32f30x.c \
-			drivers/timer_stm32f30x.c
+            startup_stm32f30x_md_gcc.S \
+            target/system_stm32f30x.c \
+            drivers/adc_stm32f30x.c \
+            drivers/bus_i2c_stm32f30x.c \
+            drivers/dma.c \
+            drivers/gpio_stm32f30x.c \
+            drivers/light_ws2811strip_stm32f30x.c \
+            drivers/serial_uart_stm32f30x.c \
+            drivers/system_stm32f30x.c \
+            drivers/timer_stm32f30x.c
 
 STM32F4xx_COMMON_SRC = \
-			startup_stm32f40xx.s \
-			target/system_stm32f4xx.c \
-			drivers/accgyro_mpu.c \
-			drivers/adc_stm32f4xx.c \
-			drivers/adc_stm32f4xx.c \
-			drivers/bus_i2c_stm32f10x.c \
-			drivers/gpio_stm32f4xx.c \
-			drivers/inverter.c \
-			drivers/serial_softserial.c \
-			drivers/serial_uart_stm32f4xx.c \
-			drivers/system_stm32f4xx.c \
-			drivers/timer_stm32f4xx.c \
-			drivers/dma_stm32f4xx.c 
+            startup_stm32f40xx.s \
+            target/system_stm32f4xx.c \
+            drivers/accgyro_mpu.c \
+            drivers/adc_stm32f4xx.c \
+            drivers/adc_stm32f4xx.c \
+            drivers/bus_i2c_stm32f10x.c \
+            drivers/gpio_stm32f4xx.c \
+            drivers/inverter.c \
+            drivers/serial_softserial.c \
+            drivers/serial_uart_stm32f4xx.c \
+            drivers/system_stm32f4xx.c \
+            drivers/timer_stm32f4xx.c \
+            drivers/dma_stm32f4xx.c
 
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
@@ -513,24 +513,24 @@ endif
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 TARGET_SRC += \
-			drivers/flash_m25p16.c \
-			io/flashfs.c 
+            drivers/flash_m25p16.c \
+            io/flashfs.c
 endif
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS) $(F3_TARGETS)))
 TARGET_SRC += $(HIGHEND_SRC)
 else ifneq ($(filter HIGHEND,$(FEATURES)),)
-TARGET_SRC += $(HIGHEND_SRC) 
+TARGET_SRC += $(HIGHEND_SRC)
 endif
 
 TARGET_SRC += $(COMMON_SRC)
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
 TARGET_SRC += \
-			drivers/sdcard.c \
-			drivers/sdcard_standard.c \
-			io/asyncfatfs/asyncfatfs.c \
-			io/asyncfatfs/fat_standard.c
+            drivers/sdcard.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c
 endif
 
 ifneq ($(filter VCP,$(FEATURES)),)
@@ -566,50 +566,50 @@ endif
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
 CFLAGS      += $(ARCH_FLAGS) \
-			  $(LTO_FLAGS) \
-			  $(addprefix -D,$(OPTIONS)) \
-			  $(addprefix -I,$(INCLUDE_DIRS)) \
-			  $(DEBUG_FLAGS) \
-			  -std=gnu99 \
-			  -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
-			  -ffunction-sections \
-			  -fdata-sections \
-			  $(DEVICE_FLAGS) \
-			  -DUSE_STDPERIPH_DRIVER \
-			  $(TARGET_FLAGS) \
-			  -D'__FORKNAME__="$(FORKNAME)"' \
-			  -D'__TARGET__="$(TARGET)"' \
-			  -D'__REVISION__="$(REVISION)"' \
-			  -save-temps=obj \
-			  -MMD -MP
+              $(LTO_FLAGS) \
+              $(addprefix -D,$(OPTIONS)) \
+              $(addprefix -I,$(INCLUDE_DIRS)) \
+              $(DEBUG_FLAGS) \
+              -std=gnu99 \
+              -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -ffunction-sections \
+              -fdata-sections \
+              $(DEVICE_FLAGS) \
+              -DUSE_STDPERIPH_DRIVER \
+              $(TARGET_FLAGS) \
+              -D'__FORKNAME__="$(FORKNAME)"' \
+              -D'__TARGET__="$(TARGET)"' \
+              -D'__REVISION__="$(REVISION)"' \
+              -save-temps=obj \
+              -MMD -MP
 
 ASFLAGS     = $(ARCH_FLAGS) \
-			  -x assembler-with-cpp \
-			  $(addprefix -I,$(INCLUDE_DIRS)) \
-			  -MMD -MP
+              -x assembler-with-cpp \
+              $(addprefix -I,$(INCLUDE_DIRS)) \
+              -MMD -MP
 
 LDFLAGS     = -lm \
-			  -nostartfiles \
-			  --specs=nano.specs \
-			  -lc \
-			  -lnosys \
-			  $(ARCH_FLAGS) \
-			  $(LTO_FLAGS) \
-			  $(DEBUG_FLAGS) \
-			  -static \
-			  -Wl,-gc-sections,-Map,$(TARGET_MAP) \
-			  -Wl,-L$(LINKER_DIR) \
-			  -Wl,--cref \
-			  -T$(LD_SCRIPT)
+              -nostartfiles \
+              --specs=nano.specs \
+              -lc \
+              -lnosys \
+              $(ARCH_FLAGS) \
+              $(LTO_FLAGS) \
+              $(DEBUG_FLAGS) \
+              -static \
+              -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+              -Wl,-L$(LINKER_DIR) \
+              -Wl,--cref \
+              -T$(LD_SCRIPT)
 
 ###############################################################################
 # No user-serviceable parts below
 ###############################################################################
 
 CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
-				  --std=c99 --inline-suppr --quiet --force \
-				  $(addprefix -I,$(INCLUDE_DIRS)) \
-				  -I/usr/include -I/usr/include/linux
+                  --std=c99 --inline-suppr --quiet --force \
+                  $(addprefix -I,$(INCLUDE_DIRS)) \
+                  -I/usr/include -I/usr/include/linux
 
 #
 # Things we will build
@@ -638,7 +638,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_ELF):  $(TARGET_OBJS)
 	@echo LD $(notdir $@)
 	@$(CC) -o $@ $^ $(LDFLAGS)
-	$(SIZE) $(TARGET_ELF) 
+	$(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
@@ -659,7 +659,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 
 
 ## all               : default task; compile C code, build firmware
-all: 
+all:
 	for build_target in $(VALID_TARGETS); do \
 		echo "" && \
 		echo "Building $$build_target" && \
