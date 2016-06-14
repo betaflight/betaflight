@@ -1,5 +1,5 @@
-FEATURES     = VCP ONBOARDFLASH
 F3_TARGETS  += $(TARGET)
+FEATURES    = VCP ONBOARDFLASH
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -8,5 +8,4 @@ TARGET_SRC = \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_softserial.c \
             drivers/vtx_rtc6705.c
-
 

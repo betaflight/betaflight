@@ -1,5 +1,5 @@
-F405_TARGETS   += $(TARGET)
-FEATURES       += SDCARD VCP
+F405_TARGETS    += $(TARGET)
+FEATURES        += SDCARD VCP
 
 TARGET_SRC = \
             drivers/accgyro_mpu6500.c \
@@ -10,4 +10,5 @@ TARGET_SRC = \
             drivers/compass_ak8963.c \
             drivers/compass_hmc5883l.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f4xx.c 
+            drivers/light_ws2811strip_stm32f4xx.c
+

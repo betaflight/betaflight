@@ -1,5 +1,5 @@
-FEATURES     = ONBOARDFLASH HIGHEND VCP
 F1_TARGETS  += $(TARGET)
+FEATURES    = ONBOARDFLASH HIGHEND VCP
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -10,4 +10,5 @@ TARGET_SRC = \
             drivers/compass_hmc5883l.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f10x.c \
-            drivers/sonar_hcsr04.c 
+            drivers/sonar_hcsr04.c
+

@@ -1,5 +1,5 @@
-FLASH_SIZE = 64
-F1_TARGETS += $(TARGET)
+F1_TARGETS  += $(TARGET)
+FLASH_SIZE  = 64
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -8,4 +8,5 @@ TARGET_SRC = \
             hardware_revision.c \
             flight/gtune.c \
             blackbox/blackbox.c \
-            blackbox/blackbox_io.c 
+            blackbox/blackbox_io.c
+
