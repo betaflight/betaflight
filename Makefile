@@ -663,7 +663,6 @@ all:
 	for build_target in $(VALID_TARGETS); do \
 		echo "" && \
 		echo "Building $$build_target" && \
-		$(MAKE) -j TARGET=$$build_target clean && \
 		$(MAKE) -j binary hex TARGET=$$build_target || \
 		break; \
 		echo "Building $$build_target succeeded."; \
