@@ -27,7 +27,7 @@
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 
-#include "rtc6705.h"
+#include "vtx_soft_spi_rtc6705.h"
 
 #define RTC6705_SPICLK_ON        GPIO_SetBits(RTC6705_SPICLK_GPIO,   RTC6705_SPICLK_PIN)
 #define RTC6705_SPICLK_OFF       GPIO_ResetBits(RTC6705_SPICLK_GPIO, RTC6705_SPICLK_PIN)
@@ -57,7 +57,7 @@ uint16_t vtx_freq[] =
 
 uint16_t current_vtx_channel;
 
-void rtc6705_init(void) {
+void rtc6705_soft_spi_init(void) {
     gpio_config_t gpio;
 
 #ifdef STM32F303
@@ -99,7 +99,7 @@ void rtc6705_init(void) {
     gpioInit(RTC6705_SPIDATA_GPIO, &gpio);
 }
 
-void rtc6705_write_register(uint8_t addr, uint32_t data) {
+static void rtc6705_write_register(uint8_t addr, uint32_t data) {
     uint8_t i;
 
     RTC6705_SPILE_OFF;
@@ -137,7 +137,7 @@ void rtc6705_write_register(uint8_t addr, uint32_t data) {
 }
 
 
-void rtc6705_set_channel(uint16_t channel_freq) {
+void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
 
     uint32_t freq = (uint32_t)channel_freq * 1000;
     uint32_t N, A;

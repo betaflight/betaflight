@@ -1,5 +1,5 @@
-FEATURES    = VCP SDCARD MAX_OSD
 F3_TARGETS += $(TARGET)
+FEATURES    = VCP SDCARD MAX_OSD
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -12,5 +12,5 @@ TARGET_SRC = \
             drivers/flash_m25p16.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
-            drivers/rtc6705.c
+            drivers/vtx_soft_spi_rtc6705.c
 

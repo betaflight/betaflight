@@ -21,5 +21,5 @@ extern char* vtx_bands[];
 extern uint16_t vtx_freq[];
 extern uint16_t current_vtx_channel;
 
-void rtc6705_init(void);
-void rtc6705_set_channel(uint16_t channel_freq);
+void rtc6705_soft_spi_init(void);
+void rtc6705_soft_spi_set_channel(uint16_t channel_freq);

@@ -106,7 +106,11 @@
 #ifdef OSD
 
 #include "drivers/max7456.h"
-#include "drivers/rtc6705.h"
+
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
+
 #include "scheduler.h"
 #include "common/printf.h"
 
@@ -355,7 +359,7 @@ void print_batt_voltage(uint16_t pos, uint8_t col) {
     { "acro_plus_offset",           VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.acroPlusOffset, .config.minmax = {1, 90 } },
 */
 
-page_t menu_pages[] = {
+osd_page_t menu_pages[] = {
     {
         .title = "STATUS",
         .cols_number = 1,
@@ -475,8 +479,8 @@ page_t menu_pages[] = {
 void show_menu(void) {
     uint8_t line = 1;
     uint16_t pos;
-    col_t *col;
-    row_t *row;
+    osd_col_t *col;
+    osd_row_t *row;
     int16_t cursor_x = 0;
     int16_t cursor_y = 0;
 
@@ -498,13 +502,13 @@ void show_menu(void) {
 #ifdef USE_RTC6705
                     if (masterConfig.vtx_channel != current_vtx_channel) {
                         masterConfig.vtx_channel = current_vtx_channel;
-                        rtc6705_set_channel(vtx_freq[current_vtx_channel]);
+                        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
                     }
 #endif
                     writeEEPROM();
                     break;
                 case 2:
-                    if (current_page < (sizeof(menu_pages) / sizeof(page_t) - 1))
+                    if (current_page < (sizeof(menu_pages) / sizeof(osd_page_t) - 1))
                         current_page++;
                     else
                         current_page = 0;
@@ -700,9 +704,9 @@ void updateOsd(void)
 void osdInit(void)
 {
 #ifdef USE_RTC6705
-    rtc6705_init();
+    rtc6705_soft_spi_init();
     current_vtx_channel = masterConfig.vtx_channel;
-    rtc6705_set_channel(vtx_freq[current_vtx_channel]);
+    rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
 #endif
     max7456_init(masterConfig.osdProfile.system);
 

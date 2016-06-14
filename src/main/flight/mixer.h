@@ -187,8 +187,6 @@ void writeServos(void);
 void filterServos(void);
 #endif
 
-bool motorLimitReached;
-
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 bool motorLimitReached;

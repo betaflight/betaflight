@@ -21,21 +21,21 @@
 typedef struct {
     const char* title;
     uint8_t x_pos;
-} col_t;
+} osd_col_t;
 
 typedef struct {
     const char* title;
     void (*update)(bool increase, uint8_t col);
     void (*print)(uint16_t pos, uint8_t col);
-} row_t;
+} osd_row_t;
 
 typedef struct {
     const char* title;
     uint8_t     cols_number;
     uint8_t     rows_number;
-    col_t       cols[MAX_MENU_COLS];
-    row_t       rows[MAX_MENU_ROWS];
-} page_t;
+    osd_col_t       cols[MAX_MENU_COLS];
+    osd_row_t       rows[MAX_MENU_ROWS];
+} osd_page_t;
 
 
 typedef enum {
@@ -49,7 +49,7 @@ typedef enum {
     OSD_ARMED,
     OSD_DISARMED,
     OSD_MAX_ITEMS, // MUST BE LAST
-} osd_items;
+} osd_items_t;
 
 
 typedef struct {

@@ -419,20 +419,8 @@ static void resetConf(void)
     featureSet(DEFAULT_FEATURES);
 #endif
 
-#ifdef SIRINFPV
-    featureSet(FEATURE_OSD);
-    featureSet(FEATURE_RX_SERIAL);
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    //masterConfig.batteryConfig.vbatscale = 20;
-    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-    masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
-    masterConfig.blackbox_device = 1;
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
-#endif
-
 #ifdef OSD
-    masterConfig.vtx_channel = 19;
+    featureSet(FEATURE_OSD);
     masterConfig.osdProfile.system = 0;
     masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] = -29;
     masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]        = -59;
@@ -443,6 +431,10 @@ static void resetConf(void)
     masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]   = -80;
     masterConfig.osdProfile.item_pos[OSD_ARMED]             = -107;
     masterConfig.osdProfile.item_pos[OSD_DISARMED]          = -109;
+#endif
+
+#ifdef USE_RTC6705
+    masterConfig.vtx_channel = 19; // default to Boscam E channel 4
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER

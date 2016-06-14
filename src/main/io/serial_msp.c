@@ -45,7 +45,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
-#include "drivers/rtc6705.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -1543,7 +1543,7 @@ static bool processInCommand(void)
             masterConfig.vtx_channel = tmp;
         if (current_vtx_channel != masterConfig.vtx_channel) {
             current_vtx_channel = masterConfig.vtx_channel;
-            rtc6705_set_channel(vtx_freq[current_vtx_channel]);
+            rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
         }
         break;
 #endif
