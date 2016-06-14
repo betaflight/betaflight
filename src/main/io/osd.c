@@ -360,7 +360,7 @@ page_t menu_pages[] = {
         .title = "STATUS",
         .cols_number = 1,
         .rows_number = 2,
-        .cols = { 
+        .cols = {
             {
                 .title = NULL,
                 .x_pos = 15
@@ -380,17 +380,17 @@ page_t menu_pages[] = {
         }
     },
 #ifdef USE_RTC6705
-    {   
+    {
         .title       = "VTX SETTINGS",
         .cols_number = 1,
         .rows_number = 3,
-        .cols = { 
+        .cols = {
             {
                 .title = NULL,
                 .x_pos = 15
             }
         },
-        .rows = { 
+        .rows = {
             {
                 .title  = "BAND",
                 .update = update_vtx_band,
@@ -413,7 +413,7 @@ page_t menu_pages[] = {
         .title       = "PID SETTINGS",
         .cols_number = 3,
         .rows_number = 8,
-        .cols = { 
+        .cols = {
             {
                 .title = "P",
                 .x_pos = 13
@@ -427,7 +427,7 @@ page_t menu_pages[] = {
                 .x_pos = 25
             }
         },
-        .rows = { 
+        .rows = {
             {
                 .title  = "ROLL",
                 .update = update_roll_pid,
@@ -477,7 +477,8 @@ void show_menu(void) {
     uint16_t pos;
     col_t *col;
     row_t *row;
-    int16_t cursor_x, cursor_y;
+    int16_t cursor_x = 0;
+    int16_t cursor_y = 0;
 
     if (activating_menu) {
         if (sticks[YAW] < 60 && sticks[YAW] > 40 && sticks[PITCH] > 40 && sticks[PITCH] < 60 && sticks[ROLL] > 40 && sticks[ROLL] < 60)

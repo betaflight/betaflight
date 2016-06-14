@@ -14,13 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+#ifndef STM32F3DISCOVERY
+#define STM32F3DISCOVERY
+#endif 
+ 
 #define LED0    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
 #define LED1    PE10  // Orange LEDs - PE10/PE14
