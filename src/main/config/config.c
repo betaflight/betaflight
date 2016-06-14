@@ -826,6 +826,19 @@ void validateAndFixConfig(void)
         if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
             featureClear(FEATURE_CURRENT_METER);
         }
+
+#if defined(CC3D)
+        // There is a timer clash between PWM RX pins and motor output pins - this forces us to have same timer tick rate for these timers
+        // which is only possible when using brushless motors w/o oneshot (timer tick rate is PWM_TIMER_MHZ)
+
+        // On CC3D OneShot is incompatible with PWM RX
+        featureClear(FEATURE_ONESHOT125);
+
+        // Brushed motors on CC3D are not possible when using PWM RX
+        if (masterConfig.motor_pwm_rate > BRUSHLESS_MOTORS_PWM_RATE) {
+            masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+        }
+#endif
 #endif
 
 #if defined(STM32F10X) || defined(CHEBUZZ) || defined(STM32F3DISCOVERY)
