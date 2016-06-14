@@ -51,13 +51,13 @@ SDCARD_TARGETS     = ALIENFLIGHTF4 AQ32_V2 BLUEJAYF4 FURYF3 FURYF4 SPRACINGF3MIN
 SERIAL_USB_TARGETS = IRCFUSIONF3 SPRACINGF3
 
 # Valid targets for STM VCP support
-VCP_TARGETS = $(CC3D_TARGETS) BLUEJAYF4 FURYF3 FURYF4 REVO SIRINFPV
+VCP_TARGETS = $(CC3D_TARGETS) BLUEJAYF4 FURYF3 FURYF4 REVO REVO_OPBL SIRINFPV
 
 # Valid targets for OP BootLoader support
-OPBL_TARGETS = CC3D_OPBL
+OPBL_TARGETS = CC3D_OPBL REVO_OPBL
 
 
-F405_TARGETS    = ALIENFLIGHTF4 BLUEJAYF4 FURYF4 REVO
+F405_TARGETS    = ALIENFLIGHTF4 BLUEJAYF4 FURYF4 REVO REVO_OPBL
 F405_TARGETS_16 =
 F411_TARGETS    =
 
@@ -380,14 +380,26 @@ endif
 TARGET_DIR = $(ROOT)/src/main/target/CC3D
 endif
 
+ifeq ($(TARGET),$(filter $(TARGET), REVO_OPBL))
+TARGET_FLAGS := $(TARGET_FLAGS) -DREVO
+TARGET_DIR = $(ROOT)/src/main/target/REVO
+TARGET_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
+endif
+
 ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
 OPBL=yes
 endif
 
 ifeq ($(OPBL),yes)
-ifneq ($(filter $(TARGET),$(OPBL_TARGETS)),)
+ifeq ($(TARGET),$(filter $(TARGET),$(OPBL_TARGETS)))
 TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
-LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+ifeq ($(TARGET),$(filter $(TARGET),$(F411_TARGETS)))
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f411_bl.ld
+else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f405_bl.ld
+else
+LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+endif
 .DEFAULT_GOAL := binary
 else
 $(error OPBL specified with a unsupported target)
@@ -967,6 +979,8 @@ REVO_SRC = \
             $(HIGHEND_SRC) \
             $(COMMON_SRC) \
             $(VCPF4_SRC)
+
+REVO_OPBL_SRC = $(REVO_SRC)
 
 FURYF4_SRC = \
             $(STM32F4xx_COMMON_SRC) \
