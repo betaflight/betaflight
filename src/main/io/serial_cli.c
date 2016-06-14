@@ -60,6 +60,7 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -446,6 +447,13 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "AIRMODE",
     "PIDLOOP",
 };
+#ifdef OSD
+static const char * const lookupTableOsdType[] = {
+    "AUTO",
+    "PAL",
+    "NTSC"
+};
+#endif
 
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
@@ -482,6 +490,9 @@ typedef enum {
 	TABLE_DEBUG,
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
+#ifdef OSD
+    TABLE_OSD,
+#endif
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -506,6 +517,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTableFastPwm, sizeof(lookupTableFastPwm) / sizeof(char *) },
+#ifdef OSD
+    { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+#endif
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -785,6 +799,21 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+#endif
+#ifdef USE_RTC6705
+    { "vtx_channel",                VAR_INT16  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
+#endif
+#ifdef OSD
+    { "osd_system",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.system, .config.minmax = { 0, 2 } },
+    { "osd_main_voltage_pos",       VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { -480, 480 } },
+    { "osd_rssi_pos",               VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], .config.minmax = { -480, 480 } },
+    { "osd_timer_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_TIMER], .config.minmax = { -480, 480 } },
+    { "osd_throttle_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], .config.minmax = { -480, 480 } },
+    { "osd_cpu_load_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], .config.minmax = { -480, 480 } },
+    { "osd_vtx_channel_pos",        VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL], .config.minmax = { -480, 480 } },
+    { "osd_voltage_warning_pos",    VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING], .config.minmax = { -480, 480 } },
+    { "osd_armed_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARMED], .config.minmax = { -480, 480 } },
+    { "osd_disarmed_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_DISARMED], .config.minmax = { -480, 480 } },
 #endif
 };
 
