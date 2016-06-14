@@ -658,15 +658,14 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all               : default task; compile C code, build firmware
-all:
-	for build_target in $(VALID_TARGETS); do \
+## all               : Build all valid targets
+all: $(VALID_TARGETS)
+
+$(VALID_TARGETS):
 		echo "" && \
-		echo "Building $$build_target" && \
-		$(MAKE) -j binary hex TARGET=$$build_target || \
-		break; \
-		echo "Building $$build_target succeeded."; \
-	done
+		echo "Building $@" && \
+		$(MAKE) -j binary hex TARGET=$@ && \
+		echo "Building $@ succeeded."
 
 ## clean             : clean up all temporary / machine-generated files
 clean:
@@ -725,6 +724,8 @@ help: Makefile
 	@echo ""
 	@echo "Usage:"
 	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo "Or:"
+	@echo "        make <target> [OPTIONS=\"<options>\"]"
 	@echo ""
 	@echo "Valid TARGET values are: $(VALID_TARGETS)"
 	@echo ""
