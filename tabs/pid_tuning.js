@@ -170,12 +170,21 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         // Fill in data from RC_tuning object
-        $('.rate-tpa input[name="roll-pitch"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
-        $('.rate-tpa input[name="roll"]').val(RC_tuning.roll_rate.toFixed(2));
-        $('.rate-tpa input[name="pitch"]').val(RC_tuning.pitch_rate.toFixed(2));
-        $('.rate-tpa input[name="yaw"]').val(RC_tuning.yaw_rate.toFixed(2));
-        $('.rate-tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
-        $('.rate-tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
+        $('.pid_tuning input[name="rc_rate"]').val(RC_tuning.RC_RATE.toFixed(2));
+        $('.pid_tuning input[name="roll_pitch_rate"]').val(RC_tuning.roll_pitch_rate.toFixed(2));
+        $('.pid_tuning input[name="roll_rate"]').val(RC_tuning.roll_rate.toFixed(2));
+        $('.pid_tuning input[name="pitch_rate"]').val(RC_tuning.pitch_rate.toFixed(2));
+        $('.pid_tuning input[name="yaw_rate"]').val(RC_tuning.yaw_rate.toFixed(2));
+        $('.pid_tuning input[name="rc_expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
+        $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
+
+        $('.tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
+        $('.tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
+
+        if (semver.lt(CONFIG.apiVersion, "1.10.0")) {
+            $('.pid_tuning input[name="rc_yaw_expo"]').hide();
+            $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
+        }
     }
 
     function form_to_pid_and_rc() {
@@ -231,12 +240,16 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         // catch RC_tuning changes
-        RC_tuning.roll_pitch_rate = parseFloat($('.rate-tpa input[name="roll-pitch"]').val());
-        RC_tuning.roll_rate = parseFloat($('.rate-tpa input[name="roll"]').val());
-        RC_tuning.pitch_rate = parseFloat($('.rate-tpa input[name="pitch"]').val());
-        RC_tuning.yaw_rate = parseFloat($('.rate-tpa input[name="yaw"]').val());
-        RC_tuning.dynamic_THR_PID = parseFloat($('.rate-tpa input[name="tpa"]').val());
-        RC_tuning.dynamic_THR_breakpoint = parseInt($('.rate-tpa input[name="tpa-breakpoint"]').val());
+        RC_tuning.RC_RATE = parseFloat($('.pid_tuning input[name="rc_rate"]').val());
+        RC_tuning.roll_pitch_rate = parseFloat($('.pid_tuning input[name="roll_pitch_rate"]').val());
+        RC_tuning.roll_rate = parseFloat($('.pid_tuning input[name="roll_rate"]').val());
+        RC_tuning.pitch_rate = parseFloat($('.pid_tuning input[name="pitch_rate"]').val());
+        RC_tuning.yaw_rate = parseFloat($('.pid_tuning input[name="yaw_rate"]').val());
+        RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
+        RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
+
+        RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
+        RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
     }
     function hideUnusedPids(sensors_detected) {
       $('.tab-pid_tuning table.pid_tuning').hide();
@@ -331,14 +344,63 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
-            $('.rate-tpa .tpa-breakpoint').hide();
-            $('.rate-tpa .roll').hide();
-            $('.rate-tpa .pitch').hide();
+            $('.tpa .tpa-breakpoint').hide();
+
+            $('.pid_tuning .roll_rate').hide();
+            $('.pid_tuning .pitch_rate').hide();
         } else {
-            $('.rate-tpa .roll-pitch').hide();
+            $('.pid_tuning .roll_pitch_rate').hide();
+        }
+
+        function setCanvasDimensions(canvas) {
+            canvas.width = canvas.parentNode.clientWidth;
+            canvas.height = canvas.parentNode.clientHeight;
+        }
+        setCanvasDimensions($('.pitch_roll_curve canvas').get(0));
+        setCanvasDimensions($('.yaw_curve canvas').get(0));
+
+        function drawRateCurve(rateElement, expoElement, canvasElement) {
+            var rate = parseFloat(rateElement.val()),
+                expo = parseFloat(expoElement.val()),
+                context = canvasElement.getContext("2d");
+
+            // local validation to deal with input event
+            if (rate >= parseFloat(rateElement.prop('min')) &&
+                rate <= parseFloat(rateElement.prop('max')) &&
+                expo >= parseFloat(expoElement.prop('min')) &&
+                expo <= parseFloat(expoElement.prop('max'))) {
+
+                var rateHeight = canvasElement.height;
+                var rateWidth = canvasElement.width;
+
+                // math magic by englishman
+                var ratey = rateHeight * rate;
+
+                // draw
+                context.clearRect(0, 0, rateWidth, rateHeight);
+                context.beginPath();
+                context.moveTo(0, rateHeight);
+                context.quadraticCurveTo(rateWidth * 11 / 20, rateHeight - ((ratey / 2) * (1 - expo)), rateWidth, rateHeight - ratey);
+                context.lineWidth = 2;
+                context.strokeStyle = '#ffbb00';
+                context.stroke();
+            }
         }
 
         // UI Hooks
+        // curves
+        $('.pid_tuning').on('input change', function () {
+            setTimeout(function () { // let global validation trigger and adjust the values first
+                var rateElement = $('.pid_tuning input[name="rc_rate"]'),
+                    expoElement = $('.pid_tuning input[name="rc_expo"]'),
+                    yawExpoElement = $('.pid_tuning input[name="rc_yaw_expo"]'),
+                    rcCurveElement = $('.pitch_roll_curve canvas').get(0),
+                    rcYawCurveElement = $('.yaw_curve canvas').get(0);
+
+		drawRateCurve(rateElement, expoElement, rcCurveElement);
+		drawRateCurve(rateElement, yawExpoElement, rcYawCurveElement);
+            }, 0);
+        }).trigger('input');
 
         $('a.refresh').click(function () {
             GUI.tab_switch_cleanup(function () {
