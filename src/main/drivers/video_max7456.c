@@ -204,20 +204,6 @@ void VSYNC_EXTI_Handler(void)
 
     max7456State.frameCounter++;
     //debug[1] = max7456State.frameCounter;
-
-    /* Time between VSYNC pulses can be measured using the code below.
-     * NTSC: ~16673us (60 FPS), PAL: ~19990us (50FPS)
-     */
-#if DEBUG_MAX7456_VSYNC_TRIGGER
-    static bool shouldStartMeasuring = true;
-
-    if (shouldStartMeasuring) {
-        TIME_SECTION_BEGIN(2);
-    } else {
-        TIME_SECTION_END(2);
-    }
-    shouldStartMeasuring = !shouldStartMeasuring;
-#endif
 }
 
 void HSYNC_EXTI_Handler(void)
