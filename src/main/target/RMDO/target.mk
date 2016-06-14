@@ -1,5 +1,5 @@
+F3_TARGETS   += $(TARGET)
 FEATURES     = VCP ONBOARDFLASH
-F3_TARGETS  += $(TARGET)
 TARGET_FLAGS = -DSPRACINGF3
 
 TARGET_SRC = \
@@ -9,5 +9,5 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_softserial.c \
-            drivers/sonar_hcsr04.c 
+            drivers/sonar_hcsr04.c
 

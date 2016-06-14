@@ -1,5 +1,5 @@
-FEATURES     = VCP 
 F3_TARGETS  += $(TARGET)
+FEATURES    = VCP 
 
 TARGET_SRC = \
             io/i2c_bst.c \
@@ -14,4 +14,5 @@ TARGET_SRC = \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f30x.c 
+            drivers/light_ws2811strip_stm32f30x.c
+

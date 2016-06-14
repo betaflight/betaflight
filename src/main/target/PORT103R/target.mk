@@ -1,5 +1,5 @@
-FEATURES     = ONBOARDFLASH HIGHEND 
 F1_TARGETS  += $(TARGET)
+FEATURES     = ONBOARDFLASH HIGHEND 
 
 DEVICE_FLAGS    = -DSTM32F10X_HD
 
@@ -21,3 +21,4 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f10x.c \
             drivers/sonar_hcsr04.c
+
