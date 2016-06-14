@@ -300,12 +300,19 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
-    if (newTelemetryEnabledValue == ltmEnabled)
-        return;
-    if (newTelemetryEnabledValue)
-        configureLtmTelemetryPort();
-    else
-        freeLtmTelemetryPort();
+    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+        if (!ltmEnabled && telemetrySharedPort != NULL) {
+            ltmPort = telemetrySharedPort;
+            ltmEnabled = true;
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
+        if (newTelemetryEnabledValue == ltmEnabled)
+            return;
+        if (newTelemetryEnabledValue)
+            configureLtmTelemetryPort();
+        else
+            freeLtmTelemetryPort();
+    }
 }
 #endif

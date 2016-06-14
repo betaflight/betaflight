@@ -1,5 +1,5 @@
-FEATURES     = ONBOARDFLASH HIGHEND 
 F1_TARGETS  += $(TARGET)
+FEATURES    = ONBOARDFLASH HIGHEND 
 
 TARGET_SRC = \
             drivers/accgyro_adxl345.c \

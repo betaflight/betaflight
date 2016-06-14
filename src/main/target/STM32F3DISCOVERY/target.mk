@@ -1,5 +1,5 @@
+F3_TARGETS  += $(TARGET)
 FEATURES    = VCP SDCARD
-F3_TARGETS += $(TARGET)
 
 TARGET_SRC = \
             drivers/light_ws2811strip.c \
@@ -15,4 +15,5 @@ TARGET_SRC = \
             drivers/accgyro_l3g4200d.c \
             drivers/barometer_ms5611.c \
             drivers/barometer_bmp280.c \
-            drivers/compass_ak8975.c 
+            drivers/compass_ak8975.c
+

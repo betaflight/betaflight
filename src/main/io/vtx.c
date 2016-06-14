@@ -35,6 +35,8 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
+#include "drivers/vtx_rtc6705.h"
+
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -72,7 +74,7 @@
 
 static uint8_t locked = 0;
 
-void vtxInit()
+void vtxInit(void)
 {
 	rtc6705Init();
     if (masterConfig.vtx_mode == 0) {
@@ -100,27 +102,27 @@ static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_
     }
 }
 
-void vtxIncrementBand()
+void vtxIncrementBand(void)
 {
     setChannelSaveAndNotify(&(masterConfig.vtx_band), 1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
 }
 
-void vtxDecrementBand()
+void vtxDecrementBand(void)
 {
     setChannelSaveAndNotify(&(masterConfig.vtx_band), -1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
 }
 
-void vtxIncrementChannel()
+void vtxIncrementChannel(void)
 {
     setChannelSaveAndNotify(&(masterConfig.vtx_channel), 1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
 }
 
-void vtxDecrementChannel()
+void vtxDecrementChannel(void)
 {
     setChannelSaveAndNotify(&(masterConfig.vtx_channel), -1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
 }
 
-void vtxUpdateActivatedChannel()
+void vtxUpdateActivatedChannel(void)
 {
     if (ARMING_FLAG(ARMED)) {
         locked = 1;
@@ -144,3 +146,4 @@ void vtxUpdateActivatedChannel()
 }
 
 #endif
+

@@ -108,6 +108,8 @@
 // USART3,
 #define BIND_PIN   PB11
 
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+/*
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 
@@ -125,6 +127,7 @@
 #define S1W_RX_GPIO         GPIOA
 #define S1W_RX_PIN          GPIO_Pin_10
 #endif
+*/
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA 0xffff

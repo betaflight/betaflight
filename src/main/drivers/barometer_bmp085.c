@@ -49,7 +49,6 @@ void bmp085_extiHandler(extiCallbackRec_t* cb)
 	isConversionComplete = true;
 }
 
-static extiCallbackRec_t bmp085_extiCallbackRec;
 bool bmp085TestEOCConnected(const bmp085Config_t *config); 
 # endif
 

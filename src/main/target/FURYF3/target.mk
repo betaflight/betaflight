@@ -1,5 +1,5 @@
+F3_TARGETS  += $(TARGET)
 FEATURES    = VCP SDCARD ONBOARDFLASH
-F3_TARGETS += $(TARGET)
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -11,5 +11,5 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/sonar_hcsr04.c \
-            drivers/serial_softserial.c 
+            drivers/serial_softserial.c
 

@@ -33,6 +33,6 @@
 #define RTC6705_FREQ_MIN    5600
 #define RTC6705_FREQ_MAX    5950
 
-bool rtc6705Init();
+bool rtc6705Init(void);
 void rtc6705SetChannel(uint8_t band, uint8_t channel);
 void rtc6705SetFreq(uint16_t freq);
