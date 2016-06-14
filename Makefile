@@ -59,15 +59,30 @@ HSE_VALUE       = 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-# silently ignore if the file is not present. Allows for target specific.
--include $(ROOT)/src/main/target/$(TARGET)/target.mk
-
-F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
+ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
+OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
-VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS))) 
+VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
+VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)  
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
+
+ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
+BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
+-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
+else
+BASE_TARGET	   := $(TARGET)
+endif
+
+ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
+OPBL 			= yes
+endif
+
+# silently ignore if the file is not present. Allows for target specific.
+-include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
+
+F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
@@ -100,9 +115,9 @@ endif
 # note that there is no hardfault debugging startup file assembly handler for other platforms
 ifeq ($(DEBUG_HARDFAULTS),F3)
 CFLAGS               += -DDEBUG_HARDFAULTS
-STM32F30x_COMMON_SRC = startup_stm32f3_debug_hardfault_handler.S
+STM32F30x_COMMON_SRC  = startup_stm32f3_debug_hardfault_handler.S
 else
-STM32F30x_COMMON_SRC = startup_stm32f30x_md_gcc.S
+STM32F30x_COMMON_SRC  = startup_stm32f30x_md_gcc.S
 endif
 
 REVISION = $(shell git log -1 --format="%h")
@@ -121,7 +136,6 @@ FATFS_DIR       = $(ROOT)/lib/main/FatFS
 FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
-
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 # F3 TARGETS
@@ -304,18 +318,21 @@ TARGET_FLAGS   := -D$(TARGET) -pedantic $(TARGET_FLAGS)
 ifeq ($(DEVICE_FLAGS),)
 DEVICE_FLAGS    = -DSTM32F10X_MD 
 endif
-DEVICE_FLAGS    += -DSTM32F10X
+DEVICE_FLAGS   += -DSTM32F10X
 
 endif
 #
 # End F1 targets
 #
-
-ifneq ($(FLASH_SIZE),)
-DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
+ifneq ($(BASE_TARGET), $(TARGET))
+TARGET_FLAGS  := $(TARGET_FLAGS) -D$(BASE_TARGET)
 endif
 
-TARGET_DIR     = $(ROOT)/src/main/target/$(TARGET)
+ifneq ($(FLASH_SIZE),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
+endif
+
+TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
 ifeq ($(OPBL),yes)
@@ -330,6 +347,8 @@ else ifeq ($(TARGET), $(filter $(TARGET),$(F1_TARGETS)))
 LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
 endif
 .DEFAULT_GOAL := binary
+else
+.DEFAULT_GOAL := hex
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -486,7 +505,6 @@ STM32F4xx_COMMON_SRC = \
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 TARGET_SRC := $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
-
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 TARGET_SRC := $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
@@ -641,10 +659,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 
 
 ## all               : default task; compile C code, build firmware
-all: binary
-
-## all_targets       : build all valid target platforms
-all_targets:
+all: 
 	for build_target in $(VALID_TARGETS); do \
 		echo "" && \
 		echo "Building $$build_target" && \
@@ -664,7 +679,7 @@ clean_test:
 	cd src/test && $(MAKE) clean || true
 
 ## clean_all_targets : clean all valid target platforms
-clean_all_targets:
+clean_all:
 	for clean_target in $(VALID_TARGETS); do \
 		echo "" && \
 		echo "Cleaning $$clean_target" && \
@@ -718,7 +733,9 @@ help: Makefile
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	@echo $(VALID_TARGETS)
+	@echo "Valid targets: $(VALID_TARGETS)"
+	@echo "Target:        $(TARGET)"
+	@echo "Base target:   $(BASE_TARGET)"
 
 ## test              : run the cleanflight test suite
 test:
