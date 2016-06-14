@@ -11,6 +11,8 @@
 
 #include "platform.h"
 
+#include "i2c_bst.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -69,6 +71,7 @@
 #include "hardware_revision.h"
 #endif
 
+#include "bus_bst.h"
 #include "i2c_bst.h"
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);

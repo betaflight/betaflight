@@ -47,7 +47,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -58,6 +57,10 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+
+#ifdef USE_BST
+#include "bus_bst.h"
+#endif
 
 #include "rx/rx.h"
 

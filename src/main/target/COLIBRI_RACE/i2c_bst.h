@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "drivers/bus_bst.h"
-
 void bstProcessInCommand(void);
 void bstSlaveProcessInCommand(void);
 void taskBstMasterProcess(void);
