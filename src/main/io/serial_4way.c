@@ -26,6 +26,8 @@
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "drivers/serial.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
@@ -149,8 +151,8 @@ int esc4wayInit(void)
     for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
         if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
             if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
-                escHardware[escIdx].gpio = pwmOutputConfiguration->portConfigurations[i].timerHardware->gpio;
-                escHardware[escIdx].pin = pwmOutputConfiguration->portConfigurations[i].timerHardware->pin;
+                escHardware[escIdx].gpio = IO_GPIO(IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin));
+                escHardware[escIdx].pin = IO_Pin(IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin));
                 escHardware[escIdx].pinpos = getPinPos(escHardware[escIdx].pin);
                 escHardware[escIdx].gpio_config_INPUT.pin = escHardware[escIdx].pin;
                 escHardware[escIdx].gpio_config_INPUT.speed = Speed_2MHz; // see pwmOutConfig()
