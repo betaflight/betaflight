@@ -5,7 +5,7 @@
 # this stuff is worth it, you can buy me a beer in return
 ###############################################################################
 #
-# Makefile for building the cleanflight firmware.
+# Makefile for building the iNav firmware.
 #
 # Invoke this with 'make help' to see the list of supported targets.
 #
