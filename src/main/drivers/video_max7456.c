@@ -40,6 +40,8 @@
 #define MAX7456_MODE_MASK_NTSC 0x00
 #define MAX7456_CENTER_NTSC 0x6
 
+#define MAX7456_SHADOW_TO_NVM_MASK 0xA0
+
 //MAX7456 read addresses
 #define MAX7456_REG_OSDBL_READ 0xec //black level
 #define MAX7456_REG_STAT_READ  0xa0 //0xa[X] Status
@@ -383,11 +385,11 @@ static void max7456_softReset()
 
     // force soft reset on Max7456
     max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_SOFTWARE_RESET); // without video mode
-    delay(100);
+    delayMicroseconds(100);
 
     while(!max7456_isResetComplete()) {
         resetWait++;
-        delay(10);
+        delayMicroseconds(100);
     }
 }
 
@@ -456,7 +458,7 @@ static void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *char
     }
 
     // transfer character buffer from shadow ram to NVM
-    max7456_write(MAX7456_REG_CMM, 0xA0); // must use b1010xxxx
+    max7456_write(MAX7456_REG_CMM, MAX7456_SHADOW_TO_NVM_MASK);
 
     // wait until bit 5 in the status register returns to 0 (12ms)
     while ((max7456_read(MAX7456_REG_STAT_READ) & MAX7456_STAT_BIT_CHAR_MEM_BUSY) != 0x00);
@@ -497,8 +499,8 @@ uint8_t max7456_readStatus(void)
 #define MAX7456_TIME_SECTION_END(index) TIME_SECTION_END(index)
 #define MAX7456_TIME_SECTION_BEGIN(index) TIME_SECTION_BEGIN(index)
 #else
-#define MAX7456_TIME_SECTION_END(index) while(0) {}
-#define MAX7456_TIME_SECTION_BEGIN(index) while(0) {}
+#define MAX7456_TIME_SECTION_END(index) do {} while(0)
+#define MAX7456_TIME_SECTION_BEGIN(index) do {} while(0)
 #endif
 
 void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
@@ -569,7 +571,7 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
     uint8_t char_address_hi, char_address_lo;
 
     //find start address position
-    linepos = y * 30 + x;
+    linepos = y * MAX7456_COLUMN_COUNT + x;
 
     // divide 16 bits into hi & lo uint8_t
     char_address_hi = linepos >> 8;
@@ -606,7 +608,7 @@ void max7456_clearScreen(void)
 
     dmmStatus |= MAX7456_DMM_BIT_CLEAR;
     max7456_write(MAX7456_REG_DMM, dmmStatus);
-    delay(20);
+    delayMicroseconds(20);
 }
 
 void max7456_clearScreenAtNextVSync(void)
@@ -616,5 +618,4 @@ void max7456_clearScreenAtNextVSync(void)
     dmmStatus |= MAX7456_DMM_BIT_CLEAR;
     dmmStatus |= MAX7456_DMM_BIT_VSYNC_CLEAR;
     max7456_write(MAX7456_REG_DMM, dmmStatus);
-    delay(20);
 }

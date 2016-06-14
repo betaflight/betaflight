@@ -489,7 +489,7 @@ void init(void)
 #endif
 #ifdef NAZE
     // optional ADC5 input on rev.5 hardware
-    adc_params.channelMask |= ((hardwareRevision >= NAZE32_REV5) << ADC_CHANNEL4_BIT);
+    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? (1 << ADC_CHANNEL4_BIT) : 0;
 #endif
 
     adcInit(&adc_params);
