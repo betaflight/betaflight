@@ -28,8 +28,6 @@ typedef struct max7456State_s {
     bool los;
     uint32_t losCounter;
     uint32_t frameCounter;
-    uint16_t lineCounter;
-    uint16_t maxLinesDetected;
 
     volatile bool vSyncDetected;
     volatile bool hSyncDetected;

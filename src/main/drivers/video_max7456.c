@@ -203,15 +203,12 @@ void VSYNC_EXTI_Handler(void)
     max7456State.vSyncDetected = true;
 
     max7456State.frameCounter++;
-    if (max7456State.lineCounter > max7456State.maxLinesDetected) {
-        max7456State.maxLinesDetected = max7456State.lineCounter;
-    }
-    max7456State.lineCounter = 0;
+    //debug[1] = max7456State.frameCounter;
 
     /* Time between VSYNC pulses can be measured using the code below.
      * NTSC: ~16673us (60 FPS), PAL: ~19990us (50FPS)
      */
-    /*
+#if DEBUG_MAX7456_VSYNC_TRIGGER
     static bool shouldStartMeasuring = true;
 
     if (shouldStartMeasuring) {
@@ -220,12 +217,7 @@ void VSYNC_EXTI_Handler(void)
         TIME_SECTION_END(2);
     }
     shouldStartMeasuring = !shouldStartMeasuring;
-    */
-
-
-
-    //debug[1] = max7456State.frameCounter;
-    //debug[3] = max7456State.maxLinesDetected;
+#endif
 }
 
 void HSYNC_EXTI_Handler(void)
@@ -238,11 +230,6 @@ void HSYNC_EXTI_Handler(void)
     }
 
     max7456State.hSyncDetected = true;
-
-
-    max7456State.lineCounter++;
-
-    //debug[2] = max7456State.lineCounter;
 }
 
 
