@@ -164,9 +164,42 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
+//#define USE_RX_NRF24
+#ifdef USE_RX_NRF24
+
+#define USE_RX_SYMA
+//#define USE_RX_V202
+#define NRF24_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+
+#define USE_SOFTSPI
+#define USE_NRF24_SOFTSPI
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
+// RC pinouts
+// RC3              RX_PPM
+// RC4  PA1         CE / RSSI_ADC
+// RC5  PA2         USART2 TX
+// RC6  PA3         USART2 RX
+// RC7  PA6/TIM3    CSN / softserial1 RX / LED_STRIP
+// RC8  PA7         SCK / softserial1 TX
+// RC9  PB0         MISO / softserial2 RX / sonar trigger
+// RC10 PB1         MOSI /softserial2 TX / sonar echo / current
+
+// Nordic Semiconductor uses 'CSN', STM uses 'NSS'
+#define NRF24_CE_GPIO                   GPIOA
+#define NRF24_CE_PIN                    GPIO_Pin_1
+#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
+#define NRF24_CSN_GPIO                  GPIOA
+#define NRF24_CSN_PIN                   GPIO_Pin_6
+#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define NRF24_SCK_GPIO                  GPIOA
+#define NRF24_SCK_PIN                   GPIO_Pin_7
+#define NRF24_MOSI_GPIO                 GPIOB
+#define NRF24_MOSI_PIN                  GPIO_Pin_1
+#define NRF24_MISO_GPIO                 GPIOB
+#define NRF24_MISO_PIN                  GPIO_Pin_0
+#endif // USE_NRF24
 
 #define USE_ADC
 

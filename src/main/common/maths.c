@@ -439,3 +439,17 @@ void sensorCalibrationSolveForScale(sensorCalibrationState_t * state, float resu
         result[i] = sqrtf(beta[i]);
     }
 }
+
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
+{
+    crc ^= a << 8;
+    for (int ii = 0; ii < 8; ++ii) {
+        if (crc & 0x8000) {
+            crc = (crc << 1) ^ 0x1021;
+        } else {
+            crc = crc << 1;
+        }
+    }
+    return crc;
+}
+

@@ -161,9 +161,6 @@ void flashLedsAndBeep(void)
 
 void init(void)
 {
-    uint8_t i;
-    drv_pwm_config_t pwm_params;
-
     printfSupportInit();
 
     initEEPROM();
@@ -225,18 +222,21 @@ void init(void)
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
 #endif
 
+    drv_pwm_config_t pwm_params;
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
     sonarGPIOConfig_t sonarGPIOConfig;
     if (feature(FEATURE_SONAR)) {
         const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
-        sonarGPIOConfig.gpio = sonarHardware->echo_gpio;
-        sonarGPIOConfig.triggerPin = sonarHardware->echo_pin;
-        sonarGPIOConfig.echoPin = sonarHardware->trigger_pin;
-        pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
+        if (sonarHardware) {
+            sonarGPIOConfig.gpio = sonarHardware->echo_gpio;
+            sonarGPIOConfig.triggerPin = sonarHardware->echo_pin;
+            sonarGPIOConfig.echoPin = sonarHardware->trigger_pin;
+            pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
+            pwm_params.useSonar = true;
+        }
     }
-    pwm_params.useSonar = feature(FEATURE_SONAR);
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
@@ -275,7 +275,9 @@ void init(void)
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 
+#ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmInit(&pwm_params);
@@ -404,7 +406,7 @@ void init(void)
 
     LED1_ON;
     LED0_OFF;
-    for (i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);

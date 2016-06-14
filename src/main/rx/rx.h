@@ -108,9 +108,12 @@ typedef struct rxChannelRangeConfiguration_s {
     uint16_t max;
 } rxChannelRangeConfiguration_t;
 
+#define NRF24RX_ID_LEN 5
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
+    uint8_t nrf24rx_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
+    uint8_t nrf24rx_id[NRF24RX_ID_LEN];
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t rssi_channel;
     uint8_t rssi_scale;

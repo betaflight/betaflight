@@ -185,7 +185,7 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
-    "BLACKBOX", "CHANNEL_FORWARDING", NULL
+    "BLACKBOX", "CHANNEL_FORWARDING", "RX_NRF24", "SOFTSPI", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -369,6 +369,7 @@ static const char * const lookupTableBlackboxDevice[] = {
     "SERIAL", "SPIFLASH"
 };
 
+#ifdef SERIAL_RX
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
     "SPEK2048",
@@ -379,6 +380,21 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B-RJ01",
     "IBUS"
 };
+#endif
+
+#ifdef USE_RX_NRF24
+// sync with nrf24_protocol_t
+static const char * const lookupTableNRF24RX[] = {
+    "V202_250K",
+    "V202_1M",
+    "SYMA_X",
+    "SYMA_X5C",
+    "CX10",
+    "CX10A",
+    "H8_3D",
+    "H8_3D_DEV",
+};
+#endif
 
 static const char * const lookupTableGyroLpf[] = {
     "256HZ",
@@ -423,7 +439,12 @@ typedef enum {
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
+#ifdef SERIAL_RX
     TABLE_SERIAL_RX,
+#endif
+#ifdef USE_RX_NRF24
+    TABLE_NRF24_RX,
+#endif
     TABLE_GYRO_LPF,
     TABLE_FAILSAFE_PROCEDURE,
 #ifdef NAV
@@ -447,8 +468,13 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
+#ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
-    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
+#endif
+#ifdef USE_RX_NRF24
+    { lookupTableNRF24RX, sizeof(lookupTableNRF24RX) / sizeof(char *) },
+#endif
+     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
 #ifdef NAV
     { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
@@ -622,7 +648,12 @@ const clivalue_t valueTable[] = {
     { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw_loiter_radius, .config.minmax = { 0,  10000 }, 0 },
 #endif
 
+#ifdef SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.serialrx_provider, .config.lookup = { TABLE_SERIAL_RX }, 0 },
+#endif
+#ifdef USE_RX_NRF24
+    { "nrf24rx_protocol",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_protocol, .config.lookup = { TABLE_NRF24_RX }, 0 },
+#endif
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },
 
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
@@ -1697,7 +1728,6 @@ static void cliDump(char *cmdline)
                 cliWrite(' ');
             cliPrintf("%s\r\n", ftoa(yaw, buf));
         }
-
 #ifdef USE_SERVOS
         // print custom servo mixer if exists
         cliPrintf("smix reset\r\n");
@@ -1719,8 +1749,7 @@ static void cliDump(char *cmdline)
             );
         }
 #endif // USE_SERVOS
-
-#endif
+#endif // USE_QUAD_MIXER_ONLY
 
         cliPrint("\r\n\r\n# feature\r\n");
 

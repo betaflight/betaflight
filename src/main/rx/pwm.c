@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifndef SKIP_RX_PWM_PPM
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
@@ -59,4 +61,5 @@ void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfigPtr, rcReadRawDataPtr *callback
         *callback = ppmReadRawRC;
     }
 }
+#endif
 

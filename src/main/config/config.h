@@ -43,7 +43,9 @@ typedef enum {
     FEATURE_DISPLAY = 1 << 17,
     FEATURE_ONESHOT125 = 1 << 18,
     FEATURE_BLACKBOX = 1 << 19,
-    FEATURE_CHANNEL_FORWARDING = 1 << 20
+    FEATURE_CHANNEL_FORWARDING = 1 << 20,
+    FEATURE_RX_NRF24 = 1 << 21,
+    FEATURE_SOFTSPI = 1 << 22,
 } features_e;
 
 void handleOneshotFeatureChangeOnRestart(void);

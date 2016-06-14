@@ -35,6 +35,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/rx_nrf24l01.h"
 #include "drivers/serial.h"
 
 #include "sensors/sensors.h"
@@ -55,6 +56,7 @@
 #include "io/gps.h"
 
 #include "rx/rx.h"
+#include "rx/nrf24.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -80,6 +82,13 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+
+#ifndef DEFAULT_RX_FEATURE
+#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+#ifndef NRF24_DEFAULT_PROTOCOL
+#define NRF24_DEFAULT_PROTOCOL 0
+#endif
 
 #if !defined(FLASH_SIZE)
 #error "Flash size not defined for target. (specify in KB)"
@@ -465,6 +474,7 @@ static void resetConf(void)
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
     masterConfig.rxConfig.serialrx_provider = 0;
+    masterConfig.rxConfig.nrf24rx_protocol = NRF24_DEFAULT_PROTOCOL;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
@@ -792,33 +802,48 @@ void activateConfig(void)
 #endif
 }
 
-void validateAndFixConfig(void)
+static void validateAndFixConfig(void)
 {
-    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
-    }
+    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_NRF24))) {
+         featureSet(DEFAULT_RX_FEATURE);
+     }
 
-    if (featureConfigured(FEATURE_RX_PPM)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-    }
+     if (featureConfigured(FEATURE_RX_PPM)) {
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_NRF24);
+     }
 
-    if (featureConfigured(FEATURE_RX_MSP)) {
-        featureClear(FEATURE_RX_SERIAL);
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
-    }
+     if (featureConfigured(FEATURE_RX_MSP)) {
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_NRF24);
+     }
 
-    if (featureConfigured(FEATURE_RX_SERIAL)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
-    }
+     if (featureConfigured(FEATURE_RX_SERIAL)) {
+         featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_NRF24);
+     }
+
+     if (featureConfigured(FEATURE_RX_NRF24)) {
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
+     }
 
 #if defined(NAV)
     // Ensure sane values of navConfig settings
     validateNavConfig(&masterConfig.navConfig);
 #endif
 
+    if (featureConfigured(FEATURE_SOFTSPI)) {
+        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
+#if defined(STM32F10X)
+        featureClear(FEATURE_LED_STRIP);
+        // rssi adc needs the same ports
+        featureClear(FEATURE_RSSI_ADC);
+        // current meter needs the same ports
+        if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+            featureClear(FEATURE_CURRENT_METER);
+        }
+#endif
+    }
+
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_NRF24);
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
