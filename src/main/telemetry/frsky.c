@@ -477,16 +477,23 @@ bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
 
 void checkFrSkyTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(frskyPortSharing);
+    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+        if (!frskyTelemetryEnabled && telemetrySharedPort != NULL) {
+            frskyPort = telemetrySharedPort;
+            frskyTelemetryEnabled = true;
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(frskyPortSharing);
 
-    if (newTelemetryEnabledValue == frskyTelemetryEnabled) {
-        return;
+        if (newTelemetryEnabledValue == frskyTelemetryEnabled) {
+            return;
+        }
+
+        if (newTelemetryEnabledValue)
+            configureFrSkyTelemetryPort();
+        else
+            freeFrSkyTelemetryPort();
     }
-
-    if (newTelemetryEnabledValue)
-        configureFrSkyTelemetryPort();
-    else
-        freeFrSkyTelemetryPort();
 }
 
 void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)

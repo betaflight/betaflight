@@ -48,11 +48,16 @@ typedef struct telemetryConfig_s {
     uint8_t hottAlarmSoundInterval;
 } telemetryConfig_t;
 
+bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig);
+extern serialPort_t *telemetrySharedPort;
+
 void telemetryCheckState(void);
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
+
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM)
 
 #endif /* TELEMETRY_COMMON_H_ */
