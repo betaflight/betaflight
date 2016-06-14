@@ -73,12 +73,6 @@ extern "C" {
     void taskLedStrip(void) {simulatedTime+=ledStripTime;}
     void taskTransponder(void) {simulatedTime+=transponderTime;}
 
-    extern cfTask_t* taskQueueArray[];
-    extern const uint32_t taskQueueArraySize;
-    extern const uint32_t taskCount;
-    extern cfTask_t cfTasks[];
-
-
     extern void queueClear(void);
     extern int queueSize();
     extern bool queueContains(cfTask_t *task);

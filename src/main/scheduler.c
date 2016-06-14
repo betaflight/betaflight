@@ -52,11 +52,6 @@ uint16_t averageSystemLoadPercent = 0;
 static int taskQueuePos = 0;
 static unsigned int taskQueueSize = 0;
 
-extern cfTask_t* taskQueueArray[];
-extern const uint32_t taskQueueArraySize;
-extern const uint32_t taskCount;
-extern cfTask_t cfTasks[];
-
 STATIC_UNIT_TESTED void queueClear(void)
 {
     memset(taskQueueArray, 0, taskQueueArraySize * sizeof(cfTask_t *));
