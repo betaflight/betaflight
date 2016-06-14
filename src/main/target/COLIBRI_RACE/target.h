@@ -45,6 +45,10 @@
 #define MPU6500_CS_PIN                   GPIO_Pin_4
 #define MPU6500_SPI_INSTANCE             SPI1
 
+#define MPU6000_CS_GPIO                  GPIOA
+#define MPU6000_CS_PIN                   GPIO_Pin_4
+#define MPU6000_SPI_INSTANCE             SPI1
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 

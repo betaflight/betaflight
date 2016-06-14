@@ -99,6 +99,24 @@
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
+// SPI3
+// PA15 38 SPI3_NSS
+// PB3  39 SPI3_SCK
+// PB4  40 SPI3_MISO
+// PB5  41 SPI3_MOSI
+
+#define USE_SPI
+#define USE_SPI_DEVICE_3
+
+#define M25P16_CS_GPIO        GPIOA
+#define M25P16_CS_PIN         GPIO_Pin_15
+#define M25P16_SPI_INSTANCE   SPI3
+
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+#define MPU6500_CS_GPIO                  GPIOA
+#define MPU6500_CS_PIN                   GPIO_Pin_15
+#define MPU6500_SPI_INSTANCE             SPI3
+
 #define USE_ADC
 
 #define ADC_INSTANCE         ADC2
