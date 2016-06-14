@@ -10,6 +10,7 @@ ALL_TARGETS += alienflightf3
 ALL_TARGETS += colibri_race
 ALL_TARGETS += lux_race
 ALL_TARGETS += motolab
+ALL_TARGETS += pikoblx
 ALL_TARGETS += rmdo
 ALL_TARGETS += ircfusionf3
 ALL_TARGETS += afromini
@@ -31,6 +32,7 @@ clean_alienflightf3 alienflightf3  :      opts := TARGET=ALIENFLIGHTF3
 clean_colibri_race colibri_race :         opts := TARGET=COLIBRI_RACE
 clean_lux_race lux_race :                 opts := TARGET=LUX_RACE
 clean_motolab motolab :                   opts := TARGET=MOTOLAB
+clean_pikolx pikoblx :                    opts := TARGET=PIKOBLX
 clean_rmdo rmdo :                         opts := TARGET=RMDO
 clean_ircfusionf3 ircfusionf3 :           opts := TARGET=IRCFUSIONF3
 clean_afromini afromini :                 opts := TARGET=AFROMINI
