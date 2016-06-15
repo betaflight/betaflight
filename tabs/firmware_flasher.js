@@ -101,8 +101,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             var optionIndex = 1;
             releaseDescriptors.forEach(function(descriptor){
                 var select_e =
-                        $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
-                                optionIndex++,
+                        $("<option value='{0}'>{1} {2} ({3})</option>".format(
                                 descriptor.name,
                                 descriptor.target,
                                 descriptor.date,
