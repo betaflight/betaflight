@@ -42,6 +42,7 @@
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
+#include "telemetry/mavlink.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -66,6 +67,10 @@ void telemetryInit(void)
 
 #if defined(TELEMETRY_LTM)
     initLtmTelemetry(telemetryConfig);
+#endif
+
+#if defined(TELEMETRY_MAVLINK)
+    initMAVLinkTelemetry();
 #endif
 
     telemetryCheckState();
@@ -102,6 +107,10 @@ void telemetryCheckState(void)
 #if defined(TELEMETRY_LTM)
     checkLtmTelemetryState();
 #endif
+
+#if defined(TELEMETRY_MAVLINK)
+    checkMAVLinkTelemetryState();
+#endif
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -123,6 +132,10 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 
 #if defined(TELEMETRY_LTM)
     handleLtmTelemetry();
+#endif
+
+#if defined(TELEMETRY_MAVLINK)
+    handleMAVLinkTelemetry();
 #endif
 }
 
