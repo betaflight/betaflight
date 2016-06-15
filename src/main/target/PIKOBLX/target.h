@@ -92,6 +92,10 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
+#define CURRENT_METER_ADC_GPIO      GPIOA
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_3
+
 #define VBAT_ADC_GPIO               GPIOA
 #define VBAT_ADC_GPIO_PIN           GPIO_Pin_5
 #define VBAT_ADC_CHANNEL            ADC_Channel_2
