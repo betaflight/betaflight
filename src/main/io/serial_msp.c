@@ -1224,7 +1224,12 @@ static bool processInCommand(void)
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
                 rate = read8();
-                currentControlRateProfile->rates[i] = constrain(rate, i == FD_YAW  ? CONTROL_RATE_CONFIG_YAW_RATE_MIN : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                if (i == FD_YAW) {
+                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
+                }
+                else {
+                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                }
             }
             rate = read8();
             currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
