@@ -88,11 +88,10 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #if defined(MPU_INT_EXTI)
     static const extiConfig_t mpuIntExtiConfig = { .io = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
-#endif
-    
-#ifdef USE_HARDWARE_REVISION_DETECTION
+#elif defined(USE_HARDWARE_REVISION_DETECTION) 
     return selectMPUIntExtiConfigByHardwareRevision();
-#else    return NULL;
+#else
+    return NULL;
 #endif    
 }
 
