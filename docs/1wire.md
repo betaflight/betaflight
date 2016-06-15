@@ -34,7 +34,7 @@ Currently supported on the SPRACINGF3, STM32F3DISCOVERY, NAZE32 (including clone
 
   - Open the BlHeli Suite.
 
-  - Ensure you have selected the correct Atmel or SILABS "INAV" option under the "Select ATMEL / SILABS Interface" menu option.
+  - Ensure you have selected the correct Atmel or SILABS "Cleanflight" option under the "Select ATMEL / SILABS Interface" menu option.
 
   - Ensure you have port for your external USB/UART adapter selected, if you're using one, otherwise pick the same COM port that you normally use for INAV.
 
