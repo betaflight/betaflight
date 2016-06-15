@@ -108,6 +108,7 @@
 #define MAG_HMC5883_ALIGN CW180_DEG
 
 #define SONAR
+#define SONAR_CUSTOM_CONFIG
 #define DISPLAY
 
 #define USE_USART1
