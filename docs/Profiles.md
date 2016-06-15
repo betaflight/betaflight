@@ -54,7 +54,6 @@ e.g
 # rateprofile
 rateprofile 0
 
-set rc_rate = 90
 set rc_expo = 65
 set thr_mid = 50
 set thr_expo = 0

@@ -737,7 +737,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_RC_TUNING:
         headSerialReply(11);
-        serialize8(currentControlRateProfile->rcRate8);
+        serialize8(100); //rcRate8 kept for compatibity reasons, this setting is no longer used
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
             serialize8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
@@ -1221,11 +1221,16 @@ static bool processInCommand(void)
 
     case MSP_SET_RC_TUNING:
         if (currentPort->dataSize >= 10) {
-            currentControlRateProfile->rcRate8 = read8();
+            read8(); //Read rcRate8, kept for protocol compatibility reasons
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
                 rate = read8();
-                currentControlRateProfile->rates[i] = MIN(rate, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                if (i == FD_YAW) {
+                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
+                }
+                else {
+                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                }
             }
             rate = read8();
             currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);

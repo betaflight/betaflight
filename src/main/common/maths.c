@@ -187,6 +187,12 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
     return ((a / b) - (destMax - destMin)) + destMax;
 }
 
+int scaleRangef(float x, float srcMin, float srcMax, float destMin, float destMax) {
+    float a = (destMax - destMin) * (x - srcMin);
+    float b = srcMax - srcMin;
+    return ((a / b) - (destMax - destMin)) + destMax;
+}
+
 // Normalize a vector
 void normalizeV(struct fp_vector *src, struct fp_vector *dest)
 {

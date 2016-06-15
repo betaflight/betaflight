@@ -362,7 +362,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 }
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
-    controlRateConfig->rcRate8 = 90;
     controlRateConfig->rcExpo8 = 70;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
@@ -371,7 +370,11 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
     controlRateConfig->tpa_breakpoint = 1500;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 0;
+        if (axis == FD_YAW) {
+            controlRateConfig->rates[axis] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
+        } else {
+            controlRateConfig->rates[axis] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
+        }
     }
 
 }
@@ -634,10 +637,9 @@ static void resetConf(void)
     currentProfile->pidProfile.P8[PITCH] = 36;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
-    currentControlRateProfile->rates[FD_PITCH] = 20;
-    currentControlRateProfile->rates[FD_ROLL] = 20;
-    currentControlRateProfile->rates[FD_YAW] = 100;
+    currentControlRateProfile->rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
+    currentControlRateProfile->rates[FD_ROLL] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
+    currentControlRateProfile->rates[FD_YAW] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
@@ -738,8 +740,7 @@ static bool isEEPROMContentValid(void)
 
 void activateControlRateConfig(void)
 {
-    generatePitchRollCurve(currentControlRateProfile);
-    generateYawCurve(currentControlRateProfile);
+    generateRcCurves(currentControlRateProfile);
     generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
 }
 
