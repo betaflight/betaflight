@@ -17,8 +17,7 @@
 
 #pragma once
 
-void generatePitchRollCurve(controlRateConfig_t *controlRateConfig);
-void generateYawCurve(controlRateConfig_t *controlRateConfig);
+void generateRcCurves(controlRateConfig_t *controlRateConfig);
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
 
 int16_t rcLookupPitchRoll(int32_t tmp);

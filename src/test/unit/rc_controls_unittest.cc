@@ -186,7 +186,7 @@ static int callCounts[CALL_COUNT_ITEM_COUNT];
 #define CALL_COUNTER(item) (callCounts[item])
 
 extern "C" {
-void generatePitchRollCurve(controlRateConfig_t *) {
+void generateRcCurves(controlRateConfig_t *) {
     callCounts[COUNTER_GENERATE_PITCH_ROLL_CURVE]++;
 }
 
@@ -237,7 +237,6 @@ static const adjustmentConfig_t rateAdjustmentConfig = {
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
     controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
             .rcExpo8 = 0,
             .thrMid8 = 0,
             .thrExpo8 = 0,
@@ -256,7 +255,6 @@ protected:
         rxConfig.maxcheck = DEFAULT_MAX_CHECK;
         rxConfig.midrc = 1500;
 
-        controlRateConfig.rcRate8 = 90;
         controlRateConfig.rcExpo8 = 0;
         controlRateConfig.thrMid8 = 0;
         controlRateConfig.thrExpo8 = 0;
@@ -289,7 +287,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 90);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 0);
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 0);
     EXPECT_EQ(adjustmentStateMask, 0);
@@ -299,7 +296,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 {
     // given
     controlRateConfig_t controlRateConfig = {
-            .rcRate8 = 90,
             .rcExpo8 = 0,
             .thrMid8 = 0,
             .thrExpo8 = 0,
@@ -344,7 +340,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 1);
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 1);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -360,7 +355,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     // when
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
-    EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
@@ -382,7 +376,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     // when
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
-    EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
 
@@ -403,7 +396,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 92);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 2);
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 2);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -420,7 +412,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 92);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
@@ -434,7 +425,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 92);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     //
@@ -450,7 +440,6 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
-    EXPECT_EQ(controlRateConfig.rcRate8, 93);
     EXPECT_EQ(CALL_COUNTER(COUNTER_GENERATE_PITCH_ROLL_CURVE), 3);
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 3);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);

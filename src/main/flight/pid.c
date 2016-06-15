@@ -115,10 +115,14 @@ int16_t pidAngleToRcCommand(float angleDeciDegrees)
     return angleDeciDegrees / 2.0f;
 }
 
+/*
+Map stick positions to desired rotatrion rate in given axis.
+Rotation rate in dps at full stick deflection is defined by axis rate measured in dps/10
+Rate 20 means 200dps at full stick deflection
+*/
 float pidRcCommandToRate(int16_t stick, uint8_t rate)
 {
-    // Map stick position from 200dps to 1200dps
-    return (float)((rate + 20) * stick) / 50.0f;
+    return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
 }
 
 #define FP_PID_RATE_P_MULTIPLIER    40.0f       // betaflight - 40.0

@@ -108,11 +108,21 @@ typedef enum {
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
-// Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
+/*
+Max and min available values for rates are now stored as absolute
+tenths of degrees-per-second [dsp/10]
+That means, max. rotation rate 180 equals 1800dps
 
-/* Meaningful yaw rates are effectively unbounded because they are treated as a rotation rate multiplier: */
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
+New defaults of 200dps for pitch,roll and yaw are more less
+equivalent of rates 0 from previous versions of iNav, Cleanflight, Baseflight
+and so on.
+*/
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  180
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN  6
+#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT  20
+#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         180
+#define CONTROL_RATE_CONFIG_YAW_RATE_MIN         2
+#define CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT     20
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
 
@@ -134,7 +144,6 @@ typedef struct modeActivationCondition_s {
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
     uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;

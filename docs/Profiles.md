@@ -31,7 +31,7 @@ Three rate profiles are supported.
 Rate profiles can be selected while flying using the inflight adjustments feature.
 
 Each normal profile has a setting called 'default_rate_profile`.  When a profile is activated the
-corresponding rate profile is also activated. 
+corresponding rate profile is also activated.
 
 Profile 0 has a default rate profile of 0.
 Profile 1 has a default rate profile of 1.
@@ -54,7 +54,6 @@ e.g
 # rateprofile
 rateprofile 0
 
-set rc_rate = 90
 set rc_expo = 65
 set thr_mid = 50
 set thr_expo = 0
