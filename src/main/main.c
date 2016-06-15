@@ -269,7 +269,7 @@ void init(void)
             .triggerPin = sonarHardware->triggerIO,
             .echoPin = sonarHardware->echoIO
         };
-	    pwm_params.sonarConfig = &sonarConfig;
+        pwm_params.sonarConfig = &sonarConfig;
     }
 #endif
 
