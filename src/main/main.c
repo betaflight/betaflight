@@ -343,7 +343,6 @@ void init(void)
         sonarGPIOConfig.echoGPIO = sonarHardware->echo_gpio;
         sonarGPIOConfig.echoPin = sonarHardware->echo_pin;
         pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
-
     }
 #endif
 
