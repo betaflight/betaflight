@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
-#define ALIENFLIGHT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -128,22 +127,22 @@
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
 
-#undef BLACKBOX
-#undef GPS
-#undef DISPLAY
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
+// alternative defaults for AlienFlight F3 target
+#define ALIENFLIGHT
 
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN   PA3
 
-// alternative defaults for AlienFlight F3 target
-#define ALIENFLIGHT
 #define HARDWARE_BIND_PLUG
-
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN   PB12
+
+#define BRUSHED_MOTORS
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_FEATURES (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA 0xffff
