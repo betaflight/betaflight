@@ -20,30 +20,9 @@
 #include <stdint.h>
 
 #include <platform.h>
-#include "scheduler.h"
 
-void taskSystem(void);
-void taskMainPidLoopCheck(void);
-void taskUpdateAccelerometer(void);
-void taskUpdateAttitude(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskHandleSerial(void);
-void taskUpdateBattery(void);
-void taskUpdateBeeper(void);
-void taskProcessGPS(void);
-void taskUpdateCompass(void);
-void taskUpdateBaro(void);
-void taskUpdateSonar(void);
-void taskCalculateAltitude(void);
-void taskUpdateDisplay(void);
-void taskTelemetry(void);
-void taskLedStrip(void);
-void taskTransponder(void);
-#ifdef USE_BST
-void taskBstReadWrite(void);
-void taskBstMasterProcess(void);
-#endif
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {

@@ -21,7 +21,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -85,6 +84,9 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
 
 // June 2013     V2.2-dev
 
@@ -839,8 +841,9 @@ void taskUpdateBattery(void)
     }
 }
 
-bool taskUpdateRxCheck(void)
+bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
+    UNUSED(currentDeltaTime);
     updateRx(currentTime);
     return shouldProcessRx(currentTime);
 }
