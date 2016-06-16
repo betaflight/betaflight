@@ -57,7 +57,6 @@
 //#define MAG
 //#define USE_MAG_HMC5883
 
-
 #define USE_VCP
 #define USE_USART1
 #define USE_USART2
@@ -182,6 +181,13 @@
 #undef GPS_PROTO_I2C_NAV
 #undef GPS_PROTO_NAZA
 
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+// #define TARGET_IO_PORTF (BIT(0)|BIT(1))
+// !!TODO - check the following line is correct
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
 
