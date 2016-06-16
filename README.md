@@ -1,5 +1,7 @@
 # Betaflight Configurator
 
+![Betaflight](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088900-228-bf_logo.jpg)
+
 Betaflight Configurator is a crossplatform configuration tool for the Betaflight flight control system.
 
 It runs as an app within Google Chrome and allows you to configure the Betaflight software running on any [supported Betaflight target](https://github.com/betaflight/betaflight/tree/betaflight/src/main/target).
@@ -17,7 +19,7 @@ If you are experiencing any problems please make sure you are running the [lates
 
 ## Installation
 
-### Via chrome webstore
+### Via chrome webstore (not released yet)
 
 1. Visit [Chrome web store](https://chrome.google.com/webstore/detail/betaflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
 2. Click **+ Free**
