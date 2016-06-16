@@ -353,14 +353,10 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 }
 
 // configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t *timHw, GPIO_Mode mode)
+void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    gpio_config_t cfg;
-
-    cfg.pin = timHw->pin;
-    cfg.mode = mode;
-    cfg.speed = Speed_2MHz;
-    gpioInit(timHw->gpio, &cfg);
+    IOInit(IOGetByTag(timHw->pin), OWNER_TIMER, RESOURCE_TIMER);
+    IOConfigGPIO(IOGetByTag(timHw->pin), mode);
 }
 
 // calculate input filter constant
@@ -656,20 +652,14 @@ void timerInit(void)
     RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
 #endif
 
-#ifdef STM32F303xC
+#if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->pin), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
-
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
-    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
-    }
-#endif
-// initialize timer channel structures
+    
+    // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }

@@ -47,7 +47,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -58,6 +57,10 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+
+#ifdef USE_BST
+#include "bus_bst.h"
+#endif
 
 #include "rx/rx.h"
 
@@ -194,7 +197,7 @@ void init(void)
     EXTIInit();
 #endif
 
-#ifdef SPRACINGF3MINI
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
@@ -418,10 +421,12 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
+#endif
 #endif
 
 #ifdef USE_I2C

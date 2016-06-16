@@ -39,6 +39,7 @@ enum {
     updateSonarTime = 10,
     calculateAltitudeTime = 154,
     updateDisplayTime = 10,
+    updateMaxOSDTime = 10,
     telemetryTime = 10,
     ledStripTime = 10,
     transponderTime = 10
@@ -68,6 +69,7 @@ extern "C" {
     void taskUpdateSonar(void) {simulatedTime+=updateSonarTime;}
     void taskCalculateAltitude(void) {simulatedTime+=calculateAltitudeTime;}
     void taskUpdateDisplay(void) {simulatedTime+=updateDisplayTime;}
+    void taskUpdateMaxOSD(void) {simulatedTime+=updateMaxOSDTime;}
     void taskTelemetry(void) {simulatedTime+=telemetryTime;}
     void taskLedStrip(void) {simulatedTime+=ledStripTime;}
     void taskTransponder(void) {simulatedTime+=transponderTime;}
