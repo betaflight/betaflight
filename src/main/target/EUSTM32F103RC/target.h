@@ -69,6 +69,8 @@
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
 
 #define SONAR
+#define SONAR_CUSTOM_CONFIG
+
 #define DISPLAY
 
 #define USE_USART1

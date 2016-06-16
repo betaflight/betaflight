@@ -52,6 +52,8 @@
 #define USE_FLASH_M25P16
 
 #define SONAR
+#define SONAR_ECHO_PIN      PB1
+#define SONAR_TRIGGER_PIN   PB0
 
 #define USE_USART1
 #define USE_USART2
