@@ -22,8 +22,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
-
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -77,6 +75,8 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -267,12 +267,11 @@ void init(void)
 
     if (feature(FEATURE_SONAR)) {
         sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
-        sonarGPIOConfig_t sonarGPIOConfig = {
-            .gpio = SONAR_GPIO,
-            .triggerPin = sonarHardware->echo_pin,
-            .echoPin = sonarHardware->trigger_pin,
+        sonarIOConfig_t sonarConfig = {
+            .triggerPin = sonarHardware->triggerIO,
+            .echoPin = sonarHardware->echoIO
         };
-        pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
+        pwm_params.sonarConfig = &sonarConfig;
     }
 #endif
 
@@ -354,10 +353,6 @@ void init(void)
         .isInverted = false
 #endif
     };
-#ifdef AFROMINI
-    beeperConfig.isOD = true;
-    beeperConfig.isInverted = true;
-#endif
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.

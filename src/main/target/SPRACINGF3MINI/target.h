@@ -24,9 +24,9 @@
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA
 
-#define LED0    PB3
+#define LED0            PB3
 
-#define BEEPER    PC15
+#define BEEPER          PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
@@ -50,7 +50,7 @@
 //#define USE_FAKE_ACC
 #define USE_ACC_MPU6500
 
-#define ACC_MPU6500_ALIGN CW180_DEG
+#define ACC_MPU6500_ALIGN  CW180_DEG
 #define GYRO_MPU6500_ALIGN CW180_DEG
 
 #define BARO
@@ -64,11 +64,13 @@
 #define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define SONAR
+#define SONAR_ECHO_PIN      PB1
+#define SONAR_TRIGGER_PIN   PB0
 
 #define USB_IO
 #define USB_CABLE_DETECTION
 
-#define USB_DETECT_PIN                   PB5
+#define USB_DETECT_PIN      PB5
 
 #define USE_VCP
 #define USE_USART1

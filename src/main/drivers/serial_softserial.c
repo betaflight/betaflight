@@ -96,7 +96,7 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     if (state) {
         IOHi(softSerial->txIO);
     } else {
-        IOLo(softSerial->txIO);
+	    IOLo(softSerial->txIO);
     }
 }
 
@@ -220,7 +220,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->pin);
     serialOutputPortConfig(softSerial->txTimerHardware->pin);
-
+    
     softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->pin);
     serialInputPortConfig(softSerial->rxTimerHardware->pin);
 

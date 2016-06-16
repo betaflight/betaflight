@@ -118,6 +118,9 @@
 
 #define DISPLAY
 #define SONAR
+#define SONAR_ECHO_PIN      PB0
+#define SONAR_TRIGGER_PIN   PB5
+
 #undef GPS
 
 #undef BARO

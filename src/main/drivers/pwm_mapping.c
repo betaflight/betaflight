@@ -111,7 +111,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     int channelIndex = 0;
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
-
+       
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
         i = 2; // switch to air hardware config
@@ -189,12 +189,11 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef SONAR
-        if (init->sonarGPIOConfig &&
+        if (init->sonarConfig && 
             (
-                CheckGPIOPin(timerHardwarePtr->pin, init->sonarGPIOConfig->gpio, init->sonarGPIOConfig->triggerPin) ||
-                CheckGPIOPin(timerHardwarePtr->pin, init->sonarGPIOConfig->gpio, init->sonarGPIOConfig->echoPin)
-            )
-        ) {
+                timerHardwarePtr->pin == init->sonarConfig->triggerPin ||
+                timerHardwarePtr->pin == init->sonarConfig->echoPin
+            )) {
             continue;
         }
 #endif

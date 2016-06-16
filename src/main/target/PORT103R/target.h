@@ -87,6 +87,8 @@
 #define USE_FLASH_M25P16
 
 #define SONAR
+#define SONAR_CUSTOM_CONFIG
+
 #define DISPLAY
 
 #define USE_USART1

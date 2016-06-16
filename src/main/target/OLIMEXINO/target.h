@@ -59,6 +59,8 @@
 #define USE_MAG_HMC5883
 
 #define SONAR
+#define SONAR_ECHO_PIN      PB1
+#define SONAR_TRIGGER_PIN   PB0
 
 #define USE_USART1
 #define USE_USART2
