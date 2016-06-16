@@ -4,11 +4,11 @@
 #include "common/utils.h"
 
 enum rcc_reg {
-	RCC_EMPTY = 0,   // make sure that default value (0) does not enable anything
-	RCC_AHB,
-	RCC_APB2,
-	RCC_APB1,
-	RCC_AHB1,
+    RCC_EMPTY = 0,   // make sure that default value (0) does not enable anything
+    RCC_AHB,
+    RCC_APB2,
+    RCC_APB1,
+    RCC_AHB1,
 };
 
 #define RCC_ENCODE(reg, mask) (((reg) << 5) | LOG2_32BIT(mask))
