@@ -61,6 +61,8 @@
 #define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
 #define SONAR
+#define SONAR_ECHO_PIN      PB1
+#define SONAR_TRIGGER_PIN   PB0
 
 #define USB_IO
 #define USB_CABLE_DETECTION
