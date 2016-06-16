@@ -31,8 +31,10 @@
 
 #include "max7456.h"
 
-#define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
-#define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
+#define DISABLE_MAX7456       IOHi(max7456CsPin)
+#define ENABLE_MAX7456        IOLo(max7456CsPin)
+
+static IO_t max7456CsPin = IO_NONE;
 
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_MODE_PIXELS_NTSC   390
@@ -56,6 +58,12 @@ void max7456_init(uint8_t system) {
     uint8_t srdata = 0;
     uint16_t x;
     char buf[30];
+
+#ifdef MAX7456_SPI_CS_PIN
+    max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+    IOInit(max7456CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
 
     //Minimum spi clock period for max7456 is 100ns (10Mhz)
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
