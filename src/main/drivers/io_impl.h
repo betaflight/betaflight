@@ -5,14 +5,14 @@
 #include "platform.h"
 
 typedef struct ioDef_s {
-	ioTag_t tag;
+    ioTag_t tag;
 } ioDef_t;
 
 typedef struct ioRec_s {
-	GPIO_TypeDef *gpio;
-	uint16_t pin;
-	resourceOwner_t owner;
-	resourceType_t resourcesUsed; // TODO!
+    GPIO_TypeDef *gpio;
+    uint16_t pin;
+    resourceOwner_t owner;
+    resourceType_t resourcesUsed; // TODO!
 } ioRec_t;
 
 extern ioRec_t ioRecs[DEFIO_IO_USED_COUNT];
