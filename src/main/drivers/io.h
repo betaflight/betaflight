@@ -3,11 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <platform.h>
 #include "resource.h"
 
 // IO pin identification
 // make sure that ioTag_t can't be assigned into IO_t without warning
-typedef uint8_t ioTag_t;          // packet tag to specify IO pin
+typedef uint8_t ioTag_t;       // packet tag to specify IO pin
 typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t pointer, but this may change
 
 // NONE initializer for IO_t variable
@@ -33,42 +34,32 @@ typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t poin
 //  helps masking CPU differences
 
 typedef uint8_t ioConfig_t;  // packed IO configuration
-#if defined(STM32F10X)
+#if defined(STM32F1)
 
 // mode is using only bits 6-2
-# define IO_CONFIG(mode, speed) ((mode) | (speed))
+#define IO_CONFIG(mode, speed) ((mode) | (speed))
 
-# define IOCFG_OUT_PP         IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_2MHz)
-# define IOCFG_OUT_OD         IO_CONFIG(GPIO_Mode_Out_OD,      GPIO_Speed_2MHz)
-# define IOCFG_AF_PP          IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_2MHz)
-# define IOCFG_AF_OD          IO_CONFIG(GPIO_Mode_AF_OD,       GPIO_Speed_2MHz)
-# define IOCFG_IPD            IO_CONFIG(GPIO_Mode_IPD,         GPIO_Speed_2MHz)
-# define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IPU,         GPIO_Speed_2MHz)
-# define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_2MHz)
+#define IOCFG_OUT_PP         IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_2MHz)
+#define IOCFG_OUT_OD         IO_CONFIG(GPIO_Mode_Out_OD,      GPIO_Speed_2MHz)
+#define IOCFG_AF_PP          IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_2MHz)
+#define IOCFG_AF_OD          IO_CONFIG(GPIO_Mode_AF_OD,       GPIO_Speed_2MHz)
+#define IOCFG_IPD            IO_CONFIG(GPIO_Mode_IPD,         GPIO_Speed_2MHz)
+#define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IPU,         GPIO_Speed_2MHz)
+#define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_2MHz)
 
-#elif defined(STM32F303xC)
+#elif defined(STM32F3) || defined(STM32F4)
 
-# define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
+#define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
 
-# define IOCFG_OUT_PP         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_PP, GPIO_PuPd_NOPULL)  // TODO
-# define IOCFG_OUT_OD         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
-# define IOCFG_AF_PP          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-# define IOCFG_AF_OD          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
-# define IOCFG_IPD            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_DOWN)
-# define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_UP)
-# define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_NOPULL)
-
-#elif defined(STM32F40_41xxx) || defined(STM32F411xE)
-
-# define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
-
-# define IOCFG_OUT_PP         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_PP, GPIO_PuPd_NOPULL)  // TODO
-# define IOCFG_OUT_OD         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
-# define IOCFG_AF_PP          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-# define IOCFG_AF_OD          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
-# define IOCFG_IPD            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_DOWN)
-# define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_UP)
-# define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_NOPULL)
+#define IOCFG_OUT_PP         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_PP, GPIO_PuPd_NOPULL)  // TODO
+#define IOCFG_OUT_OD         IO_CONFIG(GPIO_Mode_OUT, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
+#define IOCFG_AF_PP          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define IOCFG_AF_PP_PD       IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define IOCFG_AF_PP_UP       IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_PP, GPIO_PuPd_UP)
+#define IOCFG_AF_OD          IO_CONFIG(GPIO_Mode_AF,  0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
+#define IOCFG_IPD            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_DOWN)
+#define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_UP)
+#define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_NOPULL)
 
 #elif defined(UNIT_TEST)
 
@@ -100,7 +91,7 @@ resourceType_t IOGetResources(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);
-#if defined(STM32F303xC) || defined(STM32F40_41xxx) || defined(STM32F411xE)
+#if defined(STM32F3) || defined(STM32F4)
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 

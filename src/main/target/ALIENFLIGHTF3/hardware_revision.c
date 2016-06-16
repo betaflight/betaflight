@@ -24,7 +24,7 @@
 
 #include "drivers/system.h"
 #include "drivers/io.h"
-
+#include "drivers/exti.h"
 #include "hardware_revision.h"
 
 static const char * const hardwareRevisionNames[] = {
@@ -55,4 +55,23 @@ void detectHardwareRevision(void)
 
 void updateHardwareRevision(void)
 {
+}
+
+const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+{
+    // MPU_INT output on V1 PA15
+    static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
+        .io = IO_TAG(PA15)
+    };
+    // MPU_INT output on V2 PB13
+    static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
+        .io = IO_TAG(PB13)
+    };
+
+    if (hardwareRevision == AFF3_REV_1) {
+        return &alienFlightF3V1MPUIntExtiConfig;
+    }
+    else {
+        return &alienFlightF3V2MPUIntExtiConfig;
+    }
 }

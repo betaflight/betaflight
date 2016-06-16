@@ -11,7 +11,7 @@ struct ioPortDef_s {
 	rccPeriphTag_t rcc;
 };
 
-#if defined(STM32F10X)
+#if defined(STM32F1)
 const struct ioPortDef_s ioPortDefs[] = {
 	{ RCC_APB2(IOPA) },
 	{ RCC_APB2(IOPB) },
@@ -33,7 +33,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 #endif
 },
 };
-#elif defined(STM32F303xC)
+#elif defined(STM32F3)
 const struct ioPortDef_s ioPortDefs[] = {
 	{ RCC_AHB(GPIOA) },
 	{ RCC_AHB(GPIOB) },
@@ -111,11 +111,11 @@ uint32_t IO_EXTI_Line(IO_t io)
 {
 	if (!io)
 		return 0;
-#if defined(STM32F10X)
+#if defined(STM32F1)
 	return 1 << IO_GPIOPinIdx(io);
-#elif defined(STM32F303xC)
+#elif defined(STM32F3)
 	return IO_GPIOPinIdx(io);
-#elif defined(STM32F40_41xxx) || defined(STM32F411xE)
+#elif defined(STM32F4)
 	return 1 << IO_GPIOPinIdx(io);
 #else
 # error "Unknown target type"
@@ -133,7 +133,7 @@ void IOWrite(IO_t io, bool hi)
 {
 	if (!io)
 		return;
-#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#ifdef STM32F4
 	if (hi) {
 		IO_GPIO(io)->BSRRL = IO_Pin(io);
 	}
@@ -149,7 +149,7 @@ void IOHi(IO_t io)
 {
 	if (!io)
 		return;
-#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#ifdef STM32F4
 	IO_GPIO(io)->BSRRL = IO_Pin(io);
 #else
 	IO_GPIO(io)->BSRR = IO_Pin(io);
@@ -160,7 +160,7 @@ void IOLo(IO_t io)
 {
 	if (!io)
 		return;
-#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#ifdef STM32F4
 	IO_GPIO(io)->BSRRH = IO_Pin(io);
 #else
 	IO_GPIO(io)->BRR = IO_Pin(io);
@@ -175,7 +175,7 @@ void IOToggle(IO_t io)
 	// Read pin state from ODR but write to BSRR because it only changes the pins
 	// high in the mask value rather than all pins. XORing ODR directly risks
 	// setting other pins incorrectly because it change all pins' state.
-#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#ifdef STM32F4
 	if (IO_GPIO(io)->ODR & mask) {
 		IO_GPIO(io)->BSRRH = mask;
 	} else {
@@ -216,7 +216,7 @@ resourceType_t IOGetResources(IO_t io)
 	return ioRec->resourcesUsed;
 }
 
-#if defined(STM32F10X)
+#if defined(STM32F1)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
@@ -233,7 +233,7 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 	GPIO_Init(IO_GPIO(io), &init);
 }
 
-#elif defined(STM32F303xC) || defined(STM32F40_41xxx) || defined(STM32F411xE)
+#elif defined(STM32F3) || defined(STM32F4)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {

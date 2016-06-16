@@ -26,6 +26,9 @@
 #define LED1    PB4 // PB4 (LED)
 
 #define BEEPER      PA12 // PA12 (Beeper)
+#ifdef AFROMINI
+#define BEEPER_INVERTED
+#endif
 
 #define BARO_XCLR_PIN    PC13
 #define BARO_EOC_PIN     PC14

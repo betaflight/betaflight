@@ -26,6 +26,7 @@
 #include "drivers/system.h"
 #include "drivers/bus_spi.h"
 #include "drivers/sensor.h"
+#include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_mpu.h"
@@ -107,5 +108,28 @@ void updateHardwareRevision(void)
 
     if (detectedSpiDevice == SPI_DEVICE_MPU && hardwareRevision == NAZE32_REV5)
         hardwareRevision = NAZE32_SP;
+#endif
+}
+
+const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+{
+    // MPU_INT output on rev4 PB13
+    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
+        .io = IO_TAG(PB13)
+    };
+    // MPU_INT output on rev5 hardware PC13
+    static const extiConfig_t nazeRev5MPUIntExtiConfig = {
+        .io = IO_TAG(PC13)
+    };
+
+#ifdef AFROMINI
+    return &nazeRev5MPUIntExtiConfig;
+#else
+    if (hardwareRevision < NAZE32_REV5) {
+        return &nazeRev4MPUIntExtiConfig;
+    }
+    else {
+        return &nazeRev5MPUIntExtiConfig;
+    }
 #endif
 }
