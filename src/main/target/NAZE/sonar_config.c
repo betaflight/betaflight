@@ -7,8 +7,7 @@
 #include "sensors/battery.h"
 #include "sensors/sonar.h"
 
-#ifdef SONAR_CUSTOM_CONFIG
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
+const sonarHardware_t *sonarGetTargetHardwareConfiguration(batteryConfig_t *batteryConfig)
 {
     static const sonarHardware_t const sonarPWM56 = {
 		.triggerIO = IO_TAG(PB8),
@@ -27,4 +26,3 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
         return &sonarRC78;
     }
 }
-#endif

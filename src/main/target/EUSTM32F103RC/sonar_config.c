@@ -7,16 +7,15 @@
 #include "sensors/battery.h"
 #include "sensors/sonar.h"
 
-#ifdef SONAR_CUSTOM_CONFIG
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
+const sonarHardware_t *sonarGetTargetHardwareConfiguration(batteryConfig_t *batteryConfig)
 {
     static const sonarHardware_t const sonarPWM56 = {
-		.triggerIO = IO_TAG(PB8),
-		.echoIO = IO_TAG(PB9),
+        .triggerIO = IO_TAG(PB8),
+        .echoIO = IO_TAG(PB9),
     };
     static const sonarHardware_t sonarRC78 = {
-		.triggerIO = IO_TAG(PB0),
-		.echoIO = IO_TAG(PB1),
+        .triggerIO = IO_TAG(PB0),
+        .echoIO = IO_TAG(PB1),
     };
     // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
     if (feature(FEATURE_SOFTSERIAL)
@@ -27,4 +26,3 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
         return &sonarRC78;
     }
 }
-#endif

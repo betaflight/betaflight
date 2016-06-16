@@ -48,7 +48,10 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-#ifndef SONAR_CUSTOM_CONFIG
+#ifdef SONAR_CUSTOM_CONFIG
+const sonarHardware_t *sonarGetTargetHardwareConfiguration(batteryConfig_t *batteryConfig);
+#endif
+
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
 {
 #if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
@@ -58,6 +61,8 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 		.echoIO = IO_TAG(SONAR_ECHO_PIN),
     };
     return &sonarHardware;
+#elif defined(SONAR_CUSTOM_CONFIG)
+    return sonarGetTargetHardwareConfiguration(batteryConfig);
 #elif defined(UNIT_TEST)
     UNUSED(batteryConfig);
     return 0;
@@ -65,7 +70,7 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 #error Sonar not defined for target
 #endif
 }
-#endif
+
 void sonarInit(const sonarHardware_t *sonarHardware)
 {
     sonarRange_t sonarRange;
