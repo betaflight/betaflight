@@ -71,4 +71,5 @@ We accept clean and reasonable patches, submit them!
 ## Credits
 
 ctn - primary author and maintainer of Baseflight Configurator from which Cleanflight Configurator project was forked.
+
 Hydra -  author and maintainer of Cleanflight Configurator from which this project was forked.
