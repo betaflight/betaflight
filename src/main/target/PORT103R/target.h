@@ -161,6 +161,12 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// IO - stm32f103RCT6 in 64pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))
+
 
 #define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
 

@@ -250,9 +250,9 @@
 #define BINDPLUG_PIN   Pin_5
 #endif // ALIENFLIGHTF1
 
-#ifdef MICROSKYSKY
+#ifdef MICROSCISKY
 #undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "MSKY" // Micro SKYsci
+#define TARGET_BOARD_IDENTIFIER "MSKY" // Micro sciSKY
 #define BRUSHED_MOTORS
 #define USE_QUAD_MIXER_ONLY
 #undef USE_SERVOS
@@ -264,6 +264,12 @@
 #undef TELEMETRY_FRSKY
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
+
+
+// IO - assuming all IOs on 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 
 
 #define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
