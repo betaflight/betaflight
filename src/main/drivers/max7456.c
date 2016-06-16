@@ -35,14 +35,14 @@
 #define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
 
 /** PAL or NTSC, value is number of chars total */
-#define VIDEO_MODE_PIXELS_NTSC   390
-#define VIDEO_MODE_PIXELS_PAL    480
+#define VIDEO_BUFFER_CHARS_NTSC   390
+#define VIDEO_BUFFER_CHARS_PAL    480
 
 
 uint16_t max_screen_size;
 uint8_t  video_signal_type = 0;
 uint8_t  max7456_lock = 0;
-char screen[VIDEO_MODE_PIXELS_PAL];
+char screen[VIDEO_BUFFER_CHARS_PAL];
 
 
 uint8_t max7456_send(uint8_t add, uint8_t data) {
@@ -85,10 +85,10 @@ void max7456_init(uint8_t system) {
     }
 
     if (video_signal_type) { //PAL
-        max_screen_size = VIDEO_MODE_PIXELS_PAL;
+        max_screen_size = VIDEO_BUFFER_CHARS_PAL;
         max_screen_rows = 16;
     } else {                 // NTSC
-        max_screen_size = VIDEO_MODE_PIXELS_NTSC;
+        max_screen_size = VIDEO_BUFFER_CHARS_NTSC;
         max_screen_rows = 13;
     }
 

@@ -125,8 +125,11 @@ typedef struct master_t {
     uint8_t transponderData[6];
 #endif
 
-#ifdef OSD
+#ifdef USE_RTC6705
     uint8_t vtx_channel;
+#endif
+
+#ifdef OSD
     osd_profile osdProfile;
 #endif
 
