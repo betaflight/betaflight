@@ -352,10 +352,6 @@ void init(void)
         .isInverted = false
 #endif
     };
-#ifdef AFROMINI
-    beeperConfig.isOD = true;
-    beeperConfig.isInverted = true;
-#endif
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
