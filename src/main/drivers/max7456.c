@@ -27,6 +27,7 @@
 #ifdef USE_MAX7456
 
 #include "drivers/bus_spi.h"
+#include "drivers/light_led.h"
 #include "drivers/system.h"
 
 #include "max7456.h"
@@ -39,7 +40,6 @@ static IO_t max7456CsPin = IO_NONE;
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_MODE_PIXELS_NTSC   390
 #define VIDEO_MODE_PIXELS_PAL    480
-
 
 uint16_t max_screen_size;
 uint8_t  video_signal_type = 0;
@@ -183,6 +183,11 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     for(x = 0; x < 54; x++) {
         max7456_send(MAX7456ADD_CMAL, x); //set start address low
         max7456_send(MAX7456ADD_CMDI, font_data[x]);
+#ifdef LED0_TOGGLE
+        LED0_TOGGLE;
+#else
+        LED1_TOGGLE;
+#endif
     }
 
     // transfer 54 bytes from shadow ram to NVM
