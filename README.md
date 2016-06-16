@@ -10,7 +10,7 @@ Various types of aircraft are supported by the tool and by Betaflight, e.g. quad
 
 ## Authors
 
-Betaflight Configurator was originally a [fork](#credits) of the betaflight Configurator with support for Betaflight instead of betaflight.
+Betaflight Configurator is a [fork](#credits) of the Cleanflight Configurator with support for Betaflight instead of Cleanflight.
 
 This configurator is the only configurator with support for Betaflight specific features. It will likely require that you run the latest firmware on the flight controller.
 If you are experiencing any problems please make sure you are running the [latest firmware version](https://github.com/betaflight/betaflight/releases/).
@@ -70,4 +70,5 @@ We accept clean and reasonable patches, submit them!
 
 ## Credits
 
-ctn - primary author and maintainer of Baseflight Configurator from which this project was forked.
+ctn - primary author and maintainer of Baseflight Configurator from which Cleanflight Configurator project was forked.
+Hydra -  author and maintainer of Cleanflight Configurator from which this project was forked.
