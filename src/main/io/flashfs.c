@@ -33,7 +33,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#ifdef CUSTOM_FLASHCHIP
+#ifndef NO_CUSTOM_FLASHCHIP
 #include "config/parameter_group.h"
 #endif
 

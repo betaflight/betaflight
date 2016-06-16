@@ -23,7 +23,7 @@
 
 #ifdef USE_FLASH_M25P16
 
-#ifdef CUSTOM_FLASHCHIP
+#ifndef NO_CUSTOM_FLASHCHIP
 #include "config/parameter_group.h"
 #endif
 
@@ -174,7 +174,7 @@ static bool m25p16_readIdentification()
             geometry.pagesPerSector = 256;
         break;
         default:
-#ifdef CUSTOM_FLASHCHIP
+#ifndef NO_CUSTOM_FLASHCHIP
             if (chipID == flashchipConfig()->flashchip_id) {
                 geometry.sectors = flashchipConfig()->flashchip_nsect;
                 geometry.pagesPerSector = flashchipConfig()->flashchip_pps;
@@ -189,7 +189,7 @@ static bool m25p16_readIdentification()
             geometry.totalSize = 0;
             return false;
     }
-#ifdef CUSTOM_FLASHCHIP
+#ifndef NO_CUSTOM_FLASHCHIP
     // Write back hard coded params. Eventually go away?
     if (flashchipConfig()->flashchip_id == 0) {
         flashchipConfig()->flashchip_id = chipID;

@@ -502,7 +502,7 @@ const clivalue_t valueTable[] = {
     { "looptime",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 9000} , PG_IMU_CONFIG, offsetof(imuConfig_t, looptime)},
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, emf_avoidance)},
     { "i2c_highspeed",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_highspeed)},
-#ifdef CUSTOM_FLASHCHIP
+#ifndef NO_CUSTOM_FLASHCHIP
     { "flashchip_id",                VAR_UINT32 | MASTER_VALUE, .config.minmax = { 0,  0xffffff } ,   PG_DRIVER_FLASHCHIP_CONFIG, offsetof(flashchipConfig_t, flashchip_id)},
     { "flashchip_nsect",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_DRIVER_FLASHCHIP_CONFIG, offsetof(flashchipConfig_t, flashchip_nsect)},
     { "flashchip_pps",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_DRIVER_FLASHCHIP_CONFIG, offsetof(flashchipConfig_t, flashchip_pps)},
