@@ -40,8 +40,6 @@
 
 static IO_t mpuSpi6500CsPin = IO_NONE;
 
-extern uint16_t acc_1G;
-
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;

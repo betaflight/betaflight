@@ -116,11 +116,11 @@ void mpu9250SpiGyroInit(uint8_t lpf)
     }
 }
 
-void mpu9250SpiAccInit(void)
+void mpu9250SpiAccInit(acc_t *acc)
 {
     mpuIntExtiInit();
 
-    acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 8;
 }
 
 

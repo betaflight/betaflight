@@ -166,7 +166,7 @@ static void sendAccel(void)
 
     for (i = 0; i < 3; i++) {
         sendDataHead(ID_ACC_X + i);
-        serialize16(((float)accSmooth[i] / acc_1G) * 1000);
+        serialize16(((float)accSmooth[i] / acc.acc_1G) * 1000);
     }
 }
 

@@ -144,11 +144,11 @@ void mpu6000SpiGyroInit(uint8_t lpf)
     }
 }
 
-void mpu6000SpiAccInit(void)
+void mpu6000SpiAccInit(acc_t *acc)
 {
     mpuIntExtiInit();
 
-    acc_1G = 512 * 4;
+    acc->acc_1G = 512 * 4;
 }
 
 bool mpu6000SpiDetect(void)

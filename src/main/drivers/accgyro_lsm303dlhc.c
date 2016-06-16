@@ -113,7 +113,7 @@ int32_t accelSummedSamples100Hz[3];
 
 int32_t accelSummedSamples500Hz[3];
 
-void lsm303dlhcAccInit(void)
+void lsm303dlhcAccInit(acc_t *acc)
 {
 	i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG5_A, BOOT);
 
@@ -127,7 +127,7 @@ void lsm303dlhcAccInit(void)
 
     delay(100);
 
-    acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 8;
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.

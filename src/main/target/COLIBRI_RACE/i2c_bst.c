@@ -606,7 +606,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 		case BST_RAW_IMU:
 			{
 				// Hack scale due to choice of units for sensor data in multiwii
-				uint8_t scale = (acc_1G > 1024) ? 8 : 1;
+				uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
 
 				for (i = 0; i < 3; i++)
 					bstWrite16(accSmooth[i] / scale);
