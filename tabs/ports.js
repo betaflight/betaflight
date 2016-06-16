@@ -72,7 +72,6 @@ TABS.ports.initialize = function (callback, scrollPosition) {
 
     if (GUI.active_tab != 'ports') {
         GUI.active_tab = 'ports';
-        googleAnalytics.sendAppView('Ports');
     }
 
     load_configuration_from_fc();

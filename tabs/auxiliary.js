@@ -5,7 +5,6 @@ TABS.auxiliary = {};
 TABS.auxiliary.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'auxiliary';
-    googleAnalytics.sendAppView('Auxiliary');
     
     function get_mode_ranges() {
         MSP.send_message(MSP_codes.MSP_MODE_RANGES, false, false, get_box_ids);

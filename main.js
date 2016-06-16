@@ -1,13 +1,5 @@
 'use strict';
 
-// Google Analytics
-var googleAnalyticsService = analytics.getService('ice_cream_app');
-var googleAnalytics = googleAnalyticsService.getTracker(atob("VUEtNTI4MjA5MjAtMQ=="));
-var googleAnalyticsConfig = false;
-googleAnalyticsService.getConfig().addCallback(function (config) {
-    googleAnalyticsConfig = config;
-});
-
 $(document).ready(function () {
     // translate to user-selected language
     localize();
@@ -54,11 +46,6 @@ $(document).ready(function () {
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future
     // and webgl will be supported if gpu supports it by default (canary 40.0.2175.0), keep an eye on this one
     var canvas = document.createElement('canvas');
-    if (window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))) {
-        googleAnalytics.sendEvent('Capability', 'WebGL', 'true');
-    } else {
-        googleAnalytics.sendEvent('Capability', 'WebGL', 'false');
-    }
 
     // log library versions in console to make version tracking easier
     console.log('Libraries: jQuery - ' + $.fn.jquery + ', d3 - ' + d3.version + ', three.js - ' + THREE.REVISION);
@@ -194,8 +181,6 @@ $(document).ready(function () {
             el.after('<div id="options-window"></div>');
 
             $('div#options-window').load('./tabs/options.html', function () {
-                googleAnalytics.sendAppView('Options');
-
                 // translate to user-selected language
                 localize();
 
@@ -208,21 +193,17 @@ $(document).ready(function () {
 
                 $('div.notifications input').change(function () {
                     var check = $(this).is(':checked');
-                    googleAnalytics.sendEvent('Settings', 'Notifications', check);
 
                     chrome.storage.local.set({'update_notify': check});
                 });
 
                 // if tracking is enabled, check the statistics checkbox
-                if (googleAnalyticsConfig.isTrackingPermitted()) {
-                    $('div.statistics input').prop('checked', true);
-                }
-
-                $('div.statistics input').change(function () {
-                    var check = $(this).is(':checked');
-                    googleAnalytics.sendEvent('Settings', 'GoogleAnalytics', check);
-                    googleAnalyticsConfig.setTrackingPermitted(check);
-                });
+                //if (googleAnalyticsConfig.isTrackingPermitted()) {
+                //    $('div.statistics input').prop('checked', false);
+                //}
+                //$('div.statistics input').change(function () {
+                //    var check = $(this).is(':checked');
+                //});
 
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
@@ -356,13 +337,6 @@ $(document).ready(function () {
         });
     });
 });
-
-function catch_startup_time(startTime) {
-    var endTime = new Date().getTime(),
-        timeSpent = endTime - startTime;
-
-    googleAnalytics.sendTiming('Load Times', 'Application Startup', timeSpent);
-}
 
 function microtime() {
     var now = new Date().getTime() / 1000;

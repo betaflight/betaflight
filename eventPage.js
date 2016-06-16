@@ -14,10 +14,6 @@ function startApplication() {
             minHeight: 550
         }
     }, function (createdWindow) {
-        createdWindow.contentWindow.addEventListener('load', function () {
-            createdWindow.contentWindow.catch_startup_time(applicationStartTime);
-        });
-
         createdWindow.onClosed.addListener(function () {
             // automatically close the port when application closes
             // save connectionId in separate variable before createdWindow.contentWindow is destroyed

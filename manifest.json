@@ -23,7 +23,6 @@
     },
          
         "permissions": [
-        "https://www.google-analytics.com/",
         "https://maps.googleapis.com/*",    
         "https://*.github.com/",
         "https://*.githubusercontent.com/",

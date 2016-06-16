@@ -6,7 +6,6 @@ TABS.landing.initialize = function (callback) {
 
     if (GUI.active_tab != 'landing') {
         GUI.active_tab = 'landing';
-        googleAnalytics.sendAppView('Landing');
     }
 
     $('#content').load("./tabs/landing.html", function () {
@@ -15,10 +14,6 @@ TABS.landing.initialize = function (callback) {
 
         // load changelog content
         $('#changelog .log').load('./changelog.html');
-
-        $('div.welcome a, div.sponsors a').click(function () {
-            googleAnalytics.sendEvent('ExternalUrls', 'Click', $(this).prop('href'));
-        });
 
         /** changelog trigger **/
         $("#changelog_toggle").on('click', function() {

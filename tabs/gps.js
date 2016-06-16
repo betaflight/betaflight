@@ -6,7 +6,6 @@ TABS.gps.initialize = function (callback) {
 
     if (GUI.active_tab != 'gps') {
         GUI.active_tab = 'gps';
-        googleAnalytics.sendAppView('GPS');
     }
 
     function load_html() {
