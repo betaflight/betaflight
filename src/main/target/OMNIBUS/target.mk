@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD OSD
+FEATURES    = VCP SDCARD MAX_OSD
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \

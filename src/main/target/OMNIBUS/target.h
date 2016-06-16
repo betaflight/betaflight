@@ -115,9 +115,14 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define MAX_OSD
-#define MAX_OSD_SPI_INSTANCE              SPI1
-#define MAX_OSD_SPI_CS_PIN                SPI1_NSS_PIN
+// OSD define info:
+//   feature name (includes source) -> MAX_OSD, used in target.mk
+// include the osd code
+#define OSD
+// include the max7456 driver
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE              SPI1
+#define MAX7456_SPI_CS_PIN                SPI1_NSS_PIN
 
 
 #define USE_SPI

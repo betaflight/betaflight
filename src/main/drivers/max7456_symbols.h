@@ -21,7 +21,7 @@
 
 #pragma once
 
-#ifdef MAX_OSD
+#ifdef USE_MAX7456
 
 // Character Symbols
 #define SYM_BLANK 0X20
@@ -230,4 +230,4 @@
 #define SYM_MIN 0xB3
 #define SYM_AVG 0xB4
 
-#endif //MAX_OSD
+#endif

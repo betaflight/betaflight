@@ -98,9 +98,10 @@
 //#define USE_BARO_BMP280
 //#define USE_BARO_SPI_BMP280
 
-#define MAX_OSD
-#define MAX_OSD_SPI_INSTANCE              SPI2
-#define MAX_OSD_SPI_CS_PIN                SPI2_NSS_PIN
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE              SPI2
+#define MAX7456_SPI_CS_PIN                SPI2_NSS_PIN
 
 //#define USE_SDCARD
 //#define USE_SDCARD_SPI2
