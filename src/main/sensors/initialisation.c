@@ -627,8 +627,10 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
 
 
     // Now time to init things, acc first
-    if (sensors(SENSOR_ACC))
-        acc.init();
+    if (sensors(SENSOR_ACC)) {
+        acc.acc_1G = 256; // set default
+        acc.init(&acc);
+    }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyroUpdateSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro refresh rate before initialisation
     gyro.init(gyroLpf);

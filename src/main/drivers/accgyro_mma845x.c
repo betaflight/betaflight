@@ -81,7 +81,7 @@
 
 static uint8_t device_id;
 
-static void mma8452Init(void);
+static void mma8452Init(acc_t *acc);
 static bool mma8452Read(int16_t *accelData);
 
 bool mma8452Detect(acc_t *acc)
@@ -114,7 +114,7 @@ static inline void mma8451ConfigureInterrupt(void)
 	i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
 }
 
-static void mma8452Init(void)
+static void mma8452Init(acc_t *acc)
 {
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG1, 0); // Put device in standby to configure stuff
@@ -126,7 +126,7 @@ static void mma8452Init(void)
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG1, MMA8452_CTRL_REG1_LNOISE | MMA8452_CTRL_REG1_ACTIVE); // Turn on measurements, low noise at max scale mode, Data Rate 800Hz. LNoise mode makes range +-4G.
 
-    acc_1G = 256;
+    acc->acc_1G = 256;
 }
 
 static bool mma8452Read(int16_t *accelData)
