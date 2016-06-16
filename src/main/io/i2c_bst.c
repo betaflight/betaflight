@@ -959,7 +959,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #ifdef USE_FLASHFS
 	    case BST_DATAFLASH_READ:
 			{
-				uint32_t readAddress = read32();
+				uint32_t readAddress = bstRead32();
 
 				bstWriteDataflashReadReply(readAddress, 128);
 			}
@@ -1457,6 +1457,7 @@ static bool bstSlaveUSBCommandFeedback(/*uint8_t bstFeedback*/)
 #define BST_RESET_TIME			1.2*1000*1000 //micro-seconds
 uint32_t resetBstTimer = 0;
 bool needResetCheck = true;
+extern bool cleanflight_data_ready;
 
 void bstProcessInCommand(void)
 {
@@ -1465,6 +1466,7 @@ void bstProcessInCommand(void)
 		if(bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
 			uint8_t i;
 			writeBufferPointer = 1;
+			cleanflight_data_ready = false;
 			for(i = 0; i < DATA_BUFFER_SIZE; i++) {
 				writeData[i] = 0;
 			}
@@ -1486,6 +1488,7 @@ void bstProcessInCommand(void)
 					// we do not know how to handle the (valid) message, indicate error BST
 					break;
 			}
+			cleanflight_data_ready = true;
 		}
 	} else if(bstCurrentAddress() == 0x00) {
 		if(bstReadCRC() == CRC8 && bstRead8()==BST_GENERAL_HEARTBEAT) {

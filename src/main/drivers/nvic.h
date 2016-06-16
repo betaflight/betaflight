@@ -9,6 +9,7 @@
 #define NVIC_PRIO_BARO_EXT                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_WS2811_DMA               NVIC_BUILD_PRIORITY(1, 2)  // TODO - is there some reason to use high priority? (or to use DMA IRQ at all?)
 #define NVIC_PRIO_BST_READ_DATA            NVIC_BUILD_PRIORITY(0x0f, 0x0f)
+//#define NVIC_PRIO_BST_READ_DATA            NVIC_BUILD_PRIORITY(1, 2)
 #define NVIC_PRIO_TRANSPONDER_DMA          NVIC_BUILD_PRIORITY(3, 0)
 #define NVIC_PRIO_SERIALUART1_TXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
