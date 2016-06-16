@@ -24,7 +24,6 @@
 #include "build_config.h"
 #include "debug.h"
 #include "platform.h"
-#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -63,6 +62,8 @@
 #include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"

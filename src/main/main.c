@@ -22,8 +22,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
-
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -47,7 +45,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -58,6 +55,10 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+
+#ifdef USE_BST
+#include "bus_bst.h"
+#endif
 
 #include "rx/rx.h"
 
@@ -74,6 +75,8 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -351,10 +354,6 @@ void init(void)
         .isInverted = false
 #endif
     };
-#ifdef AFROMINI
-    beeperConfig.isOD = true;
-    beeperConfig.isInverted = true;
-#endif
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.

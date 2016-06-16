@@ -23,9 +23,11 @@
 
 #include "platform.h"
 
-#include "scheduler.h"
 #include "debug.h"
 #include "build_config.h"
+
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
 
 #include "common/maths.h"
 

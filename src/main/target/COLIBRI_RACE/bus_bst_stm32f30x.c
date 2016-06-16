@@ -12,7 +12,7 @@
 
 #include <build_config.h>
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "bus_bst.h"
 
 

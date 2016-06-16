@@ -24,7 +24,6 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "version.h"
 #include "debug.h"
 
@@ -44,6 +43,8 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
@@ -90,7 +91,8 @@
 
 #include "common/printf.h"
 
-#include "serial_cli.h"
+#include "io/serial_cli.h"
+#include "scheduler/scheduler.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -140,6 +142,7 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
+static void cliResource(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
@@ -299,6 +302,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
 	CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
+	CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
@@ -1889,6 +1893,10 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
+        
+#ifdef STM32F4
+        delayMicroseconds(1000);
+#endif
     }
 }
 
@@ -3019,6 +3027,48 @@ void cliProcess(void)
             cliBuffer[bufferIndex++] = c;
             cliWrite(c);
         }
+    }
+}
+
+const char * const ownerNames[] = {
+    "FREE",
+    "PWM IN",
+    "PPM IN",
+    "MOTOR",
+    "SERVO",
+    "SOFTSERIAL RX",
+    "SOFTSERIAL TX",
+    "SOFTSERIAL RXTX",        // bidirectional pin for softserial
+    "SOFTSERIAL AUXTIMER",    // timer channel is used for softserial. No IO function on pin
+    "ADC",
+    "SERIAL RX",
+    "SERIAL TX",
+    "SERIAL RXTX",
+    "PINDEBUG",
+    "TIMER",
+    "SONAR",
+    "SYSTEM",
+    "SDCARD",
+    "FLASH",
+    "USB",
+    "BEEPER",
+};
+
+static void cliResource(char *cmdline)
+{
+    UNUSED(cmdline);
+    cliPrintf("IO:\r\n");
+    for (unsigned i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        const char* owner;
+        char buff[15];
+        if (ioRecs[i].owner < ARRAYLEN(ownerNames)) {
+            owner = ownerNames[ioRecs[i].owner];
+        }
+        else {
+            sprintf(buff, "O=%d", ioRecs[i].owner);
+            owner = buff;
+        }
+        cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
 }
 

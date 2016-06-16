@@ -14,22 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include "drivers/exti.h"
+void bstProcessInCommand(void);
+void bstSlaveProcessInCommand(void);
+void taskBstMasterProcess(void);
 
-typedef enum nazeHardwareRevision_t {
-    UNKNOWN = 0,
-    NAZE32, // Naze32 and compatible with 8MHz HSE
-    NAZE32_REV5, // Naze32 and compatible with 12MHz HSE
-    NAZE32_SP // Naze32 w/Sensor Platforms
-} nazeHardwareRevision_e;
+bool writeGpsPositionPrameToBST(void);
+bool writeRollPitchYawToBST(void);
+bool writeRCChannelToBST(void);
+bool writeFCModeToBST(void);
 
-extern uint8_t hardwareRevision;
-
-void updateHardwareRevision(void);
-void detectHardwareRevision(void);
-
-void spiBusInit(void);
-
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void);

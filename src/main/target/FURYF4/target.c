@@ -42,12 +42,12 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM8, GPIOC, Pin_9, TIM_Channel_4, TIM8_CC_IRQn,       0, GPIO_Mode_AF, GPIO_PinSource9, GPIO_AF_TIM8, 0},          // PPM_IN
+    { TIM8, IO_TAG(PC9), TIM_Channel_4, TIM8_CC_IRQn,       0, IOCFG_AF_PP, GPIO_AF_TIM8, 0},          // PPM_IN
 
-    { TIM9, GPIOA, Pin_3, TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource3, GPIO_AF_TIM9, 0},          // S1_OUT
-    { TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn,          1, GPIO_Mode_AF, GPIO_PinSource0, GPIO_AF_TIM3, 0},          // S2_OUT
-    { TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn,          1, GPIO_Mode_AF, GPIO_PinSource1, GPIO_AF_TIM3, 0},          // S3_OUT
-    { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn,          1, GPIO_Mode_AF, GPIO_PinSource2, GPIO_AF_TIM2, 0},          // S4_OUT
+    { TIM9, IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM9, 0},          // S1_OUT
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},          // S2_OUT
+    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3, 0},          // S3_OUT
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM2, 0},          // S4_OUT
 
 //  { TIM5, GPIOA, Pin_0, TIM_Channel_1, TIM5_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource0, GPIO_AF_TIM5, 0},    // LED Strip
 };
