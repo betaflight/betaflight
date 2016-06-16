@@ -156,6 +156,9 @@
 // USART2, PA3
 #define BIND_PIN PA3
 
+//#define SONAR
+//#define SONAR_ECHO_PIN      PB1
+//#define SONAR_TRIGGER_PIN   PA2
 
 // available IO pins (from schematics)
 //#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
