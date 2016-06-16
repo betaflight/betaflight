@@ -806,6 +806,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_RTC6705
     { "vtx_channel",                VAR_INT16  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_power,   .config.minmax = { 0,  1 } },
 #endif
 #ifdef OSD
     { "osd_system",                 VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.system, .config.minmax = { 0, 2 } },

@@ -127,6 +127,7 @@ typedef struct master_t {
 
 #ifdef USE_RTC6705
     uint8_t vtx_channel;
+    uint8_t vtx_power;
 #endif
 
 #ifdef OSD

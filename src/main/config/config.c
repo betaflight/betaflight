@@ -435,6 +435,7 @@ static void resetConf(void)
 
 #ifdef USE_RTC6705
     masterConfig.vtx_channel = 19; // default to Boscam E channel 4
+    masterConfig.vtx_power   = 1;
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER

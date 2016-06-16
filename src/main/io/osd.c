@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -47,7 +47,6 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -111,7 +110,6 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #endif
 
-#include "scheduler.h"
 #include "common/printf.h"
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
@@ -707,6 +705,7 @@ void osdInit(void)
     rtc6705_soft_spi_init();
     current_vtx_channel = masterConfig.vtx_channel;
     rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+    rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
 #endif
     max7456_init(masterConfig.osdProfile.system);
 
