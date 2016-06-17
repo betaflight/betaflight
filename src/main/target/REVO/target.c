@@ -28,12 +28,12 @@ const uint16_t multiPWM[] = {
     PWM4  | (MAP_TO_PWM_INPUT << 8),
     PWM5  | (MAP_TO_PWM_INPUT << 8),
     PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
-    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),      // motor #1 or servo #1 (swap to servo if needed)
-    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2 or servo #2 (swap to servo if needed)
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1 or #3
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or servo #1 (swap to servo if needed)
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2 or servo #2 (swap to servo if needed)
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or #3
     PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
+    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #4 or #6
     0xFFFF
 };
 
@@ -60,12 +60,12 @@ const uint16_t airPWM[] = {
     PWM4  | (MAP_TO_PWM_INPUT << 8),
     PWM5  | (MAP_TO_PWM_INPUT << 8),
     PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
-    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1
-    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
-    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
-    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #2
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #3
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #2
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #3
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #4
     0xFFFF
 };
 

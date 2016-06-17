@@ -6,7 +6,7 @@
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -32,7 +32,7 @@ const uint16_t multiPWM[] = {
 };
 
 const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
