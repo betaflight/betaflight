@@ -48,6 +48,8 @@ typedef enum {
     OSD_VOLTAGE_WARNING,
     OSD_ARMED,
     OSD_DISARMED,
+    OSD_ARTIFICIAL_HORIZON,
+    OSD_HORIZON_SIDEBARS,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
 

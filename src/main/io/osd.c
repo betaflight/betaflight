@@ -699,6 +699,9 @@ void updateOsd(void)
             if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {
                 print_average_system_load(masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], 0);
             }
+            if (masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] != -1) {
+                max7456_artificial_horizon(attitude.values.roll, attitude.values.pitch, masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS] != -1);
+            }
         }
     } else {
         max7456_draw_screen_fast();

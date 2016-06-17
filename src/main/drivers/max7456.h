@@ -149,5 +149,6 @@ char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 void max7456_init(uint8_t system);
 void max7456_draw_screen(void);
 void max7456_draw_screen_fast(void);
+void max7456_artificial_horizon(int rollAngle, int pitchAngle, uint8_t show_sidebars);
 void max7456_write_string(const char *string, int16_t address);
 void max7456_write_nvm(uint8_t char_address, uint8_t *font_data);

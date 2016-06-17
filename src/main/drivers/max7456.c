@@ -38,6 +38,11 @@
 
 static IO_t max7456CsPin = IO_NONE;
 
+/** Artificial Horizon limits **/
+#define AHIPITCHMAX 200             // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
+#define AHIROLLMAX  400             // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AHISIDEBARWIDTHPOSITION 7
+#define AHISIDEBARHEIGHTPOSITION 3
 
 uint16_t max_screen_size;
 uint8_t  video_signal_type = 0;
@@ -127,12 +132,47 @@ void max7456_write_string(const char *string, int16_t address) {
     char *dest;
 
     if (address >= 0)
-        dest  = screen + address;
+        dest  = max7456_screen + address;
     else
-        dest  = screen + (max_screen_size + address);
+        dest  = max7456_screen + (max_screen_size + address);
 
-    while(*string && dest < (screen + max_screen_size))
+    while(*string && dest < (max7456_screen + max_screen_size))
         *dest++ = *string++;
+}
+
+
+// Write the artifical horizon to the screen buffer
+void max7456_artificial_horizon(int rollAngle, int pitchAngle, uint8_t show_sidebars) {
+    uint16_t position = 194;
+
+    if(pitchAngle>AHIPITCHMAX) pitchAngle=AHIPITCHMAX;
+    if(pitchAngle<-AHIPITCHMAX) pitchAngle=-AHIPITCHMAX;
+    if(rollAngle>AHIROLLMAX) rollAngle=AHIROLLMAX;
+    if(rollAngle<-AHIROLLMAX) rollAngle=-AHIROLLMAX;
+
+    for(uint8_t X=0; X<=8; X++) {
+      if (X==4) X=5;
+      int Y = (rollAngle * (4-X)) / 64;
+      Y -= pitchAngle / 8;
+      Y += 41;
+      if(Y >= 0 && Y <= 81) {
+        uint16_t pos = position -7 + LINE*(Y/9) + 3 - 4*LINE + X;
+        max7456_screen[pos] = SYM_AH_BAR9_0+(Y%9);
+      }
+    }
+
+    if (show_sidebars) {
+      // Draw AH sides
+      int8_t hudwidth =  AHISIDEBARWIDTHPOSITION;
+      int8_t hudheight = AHISIDEBARHEIGHTPOSITION;
+      for(int8_t X=-hudheight; X<=hudheight; X++) {
+        max7456_screen[position-hudwidth+(X*LINE)] = SYM_AH_DECORATION;
+        max7456_screen[position+hudwidth+(X*LINE)] = SYM_AH_DECORATION;
+      }
+      // AH level indicators
+      max7456_screen[position-hudwidth+1] =  SYM_AH_LEFT;
+      max7456_screen[position+hudwidth-1] =  SYM_AH_RIGHT;
+    }
 }
 
 void max7456_draw_screen(void) {
