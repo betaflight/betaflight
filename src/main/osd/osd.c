@@ -61,10 +61,14 @@
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 PG_REGISTER_WITH_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig, PG_OSD_VIDEO_CONFIG, 0);
 
+#ifndef DEFAULT_VIDEO_MODE
+// the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
+// Also most PAL screens can also display NTSC but not vice-versa.  PAL = more lines, less FPS.  NTSC = fewer lines, more FPS.
+#define DEFAULT_VIDEO_MODE VIDEO_NTSC
+#endif
+
 PG_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig,
-        // the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
-        // Also most PAL screens can also display NTSC but not vice-versa.
-    .videoMode = VIDEO_NTSC,
+    .videoMode = DEFAULT_VIDEO_MODE,
 );
 
 textScreen_t osdTextScreen;
