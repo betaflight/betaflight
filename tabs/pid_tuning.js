@@ -9,7 +9,6 @@ TABS.pid_tuning.initialize = function (callback) {
 
     if (GUI.active_tab != 'pid_tuning') {
         GUI.active_tab = 'pid_tuning';
-        googleAnalytics.sendAppView('PID Tuning');
     }
 
     function get_pid_controller() {

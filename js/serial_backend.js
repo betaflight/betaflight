@@ -190,17 +190,14 @@ function onOpen(openInfo) {
 
                     MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
 
-                        googleAnalytics.sendEvent('Firmware', 'Variant', CONFIG.flightControllerIdentifier + ',' + CONFIG.flightControllerVersion);
                         GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
 
                         MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
 
-                            googleAnalytics.sendEvent('Firmware', 'Using', CONFIG.buildInfo);
                             GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
 
                             MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
 
-                                googleAnalytics.sendEvent('Board', 'Using', CONFIG.boardIdentifier + ',' + CONFIG.boardVersion);
                                 GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
 
                                 MSP.send_message(MSP_codes.MSP_UID, false, false, function () {

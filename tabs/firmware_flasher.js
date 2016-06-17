@@ -6,7 +6,6 @@ TABS.firmware_flasher.initialize = function (callback) {
 
     if (GUI.active_tab != 'firmware_flasher') {
         GUI.active_tab = 'firmware_flasher';
-        googleAnalytics.sendAppView('Firmware Flasher');
     }
 
 
@@ -194,7 +193,6 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('disabled');
 
                                         $('span.progressLabel').text('Loaded Local Firmware: (' + parsed_hex.bytes_total + ' bytes)');
@@ -239,7 +237,6 @@ TABS.firmware_flasher.initialize = function (callback) {
                     if (parsed_hex) {
                         var url;
 
-                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('span.progressLabel').html('<a class="save_firmware" href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
 
                         $('a.flash_firmware').removeClass('disabled');

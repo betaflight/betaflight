@@ -13,7 +13,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
     if (GUI.active_tab != 'led_strip') {
         GUI.active_tab = 'led_strip';
-        googleAnalytics.sendAppView('LED Strip');
     }
 
     function load_led_config() {

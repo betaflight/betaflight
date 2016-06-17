@@ -9,7 +9,6 @@ TABS.setup.initialize = function (callback) {
 
     if (GUI.active_tab != 'setup') {
         GUI.active_tab = 'setup';
-        googleAnalytics.sendAppView('Setup');
     }
 
     function load_status() {
@@ -139,7 +138,6 @@ TABS.setup.initialize = function (callback) {
             }
             configuration_backup(function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupBackupSuccess'));
-                googleAnalytics.sendEvent('Configuration', 'Backup', 'true');
             });
         });
 
@@ -149,7 +147,6 @@ TABS.setup.initialize = function (callback) {
             }
             configuration_restore(function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
-                googleAnalytics.sendEvent('Configuration', 'Restore', 'true');
 
                 // get latest settings
                 TABS.setup.initialize();

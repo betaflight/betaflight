@@ -6,7 +6,6 @@ TABS.logging.initialize = function (callback) {
 
     if (GUI.active_tab != 'logging') {
         GUI.active_tab = 'logging';
-        googleAnalytics.sendAppView('Logging');
     }
 
     var requested_properties = [],

@@ -14,7 +14,6 @@ TABS.motors.initialize = function (callback) {
     
     if (GUI.active_tab != 'motors') {
         GUI.active_tab = 'motors';
-        googleAnalytics.sendAppView('Motors');
     }
 
     function get_arm_status() {
