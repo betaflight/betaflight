@@ -17,6 +17,51 @@
 
 #pragma once
 
+#ifndef SPI1_GPIO
+#define SPI1_GPIO               GPIOA
+#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
+#define SPI1_NSS_PIN            GPIO_Pin_4
+#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
+#define SPI1_SCK_PIN            GPIO_Pin_5
+#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource5
+#define SPI1_MISO_PIN           GPIO_Pin_6
+#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource6
+#define SPI1_MOSI_PIN           GPIO_Pin_7
+#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
+#endif
+
+#ifndef SPI2_GPIO
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            GPIO_Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            GPIO_Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           GPIO_Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           GPIO_Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#endif
+
+#if defined(USE_SPI_DEVICE_3) && defined(STM32F303xC)
+
+#ifndef SPI3_GPIO
+#define SPI3_GPIO               GPIOB
+#define SPI3_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI3_NSS_GPIO           GPIOA
+#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
+#define SPI3_NSS_PIN            GPIO_Pin_15
+#define SPI3_NSS_PIN_SOURCE     GPIO_PinSource15
+#define SPI3_SCK_PIN            GPIO_Pin_3
+#define SPI3_SCK_PIN_SOURCE     GPIO_PinSource3
+#define SPI3_MISO_PIN           GPIO_Pin_4
+#define SPI3_MISO_PIN_SOURCE    GPIO_PinSource4
+#define SPI3_MOSI_PIN           GPIO_Pin_5
+#define SPI3_MOSI_PIN_SOURCE    GPIO_PinSource5
+#endif
+
+#endif
+
 #define SPI_0_28125MHZ_CLOCK_DIVIDER  256
 #define SPI_0_5625MHZ_CLOCK_DIVIDER 128
 #define SPI_18MHZ_CLOCK_DIVIDER     2

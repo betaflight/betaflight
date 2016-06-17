@@ -28,19 +28,6 @@
 
 #ifdef USE_SPI_DEVICE_1
 
-#ifndef SPI1_GPIO
-#define SPI1_GPIO               GPIOA
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
-#define SPI1_NSS_PIN            GPIO_Pin_4
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
-#define SPI1_SCK_PIN            GPIO_Pin_5
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource5
-#define SPI1_MISO_PIN           GPIO_Pin_6
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource6
-#define SPI1_MOSI_PIN           GPIO_Pin_7
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
-#endif
-
 void initSpi1(void)
 {
     // Specific to the STM32F103
@@ -166,19 +153,6 @@ void initSpi1(void)
 #endif
 
 #ifdef USE_SPI_DEVICE_2
-
-#ifndef SPI2_GPIO
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            GPIO_Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            GPIO_Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           GPIO_Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           GPIO_Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
-#endif
 
 void initSpi2(void)
 {
@@ -344,9 +318,9 @@ void initSpi3(void)
     GPIO_PinAFConfig(SPI3_GPIO, SPI3_MISO_PIN_SOURCE, GPIO_AF_6);
     GPIO_PinAFConfig(SPI3_GPIO, SPI3_MOSI_PIN_SOURCE, GPIO_AF_6);
 
-#ifdef SPI2_NSS_PIN_SOURCE
-    RCC_AHBPeriphClockCmd(SPI3_NNS_PERIPHERAL, ENABLE);
-    GPIO_PinAFConfig(SPI3_NNS_GPIO, SPI3_NSS_PIN_SOURCE, GPIO_AF_6);
+#ifdef SPI3_NSS_PIN_SOURCE
+    RCC_AHBPeriphClockCmd(SPI3_NSS_PERIPHERAL, ENABLE);
+    GPIO_PinAFConfig(SPI3_NSS_GPIO, SPI3_NSS_PIN_SOURCE, GPIO_AF_6);
 #endif
 
     // Init pins

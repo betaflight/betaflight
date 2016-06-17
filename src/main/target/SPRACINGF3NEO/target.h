@@ -1,0 +1,221 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#define TARGET_BOARD_IDENTIFIER "SPNE"
+
+#define LED0_GPIO   GPIOB
+#define LED0_PIN    Pin_9
+#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define LED1_GPIO   GPIOB
+#define LED1_PIN    Pin_2
+#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+
+#define BEEP_GPIO   GPIOC
+#define BEEP_PIN    Pin_15
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER_INVERTED
+
+#define USABLE_TIMER_CHANNEL_COUNT 12 // 2xPPM, 6xPWM, UART3 RX/TX, LED Strip, IR.
+
+#define EXTI_CALLBACK_HANDLER_COUNT 4 // MPU_INT (PC13), SDCardDetect (PC14), PC4, PC5
+
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+
+#define USE_MAG_DATA_READY_SIGNAL
+#define ENSURE_MAG_DATA_READY_IS_HIGH
+
+
+#define GYRO
+//#define USE_FAKE_GYRO
+#define USE_GYRO_SPI_MPU6500
+
+#define ACC
+//#define USE_FAKE_ACC
+#define USE_ACC_SPI_MPU6500
+
+#define ACC_MPU6500_ALIGN CW0_DEG
+#define GYRO_MPU6500_ALIGN CW0_DEG
+
+#define BEEPER
+#define LED0
+#define LED1
+
+#define USB_IO
+
+#define USE_VCP
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define SERIAL_PORT_COUNT 6
+
+#define UART1_TX_PIN        GPIO_Pin_9  // PA9
+#define UART1_RX_PIN        GPIO_Pin_10 // PA10
+#define UART1_GPIO          GPIOA
+#define UART1_GPIO_AF       GPIO_AF_7
+#define UART1_TX_PINSOURCE  GPIO_PinSource9
+#define UART1_RX_PINSOURCE  GPIO_PinSource10
+
+#define UART2_TX_PIN        GPIO_Pin_2 // PA2
+#define UART2_RX_PIN        GPIO_Pin_3 // PA3
+#define UART2_GPIO          GPIOA
+#define UART2_GPIO_AF       GPIO_AF_7
+#define UART2_TX_PINSOURCE  GPIO_PinSource2
+#define UART2_RX_PINSOURCE  GPIO_PinSource3
+
+#define UART3_TX_PIN        GPIO_Pin_10 // PB10
+#define UART3_RX_PIN        GPIO_Pin_11 // PB11
+#define UART3_GPIO_AF       GPIO_AF_7
+#define UART3_GPIO          GPIOB
+#define UART3_TX_PINSOURCE  GPIO_PinSource10
+#define UART3_RX_PINSOURCE  GPIO_PinSource11
+
+// pins for UART4 are fixed by hardware (TX = PC10, RX = PC11)
+// pins for UART5 are fixed by hardware (TX = PC12, RX = PD2)
+
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1 // External
+#define USE_SPI_DEVICE_2 // SDCard
+#define USE_SPI_DEVICE_3 // MPU
+
+// Using SPI1 default IO pins PA4/PA5/PA6/PA7
+// Using SPI2 default IO pins PB12/PA13/PA14/PA15
+// Using SPI3 default IO pins PA15/PB3/PB4/PB5
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI2
+
+#define SDCARD_DETECT_INVERTED
+
+#define SDCARD_DETECT_PIN                   GPIO_Pin_14
+#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
+#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
+#define SDCARD_DETECT_GPIO_PORT             GPIOC
+#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
+#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
+
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
+#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
+
+// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
+
+// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL   SPI3_GPIO_PERIPHERAL
+#define MPU6500_CS_GPIO                  SPI3_NSS_GPIO
+#define MPU6500_CS_PIN                   SPI3_NSS_PIN
+#define MPU6500_SPI_INSTANCE             SPI3
+
+#define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
+
+
+#define ADC_INSTANCE                ADC1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+
+//#define DEBUG_ADC_CHANNELS
+
+// 6 ADC Sources on ADC1
+
+#define VBAT_ADC_GPIO               GPIOC
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_1
+#define VBAT_ADC_CHANNEL            ADC_Channel_7
+
+#define CURRENT_METER_ADC_GPIO      GPIOC
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_8
+
+#define RSSI_ADC_GPIO               GPIOC
+#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
+#define RSSI_ADC_CHANNEL            ADC_Channel_6
+
+#define POWER_12V_ADC_GPIO            GPIOA
+#define POWER_12V_ADC_GPIO_PIN        GPIO_Pin_0
+#define POWER_12V_CHANNEL             ADC_Channel_1
+
+#define POWER_5V_ADC_GPIO             GPIOA
+#define POWER_5V_ADC_GPIO_PIN         GPIO_Pin_1
+#define POWER_5V_CHANNEL              ADC_Channel_2
+
+#define POWER_3V_ADC_GPIO             GPIOC
+#define POWER_3V_ADC_GPIO_PIN         GPIO_Pin_3     // connected directly to 3v3.
+#define POWER_3V_CHANNEL              ADC_Channel_9
+
+#define LED_STRIP
+#define LED_STRIP_TIMER TIM1
+
+#define USE_LED_STRIP_ON_DMA1_CHANNEL2
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_6
+#define WS2811_PIN                      GPIO_Pin_8
+#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_TIMER                    TIM1
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define WS2811_DMA_CHANNEL              DMA1_Channel2
+#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+
+#define TRANSPONDER
+#define TRANSPONDER_GPIO                     GPIOB
+#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
+#define TRANSPONDER_GPIO_AF                  GPIO_AF_1
+#define TRANSPONDER_PIN                      GPIO_Pin_8 // TIM16_CH1
+#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
+#define TRANSPONDER_TIMER                    TIM16
+#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
+#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
+#define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
+#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_FEATURES (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
+
+#define GPS
+#define BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define TELEMETRY
+#define SERIAL_RX
+#define GTUNE
+#define DISPLAY
+#define USE_SERVOS
+#define USE_CLI
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PORT  GPIOA
+#define BIND_PIN   Pin_2
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE

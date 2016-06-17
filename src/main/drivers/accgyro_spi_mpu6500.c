@@ -105,7 +105,7 @@ bool mpu6500SpiDetect(void)
 
     mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &sig);
 
-    if (sig == MPU6500_WHO_AM_I_CONST || sig == MPU9250_WHO_AM_I_CONST) {
+    if (sig == MPU6500_WHO_AM_I_CONST || sig == MPU9250_WHO_AM_I_CONST || sig == ICM20608G_WHO_AM_I_CONST) {
         return true;
     }
 
