@@ -17,6 +17,8 @@
     float: left;
     margin-right: 10px;
     border-radius: 3px;
+    background-color: #dcdcdc;
+    border: silver;
 }
 
 .tab-led-strip .mainGrid .gPoint {
@@ -26,7 +28,7 @@
     height: 23px;
     margin: 3px;
     border-radius: 7px;
-    background: #ececec;;
+    background: #e9e9e9;
     cursor: pointer;
 }
 
@@ -182,7 +184,7 @@
 .tab-led-strip .functions .function-w.btnOn {background: red;}
 .tab-led-strip .functions .function-f.btnOn {background: rgb(50, 205, 50);}
 .tab-led-strip .functions .function-i.btnOn {background: yellow; color: #333;}
-.tab-led-strip .functions .function-a.btnOn {background: blue;}
+.tab-led-strip .functions .function-a.btnOn {background: #0084ff;}
 .tab-led-strip .functions .function-t.btnOn {background: orange;}
 .tab-led-strip .functions .function-r.btnOn {background: #acacac;}
 .tab-led-strip .functions .function-c.btnOn {
@@ -326,6 +328,7 @@
     font-size: 40px;
     color: #ffbb00;
     margin-bottom: -5px;
+    margin-top: -10px;
 }
 
 .tab-led-strip .wires-remaining.error div {
