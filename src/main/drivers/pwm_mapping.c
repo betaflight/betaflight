@@ -243,7 +243,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
+#if (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (timerIndex == PWM5 || timerIndex == PWM6)
