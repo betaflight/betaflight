@@ -17,7 +17,6 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "AFF4"
-#define ALIENFLIGHT
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define CONFIG_SERIALRX_PROVIDER SERIALRX_SPEKTRUM2048
@@ -181,19 +180,18 @@
 //#define WS2811_DMA_CHANNEL            DMA1_Channel3
 //#define WS2811_IRQ                    DMA1_Channel3_IRQn
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PORT            GPIOA
-#define BIND_PIN             PA3
-
 // alternative defaults for AlienFlight F4 target
 #define ALIENFLIGHT
 
-// Hardware bind plug at PB2 (Pin 28)
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PIN             PA3
+
 #define HARDWARE_BIND_PLUG
-#define BINDPLUG_PORT        GPIOB
+// Hardware bind plug at PB2 (Pin 28)
 #define BINDPLUG_PIN         PB2
 
+#define BRUSHED_MOTORS
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define DEFAULT_FEATURES (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
 
