@@ -1214,6 +1214,21 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         break;
 
+    case MSP_OSD_CONFIG:
+#ifdef OSD
+        headSerialReply(2 + (OSD_MAX_ITEMS * 2));
+        serialize8(1); // OSD supported
+        // send video system (AUTO/PAL/NTSC)
+        serialize8(masterConfig.osdProfile.video_system);
+        for (i = 0; i < OSD_MAX_ITEMS; i++) {
+            serialize16(masterConfig.osdProfile.item_pos[i]);
+        }
+#else
+        headSerialReply(1);
+        serialize8(0); // OSD not supported
+#endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1524,9 +1539,15 @@ static bool processInCommand(void)
 #endif
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
-        masterConfig.osdProfile.video_system = read8();
-        for (i = 0; i < OSD_MAX_ITEMS; i++)
-            masterConfig.osdProfile.item_pos[i] = read16();
+        addr = read8();
+        // set all the other settings
+        if ((int8_t)addr == -1) {
+            masterConfig.osdProfile.video_system = read8();
+        }
+        // set a position setting
+        else {
+            masterConfig.osdProfile.item_pos[addr] = read16();
+        }
         break;
     case MSP_OSD_CHAR_WRITE:
         addr = read8();

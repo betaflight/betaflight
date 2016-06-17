@@ -62,3 +62,4 @@ typedef struct {
 
 void updateOsd(void);
 void osdInit(void);
+void resetOsdConfig(void);

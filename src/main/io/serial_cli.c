@@ -204,7 +204,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", "SUPEREXPO_RATES",
-    NULL
+    "OSD", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -819,6 +819,8 @@ const clivalue_t valueTable[] = {
     { "osd_voltage_warning_pos",    VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING], .config.minmax = { -480, 480 } },
     { "osd_armed_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARMED], .config.minmax = { -480, 480 } },
     { "osd_disarmed_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_DISARMED], .config.minmax = { -480, 480 } },
+    { "osd_artificial_horizon",     VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { -1, 0 } },
+    { "osd_horizon_sidebars",       VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS], .config.minmax = { -1, 0 } },
 #endif
 };
 
