@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/pwm_output.h"
+#include "drivers/max7456.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -421,7 +422,7 @@ static void resetConf(void)
 
 #ifdef OSD
     featureSet(FEATURE_OSD);
-    masterConfig.osdProfile.system = 0;
+    masterConfig.osdProfile.video_system = AUTO;
     masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] = -29;
     masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]        = -59;
     masterConfig.osdProfile.item_pos[OSD_TIMER]             = -39;

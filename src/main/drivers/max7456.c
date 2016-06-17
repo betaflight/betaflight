@@ -31,20 +31,18 @@
 #include "drivers/system.h"
 
 #include "max7456.h"
+#include "max7456_symbols.h"
 
 #define DISABLE_MAX7456       IOHi(max7456CsPin)
 #define ENABLE_MAX7456        IOLo(max7456CsPin)
 
 static IO_t max7456CsPin = IO_NONE;
 
-/** PAL or NTSC, value is number of chars total */
-#define VIDEO_BUFFER_CHARS_NTSC   390
-#define VIDEO_BUFFER_CHARS_PAL    480
 
 uint16_t max_screen_size;
 uint8_t  video_signal_type = 0;
 uint8_t  max7456_lock = 0;
-char screen[VIDEO_BUFFER_CHARS_PAL];
+char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 
 
 uint8_t max7456_send(uint8_t add, uint8_t data) {
@@ -53,11 +51,11 @@ uint8_t max7456_send(uint8_t add, uint8_t data) {
 }
 
 
-void max7456_init(uint8_t system) {
+void max7456_init(uint8_t video_system) {
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
     uint16_t x;
-    char buf[30];
+    char buf[LINE];
 
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
@@ -83,21 +81,21 @@ void max7456_init(uint8_t system) {
     }
 
     // Override detected type: 0-AUTO, 1-PAL, 2-NTSC
-    switch(system) {
-        case 1:
+    switch(video_system) {
+        case PAL:
             video_signal_type = VIDEO_MODE_PAL;
             break;
-        case 2:
+        case NTSC:
             video_signal_type = VIDEO_MODE_NTSC;
             break;
     }
 
     if (video_signal_type) { //PAL
         max_screen_size = VIDEO_BUFFER_CHARS_PAL;
-        max_screen_rows = 16;
+        max_screen_rows = VIDEO_LINES_PAL;
     } else {                 // NTSC
         max_screen_size = VIDEO_BUFFER_CHARS_NTSC;
-        max_screen_rows = 13;
+        max_screen_rows = VIDEO_LINES_NTSC;
     }
 
     // set all rows to same charactor black/white level
@@ -114,13 +112,13 @@ void max7456_init(uint8_t system) {
     x =  160;
     for (int i = 1; i < 5; i++) {
         for (int j = 3; j < 27; j++)
-            screen[i * 30 + j] = (char)x++;
+            max7456_screen[i * LINE + j] = (char)x++;
     }
     tfp_sprintf(buf, "BF VERSION: %s", FC_VERSION_STRING);
-    max7456_write_string(buf, 5*30+5);
-    max7456_write_string("MENU: THRT MID", 6*30+7);
-    max7456_write_string("YAW RIGHT", 7*30+13);
-    max7456_write_string("PITCH UP", 8*30+13);
+    max7456_write_string(buf, LINE06+5);
+    max7456_write_string("MENU: THRT MID", LINE07+7);
+    max7456_write_string("YAW RIGHT", LINE08+13);
+    max7456_write_string("PITCH UP", LINE09+13);
     max7456_draw_screen();
 }
 
@@ -144,8 +142,8 @@ void max7456_draw_screen(void) {
         for (xx = 0; xx < max_screen_size; ++xx) {
             max7456_send(MAX7456ADD_DMAH, xx>>8);
             max7456_send(MAX7456ADD_DMAL, xx);
-            max7456_send(MAX7456ADD_DMDI, screen[xx]);
-            screen[xx] = ' ';
+            max7456_send(MAX7456ADD_DMDI, max7456_screen[xx]);
+            max7456_screen[xx] = ' ';
         }
         DISABLE_MAX7456;
     }
@@ -159,8 +157,8 @@ void max7456_draw_screen_fast(void) {
         max7456_send(MAX7456ADD_DMAL, 0);
         max7456_send(MAX7456ADD_DMM, 1);
         for (xx = 0; xx < max_screen_size; ++xx) {
-           max7456_send(MAX7456ADD_DMDI, screen[xx]);
-            screen[xx] = ' ';
+           max7456_send(MAX7456ADD_DMDI, max7456_screen[xx]);
+            max7456_screen[xx] = ' ';
         }
         max7456_send(MAX7456ADD_DMDI, 0xFF);
         max7456_send(MAX7456ADD_DMM, 0);

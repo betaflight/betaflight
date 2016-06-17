@@ -1524,7 +1524,7 @@ static bool processInCommand(void)
 #endif
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
-        masterConfig.osdProfile.system = read8();
+        masterConfig.osdProfile.video_system = read8();
         for (i = 0; i < OSD_MAX_ITEMS; i++)
             masterConfig.osdProfile.item_pos[i] = read16();
         break;

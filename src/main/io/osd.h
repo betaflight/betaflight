@@ -53,7 +53,8 @@ typedef enum {
 
 
 typedef struct {
-    uint8_t system;
+    // AUTO / PAL / NTSC in VIDEO_TYPES enum
+    uint8_t video_system;
     int16_t item_pos[OSD_MAX_ITEMS];
 } osd_profile;
 

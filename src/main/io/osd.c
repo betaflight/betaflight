@@ -714,7 +714,7 @@ void osdInit(void)
     rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
     rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
 #endif
-    max7456_init(masterConfig.osdProfile.system);
+    max7456_init(masterConfig.osdProfile.video_system);
 
 }
 

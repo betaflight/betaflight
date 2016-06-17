@@ -114,8 +114,36 @@
 #define WRITE_NVR               0xA0
 #define STATUS_REG_NVR_BUSY     0x20
 
+/** Line multiples, for convenience & one less op at runtime **/
+#define LINE      30
+#define LINE01    0
+#define LINE02    30
+#define LINE03    60
+#define LINE04    90
+#define LINE05    120
+#define LINE06    150
+#define LINE07    180
+#define LINE08    210
+#define LINE09    240
+#define LINE10    270
+#define LINE11    300
+#define LINE12    330
+#define LINE13    360
+#define LINE14    390
+#define LINE15    420
+#define LINE16    450
+
+
+/** PAL or NTSC, value is number of chars total */
+#define VIDEO_BUFFER_CHARS_NTSC   390
+#define VIDEO_BUFFER_CHARS_PAL    480
+#define VIDEO_LINES_NTSC          13
+#define VIDEO_LINES_PAL           16
+
+enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
+
 extern uint16_t max_screen_size;
-char screen[480];
+char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 
 
 void max7456_init(uint8_t system);
