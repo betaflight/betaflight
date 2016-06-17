@@ -6,7 +6,6 @@ TABS.pid_tuning = {
 
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
-
     if (GUI.active_tab != 'pid_tuning') {
         GUI.active_tab = 'pid_tuning';
     }
@@ -44,13 +43,13 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .ROLL input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[0][i++].toFixed(1));
+                    $(this).val(PIDs[0][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[0][i++].toFixed(3));
+                    $(this).val(PIDs[0][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[0][i++].toFixed(0));
+                    $(this).val(PIDs[0][i++]);
                     break;
             }
         });
@@ -59,13 +58,13 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .PITCH input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[1][i++].toFixed(1));
+                    $(this).val(PIDs[1][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[1][i++].toFixed(3));
+                    $(this).val(PIDs[1][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[1][i++].toFixed(0));
+                    $(this).val(PIDs[1][i++]);
                     break;
             }
         });
@@ -74,13 +73,13 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .YAW input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[2][i++].toFixed(1));
+                    $(this).val(PIDs[2][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[2][i++].toFixed(3));
+                    $(this).val(PIDs[2][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[2][i++].toFixed(0));
+                    $(this).val(PIDs[2][i++]);
                     break;
             }
         });
@@ -89,33 +88,33 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .ALT input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[3][i++].toFixed(1));
+                    $(this).val(PIDs[3][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[3][i++].toFixed(3));
+                    $(this).val(PIDs[3][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[3][i++].toFixed(0));
+                    $(this).val(PIDs[3][i++]);
                     break;
             }
         });
 
         i = 0;
         $('.pid_tuning .Pos input').each(function () {
-            $(this).val(PIDs[4][i++].toFixed(2));
+            $(this).val(PIDs[4][i++]);
         });
 
         i = 0;
         $('.pid_tuning .PosR input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[5][i++].toFixed(1));
+                    $(this).val(PIDs[5][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[5][i++].toFixed(2));
+                    $(this).val(PIDs[5][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[5][i++].toFixed(3));
+                    $(this).val(PIDs[5][i++]);
                     break;
             }
         });
@@ -124,13 +123,13 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .NavR input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[6][i++].toFixed(1));
+                    $(this).val(PIDs[6][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[6][i++].toFixed(2));
+                    $(this).val(PIDs[6][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[6][i++].toFixed(3));
+                    $(this).val(PIDs[6][i++]);
                     break;
             }
         });
@@ -139,33 +138,33 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning .LEVEL input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[7][i++].toFixed(1));
+                    $(this).val(PIDs[7][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[7][i++].toFixed(3));
+                    $(this).val(PIDs[7][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[7][i++].toFixed(0));
+                    $(this).val(PIDs[7][i++]);
                     break;
             }
         });
 
         i = 0;
         $('.pid_tuning .MAG input').each(function () {
-            $(this).val(PIDs[8][i++].toFixed(1));
+            $(this).val(PIDs[8][i++]);
         });
 
         i = 0;
         $('.pid_tuning .Vario input').each(function () {
             switch (i) {
                 case 0:
-                    $(this).val(PIDs[9][i++].toFixed(1));
+                    $(this).val(PIDs[9][i++]);
                     break;
                 case 1:
-                    $(this).val(PIDs[9][i++].toFixed(3));
+                    $(this).val(PIDs[9][i++]);
                     break;
                 case 2:
-                    $(this).val(PIDs[9][i++].toFixed(0));
+                    $(this).val(PIDs[9][i++]);
                     break;
             }
         });

@@ -3,7 +3,7 @@
     <div class="content_wrapper">
         <div class="tab_title" i18n="tabPidTuning"></div>
         <div class="cf_doc_version_bt">
-            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+            <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
         </div>
         <div class="cf_column half">
             <div class="controller">
@@ -44,22 +44,22 @@
                         <tr class="ROLL">
                             <!-- 0 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="PITCH">
                             <!-- 1 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="YAW">
                             <!-- 2 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
@@ -72,15 +72,15 @@
                         <tr class="ALT">
                             <!-- 3 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="Vario">
                             <!-- 9 -->
                             <td>VEL</td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
@@ -93,7 +93,7 @@
                         <tr class="MAG">
                             <!-- 8 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
                             <td></td>
                             <td></td>
                         </tr>
@@ -107,23 +107,24 @@
                         <tr class="Pos">
                             <!-- 4 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <!-- <td><input type="number" name="i" step="1" min="0" max="255" /></td>  -->
+                            <td></td>
                             <td></td>
                         </tr>
                         <tr class="PosR">
                             <!-- 5 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="d" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="NavR">
                             <!-- 6 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="d" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
                 </div>
@@ -145,8 +146,8 @@
                         <tr class="LEVEL">
                             <!-- 7 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>

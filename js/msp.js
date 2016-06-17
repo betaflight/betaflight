@@ -378,20 +378,20 @@ var MSP = {
                         case 7:
                         case 8:
                         case 9:
-                            PIDs[i][0] = data.getUint8(needle) / 10;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
                             PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                         case 4:
-                            PIDs[i][0] = data.getUint8(needle) / 100;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 100;
-                            PIDs[i][2] = data.getUint8(needle + 2) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
+                            PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                         case 5:
                         case 6:
-                            PIDs[i][0] = data.getUint8(needle) / 10;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 100;
-                            PIDs[i][2] = data.getUint8(needle + 2) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
+                            PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                     }
                 }
@@ -1157,20 +1157,20 @@ MSP.crunch = function (code) {
                     case 7:
                     case 8:
                     case 9:
-                        buffer.push(Math.round(PIDs[i][0] * 10));
-                        buffer.push(Math.round(PIDs[i][1] * 1000));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 4:
-                        buffer.push(Math.round(PIDs[i][0] * 100));
-                        buffer.push(Math.round(PIDs[i][1] * 100));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 5:
                     case 6:
-                        buffer.push(Math.round(PIDs[i][0] * 10));
-                        buffer.push(Math.round(PIDs[i][1] * 100));
-                        buffer.push(Math.round(PIDs[i][2] * 1000));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
+                        buffer.push(parseInt(PIDs[i][2]));
                         break;
                 }
             }
@@ -1705,5 +1705,4 @@ MSP.SDCARD_STATE_FATAL       = 1;
 MSP.SDCARD_STATE_CARD_INIT   = 2;
 MSP.SDCARD_STATE_FS_INIT     = 3;
 MSP.SDCARD_STATE_READY       = 4;
-
 
