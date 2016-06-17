@@ -347,17 +347,6 @@ void print_batt_voltage(uint16_t pos, uint8_t col) {
     max7456_write_string(string_buffer, pos);
 }
 
-/*
-    TODO: add this to menu
-    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  250 } },
-    { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
-    { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
-    { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
-    { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
-    { "acro_plus_factor",           VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.acroPlusFactor, .config.minmax = {1, 100 } },
-    { "acro_plus_offset",           VAR_UINT8  | MASTER_VALUE, &masterConfig.rxConfig.acroPlusOffset, .config.minmax = {1, 90 } },
-*/
-
 osd_page_t menu_pages[] = {
     {
         .title = "STATUS",
@@ -711,14 +700,7 @@ void updateOsd(void)
 
 void osdInit(void)
 {
-#ifdef USE_RTC6705
-    rtc6705_soft_spi_init();
-    current_vtx_channel = masterConfig.vtx_channel;
-    rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-    rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
-#endif
     max7456_init(masterConfig.osdProfile.video_system);
-
 }
 
 void resetOsdConfig(void)

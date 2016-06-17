@@ -114,6 +114,7 @@ void max7456_init(uint8_t video_system) {
     DISABLE_MAX7456;
     delay(100);
 
+    // display logo
     x =  160;
     for (int i = 1; i < 5; i++) {
         for (int j = 3; j < 27; j++)

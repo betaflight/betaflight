@@ -47,6 +47,7 @@ typedef enum {
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SUPEREXPO_RATES = 1 << 23,
     FEATURE_OSD = 1 << 24,
+    FEATURE_VTX = 1 << 25,
 } features_e;
 
 void handleOneshotFeatureChangeOnRestart(void);

@@ -537,6 +537,10 @@ ifneq ($(filter VCP,$(FEATURES)),)
 TARGET_SRC += $(VCP_SRC)
 endif
 
+ifneq ($(filter VTX_SOFT, $(FEATURES)),)
+TARGET_SRC += $(SRC_DIR)/drivers/rtc6705_soft_spi.c
+endif
+
 ifneq ($(filter MAX_OSD, $(FEATURES)),)
 TARGET_SRC += $(SRC_DIR)/drivers/max7456.c \
               $(SRC_DIR)/io/osd.c

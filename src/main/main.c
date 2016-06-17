@@ -55,6 +55,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -466,6 +467,15 @@ void init(void)
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef USE_RTC6705
+    if (feature(feature(FEATURE_VTX))) {
+        rtc6705_soft_spi_init();
+        current_vtx_channel = masterConfig.vtx_channel;
+        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
     }
 #endif
 

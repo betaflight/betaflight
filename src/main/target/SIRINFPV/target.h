@@ -113,15 +113,9 @@
 #define MAX7456_SPI_CS_PIN                PA15
 
 #define USE_RTC6705
-#define RTC6705_SPIDATA_GPIO        GPIOC
-#define RTC6705_SPIDATA_PIN         Pin_15
-#define RTC6705_SPIDATA_PERIPHERAL  RCC_AHBPeriph_GPIOC
-#define RTC6705_SPILE_GPIO          GPIOC
-#define RTC6705_SPILE_PIN           Pin_14
-#define RTC6705_SPILE_PERIPHERAL    RCC_AHBPeriph_GPIOC
-#define RTC6705_SPICLK_GPIO         GPIOC
-#define RTC6705_SPICLK_PIN          Pin_13
-#define RTC6705_SPICLK_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define RTC6705_SPIDATA_PIN         PC15
+#define RTC6705_SPILE_PIN           PC14
+#define RTC6705_SPICLK_PIN          PC13
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
