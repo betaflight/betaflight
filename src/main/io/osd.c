@@ -105,6 +105,7 @@
 #ifdef OSD
 
 #include "drivers/max7456.h"
+#include "drivers/max7456_symbols.h"
 
 #ifdef USE_RTC6705
 #include "drivers/vtx_soft_spi_rtc6705.h"
@@ -668,29 +669,38 @@ void updateOsd(void)
             }
 
             if (masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] != -1) {
-                sprintf(line, "\x01%d.%1d", vbat / 10, vbat % 10);
+                line[0] = SYM_VOLT;
+                sprintf(line+1, "%d.%1d", vbat / 10, vbat % 10);
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
-                sprintf(line, "\x02%d", rssi / 10);
+                line[0] = SYM_RSSI;
+                sprintf(line+1, "%d", rssi / 10);
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS] != -1) {
-                sprintf(line, "\x03%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+                line[0] = SYM_THR;
+                line[1] = SYM_THR1;
+                sprintf(line+2, "%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
                 if (armed) {
                     seconds = armed_seconds + ((now-armed_at) / 1000000);
-                    sprintf(line, "\x04 %02d:%02d", seconds / 60, seconds % 60);
+                    line[0] = SYM_FLY_M;
+                    sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
                 } else {
+                    line[0] = SYM_ON_M;
                     seconds = now  / 1000000;
-                    sprintf(line, "\x05 %02d:%02d", seconds / 60, seconds % 60);
+                    sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
                 }
                 max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);
             }
             if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {
                 print_average_system_load(masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], 0);
+            }
+            if (masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] != -1) {
+                max7456_artificial_horizon(attitude.values.roll, attitude.values.pitch, masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS] != -1);
             }
         }
     } else {
@@ -707,8 +717,25 @@ void osdInit(void)
     rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
     rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
 #endif
-    max7456_init(masterConfig.osdProfile.system);
+    max7456_init(masterConfig.osdProfile.video_system);
 
+}
+
+void resetOsdConfig(void)
+{
+    featureSet(FEATURE_OSD);
+    masterConfig.osdProfile.video_system = AUTO;
+    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
+    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]         = -59;
+    masterConfig.osdProfile.item_pos[OSD_TIMER]              = -39;
+    masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]       = -9;
+    masterConfig.osdProfile.item_pos[OSD_CPU_LOAD]           = 26;
+    masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]        = 1;
+    masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]    = -80;
+    masterConfig.osdProfile.item_pos[OSD_ARMED]              = -107;
+    masterConfig.osdProfile.item_pos[OSD_DISARMED]           = -109;
+    masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] = -1;
+    masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]   = -1;
 }
 
 #endif

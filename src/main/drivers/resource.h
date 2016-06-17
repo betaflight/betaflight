@@ -22,7 +22,8 @@ typedef enum {
     OWNER_SDCARD,
     OWNER_FLASH,
     OWNER_USB,
-    OWNER_BEEPER    
+    OWNER_BEEPER,
+    OWNER_OSD
 } resourceOwner_t;
 
 // Currently TIMER should be shared resource (softserial dualtimer and timerqueue needs to allocate timer channel, but pin can be used for other function)

@@ -48,14 +48,18 @@ typedef enum {
     OSD_VOLTAGE_WARNING,
     OSD_ARMED,
     OSD_DISARMED,
+    OSD_ARTIFICIAL_HORIZON,
+    OSD_HORIZON_SIDEBARS,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
 
 
 typedef struct {
-    uint8_t system;
+    // AUTO / PAL / NTSC in VIDEO_TYPES enum
+    uint8_t video_system;
     int16_t item_pos[OSD_MAX_ITEMS];
 } osd_profile;
 
 void updateOsd(void);
 void osdInit(void);
+void resetOsdConfig(void);

@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/pwm_output.h"
+#include "drivers/max7456.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -420,17 +421,7 @@ static void resetConf(void)
 #endif
 
 #ifdef OSD
-    featureSet(FEATURE_OSD);
-    masterConfig.osdProfile.system = 0;
-    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] = -29;
-    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]        = -59;
-    masterConfig.osdProfile.item_pos[OSD_TIMER]             = -39;
-    masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]      = -9;
-    masterConfig.osdProfile.item_pos[OSD_CPU_LOAD]          = 26;
-    masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]       = 1;
-    masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]   = -80;
-    masterConfig.osdProfile.item_pos[OSD_ARMED]             = -107;
-    masterConfig.osdProfile.item_pos[OSD_DISARMED]          = -109;
+    resetOsdConfig();
 #endif
 
 #ifdef USE_RTC6705

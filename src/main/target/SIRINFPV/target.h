@@ -109,9 +109,8 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define USE_MAX7456
-#define MAX7456_CS_GPIO          GPIOA
-#define MAX7456_CS_PIN           GPIO_Pin_15
-#define MAX7456_SPI_INSTANCE     SPI3
+#define MAX7456_SPI_INSTANCE              SPI3
+#define MAX7456_SPI_CS_PIN                PA15
 
 #define USE_RTC6705
 #define RTC6705_SPIDATA_GPIO        GPIOC
@@ -155,11 +154,7 @@
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
 //#define USE_QUAD_MIXER_ONLY
-#define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_CLI
 #define OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
