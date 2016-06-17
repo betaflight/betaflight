@@ -1,4 +1,0 @@
-F3_TARGETS  += $(TARGET)
-FEATURES    = VCP 
-
-TARGET_SRC = 
