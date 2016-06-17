@@ -154,6 +154,7 @@
 
 #define TELEMETRY
 #define SERIAL_RX
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define USE_SERVOS
 #define USE_CLI
 
