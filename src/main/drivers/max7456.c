@@ -160,6 +160,9 @@ void max7456_artificial_horizon(int rollAngle, int pitchAngle, uint8_t show_side
         max7456_screen[pos] = SYM_AH_BAR9_0+(Y%9);
       }
     }
+    max7456_screen[position-1] = SYM_AH_CENTER_LINE;
+    max7456_screen[position+1] = SYM_AH_CENTER_LINE_RIGHT;
+    max7456_screen[position] =   SYM_AH_CENTER;
 
     if (show_sidebars) {
       // Draw AH sides
