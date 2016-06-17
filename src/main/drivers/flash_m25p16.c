@@ -44,6 +44,7 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
@@ -161,6 +162,7 @@ static bool m25p16_readIdentification()
         break;
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
+        case JEDEC_ID_MACRONIX_MX25L6406E:
             geometry.sectors = 128;
             geometry.pagesPerSector = 256;
         break;
@@ -195,8 +197,26 @@ static bool m25p16_readIdentification()
  */
 bool m25p16_init()
 {
+#ifdef M25P16_SPI_SHARED
+#ifdef STM32F303xC
+    GPIO_InitTypeDef GPIO_InitStructure;
+    RCC_AHBPeriphClockCmd(M25P16_CS_GPIO_CLK_PERIPHERAL, ENABLE);
+    
+    GPIO_InitStructure.GPIO_Pin = M25P16_CS_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+
+    GPIO_Init(M25P16_CS_GPIO, &GPIO_InitStructure);
+    DISABLE_M25P16;
+#endif // STM32F303xC
+#else // M25P16_SPI_SHARED
+    
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
     spiSetDivisor(M25P16_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);
+
+#endif // M25P16_SPI_SHARED
 
     return m25p16_readIdentification();
 }

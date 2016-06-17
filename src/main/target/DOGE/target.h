@@ -79,6 +79,14 @@
 #define SPI2_MOSI_PIN           GPIO_Pin_15
 #define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_SPI_SHARED
+#define M25P16_CS_GPIO                GPIOC
+#define M25P16_CS_PIN                 GPIO_Pin_15
+#define M25P16_CS_GPIO_CLK_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define M25P16_SPI_INSTANCE           SPI2
+
 // timer definitions in drivers/timer.c
 // channel mapping in drivers/pwm_mapping.c
 // only 6 outputs available on hardware
