@@ -155,10 +155,9 @@
 .tab-led-strip button {
     text-align: center;
     font-weight: bold;
-
     border: 1px solid silver;
     background-color: #ececec;
-
+    border-radius: 3px;
     padding: 7px 6px;
     margin: 3px 0;
 }
@@ -325,8 +324,8 @@
 
 .tab-led-strip .wires-remaining div {
     font-size: 40px;
-    color: #7AAE2D;
-    font-family: monospace;
+    color: #ffbb00;
+    margin-bottom: -5px;
 }
 
 .tab-led-strip .wires-remaining.error div {
