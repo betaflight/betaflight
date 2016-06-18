@@ -1,6 +1,6 @@
 # Betaflight
 
-![Betaflight](https://dl.dropboxusercontent.com/u/31537757/betaflight%20logo.jpg)
+![Betaflight](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088900-228-bf_logo.jpg)
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 

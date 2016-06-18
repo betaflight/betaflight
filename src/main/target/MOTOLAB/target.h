@@ -121,6 +121,7 @@
 #define TELEMETRY
 #define BLACKBOX
 #define SERIAL_RX
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 //#define GPS
 //#define GTUNE
 #define DISPLAY
