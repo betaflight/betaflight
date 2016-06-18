@@ -27,6 +27,8 @@
 #include "nvic.h"
 
 #include "gpio.h"
+#include "gpio.h"
+#include "rcc.h"
 #include "system.h"
 
 #include "timer.h"
@@ -51,7 +53,7 @@ typedef struct timerConfig_s {
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
-	uint32_t forcedOverflowTimerValue;
+    uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
@@ -141,6 +143,16 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
     return channel >> 2;
 }
 
+rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].rcc;
+        }            
+    }
+    return 0;
+}
+
 void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -162,19 +174,19 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
 #if defined (STM32F40_41xxx)
-	if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-	}
-	else {
-		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-	}
+    if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+    }
+    else {
+        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
+    }
 #elif defined (STM32F411xE)
-	if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-	}
-	else {
-		TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-	}
+    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
+    }
+    else {
+        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
+    }
 #else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
 #endif 
@@ -197,17 +209,14 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
         timerNVICConfigure(TIM1_UP_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined(STM32F411xE)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
-        break;
-    case TIM8_CC_IRQn:
-        timerNVICConfigure(TIM8_UP_TIM13_IRQn);
         break;
 #endif
-#if defined (STM32F411xE)
-    case TIM1_CC_IRQn:
-        timerNVICConfigure(TIM1_UP_TIM10_IRQn);
+#if defined (STM32F40_41xxx)
+    case TIM8_CC_IRQn:
+        timerNVICConfigure(TIM8_UP_TIM13_IRQn);
         break;
 #endif
 #ifdef STM32F303xC
@@ -640,17 +649,10 @@ void timerInit(void)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
-#ifdef TIMER_APB1_PERIPHERALS
-    RCC_APB1PeriphClockCmd(TIMER_APB1_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef TIMER_APB2_PERIPHERALS
-    RCC_APB2PeriphClockCmd(TIMER_APB2_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef TIMER_AHB_PERIPHERALS
-    RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
-#endif
+    /* enable the timer peripherals */
+    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    }
 
 #if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {

@@ -6,6 +6,8 @@
 */
 
 #include "stm32f4xx.h"
+#include "timer.h"
+#include "rcc.h"
 
 /**
   * @brief  Selects the TIM Output Compare Mode.
@@ -31,6 +33,23 @@
   */
 
 #define CCMR_Offset                 ((uint16_t)0x0018)
+
+const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5)  },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8)  },
+    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
+    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
+    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
+    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
+};
 
 void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t TIM_OCMode)
 {
@@ -65,3 +84,4 @@ void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t 
     *(__IO uint32_t *) tmp |= (uint16_t)(TIM_OCMode << 8);
   }
 }
+
