@@ -668,6 +668,12 @@ void init(void)
     // TODO - not implemented yet
     timerStart();
 
+#ifdef SPRACINGF3NEO
+    void configureBoardInterconnects(void);
+
+    configureBoardInterconnects();
+#endif
+
     ENABLE_STATE(SMALL_ANGLE);
     DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
