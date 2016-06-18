@@ -22,8 +22,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
-
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -47,7 +45,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/bus_bst.h"
 #include "drivers/bus_spi.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
@@ -56,6 +53,12 @@
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/io.h"
+#include "drivers/exti.h"
+
+#ifdef USE_BST
+#include "bus_bst.h"
+#endif
 
 #include "rx/rx.h"
 
@@ -71,6 +74,8 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -133,15 +138,6 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
-#ifdef STM32F303xC
-// from system_stm32f30x.c
-void SetSysClock(void);
-#endif
-#ifdef STM32F10X
-// from system_stm32f10x.c
-void SetSysClock(bool overclock);
-#endif
-
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
     SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
@@ -167,23 +163,13 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-#ifdef STM32F303
-    // start fpu
-    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
-#endif
-
-#ifdef STM32F303xC
-    SetSysClock();
-#endif
-#ifdef STM32F10X
-    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
-    // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(0); // TODO - Remove from config in the future
-#endif
-    //i2cSetOverclock(masterConfig.i2c_overclock);
-
     systemInit();
 
+    //i2cSetOverclock(masterConfig.i2c_overclock);
+
+    // initialize IO (needed for all IO operations)
+	IOInitGlobal();
+    
     debugMode = masterConfig.debug_mode;
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -196,11 +182,17 @@ void init(void)
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
-    } else {
+    }
+    else {
         ledInit(true);
     }
 #else
     ledInit(false);
+#endif
+    LED2_ON;
+    
+#ifdef USE_EXTI
+    EXTIInit();
 #endif
 
 #ifdef SPRACINGF3MINI
@@ -273,12 +265,11 @@ void init(void)
 
     if (feature(FEATURE_SONAR)) {
         sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
-        sonarGPIOConfig_t sonarGPIOConfig = {
-            .gpio = SONAR_GPIO,
-            .triggerPin = sonarHardware->echo_pin,
-            .echoPin = sonarHardware->trigger_pin,
+        sonarIOConfig_t sonarConfig = {
+            .triggerPin = sonarHardware->triggerIO,
+            .echoPin = sonarHardware->echoIO
         };
-        pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
+        pwm_params.sonarConfig = &sonarConfig;
     }
 #endif
 
@@ -293,6 +284,12 @@ void init(void)
 #ifdef STM32F303xC
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
+#if defined(USE_USART2) && defined(STM32F40_41xxx)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
+#if defined(USE_USART6) && defined(STM32F40_41xxx)
+    pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
+#endif    
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -313,20 +310,20 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    if (masterConfig.fast_pwm_protocol == PWM_TYPE_ONESHOT125) {
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
         featureSet(FEATURE_ONESHOT125);
     } else {
         featureClear(FEATURE_ONESHOT125);
     }
-
-    pwm_params.useFastPwm = (masterConfig.fast_pwm_protocol != PWM_TYPE_CONVENTIONAL) ? true : false;  // Configurator feature abused for enabling Fast PWM
-    pwm_params.pwmProtocolType = masterConfig.fast_pwm_protocol;
+    
+    // Configurator feature abused for enabling Fast PWM
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
+    pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
-    pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500 && !pwm_params.useFastPwm)
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -335,6 +332,7 @@ void init(void)
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
+    syncMotors(pwm_params.motorPwmRate == 0 && pwm_params.motorPwmRate != PWM_TYPE_BRUSHED);
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
     if (!feature(FEATURE_ONESHOT125))
@@ -344,31 +342,25 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
-        .gpioPeripheral = BEEP_PERIPHERAL,
-        .gpioPin = BEEP_PIN,
-        .gpioPort = BEEP_GPIO,
+        .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
-        .gpioMode = Mode_Out_PP,
+        .isOD = false,
         .isInverted = true
 #else
-        .gpioMode = Mode_Out_OD,
+        .isOD = true,
         .isInverted = false
 #endif
     };
-#ifdef AFROMINI
-    beeperConfig.gpioMode = Mode_Out_PP;   // AFROMINI override
-    beeperConfig.isInverted = true;
-#endif
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isOD = true;
         beeperConfig.isInverted = true;
     }
 #endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
-        beeperConfig.gpioPin = Pin_2;
+		beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif
 
     beeperInit(&beeperConfig);
@@ -382,18 +374,20 @@ void init(void)
     bstInit(BST_DEVICE);
 #endif
 
-
-
 #ifdef USE_SPI
-    spiInit(SPI1);
-    spiInit(SPI2);
-#ifdef STM32F303xC
+#ifdef USE_SPI_DEVICE_1
+    spiInit(SPIDEV_1);
+#endif
+#ifdef USE_SPI_DEVICE_2
+    spiInit(SPIDEV_2);
+#endif
+#ifdef USE_SPI_DEVICE_3
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_2) {
-        spiInit(SPI3);
+        spiInit(SPIDEV_3);
     }
 #else
-    spiInit(SPI3);
+    spiInit(SPIDEV_3);
 #endif
 #endif
 #endif
@@ -421,12 +415,6 @@ void init(void)
 #endif
 
 #if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
-    }
-#endif
-
-#if defined(FURYF3) && defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
@@ -477,7 +465,13 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf, masterConfig.gyro_sync_denom)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
+                masterConfig.acc_hardware, 
+                masterConfig.mag_hardware, 
+                masterConfig.baro_hardware, 
+                masterConfig.mag_declination, 
+                masterConfig.gyro_lpf, 
+                masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -486,6 +480,8 @@ void init(void)
 
     LED1_ON;
     LED0_OFF;
+    LED2_OFF;
+    
     for (i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
@@ -670,7 +666,8 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) {
+void main_init(void) 
+{
     init();
 
     /* Setup scheduler */
@@ -771,7 +768,8 @@ int main(void)
  * cause of the fault.
  * The function ends with a BKPT instruction to force control back into the debugger
  */
-void hard_fault_handler_c(unsigned long *hardfault_args){
+void hard_fault_handler_c(unsigned long *hardfault_args)
+{
   volatile unsigned long stacked_r0 ;
   volatile unsigned long stacked_r1 ;
   volatile unsigned long stacked_r2 ;
@@ -822,6 +820,8 @@ void hard_fault_handler_c(unsigned long *hardfault_args){
 #else
 void HardFault_Handler(void)
 {
+    LED2_ON;
+
     // fall out of the sky
     uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
     if ((systemState & requiredStateForMotors) == requiredStateForMotors) {
@@ -835,6 +835,14 @@ void HardFault_Handler(void)
     }
 #endif
 
-    while (1);
+    LED1_OFF;
+    LED0_OFF;
+
+    while (1) {
+#ifdef LED2
+        delay(50);
+        LED2_TOGGLE;
+#endif
+    }
 }
 #endif

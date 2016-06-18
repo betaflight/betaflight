@@ -14,7 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
+ #include "drivers/exti.h"
+ 
 typedef enum cjmcuHardwareRevision_t {
     UNKNOWN = 0,
     REV_1, // Blue LED3
@@ -27,3 +30,5 @@ void updateHardwareRevision(void);
 void detectHardwareRevision(void);
 
 void spiBusInit(void);
+
+const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void);

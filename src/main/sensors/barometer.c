@@ -20,8 +20,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
-
 #include "common/maths.h"
 
 #include "drivers/barometer.h"

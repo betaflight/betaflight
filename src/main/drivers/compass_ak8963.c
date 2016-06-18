@@ -95,7 +95,7 @@ ak8963Configuration_t ak8963config;
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 // FIXME pretend we have real MPU9250 support
-#ifdef MPU6500_SPI_INSTANCE
+#if defined(MPU6500_SPI_INSTANCE) && !defined(MPU9250_SPI_INSTANCE)
 #define MPU9250_SPI_INSTANCE
 #define verifympu9250WriteRegister mpu6500WriteRegister
 #define mpu9250WriteRegister mpu6500WriteRegister
@@ -187,12 +187,14 @@ bool ak8963SPICompleteRead(uint8_t *buf)
 #endif
 
 #ifdef USE_I2C
-bool c_i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data) {
-    return i2cWrite(addr_, reg_, data);
+bool c_i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data) 
+{
+    return i2cWrite(MAG_I2C_INSTANCE, addr_, reg_, data);
 }
 
-bool c_i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) {
-    return i2cRead(addr_, reg_, len, buf);
+bool c_i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf) 
+{
+	return i2cRead(MAG_I2C_INSTANCE, addr_, reg_, len, buf);
 }
 #endif
 
@@ -203,11 +205,11 @@ bool ak8963Detect(mag_t *mag)
 
 #ifdef USE_I2C
     // check for AK8963 on I2C bus
-    ack = i2cRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
+    ack = i2cRead(MAG_I2C_INSTANCE, AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
     if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
     {
-        ak8963config.read = i2cRead;
-        ak8963config.write = i2cWrite;
+        ak8963config.read = c_i2cRead;
+        ak8963config.write = c_i2cWrite;
         mag->init = ak8963Init;
         mag->read = ak8963Read;
 

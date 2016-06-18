@@ -100,7 +100,7 @@ static const uint32_t channelArray[RTC6705_BAND_MAX][RTC6705_CHANNEL_MAX] = {
  * Send a command and return if good
  * TODO chip detect
  */
-static bool rtc6705IsReady()
+static bool rtc6705IsReady(void)
 {
     // Sleep a little bit to make sure it has booted
     delay(50);
@@ -115,7 +115,8 @@ static bool rtc6705IsReady()
  * This is easier for when generating the frequency to then
  * reverse the bits afterwards
  */
-static uint32_t reverse32(uint32_t in) {
+static uint32_t reverse32(uint32_t in)
+{
     uint32_t out = 0;
 
     for (uint8_t i = 0 ; i < 32 ; i++)
@@ -129,7 +130,7 @@ static uint32_t reverse32(uint32_t in) {
 /**
  * Start chip if available
  */
-bool rtc6705Init()
+bool rtc6705Init(void)
 {
     DISABLE_RTC6705;
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
