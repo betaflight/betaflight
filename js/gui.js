@@ -279,8 +279,8 @@ GUI_control.prototype.content_ready = function (callback) {
     if (CONFIGURATOR.connectionValid) {
         // Build link to in-use CF version documentation
         var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for " + CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+        documentationButton.html("Wiki");
+        documentationButton.attr("href","https://github.com/betaflight/betaflight/wiki");
     }
 
     // loading tooltip
