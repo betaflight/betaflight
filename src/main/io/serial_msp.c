@@ -43,6 +43,8 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
+#include "drivers/max7456.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -56,6 +58,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
@@ -1211,6 +1214,21 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         break;
 
+    case MSP_OSD_CONFIG:
+#ifdef OSD
+        headSerialReply(2 + (OSD_MAX_ITEMS * 2));
+        serialize8(1); // OSD supported
+        // send video system (AUTO/PAL/NTSC)
+        serialize8(masterConfig.osdProfile.video_system);
+        for (i = 0; i < OSD_MAX_ITEMS; i++) {
+            serialize16(masterConfig.osdProfile.item_pos[i]);
+        }
+#else
+        headSerialReply(1);
+        serialize8(0); // OSD not supported
+#endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1256,7 +1274,9 @@ static bool processInCommand(void)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
-
+#ifdef OSD
+    uint8_t addr, font_data[64];
+#endif
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
@@ -1515,6 +1535,38 @@ static bool processInCommand(void)
         }
 
         transponderUpdateData(masterConfig.transponderData);
+        break;
+#endif
+#ifdef OSD
+    case MSP_SET_OSD_CONFIG:
+        addr = read8();
+        // set all the other settings
+        if ((int8_t)addr == -1) {
+            masterConfig.osdProfile.video_system = read8();
+        }
+        // set a position setting
+        else {
+            masterConfig.osdProfile.item_pos[addr] = read16();
+        }
+        break;
+    case MSP_OSD_CHAR_WRITE:
+        addr = read8();
+        for (i = 0; i < 54; i++) {
+            font_data[i] = read8();
+        }
+        max7456_write_nvm(addr, font_data);
+        break;
+#endif
+
+#ifdef USE_RTC6705
+    case MSP_SET_VTX_CONFIG:
+        tmp = read16();
+        if  (tmp < 40)
+            masterConfig.vtx_channel = tmp;
+        if (current_vtx_channel != masterConfig.vtx_channel) {
+            current_vtx_channel = masterConfig.vtx_channel;
+            rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        }
         break;
 #endif
 

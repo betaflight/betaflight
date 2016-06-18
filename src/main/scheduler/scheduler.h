@@ -79,7 +79,9 @@ typedef enum {
 #ifdef TRANSPONDER
     TASK_TRANSPONDER,
 #endif
-
+#ifdef OSD
+    TASK_OSD,
+#endif
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif

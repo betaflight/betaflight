@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/pwm_output.h"
+#include "drivers/max7456.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -55,6 +56,7 @@
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -416,6 +418,10 @@ static void resetConf(void)
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
+#endif
+
+#ifdef OSD
+    resetOsdConfig();
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER

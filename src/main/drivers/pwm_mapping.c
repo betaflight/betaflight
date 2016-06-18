@@ -237,7 +237,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(SPRACINGF3MINI)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
