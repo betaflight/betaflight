@@ -160,7 +160,7 @@ void annexCode(void)
     // Compute ROLL PITCH and YAW command
     rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
     rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
-    rcCommand[YAW] = getAxisRcCommand(rcData[YAW], rcLookupYaw, currentProfile->rcControlsConfig.yaw_deadband);
+    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], rcLookupYaw, currentProfile->rcControlsConfig.yaw_deadband);
 
     //Compute THROTTLE command
     throttleValue = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
