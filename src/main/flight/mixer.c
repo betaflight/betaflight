@@ -70,6 +70,8 @@ static rxConfig_t *rxConfig;
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+float errorLimiter = 1.0f;
+
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
@@ -823,21 +825,21 @@ void mixTable(void)
     throttleRange = throttleMax - throttleMin;
 
     if (rollPitchYawMixRange > throttleRange) {
-        motorLimitReached = true;
         mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        if (!escAndServoConfig->escDesyncProtection) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
-
-        if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
+        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
     } else {
-        motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
+
+    // adjust feedback to scale PID error inputs to our limitations.
+    errorLimiter = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.1f, 1.0f);
+    if (debugMode == DEBUG_AIRMODE) debug[1] = errorLimiter * 100;
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
