@@ -51,7 +51,7 @@ extern uint8_t mpuLowPassFilter;
 
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
-static void mpu6050AccInit(void);
+static void mpu6050AccInit(acc_t *acc);
 static void mpu6050GyroInit(uint8_t lpf);
 
 bool mpu6050AccDetect(acc_t *acc)
@@ -82,16 +82,16 @@ bool mpu6050GyroDetect(gyro_t *gyro)
     return true;
 }
 
-static void mpu6050AccInit(void)
+static void mpu6050AccInit(acc_t *acc)
 {
     mpuIntExtiInit();
 
     switch (mpuDetectionResult.resolution) {
         case MPU_HALF_RESOLUTION:
-            acc_1G = 256 * 4;
+            acc->acc_1G = 256 * 4;
             break;
         case MPU_FULL_RESOLUTION:
-            acc_1G = 512 * 4;
+            acc->acc_1G = 512 * 4;
             break;
     }
 }

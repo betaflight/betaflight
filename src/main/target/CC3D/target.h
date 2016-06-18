@@ -17,27 +17,24 @@
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3 // PB3 (LED)
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOB
-#define LED0
+#define LED0    PB3 // PB3 (LED)
 
-#define INVERTER_PIN Pin_2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_GPIO GPIOB
-#define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
+#define INVERTER    PB2 // PB2 (BOOT1) used as inverter select GPIO
 #define INVERTER_USART USART1
 
+#define BEEPER      PB15 // PB15 (Beeper)
+#define BEEPER_OPT  PB2  // PB15 (Beeper)
 
-#define BEEP_GPIO GPIOA
-#define BEEP_PIN Pin_15 // PA15 (Beeper)
-#define BEEP_PERIPHERAL RCC_APB2Periph_GPIOA
+#define USE_EXTI
+#define USE_MPU_DATA_READY_SIGNAL
+#define MPU_INT_EXTI PA3
 
 #define MPU6000_CS_GPIO       GPIOA
-#define MPU6000_CS_PIN        GPIO_Pin_4
+#define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
 
 #define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
+#define M25P16_CS_PIN         PB12
 #define M25P16_SPI_INSTANCE   SPI2
 
 #define USE_FLASHFS
@@ -115,22 +112,16 @@
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define INVERTER
-#define BEEPER
 #define DISPLAY
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define SONAR
-//#define GPS
+#define SONAR_ECHO_PIN      PB0
+#define SONAR_TRIGGER_PIN   PB5
+
+#undef GPS
 
 #undef BARO
 
@@ -139,6 +130,14 @@
 //#define SKIP_PID_LUXFLOAT
 #undef DISPLAY
 #undef SONAR
-#undef GPS
 #endif
 
+// IO - from schematics
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(14))
+
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)

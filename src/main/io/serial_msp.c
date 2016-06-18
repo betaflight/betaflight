@@ -24,7 +24,6 @@
 #include "build_config.h"
 #include "debug.h"
 #include "platform.h"
-#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -61,6 +60,8 @@
 
 #include "telemetry/telemetry.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -93,16 +94,13 @@
 
 #include "serial_msp.h"
 
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
-#endif
 
 static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
-
 
 void setGyroSamplingSpeed(uint16_t looptime) {
     uint16_t gyroSampleRate = 1000;
@@ -116,46 +114,44 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
             if (looptime < 250) {
-                masterConfig.acc_hardware = 1;
-                masterConfig.baro_hardware = 1;
-                masterConfig.mag_hardware = 1;
+                masterConfig.acc_hardware = ACC_NONE;
+                masterConfig.baro_hardware = BARO_NONE;
+                masterConfig.mag_hardware = MAG_NONE;
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
-#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(FURYF3)
-                masterConfig.acc_hardware = 0;
-#else
-                masterConfig.acc_hardware = 1;
-#endif
-                masterConfig.baro_hardware = 1;
-                masterConfig.mag_hardware = 1;
+                masterConfig.acc_hardware = CONFIG_FASTLOOP_PREFERRED_ACC;
+                masterConfig.baro_hardware = BARO_NONE;
+                masterConfig.mag_hardware = MAG_NONE;
                 masterConfig.pid_process_denom = 2;
             }
             masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
             masterConfig.gyro_lpf = 0;
             masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
         }
 #else
         if (looptime < 1000) {
             masterConfig.gyro_lpf = 0;
-            masterConfig.acc_hardware = 1;
-            masterConfig.baro_hardware = 1;
-            masterConfig.mag_hardware = 1;
+            masterConfig.acc_hardware = ACC_NONE;
+            masterConfig.baro_hardware = BARO_NONE;
+            masterConfig.mag_hardware = MAG_NONE;
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
+            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
+                masterConfig.pid_process_denom = 2;
+            }
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == 2) {
+                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
@@ -164,11 +160,10 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
             masterConfig.gyro_lpf = 0;
-
             masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
             masterConfig.pid_process_denom = 1;
         }
 #endif
@@ -399,7 +394,7 @@ static void serializeSDCardSummaryReply(void)
 
 #ifdef USE_SDCARD
     uint8_t flags = 1 /* SD card supported */ ;
-    uint8_t state;
+    uint8_t state = 0;
 
     serialize8(flags);
 
@@ -769,7 +764,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(18);
 
         // Hack scale due to choice of units for sensor data in multiwii
-        uint8_t scale = (acc_1G > 1024) ? 8 : 1;
+        uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
 
         for (i = 0; i < 3; i++)
             serialize16(accSmooth[i] / scale);
@@ -1740,7 +1735,7 @@ static bool processInCommand(void)
         // switch all motor lines HI
         // reply the count of ESC found
         headSerialReply(1);
-        serialize8(Initialize4WayInterface());
+        serialize8(esc4wayInit());
         // because we do not come back after calling Process4WayInterface
         // proceed with a success reply first
         tailSerialReply();
@@ -1751,7 +1746,7 @@ static bool processInCommand(void)
         // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
         // bootloader mode before try to connect any ESC
         // Start to activate here
-        Process4WayInterface(currentPort, writer);
+        esc4wayProcess(currentPort->port);
         // former used MSP uart is still active
         // proceed as usual with MSP commands
         break;
