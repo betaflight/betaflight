@@ -166,6 +166,7 @@
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC2
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
