@@ -22,6 +22,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "version.h"
 #include "scheduler/scheduler.h"
 
 #include "common/axis.h"
@@ -123,57 +124,73 @@
 
 
 static uint32_t next_osd_update_at = 0;
-static uint32_t armed_seconds = 0;
-static uint32_t armed_at = 0;
-static bool armed = false;
+static uint32_t armed_seconds      = 0;
+static uint32_t armed_at           = 0;
+static uint8_t armed               = 0;
 
-static uint8_t current_page = 0;
-static uint8_t sticks[] = {0,0,0,0};
+static uint8_t current_page        = 0;
+static uint8_t sticks[]            = {0,0,0,0};
+
+static uint8_t cursor_row          = 255;
+static uint8_t cursor_col          = 0;
+static uint8_t in_menu             = 0;
+static uint8_t activating_menu     = 0;
+
 static char string_buffer[30];
-static uint8_t cursor_row = 255;
-static uint8_t cursor_col = 0;
-static bool in_menu = false;
-static bool activating_menu = false;
+
 extern uint16_t rssi;
 
+enum {
+    MENU_VALUE_DECREASE = 0,
+    MENU_VALUE_INCREASE,
+};
 
 #ifdef USE_RTC6705
-void update_vtx_band(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
-        if (current_vtx_channel < 32)
-            current_vtx_channel += 8;
+
+static const char *vtx_bands[] = {
+    "BOSCAM A",
+    "BOSCAM B",
+    "BOSCAM E",
+    "FATSHARK",
+    "RACEBAND",
+};
+
+void update_vtx_band(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+    if (value_change_direction) {
+        if (current_vtx_channel < (BANDS_NUMBER * CHANNELS_PER_BAND - CHANNELS_PER_BAND))
+            current_vtx_channel += CHANNELS_PER_BAND;
     } else {
-        if (current_vtx_channel > 7)
-            current_vtx_channel -= 8;
+        if (current_vtx_channel >= CHANNELS_PER_BAND)
+            current_vtx_channel -= CHANNELS_PER_BAND;
     }
 }
 
 void print_vtx_band(uint16_t pos, uint8_t col) {
-    (void)col;
-    sprintf(string_buffer,  "%s", vtx_bands[current_vtx_channel / 8]);
+    UNUSED(col);
+    sprintf(string_buffer,  "%s", vtx_bands[current_vtx_channel / CHANNELS_PER_BAND]);
     max7456_write_string(string_buffer, pos);
 }
 
-void update_vtx_channel(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
-        if ((current_vtx_channel % 8) < 7)
+void update_vtx_channel(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+    if (value_change_direction) {
+        if ((current_vtx_channel % CHANNELS_PER_BAND) < (CHANNELS_PER_BAND - 1))
             current_vtx_channel++;
     } else {
-        if ((current_vtx_channel % 8) > 0)
+        if ((current_vtx_channel % CHANNELS_PER_BAND) > 0)
             current_vtx_channel--;
     }
 }
 
 void print_vtx_channel(uint16_t pos, uint8_t col) {
-    (void)col;
-    sprintf(string_buffer,  "%d", current_vtx_channel % 8 + 1);
+    UNUSED(col);
+    sprintf(string_buffer,  "%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
     max7456_write_string(string_buffer, pos);
 }
 
 void print_vtx_freq(uint16_t pos, uint8_t col) {
-    (void)col;
+    UNUSED(col);
     sprintf(string_buffer,  "%d M", vtx_freq[current_vtx_channel]);
     max7456_write_string(string_buffer, pos);
 }
@@ -243,8 +260,9 @@ void print_tpa_brkpt(uint16_t pos, uint8_t col) {
     }
 }
 
-void update_int_pid(bool inc, uint8_t col, int pid_term) {
+void update_int_pid(int value_change_direction, uint8_t col, int pid_term) {
     void* ptr;
+
     switch(col) {
         case 0:
             ptr = &currentProfile->pidProfile.P8[pid_term];
@@ -259,7 +277,7 @@ void update_int_pid(bool inc, uint8_t col, int pid_term) {
             return;
     }
 
-    if (inc) {
+    if (value_change_direction) {
         if (*(uint8_t*)ptr < 200)
             *(uint8_t*)ptr += 1;
     } else {
@@ -268,21 +286,22 @@ void update_int_pid(bool inc, uint8_t col, int pid_term) {
     }
 }
 
-void update_roll_pid(bool inc, uint8_t col) {
-    update_int_pid(inc, col, ROLL);
+void update_roll_pid(int value_change_direction, uint8_t col) {
+    update_int_pid(value_change_direction, col, ROLL);
 }
 
-void update_pitch_pid(bool inc, uint8_t col) {
-    update_int_pid(inc, col, PITCH);
+void update_pitch_pid(int value_change_direction, uint8_t col) {
+    update_int_pid(value_change_direction, col, PITCH);
 }
 
-void update_yaw_pid(bool inc, uint8_t col) {
-    update_int_pid(inc, col, YAW);
+void update_yaw_pid(int value_change_direction, uint8_t col) {
+    update_int_pid(value_change_direction, col, YAW);
 }
 
-void update_roll_rate(bool inc, uint8_t col) {
-    (void)col;
-    if (inc) {
+void update_roll_rate(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+
+    if (value_change_direction) {
         if (currentControlRateProfile->rates[FD_ROLL] < CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX)
             currentControlRateProfile->rates[FD_ROLL]++;
     } else {
@@ -291,9 +310,10 @@ void update_roll_rate(bool inc, uint8_t col) {
     }
 }
 
-void update_pitch_rate(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
+void update_pitch_rate(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+
+    if (value_change_direction) {
         if (currentControlRateProfile->rates[FD_PITCH] < CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX)
             currentControlRateProfile->rates[FD_PITCH]++;
     } else {
@@ -302,9 +322,10 @@ void update_pitch_rate(bool increase, uint8_t col) {
     }
 }
 
-void update_yaw_rate(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
+void update_yaw_rate(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+
+    if (value_change_direction) {
         if (currentControlRateProfile->rates[FD_YAW] < CONTROL_RATE_CONFIG_YAW_RATE_MAX)
             currentControlRateProfile->rates[FD_YAW]++;
     } else {
@@ -313,9 +334,10 @@ void update_yaw_rate(bool increase, uint8_t col) {
     }
 }
 
-void update_tpa_rate(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
+void update_tpa_rate(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+
+    if (value_change_direction) {
         if (currentControlRateProfile->dynThrPID < CONTROL_RATE_CONFIG_TPA_MAX)
             currentControlRateProfile->dynThrPID++;
     } else {
@@ -324,9 +346,10 @@ void update_tpa_rate(bool increase, uint8_t col) {
     }
 }
 
-void update_tpa_brkpt(bool increase, uint8_t col) {
-    (void)col;
-    if (increase) {
+void update_tpa_brkpt(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+
+    if (value_change_direction) {
         if (currentControlRateProfile->tpa_breakpoint < PWM_RANGE_MAX)
             currentControlRateProfile->tpa_breakpoint++;
     } else {
@@ -336,13 +359,15 @@ void update_tpa_brkpt(bool increase, uint8_t col) {
 }
 
 void print_average_system_load(uint16_t pos, uint8_t col) {
-    (void)col;
+    UNUSED(col);
+
     sprintf(string_buffer, "%d", averageSystemLoadPercent);
     max7456_write_string(string_buffer, pos);
 }
 
 void print_batt_voltage(uint16_t pos, uint8_t col) {
-    (void)col;
+    UNUSED(col);
+
     sprintf(string_buffer, "%d.%1d", vbat / 10, vbat % 10);
     max7456_write_string(string_buffer, pos);
 }
@@ -503,7 +528,7 @@ void show_menu(void) {
             }
         } else {
             if (menu_pages[current_page].rows[cursor_row].update)
-                menu_pages[current_page].rows[cursor_row].update(true, cursor_col);
+                menu_pages[current_page].rows[cursor_row].update(MENU_VALUE_INCREASE, cursor_col);
         }
     }
 
@@ -514,7 +539,7 @@ void show_menu(void) {
             }
         } else {
             if (menu_pages[current_page].rows[cursor_row].update)
-                menu_pages[current_page].rows[cursor_row].update(false, cursor_col);
+                menu_pages[current_page].rows[cursor_row].update(MENU_VALUE_DECREASE, cursor_col);
         }
     }
 
@@ -697,10 +722,24 @@ void updateOsd(void)
     }
 }
 
-
 void osdInit(void)
 {
+    uint16_t x;
+
     max7456_init(masterConfig.osdProfile.video_system);
+
+    // display logo and help
+    x =  160;
+    for (int i = 1; i < 5; i++) {
+        for (int j = 3; j < 27; j++)
+            max7456_screen[i * LINE + j] = (char)x++;
+    }
+    sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
+    max7456_write_string(string_buffer, LINE06 + 5);
+    max7456_write_string("MENU: THRT MID", LINE07 + 7);
+    max7456_write_string("YAW RIGHT", LINE08 + 13);
+    max7456_write_string("PITCH UP", LINE09 + 13);
+    max7456_draw_screen();
 }
 
 void resetOsdConfig(void)

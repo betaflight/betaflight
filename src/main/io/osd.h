@@ -25,7 +25,7 @@ typedef struct {
 
 typedef struct {
     const char* title;
-    void (*update)(bool increase, uint8_t col);
+    void (*update)(int value_change_direction, uint8_t col);
     void (*print)(uint16_t pos, uint8_t col);
 } osd_row_t;
 

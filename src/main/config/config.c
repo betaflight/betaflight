@@ -424,12 +424,6 @@ static void resetConf(void)
     resetOsdConfig();
 #endif
 
-#ifdef USE_RTC6705
-    featureSet(FEATURE_VTX);
-    masterConfig.vtx_channel = 19; // default to Boscam E channel 4
-    masterConfig.vtx_power   = 1;
-#endif
-
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.

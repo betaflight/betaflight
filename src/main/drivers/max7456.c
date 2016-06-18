@@ -36,8 +36,6 @@
 #define DISABLE_MAX7456       IOHi(max7456CsPin)
 #define ENABLE_MAX7456        IOLo(max7456CsPin)
 
-static IO_t max7456CsPin = IO_NONE;
-
 /** Artificial Horizon limits **/
 #define AHIPITCHMAX 200             // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
 #define AHIROLLMAX  400             // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
@@ -45,10 +43,11 @@ static IO_t max7456CsPin = IO_NONE;
 #define AHISIDEBARHEIGHTPOSITION 3
 
 uint16_t max_screen_size;
-uint8_t  video_signal_type = 0;
-uint8_t  max7456_lock = 0;
 char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 
+static uint8_t  video_signal_type   = 0;
+static uint8_t  max7456_lock        = 0;
+static IO_t max7456CsPin            = IO_NONE;
 
 uint8_t max7456_send(uint8_t add, uint8_t data) {
     spiTransferByte(MAX7456_SPI_INSTANCE, add);
@@ -113,19 +112,6 @@ void max7456_init(uint8_t video_system) {
 
     DISABLE_MAX7456;
     delay(100);
-
-    // display logo
-    x =  160;
-    for (int i = 1; i < 5; i++) {
-        for (int j = 3; j < 27; j++)
-            max7456_screen[i * LINE + j] = (char)x++;
-    }
-    tfp_sprintf(buf, "BF VERSION: %s", FC_VERSION_STRING);
-    max7456_write_string(buf, LINE06+5);
-    max7456_write_string("MENU: THRT MID", LINE07+7);
-    max7456_write_string("YAW RIGHT", LINE08+13);
-    max7456_write_string("PITCH UP", LINE09+13);
-    max7456_draw_screen();
 }
 
 // Copy string from ram into screen buffer

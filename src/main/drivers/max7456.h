@@ -143,7 +143,7 @@
 enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
 
 extern uint16_t max_screen_size;
-char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
+extern char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 
 
 void max7456_init(uint8_t system);

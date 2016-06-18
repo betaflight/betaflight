@@ -38,21 +38,13 @@
 #define RTC6705_SPILE_ON      IOHi(rtc6705LePin)
 #define RTC6705_SPILE_OFF     IOLo(rtc6705LePin)
 
-char *vtx_bands[] = {
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
-
-uint16_t vtx_freq[] =
+const uint16_t vtx_freq[] =
 {
-    5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725,
-    5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866,
-    5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945,
-    5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880,
-    5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917,
+    5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725, // Boacam A
+    5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866, // Boscam B
+    5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945, // Boscam E
+    5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880, // FatShark
+    5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
 };
 
 uint16_t current_vtx_channel;
@@ -127,8 +119,8 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705_soft_spi_set_rf_power(uint8_t power) {
-    rtc6705_write_register(7, (power ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power) {
+    rtc6705_write_register(7, (reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT));
 }
 
 #endif
