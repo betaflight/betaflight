@@ -152,18 +152,10 @@
 
 #define USE_ADC
 //#define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define VBAT_ADC_PIN               PC0
-#define VBAT_ADC_CHANNEL           ADC_Channel_1
-
 #define CURRENT_METER_ADC_PIN      PC1
-#define CURRENT_METER_ADC_CHANNEL  ADC_Channel_0
-
 #define RSSI_ADC_PIN               PC4
-#define RSSI_ADC_CHANNEL           ADC_Channel_4
-
 #define EXTERNAL1_ADC_GPIO_PIN     PC5
-#define EXTERNAL1_ADC_CHANNEL      ADC_Channel_5
 
 // LED strip configuration using RC5 pin.
 //#define LED_STRIP

@@ -83,18 +83,10 @@
 // #define SOFT_I2C_PB67
 
 #define USE_ADC
-
 #define CURRENT_METER_ADC_PIN       PB1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
-
 #define VBAT_ADC_PIN                PA4
-#define VBAT_ADC_CHANNEL            ADC_Channel_4
-
 #define RSSI_ADC_PIN                PA1
-#define RSSI_ADC_CHANNEL            ADC_Channel_1
-
 #define EXTERNAL1_ADC_PIN           PA5
-#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM3

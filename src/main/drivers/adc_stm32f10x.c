@@ -54,6 +54,19 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
+const adcPinMap_t adcPinMap[] = { 
+    { .pin = DEFIO_TAG_E__PA0, .channel = ADC_Channel_0 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA1, .channel = ADC_Channel_1 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA2, .channel = ADC_Channel_2 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA3, .channel = ADC_Channel_3 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA4, .channel = ADC_Channel_4 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA5, .channel = ADC_Channel_5 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA6, .channel = ADC_Channel_6 }, // ADC12
+    { .pin = DEFIO_TAG_E__PA7, .channel = ADC_Channel_7 }, // ADC12
+    { .pin = DEFIO_TAG_E__PB0, .channel = ADC_Channel_8 }, // ADC12
+    { .pin = DEFIO_TAG_E__PB1, .channel = ADC_Channel_9 }, // ADC12   
+};
+
 // Driver for STM32F103CB onboard ADC
 //
 // Naze32
@@ -80,7 +93,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableVBat) {
         IOInit(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
         IOConfigGPIO(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_BATTERY].adcChannel = VBAT_ADC_CHANNEL;
+        adcConfig[ADC_BATTERY].adcChannel = adcChannelByPin(IO_TAG(VBAT_ADC_PIN));
         adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_BATTERY].enabled = true;
         adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
@@ -91,7 +104,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableRSSI) {
         IOInit(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
         IOConfigGPIO(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_RSSI].adcChannel = RSSI_ADC_CHANNEL;
+        adcConfig[ADC_RSSI].adcChannel = adcChannelByPin(IO_TAG(RSSI_ADC_PIN));
         adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_RSSI].enabled = true;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
@@ -102,7 +115,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableExternal1) {
         IOInit(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
 	    IOConfigGPIO(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_EXTERNAL1].adcChannel = EXTERNAL1_ADC_CHANNEL;
+        adcConfig[ADC_EXTERNAL1].adcChannel = adcChannelByPin(IO_TAG(EXTERNAL1_ADC_PIN));
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
@@ -113,7 +126,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableCurrentMeter) {
         IOInit(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
 	    IOConfigGPIO(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_CURRENT].adcChannel = CURRENT_METER_ADC_CHANNEL;
+        adcConfig[ADC_CURRENT].adcChannel = adcChannelByPin(IO_TAG(CURRENT_METER_ADC_PIN));
         adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_CURRENT].enabled = true;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;

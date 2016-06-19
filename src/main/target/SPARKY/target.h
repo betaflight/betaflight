@@ -88,16 +88,9 @@
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
 
 #define USE_ADC
-
 #define ADC_INSTANCE                ADC2
-#define ADC_DMA_CHANNEL             DMA2_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
-
 #define VBAT_ADC_PIN                PA4
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
 #define CURRENT_METER_ADC_PIN       PA7
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
 #define DEFAULT_RX_FEATURE          FEATURE_RX_PPM
 

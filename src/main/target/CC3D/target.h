@@ -92,15 +92,9 @@
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 #define USE_ADC
-
 #define CURRENT_METER_ADC_PIN       PB1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
-
 #define VBAT_ADC_PIN                PA0
-#define VBAT_ADC_CHANNEL            ADC_Channel_0
-
 #define RSSI_ADC_PIN                PB0
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
 
 #define LED_STRIP
 #define LED_STRIP_TIMER              TIM3

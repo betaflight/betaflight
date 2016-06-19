@@ -140,11 +140,7 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-
 #define VBAT_ADC_PIN                PA0
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
 
 //#define USE_QUAD_MIXER_ONLY
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

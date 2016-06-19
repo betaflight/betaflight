@@ -32,11 +32,11 @@
 	#define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
-#define LED0 PB5
-#define LED1 PB4
-#define BEEPER PB4
-#define INVERTER PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART USART1
+#define LED0            PB5
+#define LED1            PB4
+#define BEEPER          PB4
+#define INVERTER        PC0 // PC0 used as inverter select GPIO
+#define INVERTER_USART  USART1
 
 #define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
@@ -110,14 +110,10 @@
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN       PC1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_11
-
 #define VBAT_ADC_PIN                PC2
-#define VBAT_ADC_CHANNEL            ADC_Channel_12
-
 #define RSSI_ADC_GPIO_PIN           PA0
-#define RSSI_ADC_CHANNEL            ADC_Channel_0
 
+ 
 #define SENSORS_SET (SENSOR_ACC)
 
 //#define LED_STRIP

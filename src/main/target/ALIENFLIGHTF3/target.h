@@ -118,13 +118,8 @@
 #define USE_ADC
 
 #define ADC_INSTANCE         ADC2
-#define ADC_DMA_CHANNEL      DMA2_Channel1
-#define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
-
 //#define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define VBAT_ADC_PIN         PA4
-#define VBAT_ADC_CHANNEL     ADC_Channel_1
 
 // alternative defaults for AlienFlight F3 target
 #define ALIENFLIGHT

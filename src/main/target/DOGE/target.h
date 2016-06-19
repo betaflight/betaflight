@@ -34,44 +34,29 @@
 #define BEEPER_INVERTED
 
 // tqfp48 pin 3
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOC
-#define MPU6500_CS_GPIO                  GPIOC
 #define MPU6500_CS_PIN                   PC14
 #define MPU6500_SPI_INSTANCE             SPI1
 
 // tqfp48 pin 25
-#define BMP280_CS_GPIO_CLK_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define BMP280_CS_GPIO                   GPIOB
-#define BMP280_CS_PIN                    GPIO_Pin_12
+#define BMP280_CS_PIN                    PB12
 #define BMP280_SPI_INSTANCE              SPI2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
-#define SPI1_GPIO               GPIOB
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 39
 #define SPI1_SCK_PIN            PB3
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
 // tqfp48 pin 40
 #define SPI1_MISO_PIN           PB4
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
 // tqfp48 pin 41
 #define SPI1_MOSI_PIN           PB5
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
-
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 // tqfp48 pin 26
 #define SPI2_SCK_PIN            PB13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 // tqfp48 pin 27
 #define SPI2_MISO_PIN           PB14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
 // tqfp48 pin 28
 #define SPI2_MOSI_PIN           PB15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -139,18 +124,9 @@
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define ADC_INSTANCE                ADC2
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
-#define ADC_DMA_CHANNEL             DMA2_Channel1
-
-// tqfp48 pin 14
 #define VBAT_ADC_PIN                PA4
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
-// tqfp48 pin 15
 #define CURRENT_METER_ADC_PIN       PA5
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
 
 // mpu_int definition in sensors/initialisation.c
 #define USE_EXTI
