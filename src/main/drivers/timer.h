@@ -18,6 +18,7 @@
 #pragma once
 
 #include "io.h"
+#include "rcc.h"
 
 #if !defined(USABLE_TIMER_CHANNEL_COUNT)
 #define USABLE_TIMER_CHANNEL_COUNT 14
@@ -64,6 +65,11 @@ typedef struct timerOvrHandlerRec_s {
     struct timerOvrHandlerRec_s* next;
 } timerOvrHandlerRec_t;
 
+typedef struct timerDef_s {
+    TIM_TypeDef *TIMx;
+    rccPeriphTag_t rcc;
+} timerDef_t;
+
 typedef struct {
     TIM_TypeDef *tim;
     ioTag_t pin;
@@ -77,7 +83,21 @@ typedef struct {
     uint8_t outputInverted;
 } timerHardware_t;
 
+#ifdef STM32F1
+#if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+#elif defined(STM32F10X_HD) || defined(STM32F10X_CL)
+#define HARDWARE_TIMER_DEFINITION_COUNT 7
+#else
+#define HARDWARE_TIMER_DEFINITION_COUNT 4
+#endif
+#elif defined(STM32F3)
+#define HARDWARE_TIMER_DEFINITION_COUNT 10
+#elif defined(STM32F4)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+#endif
 extern const timerHardware_t timerHardware[];
+extern const timerDef_t timerDefinitions[];
 
 typedef enum {
     TYPE_FREE,
@@ -124,3 +144,4 @@ void timerForceOverflow(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
+rccPeriphTag_t timerRCC(TIM_TypeDef *tim);

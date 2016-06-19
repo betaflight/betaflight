@@ -55,6 +55,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -73,6 +74,7 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "scheduler/scheduler.h"
@@ -137,6 +139,7 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
+void osdInit(void);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -195,7 +198,7 @@ void init(void)
     EXTIInit();
 #endif
 
-#ifdef SPRACINGF3MINI
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
@@ -414,10 +417,12 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
+#endif
 #endif
 
 #ifdef USE_I2C
@@ -462,6 +467,21 @@ void init(void)
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef USE_RTC6705
+    if (feature(FEATURE_VTX)) {
+        rtc6705_soft_spi_init();
+        current_vtx_channel = masterConfig.vtx_channel;
+        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
+    }
+#endif
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
     }
 #endif
 
@@ -734,6 +754,9 @@ void main_init(void)
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);

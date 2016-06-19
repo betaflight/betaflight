@@ -213,6 +213,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(DOGE)
+            // remap outputs 1+2 (PWM2+3) as servos
+            if ((timerIndex == PWM2 || timerIndex == PWM3) && timerHardwarePtr->tim == TIM4)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
@@ -237,7 +243,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(SPRACINGF3MINI)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;

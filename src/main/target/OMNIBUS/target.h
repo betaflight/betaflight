@@ -17,19 +17,16 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SRFM"
+#define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-// early prototype had slightly different pin mappings.
-//#define SPRACINGF3MINI_MKII_REVA
+#define LED0    PB3
 
-#define LED0            PB3
-
-#define BEEPER          PC15
+#define BEEPER    PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USABLE_TIMER_CHANNEL_COUNT 10 // 6 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -50,7 +47,7 @@
 //#define USE_FAKE_ACC
 #define USE_ACC_MPU6500
 
-#define ACC_MPU6500_ALIGN  CW180_DEG
+#define ACC_MPU6500_ALIGN CW180_DEG
 #define GYRO_MPU6500_ALIGN CW180_DEG
 
 #define BARO
@@ -70,7 +67,7 @@
 #define USB_IO
 #define USB_CABLE_DETECTION
 
-#define USB_DETECT_PIN      PB5
+#define USB_DETECT_PIN                   PB5
 
 #define USE_VCP
 #define USE_USART1
@@ -111,8 +108,28 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+
+// OSD define info:
+//   feature name (includes source) -> MAX_OSD, used in target.mk
+// include the osd code
+#define OSD
+// include the max7456 driver
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE              SPI1
+#define MAX7456_SPI_CS_PIN                SPI1_NSS_PIN
+
+
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
+#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -176,20 +193,20 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 
-#define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+//#define TRANSPONDER
+//#define TRANSPONDER_GPIO                     GPIOA
+//#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+//#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
+//#define TRANSPONDER_PIN                      GPIO_Pin_8
+//#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
+//#define TRANSPONDER_TIMER                    TIM1
+//#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+//#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
+//#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
+//#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
+//#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
+//#define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
@@ -214,4 +231,8 @@
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
