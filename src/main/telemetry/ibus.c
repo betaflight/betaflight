@@ -148,7 +148,7 @@
  *     0xA1       - bits 7-4 Command (1010 = request measurement)
  *                  bits 3-0 Address (0001 = address 1)
  *     0x00, 0x00 - The measurement
- *     0x5E, 0xFF - Checksum, 0xFF - (0x06 + 0xA1 + 0x00 + 0x00)
+ *     0x58, 0xFF - Checksum, 0xFFFF - (0x06 + 0xA1 + 0x00 + 0x00)
  *
  *
  * Due to the limited telemetry data types possible with ibus, we
