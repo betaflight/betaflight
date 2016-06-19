@@ -13,7 +13,6 @@ TABS.onboard_logging.initialize = function (callback) {
 
     if (GUI.active_tab != 'onboard_logging') {
         GUI.active_tab = 'onboard_logging';
-        googleAnalytics.sendAppView('onboard_logging');
     }
 
     if (CONFIGURATOR.connectionValid) {

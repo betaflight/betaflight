@@ -1,4 +1,4 @@
-.tab-pid_tuning .rate-tpa th {
+.tab-pid_tuning .tpa th {
     background-color: #828885;
     padding: 4px;
     border-left: 0px solid #ccc;
@@ -44,21 +44,89 @@
     border: 1px solid silver;
 }
 
-.tab-pid_tuning .rate-tpa th:nth-child(2) {
+.tab-pid_tuning .tpa th:nth-child(2) {
     border-top-left-radius: 3px;
 }
 
-.tab-pid_tuning .rate-tpa th:first-child {
+.tab-pid_tuning .tpa th:first-child {
     border-top-left-radius: 3px;
 }
 
-.tab-pid_tuning .rate-tpa th:last-child {
+.tab-pid_tuning .tpa th:last-child {
     border-top-right-radius: 3px;
 }
 
-.tab-pid_tuning .rate-tpa {
+.tab-pid_tuning .tpa {
     /*border: 0px solid #ccc; */
     margin-bottom: 10px;
+}
+
+.tab-pid_tuning .rc_curve {
+    float: right;
+    width: calc(100% - 2px); /* - ( "virtual" margin) */
+}
+
+.tab-pid_tuning .rc_curve th {
+    background-color: #828885;
+    padding: 4px;
+    border-left: 0px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    font-weight: bold;
+    color: white;
+    text-align: left;
+}
+
+.tab-pid_tuning .rc_curve th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .rc_curve th:last-child {
+    border-top-right-radius: 3px;
+}
+
+.tab-pid_tuning .pitch_roll_curve {
+    margin: 0 0px 0px 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid silver;
+    border-radius: 3px;
+    background-image: url(../images/paper.jpg);
+    background-size: 200%;
+    background-position: center;
+}
+
+.tab-pid_tuning .rc_yaw_curve {
+    float: right;
+    width: calc(100% - 2px); /* - ( "virtual" margin) */
+}
+
+.tab-pid_tuning .rc_yaw_curve th {
+    background-color: #828885;
+    padding: 4px;
+    border-left: 0px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    font-weight: bold;
+    color: white;
+    text-align: left;
+}
+
+.tab-pid_tuning .rc_yaw_curve th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .rc_yaw_curve th:last-child {
+    border-top-right-radius: 3px;
+}
+
+.tab-pid_tuning .yaw_curve {
+    margin: 0 0px 0px 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid silver;
+    border-radius: 3px;
+    background-image: url(../images/paper.jpg);
+    background-size: 200%;
+    background-position: center;
 }
 
 .tab-pid_tuning input[type="number"]::-webkit-inner-spin-button {
@@ -114,7 +182,7 @@
 
 .tab-pid_tuning table td {
     padding: 1px;
-    width: 25%;
+    width: 14%;
     border-right: 1px solid #ccc;
 }
 
@@ -191,23 +259,35 @@
     line-height: 20px;
 }
 
-.tab-pid_tuning .pid_tuning .name {
-    width: 25%;
+.tab-pid_tuning .name {
+    width: 14%;
 }
 
 .tab-pid_tuning .proportional {
-    width: 25%;
+    width: 14%;
 }
 
 .tab-pid_tuning .integral {
-    width: 25%;
+    width: 14%;
 }
 
 .tab-pid_tuning .derivative {
-    width: 25%;
+    width: 14%;
 }
 
-.tab-pid_tuning .rate-tpa {
+.tab-pid_tuning .rc_rate {
+    width: 14%;
+}
+
+.tab-pid_tuning .rate {
+    width: 14%;
+}
+
+.tab-pid_tuning .rc_expo {
+    width: 14%;
+}
+
+.tab-pid_tuning .tpa {
     float: right;
     width: calc(100% - 2px); /* - ( "virtual" margin) */
 }
@@ -335,7 +415,7 @@
     right: 0;
     z-index: -1;
     overflow: hidden;
-    background-image: url("../images/light-wide-2.svg");
+    background-image: url("../images/light-wide-1.svg");
     background-repeat: no-repeat;
     background-position: 95% 20%;
     background-size: 430px;

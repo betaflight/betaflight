@@ -9,7 +9,6 @@ TABS.receiver.initialize = function (callback) {
 
     if (GUI.active_tab != 'receiver') {
         GUI.active_tab = 'receiver';
-        googleAnalytics.sendAppView('Receiver');
     }
 
     function get_misc_data() {
@@ -51,14 +50,6 @@ TABS.receiver.initialize = function (callback) {
         // fill in data from RC_tuning
         $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
         $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
-
-        $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
-        $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
-		    $('.tunings .yaw_rate input[name="yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-
-		    if (semver.lt(CONFIG.apiVersion, "1.10.0")) {
-            $('.tunings .yaw_rate input[name="yaw_expo"]').hide();
-        }
 
         chrome.storage.local.get('rx_refresh_rate', function (result) {
             if (result.rx_refresh_rate) {
@@ -244,40 +235,7 @@ TABS.receiver.initialize = function (callback) {
                 context.moveTo(midx, midy);
                 context.quadraticCurveTo(midxr, midyr, 200, 0);
                 context.lineWidth = 2;
-				context.strokeStyle = '#59aa29';
-                context.stroke();
-            }, 0);
-        }).trigger('input');
-
-        $('.tunings .rate input').on('input change', function () {
-            setTimeout(function () { // let global validation trigger and adjust the values first
-                var rateE = $('.tunings .rate input[name="rate"]'),
-                    expoE = $('.tunings .rate input[name="expo"]'),
-                    rate = parseFloat(rateE.val()),
-                    expo = parseFloat(expoE.val()),
-                    pitch_roll_curve = $('.pitch_roll_curve canvas').get(0),
-                    context = pitch_roll_curve.getContext("2d");
-
-                // local validation to deal with input event
-                if (rate >= parseFloat(rateE.prop('min')) &&
-                    rate <= parseFloat(rateE.prop('max')) &&
-                    expo >= parseFloat(expoE.prop('min')) &&
-                    expo <= parseFloat(expoE.prop('max'))) {
-                    // continue
-                } else {
-                    return;
-                }
-
-                // math magic by englishman
-                var ratey = rateHeight * rate;
-
-                // draw
-                context.clearRect(0, 0, 200, rateHeight);
-                context.beginPath();
-                context.moveTo(0, rateHeight);
-                context.quadraticCurveTo(110, rateHeight - ((ratey / 2) * (1 - expo)), 200, rateHeight - ratey);
-                context.lineWidth = 2;
-				context.strokeStyle = '#59aa29';
+				context.strokeStyle = '#ffbb00';
                 context.stroke();
             }, 0);
         }).trigger('input');
@@ -290,12 +248,8 @@ TABS.receiver.initialize = function (callback) {
                 $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
                 $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
 
-                $('.tunings .rate input[name="rate"]').val(RC_tuning.RC_RATE.toFixed(2));
-                $('.tunings .rate input[name="expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
-
                 // update visual representation
                 $('.tunings .throttle input').change();
-                $('.tunings .rate input').change();
             });
         });
 
@@ -303,10 +257,6 @@ TABS.receiver.initialize = function (callback) {
             // catch RC_tuning changes
             RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());
             RC_tuning.throttle_EXPO = parseFloat($('.tunings .throttle input[name="expo"]').val());
-
-            RC_tuning.RC_RATE = parseFloat($('.tunings .rate input[name="rate"]').val());
-            RC_tuning.RC_EXPO = parseFloat($('.tunings .rate input[name="expo"]').val());
-            RC_tuning.RC_YAW_EXPO = parseFloat($('.tunings .yaw_rate input[name="yaw_expo"]').val());
 
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
                RC_deadband.yaw_deadband = parseInt($('.deadband input[name="yaw_deadband"]').val());

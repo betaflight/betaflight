@@ -11,7 +11,6 @@ TABS.cli.initialize = function (callback) {
 
     if (GUI.active_tab != 'cli') {
         GUI.active_tab = 'cli';
-        googleAnalytics.sendAppView('CLI');
     }
     
     $('#content').load("./tabs/cli.html", function () {
@@ -99,7 +98,10 @@ TABS.cli.sendSlowly = function (out_arr, i, timeout_needle) {
         bufView[out_arr[i].length] = 0x0D; // enter (\n)
 
         serial.send(bufferOut);
-    }, timeout_needle * 5);
+        if (out_arr[i].substring(1, 7) == 'profile') {
+            timeout_needle *= 2; // switching profiles needs additional time
+        }
+    }, timeout_needle * 15);
 };
 
 TABS.cli.read = function (readInfo) {
@@ -221,5 +223,6 @@ TABS.cli.cleanup = function (callback) {
         GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
             if (callback) callback();
         }, 1000); // if we dont allow enough time to reboot, CRC of "first" command sent will fail, keep an eye for this one
+        CONFIGURATOR.cliActive = false;
     });
 };

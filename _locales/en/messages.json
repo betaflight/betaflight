@@ -35,7 +35,7 @@
         "message": "Device - <span style=\"color: red\">Rebooting</span>"
     },
     "deviceReady": {
-        "message": "Device - <span style=\"color: #57a929\">Ready</span>"
+        "message": "Device - <span style=\"color: #ffbb00\">Ready</span>"
     },
 
     "backupFileIncompatible": {
@@ -122,26 +122,26 @@
     },
 
     "serialPortOpened": {
-        "message": "Serial port <span style=\"color: #57a929\">successfully</span> opened with ID: $1"
+        "message": "Serial port <span style=\"color: #ffbb00\">successfully</span> opened with ID: $1"
     },
     "serialPortOpenFail": {
         "message": "<span style=\"color: red\">Failed</span> to open serial port"
     },
     "serialPortClosedOk": {
-        "message": "Serial port <span style=\"color: #57a929\">successfully</span> closed"
+        "message": "Serial port <span style=\"color: #ffbb00\">successfully</span> closed"
     },
     "serialPortClosedFail": {
         "message": "<span style=\"color: red\">Failed</span> to close serial port"
     },
 
     "usbDeviceOpened": {
-        "message": "USB device <span style=\"color: #57a929\">successfully</span> opened with ID: $1"
+        "message": "USB device <span style=\"color: #ffbb00\">successfully</span> opened with ID: $1"
     },
     "usbDeviceOpenFail": {
         "message": "<span style=\"color: red\">Failed</span> to open USB device!"
     },
     "usbDeviceClosed": {
-        "message": "USB device <span style=\"color: #57a929\">successfully</span> closed"
+        "message": "USB device <span style=\"color: #ffbb00\">successfully</span> closed"
     },
     "usbDeviceCloseFail": {
         "message": "<span style=\"color: red\">Failed</span> to close USB device"
@@ -171,10 +171,10 @@
         "message": "Firmware Version: <strong>$1</strong>"
     },
     "apiVersionReceived": {
-        "message": "MultiWii API version <span style=\"color: #57a929\">received</span> - <strong>$1</strong>"
+        "message": "MultiWii API version <span style=\"color: #ffbb00\">received</span> - <strong>$1</strong>"
     },
     "uniqueDeviceIdReceived": {
-        "message": "Unique device ID <span style=\"color: #57a929\">received</span> - <strong>0x$1</strong>"
+        "message": "Unique device ID <span style=\"color: #ffbb00\">received</span> - <strong>0x$1</strong>"
     },
     "boardInfoReceived": {
         "message": "Board: <strong>$1</strong>, version: <strong>$2</strong>"
@@ -216,7 +216,7 @@
         "message": "Please use the Firmware Flasher to access DFU devices"
     },
     "dfu_erased_kilobytes": {
-        "message": "Erased $1 kB of flash <span style=\"color: #57a929\">successfully</span>"
+        "message": "Erased $1 kB of flash <span style=\"color: #ffbb00\">successfully</span>"
     },
     "dfu_device_flash_info": {
         "message": "Detected device with total flash size $1 kiB"
@@ -226,21 +226,21 @@
     },
 
     "eeprom_saved_ok": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "defaultWelcomeIntro": {
-        "message": "Welcome to <strong>Cleanflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller."
+        "message": "Welcome to <strong>Betaflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller."
     },
     
     "defaultWelcomeText": {
-        "message": "The application supports all hardware that can run cleanflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"http://www.readymaderc.com/store/index.php?main_page=product_info&cPath=76_156&products_id=4221\" target=\"_blank\">DoDo</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://multirotormania.com/129-dragonfly32\" target=\"_blank\">DragonFly32</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/Shop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/cleanflight/cleanflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/cleanflight/cleanflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a>, development builds available <a href=\"http://cleanflight.memoryleaks.org/builds/\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com\" target=\"_blank\">here</a><br />Latest <strong>STM USB VCP Drivers</strong> can be downloaded from <a href=\"http://www.st.com/web/en/catalog/tools/PF257938\" title=\"http://www.st.com\" target=\"_blank\">here</a><br />Latest <strong>Zadig</strong> for Windows DFU flashing can be downloaded from <a href=\"http://zadig.akeo.ie/\" title=\"http://zadig.akeo.ie\" target=\"_blank\">here</a><br />"
+        "message": "The application supports all hardware that can run Betaflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"http://www.readymaderc.com/store/index.php?main_page=product_info&cPath=76_156&products_id=4221\" target=\"_blank\">DoDo</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://multirotormania.com/129-dragonfly32\" target=\"_blank\">DragonFly32</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/Shop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/Betaflight/Betaflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/Betaflight/Betaflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a>, development builds available <a href=\"http://Betaflight.memoryleaks.org/builds/\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com\" target=\"_blank\">here</a><br />Latest <strong>STM USB VCP Drivers</strong> can be downloaded from <a href=\"http://www.st.com/web/en/catalog/tools/PF257938\" title=\"http://www.st.com\" target=\"_blank\">here</a><br />Latest <strong>Zadig</strong> for Windows DFU flashing can be downloaded from <a href=\"http://zadig.akeo.ie/\" title=\"http://zadig.akeo.ie\" target=\"_blank\">here</a><br />"
     },
     "defaultContributingHead": {
         "message": "Contributing"
     },
     "defaultContributingText": {
-        "message": "If you would like to help make Cleanflight even better you can help in many ways, including:<br /><ul><li>Answering other users questions on the forums and IRC.</li><li>Contributing code to the firmware and configurator - new features, fixes, improvements</li><li>Testing <a href=\"https://github.com/cleanflight/cleanflight/pulls\" target=\"_blank\">new features/fixes</a> and providing feedback.</li><li>Helping out with <a href=\"https://github.com/cleanflight/cleanflight/issues\" target=\"_blank\">issues and commenting on feature requests</a>.</li><li><a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSQKVT6UYKGL6\" target=\"_blank\" title=\"Donate\">Donating</a>, <a href=\"http://www.bcmultirotors.com/#!/Cleanflight/c/12311211/offset=0&sort=nameAsc\" title=\"www.bcmultirotors.com\" target=\"_blank\">buying a T-Shirt</a> or <a href=\"http://seriouslypro.com/spracingf3\" title=\"seriouslypro.com\" target=\"_blank\">buying an SPRacingF3 board</a></li></ul>"
+        "message": "If you would like to help make Betaflight even better you can help in many ways, including:<br /><ul><li>Answering other users questions on the forums and IRC.</li><li>Contributing code to the firmware and configurator - new features, fixes, improvements</li><li>Testing <a href=\"https://github.com/Betaflight/Betaflight/pulls\" target=\"_blank\">new features/fixes</a> and providing feedback.</li><li>Helping out with <a href=\"https://github.com/Betaflight/Betaflight/issues\" target=\"_blank\">issues and commenting on feature requests</a>.</li><li><a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSQKVT6UYKGL6\" target=\"_blank\" title=\"Donate\">Donating</a>, <a href=\"http://www.bcmultirotors.com/#!/Betaflight/c/12311211/offset=0&sort=nameAsc\" title=\"www.bcmultirotors.com\" target=\"_blank\">buying a T-Shirt</a> or <a href=\"http://seriouslypro.com/spracingf3\" title=\"seriouslypro.com\" target=\"_blank\">buying an SPRacingF3 board</a></li></ul>"
     },
     "defaultChangelogHead": {
         "message": "Configurator - Changelog"
@@ -252,7 +252,7 @@
         "message": "Open Source / Donation Notice"
     },
     "defaultDonateText": {
-        "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>cleanflight</strong> users.<br />If you found the cleanflight or cleanflight configurator useful, please consider <strong>supporting</strong> its development by donating."
+        "message": "This utility is fully <strong>open source</strong> and is available free of charge to all <strong>Betaflight</strong> users.<br />If you found the Betaflight or Betaflight configurator useful, please consider <strong>supporting</strong> its development by donating."
     },
     "defaultSponsorsHead": {
         "message": "Sponsors"
@@ -261,13 +261,13 @@
         "message": "Documentation / Manual"
     },
     "defaultDocumentation": {
-        "message": "Cleanflight documentation is available in Markdown and PDF formats.<br /><br />"
+        "message": "Betaflight documentation is available in Markdown and PDF formats.<br /><br />"
     },
     "defaultDocumentation1": {
-        "message": "The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/cleanflight/cleanflight/releases\" target=\"_blank\">here</a>."
+        "message": "The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/Betaflight/Betaflight/releases\" target=\"_blank\">here</a>."
     },
     "defaultDocumentation2": {
-        "message": "The Markdown latest online documentation is available <a href=\"https://github.com/cleanflight/cleanflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
+        "message": "The Markdown latest online documentation is available <a href=\"https://github.com/Betaflight/Betaflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
     },
     "defaultSupportHead": {
         "message": "Support"
@@ -288,17 +288,17 @@
         "message": "<a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">MultiWii forums thread</a>"
     },
     "defaultSupport3": {
-        "message": "<a href=\"https://github.com/cleanflight\" target=\"_blank\">GitHub</a>"
+        "message": "<a href=\"https://github.com/Betaflight\" target=\"_blank\">GitHub</a>"
     },
     "defaultSupport4": {
-        "message": "<a href=\"irc://irc.freenode.net/#cleanflight\" target=\"_blank\">IRC channel on freenode</a>"
+        "message": "<a href=\"irc://irc.freenode.net/#Betaflight\" target=\"_blank\">IRC channel on freenode</a>"
     },
     "defaultSupport5": {
-        "message": "<a href=\"http://webchat.freenode.net/?channels=cleanflight\" target=\"_blank\">Join via WebClient</a>"
+        "message": "<a href=\"http://webchat.freenode.net/?channels=Betaflight\" target=\"_blank\">Join via WebClient</a>"
     },
     
     "initialSetupBackupAndRestoreApiVersion": {
-        "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: #57a929\">$2</span>.  Please backup your settings via the CLI, see Cleanflight documentation for procedure."
+        "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: #ffbb00\">$2</span>.  Please backup your settings via the CLI, see Betaflight documentation for procedure."
     },
     "initialSetupButtonCalibrateAccel": {
         "message": "Calibrate Accelerometer"
@@ -328,10 +328,10 @@
         "message": "<strong>Backup</strong> your configuration in case of an accident, <strong>CLI</strong> settings are <span style=\"color: red\">not</span> included - See 'dump' cli command"
     },
     "initialSetupBackupSuccess": {
-        "message": "Backup saved <span style=\"color: #57a929\">successfully</span>"
+        "message": "Backup saved <span style=\"color: #ffbb00\">successfully</span>"
     },
     "initialSetupRestoreSuccess": {
-        "message": "Configuration restored <span style=\"color: #57a929\">successfully</span>"
+        "message": "Configuration restored <span style=\"color: #ffbb00\">successfully</span>"
     },
     "initialSetupButtonResetZaxis": {
         "message": "Reset Z axis, offset: 0 deg"
@@ -430,19 +430,19 @@
         "message": "Accelerometer calibration started"
     },
     "initialSetupAccelCalibEnded": {
-        "message": "Accelerometer calibration <span style=\"color: #57a929\">finished</span>"
+        "message": "Accelerometer calibration <span style=\"color: #ffbb00\">finished</span>"
     },
     "initialSetupMagCalibStarted": {
         "message": "Magnetometer calibration started"
     },
     "initialSetupMagCalibEnded": {
-        "message": "Magnetometer calibration <span style=\"color: #57a929\">finished</span>"
+        "message": "Magnetometer calibration <span style=\"color: #ffbb00\">finished</span>"
     },
     "initialSetupSettingsRestored": {
         "message": "Settings restored to <strong>default</strong>"
     },
     "initialSetupEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "featureRX_PPM": {
@@ -687,7 +687,7 @@
         "message": "Serial Receiver Provider"
     },
     "configurationEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
     "configurationButtonSave": {
         "message": "Save and Reboot"
@@ -723,6 +723,9 @@
     "portsFunction_TELEMETRY_LTM": {
         "message": "LTM"
     },
+    "portsFunction_TELEMETRY_MAVLINK": {
+        "message": "MAVLink"
+    },
     "portsFunction_TELEMETRY_MSP": {
         "message": "MSP"
     },
@@ -737,7 +740,7 @@
     },
 
     "pidTuningUpgradeFirmwareToChangePidController": {
-        "message": "<span style=\"color: red\">Changing PID controller disabled - you can change it via the CLI.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, but this functionality requires requires <span style=\"color: #57a929\">$2</span>."
+        "message": "<span style=\"color: red\">Changing PID controller disabled - you can change it via the CLI.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, but this functionality requires requires <span style=\"color: #ffbb00\">$2</span>."
     },
     "pidTuningName": {
         "message": "Name"
@@ -751,23 +754,26 @@
     "pidTuningDerivative": {
         "message": "Derivative"
     },
-    "pidTuningRollPitchRate": {
-        "message": "ROLL &amp; PITCH rate"
+    "pidTuningRcRate": {
+        "message": "RC Rate"
     },
-    "pidTuningRollRate": {
-        "message": "ROLL rate"
+    "pidTuningRate": {
+        "message": "Rate"
     },
-    "pidTuningPitchRate": {
-        "message": "PITCH rate"
-    },
-    "pidTuningYawRate": {
-        "message": "YAW rate"
+    "pidTuningRcExpo": {
+        "message": "RC Expo"
     },
     "pidTuningTPA": {
         "message": "TPA"
     },
     "pidTuningTPABreakPoint": {
         "message": "TPA Breakpoint"
+    },
+    "rcCurve": {
+	"message": "RC Curve"
+    },
+    "rcYawCurve": {
+	"message": "RC Yaw Curve"
     },
     "pidTuningButtonSave": {
         "message": "Save"
@@ -782,13 +788,13 @@
         "message": "PID Controller"
     },
     "pidTuningLoadedProfile": {
-        "message": "Loaded Profile: <strong style=\"color: #57a929\">$1</strong>"
+        "message": "Loaded Profile: <strong style=\"color: #ffbb00\">$1</strong>"
     },
     "pidTuningDataRefreshed": {
         "message": "PID data <strong>refreshed</strong>"
     },
     "pidTuningEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "receiverHelp": {
@@ -799,9 +805,6 @@
     },
     "receiverThrottleExpo": {
         "message": "Throttle EXPO"
-    },
-    "receiverRcRate": {
-        "message": "RC Rate"
     },
     "receiverDeadband": {
         "message": "RC Deadband"
@@ -814,12 +817,6 @@
     },    
     "receiverYawDeadband": {
         "message": "Yaw Deadband"
-    },
-    "receiverRcExpo": {
-        "message": "RC Expo"
-    },
-	"receiverRcYawExpo": {
-        "message": "RC Yaw Expo"
     },
     "receiverChannelMap": {
         "message": "Channel Map"
@@ -846,7 +843,7 @@
         "message": "RC Tuning data <strong>refreshed</strong>"
     },
     "receiverEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "auxiliaryHelp": {
@@ -865,7 +862,7 @@
         "message": "Save"
     },
     "auxiliaryEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "adjustmentsHelp": {
@@ -1037,7 +1034,7 @@
         "message": "Save"
     },
     "adjustmentsEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "transponderNotSupported": {
@@ -1065,7 +1062,7 @@
         "message": "Transponder data is <span style=\"color: red\">invalid</span>"
     },    
     "transponderEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "servosFirmwareUpgradeRequired": {
@@ -1108,7 +1105,7 @@
         "message": "Reverse"
     },
     "servosEepromSave": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
 
     "gpsHead": {
@@ -1412,13 +1409,13 @@
         "message": "Warning"
     },
     "firmwareFlasherWarningText": {
-        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-cleanflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC first, try rebooting, upgrade chrome, upgrade drivers.<br /><strong>Note:</strong> When flashing boards that have directly connected USB sockets (SPRacingF3Mini, Sparky, ColibriRace, etc) ensure you have read the USB Flashing section of the Cleanflight manual and have the correct software and drivers installed"
+        "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-Betaflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC first, try rebooting, upgrade chrome, upgrade drivers.<br /><strong>Note:</strong> When flashing boards that have directly connected USB sockets (SPRacingF3Mini, Sparky, ColibriRace, etc) ensure you have read the USB Flashing section of the Betaflight manual and have the correct software and drivers installed"
     },
     "firmwareFlasherRecoveryHead": {
         "message": "<strong>Recovery / Lost communication<strong>"
     },
     "firmwareFlasherRecoveryText": {
-        "message": "If you have lost communication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Install all STM32 drivers and Zadig if required (see <a href=\"https://github.com/cleanflight/cleanflight/blob/master/docs/USB%20Flashing.md\"target=\"_blank\">USB Flashing</a> section of cleanflight manual).</li><li>Close configurator, Close all running chrome instances, Close all Chrome apps, Restart Configurator.</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
+        "message": "If you have lost communication with your board follow these steps to restore communication: <ul><li>Power off</li><li>Enable 'No reboot sequence', enable 'Full chip erase'.</li><li>Jumper the BOOT pins or hold BOOT button.</li><li>Power on (activity LED will NOT flash if done correctly).</li><li>Install all STM32 drivers and Zadig if required (see <a href=\"https://github.com/Betaflight/Betaflight/blob/master/docs/USB%20Flashing.md\"target=\"_blank\">USB Flashing</a> section of Betaflight manual).</li><li>Close configurator, Close all running chrome instances, Close all Chrome apps, Restart Configurator.</li><li>Release BOOT button if your FC has one.</li><li>Flash with correct firmware (using manual baud rate if specified in your FC's manual).</li><li>Power off.</li><li>Remove BOOT jumper.</li><li>Power on (activity LED should flash).</li><li>Connect normally.</li></ul>"
     },
     "firmwareFlasherButtonLeave": {
         "message": "Leave Firmware Flasher"
@@ -1430,20 +1427,20 @@
         "message": "HEX file appears to be corrupted"
     },
     "firmwareFlasherRemoteFirmwareLoaded": {
-        "message": "<span style=\"color: #57a929\">Remote Firmware loaded, ready for flashing</span>"
+        "message": "<span style=\"color: #ffbb00\">Remote Firmware loaded, ready for flashing</span>"
     },
     "firmwareFlasherFailedToLoadOnlineFirmware": {
         "message": "Failed to load remote firmware"
     },
 
     "ledStripHelp": {
-        "message": "The flight controller can control colors and effects of individual LEDs on a strip.<br />Configure LEDs on the grid, configure wiring order then attach LEDs on your aircraft according to grid positions."
+        "message": "The flight controller can control colors and effects of individual LEDs on a strip. Configure LEDs on the grid, configure wiring order then attach LEDs on your aircraft according to grid positions. LEDs without wire ordering number will not be saved."
     },
     "ledStripButtonSave": {
         "message": "Save"
     },
     "ledStripEepromSaved": {
-        "message": "EEPROM <span style=\"color: #57a929\">saved</span>"
+        "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
     
     "controlAxisRoll": {
@@ -1538,7 +1535,7 @@
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
     },
     "failsafeFeaturesHelpOld": {
-        "message": "Failsafe configuration has changed considerably. Use Cleanflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
+        "message": "Failsafe configuration has changed considerably. Use Betaflight <strong>v1.12.0+</strong> to enable the improved configuration panel."
     },
     "failsafePaneTitleOld": {
         "message": "Receiver failsafe"
@@ -1620,5 +1617,14 @@
     },
     "failsafeKillSwitchHelp": {
         "message": "Set this option to make the failsafe switch, configured in the modes tab, act as a direct kill switch, bypassing the selected failsafe procedure. <strong>Note:</strong> Arming is blocked with the failsafe kill switch in the ON position"
+    },
+    "mainHelpArmed": {
+        "message": "Motor Arming"
+    },
+    "mainHelpFailsafe": {
+        "message": "Failsafe Mode"
+    },
+    "mainHelpLink": {
+        "message": "Serial Link Status"
     }
 }

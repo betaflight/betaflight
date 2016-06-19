@@ -2,7 +2,7 @@
 
 TABS.led_strip = {
     wireMode: false,
-    functions: ['w', 'f', 'i', 'a', 't', 'r', 'c'],
+    functions: ['w', 'f', 'i', 'a', 't', 'r', 'c', 'g', 's', 'b'],
     directions: ['n', 'e', 's', 'w', 'u', 'd'],
 };
 
@@ -13,7 +13,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
     if (GUI.active_tab != 'led_strip') {
         GUI.active_tab = 'led_strip';
-        googleAnalytics.sendAppView('LED Strip');
     }
 
     function load_led_config() {
@@ -287,6 +286,10 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             }
 
         });
+        
+        if (CONFIG.apiVersion < '1.18.0') {
+            $(".extra_functions").hide();
+        }
         
         GUI.content_ready(callback);
     }

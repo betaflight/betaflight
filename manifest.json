@@ -1,11 +1,11 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "38",
-    "version": "1.2.1",
+    "version": "1.0",
     "author": "Hydra",
-    "name": "Cleanflight - Configurator",
-    "short_name": "cleanflight",
-    "description": "Crossplatform configuration tool for Cleanflight flight control system",
+    "name": "Betaflight - Configurator",
+    "short_name": "Betaflight",
+    "description": "Crossplatform configuration tool for Betaflight flight control system",
 
     "offline_enabled": true,
 
@@ -23,12 +23,10 @@
     },
          
         "permissions": [
-        "https://www.google-analytics.com/",
         "https://maps.googleapis.com/*",    
         "https://*.github.com/",
         "https://*.githubusercontent.com/",
         "http://*.baseflight.net/",
-        "http://*.cleanflight.com/",
         "https://*.amazonaws.com/",
         "serial",
         "usb",
@@ -44,6 +42,6 @@
     ],
 
     "icons": {
-        "128": "images/icon_128.png"
+        "128": "images/bf_icon_128.png"
     }
 }

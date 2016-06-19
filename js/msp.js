@@ -126,8 +126,11 @@ var MSP = {
     unsupported:                0,
 
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
-    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c'], // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b'], // in LSB bit order
 
+    last_received_timestamp:   null,
+    analog_last_received_timestamp: null,
+    
     supportedBaudRates: [ // 0 based index.
         'AUTO',
         '9600',
@@ -139,8 +142,18 @@ var MSP = {
         '250000',
     ],
     
-    serialPortFunctions: // in LSB bit order 
-        ['MSP', 'GPS', 'TELEMETRY_FRSKY', 'TELEMETRY_HOTT', 'TELEMETRY_MSP', 'TELEMETRY_SMARTPORT', 'RX_SERIAL', 'BLACKBOX'],
+    serialPortFunctions: {
+            'MSP': 0,
+            'GPS': 1, 
+            'TELEMETRY_FRSKY': 2, 
+            'TELEMETRY_HOTT': 3,
+            'TELEMETRY_MSP': 4, 
+            'TELEMETRY_LTM': 4, // LTM replaced MSP 
+            'TELEMETRY_SMARTPORT': 5,
+            'RX_SERIAL': 6,
+            'BLACKBOX': 7,
+            'TELEMETRY_MAVLINK': 8,
+        },
 
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
@@ -224,6 +237,7 @@ var MSP = {
                     console.log('Unknown state detected: ' + this.state);
             }
         }
+        this.last_received_timestamp = Date.now();
     },
     process_data: function (code, message_buffer, message_length) {
         var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
@@ -321,6 +335,7 @@ var MSP = {
                 ANALOG.mAhdrawn = data.getUint16(1, 1);
                 ANALOG.rssi = data.getUint16(3, 1); // 0-1023
                 ANALOG.amperage = data.getInt16(5, 1) / 100; // A
+                this.analog_last_received_timestamp = Date.now();
                 break;
             case MSP_codes.MSP_RC_TUNING:
                 var offset = 0;
@@ -363,20 +378,20 @@ var MSP = {
                         case 7:
                         case 8:
                         case 9:
-                            PIDs[i][0] = data.getUint8(needle) / 10;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
                             PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                         case 4:
-                            PIDs[i][0] = data.getUint8(needle) / 100;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 100;
-                            PIDs[i][2] = data.getUint8(needle + 2) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
+                            PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                         case 5:
                         case 6:
-                            PIDs[i][0] = data.getUint8(needle) / 10;
-                            PIDs[i][1] = data.getUint8(needle + 1) / 100;
-                            PIDs[i][2] = data.getUint8(needle + 2) / 1000;
+                            PIDs[i][0] = data.getUint8(needle);
+                            PIDs[i][1] = data.getUint8(needle + 1);
+                            PIDs[i][2] = data.getUint8(needle + 2);
                             break;
                     }
                 }
@@ -420,8 +435,11 @@ var MSP = {
                 MISC.gps_ubx_sbas = data.getInt8(offset++);
                 MISC.multiwiicurrentoutput = data.getUint8(offset++);
                 MISC.rssi_channel = data.getUint8(offset++);
-                MISC.placeholder2 = data.getUint8(offset++);
-                MISC.mag_declination = data.getInt16(offset, 1) / 10; // -18000-18000
+                MISC.placeholder2 = data.getUint8(offset++);                
+                if (semver.lt(CONFIG.apiVersion, "1.18.0"))
+                    MISC.mag_declination = data.getInt16(offset, 1) / 10; // -1800-1800
+                else
+                    MISC.mag_declination = data.getInt16(offset, 1) / 100; // -18000-18000                
                 offset += 2;
                 MISC.vbatscale = data.getUint8(offset++, 1); // 10-200
                 MISC.vbatmincellvoltage = data.getUint8(offset++, 1) / 10; // 10-50
@@ -435,8 +453,11 @@ var MSP = {
                 _3D.deadband3d_high = data.getUint16(offset, 1);
                 offset += 2;
                 _3D.neutral3d = data.getUint16(offset, 1);
-                offset += 2;
-                _3D.deadband3d_throttle = data.getUint16(offset, 1);
+                
+                if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                    offset += 2;
+                    _3D.deadband3d_throttle = data.getUint16(offset, 1);
+                }
                 break;
             case MSP_codes.MSP_MOTOR_PINS:
                 console.log(data);
@@ -1136,20 +1157,20 @@ MSP.crunch = function (code) {
                     case 7:
                     case 8:
                     case 9:
-                        buffer.push(Math.round(PIDs[i][0] * 10));
-                        buffer.push(Math.round(PIDs[i][1] * 1000));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 4:
-                        buffer.push(Math.round(PIDs[i][0] * 100));
-                        buffer.push(Math.round(PIDs[i][1] * 100));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
                         buffer.push(parseInt(PIDs[i][2]));
                         break;
                     case 5:
                     case 6:
-                        buffer.push(Math.round(PIDs[i][0] * 10));
-                        buffer.push(Math.round(PIDs[i][1] * 100));
-                        buffer.push(Math.round(PIDs[i][2] * 1000));
+                        buffer.push(parseInt(PIDs[i][0]));
+                        buffer.push(parseInt(PIDs[i][1]));
+                        buffer.push(parseInt(PIDs[i][2]));
                         break;
                 }
             }
@@ -1220,8 +1241,13 @@ MSP.crunch = function (code) {
             buffer.push(MISC.multiwiicurrentoutput);
             buffer.push(MISC.rssi_channel);
             buffer.push(MISC.placeholder2);
-            buffer.push(lowByte(Math.round(MISC.mag_declination * 10)));
-            buffer.push(highByte(Math.round(MISC.mag_declination * 10)));
+            if (semver.lt(CONFIG.apiVersion, "1.18.0")) {
+                buffer.push(lowByte(Math.round(MISC.mag_declination * 10)));
+                buffer.push(highByte(Math.round(MISC.mag_declination * 10)));
+            } else {            
+                buffer.push(lowByte(Math.round(MISC.mag_declination * 100)));
+                buffer.push(highByte(Math.round(MISC.mag_declination * 100)));
+            }
             buffer.push(MISC.vbatscale);
             buffer.push(Math.round(MISC.vbatmincellvoltage * 10));
             buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
@@ -1321,8 +1347,10 @@ MSP.crunch = function (code) {
             buffer.push(highByte(_3D.deadband3d_high));
             buffer.push(lowByte(_3D.neutral3d));
             buffer.push(highByte(_3D.neutral3d));
-            buffer.push(lowByte(_3D.deadband3d_throttle));
-            buffer.push(highByte(_3D.deadband3d_throttle));
+            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                buffer.push(lowByte(_3D.deadband3d_throttle));
+                buffer.push(highByte(_3D.deadband3d_throttle));
+            }
             break;    
 
         case MSP_codes.MSP_SET_RC_DEADBAND:
@@ -1617,9 +1645,12 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
 MSP.serialPortFunctionMaskToFunctions = function(functionMask) {
     var functions = [];
     
-    for (var index = 0; index < MSP.serialPortFunctions.length; index++) {
-        if (bit_check(functionMask, index)) {
-            functions.push(MSP.serialPortFunctions[index]);
+    var keys = Object.keys(MSP.serialPortFunctions);
+    for (var index = 0; index < keys.length; index++) {
+        var key = keys[index];
+        var bit = MSP.serialPortFunctions[key];
+        if (bit_check(functionMask, bit)) {
+            functions.push(key);
         }
     }
     return functions;
@@ -1627,8 +1658,10 @@ MSP.serialPortFunctionMaskToFunctions = function(functionMask) {
 
 MSP.serialPortFunctionsToMask = function(functions) {
     var mask = 0;
+    var keys = Object.keys(MSP.serialPortFunctions);
     for (var index = 0; index < functions.length; index++) {
-        var bitIndex = MSP.serialPortFunctions.indexOf(functions[index]);
+        var key = functions[index];
+        var bitIndex = MSP.serialPortFunctions[key];
         if (bitIndex >= 0) {
             mask = bit_set(mask, bitIndex);
         }
@@ -1672,5 +1705,4 @@ MSP.SDCARD_STATE_FATAL       = 1;
 MSP.SDCARD_STATE_CARD_INIT   = 2;
 MSP.SDCARD_STATE_FS_INIT     = 3;
 MSP.SDCARD_STATE_READY       = 4;
-
 

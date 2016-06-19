@@ -6,7 +6,6 @@ TABS.firmware_flasher.initialize = function (callback) {
 
     if (GUI.active_tab != 'firmware_flasher') {
         GUI.active_tab = 'firmware_flasher';
-        googleAnalytics.sendAppView('Firmware Flasher');
     }
 
 
@@ -73,7 +72,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                     var descriptor = {
                         "releaseUrl": release.html_url,
                         "name"      : semver.clean(release.name),
-                        "version"   : release.tag_name,
+                        "version"   : release.name,
                         "url"       : asset.browser_download_url,
                         "file"      : asset.name,
                         "target"    : target,
@@ -88,7 +87,9 @@ TABS.firmware_flasher.initialize = function (callback) {
 
             releaseDescriptors.sort(function(o1,o2){
                 // compare versions descending
-                var cmpVal = semver(o2.version).compare(semver(o1.version));
+                var oo1 = o1.version.replace(/[^0-9]+/g, "");
+                var oo2 = o2.version.replace(/[^0-9]+/g, "");
+                var cmpVal = (oo2<oo1?-1:(oo2>oo1?1:0));
                 if (cmpVal == 0){
                     // compare target names ascending
                     cmpVal = (o1.target<o2.target?-1:(o1.target>o2.target?1:0));
@@ -99,8 +100,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             var optionIndex = 1;
             releaseDescriptors.forEach(function(descriptor){
                 var select_e =
-                        $("<option value='{0}'>{1} {2} {3} ({4})</option>".format(
-                                optionIndex++,
+                        $("<option value='{0}'>{1} {2} ({3})</option>".format(
                                 descriptor.name,
                                 descriptor.target,
                                 descriptor.date,
@@ -134,7 +134,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             })
         };
 
-        $.get('https://api.github.com/repos/cleanflight/cleanflight/releases', function (releases){
+        $.get('https://api.github.com/repos/betaflight/betaflight/releases', function (releases){
             processReleases(releases);
             TABS.firmware_flasher.releases = releases;
 
@@ -193,7 +193,6 @@ TABS.firmware_flasher.initialize = function (callback) {
                                     parsed_hex = data;
 
                                     if (parsed_hex) {
-                                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'local');
                                         $('a.flash_firmware').removeClass('disabled');
 
                                         $('span.progressLabel').text('Loaded Local Firmware: (' + parsed_hex.bytes_total + ' bytes)');
@@ -238,13 +237,12 @@ TABS.firmware_flasher.initialize = function (callback) {
                     if (parsed_hex) {
                         var url;
 
-                        googleAnalytics.sendEvent('Flashing', 'Firmware', 'online');
                         $('span.progressLabel').html('<a class="save_firmware" href="#" title="Save Firmware">Loaded Online Firmware: (' + parsed_hex.bytes_total + ' bytes)</a>');
 
                         $('a.flash_firmware').removeClass('disabled');
 
                         if (summary.commit) {
-                            $.get('https://api.github.com/repos/cleanflight/cleanflight/commits/' + summary.commit, function (data) {
+                            $.get('https://api.github.com/repos/betaflight/betaflight/commits/' + summary.commit, function (data) {
                                 var data = data,
                                     d = new Date(data.commit.author.date),
                                     offset = d.getTimezoneOffset() / 60,
@@ -256,7 +254,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                                 $('div.git_info .committer').text(data.commit.author.name);
                                 $('div.git_info .date').text(date);
-                                $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://github.com/cleanflight/cleanflight/commit/' + data.sha);
+                                $('div.git_info .hash').text(data.sha.slice(0, 7)).prop('href', 'https://api.github.com/betaflight/betaflight/commit/' + data.sha);
 
                                 $('div.git_info .message').text(data.commit.message);
 

@@ -3,7 +3,7 @@
     <div class="content_wrapper">
         <div class="tab_title" i18n="tabPidTuning"></div>
         <div class="cf_doc_version_bt">
-            <a id="button-documentation" href="https://github.com/cleanflight/cleanflight/releases" target="_blank"></a>
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
         </div>
         <div class="cf_column half">
             <div class="controller">
@@ -25,7 +25,7 @@
         </div>
         <form name="pid-tuning" id="pid-tuning">
             <div class="clear-both"></div>
-            <div class="cf_column half">
+            <div class="cf_column twothird">
                 <div class="gui_box grey">
                     <table class="pid_titlebar">
                         <tr>
@@ -33,34 +33,55 @@
                             <th class="proportional" i18n="pidTuningProportional"></th>
                             <th class="integral" i18n="pidTuningIntegral"></th>
                             <th class="derivative" i18n="pidTuningDerivative"></th>
+			    <th class="rc_rate" i18n="pidTuningRcRate"></th>
+                            <th class="rate" i18n="pidTuningRate"></th>
+			    <th class="rc_expo" i18n="pidTuningRcExpo"></th>
                         </tr>
                     </table>
                     <table id="pid_main" class="pid_tuning">
                         <tr>
-                            <th colspan="4">
+                            <th colspan="8">
                                 <div class="pid_mode" i18n="pidTuningBasic"></div>
                             </th>
                         </tr>
                         <tr class="ROLL">
                             <!-- 0 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+			    <td rowspan="3"><input type="number" name="rc_rate" step="0.01" min="0" max="2.5" /></td>
+			    <td class="roll_rate"><input type="number" name="roll_rate" step="0.01" min="0" max="1.00" /></td>
+			    <td class="roll_pitch_rate" rowspan="2"><input type="number" name="roll_pitch_rate" step="0.01" min="0" max="1.00" /></td>
+                            <td rowspan="2"><input type="number" name="rc_expo" step="0.01" min="0" max="1" /></td>
+
                         </tr>
                         <tr class="PITCH">
                             <!-- 1 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+                            <td class="pitch_rate"><input type="number" name="pitch_rate" step="0.01" min="0" max="1.00" /></td>
                         </tr>
                         <tr class="YAW">
                             <!-- 2 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+			    <td><input type="number" name="yaw_rate" step="0.01" min="0" max="2.55" /></td>
+			    <td><input type="number" name="rc_yaw_expo" step="0.01" min="0" max="1" /></td>
+                        </tr>
+                    </table>
+		</div>
+                <div class="gui_box grey topspacer">
+                    <table class="pid_titlebar">
+                        <tr>
+                            <th class="name" i18n="pidTuningName""></th>
+                            <th class="proportional" i18n="pidTuningProportional"></th>
+                            <th class="integral" i18n="pidTuningIntegral"></th>
+                            <th class="derivative" i18n="pidTuningDerivative"></th>
                         </tr>
                     </table>
                     <table id="pid_baro" class="pid_tuning">
@@ -72,15 +93,15 @@
                         <tr class="ALT">
                             <!-- 3 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="Vario">
                             <!-- 9 -->
                             <td>VEL</td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
@@ -93,7 +114,7 @@
                         <tr class="MAG">
                             <!-- 8 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
                             <td></td>
                             <td></td>
                         </tr>
@@ -107,23 +128,24 @@
                         <tr class="Pos">
                             <!-- 4 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <!-- <td><input type="number" name="i" step="1" min="0" max="255" /></td>  -->
+                            <td></td>
                             <td></td>
                         </tr>
                         <tr class="PosR">
                             <!-- 5 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="d" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                         <tr class="NavR">
                             <!-- 6 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.01" min="0" max="2.55" /></td>
-                            <td><input type="number" name="d" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
                 </div>
@@ -145,48 +167,67 @@
                         <tr class="LEVEL">
                             <!-- 7 -->
                             <td></td>
-                            <td><input type="number" name="p" step="0.1" min="0" max="25.5" /></td>
-                            <td><input type="number" name="i" step="0.001" min="0" max="0.255" /></td>
+                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
                         </tr>
                     </table>
                 </div>
             </div>
-            <div class="cf_column half">
+            <div class="cf_column third_right">
                 <div class="spacer_left">
-                    <table class="rate-tpa cf">
+                    <table class="rc_curve cf">
                         <thead>
                             <tr>
-                                <th class="roll-pitch" i18n="pidTuningRollPitchRate"></th>
-                                <th class="roll" i18n="pidTuningRollRate"></th>
-                                <th class="pitch" i18n="pidTuningPitchRate"></th>
-                                <th i18n="pidTuningYawRate"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="roll-pitch"><input type="number" name="roll-pitch" step="0.01" min="0"
-                                    max="1.00" /></td>
-                                <td class="roll"><input type="number"
-                                    name="roll" step="0.01" min="0" max="1.00" /></td>
-                                <td class="pitch"><input type="number" name="pitch" step="0.01" min="0" max="1.00" /></td>
-                                <td><input type="number" name="yaw" step="0.01" min="0" max="2.55" /></td>
-                            </tr>
-                        </tbody>
+                                <th i18n="rcCurve"></th>
+			    </tr>
+		        </thead>
+			</tbody>
+			    <tr>
+			        <td>
+                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="pitch_roll_curve">
+                                            <canvas style="width: 100%; height: 100%"></canvas>
+                                        </div>
+                                    </div>
+			        </td>
+		            </tr>
+			</tbody>
                     </table>
-                    <table class="rate-tpa cf">
+                </div>
+                <div class="spacer_left topspacer">
+                    <table class="rc_yaw_curve cf">
+                        <thead>
+                            <tr>
+                                <th i18n="rcYawCurve"></th>
+			    </tr>
+		        </thead>
+			</tbody>
+			    <tr>
+			        <td>
+                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="yaw_curve">
+                                            <canvas style="width: 100%; height: 100%"></canvas>
+                                        </div>
+                                    </div>
+			        </td>
+		            </tr>
+			</tbody>
+                    </table>
+                </div>
+                <div class="spacer_left topspacer">
+                    <table class="tpa cf">
                         <thead>
                             <tr>
                                 <th i18n="pidTuningTPA"></th>
                                 <th class="tpa-breakpoint" i18n="pidTuningTPABreakPoint"></th>
                             </tr>
                         </thead>
-                        <tbody>
+			<tbody>
                             <tr>
                                 <td class="leftzero"><input type="number" name="tpa" step="0.01" min="0"
                                     max="1.00" /></td>
-                                <td class="tpa-breakpoint"><input type="number" name="tpa-breakpoint" step="10"
-                                    min="1000" max="2000" /></td>
+                                <td class="tpa-breakpoint"><input type="number" name="tpa-breakpoint" step="10" min="1000" max="2000" /></td>
                             </tr>
                         </tbody>
                     </table>

@@ -5,7 +5,6 @@ TABS.adjustments = {};
 TABS.adjustments.initialize = function (callback) {
     GUI.active_tab_ref = this;
     GUI.active_tab = 'adjustments';
-    googleAnalytics.sendAppView('Adjustments');
     
     function get_adjustment_ranges() {
         MSP.send_message(MSP_codes.MSP_ADJUSTMENT_RANGES, false, false, get_box_ids);

@@ -9,11 +9,27 @@
             <div class="cf_column fourth buttonarea">
                 <div class="spacer_right">
                     <div class="default_btn">
-                        <a class="calibrateAccel" id="default_btn green" href="#"
-                            i18n="initialSetupButtonCalibrateAccel"></a>
+                        <div id="accel_calib_rest">
+                            <a class="calibrateAccel" id="default_btn green" href="#"
+                                i18n="initialSetupButtonCalibrateAccel"></a>
+                        </div>
+                        
+                        <div id="accel_calib_running">
+                            <div class="data-loading-setup">
+                                <p>Calibrating...</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="default_btn">
-                        <a class="calibrateMag" href="#" i18n="initialSetupButtonCalibrateMag"></a>
+                        <div id="mag_calib_rest">
+                            <a class="calibrateMag" href="#" i18n="initialSetupButtonCalibrateMag"></a>
+                        </div>
+                        
+                        <div id="mag_calib_running">
+                            <div class="data-loading-setup">
+                                <p>Calibrating...</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="default_btn">
                         <a class="resetSettings" href="#" i18n="initialSetupButtonReset"></a>

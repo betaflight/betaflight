@@ -714,7 +714,6 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                         if (verify) {
                             console.log('Programming: SUCCESSFUL');
                             $('span.progressLabel').text('Programming: SUCCESSFUL');
-                            googleAnalytics.sendEvent('Flashing', 'Programming', 'success');
 
                             // update progress bar
                             self.progress_bar_e.addClass('valid');
@@ -724,7 +723,6 @@ STM32DFU_protocol.prototype.upload_procedure = function (step) {
                         } else {
                             console.log('Programming: FAILED');
                             $('span.progressLabel').text('Programming: FAILED');
-                            googleAnalytics.sendEvent('Flashing', 'Programming', 'fail');
 
                             // update progress bar
                             self.progress_bar_e.addClass('invalid');

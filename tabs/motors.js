@@ -14,7 +14,6 @@ TABS.motors.initialize = function (callback) {
     
     if (GUI.active_tab != 'motors') {
         GUI.active_tab = 'motors';
-        googleAnalytics.sendAppView('Motors');
     }
 
     function get_arm_status() {
@@ -480,7 +479,7 @@ TABS.motors.initialize = function (callback) {
                     color = parseInt(data * 0.009);
 
                 $('.motor-' + i + ' .label', motors_wrapper).text(MOTOR_DATA[i]);
-                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1.'+ color +')'});
+                $('.motor-' + i + ' .indicator', motors_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(255,187,0,1.'+ color +')'});
             }
 
             // servo indicators are still using old (not flexible block scale), it will be changed in the future accordingly
@@ -491,7 +490,7 @@ TABS.motors.initialize = function (callback) {
                     color = parseInt(data * 0.009);
 
                 $('.servo-' + i + ' .label', servos_wrapper).text(SERVO_DATA[i]);
-                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(89,170,41,1'+ color +')'});
+                $('.servo-' + i + ' .indicator', servos_wrapper).css({'margin-top' : margin_top + 'px', 'height' : height + 'px', 'background-color' : 'rgba(255,187,0,1'+ color +')'});
             }
             //keep the following here so at least we get a visual cue of our motor setup
             update_arm_status();                        

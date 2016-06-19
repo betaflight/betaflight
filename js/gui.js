@@ -244,7 +244,7 @@ GUI_control.prototype.content_ready = function (callback) {
     $('.togglesmall').each(function(index, elem) {
         var switchery = new Switchery(elem, {
           size: 'small',
-          color: '#59aa29',
+          color: '#ffbb00',
           secondaryColor: '#c4c4c4'
         });
         $(elem).on("change", function (evt) {
@@ -255,7 +255,7 @@ GUI_control.prototype.content_ready = function (callback) {
 
     $('.toggle').each(function(index, elem) {
         var switchery = new Switchery(elem, {
-            color: '#59aa29',
+            color: '#ffbb00',
             secondaryColor: '#c4c4c4'
         });
         $(elem).on("change", function (evt) {
@@ -267,7 +267,7 @@ GUI_control.prototype.content_ready = function (callback) {
     $('.togglemedium').each(function(index, elem) {
         var switchery = new Switchery(elem, {
             className: 'switcherymid',
-            color: '#59aa29',
+            color: '#ffbb00',
             secondaryColor: '#c4c4c4'
          });
          $(elem).on("change", function (evt) {
@@ -279,8 +279,8 @@ GUI_control.prototype.content_ready = function (callback) {
     if (CONFIGURATOR.connectionValid) {
         // Build link to in-use CF version documentation
         var documentationButton = $('div#content #button-documentation');
-        documentationButton.html("Documentation for " + CONFIG.flightControllerVersion);
-        documentationButton.attr("href","https://github.com/cleanflight/cleanflight/tree/v{0}/docs".format(CONFIG.flightControllerVersion));
+        documentationButton.html("Wiki");
+        documentationButton.attr("href","https://github.com/betaflight/betaflight/wiki");
     }
 
     // loading tooltip
