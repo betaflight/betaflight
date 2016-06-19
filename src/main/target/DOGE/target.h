@@ -73,6 +73,12 @@
 #define SPI2_MOSI_PIN           PB15
 #define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_SPI_SHARED
+#define M25P16_CS_PIN       PC15
+#define M25P16_SPI_INSTANCE SPI2
+
 // timer definitions in drivers/timer.c
 // channel mapping in drivers/pwm_mapping.c
 // only 6 outputs available on hardware
@@ -188,9 +194,5 @@
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
-
-#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
-#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM15)
-#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
 

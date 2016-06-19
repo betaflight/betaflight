@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP 
+FEATURES    = VCP ONBOARDFLASH
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
