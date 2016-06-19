@@ -319,9 +319,9 @@ TABS.pid_tuning.initialize = function (callback) {
             ]
         } else {
             pidControllerList = [
-                { name: "MultiWii (2.3)"},
-                { name: "MultiWii (Rewrite)"},
-                { name: "LuxFloat"},
+                { name: ""},
+                { name: "Integer"},
+                { name: "Float"},
             ]
         }
         

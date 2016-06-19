@@ -785,7 +785,7 @@
         "message": "Profile"
     },
     "pidTuningControllerHead": {
-        "message": "PID Controller"
+        "message": "PID Math"
     },
     "pidTuningLoadedProfile": {
         "message": "Loaded Profile: <strong style=\"color: #ffbb00\">$1</strong>"

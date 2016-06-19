@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "38",
-    "version": "1.0",
+    "version": "1.1",
     "author": "Hydra",
     "name": "Betaflight - Configurator",
     "short_name": "Betaflight",
