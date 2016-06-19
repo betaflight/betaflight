@@ -754,23 +754,26 @@
     "pidTuningDerivative": {
         "message": "Derivative"
     },
-    "pidTuningRollPitchRate": {
-        "message": "ROLL &amp; PITCH rate"
+    "pidTuningRcRate": {
+        "message": "RC Rate"
     },
-    "pidTuningRollRate": {
-        "message": "ROLL rate"
+    "pidTuningRate": {
+        "message": "Rate"
     },
-    "pidTuningPitchRate": {
-        "message": "PITCH rate"
-    },
-    "pidTuningYawRate": {
-        "message": "YAW rate"
+    "pidTuningRcExpo": {
+        "message": "RC Expo"
     },
     "pidTuningTPA": {
         "message": "TPA"
     },
     "pidTuningTPABreakPoint": {
         "message": "TPA Breakpoint"
+    },
+    "rcCurve": {
+	"message": "RC Curve"
+    },
+    "rcYawCurve": {
+	"message": "RC Yaw Curve"
     },
     "pidTuningButtonSave": {
         "message": "Save"
@@ -803,9 +806,6 @@
     "receiverThrottleExpo": {
         "message": "Throttle EXPO"
     },
-    "receiverRcRate": {
-        "message": "RC Rate"
-    },
     "receiverDeadband": {
         "message": "RC Deadband"
     },
@@ -817,12 +817,6 @@
     },    
     "receiverYawDeadband": {
         "message": "Yaw Deadband"
-    },
-    "receiverRcExpo": {
-        "message": "RC Expo"
-    },
-	"receiverRcYawExpo": {
-        "message": "RC Yaw Expo"
     },
     "receiverChannelMap": {
         "message": "Channel Map"
