@@ -145,13 +145,11 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 
 // tqfp48 pin 14
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
+#define VBAT_ADC_PIN                PA4
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
 // tqfp48 pin 15
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_5
+#define CURRENT_METER_ADC_PIN       PA5
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
 
 // mpu_int definition in sensors/initialisation.c

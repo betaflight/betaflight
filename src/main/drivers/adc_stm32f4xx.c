@@ -23,6 +23,7 @@
 #include "system.h"
 
 #include "io.h"
+#include "rcc.h"
 
 #include "sensors/sensors.h" // FIXME dependency into the main code
 
@@ -32,6 +33,25 @@
 #include "adc.h"
 #include "adc_impl.h"
 
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#endif
+
+const adcDevice_t adcHardware[] = { 
+	{ .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4 },  
+	//{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1 }  
+};
+
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
+{
+	if (instance == ADC1) 
+		return ADCDEV_1;
+/*
+	if (instance == ADC2)
+		return ADCDEV_2;
+*/
+	return ADCINVALID;
+}
 void adcInit(drv_adc_config_t *init)
 {
     ADC_InitTypeDef ADC_InitStructure;
@@ -92,14 +112,19 @@ void adcInit(drv_adc_config_t *init)
 
     //RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
     
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
+    if (device == ADCINVALID)
+        return;
+    
+    adcDevice_t adc = adcHardware[device];   
+    
+    RCC_ClockCmd(adc.rccDMA, ENABLE);
+    RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    DMA_DeInit(DMA2_Stream4);
+    DMA_DeInit(adc.DMAy_Streamx);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
     DMA_InitStructure.DMA_Channel = DMA_Channel_0;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)adcValues;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
@@ -110,20 +135,9 @@ void adcInit(drv_adc_config_t *init)
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-    DMA_Init(DMA2_Stream4, &DMA_InitStructure);
+    DMA_Init(adc.DMAy_Streamx, &DMA_InitStructure);
 
-    DMA_Cmd(DMA2_Stream4, ENABLE);
-
-    // calibrate
-
-    /*
-    ADC_VoltageRegulatorCmd(ADC1, ENABLE);
-    delay(10);
-    ADC_SelectCalibrationMode(ADC1, ADC_CalibrationMode_Single);
-    ADC_StartCalibration(ADC1);
-    while(ADC_GetCalibrationStatus(ADC1) != RESET);
-    ADC_VoltageRegulatorCmd(ADC1, DISABLE);
-    */
+    DMA_Cmd(adc.DMAy_Streamx, ENABLE);
 
     ADC_CommonInitTypeDef ADC_CommonInitStructure;
 
@@ -144,19 +158,19 @@ void adcInit(drv_adc_config_t *init)
     ADC_InitStructure.ADC_NbrOfConversion       = configuredAdcChannels;
     ADC_InitStructure.ADC_ScanConvMode 			= configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
 
-    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_Init(adc.ADCx, &ADC_InitStructure);
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }
-        ADC_RegularChannelConfig(ADC1, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
+        ADC_RegularChannelConfig(adc.ADCx, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
     }
-    ADC_DMARequestAfterLastTransferCmd(ADC1, ENABLE);
+    ADC_DMARequestAfterLastTransferCmd(adc.ADCx, ENABLE);
 
-    ADC_DMACmd(ADC1, ENABLE);
-    ADC_Cmd(ADC1, ENABLE);
+    ADC_DMACmd(adc.ADCx, ENABLE);
+    ADC_Cmd(adc.ADCx, ENABLE);
 
-    ADC_SoftwareStartConv(ADC1);
+    ADC_SoftwareStartConv(adc.ADCx);
 }

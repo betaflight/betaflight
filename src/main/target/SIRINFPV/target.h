@@ -143,8 +143,7 @@
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
+#define VBAT_ADC_PIN                PA0
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
 //#define USE_QUAD_MIXER_ONLY

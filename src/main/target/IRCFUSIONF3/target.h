@@ -80,7 +80,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define M25P16_CS_GPIO          GPIOB
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
@@ -92,21 +91,18 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
+#define VBAT_ADC_PIN                PA4
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_5
+#define CURRENT_METER_ADC_PIN       PA5
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
 
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
+#define RSSI_ADC_PIN                PB2
 #define RSSI_ADC_CHANNEL            ADC_Channel_12
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PIN   PB11
+#define BIND_PIN                    PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 /*

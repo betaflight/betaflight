@@ -97,8 +97,7 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOB
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_2
+#define VBAT_ADC_PIN                PB2
 #define VBAT_ADC_CHANNEL            ADC_Channel_12
 
 #define LED_STRIP

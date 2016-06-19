@@ -155,16 +155,13 @@
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
+#define VBAT_ADC_PIN                PA0
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
+#define RSSI_ADC_PIN                PA1
 #define RSSI_ADC_CHANNEL            ADC_Channel_2
 
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
+#define CURRENT_METER_ADC_PIN       PA2
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_3
 
 #define LED_STRIP

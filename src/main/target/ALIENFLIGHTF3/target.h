@@ -123,8 +123,7 @@
 
 //#define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define VBAT_ADC_GPIO        GPIOA
-#define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
+#define VBAT_ADC_PIN         PA4
 #define VBAT_ADC_CHANNEL     ADC_Channel_1
 
 // alternative defaults for AlienFlight F3 target

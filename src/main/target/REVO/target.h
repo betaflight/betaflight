@@ -112,11 +112,11 @@
 #define CURRENT_METER_ADC_PIN       PC1
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_11
 
-#define VBAT_ADC_PIN           PC2
-#define VBAT_ADC_CHANNEL       ADC_Channel_12
+#define VBAT_ADC_PIN                PC2
+#define VBAT_ADC_CHANNEL            ADC_Channel_12
 
-#define RSSI_ADC_GPIO_PIN      PA0
-#define RSSI_ADC_CHANNEL       ADC_Channel_0
+#define RSSI_ADC_GPIO_PIN           PA0
+#define RSSI_ADC_CHANNEL            ADC_Channel_0
 
 #define SENSORS_SET (SENSOR_ACC)
 

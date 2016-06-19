@@ -87,37 +87,24 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
 
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-
 #define USE_ADC
 
 #define ADC_INSTANCE                ADC2
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
+#define VBAT_ADC_PIN                PA4
 #define VBAT_ADC_CHANNEL            ADC_Channel_1
 
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
+#define CURRENT_METER_ADC_PIN       PA7
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE          FEATURE_RX_PPM
 
 #define LED_STRIP
 #if 1
 // LED strip configuration using PWM motor output pin 5.
-#define LED_STRIP_TIMER TIM16
+#define LED_STRIP_TIMER                 TIM16
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
