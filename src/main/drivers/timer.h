@@ -96,6 +96,8 @@ typedef struct {
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
+
+
 extern const timerHardware_t timerHardware[];
 extern const timerDef_t timerDefinitions[];
 
