@@ -174,13 +174,13 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = (angleRate[axis] - gyroRate) * errorLimiter;
+        RateError = angleRate[axis] - gyroRate;
 
         // Smoothed Error for Derivative
         if (flightModeFlags && axis != YAW) {
             RateErrorSmooth = RateError;
         } else {
-            RateErrorSmooth = (angleRateSmooth[axis] - gyroRate) * errorLimiter;
+            RateErrorSmooth = angleRateSmooth[axis] - gyroRate;
         }
 
         // -----calculate P component
@@ -194,7 +194,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
         // -----calculate I component.
         uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile, (int32_t)angleRate[axis]) : pidProfile->I8[axis];
 
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * RateError * getdT() * kI, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * errorLimiter * RateError * getdT() * kI, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -299,13 +299,13 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angl
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         gyroRate = gyroADC[axis] / 4;
 
-        RateError = (AngleRateTmp - gyroRate) * errorLimiter;
+        RateError = AngleRateTmp - gyroRate;
 
         // Smoothed Error for Derivative
         if (flightModeFlags && axis != YAW) {
             RateErrorSmooth = RateError;
         } else {
-            RateErrorSmooth = (AngleRateTmpSmooth - gyroRate) * errorLimiter;
+            RateErrorSmooth = AngleRateTmpSmooth - gyroRate;
         }
 
         // -----calculate P component
@@ -323,7 +323,9 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angl
         // is normalized to cycle time = 2048.
         uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile, AngleRateTmp) : pidProfile->I8[axis];
 
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetPidLooptime) >> 11) * kI;
+        int32_t rateErrorLimited = errorLimiter * RateError;
+
+        errorGyroI[axis] = errorGyroI[axis] + ((rateErrorLimited  * (uint16_t)targetPidLooptime) >> 11) * kI;
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings

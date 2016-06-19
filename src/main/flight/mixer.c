@@ -825,7 +825,7 @@ void mixTable(void)
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        if (!escAndServoConfig->escDesyncProtection) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
     } else {
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
