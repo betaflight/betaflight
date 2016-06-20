@@ -752,7 +752,11 @@ static rangefinderType_e detectRangefinder(void)
     }
 #endif
     detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;
-    sensorsSet(SENSOR_SONAR);
+
+    if (rangefinderType != RANGEFINDER_NONE) {
+        sensorsSet(SENSOR_SONAR);
+    }
+
     return rangefinderType;
 }
 #endif
