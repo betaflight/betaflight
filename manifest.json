@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "minimum_chrome_version": "38",
-    "version": "1.1",
-    "author": "Hydra",
+    "version": "1.2",
+    "author": "Betaflight Squad",
     "name": "Betaflight - Configurator",
     "short_name": "Betaflight",
     "description": "Crossplatform configuration tool for Betaflight flight control system",
