@@ -1635,5 +1635,11 @@
     },
     "configurationUnsyncedPWMFreq": {
         "message": "Unsynced PWM frequency"
-    }
+    },
+    "configurationGyroSyncDenom": {
+        "message": "Gyro update frequency"
+    },
+    "configurationPidProcessDenom": {
+        "message": "PID loop frequency"
+    }      
 }

@@ -297,6 +297,65 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('div.unsyncedpwmfreq').hide();
         }
         
+        // Gyro and PID update
+        var gyroFreq = [
+            "8KHz",
+            "4KHz",
+            "2.67KHz", 
+            "2KHz",
+            "1.6KHz",
+            "1.33KHz",
+            "1.14KHz",
+            "1KHz"
+        ];
+        
+        var gyro_select_e = $('select.gyroSyncDenom');
+                
+        for (var i = 0; i < gyroFreq.length; i++) {
+            gyro_select_e.append('<option value="'+(i+1)+'">'+gyroFreq[i]+'</option>');
+        }
+        gyro_select_e.val(PID_ADVANCED_CONFIG.gyro_sync_denom);
+ 
+        var gyroDenom = PID_ADVANCED_CONFIG.gyro_sync_denom;
+        var pidFreq = [
+            8 / (gyroDenom * 1),
+            8 / (gyroDenom * 2),
+            8 / (gyroDenom * 3),
+            8 / (gyroDenom * 4),
+            8 / (gyroDenom * 5),
+            8 / (gyroDenom * 6),
+            8 / (gyroDenom * 7),
+            8 / (gyroDenom * 8)
+        ];
+ 
+        var pid_select_e = $('select.pidProcessDenom');
+        for (var i = 0; i < pidFreq.length; i++) {
+            var pidF = (1000 * pidFreq[i] / 10); // Could be done better
+            pidF = pidF.toFixed(0);
+            pid_select_e.append('<option value="'+(i+1)+'">'+(pidF / 100).toString()+'KHz</option>');
+        }
+        pid_select_e.val(PID_ADVANCED_CONFIG.pid_process_denom);
+        
+        $('select.gyroSyncDenom').change(function() {
+           var gyroDenom = $('select.gyroSyncDenom').val();
+           var newPidFreq = [
+                8 / (gyroDenom * 1),
+                8 / (gyroDenom * 2),
+                8 / (gyroDenom * 3),
+                8 / (gyroDenom * 4),
+                8 / (gyroDenom * 5),
+                8 / (gyroDenom * 6),
+                8 / (gyroDenom * 7),
+                8 / (gyroDenom * 8)
+            ];
+           for (var i=0; i<newPidFreq.length;i++) {
+                var pidF = (1000 * newPidFreq[i] / 10); // Could be done better
+                pidF = pidF.toFixed(0);
+                $('select.pidProcessDenom option[value="'+(i+1)+'"]').text((pidF / 100).toString()+'KHz');}
+           
+        });
+        
+        
         // generate GPS
         var gpsProtocols = [
             'NMEA',
@@ -552,7 +611,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             PID_ADVANCED_CONFIG.fast_pwm_protocol = parseInt(esc_protocol_e.val()-1);
             PID_ADVANCED_CONFIG.use_unsyncedPwm = ~~$('input[name="unsyncedPWMSwitch"]').is(':checked');
             PID_ADVANCED_CONFIG.motor_pwm_rate = parseInt($('input[name="unsyncedpwmfreq"]').val());
-            
+            PID_ADVANCED_CONFIG.gyro_sync_denom = parseInt(gyro_select_e.val());
+            PID_ADVANCED_CONFIG.pid_process_denom = parseInt(pid_select_e.val());
 
             function save_serial_config() {
                 if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
@@ -598,11 +658,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_arming_config() {
-                MSP.send_message(MSP_codes.MSP_SET_ARMING_CONFIG, MSP.crunch(MSP_codes.MSP_SET_ARMING_CONFIG), false, save_looptime_config);
-            }
-
-            function save_looptime_config() {
-                MSP.send_message(MSP_codes.MSP_SET_LOOP_TIME, MSP.crunch(MSP_codes.MSP_SET_LOOP_TIME), false, save_to_eeprom);
+                MSP.send_message(MSP_codes.MSP_SET_ARMING_CONFIG, MSP.crunch(MSP_codes.MSP_SET_ARMING_CONFIG), false, save_to_eeprom);
             }
 
             function save_to_eeprom() {

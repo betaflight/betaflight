@@ -355,16 +355,23 @@
                             <p i18n="configurationLoopTimeHelp"></p>
                         </div>
                     </div>
-                    <div class="number">
-                        <label> <input type="number" name="looptime" step="100" min="0" max="9000" /> <span
-                            i18n="configurationLoopTime"></span>
+                    <div class="select">
+                        <label> 
+                            <select class="gyroSyncDenom">
+                                    <!-- list generated here -->
+                            </select>
+                            <span i18n="configurationGyroSyncDenom"></span>
                         </label>
                     </div>
-                    <div class="number">
-                        <label> <input type="text" name="looptimehz" readonly class="disabled" /> <span
-                            i18n="configurationCalculatedCyclesSec"></span>
+                    <div class="select">
+                        <label> 
+                            <select class="pidProcessDenom">
+                                    <!-- list generated here -->
+                            </select>
+                            <span i18n="configurationPidProcessDenom"></span>
                         </label>
                     </div>
+                    
                 </div>
             </div>
         </div>
