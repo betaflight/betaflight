@@ -666,7 +666,7 @@
         "message": "Cycles/Sec (Hz)"
     },
     "configurationLoopTimeHelp": {
-        "message": "<strong>Note:</strong> Changing this may require PID re-tuning."
+        "message": "<strong>Note:</strong> Make sure your FC is capable to work on these speeds! Check CPU and cycletime stability. Changing this may require PID re-tuning."
     },
     "configurationGPS": {
         "message": "GPS"
