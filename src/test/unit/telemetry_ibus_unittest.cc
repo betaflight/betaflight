@@ -21,7 +21,6 @@
 extern "C" {
     #include <platform.h>
     #include "config/parameter_group.h"
-//     #include "drivers/accgyro.h"
     #include "drivers/serial.h"
     #include "io/serial.h"
     #include "io/rc_controls.h"
@@ -70,15 +69,18 @@ portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFun
     return PORTSHARING_UNUSED;
 }
 
+
 bool telemetryDetermineEnabledState(portSharing_e portSharing) {
     (void) portSharing;
     return telemetryDetermineEnabledState_stub_retval;
 }
 
+
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
     EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
     return findSerialPortConfig_stub_retval ;
 }
+
 
 serialPort_t * openSerialPort(
     serialPortIdentifier_e identifier,
@@ -98,9 +100,11 @@ serialPort_t * openSerialPort(
     return &serialTestInstance;
 }
 
+
 void closeSerialPort(serialPort_t *serialPort) {
     EXPECT_EQ(serialPort, &serialTestInstance);
 }
+
 
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
@@ -109,6 +113,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
     // printf("w: 0x%02x\n", ch);
 }
+
 
 uint8_t serialRxBytesWaiting(serialPort_t *instance)
 {
@@ -119,6 +124,7 @@ uint8_t serialRxBytesWaiting(serialPort_t *instance)
     return 0;
 }
 
+
 uint8_t serialRead(serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
@@ -127,11 +133,13 @@ uint8_t serialRead(serialPort_t *instance)
     return ch;
 }
 
+
 void serialTestResetBuffers()
 {
     memset(&serialReadStub, 0, sizeof(serialReadStub));
     memset(&serialWriteStub, 0, sizeof(serialWriteStub));
 }
+
 
 void serialTestResetPort()
 {
