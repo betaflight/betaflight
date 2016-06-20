@@ -43,6 +43,11 @@ var MSP_codes = {
     
     MSP_PID_ADVANCED_CONFIG:    90,
     MSP_SET_PID_ADVANCED_CONFIG: 91,
+    MSP_FILTER_CONFIG:          92,
+    MSP_SET_FILTER_CONFIG:      93,
+    MSP_ADVANCED_TUNING:        94,
+    MSP_SET_ADVANCED_TUNING:    95,
+
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -878,6 +883,23 @@ var MSP = {
                 PID_ADVANCED_CONFIG.use_unsyncedPwm = data.getUint8(offset++, 1);
                 PID_ADVANCED_CONFIG.fast_pwm_protocol = data.getUint8(offset++, 1);
                 PID_ADVANCED_CONFIG.motor_pwm_rate = data.getUint16(offset++, 1);
+                break;
+                
+            case MSP_codes.MSP_FILTER_CONFIG:
+                var offset = 0;
+                FILTER_CONFIG.gyro_soft_lpf_hz = data.getUint8(offset++, 1);
+                FILTER_CONFIG.dterm_lpf_hz = data.getUint16(offset, 1);
+                offset += 2;
+                FILTER_CONFIG.yaw_lpf_hz = data.getUint16(offset, 1);
+                break;
+            
+            case MSP_codes.MSP_ADVANCED_TUNING:
+                var offset = 0;
+                ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1); 
+                offset += 2;
+                ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1); 
+                offset += 2;
+                ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
                 break;
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];

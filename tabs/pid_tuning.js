@@ -27,7 +27,13 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     function get_rc_tuning_data() {
-        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, load_html);
+        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_filter_config);
+    }
+    function get_filter_config() {
+        MSP.send_message(MSP_codes.MSP_FILTER_CONFIG, false, false, get_advanced_tuning);
+    }
+    function get_advanced_tuning() {
+        MSP.send_message(MSP_codes.MSP_ADVANCED_TUNING, false, false, load_html);
     }
 
     function load_html() {
@@ -185,6 +191,9 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_yaw_expo"]').hide();
             $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
         }
+        
+        
+        
     }
 
     function form_to_pid_and_rc() {

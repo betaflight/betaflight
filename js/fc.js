@@ -36,6 +36,8 @@ var RX_CONFIG;
 var FAILSAFE_CONFIG;
 var RXFAIL_CONFIG;
 var PID_ADVANCED_CONFIG;
+var FILTER_CONFIG;
+var ADVANCED_TUNING;
 
 var FC = {
     resetState: function() {
@@ -242,6 +244,18 @@ var FC = {
             use_unsyncedPwm:        0,
             fast_pwm_protocol:      0,
             motor_pwm_rate:         0
+        };
+        
+        FILTER_CONFIG = {
+            gyro_soft_lpf_hz:       0,
+            dterm_lpf_hz:           0,
+            yaw_lpf_hz:             0
+        };
+        
+        ADVANCED_TUNING = {
+            rollPitchItermIgnoreRate: 0,
+            yawItermIgnoreRate:       0,
+            yaw_p_limit:              0
         };
         
         RX_CONFIG = {
