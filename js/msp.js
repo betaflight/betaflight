@@ -47,7 +47,8 @@ var MSP_codes = {
     MSP_SET_FILTER_CONFIG:      93,
     MSP_ADVANCED_TUNING:        94,
     MSP_SET_ADVANCED_TUNING:    95,
-
+    MSP_TEMPORARY_COMMANDS:     98,
+    MSP_SET_TEMPORARY_COMMANDS: 99,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -884,7 +885,6 @@ var MSP = {
                 PID_ADVANCED_CONFIG.fast_pwm_protocol = data.getUint8(offset++, 1);
                 PID_ADVANCED_CONFIG.motor_pwm_rate = data.getUint16(offset++, 1);
                 break;
-                
             case MSP_codes.MSP_FILTER_CONFIG:
                 var offset = 0;
                 FILTER_CONFIG.gyro_soft_lpf_hz = data.getUint8(offset++, 1);
@@ -900,6 +900,9 @@ var MSP = {
                 ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1); 
                 offset += 2;
                 ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
+                break;
+            case MSP_codes.MSP_TEMPORARY_COMMANDS:
+                TEMPORARY_COMMANDS.RC_RATE_YAW = data.getUint8(0, 1);
                 break;
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
@@ -1403,6 +1406,9 @@ MSP.crunch = function (code) {
             buffer.push(PID_ADVANCED_CONFIG.fast_pwm_protocol);
             buffer.push(lowByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
             buffer.push(highByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
+            break;
+        case MSP_codes.MSP_TEMPORARY_COMMANDS:
+            buffer.push(TEMPORARY_COMMANDS.RC_RATE_YAW);
             break;
         default:
             return false;

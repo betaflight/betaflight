@@ -38,6 +38,7 @@ var RXFAIL_CONFIG;
 var PID_ADVANCED_CONFIG;
 var FILTER_CONFIG;
 var ADVANCED_TUNING;
+var TEMPORARY_COMMANDS;
 
 var FC = {
     resetState: function() {
@@ -256,6 +257,10 @@ var FC = {
             rollPitchItermIgnoreRate: 0,
             yawItermIgnoreRate:       0,
             yaw_p_limit:              0
+        };
+
+        TEMPORARY_COMMANDS = {
+            RC_YAW_RATE:              0
         };
         
         RX_CONFIG = {
