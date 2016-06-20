@@ -17,40 +17,14 @@
 
 #include <stdint.h>
 #include <string.h>
-// #include <math.h>
-
-// //#define DEBUG_MSP
 
 extern "C" {
     #include <platform.h>
-//     #include "build_config.h"
-//     #include "version.h"
-//     #include "debug.h"
-
-//     #include "common/streambuf.h"
-//     #include "common/utils.h"
-
     #include "config/parameter_group.h"
-//     #include "config/config_eeprom.h"
-
-//     #include "drivers/system.h"
-//     #include "drivers/sensor.h"
 //     #include "drivers/accgyro.h"
-//     #include "drivers/compass.h"
     #include "drivers/serial.h"
-//     #include "drivers/serial_softserial.h"
-//     #include "drivers/buf_writer.h"
-
-//     #include "rx/rx.h"
-
-//     #include "io/msp_protocol.h"
     #include "io/serial.h"
-//     #include "io/serial_msp.h"
-//     #include "io/msp.h"
     #include "io/rc_controls.h"
-//     #include "config/parameter_group_ids.h"
-//     #include "config/runtime_config.h"
-//     #include "config/config.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/ibus.h"
 }
@@ -60,39 +34,20 @@ extern "C" {
 
 
 extern "C" {
-    //void mspSerialProcessReceivedCommand(mspPort_t *msp);
-    // extern mspPort_t mspPorts[];
+    uint8_t batteryCellCount = 3;
+    uint16_t vbat = 100;
+    int16_t rcCommand[4] = {0, 0, 0, 0};
+
+    int16_t telemTemperature1 = 0;
 }
 
-uint8_t batteryCellCount = 3;
-uint16_t vbat = 100;
-int16_t rcCommand[4] = {0, 0, 0, 0};
-
-int16_t telemTemperature1 = 0;
-
-
-
-// typedef struct mspHeader_s {
-//     uint8_t dollar;
-//     uint8_t m;
-//     uint8_t direction;
-//     uint8_t size;
-//     uint8_t type;
-// } mspHeader_t;
 
 #define SERIAL_BUFFER_SIZE 256
-typedef union mspBuffer_u {
-    struct {
-//         mspHeader_t header;
-//         uint8_t payload[];
-    };
-    uint8_t buf[SERIAL_BUFFER_SIZE];
-} ibusBuffer_t;
 
-static ibusBuffer_t serialWriteBuffer;
+static uint8_t serialWriteBuffer[SERIAL_BUFFER_SIZE];
 static int serialWritePos = 0;
 
-static ibusBuffer_t serialReadBuffer;
+static uint8_t serialReadBuffer[SERIAL_BUFFER_SIZE];
 static int serialReadPos = 0;
 static int serialReadEnd = 0;
 
@@ -148,26 +103,10 @@ void closeSerialPort(serialPort_t *serialPort) {
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     EXPECT_EQ(instance, &serialTestInstance);
-    EXPECT_LT(serialWritePos, sizeof(serialWriteBuffer.buf));
-    serialWriteBuffer.buf[serialWritePos++] = ch;
+    EXPECT_LT(serialWritePos, sizeof(serialWriteBuffer));
+    serialWriteBuffer[serialWritePos++] = ch;
     printf("w: 0x%02x\n", ch);
 }
-
-// void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
-// {
-//     while(count--)
-//         serialWrite(instance, *data++);
-// }
-
-// void serialBeginWrite(serialPort_t *instance)
-// {
-//     EXPECT_EQ(instance, &serialTestInstance);
-// }
-
-// void serialEndWrite(serialPort_t *instance)
-// {
-//     EXPECT_EQ(instance, &serialTestInstance);
-// }
 
 uint8_t serialRxBytesWaiting(serialPort_t *instance)
 {
@@ -182,23 +121,16 @@ uint8_t serialRead(serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_LT(serialReadPos, serialReadEnd);
-    const uint8_t ch = serialReadBuffer.buf[serialReadPos++];
+    const uint8_t ch = serialReadBuffer[serialReadPos++];
     return ch;
 }
 
-// bool isSerialTransmitBufferEmpty(serialPort_t *instance)
-// {
-//     EXPECT_EQ(instance, &serialTestInstance);
-//     return true;
-// }
-
-
 void serialTestResetBuffers()
 {
-    memset(&serialReadBuffer.buf, 0, sizeof(serialReadBuffer.buf));
+    memset(&serialReadBuffer, 0, sizeof(serialReadBuffer));
     serialReadPos = 0;
     serialReadEnd = 0;
-    memset(&serialWriteBuffer.buf, 0, sizeof(serialWriteBuffer.buf));
+    memset(&serialWriteBuffer, 0, sizeof(serialWriteBuffer));
     serialWritePos = 0;
 }
 
@@ -211,50 +143,15 @@ void serialTestResetPort()
     serialTestResetBuffers();
 }
 
-// // dummy MSP command processor
-// #define MSP_TEST_ECHO        1
-// #define MSP_TEST_COMMAND     2
-// #define MSP_TEST_REPLY       3
-// #define MSP_TEST_ERROR       4
 
-// uint8_t msp_echo_data[]="PING\0PONG";
-// uint8_t msp_request_data[]={0xbe, 0xef};
-// uint8_t msp_reply_data[]={0x55,0xaa};
-
-// int mspProcess(mspPacket_t *command, mspPacket_t *reply)
-// {
-//     sbuf_t *src = &command->buf;
-//     sbuf_t *dst = &reply->buf;
-//     int cmdLength = sbufBytesRemaining(src);
-//     reply->cmd = command->cmd;
-//     switch(command->cmd) {
-//         case MSP_TEST_ECHO:
-//             while(sbufBytesRemaining(src) > 0)
-//                 sbufWriteU8(dst, sbufReadU8(src));
-//             break;
-//         case MSP_TEST_COMMAND:
-//             EXPECT_EQ(sizeof(msp_request_data), cmdLength);
-//             EXPECT_EQ(0, memcmp(sbufPtr(src), msp_request_data, sizeof(msp_request_data)));
-//             break;
-//         case MSP_TEST_REPLY:
-//             EXPECT_EQ(0, cmdLength);
-//             sbufWriteData(dst, msp_reply_data, sizeof(msp_reply_data));
-//             break;
-//         case MSP_TEST_ERROR:
-//             return -1;
-//     }
-//     return 1;
-// }
 
 class IbusTelemteryInitUnitTest : public ::testing::Test {
 protected:
-//    mspPort_t *mspPort;
     virtual void SetUp() {
-//        mspPort = &mspPorts[0];
-//        mspPort->port = &serialTestInstance;
         serialTestResetPort();
     }
 };
+
 
 TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled) {
     findSerialPortConfig_stub_retval = NULL;
@@ -292,7 +189,6 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
 
 
 
-
 class IbusTelemteryProtocolUnitTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
@@ -304,16 +200,17 @@ protected:
     void checkResponseToCommand(const char * rx, uint8_t rxCnt, const char * expectedTx, uint8_t expectedTxCnt) {
         serialTestResetBuffers();
 
-        memcpy(serialReadBuffer.buf, rx, rxCnt);
+        memcpy(serialReadBuffer, rx, rxCnt);
         serialReadEnd += rxCnt;
 
         //when polling ibus
         handleIbusTelemetry();
 
         EXPECT_EQ(expectedTxCnt, serialWritePos);
-        EXPECT_EQ(0, memcmp(serialWriteBuffer.buf, expectedTx, expectedTxCnt));
+        EXPECT_EQ(0, memcmp(serialWriteBuffer, expectedTx, expectedTxCnt));
     }
 };
+
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusNoRespondToDiscoveryCrcErr)
 {
@@ -321,6 +218,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusNoRespondToDiscoveryCrcErr)
     //then we do not respond
     checkResponseToCommand("\x04\x81\x00\x00", 4, NULL, 0);
 }
+
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToDiscovery)
 {
@@ -337,12 +235,14 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryVbatt)
     checkResponseToCommand("\x04\x91\x6A\xFF", 4, "\x06\x91\x03\x02\x63\xFF", 6);
 }
 
+
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryTemperature)
 {
     //Given ibus command: Sensor at address 1, what type are you?
     //then we respond with: I'm a thermometer
     checkResponseToCommand("\x04\x92\x69\xFF", 4, "\x06\x92\x01\x02\x64\xFF", 6);
 }
+
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryRpm)
 {
@@ -365,13 +265,20 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbatt)
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
-// TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperature)
-// {
-//     //Given ibus command: Sensor at address 2, please send your measurement
-//     //then we respond with: I'm reading 0 degrees
-//     telemTemperature1 = 0;
-//     checkResponseToCommand("\x04\xA2\x5a\xff", 4, "\x06\xA2\x00\x00\x58\xFF", 6);
-// }
+
+TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperature)
+{
+    //Given ibus command: Sensor at address 2, please send your measurement
+    //then we respond with: I'm reading 0 degrees + constant offset 0x190
+    telemTemperature1 = 0;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
+
+    //Given ibus command: Sensor at address 2, please send your measurement
+    //then we respond with: I'm reading 100 degrees + constant offset 0x190
+    telemTemperature1 = 100;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xF4\x01\x62\xFE", 6);
+}
+
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
 {
