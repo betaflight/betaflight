@@ -635,15 +635,21 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm)
+static bool syncPwm = false;
+
+void syncMotors(bool enabled)
+{
+    syncPwm = enabled;
+}
+
+void writeMotors(void)
 {
     uint8_t i;
 
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
 
-
-    if (fastPwmProtocol && !unsyncedPwm) {
+    if (syncPwm) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -655,7 +661,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(1,1);
+    writeMotors();
 }
 
 void stopMotors(void)
@@ -752,7 +758,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 void mixTable(void)
 {
-    uint32_t i;
+    uint32_t i = 0;
     fix12_t vbatCompensationFactor = 0;
     static fix12_t mixReduction;
     bool use_vbat_compensation = false;

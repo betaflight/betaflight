@@ -24,7 +24,6 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "version.h"
 #include "debug.h"
 
@@ -44,6 +43,8 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
@@ -60,6 +61,7 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -89,7 +91,8 @@
 
 #include "common/printf.h"
 
-#include "serial_cli.h"
+#include "io/serial_cli.h"
+#include "scheduler/scheduler.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -139,6 +142,7 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
+static void cliResource(char *cmdline);
 
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
@@ -200,7 +204,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", "SUPEREXPO_RATES",
-    NULL
+    "OSD", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -220,7 +224,7 @@ static const char * const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 static const char * const sensorHardwareNames[4][11] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE", NULL },
+    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE", NULL },
     { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", "BMP280", NULL },
     { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
@@ -298,6 +302,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
 	CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
+	CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
@@ -446,13 +451,20 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "AIRMODE",
     "PIDLOOP",
 };
+#ifdef OSD
+static const char * const lookupTableOsdType[] = {
+    "AUTO",
+    "PAL",
+    "NTSC"
+};
+#endif
 
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
 };
 
 static const char * const lookupTableFastPwm[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT"
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED"
 };
 
 typedef struct lookupTableEntry_s {
@@ -481,7 +493,10 @@ typedef enum {
     TABLE_MAG_HARDWARE,
 	TABLE_DEBUG,
     TABLE_SUPEREXPO_YAW,
-    TABLE_FAST_PWM,
+    TABLE_MOTOR_PWM_PROTOCOL,
+#ifdef OSD
+    TABLE_OSD,
+#endif
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -506,6 +521,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTableFastPwm, sizeof(lookupTableFastPwm) / sizeof(char *) },
+#ifdef OSD
+    { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+#endif
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -581,12 +599,11 @@ const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "unsynced_fast_pwm",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "fast_pwm_protocol",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.fast_pwm_protocol, .config.lookup = { TABLE_FAST_PWM } },
 #ifdef CC3D
     { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
 #endif
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200,  32000 } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE, &masterConfig.motor_pwm_rate, .config.minmax = { 0, 32000 } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
@@ -785,6 +802,24 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+#endif
+#ifdef USE_RTC6705
+    { "vtx_channel",                VAR_INT16  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_power,   .config.minmax = { 0,  1 } },
+#endif
+#ifdef OSD
+    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
+    { "osd_main_voltage_pos",       VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { -480, 480 } },
+    { "osd_rssi_pos",               VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], .config.minmax = { -480, 480 } },
+    { "osd_timer_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_TIMER], .config.minmax = { -480, 480 } },
+    { "osd_throttle_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], .config.minmax = { -480, 480 } },
+    { "osd_cpu_load_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], .config.minmax = { -480, 480 } },
+    { "osd_vtx_channel_pos",        VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL], .config.minmax = { -480, 480 } },
+    { "osd_voltage_warning_pos",    VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING], .config.minmax = { -480, 480 } },
+    { "osd_armed_pos",              VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARMED], .config.minmax = { -480, 480 } },
+    { "osd_disarmed_pos",           VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_DISARMED], .config.minmax = { -480, 480 } },
+    { "osd_artificial_horizon",     VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { -1, 0 } },
+    { "osd_horizon_sidebars",       VAR_INT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS], .config.minmax = { -1, 0 } },
 #endif
 };
 
@@ -1860,6 +1895,10 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
+        
+#ifdef STM32F4
+        delayMicroseconds(1000);
+#endif
     }
 }
 
@@ -2694,7 +2733,7 @@ static void cliSet(char *cmdline)
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
 
                 bool changeValue = false;
-                int_float_value_t tmp;
+	            int_float_value_t tmp = { 0 };
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
                             int32_t value = 0;
@@ -2990,6 +3029,48 @@ void cliProcess(void)
             cliBuffer[bufferIndex++] = c;
             cliWrite(c);
         }
+    }
+}
+
+const char * const ownerNames[] = {
+    "FREE",
+    "PWM IN",
+    "PPM IN",
+    "MOTOR",
+    "SERVO",
+    "SOFTSERIAL RX",
+    "SOFTSERIAL TX",
+    "SOFTSERIAL RXTX",        // bidirectional pin for softserial
+    "SOFTSERIAL AUXTIMER",    // timer channel is used for softserial. No IO function on pin
+    "ADC",
+    "SERIAL RX",
+    "SERIAL TX",
+    "SERIAL RXTX",
+    "PINDEBUG",
+    "TIMER",
+    "SONAR",
+    "SYSTEM",
+    "SDCARD",
+    "FLASH",
+    "USB",
+    "BEEPER",
+};
+
+static void cliResource(char *cmdline)
+{
+    UNUSED(cmdline);
+    cliPrintf("IO:\r\n");
+    for (unsigned i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        const char* owner;
+        char buff[15];
+        if (ioRecs[i].owner < ARRAYLEN(ownerNames)) {
+            owner = ownerNames[ioRecs[i].owner];
+        }
+        else {
+            sprintf(buff, "O=%d", ioRecs[i].owner);
+            owner = buff;
+        }
+        cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
 }
 

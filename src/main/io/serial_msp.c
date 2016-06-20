@@ -24,7 +24,6 @@
 #include "build_config.h"
 #include "debug.h"
 #include "platform.h"
-#include "scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -44,6 +43,8 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
+#include "drivers/max7456.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -57,9 +58,12 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -93,16 +97,13 @@
 
 #include "serial_msp.h"
 
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
-#endif
 
 static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
-
 
 void setGyroSamplingSpeed(uint16_t looptime) {
     uint16_t gyroSampleRate = 1000;
@@ -116,46 +117,44 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
             if (looptime < 250) {
-                masterConfig.acc_hardware = 1;
-                masterConfig.baro_hardware = 1;
-                masterConfig.mag_hardware = 1;
+                masterConfig.acc_hardware = ACC_NONE;
+                masterConfig.baro_hardware = BARO_NONE;
+                masterConfig.mag_hardware = MAG_NONE;
                 masterConfig.pid_process_denom = 2;
             } else if (looptime < 375) {
-#if defined(LUX_RACE) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENFLIGHTF3) || defined(SPRACINGF3EVO) || defined(DOGE) || defined(FURYF3)
-                masterConfig.acc_hardware = 0;
-#else
-                masterConfig.acc_hardware = 1;
-#endif
-                masterConfig.baro_hardware = 1;
-                masterConfig.mag_hardware = 1;
+                masterConfig.acc_hardware = CONFIG_FASTLOOP_PREFERRED_ACC;
+                masterConfig.baro_hardware = BARO_NONE;
+                masterConfig.mag_hardware = MAG_NONE;
                 masterConfig.pid_process_denom = 2;
             }
             masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
             masterConfig.gyro_lpf = 0;
             masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
         }
 #else
         if (looptime < 1000) {
             masterConfig.gyro_lpf = 0;
-            masterConfig.acc_hardware = 1;
-            masterConfig.baro_hardware = 1;
-            masterConfig.mag_hardware = 1;
+            masterConfig.acc_hardware = ACC_NONE;
+            masterConfig.baro_hardware = BARO_NONE;
+            masterConfig.mag_hardware = MAG_NONE;
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == 2) masterConfig.pid_process_denom = 2;
+            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
+                masterConfig.pid_process_denom = 2;
+            }
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == 2) {
+                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
@@ -164,11 +163,10 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
         } else {
             masterConfig.gyro_lpf = 0;
-
             masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = 0;
-            masterConfig.baro_hardware = 0;
-            masterConfig.mag_hardware = 0;
+            masterConfig.acc_hardware = ACC_DEFAULT;
+            masterConfig.baro_hardware = BARO_DEFAULT;
+            masterConfig.mag_hardware = MAG_DEFAULT;
             masterConfig.pid_process_denom = 1;
         }
 #endif
@@ -399,7 +397,7 @@ static void serializeSDCardSummaryReply(void)
 
 #ifdef USE_SDCARD
     uint8_t flags = 1 /* SD card supported */ ;
-    uint8_t state;
+    uint8_t state = 0;
 
     serialize8(flags);
 
@@ -769,7 +767,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(18);
 
         // Hack scale due to choice of units for sensor data in multiwii
-        uint8_t scale = (acc_1G > 1024) ? 8 : 1;
+        uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
 
         for (i = 0; i < 3; i++)
             serialize16(accSmooth[i] / scale);
@@ -1216,6 +1214,21 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         break;
 
+    case MSP_OSD_CONFIG:
+#ifdef OSD
+        headSerialReply(2 + (OSD_MAX_ITEMS * 2));
+        serialize8(1); // OSD supported
+        // send video system (AUTO/PAL/NTSC)
+        serialize8(masterConfig.osdProfile.video_system);
+        for (i = 0; i < OSD_MAX_ITEMS; i++) {
+            serialize16(masterConfig.osdProfile.item_pos[i]);
+        }
+#else
+        headSerialReply(1);
+        serialize8(0); // OSD not supported
+#endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1248,8 +1261,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(6);
         serialize8(masterConfig.gyro_sync_denom);
         serialize8(masterConfig.pid_process_denom);
-        serialize8(masterConfig.use_unsyncedPwm);
-        serialize8(masterConfig.fast_pwm_protocol);
+        serialize8(0);
+        serialize8(masterConfig.motor_pwm_protocol);
         serialize16(masterConfig.motor_pwm_rate);
         break;
     case MSP_FILTER_CONFIG :
@@ -1285,7 +1298,9 @@ static bool processInCommand(void)
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
-
+#ifdef OSD
+    uint8_t addr, font_data[64];
+#endif
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
@@ -1546,6 +1561,38 @@ static bool processInCommand(void)
         transponderUpdateData(masterConfig.transponderData);
         break;
 #endif
+#ifdef OSD
+    case MSP_SET_OSD_CONFIG:
+        addr = read8();
+        // set all the other settings
+        if ((int8_t)addr == -1) {
+            masterConfig.osdProfile.video_system = read8();
+        }
+        // set a position setting
+        else {
+            masterConfig.osdProfile.item_pos[addr] = read16();
+        }
+        break;
+    case MSP_OSD_CHAR_WRITE:
+        addr = read8();
+        for (i = 0; i < 54; i++) {
+            font_data[i] = read8();
+        }
+        max7456_write_nvm(addr, font_data);
+        break;
+#endif
+
+#ifdef USE_RTC6705
+    case MSP_SET_VTX_CONFIG:
+        tmp = read16();
+        if  (tmp < 40)
+            masterConfig.vtx_channel = tmp;
+        if (current_vtx_channel != masterConfig.vtx_channel) {
+            current_vtx_channel = masterConfig.vtx_channel;
+            rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        }
+        break;
+#endif
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
@@ -1764,7 +1811,7 @@ static bool processInCommand(void)
         // switch all motor lines HI
         // reply the count of ESC found
         headSerialReply(1);
-        serialize8(Initialize4WayInterface());
+        serialize8(esc4wayInit());
         // because we do not come back after calling Process4WayInterface
         // proceed with a success reply first
         tailSerialReply();
@@ -1775,7 +1822,7 @@ static bool processInCommand(void)
         // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
         // bootloader mode before try to connect any ESC
         // Start to activate here
-        Process4WayInterface(currentPort, writer);
+        esc4wayProcess(currentPort->port);
         // former used MSP uart is still active
         // proceed as usual with MSP commands
         break;
@@ -1784,8 +1831,8 @@ static bool processInCommand(void)
     case MSP_SET_PID_ADVANCED_CONFIG :
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
-        masterConfig.use_unsyncedPwm = read8();
-        masterConfig.fast_pwm_protocol = read8();
+        read8();
+        masterConfig.motor_pwm_protocol = read8();
         masterConfig.motor_pwm_rate = read16();
         break;
     case MSP_SET_FILTER_CONFIG :

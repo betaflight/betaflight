@@ -212,6 +212,7 @@ int servoDirection(int servoIndex, int fromChannel);
 #endif
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
-void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm);
+void syncMotors(bool enabled);
+void writeMotors(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);

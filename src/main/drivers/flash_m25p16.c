@@ -44,11 +44,12 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
-#define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
-#define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
+#define DISABLE_M25P16       IOHi(m25p16CsPin)
+#define ENABLE_M25P16        IOLo(m25p16CsPin)
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
@@ -58,6 +59,8 @@
 #define BULK_ERASE_TIMEOUT_MILLIS    21000
 
 static flashGeometry_t geometry = {.pageSize = M25P16_PAGESIZE};
+
+static IO_t m25p16CsPin = IO_NONE;
 
 /*
  * Whether we've performed an action that could have made the device busy for writes.
@@ -161,6 +164,7 @@ static bool m25p16_readIdentification()
         break;
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
+        case JEDEC_ID_MACRONIX_MX25L6406E:
             geometry.sectors = 128;
             geometry.pagesPerSector = 256;
         break;
@@ -195,8 +199,19 @@ static bool m25p16_readIdentification()
  */
 bool m25p16_init()
 {
+    
+#ifdef M25P16_CS_PIN     
+    m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
+#endif
+    IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI);
+    IOConfigGPIO(m25p16CsPin, SPI_IO_CS_CFG);
+    
+    DISABLE_M25P16;
+
+#ifndef M25P16_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
     spiSetDivisor(M25P16_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);
+#endif
 
     return m25p16_readIdentification();
 }

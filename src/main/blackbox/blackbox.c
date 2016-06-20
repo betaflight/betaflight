@@ -60,6 +60,7 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -1146,7 +1147,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.escAndServoConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.escAndServoConfig.maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
-        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc_1G);
+        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {

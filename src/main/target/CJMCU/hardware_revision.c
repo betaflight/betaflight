@@ -28,6 +28,7 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/exti.h"
 
 #include "hardware_revision.h"
 
@@ -50,4 +51,9 @@ void detectHardwareRevision(void)
 
 void updateHardwareRevision(void)
 {
+}
+
+const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+{
+	return NULL;
 }
