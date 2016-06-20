@@ -4,7 +4,7 @@
 // the data inside nested objects needs to be verified if deep copy works properly
 function configuration_backup(callback) {
     var activeProfile = null,
-        profilesN = 3;
+        profilesN = 2;
 
     var configuration = {
         'generatedBy': chrome.runtime.getManifest().version,
