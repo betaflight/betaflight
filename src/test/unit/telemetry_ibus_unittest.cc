@@ -44,12 +44,14 @@ extern "C" {
 
 #define SERIAL_BUFFER_SIZE 256
 
-static uint8_t serialWriteBuffer[SERIAL_BUFFER_SIZE];
-static int serialWritePos = 0;
+typedef struct serialPortStub_s {
+    uint8_t buffer[SERIAL_BUFFER_SIZE];
+    int pos = 0;
+    int end = 0;
+} serialPortStub_t;
 
-static uint8_t serialReadBuffer[SERIAL_BUFFER_SIZE];
-static int serialReadPos = 0;
-static int serialReadEnd = 0;
+static serialPortStub_t serialWriteStub;
+static serialPortStub_t serialReadStub;
 
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
 serialPort_t serialTestInstance;
@@ -103,16 +105,16 @@ void closeSerialPort(serialPort_t *serialPort) {
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     EXPECT_EQ(instance, &serialTestInstance);
-    EXPECT_LT(serialWritePos, sizeof(serialWriteBuffer));
-    serialWriteBuffer[serialWritePos++] = ch;
-    printf("w: 0x%02x\n", ch);
+    EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
+    serialWriteStub.buffer[serialWriteStub.pos++] = ch;
+    // printf("w: 0x%02x\n", ch);
 }
 
 uint8_t serialRxBytesWaiting(serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
-    EXPECT_GE(serialReadEnd, serialReadPos);
-    int ret = serialReadEnd - serialReadPos;
+    EXPECT_GE(serialReadStub.end, serialReadStub.pos);
+    int ret = serialReadStub.end - serialReadStub.pos;
     if(ret >= 0) return ret;
     return 0;
 }
@@ -120,18 +122,15 @@ uint8_t serialRxBytesWaiting(serialPort_t *instance)
 uint8_t serialRead(serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
-    EXPECT_LT(serialReadPos, serialReadEnd);
-    const uint8_t ch = serialReadBuffer[serialReadPos++];
+    EXPECT_LT(serialReadStub.pos, serialReadStub.end);
+    const uint8_t ch = serialReadStub.buffer[serialReadStub.pos++];
     return ch;
 }
 
 void serialTestResetBuffers()
 {
-    memset(&serialReadBuffer, 0, sizeof(serialReadBuffer));
-    serialReadPos = 0;
-    serialReadEnd = 0;
-    memset(&serialWriteBuffer, 0, sizeof(serialWriteBuffer));
-    serialWritePos = 0;
+    memset(&serialReadStub, 0, sizeof(serialReadStub));
+    memset(&serialWriteStub, 0, sizeof(serialWriteStub));
 }
 
 void serialTestResetPort()
@@ -158,7 +157,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled) {
     telemetryDetermineEnabledState_stub_retval = false;
 
     //given stuff in serial read
-    serialReadEnd++;
+    serialReadStub.end++;
 
     //when initializing and polling ibus
     initIbusTelemetry();
@@ -166,7 +165,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled) {
     handleIbusTelemetry();
 
     //then nothing is read from serial port
-    EXPECT_NE(serialReadPos, serialReadEnd);
+    EXPECT_NE(serialReadStub.pos, serialReadStub.end);
     EXPECT_FALSE(openSerial_called);
 }
 
@@ -175,7 +174,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
     findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
     //given stuff in serial read
-    serialReadEnd++;
+    serialReadStub.end++;
 
     //when initializing and polling ibus
     initIbusTelemetry();
@@ -183,7 +182,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
     handleIbusTelemetry();
 
     //then all is read from serial port
-    EXPECT_EQ(serialReadPos, serialReadEnd);
+    EXPECT_EQ(serialReadStub.pos, serialReadStub.end);
     EXPECT_TRUE(openSerial_called);
 }
 
@@ -200,14 +199,14 @@ protected:
     void checkResponseToCommand(const char * rx, uint8_t rxCnt, const char * expectedTx, uint8_t expectedTxCnt) {
         serialTestResetBuffers();
 
-        memcpy(serialReadBuffer, rx, rxCnt);
-        serialReadEnd += rxCnt;
+        memcpy(serialReadStub.buffer, rx, rxCnt);
+        serialReadStub.end += rxCnt;
 
         //when polling ibus
         handleIbusTelemetry();
 
-        EXPECT_EQ(expectedTxCnt, serialWritePos);
-        EXPECT_EQ(0, memcmp(serialWriteBuffer, expectedTx, expectedTxCnt));
+        EXPECT_EQ(expectedTxCnt, serialWriteStub.pos);
+        EXPECT_EQ(0, memcmp(serialWriteStub.buffer, expectedTx, expectedTxCnt));
     }
 };
 
