@@ -1268,6 +1268,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(1);
         serialize8(currentControlRateProfile->rcYawRate8);
         break;
+    case MSP_SENSOR_CONFIG:
+        headSerialReply(3);
+        serialize8(masterConfig.acc_hardware);
+        serialize8(masterConfig.baro_hardware);
+        serialize8(masterConfig.mag_hardware);
+        break;
 
     default:
         return false;
@@ -1800,6 +1806,11 @@ static bool processInCommand(void)
         break;
     case MSP_SET_TEMPORARY_COMMANDS:
         currentControlRateProfile->rcYawRate8 = read8();
+        break;
+    case MSP_SET_SENSOR_CONFIG:
+        masterConfig.acc_hardware = read8();
+        masterConfig.baro_hardware = read8();
+        masterConfig.mag_hardware = read8();
         break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
