@@ -45,6 +45,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
+#include "sensors/barometer.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
@@ -250,7 +251,12 @@ static void dispatchMeasurementRequest(ibusAddress_t address) {
     if (1 == address) {
         sendIbusMeasurement(address, vbat * 10 / batteryCellCount);
     } else if (2 == address) {
-        sendIbusMeasurement(address, (uint16_t) telemTemperature1 + IBUS_TEMPERATURE_OFFSET);
+#ifdef BARO
+        float temperature = (baroTemperature + 50) / 100.f;
+#else
+        float temperature = telemTemperature1 / 10.f;
+#endif
+        sendIbusMeasurement(address, (uint16_t) ((temperature + 40)*10)); 
     } else if (3 == address) {
         sendIbusMeasurement(address, (uint16_t) rcCommand[THROTTLE]);
     }
