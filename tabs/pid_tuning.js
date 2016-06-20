@@ -352,13 +352,6 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning .roll_pitch_rate').hide();
         }
 
-        function setCanvasDimensions(canvas) {
-            canvas.width = canvas.parentNode.clientWidth;
-            canvas.height = canvas.parentNode.clientHeight;
-        }
-        setCanvasDimensions($('.pitch_roll_curve canvas').get(0));
-        setCanvasDimensions($('.yaw_curve canvas').get(0));
-
         function drawRateCurve(rateElement, expoElement, canvasElement) {
             var rate = parseFloat(rateElement.val()),
                 expo = parseFloat(expoElement.val()),
