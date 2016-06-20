@@ -338,7 +338,7 @@
 }
 
 .show {
-    width:110px; 
+    width:130px; 
     float:right; 
     margin-right:3px;
 }
@@ -406,21 +406,6 @@
     line-height: 19px;
     color: #7d7d7d;
     font-size: 11px;
-}
-    
-#content-watermark {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
-    right: 0;
-    z-index: -1;
-    overflow: hidden;
-    background-image: url("../images/light-wide-1.svg");
-    background-repeat: no-repeat;
-    background-position: 95% 20%;
-    background-size: 430px;
-    height: 174px;
-    opacity: 0.15;
 }
 
 .tab-pid_tuning .resetbt {
