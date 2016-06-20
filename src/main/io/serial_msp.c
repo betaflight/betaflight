@@ -1259,7 +1259,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
         break;
     case MSP_ADVANCED_TUNING:
-        headSerialReply(3 * 3);
+        headSerialReply(3 * 2);
         serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
