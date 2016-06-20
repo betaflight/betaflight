@@ -95,7 +95,7 @@
 }
 
 .tab-configuration .numberwide input {
-    width: 55px;
+    width: 50px;
     padding-left: 3px;
     height: 20px;
     line-height: 20px;
@@ -470,6 +470,17 @@
 .tab-configuration .sensoralignment span {
     width: 55%;
     float: left;
+}
+
+.tab-configuration .escprotocol {
+    border: 1px solid silver;
+    margin-right: 5px;
+}
+
+.tab-configuration .gyroSyncDenom, .tab-configuration .pidProcessDenom {
+    border: 1px solid silver;
+    margin-right: 5px;
+    width:90px;
 }
 
 
