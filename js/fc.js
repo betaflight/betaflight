@@ -35,6 +35,7 @@ var SENSOR_ALIGNMENT;
 var RX_CONFIG;
 var FAILSAFE_CONFIG;
 var RXFAIL_CONFIG;
+var PID_ADVANCED_CONFIG;
 
 var FC = {
     resetState: function() {
@@ -233,6 +234,14 @@ var FC = {
             align_gyro:             0,
             align_acc:              0,
             align_mag:              0
+        };
+        
+        PID_ADVANCED_CONFIG = {
+            gyro_sync_denom:        0,
+            pid_process_denom:      0,
+            use_unsyncedPwm:        0,
+            fast_pwm_protocol:      0,
+            motor_pwm_rate:         0
         };
         
         RX_CONFIG = {

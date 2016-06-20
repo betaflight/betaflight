@@ -1626,5 +1626,14 @@
     },
     "mainHelpLink": {
         "message": "Serial Link Status"
+    },
+    "configurationEscProtocol": {
+        "message": "ESC/Motor protocol"
+    },
+    "configurationunsyndePwm": {
+        "message": "Unsynced PWM output"
+    },
+    "configurationUnsyncedPWMFreq": {
+        "message": "Unsynced PWM frequency"
     }
 }

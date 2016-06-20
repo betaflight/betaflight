@@ -40,6 +40,9 @@ var MSP_codes = {
     MSP_SET_BLACKBOX_CONFIG:    81,
     MSP_TRANSPONDER_CONFIG:     82,
     MSP_SET_TRANSPONDER_CONFIG: 83,
+    
+    MSP_PID_ADVANCED_CONFIG:    90,
+    MSP_SET_PID_ADVANCED_CONFIG: 91,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -868,7 +871,14 @@ var MSP = {
                 }
                 break;
 
-
+            case MSP_codes.MSP_PID_ADVANCED_CONFIG:
+                var offset = 0;
+                PID_ADVANCED_CONFIG.gyro_sync_denom = data.getUint8(offset++, 1);
+                PID_ADVANCED_CONFIG.pid_process_denom = data.getUint8(offset++, 1);
+                PID_ADVANCED_CONFIG.use_unsyncedPwm = data.getUint8(offset++, 1);
+                PID_ADVANCED_CONFIG.fast_pwm_protocol = data.getUint8(offset++, 1);
+                PID_ADVANCED_CONFIG.motor_pwm_rate = data.getUint16(offset++, 1);
+                break;
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
                 
@@ -1364,7 +1374,14 @@ MSP.crunch = function (code) {
             buffer.push(SENSOR_ALIGNMENT.align_acc);
             buffer.push(SENSOR_ALIGNMENT.align_mag);
             break
-
+        case MSP_codes.MSP_SET_PID_ADVANCED_CONFIG:
+            buffer.push(PID_ADVANCED_CONFIG.gyro_sync_denom);
+            buffer.push(PID_ADVANCED_CONFIG.pid_process_denom);
+            buffer.push(PID_ADVANCED_CONFIG.use_unsyncedPwm);
+            buffer.push(PID_ADVANCED_CONFIG.fast_pwm_protocol);
+            buffer.push(lowByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
+            buffer.push(highByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
+            break;
         default:
             return false;
     }
