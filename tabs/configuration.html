@@ -32,13 +32,40 @@
                     <div class="spacer_box_title" i18n="configurationEscFeatures"></div>
                 </div>
                 <div class="spacer_box">
+                    <div class="select">
+                        <label> 
+                            <select class="escprotocol">
+                                <!-- list generated here -->
+                            </select>
+                            <span i18n="configurationEscProtocol"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox">
+                        <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                            <input type="checkbox" name="unsyncedPWMSwitch" class="toggle" />
+                        </div>
+                        <label for="unsyncedpwmswitch"> <span class="freelabel"
+                            i18n="configurationunsyndePwm"></span>
+                        </label>
+                    </div>
+                    <div class="numberwide unsyncedpwmfreq" style="display: show; margin-top: 5px;">
+                        <label>
+                            <div class="numberspacer">
+                                <input type="number" name="unsyncedpwmfreq" min="200" max="32000" />
+                            </div>
+                            <span i18n="configurationUnsyncedPWMFreq"></span>
+                        </label>
+                    </div>
+                    
+                    
                     <table cellpadding="0" cellspacing="0">
                         <tbody class="features esc">
                             <!-- table generated here -->
                         </tbody>
                     </table>
                     <!--   -->
-                    <div class="disarm">
+                    <div class="disarm"> 
                         <div class="checkbox">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
                                 <input type="checkbox" name="disarmkillswitch" class="toggle" />

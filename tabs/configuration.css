@@ -94,6 +94,20 @@
     font-weight: normal;
 }
 
+.tab-configuration .numberwide input {
+    width: 55px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+
 .tab-configuration .number .disabled {
     width: 43px;
     padding: 0px 5px;
