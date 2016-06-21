@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    Project/STM32F4xx_StdPeriph_Templates/stm32f4xx_conf.h  
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   Library configuration file.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -115,6 +115,15 @@
 #if defined(STM32F410xx)
 #include "stm32f4xx_lptim.h"
 #endif /* STM32F410xx */
+
+#if defined(STM32F412xG)
+#include "stm32f4xx_rng.h"
+#include "stm32f4xx_can.h"
+#include "stm32f4xx_qspi.h"
+#include "stm32f4xx_rng.h"
+#include "stm32f4xx_fsmc.h"
+#include "stm32f4xx_dfsdm.h"
+#endif /* STM32F412xG */
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

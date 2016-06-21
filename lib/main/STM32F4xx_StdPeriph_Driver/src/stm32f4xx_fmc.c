@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_fmc.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the FMC peripheral:           
   *           + Interface with SRAM, PSRAM, NOR and OneNAND memories
@@ -15,7 +15,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -232,13 +232,13 @@ void FMC_NORSRAMInit(FMC_NORSRAMInitTypeDef* FMC_NORSRAMInitStruct)
   
   /* NOR/SRAM Bank timing register configuration */
   FMC_Bank1->BTCR[FMC_NORSRAMInitStruct->FMC_Bank+1] =   
-            (uint32_t)(FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_AddressSetupTime |
+            (uint32_t)FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_AddressSetupTime |
                       (FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_AddressHoldTime << 4) |
                       (FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_DataSetupTime << 8) |
                       (FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_BusTurnAroundDuration << 16) |
                       (FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_CLKDivision << 20) |
                       (FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_DataLatency << 24) |
-                       FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_AccessMode);
+                      FMC_NORSRAMInitStruct->FMC_ReadWriteTimingStruct->FMC_AccessMode;
      
   /* NOR/SRAM Bank timing register for write configuration, if extended mode is used */
   if(FMC_NORSRAMInitStruct->FMC_ExtendedMode == FMC_ExtendedMode_Enable)
@@ -248,7 +248,7 @@ void FMC_NORSRAMInit(FMC_NORSRAMInitTypeDef* FMC_NORSRAMInitStruct)
     assert_param(IS_FMC_DATASETUP_TIME(FMC_NORSRAMInitStruct->FMC_WriteTimingStruct->FMC_DataSetupTime));
     assert_param(IS_FMC_TURNAROUND_TIME(FMC_NORSRAMInitStruct->FMC_WriteTimingStruct->FMC_BusTurnAroundDuration));
     assert_param(IS_FMC_ACCESS_MODE(FMC_NORSRAMInitStruct->FMC_WriteTimingStruct->FMC_AccessMode));
-
+    
     /* Get the BWTR register value */
     tmpbwr = FMC_Bank1E->BWTR[FMC_NORSRAMInitStruct->FMC_Bank];
 

@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_qspi.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file contains all the functions prototypes for the QSPI 
   *          firmware library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@
 /** @addtogroup QSPI
   * @{
   */
-#if defined(STM32F446xx) || defined(STM32F469_479xx)
+#if defined(STM32F412xG) || defined(STM32F446xx) || defined(STM32F469_479xx)
 /* Exported types ------------------------------------------------------------*/
 
 /** 
@@ -131,11 +131,10 @@ typedef struct
   * @{
   */
 #define QSPI_SShift_NoShift                        ((uint32_t)0x00000000)
-#define QSPI_SShift_HalfCycleShift                 ((uint32_t)QUADSPI_CR_SSHIFT_0)
-#define QSPI_SShift_OneCycleShift                  ((uint32_t)QUADSPI_CR_SSHIFT_1)
-#define QSPI_SShift_OneAndHalfCycleShift           ((uint32_t)QUADSPI_CR_SSHIFT)
-#define IS_QSPI_SSHIFT(SSHIFT)      (((SSHIFT) == QSPI_SShift_NoShift) ||  ((SSHIFT) == QSPI_SShift_HalfCycleShift) || \
-                                     ((SSHIFT) == QSPI_SShift_OneCycleShift) || ((SSHIFT) == QSPI_SShift_OneAndHalfCycleShift))
+#define QSPI_SShift_HalfCycleShift                 ((uint32_t)QUADSPI_CR_SSHIFT)
+#define IS_QSPI_SSHIFT(SSHIFT)      (((SSHIFT) == QSPI_SShift_NoShift) ||  ((SSHIFT) == QSPI_SShift_HalfCycleShift))
+/* Legacy Defines */
+#define QUADSPI_CR_SSHIFT_0    QUADSPI_CR_SSHIFT
 /**
   * @}
   */
@@ -476,7 +475,7 @@ ITStatus   QSPI_GetITStatus(uint32_t QSPI_IT);
 void       QSPI_ClearITPendingBit(uint32_t QSPI_IT);
 uint32_t   QSPI_GetFMode(void);
 
-#endif /* STM32F446xx || STM32F469_479xx */
+#endif /* STM32F412xG || STM32F446xx || STM32F469_479xx */
 /**
   * @}
   */

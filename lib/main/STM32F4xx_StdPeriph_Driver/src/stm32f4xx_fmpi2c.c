@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_fmpi2c.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Inter-Integrated circuit Fast Mode Plus (FMPI2C):
   *           + Initialization and Configuration
@@ -58,7 +58,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -79,15 +79,15 @@
 #include "stm32f4xx_fmpi2c.h"
 #include "stm32f4xx_rcc.h"
 
-/** @addtogroup STM32F40x_StdPeriph_Driver
+/** @addtogroup STM32F4xx_StdPeriph_Driver
   * @{
   */
 
-/** @defgroup FMPI2C 
+/** @defgroup FMPI2C  FMPI2C
   * @brief FMPI2C driver modules
   * @{
   */
-#if defined(STM32F410xx) || defined(STM32F446xx)
+#if defined(STM32F410xx) || defined(STM32F412xG) || defined(STM32F446xx)
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
@@ -365,31 +365,6 @@ void FMPI2C_StretchClockCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState)
   {
     /* Disable clock stretching  */
     FMPI2Cx->CR1 |= FMPI2C_CR1_NOSTRETCH;
-  }
-}
-
-/**
-  * @brief  Enables or disables FMPI2Cp from stop mode.
-  * @param  FMPI2Cx: where x can be 1 to select the FMPI2C peripheral.
-  * @param  NewState: new state of the FMPI2Cx stop mode.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void FMPI2C_StopModeCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState)
-{
-  /* Check the parameters */
-  assert_param(IS_FMPI2C_ALL_PERIPH(FMPI2Cx));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-  
-  if (NewState != DISABLE)
-  {
-    /* Enable wakeup from stop mode */
-    FMPI2Cx->CR1 |= FMPI2C_CR1_WUPEN;   
-  }
-  else
-  {
-    /* Disable wakeup from stop mode */    
-    FMPI2Cx->CR1 &= (uint32_t)~((uint32_t)FMPI2C_CR1_WUPEN); 
   }
 }
 
@@ -1566,7 +1541,7 @@ void FMPI2C_ClearITPendingBit(FMPI2C_TypeDef* FMPI2Cx, uint32_t FMPI2C_IT)
 /**
   * @}
   */
-#endif /* STM32F410xx || STM32F446xx */
+#endif /* STM32F410xx || STM32F412xG || STM32F446xx */
 
 /**
   * @}

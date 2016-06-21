@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_flash.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file contains all the functions prototypes for the FLASH 
   *          firmware library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -171,10 +171,10 @@ typedef enum
                                    (((ADDRESS) >= 0x1FFF7800) && ((ADDRESS) <= 0x1FFF7A0F)))  
 #endif /* STM32F427_437xx || STM32F429_439xx || STM32F469_479xx */
 
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined(STM32F412xG)
 #define IS_FLASH_ADDRESS(ADDRESS) ((((ADDRESS) >= 0x08000000) && ((ADDRESS) <= 0x080FFFFF)) ||\
                                    (((ADDRESS) >= 0x1FFF7800) && ((ADDRESS) <= 0x1FFF7A0F))) 
-#endif /* STM32F40_41xxx */
+#endif /* STM32F40_41xxx || STM32F412xG */
 
 #if defined (STM32F401xx)
 #define IS_FLASH_ADDRESS(ADDRESS) ((((ADDRESS) >= 0x08000000) && ((ADDRESS) <= 0x0803FFFF)) ||\

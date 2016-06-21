@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_rng.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file contains all the functions prototypes for the Random 
   *          Number Generator(RNG) firmware library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@
 /** @addtogroup RNG
   * @{
   */ 
-#if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F410xx) || defined(STM32F429_439xx) || defined(STM32F469_479xx)
+#if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F410xx) || defined(STM32F412xG) || defined(STM32F429_439xx) || defined(STM32F469_479xx)
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/ 
 
@@ -102,7 +102,7 @@ FlagStatus RNG_GetFlagStatus(uint8_t RNG_FLAG);
 void RNG_ClearFlag(uint8_t RNG_FLAG);
 ITStatus RNG_GetITStatus(uint8_t RNG_IT);
 void RNG_ClearITPendingBit(uint8_t RNG_IT);
-#endif /* STM32F40_41xxx || STM32F427_437xx || STM32F410xx || STM32F429_439xx || STM32F469_479xx */
+#endif /* STM32F40_41xxx || STM32F427_437xx || STM32F410xx || STM32F412xG || STM32F429_439xx || STM32F469_479xx */
 
 #ifdef __cplusplus
 }
