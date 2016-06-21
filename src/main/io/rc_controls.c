@@ -68,6 +68,7 @@ static pidProfile_t *pidProfile;
 static bool isUsingSticksToArm = true;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+int16_t rcCommandSmooth[4];
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 

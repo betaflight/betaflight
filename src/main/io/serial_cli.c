@@ -301,8 +301,8 @@ const clicmd_t cmdTable[] = {
         "[<index>]\r\n", cliPlaySound),
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
-	CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-	CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
+    CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
@@ -413,20 +413,20 @@ static const char * const lookupTableGyroLpf[] = {
 };
 
 static const char * const lookupTableAccHardware[] = {
-	"AUTO",
-	"NONE",
-	"ADXL345",
-	"MPU6050",
-	"MMA8452",
-	"BMA280",
-	"LSM303DLHC",
-	"MPU6000",
-	"MPU6500",
-	"FAKE"
+    "AUTO",
+    "NONE",
+    "ADXL345",
+    "MPU6050",
+    "MMA8452",
+    "BMA280",
+    "LSM303DLHC",
+    "MPU6000",
+    "MPU6500",
+    "FAKE"
 };
 
 static const char * const lookupTableBaroHardware[] = {
-	"AUTO",
+    "AUTO",
     "NONE",
     "BMP085",
     "MS5611",
@@ -491,7 +491,7 @@ typedef enum {
     TABLE_ACC_HARDWARE,
     TABLE_BARO_HARDWARE,
     TABLE_MAG_HARDWARE,
-	TABLE_DEBUG,
+    TABLE_DEBUG,
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
 #ifdef OSD
@@ -542,7 +542,7 @@ typedef enum {
     // value section
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
-	PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -584,7 +584,6 @@ const clivalue_t valueTable[] = {
     { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
-    { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_OFF_ON } },
     { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
@@ -603,8 +602,9 @@ const clivalue_t valueTable[] = {
 #ifdef CC3D
     { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
 #endif
+    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
     { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE, &masterConfig.motor_pwm_rate, .config.minmax = { 0, 32000 } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200, 32000 } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
@@ -755,9 +755,9 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "dterm_lowpass",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
-    { "dynamic_pid",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dynamic_pid, .config.lookup = { TABLE_OFF_ON } },
-    { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {50, 1000 } },
-    { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {25, 1000 } },
+    { "dynamic_iterm",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dynamic_pid, .config.lookup = { TABLE_OFF_ON } },
+    { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
+    { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
 
@@ -2122,10 +2122,9 @@ static void cliDump(char *cmdline)
         cliDumpProfile(masterConfig.current_profile_index);
     }
 
-    if (dumpMask & DUMP_RATES) {				
+    if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(currentProfile->activeRateProfile);
     }
-    
 }
 
 void cliDumpProfile(uint8_t profileIndex) {
@@ -2148,9 +2147,9 @@ void cliDumpRateProfile(uint8_t rateProfileIndex) {
             return;
     
     changeControlRateProfile(rateProfileIndex);
-    cliPrint("\r\n# rateprofile\r\n");		
-    cliRateProfile("");	
-    printSectionBreak();		
+    cliPrint("\r\n# rateprofile\r\n");
+    cliRateProfile("");
+    printSectionBreak();
 
     dumpValues(PROFILE_RATE_VALUE);
 }
@@ -2267,11 +2266,11 @@ static void cliBeeper(char *cmdline)
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int i = 0; ; i++) {
-        	if (i == beeperCount-2){
+            if (i == beeperCount-2){
                 if (mask == 0)
-                	cliPrint("  none");
-        		break;
-        	}
+                    cliPrint("  none");
+                break;
+            }
             if (mask & (1 << i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
@@ -2300,7 +2299,7 @@ static void cliBeeper(char *cmdline)
                     if (i == BEEPER_ALL-1)
                         beeperOffSetAll(beeperCount-2);
                     else
-                    	if (i == BEEPER_PREFERENCE-1)
+                        if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
                             mask = 1 << i;
@@ -2312,7 +2311,7 @@ static void cliBeeper(char *cmdline)
                     if (i == BEEPER_ALL-1)
                         beeperOffClearAll();
                     else
-                    	if (i == BEEPER_PREFERENCE-1)
+                        if (i == BEEPER_PREFERENCE-1)
                             setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
                             mask = 1 << i;
@@ -2521,19 +2520,19 @@ static void cliProfile(char *cmdline)
     }
 }
 
-static void cliRateProfile(char *cmdline) {		
-	int i;		
-	
-	if (isEmpty(cmdline)) {		
-		cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());		
-		return;		
-	} else {		
-		i = atoi(cmdline);		
-		if (i >= 0 && i < MAX_RATEPROFILES) {		
-			changeControlRateProfile(i);		
-			cliRateProfile("");
-		}		
-	}		
+static void cliRateProfile(char *cmdline) {
+    int i;
+    
+    if (isEmpty(cmdline)) {
+        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
+        return;
+    } else {
+        i = atoi(cmdline);
+        if (i >= 0 && i < MAX_RATEPROFILES) {
+            changeControlRateProfile(i);
+            cliRateProfile("");
+        }
+    }
 }
 
 static void cliReboot(void) {
@@ -2598,9 +2597,9 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
 
-	if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {		
-		ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());		
-	}
+    if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+    }
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
@@ -2671,9 +2670,9 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
-	if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {		
-		ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());		
-	}
+    if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+    }
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
@@ -2734,7 +2733,7 @@ static void cliSet(char *cmdline)
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
 
                 bool changeValue = false;
-	            int_float_value_t tmp = { 0 };
+                int_float_value_t tmp = { 0 };
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
                             int32_t value = 0;
@@ -2810,7 +2809,7 @@ static void cliGet(char *cmdline)
 
 
     if (matchedCommands) {
-    	return;
+        return;
     }
 
     cliPrint("Invalid name\r\n");
