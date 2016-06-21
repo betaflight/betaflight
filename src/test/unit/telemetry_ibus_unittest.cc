@@ -26,6 +26,7 @@ extern "C" {
     #include "io/rc_controls.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/ibus.h"
+    #include "sensors/barometer.h"
 }
 
 #include "unittest_macros.h"
@@ -38,9 +39,10 @@ extern "C" {
     int16_t rcCommand[4] = {0, 0, 0, 0};
 
     int16_t telemTemperature1 = 0;
+    int32_t baroTemperature = 50;
 }
 
-
+        
 #define SERIAL_BUFFER_SIZE 256
 
 typedef struct serialPortStub_s {
@@ -275,15 +277,27 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbatt)
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperature)
 {
+#ifdef BARO
+    //Given ibus command: Sensor at address 2, please send your measurement
+    //then we respond
+    baroTemperature = 50;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x9a\x01\xbc\xFE", 6);
+
+    //Given ibus command: Sensor at address 2, please send your measurement
+    //then we respond
+    baroTemperature = 150;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xA4\x01\xb2\xFE", 6);
+#else
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond with: I'm reading 0 degrees + constant offset 0x190
     telemTemperature1 = 0;
     checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
-
+ 
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond with: I'm reading 100 degrees + constant offset 0x190
     telemTemperature1 = 100;
     checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xF4\x01\x62\xFE", 6);
+#endif
 }
 
 
