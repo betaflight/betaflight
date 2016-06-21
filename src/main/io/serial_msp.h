@@ -203,6 +203,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ADVANCED_TUNING             94
 #define MSP_SET_ADVANCED_TUNING         95
 
+#define MSP_SENSOR_CONFIG               96
+#define MSP_SET_SENSOR_CONFIG           97
+
 #define MSP_TEMPORARY_COMMANDS          98 // Temporary Commands before cleanup
 #define MSP_SET_TEMPORARY_COMMANDS      99 // Temporary Commands before cleanup
 
