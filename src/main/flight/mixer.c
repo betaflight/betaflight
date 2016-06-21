@@ -66,6 +66,7 @@ static flight3DConfig_t *flight3DConfig;
 static escAndServoConfig_t *escAndServoConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
+static bool syncPwm = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -420,13 +421,15 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
     }
 }
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
 {
     int i;
 
     motorCount = 0;
     servoCount = pwmOutputConfiguration->servoCount;
-
+    
+    syncPwm = use_unsyncedPwm;
+    
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -634,13 +637,6 @@ void writeServos(void)
     }
 }
 #endif
-
-static bool syncPwm = false;
-
-void syncMotors(bool enabled)
-{
-    syncPwm = enabled;
-}
 
 void writeMotors(void)
 {

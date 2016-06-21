@@ -129,7 +129,7 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixe
 #else
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 #endif
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration);
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm);
 void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
@@ -319,6 +319,8 @@ void init(void)
         featureClear(FEATURE_ONESHOT125);
     }
     
+    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
+    
     // Configurator feature abused for enabling Fast PWM
     pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
@@ -326,8 +328,10 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED)
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         pwm_params.idlePulse = 0; // brushed motors
+        use_unsyncedPwm = false;
+    }
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
@@ -335,8 +339,7 @@ void init(void)
 
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
-    syncMotors(pwm_params.motorPwmRate == 0 && pwm_params.motorPwmRate != PWM_TYPE_BRUSHED);
-    mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
+    mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
