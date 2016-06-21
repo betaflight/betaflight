@@ -1261,7 +1261,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(6);
         serialize8(masterConfig.gyro_sync_denom);
         serialize8(masterConfig.pid_process_denom);
-	    serialize8(masterConfig.use_unsyncedPwm);
+        serialize8(masterConfig.use_unsyncedPwm);
         serialize8(masterConfig.motor_pwm_protocol);
         serialize16(masterConfig.motor_pwm_rate);
         break;
@@ -1837,7 +1837,7 @@ static bool processInCommand(void)
     case MSP_SET_PID_ADVANCED_CONFIG :
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
-	    masterConfig.use_unsyncedPwm = read8();
+        masterConfig.use_unsyncedPwm = read8();
         masterConfig.motor_pwm_protocol = read8();
         masterConfig.motor_pwm_rate = read16();
         break;
