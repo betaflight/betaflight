@@ -769,6 +769,12 @@
     "pidTuningTPABreakPoint": {
         "message": "TPA Breakpoint"
     },
+	"pidTuningFilter": {
+        "message": "Filter"
+    },
+	"pidTuningFilterFrequency": {
+        "message": "Frequency"
+    },
     "rcCurve": {
 	"message": "RC Curve"
     },

@@ -902,7 +902,7 @@ var MSP = {
                 ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
                 break;
             case MSP_codes.MSP_TEMPORARY_COMMANDS:
-                TEMPORARY_COMMANDS.RC_RATE_YAW = data.getUint8(0, 1);
+                TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 break;
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
@@ -1407,8 +1407,13 @@ MSP.crunch = function (code) {
             buffer.push(lowByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
             buffer.push(highByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
             break;
-        case MSP_codes.MSP_TEMPORARY_COMMANDS:
-            buffer.push(TEMPORARY_COMMANDS.RC_RATE_YAW);
+        case MSP_codes.MSP_SET_FILTER_CONFIG:
+            buffer.push(FILTER_CONFIG.gyro_soft_lpf_hz);
+            buffer.push(FILTER_CONFIG.dterm_lpf_hz);
+            buffer.push(FILTER_CONFIG.yaw_lpf_hz);
+            break;
+        case MSP_codes.MSP_SET_TEMPORARY_COMMANDS:
+            buffer.push(Math.round(TEMPORARY_COMMANDS.RC_RATE_YAW * 100));
             break;
         default:
             return false;

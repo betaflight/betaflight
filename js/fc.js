@@ -260,7 +260,7 @@ var FC = {
         };
 
         TEMPORARY_COMMANDS = {
-            RC_YAW_RATE:              0
+            RC_RATE_YAW:              0
         };
         
         RX_CONFIG = {

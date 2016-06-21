@@ -185,6 +185,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="yaw_rate"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.pid_tuning input[name="rc_expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
         $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
+        $('.pid_tuning input[name="rc_rate_yaw"]').val(TEMPORARY_COMMANDS.RC_RATE_YAW.toFixed(2));
 
         $('.tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
         $('.tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
@@ -193,8 +194,10 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_yaw_expo"]').hide();
             $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
         }
-        
-        
+
+        $('.pid_tuning input[name="gyro_soft_lpf"]').val(FILTER_CONFIG.gyro_soft_lpf_hz);
+        $('.pid_tuning input[name="dterm_lpf"]').val(FILTER_CONFIG.dterm_lpf_hz);
+        $('.pid_tuning input[name="yaw_lpf"]').val(FILTER_CONFIG.yaw_lpf_hz);
         
     }
 
@@ -258,9 +261,14 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.yaw_rate = parseFloat($('.pid_tuning input[name="yaw_rate"]').val());
         RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
         RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
+		TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
+		
+		FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.tpa input[name="gyro_soft_lpf"]').val());
+		FILTER_CONFIG.dterm_lpf_hz = parseInt($('.tpa input[name="dterm_lpf"]').val());
+		FILTER_CONFIG.yaw_lpf_hz = parseInt($('.tpa input[name="yaw_lpf"]').val());
     }
     function hideUnusedPids(sensors_detected) {
       $('.tab-pid_tuning table.pid_tuning').hide();
@@ -436,9 +444,22 @@ TABS.pid_tuning.initialize = function (callback) {
 
             function send_pids() {
                 if (!TABS.pid_tuning.controllerChanged) {
-                    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_rc_tuning_changes);
+                    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_temporary);
                 }
             }
+
+            function send_temporary() {
+                if (!TABS.pid_tuning.controllerChanged) {
+                    MSP.send_message(MSP_codes.MSP_SET_TEMPORARY_COMMANDS, MSP.crunch(MSP_codes.MSP_SET_TEMPORARY_COMMANDS), false, send_rc_tuning_changes);
+                }
+            }
+
+            /* Uncomment when HTML layout added
+            function send_filters() {
+                if (!TABS.pid_tuning.controllerChanged) {
+                    MSP.send_message(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG), false, send_rc_tuning_changes);
+                }
+            }*/
 
             function send_rc_tuning_changes() {
                 MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
