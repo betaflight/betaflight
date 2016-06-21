@@ -197,8 +197,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
 
-#define MSP_TEMPORARY_COMMANDS          98 // Temporary Commands before cleanup
-#define MSP_SET_TEMPORARY_COMMANDS      99 // Temporary Commands before cleanup
+#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
+#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
 
 //
 // Multwii original MSP commands

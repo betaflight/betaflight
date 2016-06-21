@@ -1259,14 +1259,20 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
         break;
     case MSP_ADVANCED_TUNING:
-        headSerialReply(3 * 2);
+        headSerialReply(4 * 2 + 2);
         serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
+        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
+        serialize8(currentProfile->pidProfile.deltaMethod);
+        serialize8(masterConfig.batteryConfig.vbatPidCompensation);
         break;
-    case MSP_TEMPORARY_COMMANDS:
-        headSerialReply(1);
+    case MSP_SPECIAL_PARAMETERS:
+        headSerialReply(1 + 2 + 1 + 2);
         serialize8(currentControlRateProfile->rcYawRate8);
+        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
+        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize16(masterConfig.escAndServoConfig.escDesyncProtection);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1803,9 +1809,13 @@ static bool processInCommand(void)
         currentProfile->pidProfile.rollPitchItermIgnoreRate = read16();
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
+        currentProfile->pidProfile.deltaMethod = read8();
         break;
-    case MSP_SET_TEMPORARY_COMMANDS:
+    case MSP_SET_SPECIAL_PARAMETERS:
         currentControlRateProfile->rcYawRate8 = read8();
+        masterConfig.rxConfig.airModeActivateThreshold = read16();
+        masterConfig.rxConfig.rcSmoothInterval = read8();
+        masterConfig.escAndServoConfig.escDesyncProtection = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();

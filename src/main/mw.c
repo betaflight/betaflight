@@ -193,7 +193,11 @@ void processRcCommand(void)
     int axis;
 
     // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
+    if (masterConfig.rxConfig.rcSmoothInterval) {
+        rxRefreshRate = 1000 * masterConfig.rxConfig.rcSmoothInterval;
+    } else {
+        initRxRefreshRate(&rxRefreshRate);
+    }
 
     rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
