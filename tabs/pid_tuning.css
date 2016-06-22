@@ -452,3 +452,13 @@
 .tab-pid_tuning .topspacer {
     margin-top:15px;
 }
+
+.tab-pid_tuning .bracket {
+    position: absolute;
+    background-image: url(/images/icons/icon_bracket.svg);
+    background-repeat: no-repeat;
+    height: 35px;
+    width: 14px;
+    margin-top: -28px;
+    margin-left: 8px;
+}
