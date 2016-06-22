@@ -4,6 +4,14 @@
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
+## Important: PID values and scaling
+
+Starting at 22-06-2016 INAV uses the same scaling for PIDs as Cleanflight/Betaflight LuxFloat and MWRewrite PID controllers. That means the following:
+
+* PIDs from CF/BF can be used in INAV, no need to retune for INAV
+* INAV uses the same PID defaults that Cleanflight and Betaflight
+* Current INAV tunes can be converted to new using [this guide](https://github.com/iNavFlight/inav/wiki/PID-conversion-from-pre-1.2-to-1.2)
+
 This fork differs from baseflight in that it attempts to use modern software development practices which result in:
 
 1. greater reliability through code robustness and automated testing.
