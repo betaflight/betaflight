@@ -12,16 +12,7 @@ Starting at 22-06-2016 INAV uses the same scaling for PIDs as Cleanflight/Betafl
 * INAV uses the same PID defaults that Cleanflight and Betaflight
 * Current INAV tunes can be converted to new using [this guide](https://github.com/iNavFlight/inav/wiki/PID-conversion-from-pre-1.2-to-1.2)
 
-This fork differs from baseflight in that it attempts to use modern software development practices which result in:
-
-1. greater reliability through code robustness and automated testing.
-2. easier maintenance through code cleanliness.
-3. easier to develop new features.
-4. easier to re-use code though code de-coupling and modularisation.
-
-The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
-
-## Additional Features
+## Features
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
 * Oneshot ESC support.
