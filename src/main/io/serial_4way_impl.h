@@ -17,11 +17,7 @@
 */
 
 typedef struct {
-    GPIO_TypeDef* gpio;
-    uint16_t pinpos;
-    uint16_t pin;
-    gpio_config_t gpio_config_INPUT;
-    gpio_config_t gpio_config_OUTPUT;
+    IO_t io;
 } escHardware_t;
 
 extern uint8_t escSelected;

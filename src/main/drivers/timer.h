@@ -70,9 +70,9 @@ typedef struct timerDef_s {
     rccPeriphTag_t rcc;
 } timerDef_t;
 
-typedef struct {
+typedef struct timerHardware_s {
     TIM_TypeDef *tim;
-    ioTag_t pin;
+    ioTag_t tag;
     uint8_t channel;
     uint8_t irq;
     uint8_t outputEnable;
