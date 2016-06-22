@@ -35,7 +35,7 @@ http://seriouslypro.com/spracingf3
 | 3     | USART3       | PB11 / IO2_3 | PB10 / IO2_4 | NO          | Available on IO_2, USART3 JST port and through hole pins. |
 
 * You cannot use SWD and USART2 at the same time.
-* You may encounter flashing problems if you have something connected to the USART1 RX/TX pins.   Power other devices of and/or disconnect them.
+* You may encounter flashing problems if you have something connected to the USART1 RX/TX pins.   Power other devices off and/or disconnect them.
 
 ## Pinouts
 
