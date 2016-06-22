@@ -162,14 +162,14 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynam
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 30;
-    pidProfile->I8[ROLL] = 20;
-    pidProfile->D8[ROLL] = 70;
-    pidProfile->P8[PITCH] = 30;
-    pidProfile->I8[PITCH] = 20;
-    pidProfile->D8[PITCH] = 70;
-    pidProfile->P8[YAW] = 100;      // 2.5 * 40
-    pidProfile->I8[YAW] = 40;       // 4.0 * 10
+    pidProfile->P8[ROLL] = 40;
+    pidProfile->I8[ROLL] = 30;
+    pidProfile->D8[ROLL] = 23;
+    pidProfile->P8[PITCH] = 40;
+    pidProfile->I8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 23;
+    pidProfile->P8[YAW] = 85;
+    pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 0;        // not used
     pidProfile->P8[PIDALT] = 50;    // NAV_POS_Z_P * 100
     pidProfile->I8[PIDALT] = 0;     // not used
@@ -183,7 +183,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 10;   // FW_NAV_P * 100
     pidProfile->I8[PIDNAVR] = 5;    // FW_NAV_I * 100
     pidProfile->D8[PIDNAVR] = 8;    // FW_NAV_D * 100
-    pidProfile->P8[PIDLEVEL] = 120; // Self-level strength * 40 (4 * 40)
+    pidProfile->P8[PIDLEVEL] = 20;  // Self-level strength
     pidProfile->I8[PIDLEVEL] = 15;  // Self-leveing low-pass frequency (0 - disabled)
     pidProfile->D8[PIDLEVEL] = 75;  // 75% horizon strength
     pidProfile->P8[PIDMAG] = 60;

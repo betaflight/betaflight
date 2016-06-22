@@ -125,10 +125,13 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
     return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
 }
 
-#define FP_PID_RATE_P_MULTIPLIER    40.0f       // betaflight - 40.0
-#define FP_PID_RATE_I_MULTIPLIER    10.0f       // betaflight - 10.0
-#define FP_PID_RATE_D_MULTIPLIER    4000.0f     // betaflight - 1000.0
-#define FP_PID_LEVEL_P_MULTIPLIER   40.0f       // betaflight - 10.0
+/*
+FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
+*/
+#define FP_PID_RATE_P_MULTIPLIER    31.0f
+#define FP_PID_RATE_I_MULTIPLIER    4.0f
+#define FP_PID_RATE_D_MULTIPLIER    1905.0f
+#define FP_PID_LEVEL_P_MULTIPLIER   65.6f
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
 #define KD_ATTENUATION_BREAK        0.25f
@@ -214,7 +217,7 @@ static void pidLevel(const pidProfile_t *pidProfile, pidState_t *pidState, fligh
 {
     // This is ROLL/PITCH, run ANGLE/HORIZON controllers
     const float angleTarget = pidRcCommandToAngle(rcCommand[axis]);
-    const float angleError = (constrain(angleTarget, -pidProfile->max_angle_inclination[axis], +pidProfile->max_angle_inclination[axis]) - attitude.raw[axis]) / 10.0f;
+    const float angleError = constrain(angleTarget, -pidProfile->max_angle_inclination[axis], +pidProfile->max_angle_inclination[axis]) - attitude.raw[axis];
 
     // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
     if (FLIGHT_MODE(HORIZON_MODE)) {
