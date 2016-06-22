@@ -650,12 +650,14 @@ static void resetConf(void)
     
 #if defined(ALIENFLIGHT) 
     featureClear(FEATURE_ONESHOT125);
-#ifdef ALIENFLIGHTF3
+#ifdef ALIENFLIGHTF1
+    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
+#else
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+#endif
+#ifdef ALIENFLIGHTF3
     masterConfig.batteryConfig.vbatscale = 20;
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-#else
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
     masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
