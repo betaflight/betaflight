@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_dsi.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   Header file of DSI module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -164,10 +164,10 @@ typedef struct
   
   uint32_t ColorCoding;           /*!< Color coding for LTDC interface
                                        This parameter can be any value of @ref DSI_Color_Coding          */
-
+  
   uint32_t CommandSize;           /*!< Maximum allowed size for an LTDC write memory command, measured in 
                                        pixels. This parameter can be any value between 0x00 and 0xFFFF   */
- 
+  
   uint32_t TearingEffectSource;   /*!< Tearing effect source
                                        This parameter can be any value of @ref DSI_TearingEffectSource   */
   

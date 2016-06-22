@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_syscfg.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides firmware functions to manage the SYSCFG peripheral.
   *
  @verbatim
@@ -29,7 +29,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -225,7 +225,7 @@ FlagStatus SYSCFG_GetCompensationCellStatus(void)
   return bitstatus;
 }
 
-#if defined(STM32F410xx)
+#if defined(STM32F410xx) || defined(STM32F412xG)
 /**
   * @brief  Connects the selected parameter to the break input of TIM1.
   * @note   The selected configuration is locked and can be unlocked by system reset
@@ -243,7 +243,7 @@ void SYSCFG_BreakConfig(uint32_t SYSCFG_Break)
 
   SYSCFG->CFGR2 |= (uint32_t) SYSCFG_Break;
 }
-#endif /* STM32F410xx */
+#endif /* STM32F410xx || STM32F412xG */
 /**
   * @}
   */

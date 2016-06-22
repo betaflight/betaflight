@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_cryp_aes.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides high level functions to encrypt and decrypt an 
   *          input message using AES in ECB/CBC/CTR/GCM/CCM modes.
   *          It uses the stm32f4xx_cryp.c/.h drivers to access the STM32F4xx CRYP
@@ -34,7 +34,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.

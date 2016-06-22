@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_pwr.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Power Controller (PWR) peripheral:           
   *           + Backup Domain Access
@@ -17,7 +17,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@
 #define CR_LPUDS_BB             (PERIPH_BB_BASE + (CR_OFFSET * 32) + (LPUDS_BitNumber * 4))
 #endif /* STM32F427_437xx || STM32F429_439xx || STM32F446xx */
 
-#if defined(STM32F401xx) || defined(STM32F410xx) || defined(STM32F411xE)
+#if defined(STM32F401xx) || defined(STM32F410xx) || defined(STM32F411xE) || defined(STM32F412xG)
 /* Alias word address of MRLVDS bit */
 #define MRLVDS_BitNumber         0x0B
 #define CR_MRLVDS_BB             (PERIPH_BB_BASE + (CR_OFFSET * 32) + (MRLVDS_BitNumber * 4))
@@ -97,7 +97,7 @@
 /* Alias word address of LPLVDS bit */
 #define LPLVDS_BitNumber         0x0A
 #define CR_LPLVDS_BB             (PERIPH_BB_BASE + (CR_OFFSET * 32) + (LPLVDS_BitNumber * 4))
-#endif /* STM32F401xx || STM32F410xx || STM32F411xE */
+#endif /* STM32F401xx || STM32F410xx || STM32F411xE || STM32F412xG  */
 
 /* --- CSR Register ---*/
 #if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F401xx) || defined(STM32F410xx) || defined(STM32F411xE) || defined(STM32F469_479xx)
@@ -107,18 +107,18 @@
 #define CSR_EWUP_BB              (PERIPH_BB_BASE + (CSR_OFFSET * 32) + (EWUP_BitNumber * 4))
 #endif /* STM32F40_41xxx || STM32F427_437xx || STM32F429_439xx || STM32F401xx || STM32F410xx || STM32F411xE || STM32F469_479xx */
 
-#if defined(STM32F410xx) || defined(STM32F446xx)
+#if defined(STM32F410xx) || defined(STM32F412xG) || defined(STM32F446xx)
 /* Alias word address of EWUP2 bit */
 #define CSR_OFFSET               (PWR_OFFSET + 0x04)
 #define EWUP1_BitNumber           0x08
 #define CSR_EWUP1_BB              (PERIPH_BB_BASE + (CSR_OFFSET * 32) + (EWUP1_BitNumber * 4))
 #define EWUP2_BitNumber           0x07
 #define CSR_EWUP2_BB              (PERIPH_BB_BASE + (CSR_OFFSET * 32) + (EWUP2_BitNumber * 4))
-#if defined(STM32F410xx)
+#if defined(STM32F410xx) || defined(STM32F412xG)
 #define EWUP3_BitNumber           0x06
 #define CSR_EWUP3_BB              (PERIPH_BB_BASE + (CSR_OFFSET * 32) + (EWUP2_BitNumber * 4))
-#endif /* STM32F410xx */
-#endif /* STM32F410xx || STM32F446xx */
+#endif /* STM32F410xx || STM32F412xG */
+#endif /* STM32F410xx || STM32F412xG || STM32F446xx */
 
 /* Alias word address of BRE bit */
 #define BRE_BitNumber            0x09
@@ -297,14 +297,14 @@ void PWR_WakeUpPinCmd(FunctionalState NewState)
 }
 #endif /* STM32F40_41xxx || STM32F427_437xx || STM32F429_439xx || STM32F401xx || STM32F411xE */
 
-#if defined(STM32F410xx) || defined(STM32F446xx)
+#if defined(STM32F410xx) || defined(STM32F412xG) || defined(STM32F446xx)
 /**
   * @brief  Enables or disables the WakeUp Pin functionality.
   * @param  PWR_WakeUpPinx: specifies the WakeUp Pin.
   *          This parameter can be one of the following values:
   *            @arg PWR_WakeUp_Pin1: WKUP1 pin is used for wakeup from Standby mode.
   *            @arg PWR_WakeUp_Pin2: WKUP2 pin is used for wakeup from Standby mode.
-  *            @arg PWR_WakeUp_Pin3: WKUP3 pin is used for wakeup from Standby mode.(only for STM32F410xx)
+  *            @arg PWR_WakeUp_Pin3: WKUP3 pin is used for wakeup from Standby mode.(only for STM32F410xx and STM32F412xG Devices)
   * @param  NewState: new state of the WakeUp Pin functionality.
   *         This parameter can be: ENABLE or DISABLE.
   * @retval None
@@ -318,7 +318,7 @@ void PWR_WakeUpPinCmd(uint32_t PWR_WakeUpPinx, FunctionalState NewState)
   {
     *(__IO uint32_t *) CSR_EWUP1_BB = (uint32_t)NewState;
   }
-#if defined(STM32F410xx)  
+#if defined(STM32F410xx)|| defined(STM32F412xG)  
   else if(PWR_WakeUpPinx == PWR_WakeUp_Pin3) /* PWR_WakeUp_Pin3 */
   {
     *(__IO uint32_t *) CSR_EWUP3_BB = (uint32_t)NewState;
@@ -329,7 +329,7 @@ void PWR_WakeUpPinCmd(uint32_t PWR_WakeUpPinx, FunctionalState NewState)
     *(__IO uint32_t *) CSR_EWUP2_BB = (uint32_t)NewState;
   }
 }
-#endif /* STM32F410xx || STM32F446xx */
+#endif /* STM32F410xx || STM32F412xG || STM32F446xx */
 
 /**
   * @}
@@ -589,11 +589,11 @@ void PWR_LowRegulatorUnderDriveCmd(FunctionalState NewState)
 }
 #endif /* STM32F427_437xx || STM32F429_439xx || STM32F446xx */
 
-#if defined(STM32F401xx) || defined(STM32F410xx) || defined(STM32F411xE)
+#if defined(STM32F401xx) || defined(STM32F410xx) || defined(STM32F411xE) || defined(STM32F412xG)
 /**
   * @brief Enables or disables the Main Regulator low voltage mode.
   *
-  * @note  This mode is only available for STM32F401xx/STM32F410xx/STM32F411xx devices.
+  * @note  This mode is only available for STM32F401xx/STM32F410xx/STM32F411xx/STM32F412xG devices.
   *
   * @param  NewState: new state of the Main Regulator Low Voltage mode.
   *          This parameter can be: ENABLE or DISABLE.
@@ -617,7 +617,7 @@ void PWR_MainRegulatorLowVoltageCmd(FunctionalState NewState)
 /**
   * @brief Enables or disables the Low Power Regulator low voltage mode.
   *
-  * @note  This mode is only available for STM32F401xx/STM32F410xx/STM32F411xx devices.
+  * @note  This mode is only available for STM32F401xx/STM32F410xx/STM32F411xx/STM32F412xG devices.
   *
   * @param  NewState: new state of the Low Power Regulator Low Voltage mode.
   *          This parameter can be: ENABLE or DISABLE.
@@ -637,7 +637,7 @@ void PWR_LowRegulatorLowVoltageCmd(FunctionalState NewState)
     *(__IO uint32_t *) CR_LPLVDS_BB = (uint32_t)DISABLE;
   }
 }
-#endif /* STM32F401xx || STM32F410xx || STM32F411xE */
+#endif /* STM32F401xx || STM32F410xx || STM32F411xE || STM32F412xG */
 
 /**
   * @}
@@ -1029,9 +1029,9 @@ void PWR_ClearFlag(uint32_t PWR_FLAG)
   }
 #endif /* STM32F427_437xx ||  STM32F429_439xx */
 
-#if defined (STM32F40_41xxx) || defined (STM32F401xx) || defined (STM32F410xx) || defined (STM32F411xE) 
+#if defined (STM32F40_41xxx) || defined (STM32F401xx) || defined (STM32F410xx) || defined (STM32F411xE) || defined(STM32F412xG) 
   PWR->CR |=  PWR_FLAG << 2;
-#endif /* STM32F40_41xxx  || STM32F401xx || STM32F410xx || STM32F411xE */
+#endif /* STM32F40_41xxx  || STM32F401xx || STM32F410xx || STM32F411xE || STM32F412xG */
 }
 
 /**

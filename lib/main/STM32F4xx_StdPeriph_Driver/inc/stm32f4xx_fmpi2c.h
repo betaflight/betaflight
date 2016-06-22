@@ -1,15 +1,15 @@
 /**
   ******************************************************************************
-  * @file    stm32f30x_fmpi2c.h
+  * @file    stm32f4xx_fmpi2c.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file contains all the functions prototypes for the I2C Fast Mode
   *          Plus firmware library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@
 /** @addtogroup FMPI2C
   * @{
   */
-#if defined(STM32F410xx) || defined(STM32F446xx)
+#if defined(STM32F410xx) || defined(STM32F412xG) || defined(STM32F446xx)
 /* Exported types ------------------------------------------------------------*/
 
 /**
@@ -350,7 +350,6 @@ typedef struct
                                          ((IT) == FMPI2C_IT_ARLO) || ((IT) == FMPI2C_IT_OVR) || \
                                          ((IT) == FMPI2C_IT_PECERR) || ((IT) == FMPI2C_IT_TIMEOUT) || \
                                          ((IT) == FMPI2C_IT_ALERT))
-                               
 
 /**
   * @}
@@ -410,7 +409,6 @@ void FMPI2C_Cmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState);
 void FMPI2C_SoftwareResetCmd(FMPI2C_TypeDef* FMPI2Cx);
 void FMPI2C_ITConfig(FMPI2C_TypeDef* FMPI2Cx, uint32_t FMPI2C_IT, FunctionalState NewState);
 void FMPI2C_StretchClockCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState);
-void FMPI2C_StopModeCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState);
 void FMPI2C_DualAddressCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState);
 void FMPI2C_OwnAddress2Config(FMPI2C_TypeDef* FMPI2Cx, uint16_t Address, uint8_t Mask);
 void FMPI2C_GeneralCallCmd(FMPI2C_TypeDef* FMPI2Cx, FunctionalState NewState);
@@ -458,7 +456,7 @@ void FMPI2C_ClearFlag(FMPI2C_TypeDef* FMPI2Cx, uint32_t FMPI2C_FLAG);
 ITStatus FMPI2C_GetITStatus(FMPI2C_TypeDef* FMPI2Cx, uint32_t FMPI2C_IT);
 void FMPI2C_ClearITPendingBit(FMPI2C_TypeDef* FMPI2Cx, uint32_t FMPI2C_IT);
 
-#endif /* STM32F410xx || STM32F446xx */
+#endif /* STM32F410xx || STM32F412xG || STM32F446xx */
 /**
   * @}
   */

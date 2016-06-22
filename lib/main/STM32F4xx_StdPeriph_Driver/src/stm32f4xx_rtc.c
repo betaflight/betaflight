@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_rtc.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Real-Time Clock (RTC) peripheral:
   *           + Initialization
@@ -264,7 +264,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -305,7 +305,7 @@
                                             RTC_FLAG_ALRBF | RTC_FLAG_ALRAF | RTC_FLAG_INITF | \
                                             RTC_FLAG_RSF | RTC_FLAG_INITS | RTC_FLAG_WUTWF | \
                                             RTC_FLAG_ALRBWF | RTC_FLAG_ALRAWF | RTC_FLAG_TAMP1F | \
-                                            RTC_FLAG_RECALPF | RTC_FLAG_SHPF))
+                                            RTC_FLAG_TAMP2F | RTC_FLAG_RECALPF | RTC_FLAG_SHPF))
 
 #define INITMODE_TIMEOUT         ((uint32_t) 0x00010000)
 #define SYNCHRO_TIMEOUT          ((uint32_t) 0x00020000)
@@ -2092,7 +2092,7 @@ uint32_t RTC_GetTimeStampSubSecond(void)
 /**
   * @brief  Configures the select Tamper pin edge.
   * @param  RTC_Tamper: Selected tamper pin.
-  *          This parameter can be RTC_Tamper_1.
+  *          This parameter can be RTC_Tamper_1 or RTC_Tamper 2
   * @param  RTC_TamperTrigger: Specifies the trigger on the tamper pin that 
   *         stimulates tamper event. 
   *   This parameter can be one of the following values:
@@ -2123,7 +2123,7 @@ void RTC_TamperTriggerConfig(uint32_t RTC_Tamper, uint32_t RTC_TamperTrigger)
 /**
   * @brief  Enables or Disables the Tamper detection.
   * @param  RTC_Tamper: Selected tamper pin.
-  *          This parameter can be RTC_Tamper_1.
+  *          This parameter can be RTC_Tamper_1 or RTC_Tamper_2
   * @param  NewState: new state of the tamper pin.
   *          This parameter can be: ENABLE or DISABLE.                   
   * @retval None
@@ -2356,8 +2356,8 @@ uint32_t RTC_ReadBackupRegister(uint32_t RTC_BKP_DR)
   * @brief  Selects the RTC Tamper Pin.
   * @param  RTC_TamperPin: specifies the RTC Tamper Pin.
   *          This parameter can be one of the following values:
-  *            @arg RTC_TamperPin_PC13: PC13 is selected as RTC Tamper Pin.
-  *            @arg RTC_TamperPin_PI8: PI8 is selected as RTC Tamper Pin.    
+  *            @arg RTC_TamperPin_Default: RTC_AF1 is used as RTC Tamper Pin.
+  *            @arg RTC_TamperPin_Pos1: RTC_AF2 is selected as RTC Tamper Pin.    
   * @retval None
   */
 void RTC_TamperPinSelection(uint32_t RTC_TamperPin)
@@ -2588,6 +2588,7 @@ void RTC_ITConfig(uint32_t RTC_IT, FunctionalState NewState)
   *          This parameter can be one of the following values:
   *            @arg RTC_FLAG_RECALPF: RECALPF event flag.
   *            @arg RTC_FLAG_TAMP1F: Tamper 1 event flag
+  *            @arg RTC_FLAG_TAMP2F: Tamper 2 event flag
   *            @arg RTC_FLAG_TSOVF: Time Stamp OverFlow flag
   *            @arg RTC_FLAG_TSF: Time Stamp event flag
   *            @arg RTC_FLAG_WUTF: WakeUp Timer flag
@@ -2630,6 +2631,7 @@ FlagStatus RTC_GetFlagStatus(uint32_t RTC_FLAG)
   * @param  RTC_FLAG: specifies the RTC flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg RTC_FLAG_TAMP1F: Tamper 1 event flag
+  *            @arg RTC_FLAG_TAMP2F: Tamper 2 event flag
   *            @arg RTC_FLAG_TSOVF: Time Stamp Overflow flag 
   *            @arg RTC_FLAG_TSF: Time Stamp event flag
   *            @arg RTC_FLAG_WUTF: WakeUp Timer flag
@@ -2655,7 +2657,8 @@ void RTC_ClearFlag(uint32_t RTC_FLAG)
   *            @arg RTC_IT_WUT: WakeUp Timer interrupt 
   *            @arg RTC_IT_ALRB: Alarm B interrupt 
   *            @arg RTC_IT_ALRA: Alarm A interrupt 
-  *            @arg RTC_IT_TAMP1: Tamper 1 event interrupt 
+  *            @arg RTC_IT_TAMP1: Tamper 1 event interrupt
+  *            @arg RTC_IT_TAMP2: Tamper 2 event interrupt
   * @retval The new state of RTC_IT (SET or RESET).
   */
 ITStatus RTC_GetITStatus(uint32_t RTC_IT)
@@ -2670,7 +2673,7 @@ ITStatus RTC_GetITStatus(uint32_t RTC_IT)
   tmpreg = (uint32_t)(RTC->TAFCR & (RTC_TAFCR_TAMPIE));
  
   /* Get the Interrupt enable Status */
-  enablestatus = (uint32_t)((RTC->CR & RTC_IT) | (tmpreg & (RTC_IT >> 15)));
+  enablestatus = (uint32_t)((RTC->CR & RTC_IT) | (tmpreg & (RTC_IT >> 15)) | (tmpreg & (RTC_IT >> 16)));
   
   /* Get the Interrupt pending bit */
   tmpreg = (uint32_t)((RTC->ISR & (uint32_t)(RTC_IT >> 4)));
@@ -2695,7 +2698,8 @@ ITStatus RTC_GetITStatus(uint32_t RTC_IT)
   *            @arg RTC_IT_WUT: WakeUp Timer interrupt 
   *            @arg RTC_IT_ALRB: Alarm B interrupt 
   *            @arg RTC_IT_ALRA: Alarm A interrupt 
-  *            @arg RTC_IT_TAMP1: Tamper 1 event interrupt 
+  *            @arg RTC_IT_TAMP1: Tamper 1 event interrupt
+  *            @arg RTC_IT_TAMP2: Tamper 2 event interrupt 
   * @retval None
   */
 void RTC_ClearITPendingBit(uint32_t RTC_IT)

@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_rtc.h
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.7.1
+  * @date    20-May-2016
   * @brief   This file contains all the functions prototypes for the RTC firmware
   *          library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
   *
   * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
   * You may not use this file except in compliance with the License.
@@ -591,8 +591,9 @@ typedef struct
 /** @defgroup RTC_Tamper_Pins_Definitions 
   * @{
   */ 
-#define RTC_Tamper_1                    RTC_TAFCR_TAMP1E
-#define IS_RTC_TAMPER(TAMPER) (((TAMPER) == RTC_Tamper_1))
+#define RTC_Tamper_1 RTC_TAFCR_TAMP1E
+#define RTC_Tamper_2 RTC_TAFCR_TAMP2E
+#define IS_RTC_TAMPER(TAMPER) (((TAMPER) == RTC_Tamper_1) || ((TAMPER) == RTC_Tamper_2))
 
 /**
   * @}
@@ -601,10 +602,13 @@ typedef struct
 /** @defgroup RTC_Tamper_Pin_Selection 
   * @{
   */ 
-#define RTC_TamperPin_PC13                 ((uint32_t)0x00000000)
-#define RTC_TamperPin_PI8                  ((uint32_t)0x00010000)
-#define IS_RTC_TAMPER_PIN(PIN) (((PIN) == RTC_TamperPin_PC13) || \
-                                ((PIN) == RTC_TamperPin_PI8))
+#define RTC_TamperPin_Default       ((uint32_t)0x00000000)
+#define RTC_TamperPin_Pos1          ((uint32_t)0x00010000)
+#define IS_RTC_TAMPER_PIN(PIN)      (((PIN) == RTC_TamperPin_Default) || \
+                                    ((PIN) == RTC_TamperPin_Pos1))
+/* Legacy Defines */
+#define RTC_TamperPin_PC13           RTC_TamperPin_Default
+#define RTC_TamperPin_PI8            RTC_TamperPin_Pos1
 /**
   * @}
   */ 
@@ -616,6 +620,7 @@ typedef struct
 #define RTC_TimeStampPin_PI8               ((uint32_t)0x00020000)
 #define IS_RTC_TIMESTAMP_PIN(PIN) (((PIN) == RTC_TimeStampPin_PC13) || \
                                    ((PIN) == RTC_TimeStampPin_PI8))
+
 /**
   * @}
   */ 
@@ -716,6 +721,7 @@ typedef struct
   */ 
 #define RTC_FLAG_RECALPF                  ((uint32_t)0x00010000)
 #define RTC_FLAG_TAMP1F                   ((uint32_t)0x00002000)
+#define RTC_FLAG_TAMP2F                   ((uint32_t)0x00004000) 
 #define RTC_FLAG_TSOVF                    ((uint32_t)0x00001000)
 #define RTC_FLAG_TSF                      ((uint32_t)0x00000800)
 #define RTC_FLAG_WUTF                     ((uint32_t)0x00000400)
@@ -734,7 +740,7 @@ typedef struct
                                ((FLAG) == RTC_FLAG_RSF) || ((FLAG) == RTC_FLAG_WUTWF) || \
                                ((FLAG) == RTC_FLAG_ALRBWF) || ((FLAG) == RTC_FLAG_ALRAWF) || \
                                ((FLAG) == RTC_FLAG_TAMP1F) || ((FLAG) == RTC_FLAG_RECALPF) || \
-                                ((FLAG) == RTC_FLAG_SHPF))
+                                ((FLAG) == RTC_FLAG_TAMP2F) ||((FLAG) == RTC_FLAG_SHPF))
 #define IS_RTC_CLEAR_FLAG(FLAG) (((FLAG) != (uint32_t)RESET) && (((FLAG) & 0xFFFF00DF) == (uint32_t)RESET))
 /**
   * @}
@@ -749,12 +755,13 @@ typedef struct
 #define RTC_IT_ALRA                       ((uint32_t)0x00001000)
 #define RTC_IT_TAMP                       ((uint32_t)0x00000004) /* Used only to Enable the Tamper Interrupt */
 #define RTC_IT_TAMP1                      ((uint32_t)0x00020000)
+#define RTC_IT_TAMP2                      ((uint32_t)0x00040000)
 
 #define IS_RTC_CONFIG_IT(IT) (((IT) != (uint32_t)RESET) && (((IT) & 0xFFFF0FFB) == (uint32_t)RESET))
 #define IS_RTC_GET_IT(IT) (((IT) == RTC_IT_TS) || ((IT) == RTC_IT_WUT) || \
                            ((IT) == RTC_IT_ALRB) || ((IT) == RTC_IT_ALRA) || \
-                           ((IT) == RTC_IT_TAMP1))
-#define IS_RTC_CLEAR_IT(IT) (((IT) != (uint32_t)RESET) && (((IT) & 0xFFFD0FFF) == (uint32_t)RESET))
+                           ((IT) == RTC_IT_TAMP1) || ((IT) == RTC_IT_TAMP2))
+#define IS_RTC_CLEAR_IT(IT) (((IT) != (uint32_t)RESET) && (((IT) & 0xFFF90FFF) == (uint32_t)RESET))
 
 /**
   * @}

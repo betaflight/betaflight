@@ -1,8 +1,8 @@
 /* ----------------------------------------------------------------------
 * Copyright (C) 2010-2014 ARM Limited. All rights reserved.
 *
-* $Date:        31. July 2014
-* $Revision: 	V1.4.4
+* $Date:        19. March 2015
+* $Revision: 	V.1.4.5
 *
 * Project: 	    CMSIS DSP Library
 * Title:	    arm_common_tables.h
