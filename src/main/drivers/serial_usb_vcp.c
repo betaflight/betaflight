@@ -147,7 +147,8 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint8_t usbTxBytesFree() {
+uint8_t usbTxBytesFree() 
+{
     // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
     return 255;
 }
@@ -194,6 +195,7 @@ serialPort_t *usbVcpOpen(void)
 
     return (serialPort_t *)s;
 }
+
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 {
     UNUSED(instance);

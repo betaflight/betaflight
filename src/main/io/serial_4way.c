@@ -100,43 +100,32 @@ static void setDisconnected(void)
 
 bool isEscHi(uint8_t selEsc)
 {
-    return (digitalIn(escHardware[selEsc].gpio, escHardware[selEsc].pin) != Bit_RESET);
+    return (IORead(escHardware[selEsc].io) != Bit_RESET);
 }
 
 bool isEscLo(uint8_t selEsc)
 {
-    return (digitalIn(escHardware[selEsc].gpio, escHardware[selEsc].pin) == Bit_RESET);
+    return (IORead(escHardware[selEsc].io) == Bit_RESET);
 }
 
 void setEscHi(uint8_t selEsc)
 {
-    digitalHi(escHardware[selEsc].gpio, escHardware[selEsc].pin);
+    IOHi(escHardware[selEsc].io);
 }
 
 void setEscLo(uint8_t selEsc)
 {
-    digitalLo(escHardware[selEsc].gpio, escHardware[selEsc].pin);
+    IOLo(escHardware[selEsc].io);
 }
 
 void setEscInput(uint8_t selEsc)
 {
-    gpioInit(escHardware[selEsc].gpio, &escHardware[selEsc].gpio_config_INPUT);
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_IPU);
 }
 
 void setEscOutput(uint8_t selEsc)
 {
-    gpioInit(escHardware[selEsc].gpio, &escHardware[selEsc].gpio_config_OUTPUT);
-}
-
-static uint32_t getPinPos(uint32_t pin)
-{
-    for (int pinPos = 0; pinPos < 16; pinPos++) {
-        uint32_t pinMask = (0x1 << pinPos);
-        if (pin & pinMask) {
-            return pinPos;
-        }
-    }
-    return 0;
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_OUT_PP);
 }
 
 // Initialize 4way ESC interface
@@ -151,14 +140,7 @@ int esc4wayInit(void)
     for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
         if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
             if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
-                escHardware[escIdx].gpio = IO_GPIO(IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin));
-                escHardware[escIdx].pin = IO_Pin(IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin));
-                escHardware[escIdx].pinpos = getPinPos(escHardware[escIdx].pin);
-                escHardware[escIdx].gpio_config_INPUT.pin = escHardware[escIdx].pin;
-                escHardware[escIdx].gpio_config_INPUT.speed = Speed_2MHz; // see pwmOutConfig()
-                escHardware[escIdx].gpio_config_INPUT.mode = Mode_IPU;
-                escHardware[escIdx].gpio_config_OUTPUT = escHardware[escIdx].gpio_config_INPUT;
-                escHardware[escIdx].gpio_config_OUTPUT.mode = Mode_Out_PP;
+                escHardware[escIdx].io = IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin);
                 escIdx++;
             }
         }
@@ -183,7 +165,7 @@ void esc4wayStart(void)
 void esc4wayRelease(void)
 {
     for(int i = 0; i < escCount; i++) {
-        escHardware[i].gpio_config_OUTPUT.mode = Mode_AF_PP; // see pwmOutConfig()
+        IOConfigGPIO(escHardware[i].io, IOCFG_AF_PP); // see pwmOutConfig()
         setEscOutput(i);
         setEscLo(i);
     }
@@ -397,6 +379,10 @@ void esc4wayProcess(serialPort_t *serial)
         writeByte(crcOut >> 8);
         writeByte(crcOut & 0xff);
         serialEndWrite(port);
+        
+#ifdef STM32F4
+        delay(50);
+#endif
         TX_LED_OFF;
     }
 
