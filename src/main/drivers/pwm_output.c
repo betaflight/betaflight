@@ -95,7 +95,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 
     configTimeBase(timerHardware->tim, period, mhz);
-    pwmGPIOConfig(timerHardware->pin, IOCFG_AF_PP);
+    pwmGPIOConfig(timerHardware->tag, IOCFG_AF_PP);
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->outputInverted);
 

@@ -364,8 +364,8 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->pin), OWNER_TIMER, RESOURCE_TIMER);
-    IOConfigGPIO(IOGetByTag(timHw->pin), mode);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER);
+    IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 
 // calculate input filter constant
@@ -657,7 +657,7 @@ void timerInit(void)
 #if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->pin), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
     

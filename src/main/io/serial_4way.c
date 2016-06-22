@@ -140,7 +140,7 @@ int esc4wayInit(void)
     for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
         if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
             if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
-                escHardware[escIdx].io = IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->pin);
+                escHardware[escIdx].io = IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->tag);
                 escIdx++;
             }
         }
