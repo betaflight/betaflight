@@ -60,6 +60,7 @@
 #define SERIAL_RX
 //#define USE_SERVOS
 #define USE_CLI
+#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // USART2, PA3
