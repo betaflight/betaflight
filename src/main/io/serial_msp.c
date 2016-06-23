@@ -1259,11 +1259,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
         break;
     case MSP_ADVANCED_TUNING:
-        headSerialReply(4 * 2 + 2);
+        headSerialReply(3 * 2 + 2);
         serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
-        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         serialize8(currentProfile->pidProfile.deltaMethod);
         serialize8(masterConfig.batteryConfig.vbatPidCompensation);
         break;
@@ -1810,6 +1809,7 @@ static bool processInCommand(void)
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
+        masterConfig.batteryConfig.vbatPidCompensation = read8();
         break;
     case MSP_SET_SPECIAL_PARAMETERS:
         currentControlRateProfile->rcYawRate8 = read8();
