@@ -189,10 +189,10 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef SONAR
-        if (init->sonarConfig && 
+        if (init->useSonar &&
             (
-                timerHardwarePtr->tag == init->sonarConfig->triggerTag ||
-                timerHardwarePtr->tag == init->sonarConfig->echoTag
+                timerHardwarePtr->tag == init->sonarConfig.triggerTag ||
+                timerHardwarePtr->tag == init->sonarConfig.echoTag
             )) {
             continue;
         }
