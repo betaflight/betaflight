@@ -242,6 +242,7 @@ COMMON_SRC = build_config.c \
 		   common/encoding.c \
 		   common/filter.c \
 		   common/streambuf.c \
+		   common/crc.c \
 		   scheduler.c \
            scheduler_tasks.c \
 		   main.c \
@@ -286,6 +287,7 @@ COMMON_SRC = build_config.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+		   rx/srxl.c \
 		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
