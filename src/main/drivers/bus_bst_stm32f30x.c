@@ -71,6 +71,10 @@ bool receiverAddress = false;
 uint8_t readData[DATA_BUFFER_SIZE] = {0};
 uint8_t bufferPointer = 0;
 
+bool cleanflight_data_ready = false;
+uint8_t interruptCounter = 0;
+#define DEALY_SENDING_BYTE	40
+
 void bstProcessInCommand(void);
 void I2C_EV_IRQHandler()
 {
@@ -102,6 +106,17 @@ void I2C_EV_IRQHandler()
 	} else if(I2C_GetITStatus(BSTx, I2C_IT_TXIS)) {
 		if(receiverAddress) {
 			if(currentWriteBufferPointer > 0) {
+				if(!cleanflight_data_ready) {
+					I2C_ClearITPendingBit(BSTx, I2C_IT_TXIS);
+					return;
+				}
+				if(interruptCounter < DEALY_SENDING_BYTE) {
+					interruptCounter++;
+					I2C_ClearITPendingBit(BSTx, I2C_IT_TXIS);
+					return;
+				} else {
+					interruptCounter = 0;
+				}
 				if(writeData[0] == currentWriteBufferPointer) {
 					receiverAddress = false;
 					crc8Cal(0);

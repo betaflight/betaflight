@@ -60,6 +60,13 @@
 #define SPI1_MOSI_PIN           GPIO_Pin_5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+
+#define M25P16_CS_GPIO		  GPIOB
+#define M25P16_CS_PIN           GPIO_Pin_12
+#define M25P16_SPI_INSTANCE     SPI1
+
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
