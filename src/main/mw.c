@@ -123,7 +123,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float angleRate[3], angleRateSmooth[2];
+float angleRate[3], angleRateSmooth[3];
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -197,7 +197,11 @@ void processRcCommand(void)
     int axis;
 
     // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
+    if (masterConfig.rxConfig.rcSmoothInterval) {
+        rxRefreshRate = 1000 * masterConfig.rxConfig.rcSmoothInterval;
+    } else {
+        initRxRefreshRate(&rxRefreshRate);
+    }
 
     rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 

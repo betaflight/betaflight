@@ -63,7 +63,7 @@ typedef struct _USBD_DCD_INT
   uint8_t (* DevConnected) (USB_OTG_CORE_HANDLE *pdev);
   uint8_t (* DevDisconnected) (USB_OTG_CORE_HANDLE *pdev);   
   
-}USBD_DCD_INT_cb_TypeDef;
+} USBD_DCD_INT_cb_TypeDef;
 
 extern USBD_DCD_INT_cb_TypeDef *USBD_DCD_INT_fops;
 /**
