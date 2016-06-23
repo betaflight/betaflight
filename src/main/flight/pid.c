@@ -72,11 +72,13 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
 
 pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we using
 
-void setTargetPidLooptime(uint8_t pidProcessDenom) {
-	targetPidLooptime = targetLooptime * pidProcessDenom;
+void setTargetPidLooptime(uint8_t pidProcessDenom) 
+{
+    targetPidLooptime = targetLooptime * pidProcessDenom;
 }
 
-uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate) {
+uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate) 
+{
     uint16_t dynamicKi;
     uint16_t resetRate;
 
@@ -101,7 +103,8 @@ void pidResetErrorGyroState(void)
     }
 }
 
-float getdT (void) {
+float getdT (void)
+{
     static float dT;
     if (!dT) dT = (float)targetPidLooptime * 0.000001f;
 
@@ -117,7 +120,7 @@ static filterStatePt1_t yawFilterState;
 static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float RateError, gyroRate, RateErrorSmooth;
+    float RateError = 0, gyroRate = 0, RateErrorSmooth = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
     float delta;
@@ -257,7 +260,7 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
     static int32_t lastRateError[3];
-    int32_t AngleRateTmp, AngleRateTmpSmooth, RateError, gyroRate, RateErrorSmooth;
+    int32_t AngleRateTmp = 0, AngleRateTmpSmooth = 0, RateError = 0, gyroRate = 0, RateErrorSmooth = 0;
 
     int8_t horizonLevelStrength = 100;
 

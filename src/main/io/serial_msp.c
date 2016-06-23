@@ -148,13 +148,13 @@ void setGyroSamplingSpeed(uint16_t looptime) {
             gyroSampleRate = 125;
             maxDivider = 8;
             masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
+            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
                 masterConfig.pid_process_denom = 2;
             }
             if (looptime < 250) {
                 masterConfig.pid_process_denom = 4;
             } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LUX_FLOAT) {
+                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
                     masterConfig.pid_process_denom = 3;
                 } else {
                     masterConfig.pid_process_denom = 2;
