@@ -36,11 +36,6 @@ void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz
 extern uint32_t hse_value;
 
-typedef void extiCallbackHandlerFunc(void);
-
-void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
-void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
-
 extern uint32_t cachedRccCsrValue;
 
 typedef enum {
