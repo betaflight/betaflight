@@ -963,13 +963,13 @@ static bool processOutCommand(uint8_t cmdMSP)
     case MSP_RX_CONFIG:
         headSerialReply(13);
         serialize8(masterConfig.rxConfig.serialrx_provider);
-        serialize8(masterConfig.rxConfig.nrf24rx_protocol);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
         serialize16(masterConfig.rxConfig.mincheck);
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
+        serialize8(masterConfig.rxConfig.nrf24rx_protocol);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1447,7 +1447,6 @@ static bool processInCommand(void)
 
     case MSP_SET_RX_CONFIG:
         masterConfig.rxConfig.serialrx_provider = read8();
-        masterConfig.rxConfig.nrf24rx_protocol = read8();
         masterConfig.rxConfig.maxcheck = read16();
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();
@@ -1455,6 +1454,9 @@ static bool processInCommand(void)
         if (currentPort->dataSize > 8) {
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
+        }
+        if (currentPort->dataSize > 12) {
+            masterConfig.rxConfig.nrf24rx_protocol = read8();
         }
         break;
 
