@@ -97,7 +97,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 
 #ifdef USE_FAKE_GYRO
 int16_t fake_gyro_values[XYZ_AXIS_COUNT] = { 0,0,0 };
-static void fakeGyroInit(uint16_t lpf)
+static void fakeGyroInit(uint8_t lpf)
 {
     UNUSED(lpf);
 }
@@ -129,7 +129,7 @@ bool fakeGyroDetect(gyro_t *gyro)
 
 #ifdef USE_FAKE_ACC
 int16_t fake_acc_values[XYZ_AXIS_COUNT] = {0,0,0};
-static void fakeAccInit(void) {}
+static void fakeAccInit(acc_t *acc) {UNUSED(acc);}
 static bool fakeAccRead(int16_t *accData) {
     for(int i=0;i<XYZ_AXIS_COUNT;++i) {
         accData[i] = fake_acc_values[i];
