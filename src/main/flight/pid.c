@@ -51,7 +51,7 @@
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
 extern float errorLimiter;
-extern float angleRate[3], angleRateSmooth[2];
+extern float angleRate[3], angleRateSmooth[3];
 
 int16_t axisPID[3];
 

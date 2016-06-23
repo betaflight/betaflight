@@ -123,7 +123,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float angleRate[3], angleRateSmooth[2];
+float angleRate[3], angleRateSmooth[3];
 
 extern pidControllerFuncPtr pid_controller;
 
