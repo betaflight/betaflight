@@ -169,7 +169,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 140;
+static const uint8_t EEPROM_CONF_VERSION = 141;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -182,9 +182,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 {
 
 #if (defined(STM32F10X))
-    pidProfile->pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile->pidController = PID_CONTROLLER_INTEGER;
 #else
-    pidProfile->pidController = PID_CONTROLLER_LUX_FLOAT;
+    pidProfile->pidController = PID_CONTROLLER_FLOAT;
 #endif
 
     pidProfile->P8[ROLL] = 45;
@@ -221,6 +221,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->rollPitchItermIgnoreRate = 200;
     pidProfile->yawItermIgnoreRate = 35;
     pidProfile->dterm_lpf_hz = 50;    // filtering ON by default
+    pidProfile->deltaMethod = DELTA_FROM_ERROR;
     pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
@@ -494,7 +495,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = 0; // TODO - Cleanup with next EEPROM changes
+    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
 #ifdef STM32F4
     masterConfig.rxConfig.max_aux_channel = 99;

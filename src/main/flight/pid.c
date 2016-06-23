@@ -67,10 +67,10 @@ static int32_t errorGyroI[3];
 static float errorGyroIf[3];
 #endif
 
-static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 
-pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using, defaultMultiWii
+pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we using
 
 void setTargetPidLooptime(uint8_t pidProcessDenom) {
 	targetPidLooptime = targetLooptime * pidProcessDenom;
@@ -114,7 +114,7 @@ static filterStatePt1_t deltaFilterState[3];
 static filterStatePt1_t yawFilterState;
 
 #ifndef SKIP_PID_LUXFLOAT
-static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     float RateError, gyroRate, RateErrorSmooth;
@@ -126,7 +126,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
-    // Scaling factors for Pids to match rewrite and use same defaults
+    // Scaling factors for Pids for better tunable range in configurator
     static const float luxPTermScale = 1.0f / 128;
     static const float luxITermScale = 1000000.0f / 0x1000000;
     static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 508;
@@ -168,7 +168,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
             }
         }
 
-        gyroRate = gyroADCf[axis] / 4.0f; // gyro output scaled to old rewrite scale
+        gyroRate = gyroADCf[axis] / 4.0f; // gyro output scaled for easier int conversion
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
@@ -176,11 +176,12 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = angleRate[axis] - gyroRate;
 
-        // Smoothed Error for Derivative
-        if (flightModeFlags && axis != YAW) {
-            RateErrorSmooth = RateError;
-        } else {
-            RateErrorSmooth = angleRateSmooth[axis] - gyroRate;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            // Smoothed Error for Derivative when delta from error selected
+            if (flightModeFlags && axis != YAW)
+                RateErrorSmooth = RateError;
+            else
+                RateErrorSmooth = angleRateSmooth[axis] - gyroRate;
         }
 
         // -----calculate P component
@@ -215,8 +216,13 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
 
             DTerm = 0.0f; // needed for blackbox
         } else {
-            delta = RateErrorSmooth - lastRateError[axis];
-            lastRateError[axis] = RateErrorSmooth;
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateErrorSmooth - lastRateError[axis];
+                lastRateError[axis] = RateErrorSmooth;
+            } else {
+                delta = -(gyroRate - lastRateError[axis]);
+                lastRateError[axis] = gyroRate;
+            }
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
@@ -245,7 +251,7 @@ static void pidLuxFloat(const pidProfile_t *pidProfile, uint16_t max_angle_incli
 }
 #endif
 
-static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     int axis;
@@ -301,11 +307,12 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angl
 
         RateError = AngleRateTmp - gyroRate;
 
-        // Smoothed Error for Derivative
-        if (flightModeFlags && axis != YAW) {
-            RateErrorSmooth = RateError;
-        } else {
-            RateErrorSmooth = AngleRateTmpSmooth - gyroRate;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            // Smoothed Error for Derivative when delta from error selected
+            if (flightModeFlags && axis != YAW)
+                RateErrorSmooth = RateError;
+            else
+                RateErrorSmooth = AngleRateTmpSmooth - gyroRate;
         }
 
         // -----calculate P component
@@ -348,8 +355,13 @@ static void pidMultiWiiRewrite(const pidProfile_t *pidProfile, uint16_t max_angl
 
             DTerm = 0; // needed for blackbox
         } else {
-            delta = RateErrorSmooth - lastRateError[axis];
-            lastRateError[axis] = RateErrorSmooth;
+            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+                delta = RateErrorSmooth - lastRateError[axis];
+                lastRateError[axis] = RateErrorSmooth;
+            } else {
+                delta = -(gyroRate - lastRateError[axis]);
+                lastRateError[axis] = gyroRate;
+            }
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
@@ -382,12 +394,12 @@ void pidSetController(pidControllerType_e type)
 {
     switch (type) {
         default:
-        case PID_CONTROLLER_MWREWRITE:
-            pid_controller = pidMultiWiiRewrite;
+        case PID_CONTROLLER_INTEGER:
+            pid_controller = pidInteger;
             break;
 #ifndef SKIP_PID_LUXFLOAT
-        case PID_CONTROLLER_LUX_FLOAT:
-            pid_controller = pidLuxFloat;
+        case PID_CONTROLLER_FLOAT:
+            pid_controller = pidFloat;
 #endif
     }
 }
