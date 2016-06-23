@@ -72,11 +72,7 @@ static void mpu6500SpiInit(void)
     IOInit(mpuSpi6500CsPin, OWNER_SYSTEM, RESOURCE_SPI);
     IOConfigGPIO(mpuSpi6500CsPin, SPI_IO_CS_CFG);
 
-#if defined(STM32F4)
-    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_SLOW_CLOCK);
-#else
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_STANDARD_CLOCK);
-#endif
 
     hardwareInitialised = true;
 }
