@@ -23,6 +23,8 @@
 
 #include "build_config.h"
 
+#include "blackbox/blackbox_io.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -614,8 +616,6 @@ static void resetConf(void)
     masterConfig.vtx_mhz = 5740;  //F0
 #endif
 
-#ifdef SPRACINGF3
-    masterConfig.blackbox_device = 1;
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
 
@@ -629,12 +629,11 @@ static void resetConf(void)
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
-    masterConfig.blackbox_device = 0;
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
 #endif
 
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
-#endif
 
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
@@ -659,13 +658,12 @@ static void resetConf(void)
     masterConfig.batteryConfig.vbatscale = 20;
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
 #endif
-    masterConfig.rxConfig.serialrx_provider = 1;
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
     currentControlRateProfile->rates[FD_PITCH] = 40;
@@ -685,10 +683,6 @@ static void resetConf(void)
 
 #if defined(SINGULARITY)
     // alternative defaults settings for SINGULARITY target
-    masterConfig.blackbox_device = 1;
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
-    
     masterConfig.batteryConfig.vbatscale = 77;
 
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
