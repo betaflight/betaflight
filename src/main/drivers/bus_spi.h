@@ -40,7 +40,7 @@
 
 #if defined(STM32F4)
 #define SPI_SLOW_CLOCK      128 //00.65625 MHz
-#define SPI_STANDARD_CLOCK   32 //05.25000 MHz
+#define SPI_STANDARD_CLOCK   16 //05.25000 MHz
 #define SPI_FAST_CLOCK        4 //21.00000 MHz
 #define SPI_ULTRAFAST_CLOCK   2 //42.00000 MHz
 #else
