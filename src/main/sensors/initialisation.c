@@ -86,7 +86,7 @@ uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NON
 const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
-    static const extiConfig_t mpuIntExtiConfig = { .io = IO_TAG(MPU_INT_EXTI) };
+    static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
 #elif defined(USE_HARDWARE_REVISION_DETECTION) 
     return selectMPUIntExtiConfigByHardwareRevision();

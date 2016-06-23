@@ -43,8 +43,8 @@
 #define ONESHOT125_TIMER_MHZ 8
 
 typedef struct sonarIOConfig_s {
-    ioTag_t triggerPin;
-    ioTag_t echoPin;
+    ioTag_t triggerTag;
+    ioTag_t echoTag;
 } sonarIOConfig_t;
 
 typedef struct drv_pwm_config_s {

@@ -113,18 +113,19 @@ void updateHardwareRevision(void)
 
 const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
 {
-    // MPU_INT output on rev4 PB13
-    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
-        .io = IO_TAG(PB13)
-    };
     // MPU_INT output on rev5 hardware PC13
     static const extiConfig_t nazeRev5MPUIntExtiConfig = {
-        .io = IO_TAG(PC13)
+        .tag = IO_TAG(PC13)
     };
 
 #ifdef AFROMINI
     return &nazeRev5MPUIntExtiConfig;
 #else
+    // MPU_INT output on rev4 PB13
+    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
+        .tag = IO_TAG(PB13)
+    };
+
     if (hardwareRevision < NAZE32_REV5) {
         return &nazeRev4MPUIntExtiConfig;
     }

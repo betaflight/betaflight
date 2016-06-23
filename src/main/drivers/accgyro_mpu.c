@@ -236,7 +236,7 @@ void mpuIntExtiInit(void)
 
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
-	IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->io);
+	IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
 	
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
 	uint8_t status = IORead(mpuIntIO);
