@@ -203,6 +203,7 @@
 #else
 #define TARGET_MOTOR_COUNT 4
 #endif
+#undef USE_BARO_MS5611
 #undef BLACKBOX
 #undef TELEMETRY
 #undef TELEMETRY_LTM
