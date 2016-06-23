@@ -57,8 +57,8 @@ const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryCon
 #if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
     UNUSED(batteryConfig);
     static const sonarHardware_t const sonarHardware = {
-		.triggerIO = IO_TAG(SONAR_TRIGGER_PIN),
-		.echoIO = IO_TAG(SONAR_ECHO_PIN),
+		.triggerTag = IO_TAG(SONAR_TRIGGER_PIN),
+		.echoTag = IO_TAG(SONAR_ECHO_PIN),
     };
     return &sonarHardware;
 #elif defined(SONAR_CUSTOM_CONFIG)

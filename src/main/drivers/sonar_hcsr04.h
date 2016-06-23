@@ -21,8 +21,8 @@
 #include "io.h"
 
 typedef struct sonarHardware_s {
-    ioTag_t triggerIO;
-    ioTag_t echoIO;
+    ioTag_t triggerTag;
+    ioTag_t echoTag;
 } sonarHardware_t;
 
 typedef struct sonarRange_s {

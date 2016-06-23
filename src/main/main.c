@@ -269,8 +269,8 @@ void init(void)
     if (feature(FEATURE_SONAR)) {
         sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
         sonarIOConfig_t sonarConfig = {
-            .triggerPin = sonarHardware->triggerIO,
-            .echoPin = sonarHardware->echoIO
+            .triggerTag = sonarHardware->triggerTag,
+            .echoTag = sonarHardware->echoTag
         };
         pwm_params.sonarConfig = &sonarConfig;
     }
