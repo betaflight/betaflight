@@ -137,8 +137,7 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
-void sonarInit(const sonarHardware_t *sonarHardware);
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 void osdInit(void);
 
 typedef enum {
@@ -264,15 +263,13 @@ void init(void)
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
-    const sonarHardware_t *sonarHardware = NULL;
-
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
-        sonarIOConfig_t sonarConfig = {
-            .triggerTag = sonarHardware->triggerTag,
-            .echoTag = sonarHardware->echoTag
-        };
-        pwm_params.sonarConfig = &sonarConfig;
+        const sonarHardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
+        if (sonarHardware) {
+            pwm_params.useSonar = true;
+            pwm_params.sonarConfig.triggerTag = sonarHardware->triggerTag;
+            pwm_params.sonarConfig.echoTag = sonarHardware->echoTag;
+        }
     }
 #endif
 
@@ -302,9 +299,6 @@ void init(void)
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
-#ifdef SONAR
-    pwm_params.useSonar = feature(FEATURE_SONAR);
-#endif
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
@@ -548,7 +542,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        sonarInit(sonarHardware);
+        sonarInit();
     }
 #endif
 
