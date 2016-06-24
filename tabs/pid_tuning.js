@@ -23,7 +23,7 @@ TABS.pid_tuning.initialize = function (callback) {
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_RC_TUNING);
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_TEMPORARY_COMMANDS);
+        return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_ADVANCED_TUNING);
     }).then(function() {
@@ -172,7 +172,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="yaw_rate"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.pid_tuning input[name="rc_expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
         $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-        $('.pid_tuning input[name="rc_rate_yaw"]').val(TEMPORARY_COMMANDS.RC_RATE_YAW.toFixed(2));
+        $('.pid_tuning input[name="rc_rate_yaw"]').val(SPECIAL_PARAMETERS.RC_RATE_YAW.toFixed(2));
 
         $('.tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
         $('.tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
@@ -248,7 +248,7 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.yaw_rate = parseFloat($('.pid_tuning input[name="yaw_rate"]').val());
         RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
         RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
-        TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
+        SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
@@ -442,7 +442,7 @@ TABS.pid_tuning.initialize = function (callback) {
                 if (TABS.pid_tuning.controllerChanged) { return; }
                 MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID)).then(function() {
                     if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
-                    return MSP.promise(MSP_codes.MSP_SET_TEMPORARY_COMMANDS, MSP.crunch(MSP_codes.MSP_SET_TEMPORARY_COMMANDS));
+                    return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
                 }).then(function() {
                     if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
                     return MSP.promise(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING));

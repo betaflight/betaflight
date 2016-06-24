@@ -47,8 +47,8 @@ var MSP_codes = {
     MSP_SET_FILTER_CONFIG:      93,
     MSP_ADVANCED_TUNING:        94,
     MSP_SET_ADVANCED_TUNING:    95,
-    MSP_TEMPORARY_COMMANDS:     98,
-    MSP_SET_TEMPORARY_COMMANDS: 99,
+    MSP_SPECIAL_PARAMETERS:     98,
+    MSP_SET_SPECIAL_PARAMETERS: 99,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -900,13 +900,22 @@ var MSP = {
                 ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1); 
                 offset += 2;
                 ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
-                offset += 2;
-                ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
-                ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
+                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                    offset += 2;
+                    ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
+                }
                 break;
 
-            case MSP_codes.MSP_TEMPORARY_COMMANDS:
-                TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+            case MSP_codes.MSP_SPECIAL_PARAMETERS:
+                var offset = 0;
+                SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                    SPECIAL_PARAMETERS.airModeActivateThreshold = data.getUint16(offset, 1);
+                    offset += 2;
+                    SPECIAL_PARAMETERS.rcSmoothInterval = data.getUint8(offset++, 1)
+                    SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                }
                 break;
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
@@ -1434,8 +1443,8 @@ MSP.crunch = function (code) {
               .push8(ADVANCED_TUNING.deltaMethod)
               .push8(ADVANCED_TUNING.vbatPidCompensation);
             break;
-        case MSP_codes.MSP_SET_TEMPORARY_COMMANDS:
-            buffer.push(Math.round(TEMPORARY_COMMANDS.RC_RATE_YAW * 100));
+        case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
+            buffer.push(Math.round(SPECIAL_PARAMETERS.RC_RATE_YAW * 100));
             break;
         default:
             return false;

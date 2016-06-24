@@ -38,7 +38,7 @@ var RXFAIL_CONFIG;
 var PID_ADVANCED_CONFIG;
 var FILTER_CONFIG;
 var ADVANCED_TUNING;
-var TEMPORARY_COMMANDS;
+var SPECIAL_PARAMETERS;
 
 var FC = {
     resetState: function() {
@@ -261,9 +261,12 @@ var FC = {
             vbatPidCompensation:      0
         };
 
-        TEMPORARY_COMMANDS = {
-            RC_RATE_YAW:              0
-        };
+        SPECIAL_PARAMETERS = {
+            RC_RATE_YAW:              0,
+            airModeActivateThreshold: 0,
+            rcSmoothInterval:         0,
+            escDesyncProtection:      0
+         };
         
         RX_CONFIG = {
             serialrx_provider:      0,
