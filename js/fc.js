@@ -39,6 +39,7 @@ var PID_ADVANCED_CONFIG;
 var FILTER_CONFIG;
 var ADVANCED_TUNING;
 var SPECIAL_PARAMETERS;
+var SENSOR_CONFIG;
 
 var FC = {
     resetState: function() {
@@ -267,7 +268,13 @@ var FC = {
             rcSmoothInterval:         0,
             escDesyncProtection:      0
          };
-        
+
+        SENSOR_CONFIG = {
+            acc_hardware:             0,
+            baro_hardware             0,
+            mag_hardware              0
+        }
+
         RX_CONFIG = {
             serialrx_provider:      0,
             maxcheck:               0,
