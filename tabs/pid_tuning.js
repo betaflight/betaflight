@@ -10,40 +10,27 @@ TABS.pid_tuning.initialize = function (callback) {
         GUI.active_tab = 'pid_tuning';
     }
 
-    function get_pid_controller() {
-        if (GUI.canChangePidController) {
-            MSP.send_message(MSP_codes.MSP_PID_CONTROLLER, false, false, get_pid_names);
-        } else {
-            get_pid_names();
-        }
-    }
-
-    function get_pid_names() {
-        MSP.send_message(MSP_codes.MSP_PIDNAMES, false, false, get_pid_data);
-    }
-
-    function get_pid_data() {
-        MSP.send_message(MSP_codes.MSP_PID, false, false, get_rc_tuning_data);
-    }
-
-    function get_rc_tuning_data() {
-        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_temp_data);
-    }
-
-    function get_temp_data() {
-        MSP.send_message(MSP_codes.MSP_TEMPORARY_COMMANDS, false, false, get_filter_config);
-    }
-
-    function get_filter_config() {
-        MSP.send_message(MSP_codes.MSP_FILTER_CONFIG, false, false, load_html);
-    }
-
-    function load_html() {
-        $('#content').load("./tabs/pid_tuning.html", process_html);
-    }
-
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, get_pid_controller);
+    MSP.promise(MSP_codes.MSP_STATUS).then(function() {
+        if (GUI.canChangePidController) {
+            return MSP.promise(MSP_codes.MSP_PID_CONTROLLER);
+        }
+        return true;
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_PIDNAMES)
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_PID);
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_RC_TUNING);
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_TEMPORARY_COMMANDS);
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_ADVANCED_TUNING);
+    }).then(function() {
+        return MSP.promise(MSP_codes.MSP_FILTER_CONFIG);
+    }).then(function() {
+        $('#content').load("./tabs/pid_tuning.html", process_html);
+    });
 
     function pid_and_rc_to_form() {
         // Fill in the data from PIDs array
@@ -261,14 +248,13 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.yaw_rate = parseFloat($('.pid_tuning input[name="yaw_rate"]').val());
         RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
         RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
-		TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
+        TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
-		
-		FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.tpa input[name="gyro_soft_lpf"]').val());
-		FILTER_CONFIG.dterm_lpf_hz = parseInt($('.tpa input[name="dterm_lpf"]').val());
-		FILTER_CONFIG.yaw_lpf_hz = parseInt($('.tpa input[name="yaw_lpf"]').val());
+        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.tpa input[name="gyro_soft_lpf"]').val());
+        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.tpa input[name="dterm_lpf"]').val());
+        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.tpa input[name="yaw_lpf"]').val());
     }
     function hideUnusedPids(sensors_detected) {
       $('.tab-pid_tuning table.pid_tuning').hide();
@@ -308,7 +294,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         $('#resetPIDs').on('click', function(){
           MSP.send_message(MSP_codes.MSP_SET_RESET_CURR_PID, false, false, false);
-	  updateActivatedTab();
+          updateActivatedTab();
         });
 
         $('.pid_tuning tr').each(function(){
@@ -409,8 +395,8 @@ TABS.pid_tuning.initialize = function (callback) {
                     rcCurveElement = $('.pitch_roll_curve canvas').get(0),
                     rcYawCurveElement = $('.yaw_curve canvas').get(0);
 
-		drawRateCurve(rateElement, expoElement, rcCurveElement);
-		drawRateCurve(rateElement, yawExpoElement, rcYawCurveElement);
+                    drawRateCurve(rateElement, expoElement, rcCurveElement);
+                    drawRateCurve(rateElement, yawExpoElement, rcYawCurveElement);
             }, 0);
         }).trigger('input');
 
@@ -437,40 +423,13 @@ TABS.pid_tuning.initialize = function (callback) {
             }
         });
 
+        $('.delta select').val(ADVANCED_TUNING.deltaMethod).change(function() {
+          ADVANCED_TUNING.deltaMethod = $(this).val();
+        });
 
         // update == save.
         $('a.update').click(function () {
             form_to_pid_and_rc();
-
-            function send_pids() {
-                if (!TABS.pid_tuning.controllerChanged) {
-                    MSP.send_message(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID), false, send_temporary);
-                }
-            }
-
-            function send_temporary() {
-                if (!TABS.pid_tuning.controllerChanged) {
-                    MSP.send_message(MSP_codes.MSP_SET_TEMPORARY_COMMANDS, MSP.crunch(MSP_codes.MSP_SET_TEMPORARY_COMMANDS), false, send_rc_tuning_changes);
-                }
-            }
-
-            /* Uncomment when HTML layout added
-            function send_filters() {
-                if (!TABS.pid_tuning.controllerChanged) {
-                    MSP.send_message(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG), false, send_rc_tuning_changes);
-                }
-            }*/
-
-            function send_rc_tuning_changes() {
-                MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_to_eeprom);
-            }
-
-            function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                    GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
-                });
-            }
-
             if (GUI.canChangePidController && TABS.pid_tuning.controllerChanged) {
                 PID.controller = pidController_e.val();
                 MSP.send_message(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER), false, function () {
@@ -480,7 +439,23 @@ TABS.pid_tuning.initialize = function (callback) {
                     TABS.pid_tuning.initialize();
                 });
             } else {
-                send_pids();
+                if (TABS.pid_tuning.controllerChanged) { return; }
+                MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID)).then(function() {
+                    if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
+                    return MSP.promise(MSP_codes.MSP_SET_TEMPORARY_COMMANDS, MSP.crunch(MSP_codes.MSP_SET_TEMPORARY_COMMANDS));
+                }).then(function() {
+                    if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
+                    return MSP.promise(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING));
+                }).then(function() {
+                    if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
+                    return MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                }).then(function() {
+                    return MSP.promise(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING));
+                }).then(function() {
+                    return MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
+                }).then(function() {
+                    GUI.log(chrome.i18n.getMessage('pidTuningEepromSaved'));
+                });
             }
         });
 

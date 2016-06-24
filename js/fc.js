@@ -256,7 +256,9 @@ var FC = {
         ADVANCED_TUNING = {
             rollPitchItermIgnoreRate: 0,
             yawItermIgnoreRate:       0,
-            yaw_p_limit:              0
+            yaw_p_limit:              0,
+            deltaMethod:              0,
+            vbatPidCompensation:      0
         };
 
         TEMPORARY_COMMANDS = {

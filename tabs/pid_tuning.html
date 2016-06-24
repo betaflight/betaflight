@@ -5,10 +5,17 @@
             <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
         </div>
         <div class="cf_column twothird">
-            <div class="controller">
-                <span class="head" i18n="pidTuningControllerHead"></span> 
+            <div class="controller single-field">
+                <div class="head" i18n="pidTuningControllerHead"></div>
                 <select name="controller">
                     <!-- list generated here -->
+                </select>
+            </div>
+            <div class="delta single-field">
+                <div class="head">Delta</div>
+                <select name="delta">
+                    <option value="0">Error</option>
+                    <option value="1">Measurement</option>
                 </select>
             </div>
             <div class="cf_column right">

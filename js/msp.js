@@ -892,7 +892,7 @@ var MSP = {
                 offset += 2;
                 FILTER_CONFIG.yaw_lpf_hz = data.getUint16(offset, 1);
                 break;
-            
+
             case MSP_codes.MSP_ADVANCED_TUNING:
                 var offset = 0;
                 ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1); 
@@ -900,7 +900,11 @@ var MSP = {
                 ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1); 
                 offset += 2;
                 ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
+                offset += 2;
+                ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
+                ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
                 break;
+
             case MSP_codes.MSP_TEMPORARY_COMMANDS:
                 TEMPORARY_COMMANDS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                 break;
@@ -1422,6 +1426,13 @@ MSP.crunch = function (code) {
             buffer.push(FILTER_CONFIG.gyro_soft_lpf_hz);
             buffer.push(FILTER_CONFIG.dterm_lpf_hz);
             buffer.push(FILTER_CONFIG.yaw_lpf_hz);
+            break;
+        case MSP_codes.MSP_SET_ADVANCED_TUNING:
+            buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
+              .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+              .push16(ADVANCED_TUNING.yaw_p_limit)
+              .push8(ADVANCED_TUNING.deltaMethod)
+              .push8(ADVANCED_TUNING.vbatPidCompensation);
             break;
         case MSP_codes.MSP_SET_TEMPORARY_COMMANDS:
             buffer.push(Math.round(TEMPORARY_COMMANDS.RC_RATE_YAW * 100));
