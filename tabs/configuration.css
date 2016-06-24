@@ -160,6 +160,11 @@
     margin-right: 5px;
 }
 
+.tab-configuration .disarm .checkboxPwm {
+    margin-top: 2px;
+    margin-right: 5px;
+}
+
 .tab-configuration .disarm .checkbox div {
     margin-bottom: 0px;
     margin-top: 0px;
@@ -218,6 +223,26 @@
 
 .tab-configuration .number,
 .tab-configuration .select
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration .selectProtocol
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration .pidProcessDenom
  {
     margin-bottom: 5px;
     clear: left;
