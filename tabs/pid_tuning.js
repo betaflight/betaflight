@@ -1,7 +1,7 @@
 'use strict';
 
 TABS.pid_tuning = {
-    controllerChanged: true
+    controllerChanged: false
 };
 
 TABS.pid_tuning.initialize = function (callback) {
