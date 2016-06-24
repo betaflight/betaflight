@@ -314,7 +314,7 @@ void init(void)
     }
     
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
-    
+
     // Configurator feature abused for enabling Fast PWM
     pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
@@ -324,6 +324,7 @@ void init(void)
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
+        featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
         use_unsyncedPwm = false;
     }
@@ -336,9 +337,12 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
+/*
+    // TODO is this needed here? enables at the end
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
 
+*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
