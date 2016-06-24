@@ -5,10 +5,17 @@
             <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
         </div>
         <div class="cf_column twothird">
-            <div class="controller">
-                <span class="head" i18n="pidTuningControllerHead"></span> 
+            <div class="controller single-field">
+                <div class="head" i18n="pidTuningControllerHead"></div>
                 <select name="controller">
                     <!-- list generated here -->
+                </select>
+            </div>
+            <div class="delta single-field">
+                <div class="head">Delta</div>
+                <select name="delta">
+                    <option value="0">Error</option>
+                    <option value="1">Measurement</option>
                 </select>
             </div>
             <div class="cf_column right">
@@ -149,20 +156,17 @@
                         </tr>
                     </table>
                 </div>
+
                 <div class="gui_box grey topspacer">
                     <table id="pid_accel" class="pid_tuning">
-                        <tr>
-                            <th colspan="4">
-                                <div class="pid_mode borderleft">
-                                    <div class="textleft">
-                                        <div class="pidTuningLevel" i18n="pidTuningLevel"></div>
-                                        <div class="helpicon cf_tip" i18n_title="pidTuningLevelHelp"></div>
-                                    </div>
-                                    <div class="pids" i18n="pidTuningLevelP"></div>
-                                    <div class="pids" i18n="pidTuningLevelI"></div>
-                                    <div class="pids" i18n="pidTuningLevelD"></div>
-                                </div>
+                        <tr class="fancy header">
+                            <th>
+                                <div class="pidTuningLevel" i18n="pidTuningLevel"></div>
+                                <div class="helpicon cf_tip" i18n_title="pidTuningLevelHelp"></div>
                             </th>
+                            <th i18n="pidTuningLevelP"></th>
+                            <th i18n="pidTuningLevelI"></th>
+                            <th i18n="pidTuningLevelD"></th>
                         </tr>
                         <tr class="LEVEL">
                             <!-- 7 -->
@@ -173,7 +177,25 @@
                         </tr>
                     </table>
                 </div>
+
+                <div class="gui_box grey topspacer">
+                    <table class="pid_filter" class="pid_tuning">
+                        <tr class="fancy header">
+                            <th>LFP Filters (Hz)</th>
+                            <th>Gyro Soft</th>
+                            <th>D Term</th>
+                            <th>Yaw</th>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><input type="number" class="gyro" step="1" min="0" max="255" /></td>
+                            <td><input type="number" class="dterm" step="1" min="0" max="500" /></td>
+                            <td><input type="number" class="yaw" step="1" min="0" max="500" /></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
+
             <div class="cf_column third_right">
                 <div class="spacer_left">
                     <table class="rc_curve cf">
