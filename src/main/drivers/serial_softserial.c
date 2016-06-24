@@ -31,6 +31,8 @@
 #include "nvic.h"
 #include "system.h"
 #include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 #include "timer.h"
 
 #include "serial.h"
@@ -92,9 +94,9 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 
     if (state) {
-        digitalHi(softSerial->txTimerHardware->gpio, softSerial->txTimerHardware->pin);
+        digitalHi(IO_GPIOBYTAG(softSerial->txTimerHardware->tag), IO_PINBYTAG(softSerial->txTimerHardware->tag));
     } else {
-        digitalLo(softSerial->txTimerHardware->gpio, softSerial->txTimerHardware->pin);
+        digitalLo(IO_GPIOBYTAG(softSerial->txTimerHardware->tag), IO_PINBYTAG(softSerial->txTimerHardware->tag));
     }
 }
 
@@ -108,9 +110,11 @@ static void softSerialGPIOConfig(GPIO_TypeDef *gpio, uint16_t pin, GPIO_Mode mod
     gpioInit(gpio, &cfg);
 }
 
+#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
+
 void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
-    softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
+    softSerialGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -164,7 +168,7 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
 
 static void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
-    softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_Out_PP);
+    softSerialGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), Mode_Out_PP);
 }
 
 static void resetBuffers(softSerial_t *softSerial)

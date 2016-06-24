@@ -49,8 +49,7 @@
 
 #define BRUSHED_MOTORS
 
-#define USE_UART1
-
+#define USE_USART1
 #define SERIAL_PORT_COUNT 1
 
 #define USE_ADC
@@ -103,6 +102,10 @@
 #define SKIP_CLI_COMMAND_HELP
 #endif
 
+
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
 
 #define USED_TIMERS         TIM_N(2)
 

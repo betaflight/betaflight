@@ -27,6 +27,8 @@
 #include "nvic.h"
 
 #include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 #include "system.h"
 
 #include "timer.h"
@@ -324,15 +326,17 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
     TIM_ClearFlag(timHw->tim, TIM_IT_CCx(timHw->channel));
 }
 
+#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
+
 // configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t *timHw, GPIO_Mode mode)
+void timerChConfigGPIO(const timerHardware_t *timHw, ioConfig_t mode)
 {
     gpio_config_t cfg;
 
-    cfg.pin = timHw->pin;
-    cfg.mode = mode;
+    cfg.pin = IO_PINBYTAG(timHw->tag);
+    cfg.mode = GPIO_MODE_FROM_IOMODE(mode);
     cfg.speed = Speed_2MHz;
-    gpioInit(timHw->gpio, &cfg);
+    gpioInit(IO_GPIOBYTAG(timHw->tag), &cfg);
 }
 
 // calculate input filter constant
@@ -602,7 +606,7 @@ void timerInit(void)
 #ifdef STM32F303xC
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
+        GPIO_PinAFConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), (uint16_t)IO_GPIO_PinSource(IOGetByTag(timerHardwarePtr->tag)), timerHardwarePtr->alternateFunction);
     }
 #endif
 

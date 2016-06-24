@@ -28,6 +28,8 @@
 
 #include "drivers/serial.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
@@ -154,8 +156,8 @@ int esc4wayInit(void)
     for (int i = 0; i < pwmIOConfiguration->ioCount; i++) {
         if ((pwmIOConfiguration->ioConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
             if(motor[pwmIOConfiguration->ioConfigurations[i].index] > 0) {
-                escHardware[escIdx].gpio = pwmIOConfiguration->ioConfigurations[i].timerHardware->gpio;
-                escHardware[escIdx].pin = pwmIOConfiguration->ioConfigurations[i].timerHardware->pin;
+                escHardware[escIdx].gpio = IO_GPIOBYTAG(pwmIOConfiguration->ioConfigurations[i].timerHardware->tag);
+                escHardware[escIdx].pin = IO_PINBYTAG(pwmIOConfiguration->ioConfigurations[i].timerHardware->tag);
                 escHardware[escIdx].pinpos = getPinPos(escHardware[escIdx].pin);
                 escHardware[escIdx].gpio_config_INPUT.pin = escHardware[escIdx].pin;
                 escHardware[escIdx].gpio_config_INPUT.speed = Speed_2MHz; // see pwmOutConfig()
