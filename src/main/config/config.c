@@ -623,6 +623,8 @@ static void resetConf(void)
     memcpy(masterConfig.transponderData, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
 
+#ifdef BLACKBOX
+
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
@@ -636,6 +638,8 @@ static void resetConf(void)
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 
+#endif // BLACKBOX
+    
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
     masterConfig.escAndServoConfig.minthrottle = 1025;
