@@ -55,11 +55,11 @@ uint8_t max7456_send(uint8_t add, uint8_t data) {
 }
 
 
-void max7456_init(uint8_t video_system) {
+void max7456_init(uint8_t video_system) 
+{
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
     uint16_t x;
-    char buf[LINE];
 
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
@@ -68,7 +68,7 @@ void max7456_init(uint8_t video_system) {
     IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
 
     //Minimum spi clock period for max7456 is 100ns (10Mhz)
-    spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     delay(1000);
     // force soft reset on Max7456
@@ -77,10 +77,10 @@ void max7456_init(uint8_t video_system) {
     delay(100);
 
     srdata = max7456_send(0xA0, 0xFF);
-    if ((0x01 & srdata) == 0x01){     //PAL
+    if ((0x01 & srdata) == 0x01) {     //PAL
           video_signal_type = VIDEO_MODE_PAL;
     }
-    else if((0x02 & srdata) == 0x02){ //NTSC
+    else if ((0x02 & srdata) == 0x02) { //NTSC
         video_signal_type = VIDEO_MODE_NTSC;
     }
 

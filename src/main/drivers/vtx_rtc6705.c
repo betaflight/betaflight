@@ -133,7 +133,7 @@ static uint32_t reverse32(uint32_t in)
 bool rtc6705Init(void)
 {
     DISABLE_RTC6705;
-    spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
     return rtc6705IsReady();
 }
 
