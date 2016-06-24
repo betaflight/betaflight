@@ -87,7 +87,7 @@ void bmp280SpiInit(void)
 
     GPIO_SetBits(BMP280_CS_GPIO, BMP280_CS_PIN);
 
-    spiSetDivisor(BMP280_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(BMP280_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }
