@@ -81,7 +81,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     DISABLE_L3GD20;
 
-    spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(L3GD20_SPI, SPI_CLOCK_STANDARD);
 }
 
 void l3gd20GyroInit(uint8_t lpf)

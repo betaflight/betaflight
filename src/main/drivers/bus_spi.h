@@ -17,41 +17,46 @@
 
 #pragma once
 
+/*
 #define SPI_0_28125MHZ_CLOCK_DIVIDER  256
 #define SPI_0_5625MHZ_CLOCK_DIVIDER 128
 #define SPI_18MHZ_CLOCK_DIVIDER     2
 #define SPI_9MHZ_CLOCK_DIVIDER      4
+*/
 
 #include <stdint.h>
 #include "io.h"
 #include "rcc.h"
 
-#if defined(STM32F40_41xxx) || defined (STM32F411xE) || defined(STM32F303xC)
-#define SPI_IO_AF_CFG IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#define SPI_IO_AF_SCK_CFG IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
-#define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#define SPI_IO_CS_CFG IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#elif defined(STM32F10X)
-#define SPI_IO_AF_CFG IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
-#define SPI_IO_CS_CFG IO_CONFIG(GPIO_Mode_Out_OD, GPIO_Speed_50MHz)
+#if defined(STM32F4) || defined(STM32F3)
+#define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_SCK_CFG  IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#define SPI_IO_CS_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#elif defined(STM32F1)
+#define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
+#define SPI_IO_CS_CFG      IO_CONFIG(GPIO_Mode_Out_OD, GPIO_Speed_50MHz)
 #else
 #error "Unknown processor"
 #endif
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
 
-#define SPI_SLOW_CLOCK      128 //00.65625 MHz
-#define SPI_STANDARD_CLOCK    8 //11.50000 MHz
-#define SPI_FAST_CLOCK        4 //21.00000 MHz
-#define SPI_ULTRAFAST_CLOCK   2 //42.00000 MHz
-
+/*
+  Flash M25p16 tolerates 20mhz, SPI_CLOCK_FAST should sit around 20 or less.
+*/
+typedef enum {
+    SPI_CLOCK_INITIALIZATON = 256,
+#if defined(STM32F4)
+    SPI_CLOCK_SLOW          = 128, //00.65625 MHz
+    SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz
+    SPI_CLOCK_FAST          = 4,   //21.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2,   //42.00000 MHz
 #else
-
-#define SPI_SLOW_CLOCK       128 //00.56250 MHz
-#define SPI_STANDARD_CLOCK     4 //09.00000 MHz
-#define SPI_FAST_CLOCK         2 //18.00000 MHz
-#define SPI_ULTRAFAST_CLOCK    2 //18.00000 MHz
-
+    SPI_CLOCK_SLOW          = 128, //00.56250 MHz
+    SPI_CLOCK_STANDARD      = 4,   //09.00000 MHz
+    SPI_CLOCK_FAST          = 2,   //18.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2,   //18.00000 MHz
 #endif
+} SPIClockDivider_e;
 
 typedef enum SPIDevice {
 	SPIINVALID = -1,
