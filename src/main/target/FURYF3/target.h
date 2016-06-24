@@ -150,25 +150,13 @@
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define ADC_INSTANCE                ADC1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_2
-
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_3
+#define VBAT_ADC_PIN                PA0
+#define RSSI_ADC_PIN                PA1
+#define CURRENT_METER_ADC_PIN       PA2
 
 #define LED_STRIP
-#define LED_STRIP_TIMER TIM1
+#define LED_STRIP_TIMER                 TIM1
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_GPIO                     GPIOA

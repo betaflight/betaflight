@@ -3038,7 +3038,7 @@ void cliProcess(void)
     }
 }
 
-const char * const ownerNames[] = {
+const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE",
     "PWM IN",
     "PPM IN",
@@ -3060,6 +3060,8 @@ const char * const ownerNames[] = {
     "FLASH",
     "USB",
     "BEEPER",
+    "OSD",
+    "BARO",
 };
 
 static void cliResource(char *cmdline)

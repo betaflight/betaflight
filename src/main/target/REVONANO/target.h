@@ -87,18 +87,9 @@
 #define I2C_DEVICE (I2CDEV_3)
 
 #define USE_ADC
-
-//FLEXI-IO	6
 #define CURRENT_METER_ADC_PIN       PA7
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_7
-
-//FLEXI-IO	7
 #define VBAT_ADC_PIN                PA6
-#define VBAT_ADC_CHANNEL            ADC_Channel_6
-
-//FLEXI-IO	8
 #define RSSI_ADC_PIN                PA5
-#define RSSI_ADC_CHANNEL            ADC_Channel_5
 
 
 //#define SENSORS_SET (SENSOR_ACC|SENSOR_MAG)
