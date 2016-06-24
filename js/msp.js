@@ -1439,12 +1439,19 @@ MSP.crunch = function (code) {
         case MSP_codes.MSP_SET_ADVANCED_TUNING:
             buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
               .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-              .push16(ADVANCED_TUNING.yaw_p_limit)
-              .push8(ADVANCED_TUNING.deltaMethod)
-              .push8(ADVANCED_TUNING.vbatPidCompensation);
+              .push16(ADVANCED_TUNING.yaw_p_limit);
+            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+              buffer.push(ADVANCED_TUNING.deltaMethod)
+              buffer.push(ADVANCED_TUNING.vbatPidCompensation);
+            }
             break;
         case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
             buffer.push(Math.round(SPECIAL_PARAMETERS.RC_RATE_YAW * 100));
+            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                buffer.push(SPECIAL_PARAMETERS.airModeActivateThreshold);
+                buffer.push(SPECIAL_PARAMETERS.rcSmoothInterval);
+                buffer.push(SPECIAL_PARAMETERS.escDesyncProtection);
+            }
             break;
         default:
             return false;

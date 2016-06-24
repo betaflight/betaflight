@@ -185,7 +185,11 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_filter .gyro').val(FILTER_CONFIG.gyro_soft_lpf_hz);
         $('.pid_filter .dterm').val(FILTER_CONFIG.dterm_lpf_hz);
         $('.pid_filter .yaw').val(FILTER_CONFIG.yaw_lpf_hz);
-        
+
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+            $('.pid_filter').hide();
+            $('.pid_tuning input[name="rc_rate_yaw"]').hide();
+        }
     }
 
     function form_to_pid_and_rc() {
@@ -424,8 +428,12 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         $('.delta select').val(ADVANCED_TUNING.deltaMethod).change(function() {
-          ADVANCED_TUNING.deltaMethod = $(this).val();
+            ADVANCED_TUNING.deltaMethod = $(this).val();
         });
+
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.2")) {
+            $('.delta').hide();
+        }
 
         // update == save.
         $('a.update').click(function () {
@@ -442,13 +450,17 @@ TABS.pid_tuning.initialize = function (callback) {
                 if (TABS.pid_tuning.controllerChanged) { return; }
                 MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID)).then(function() {
                     if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
-                    return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
+                    if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+                        return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
+                    }
                 }).then(function() {
                     if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
                     return MSP.promise(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING));
                 }).then(function() {
                     if (TABS.pid_tuning.controllerChanged) { Promise.reject('pid controller changed'); }
-                    return MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                    if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+                        return MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                    }
                 }).then(function() {
                     return MSP.promise(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING));
                 }).then(function() {
