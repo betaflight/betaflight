@@ -21,11 +21,11 @@
 #include "rcc.h"
 
 #if defined(STM32F4)
-#define ADC_PIN_MAP_COUNT 16
+#define ADC_TAG_MAP_COUNT 16
 #elif defined(STM32F3)
-#define ADC_PIN_MAP_COUNT 39
+#define ADC_TAG_MAP_COUNT 39
 #else 
-#define ADC_PIN_MAP_COUNT 10
+#define ADC_TAG_MAP_COUNT 10
 #endif 
 
 typedef enum ADCDevice {
@@ -43,10 +43,10 @@ typedef enum ADCDevice {
 #endif
 } ADCDevice;
 
-typedef struct adcPinMap_s {
-    ioTag_t pin;
+typedef struct adcTagMap_s {
+    ioTag_t tag;
     uint8_t channel;
-} adcPinMap_t;
+} adcTagMap_t;
     
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
@@ -61,8 +61,8 @@ typedef struct adcDevice_s {
 } adcDevice_t;
 
 extern const adcDevice_t adcHardware[];
-extern const adcPinMap_t adcPinMap[ADC_PIN_MAP_COUNT];
+extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
-uint8_t adcChannelByPin(ioTag_t pin);
+uint8_t adcChannelByTag(ioTag_t ioTag);

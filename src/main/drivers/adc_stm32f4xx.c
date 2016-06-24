@@ -44,33 +44,33 @@ const adcDevice_t adcHardware[] = {
 };
 
 /* note these could be packed up for saving space */
-const adcPinMap_t adcPinMap[] = { 
+const adcTagMap_t adcTagMap[] = { 
 /*
-    { .pin = DEFIO_TAG_E__PF3,  .channel = ADC_Channel_9  },
-    { .pin = DEFIO_TAG_E__PF4,  .channel = ADC_Channel_14 },
-    { .pin = DEFIO_TAG_E__PF5,  .channel = ADC_Channel_15 },
-    { .pin = DEFIO_TAG_E__PF6,  .channel = ADC_Channel_4  },
-    { .pin = DEFIO_TAG_E__PF7,  .channel = ADC_Channel_5  },
-    { .pin = DEFIO_TAG_E__PF8,  .channel = ADC_Channel_6  },
-    { .pin = DEFIO_TAG_E__PF9,  .channel = ADC_Channel_7  },
-    { .pin = DEFIO_TAG_E__PF10, .channel = ADC_Channel_8  },
+    { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
+    { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
+    { DEFIO_TAG_E__PF5,  ADC_Channel_15 },
+    { DEFIO_TAG_E__PF6,  ADC_Channel_4  },
+    { DEFIO_TAG_E__PF7,  ADC_Channel_5  },
+    { DEFIO_TAG_E__PF8,  ADC_Channel_6  },
+    { DEFIO_TAG_E__PF9,  ADC_Channel_7  },
+    { DEFIO_TAG_E__PF10, ADC_Channel_8  },
 */
-    { .pin = DEFIO_TAG_E__PC0, .channel = ADC_Channel_10 },
-    { .pin = DEFIO_TAG_E__PC1, .channel = ADC_Channel_11 },
-    { .pin = DEFIO_TAG_E__PC2, .channel = ADC_Channel_12 },
-    { .pin = DEFIO_TAG_E__PC3, .channel = ADC_Channel_13 },
-    { .pin = DEFIO_TAG_E__PC4, .channel = ADC_Channel_14 },
-    { .pin = DEFIO_TAG_E__PC5, .channel = ADC_Channel_15 },
-    { .pin = DEFIO_TAG_E__PB0, .channel = ADC_Channel_8  },
-    { .pin = DEFIO_TAG_E__PB1, .channel = ADC_Channel_9  },
-    { .pin = DEFIO_TAG_E__PA0, .channel = ADC_Channel_0  },
-    { .pin = DEFIO_TAG_E__PA1, .channel = ADC_Channel_1  },
-    { .pin = DEFIO_TAG_E__PA2, .channel = ADC_Channel_2  },
-    { .pin = DEFIO_TAG_E__PA3, .channel = ADC_Channel_3  },
-    { .pin = DEFIO_TAG_E__PA4, .channel = ADC_Channel_4  },
-    { .pin = DEFIO_TAG_E__PA5, .channel = ADC_Channel_5  },
-    { .pin = DEFIO_TAG_E__PA6, .channel = ADC_Channel_6  },
-    { .pin = DEFIO_TAG_E__PA7, .channel = ADC_Channel_7  },    
+    { DEFIO_TAG_E__PC0, ADC_Channel_10 },
+    { DEFIO_TAG_E__PC1, ADC_Channel_11 },
+    { DEFIO_TAG_E__PC2, ADC_Channel_12 },
+    { DEFIO_TAG_E__PC3, ADC_Channel_13 },
+    { DEFIO_TAG_E__PC4, ADC_Channel_14 },
+    { DEFIO_TAG_E__PC5, ADC_Channel_15 },
+    { DEFIO_TAG_E__PB0, ADC_Channel_8  },
+    { DEFIO_TAG_E__PB1, ADC_Channel_9  },
+    { DEFIO_TAG_E__PA0, ADC_Channel_0  },
+    { DEFIO_TAG_E__PA1, ADC_Channel_1  },
+    { DEFIO_TAG_E__PA2, ADC_Channel_2  },
+    { DEFIO_TAG_E__PA3, ADC_Channel_3  },
+    { DEFIO_TAG_E__PA4, ADC_Channel_4  },
+    { DEFIO_TAG_E__PA5, ADC_Channel_5  },
+    { DEFIO_TAG_E__PA6, ADC_Channel_6  },
+    { DEFIO_TAG_E__PA7, ADC_Channel_7  },    
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
@@ -102,7 +102,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableVBat) {
         IOInit(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
         IOConfigGPIO(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_BATTERY].adcChannel = adcChannelByPin(IO_TAG(VBAT_ADC_PIN)); //VBAT_ADC_CHANNEL;
+        adcConfig[ADC_BATTERY].adcChannel = adcChannelByTag(IO_TAG(VBAT_ADC_PIN)); //VBAT_ADC_CHANNEL;
         adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_BATTERY].enabled = true;
         adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_480Cycles;
@@ -113,7 +113,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableExternal1) {
         IOInit(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
 	    IOConfigGPIO(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_EXTERNAL1].adcChannel = adcChannelByPin(IO_TAG(EXTERNAL1_ADC_PIN)); //EXTERNAL1_ADC_CHANNEL;
+        adcConfig[ADC_EXTERNAL1].adcChannel = adcChannelByTag(IO_TAG(EXTERNAL1_ADC_PIN)); //EXTERNAL1_ADC_CHANNEL;
         adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_EXTERNAL1].enabled = true;
         adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_480Cycles;
@@ -124,7 +124,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableRSSI) {
         IOInit(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
 	    IOConfigGPIO(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_RSSI].adcChannel = adcChannelByPin(IO_TAG(RSSI_ADC_PIN));  //RSSI_ADC_CHANNEL;
+        adcConfig[ADC_RSSI].adcChannel = adcChannelByTag(IO_TAG(RSSI_ADC_PIN));  //RSSI_ADC_CHANNEL;
         adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_RSSI].enabled = true;
         adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_480Cycles;
@@ -135,7 +135,7 @@ void adcInit(drv_adc_config_t *init)
     if (init->enableCurrentMeter) {
         IOInit(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
 	    IOConfigGPIO(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_CURRENT].adcChannel = adcChannelByPin(IO_TAG(CURRENT_METER_ADC_PIN));  //CURRENT_METER_ADC_CHANNEL;
+        adcConfig[ADC_CURRENT].adcChannel = adcChannelByTag(IO_TAG(CURRENT_METER_ADC_PIN));  //CURRENT_METER_ADC_CHANNEL;
         adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
         adcConfig[ADC_CURRENT].enabled = true;
         adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_480Cycles;
