@@ -724,7 +724,7 @@ void main_init(void)
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#ifdef SPRACINGF3EVO
+#if defined(USE_SPI) && defined(USE_MAG_AK8963)
     // fixme temporary solution for AK6983 via slave I2C on MPU9250
     rescheduleTask(TASK_COMPASS, 1000000 / 40);
 #endif
