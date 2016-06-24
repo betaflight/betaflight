@@ -664,7 +664,7 @@ all: $(VALID_TARGETS)
 $(VALID_TARGETS):
 		echo "" && \
 		echo "Building $@" && \
-		$(MAKE) -j binary hex TARGET=$@ && \
+		$(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
 
 ## clean             : clean up all temporary / machine-generated files
@@ -700,8 +700,11 @@ st-flash_$(TARGET): $(TARGET_BIN)
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
-binary: $(TARGET_BIN)
-hex:    $(TARGET_HEX)
+binary:
+	$(MAKE) -j $(TARGET_BIN)
+
+hex:
+	$(MAKE) -j $(TARGET_HEX)
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
