@@ -271,8 +271,8 @@ var FC = {
 
         SENSOR_CONFIG = {
             acc_hardware:             0,
-            baro_hardware             0,
-            mag_hardware              0
+            baro_hardware:            0,
+            mag_hardware:             0
         }
 
         RX_CONFIG = {
