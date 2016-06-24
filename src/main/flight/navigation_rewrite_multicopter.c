@@ -201,7 +201,7 @@ static void applyMulticopterAltitudeController(uint32_t currentTime)
     }
 
     // If we have an update on vertical position data - update velocity and accel targets
-    if (posControl.flags.verticalPositionNewData) {
+    if (posControl.flags.verticalPositionDataNew) {
         uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
         previousTimePositionUpdate = currentTime;
 
@@ -217,7 +217,7 @@ static void applyMulticopterAltitudeController(uint32_t currentTime)
         }
 
         // Indicate that information is no longer usable
-        posControl.flags.verticalPositionNewData = 0;
+        posControl.flags.verticalPositionDataConsumed = 1;
     }
 
     // Update throttle controller
@@ -433,7 +433,7 @@ static void applyMulticopterPositionController(uint32_t currentTime)
     // and pilots input would be passed thru to PID controller
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
-        if (posControl.flags.horizontalPositionNewData) {
+        if (posControl.flags.horizontalPositionDataNew) {
             uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTime;
 
@@ -449,7 +449,7 @@ static void applyMulticopterPositionController(uint32_t currentTime)
             }
 
             // Indicate that information is no longer usable
-            posControl.flags.horizontalPositionNewData = 0;
+            posControl.flags.horizontalPositionDataConsumed = 1;
         }
     }
     else {
@@ -479,7 +479,7 @@ bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelo
     bool verticalMovement = fabsf(posControl.actualState.vel.V.Z) > 25.0f;
 
     // check if we are moving horizontally
-    bool horizontalMovement = sqrtf(sq(posControl.actualState.vel.V.X) + sq(posControl.actualState.vel.V.Y)) > 100.0f;
+    bool horizontalMovement = posControl.actualState.velXY > 100.0f;
 
     // Throttle should be low enough
     // We use rcCommandAdjustedThrottle to keep track of NAV corrected throttle (isLandingDetected is executed
@@ -531,7 +531,7 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
             return;
         }
 
-        if (posControl.flags.verticalPositionNewData) {
+        if (posControl.flags.verticalPositionDataNew) {
             uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTime;
 
@@ -547,7 +547,7 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
             }
 
             // Indicate that information is no longer usable
-            posControl.flags.verticalPositionNewData = 0;
+            posControl.flags.verticalPositionDataConsumed = 1;
         }
 
         // Update throttle controller

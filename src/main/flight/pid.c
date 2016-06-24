@@ -120,6 +120,12 @@ Map stick positions to desired rotatrion rate in given axis.
 Rotation rate in dps at full stick deflection is defined by axis rate measured in dps/10
 Rate 20 means 200dps at full stick deflection
 */
+float pidRateToRcCommand(float rateDPS, uint8_t rate)
+{
+    const float rateDPS_10 = constrainf(rateDPS / 10.0f, (float) -rate, (float) rate);
+    return scaleRangef(rateDPS_10, (float) -rate, (float) rate, -500.0f, 500.0f);
+}
+
 float pidRcCommandToRate(int16_t stick, uint8_t rate)
 {
     return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
