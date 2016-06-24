@@ -1904,7 +1904,7 @@ static void dumpValues(uint16_t valueSection)
         cliPrint("\r\n");
         
 #ifdef STM32F4
-        delayMicroseconds(1000);
+        delay(2);
 #endif
     }
 }
@@ -2717,6 +2717,10 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
+            
+#ifdef STM32F4
+            delay(2);
+#endif            
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -2891,14 +2895,14 @@ static void cliTasks(char *cmdline)
                 subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
                 if (masterConfig.pid_process_denom > 1) {
                     taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-                    cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
-                cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
             }
 
             cliPrintf("max: %dus, avg: %dus, rate: %dhz, total: ", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
@@ -2909,7 +2913,7 @@ static void cliTasks(char *cmdline)
                 cliPrintf("%dms", taskTotalTime);
             }
 
-            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n- - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
+            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n - - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
             cliPrintf("\r\n", taskTotalTime);
         }
     }
