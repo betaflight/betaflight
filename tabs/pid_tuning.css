@@ -289,6 +289,16 @@
     bottom: 0px;
 }
 
+.fancy.header {
+  background-color: #D6D6D6;
+  padding-top: 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #ccc;
+  color: #828282;
+  /* font-family: 'open_sans', Arial; */
+  background-image: linear-gradient(-45deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%, rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%, rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%, rgba(255, 255, 255, .2) 80%, rgba(255, 255, 255, .2) 90%, transparent 90%, transparent 100%, rgba(255, 255, 255, .2) 100%, transparent);
+}
+
 .pid_mode {
     width: calc(100% - 5px);
     height: 20px;

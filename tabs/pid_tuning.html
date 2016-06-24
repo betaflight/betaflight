@@ -156,6 +156,7 @@
                         </tr>
                     </table>
                 </div>
+
                 <div class="gui_box grey topspacer">
                     <table id="pid_accel" class="pid_tuning">
                         <tr>
@@ -180,7 +181,25 @@
                         </tr>
                     </table>
                 </div>
+
+                <div class="gui_box grey topspacer">
+                    <table class="pid_filter" class="pid_tuning">
+                        <tr class="fancy header">
+                            <th>LFP Filters (Hz)</th>
+                            <th>Gyro Soft</th>
+                            <th>D Term</th>
+                            <th>Yaw</th>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><input type="number" class="gyro" step="1" min="0" max="255" /></td>
+                            <td><input type="number" class="dterm" step="1" min="0" max="500" /></td>
+                            <td><input type="number" class="yaw" step="1" min="0" max="500" /></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
+
             <div class="cf_column third_right">
                 <div class="spacer_left">
                     <table class="rc_curve cf">

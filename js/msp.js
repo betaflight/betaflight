@@ -1423,9 +1423,9 @@ MSP.crunch = function (code) {
             buffer.push(highByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
             break;
         case MSP_codes.MSP_SET_FILTER_CONFIG:
-            buffer.push(FILTER_CONFIG.gyro_soft_lpf_hz);
-            buffer.push(FILTER_CONFIG.dterm_lpf_hz);
-            buffer.push(FILTER_CONFIG.yaw_lpf_hz);
+            buffer.push8(FILTER_CONFIG.gyro_soft_lpf_hz)
+              .push16(FILTER_CONFIG.dterm_lpf_hz)
+              .push16(FILTER_CONFIG.yaw_lpf_hz);
             break;
         case MSP_codes.MSP_SET_ADVANCED_TUNING:
             buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)

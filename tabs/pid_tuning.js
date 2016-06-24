@@ -182,9 +182,9 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
         }
 
-        $('.pid_tuning input[name="gyro_soft_lpf"]').val(FILTER_CONFIG.gyro_soft_lpf_hz);
-        $('.pid_tuning input[name="dterm_lpf"]').val(FILTER_CONFIG.dterm_lpf_hz);
-        $('.pid_tuning input[name="yaw_lpf"]').val(FILTER_CONFIG.yaw_lpf_hz);
+        $('.pid_filter .gyro').val(FILTER_CONFIG.gyro_soft_lpf_hz);
+        $('.pid_filter .dterm').val(FILTER_CONFIG.dterm_lpf_hz);
+        $('.pid_filter .yaw').val(FILTER_CONFIG.yaw_lpf_hz);
         
     }
 
@@ -252,9 +252,9 @@ TABS.pid_tuning.initialize = function (callback) {
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
-        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.tpa input[name="gyro_soft_lpf"]').val());
-        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.tpa input[name="dterm_lpf"]').val());
-        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.tpa input[name="yaw_lpf"]').val());
+        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.pid_filter .gyro').val());
+        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.pid_filter .dterm').val());
+        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_filter .yaw').val());
     }
     function hideUnusedPids(sensors_detected) {
       $('.tab-pid_tuning table.pid_tuning').hide();
