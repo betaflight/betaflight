@@ -1139,6 +1139,17 @@ var MSP = {
 
         return true;
     },
+    /**
+     * resolves: {command: code, data: data, length: message_length}
+     */
+    promise: function(code, data) {
+      var self = this;
+      return new Promise(function(resolve) {
+        self.send_message(code, data, false, function(data) {
+          resolve(data);
+        });
+      });
+    },
     callbacks_cleanup: function () {
         for (var i = 0; i < this.callbacks.length; i++) {
             clearInterval(this.callbacks[i].timer);
