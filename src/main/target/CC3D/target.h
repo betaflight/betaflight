@@ -63,7 +63,10 @@
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
+
+#if !defined(CC3D_OPBL) && !defined(CC3D_NRF24_OPBL)
 #define USE_BARO_BMP280
+#endif 
 
 // External I2C MAG
 #define MAG
