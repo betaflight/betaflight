@@ -399,7 +399,7 @@ uint8_t getCurrentControlRateProfile(void)
 static void setControlRateProfile(uint8_t profileIndex)
 {
     currentControlRateProfileIndex = profileIndex;
-	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
+    masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
     currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];
 }
 
@@ -538,10 +538,10 @@ static void resetConf(void)
 
 #ifdef GPS
     // gps/nav stuff
-    masterConfig.gpsConfig.provider = GPS_NMEA;
-    masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
+    masterConfig.gpsConfig.provider   = GPS_NMEA;
+    masterConfig.gpsConfig.sbasMode   = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
-    masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
+    masterConfig.gpsConfig.autoBaud   = GPS_AUTOBAUD_OFF;
 #endif
 
     resetSerialConfig(&masterConfig.serialConfig);

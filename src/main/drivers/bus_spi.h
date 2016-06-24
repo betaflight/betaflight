@@ -17,13 +17,6 @@
 
 #pragma once
 
-/*
-#define SPI_0_28125MHZ_CLOCK_DIVIDER  256
-#define SPI_0_5625MHZ_CLOCK_DIVIDER 128
-#define SPI_18MHZ_CLOCK_DIVIDER     2
-#define SPI_9MHZ_CLOCK_DIVIDER      4
-*/
-
 #include <stdint.h>
 #include "io.h"
 #include "rcc.h"
