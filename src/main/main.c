@@ -322,6 +322,7 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+    
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         pwm_params.idlePulse = 0; // brushed motors
         use_unsyncedPwm = false;
