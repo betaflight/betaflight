@@ -396,13 +396,14 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
 
     [NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING] = {
         .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,
-        .timeoutMs = 5000,
+        .timeoutMs = 500,
         .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
         .mapToFlightModes = NAV_RTH_MODE | NAV_ALTHOLD_MODE,
         .mwState = MW_NAV_STATE_LAND_SETTLE,
         .mwError = MW_NAV_ERROR_NONE,
         .onEvent = {
-            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_LANDING,
+            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_3D_LANDING,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D]        = NAV_STATE_POSHOLD_2D_INITIALIZE,
@@ -929,9 +930,15 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_L
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
-    resetLandingDetector();
-
-    return NAV_FSM_EVENT_NONE;
+    // Wait until target heading is reached (with 15 deg margin for error)
+    if (ABS(wrap_18000(posControl.homeWaypointAbove.yaw - posControl.actualState.yaw)) < DEGREES_TO_CENTIDEGREES(15)) {
+        resetLandingDetector();
+        return NAV_FSM_EVENT_SUCCESS;
+    }
+    else {
+        setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+        return NAV_FSM_EVENT_NONE;
+    }
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigationFSMState_t previousState)
@@ -1840,7 +1847,7 @@ void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
             waypointUpdateFlags |= NAV_POS_UPDATE_HEADING;
         }
 
-        setDesiredPosition(&wpPos.pos, DEGREES_TO_DECIDEGREES(wpData->p1), waypointUpdateFlags);
+        setDesiredPosition(&wpPos.pos, DEGREES_TO_CENTIDEGREES(wpData->p1), waypointUpdateFlags);
     }
     // WP #1 - #15 - common waypoints - pre-programmed mission
     else if ((wpNumber >= 1) && (wpNumber <= NAV_MAX_WAYPOINTS) && !ARMING_FLAG(ARMED)) {
