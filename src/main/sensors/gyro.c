@@ -56,7 +56,7 @@ void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
 }
 
 void initGyroFilterCoefficients(void) {
-	int axis;
+    int axis;
     if (gyroLpfCutFreq && targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
         for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
         gyroFilterStateIsSet = true;
@@ -137,8 +137,8 @@ static void applyGyroZero(void)
 
 void gyroUpdate(void)
 {
-	int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-	int axis;
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int axis;
 
     // range: +/- 8192; +/- 2000 deg/sec
     if (!gyro.read(gyroADCRaw)) {
@@ -161,13 +161,13 @@ void gyroUpdate(void)
     if (gyroLpfCutFreq) {
         if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
 
-        if (gyroFilterStateIsSet) {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++){
+        for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            if (gyroFilterStateIsSet) {
                 gyroADCf[axis] = applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]);
                 gyroADC[axis] = lrintf(gyroADCf[axis]);
+            } else {
+                gyroADCf[axis] = gyroADC[axis]; // Otherwise float pid controller will not have gyro input when filter disabled
             }
-        } else {
-            gyroADCf[axis] = gyroADC[axis]; // Otherwise float pid controller will not have gyro input when filter disabled
         }
     }
 }
