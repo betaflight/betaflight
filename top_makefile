@@ -16,6 +16,8 @@ ALL_TARGETS += afromini
 ALL_TARGETS += doge
 ALL_TARGETS += singularity
 ALL_TARGETS += furyf3
+ALL_TARGETS += X_RACERSPI
+
 
 CLEAN_TARGETS     := $(addprefix clean_, $(ALL_TARGETS)) 
 
@@ -37,6 +39,7 @@ clean_afromini afromini :                 opts := TARGET=AFROMINI
 clean_doge doge :                         opts := TARGET=DOGE
 clean_singularity singularity :           opts := TARGET=SINGULARITY
 clean_furyf3 furyf3 :                     opts := TARGET=FURYF3
+clean_X_RACERSPI X_RACERSPI :             opts := TARGET=X_RACERSPI
 
 
 .PHONY: all clean
@@ -67,4 +70,4 @@ help:
 	@echo "clean"
 	@echo "$(ALL_TARGETS)"
 	@echo "$(CLEAN_TARGETS)"
-
+	
