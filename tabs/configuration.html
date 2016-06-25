@@ -363,7 +363,7 @@
                             <span i18n="configurationGyroSyncDenom"></span>
                         </label>
                     </div>
-                    <div class="selectPidProcessDenom">
+                    <div class="select selectPidProcessDenom">
                         <label> 
                             <select class="pidProcessDenom">
                                     <!-- list generated here -->
@@ -371,7 +371,32 @@
                             <span i18n="configurationPidProcessDenom"></span>
                         </label>
                     </div>
-                    
+                    <div class="hardwareSelection">
+                        <div class="select">
+                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                    <input type="checkbox" name="accHardwareSwitch" class="toggle" />
+                                </div>
+                                <label for="accHardwareSwitch"> <span class="freelabel"
+                                    i18n="configurationAccHardware"></span>
+                                </label>
+                        </div>
+                        <div class="select">
+                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                    <input type="checkbox" name="baroHardwareSwitch" class="toggle" />
+                                </div>
+                                <label for="baroHardwareSwitch"> <span class="freelabel"
+                                    i18n="configurationBaroHardware"></span>
+                                </label>
+                        </div>
+                        <div class="select">
+                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                    <input type="checkbox" name="magHardwareSwitch" class="toggle" />
+                                </div>
+                                <label for="magHardwareSwitch"> <span class="freelabel"
+                                    i18n="configurationMagHardware"></span>
+                                </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

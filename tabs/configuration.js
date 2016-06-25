@@ -62,12 +62,21 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function esc_protocol() {
-        var next_callback = load_sensor_alignment;
+        var next_callback = sensor_config;
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
             MSP.send_message(MSP_codes.MSP_PID_ADVANCED_CONFIG, false, false, next_callback);
         } else {
             next_callback();
         }        
+    }
+    
+    function sensor_config() {
+        var next_callback = load_sensor_alignment;
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+            MSP.send_message(MSP_codes.MSP_SENSOR_CONFIG, false, false, next_callback);
+        } else {
+            next_callback();
+        }
     }
     
     function load_sensor_alignment() {
@@ -344,11 +353,22 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
            
         });
 
+        $('input[name="accHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.acc_hardware!=1)?1:0);
+        $('input[name="baroHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.baro_hardware!=1)?1:0);
+        $('input[name="magHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.mag_hardware!=1)?1:0);
+
+
+        // Only show these sections for supported FW
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
             $('.selectProtocol').hide();
             $('.checkboxPwm').hide();
             $('.selectPidProcessDenom').hide();
         }
+        
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.2")) {
+            $('.hardwareSelection').hide();
+        }
+
 
         // generate GPS
         var gpsProtocols = [
@@ -645,10 +665,22 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_looptime_config() {
-                var next_callback = save_to_eeprom;
+                var next_callback = save_sensor_config;
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
                     FC_CONFIG.loopTime = PID_ADVANCED_CONFIG.gyro_sync_denom * 125;
                     MSP.send_message(MSP_codes.MSP_SET_LOOP_TIME, MSP.crunch(MSP_codes.MSP_SET_LOOP_TIME), false, next_callback);
+                } else {
+                    next_callback();
+                }
+            }
+            function save_sensor_config() {
+                var next_callback = save_to_eeprom;
+                
+                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                    SENSOR_CONFIG.acc_hardware = $('input[name="accHardwareSwitch"]').is(':checked')?0:1;
+                    SENSOR_CONFIG.baro_hardware = $('input[name="baroHardwareSwitch"]').is(':checked')?0:1;
+                    SENSOR_CONFIG.mag_hardware = $('input[name="magHardwareSwitch"]').is(':checked')?0:1
+                    MSP.send_message(MSP_codes.MSP_SET_SENSOR_CONFIG, MSP.crunch(MSP_codes.MSP_SET_SENSOR_CONFIG), false, next_callback);
                 } else {
                     next_callback();
                 }
