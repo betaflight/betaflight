@@ -675,22 +675,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
             function save_sensor_config() {
                 var next_callback = save_to_eeprom;
+                
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                    if ($('input[name="accHardwareSwitch"]').is(':checked')) {
-                        SENSOR_CONFIG.acc_hardware = 0; // 0 = AUTO
-                    } else {
-                        SENSOR_CONFIG.acc_hardware = 1; // 1 = NONE
-                    }
-                    if ($('input[name="baroHardwareSwitch"]').is(':checked')) {
-                        SENSOR_CONFIG.baro_hardware = 0; // 0 = AUTO
-                    } else {
-                        SENSOR_CONFIG.baro_hardware = 1; // 1 = NONE
-                    }
-                    if ($('input[name="magHardwareSwitch"]').is(':checked')) {
-                        SENSOR_CONFIG.mag_hardware = 0; // 0 = AUTO
-                    } else {
-                        SENSOR_CONFIG.mag_hardware = 1; // 1 = NONE
-                    }
+                    SENSOR_CONFIG.acc_hardware = $('input[name="accHardwareSwitch"]').is(':checked')?0:1;
+                    SENSOR_CONFIG.baro_hardware = $('input[name="baroHardwareSwitch"]').is(':checked')?0:1;
+                    SENSOR_CONFIG.mag_hardware = $('input[name="magHardwareSwitch"]').is(':checked')?0:1
                     MSP.send_message(MSP_codes.MSP_SET_SENSOR_CONFIG, MSP.crunch(MSP_codes.MSP_SET_SENSOR_CONFIG), false, next_callback);
                 } else {
                     next_callback();
