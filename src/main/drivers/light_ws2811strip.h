@@ -48,6 +48,3 @@ bool isWS2811LedStripReady(void);
 
 extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 extern volatile uint8_t ws2811LedDataTransferInProgress;
-
-extern const hsvColor_t hsv_white;
-extern const hsvColor_t hsv_black;
