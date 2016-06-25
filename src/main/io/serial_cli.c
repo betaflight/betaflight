@@ -1902,10 +1902,11 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
-        
-#ifdef STM32F4
+
+#ifdef USE_SLOW_SERIAL_CLI
         delay(2);
 #endif
+
     }
 }
 
@@ -1979,6 +1980,9 @@ static void cliDump(char *cmdline)
             if (yaw < 0)
                 cliWrite(' ');
             cliPrintf("%s\r\n", ftoa(yaw, buf));
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 #ifdef USE_SERVOS
@@ -2000,6 +2004,10 @@ static void cliDump(char *cmdline)
                 masterConfig.customServoMixer[i].max,
                 masterConfig.customServoMixer[i].box
             );
+
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 #endif
@@ -2012,12 +2020,18 @@ static void cliDump(char *cmdline)
             if (featureNames[i] == NULL)
                 break;
             cliPrintf("feature -%s\r\n", featureNames[i]);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
                 cliPrintf("feature %s\r\n", featureNames[i]);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 
@@ -2077,6 +2091,9 @@ static void cliDump(char *cmdline)
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
                 }
             }
         }
@@ -2109,6 +2126,9 @@ static void cliDump(char *cmdline)
 
                 changeControlRateProfile(currentRateIndex);
                 cliRateProfile("");
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2133,7 +2153,8 @@ static void cliDump(char *cmdline)
     }
 }
 
-void cliDumpProfile(uint8_t profileIndex) {
+void cliDumpProfile(uint8_t profileIndex)
+{
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
         
@@ -2148,7 +2169,8 @@ void cliDumpProfile(uint8_t profileIndex) {
         cliRateProfile("");
 }
 
-void cliDumpRateProfile(uint8_t rateProfileIndex) {
+void cliDumpRateProfile(uint8_t rateProfileIndex)
+{
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
     
@@ -2718,7 +2740,7 @@ static void cliSet(char *cmdline)
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
             
-#ifdef STM32F4
+#ifdef USE_SLOW_SERIAL_CLI
             delay(2);
 #endif            
         }

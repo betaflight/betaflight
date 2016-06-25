@@ -18,11 +18,16 @@
 #pragma once
 
 #ifdef STM32F4
+
 #define TASK_GYROPID_DESIRED_PERIOD 125
 #define SCHEDULER_DELAY_LIMIT 10
+#define USE_SLOW_SERIAL_CLI
+
 #else
+
 #define TASK_GYROPID_DESIRED_PERIOD 1000
 #define SCHEDULER_DELAY_LIMIT 100
+
 #endif
 
 #define SERIAL_RX
