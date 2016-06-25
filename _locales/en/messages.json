@@ -666,7 +666,7 @@
         "message": "Cycles/Sec (Hz)"
     },
     "configurationLoopTimeHelp": {
-        "message": "<strong>Note:</strong> Make sure your FC is capable to operate on these speeds! Check CPU and cycletime stability. Changing this may require PID re-tuning. TIP: Disable Accelerometer and other sensors to gain more performance. (CLI commands: set acc_hardware = NONE, set baro_hardware = NONE, set mag_hardware = NONE)"
+        "message": "<strong>Note:</strong> Make sure your FC is capable to operate on these speeds! Check CPU and cycletime stability. Changing this may require PID re-tuning. TIP: Disable Accelerometer and other sensors to gain more performance."
     },
     "configurationGPS": {
         "message": "GPS"
@@ -1647,5 +1647,15 @@
     },
     "configurationPidProcessDenom": {
         "message": "PID loop frequency"
-    }      
+    },
+    "configurationAccHardware": {
+        "message": "Accelerometer"
+    },
+    "configurationBaroHardware": {
+        "message": "Barometer"
+    },
+    "configurationMagHardware": {
+        "message": "Magnetometer"
+    }
+          
 }
