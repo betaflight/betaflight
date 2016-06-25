@@ -1244,6 +1244,41 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.sensorAlignmentConfig.acc_align);
         serialize8(masterConfig.sensorAlignmentConfig.mag_align);
         break;
+    case MSP_PID_ADVANCED_CONFIG :
+        headSerialReply(6);
+        serialize8(masterConfig.gyro_sync_denom);
+        serialize8(masterConfig.pid_process_denom);
+        serialize8(masterConfig.use_unsyncedPwm);
+        serialize8(masterConfig.fast_pwm_protocol);
+        serialize16(masterConfig.motor_pwm_rate);
+        break;
+    case MSP_FILTER_CONFIG :
+        headSerialReply(5);
+        serialize8(masterConfig.gyro_soft_lpf_hz);
+        serialize16(currentProfile->pidProfile.dterm_lpf_hz);
+        serialize16(currentProfile->pidProfile.yaw_lpf_hz);
+        break;
+    case MSP_ADVANCED_TUNING:
+        headSerialReply(3 * 2 + 2);
+        serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
+        serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
+        serialize16(currentProfile->pidProfile.yaw_p_limit);
+        serialize8(currentProfile->pidProfile.deltaMethod);
+        serialize8(masterConfig.batteryConfig.vbatPidCompensation);
+        break;
+    case MSP_SPECIAL_PARAMETERS:
+        headSerialReply(1 + 2 + 1 + 2);
+        serialize8(currentControlRateProfile->rcYawRate8);
+        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
+        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize16(masterConfig.escAndServoConfig.escDesyncProtection);
+        break;
+    case MSP_SENSOR_CONFIG:
+        headSerialReply(3);
+        serialize8(masterConfig.acc_hardware);
+        serialize8(masterConfig.baro_hardware);
+        serialize8(masterConfig.mag_hardware);
+        break;
 
     default:
         return false;
@@ -1756,6 +1791,37 @@ static bool processInCommand(void)
         // proceed as usual with MSP commands
         break;
 #endif
+
+    case MSP_SET_PID_ADVANCED_CONFIG :
+        masterConfig.gyro_sync_denom = read8();
+        masterConfig.pid_process_denom = read8();
+        masterConfig.use_unsyncedPwm = read8();
+        masterConfig.fast_pwm_protocol = read8();
+        masterConfig.motor_pwm_rate = read16();
+        break;
+    case MSP_SET_FILTER_CONFIG :
+        masterConfig.gyro_soft_lpf_hz = read8();
+        currentProfile->pidProfile.dterm_lpf_hz = read16();
+        currentProfile->pidProfile.yaw_lpf_hz = read16();
+        break;
+    case MSP_SET_ADVANCED_TUNING:
+        currentProfile->pidProfile.rollPitchItermIgnoreRate = read16();
+        currentProfile->pidProfile.yawItermIgnoreRate = read16();
+        currentProfile->pidProfile.yaw_p_limit = read16();
+        currentProfile->pidProfile.deltaMethod = read8();
+        masterConfig.batteryConfig.vbatPidCompensation = read8();
+        break;
+    case MSP_SET_SPECIAL_PARAMETERS:
+        currentControlRateProfile->rcYawRate8 = read8();
+        masterConfig.rxConfig.airModeActivateThreshold = read16();
+        masterConfig.rxConfig.rcSmoothInterval = read8();
+        masterConfig.escAndServoConfig.escDesyncProtection = read16();
+        break;
+    case MSP_SET_SENSOR_CONFIG:
+        masterConfig.acc_hardware = read8();
+        masterConfig.baro_hardware = read8();
+        masterConfig.mag_hardware = read8();
+        break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;

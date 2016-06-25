@@ -184,6 +184,22 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 // DEPRECATED - Use MSP_BUILD_INFO instead
 #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
 
+// Betaflight Additional Commands
+#define MSP_PID_ADVANCED_CONFIG         90
+#define MSP_SET_PID_ADVANCED_CONFIG     91
+
+#define MSP_FILTER_CONFIG               92
+#define MSP_SET_FILTER_CONFIG           93
+
+#define MSP_ADVANCED_TUNING             94
+#define MSP_SET_ADVANCED_TUNING         95
+
+#define MSP_SENSOR_CONFIG               96
+#define MSP_SET_SENSOR_CONFIG           97
+
+#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
+#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
+
 //
 // Multwii original MSP commands
 //

@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <stdlib.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -138,7 +139,7 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = 60001 * (value - 1000) / 250000 + 60;
+    *motors[index]->ccr = lrintf(((float)(value-1000) / 0.69444f) + 360);
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)

@@ -145,7 +145,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 140;
+static const uint8_t EEPROM_CONF_VERSION = 141;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -156,14 +156,19 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->pidController = 1;
+
+#if (defined(STM32F10X))
+    pidProfile->pidController = PID_CONTROLLER_INTEGER;
+#else
+    pidProfile->pidController = PID_CONTROLLER_FLOAT;
+#endif
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 15;
-    pidProfile->P8[PITCH] = 45;
+    pidProfile->D8[ROLL] = 18;
+    pidProfile->P8[PITCH] = 50;
     pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 15;
+    pidProfile->D8[PITCH] = 18;
     pidProfile->P8[YAW] = 90;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -190,8 +195,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
     pidProfile->rollPitchItermIgnoreRate = 200;
-    pidProfile->yawItermIgnoreRate = 45;
-    pidProfile->dterm_lpf_hz = 110;    // filtering ON by default
+    pidProfile->yawItermIgnoreRate = 35;
+    pidProfile->dterm_lpf_hz = 50;    // filtering ON by default
+    pidProfile->deltaMethod = DELTA_FROM_ERROR;
     pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
@@ -241,7 +247,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->escDesyncProtection = 10000;
+    escAndServoConfig->escDesyncProtection = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -387,6 +393,7 @@ static void resetConf(void)
     setProfile(0);
 
     featureClearAll();
+
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
@@ -457,7 +464,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = 0;
+    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = 6;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;

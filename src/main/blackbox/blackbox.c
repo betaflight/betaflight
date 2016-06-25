@@ -1226,7 +1226,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            masterConfig.batteryConfig.vbatPidCompensation);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing:%d",                     masterConfig.rxConfig.rcSmoothing);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smooth_interval:%d",               masterConfig.rxConfig.rcSmoothInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
 
