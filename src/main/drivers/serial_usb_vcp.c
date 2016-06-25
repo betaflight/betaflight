@@ -66,11 +66,11 @@ static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
     return true;
 }
 
-static uint8_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
+    return receiveLength;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
@@ -120,7 +120,7 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (!usbIsConnected() || !usbIsConfigured()) {
         return false;
     }
-    
+
     uint32_t txed;
     uint32_t start = millis();
 
@@ -147,7 +147,7 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint8_t usbTxBytesFree() 
+uint8_t usbTxBytesFree()
 {
     // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
     return 255;
