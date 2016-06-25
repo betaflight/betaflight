@@ -81,9 +81,6 @@ static void srxlDataReceive(uint16_t c);
 // Use max values for ram areas
 static volatile uint8_t srxlFrame[SRXL_FRAME_SIZE_A2];	//size 35 for 16 channels in SRXL 0xA2
 static uint16_t srxlChannelData[SRXL_CHANNEL_COUNT_MAX];
-
-uint8_t srxlCRC_OK();
-
 static uint16_t srxlReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 bool srxlInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
@@ -112,29 +109,6 @@ bool srxlInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 }
 
 
-uint8_t srxlCRC_OK()
-{
-	uint8_t i = 0;
-    // Calculate the CRC of the incoming frame
-    uint16_t crc = 0;
-    uint16_t inCrc = 0;
-
-    // Calculate on all bytes except the final two CRC bytes
-    for (i = 0; i < srxlFrameLength - 2; i++) {
-        inCrc =  crc16_CCITT(inCrc, srxlFrame[i]);
-    }
-
-    // Get the received CRC
-    crc = ((uint16_t)srxlFrame[srxlFrameLength - 2]) << 8;
-    crc = crc + ((uint16_t)srxlFrame[srxlFrameLength - 1]);
-
-    if (crc == inCrc) {
-		return 1;
-    }
-return 0;
-}
-
-
 // Receive ISR callback
 static void srxlDataReceive(uint16_t c)
 {
@@ -149,19 +123,19 @@ static void srxlDataReceive(uint16_t c)
         srxlFramePosition = 0;
         srxlDataIncoming = false;
     }
-    
+
     // Check if we shall start a frame?
     if (srxlFramePosition == 0)	{
-    	if (c == SRXL_START_OF_FRAME_BYTE_A1) {
-    		srxlDataIncoming = true;
-    		srxlFrameLength = SRXL_FRAME_SIZE_A1;	//decrease framesize (when receiver change, otherwise board must reboot)
-			srxlChannelCount = SRXL_CHANNEL_COUNT_A1;
-    	}
-    	else if (c == SRXL_START_OF_FRAME_BYTE_A2) {//16channel packet
-    		srxlDataIncoming = true;
-    		srxlFrameLength = SRXL_FRAME_SIZE_A2;	//increase framesize
-			srxlChannelCount = SRXL_CHANNEL_COUNT_A2;
-    	}
+        if (c == SRXL_START_OF_FRAME_BYTE_A1) {
+    		    srxlDataIncoming = true;
+    		    srxlFrameLength = SRXL_FRAME_SIZE_A1;	//decrease framesize (when receiver change, otherwise board must reboot)
+            srxlChannelCount = SRXL_CHANNEL_COUNT_A1;
+        }
+        else if (c == SRXL_START_OF_FRAME_BYTE_A2) {//16channel packet
+    		    srxlDataIncoming = true;
+    		    srxlFrameLength = SRXL_FRAME_SIZE_A2;	//increase framesize
+			      srxlChannelCount = SRXL_CHANNEL_COUNT_A2;
+        }
     }
 
     // Only do this if we are receiving to a frame
@@ -170,7 +144,7 @@ static void srxlDataReceive(uint16_t c)
         srxlFrame[srxlFramePosition] = (uint8_t)c;
         srxlFramePosition++;
     }
-    
+
     // Done?
     if (srxlFramePosition == srxlFrameLength) {
         srxlFrameReceived = true;
@@ -182,20 +156,25 @@ static void srxlDataReceive(uint16_t c)
 // Indicate time to read a frame from the data...
 uint8_t srxlFrameStatus(void)
 {
-	uint8_t i = 0;
+    uint8_t i = 0;
     uint16_t value;
     uint8_t frameAddr;
-	
+    uint16_t crc_calc = 0;
+
     if (!srxlFrameReceived) {
         return SERIAL_RX_FRAME_PENDING;
     }
 
     srxlFrameReceived = false;
-	//is CRC OK
-	if(srxlCRC_OK() == 1) {
-		// save data
-		for (i = 0; i < srxlChannelCount; i++) {
+	   //is CRC OK
+    for (i = 0; i < srxlFrameLength; i++) {
+        crc_calc =  crc16_CCITT(crc_calc, srxlFrame[i]);
+        }
 
+     //crc_calc is 0 if crc check is OK
+     if(crc_calc == 0) {
+		      // save data
+        for (i = 0; i < srxlChannelCount; i++) {
             frameAddr = 1 + i * 2;
             value = ((uint16_t)srxlFrame[frameAddr]) << 8;
             value = value + ((uint16_t)srxlFrame[frameAddr + 1]);
@@ -203,13 +182,13 @@ uint8_t srxlFrameStatus(void)
             // Convert to internal format
             srxlChannelData[i] = SRXL_CONVERT_TO_USEC(value);
         }
-		return SERIAL_RX_FRAME_COMPLETE;
+        return SERIAL_RX_FRAME_COMPLETE;
     }
     return SERIAL_RX_FRAME_PENDING;
 }
 
 static uint16_t srxlReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-	UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeConfig);
     return srxlChannelData[chan];
 }

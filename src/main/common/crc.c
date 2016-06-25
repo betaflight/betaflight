@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,16 +22,16 @@
 #include <platform.h>
 
 #include "common/crc.h"
- 
+
 uint16_t crc16_CCITT(uint16_t crc, uint8_t value)
 {
     uint8_t i;
-    
+
     crc = crc ^ (int16_t)value << 8;
 
     for (i = 0; i < 8; i++) {
-        if (crc & CRCCCITTANDVALUE) {
-            crc = crc << 1 ^ CRCCCITTPOLY;
+        if (crc & 0x8000) {
+            crc = crc << 1 ^ 0x1021;
         } else {
             crc = crc << 1;
         }

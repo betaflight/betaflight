@@ -17,7 +17,4 @@
 
 #pragma once
 
-#define CRCCCITTANDVALUE	0x8000
-#define CRCCCITTPOLY 0x1021
-
 uint16_t crc16_CCITT(uint16_t crc, uint8_t value);
