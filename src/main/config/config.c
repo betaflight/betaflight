@@ -1046,23 +1046,13 @@ void changeProfile(uint8_t profileIndex)
     beeperConfirmationBeeps(profileIndex + 1);
 }
 
-void changeControlRateProfile(uint8_t profileIndex) {    
+void changeControlRateProfile(uint8_t profileIndex)
+{    
     if (profileIndex > MAX_RATEPROFILES) {    
         profileIndex = MAX_RATEPROFILES - 1;    
     }        
     setControlRateProfile(profileIndex);    
     activateControlRateConfig();    
-}
-
-void handleOneshotFeatureChangeOnRestart(void)
-{
-    // Shutdown PWM on all motors prior to soft restart
-    StopPwmAllMotors();
-    delay(50);
-    // Apply additional delay when OneShot125 feature changed from on to off state
-    if (feature(FEATURE_ONESHOT125) && !featureConfigured(FEATURE_ONESHOT125)) {
-        delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
-    }
 }
 
 void latchActiveFeatures()

@@ -50,7 +50,6 @@ typedef enum {
     FEATURE_VTX = 1 << 25,
 } features_e;
 
-void handleOneshotFeatureChangeOnRestart(void);
 void latchActiveFeatures(void);
 bool featureConfigured(uint32_t mask);
 bool feature(uint32_t mask);
