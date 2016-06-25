@@ -1500,7 +1500,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        //resetPidProfile(&currentProfile->pidProfile);
+        resetPidProfile(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:

@@ -166,6 +166,8 @@ void gyroUpdate(void)
                 gyroADCf[axis] = applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]);
                 gyroADC[axis] = lrintf(gyroADCf[axis]);
             }
+        } else {
+            gyroADCf[axis] = gyroADC[axis]; // Otherwise float pid controller will not have gyro input when filter disabled
         }
     }
 }

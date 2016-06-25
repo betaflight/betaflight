@@ -154,7 +154,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-static void resetPidProfile(pidProfile_t *pidProfile)
+void resetPidProfile(pidProfile_t *pidProfile)
 {
 
 #if (defined(STM32F10X))
@@ -169,7 +169,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 50;
     pidProfile->I8[PITCH] = 40;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 90;
+    pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
     pidProfile->P8[PIDALT] = 50;
@@ -194,10 +194,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->rollPitchItermIgnoreRate = 180;
     pidProfile->yawItermIgnoreRate = 35;
-    pidProfile->dterm_lpf_hz = 50;    // filtering ON by default
-    pidProfile->deltaMethod = DELTA_FROM_ERROR;
+    pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
+    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
