@@ -361,8 +361,9 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning .roll_pitch_rate').hide();
         }
 
-        function drawRateCurve(rateElement, expoElement, canvasElement) {
+        function drawRateCurve(rateElement, sRateElement, expoElement, canvasElement) {
             var rate = parseFloat(rateElement.val()),
+                sRate = parseFloat(sRateElement.val()),
                 expo = parseFloat(expoElement.val()),
                 context = canvasElement.getContext("2d");
 
@@ -377,6 +378,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
                 // math magic by englishman
                 var ratey = rateHeight * rate;
+                ratey = 1 / (1 - ((ratey / rateHeight) * sRate))
 
                 // draw
                 context.clearRect(0, 0, rateWidth, rateHeight);
@@ -394,13 +396,22 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning').on('input change', function () {
             setTimeout(function () { // let global validation trigger and adjust the values first
                 var rateElement = $('.pid_tuning input[name="rc_rate"]'),
+                    sRateElementRoll = $('.pid_tuning input[name="roll_rate"]'),
+                    sRateElementPitch = $('.pid_tuning input[name="pitch_rate"]'),
+                    sRateElementYaw = $('.pid_tuning input[name="yaw_rate"]'),
                     expoElement = $('.pid_tuning input[name="rc_expo"]'),
                     yawExpoElement = $('.pid_tuning input[name="rc_yaw_expo"]'),
                     rcCurveElement = $('.pitch_roll_curve canvas').get(0),
                     rcYawCurveElement = $('.yaw_curve canvas').get(0);
 
-                    drawRateCurve(rateElement, expoElement, rcCurveElement);
-                    drawRateCurve(rateElement, yawExpoElement, rcYawCurveElement);
+                    var rateElementYaw = 1;
+                    if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+                        rateElementYaw = $('.pid_tuning input[name="rc_rate_yaw"]');
+                    }
+
+                    drawRateCurve(rateElement, sRateElementRoll, expoElement, rcCurveElement);
+                    //drawRateCurve(rateElement, sRateElementPitch, expoElement, rcCurveElement);  // Add Pitch Curve
+                    drawRateCurve(rateElementYaw, sRateElementYaw, yawExpoElement, rcYawCurveElement);
             }, 0);
         }).trigger('input');
 
