@@ -15,6 +15,8 @@ var MSP_codes = {
     MSP_SET_MODE_RANGE:         35,
     MSP_RX_CONFIG:              44,
     MSP_SET_RX_CONFIG:          45,
+    MSP_LED_COLORS:             46,
+    MSP_SET_LED_COLORS:         47,
     MSP_LED_STRIP_CONFIG:       48,
     MSP_SET_LED_STRIP_CONFIG:   49,
     MSP_ADJUSTMENT_RANGES:      52,
@@ -82,6 +84,7 @@ var MSP_codes = {
     MSP_3D:                 124,
     MSP_RC_DEADBAND:        125,
     MSP_SENSOR_ALIGNMENT:   126,
+    MSP_LED_STRIP_MODECOLOR:127,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -101,6 +104,7 @@ var MSP_codes = {
     MSP_SET_RC_DEADBAND:    218,
     MSP_SET_RESET_CURR_PID: 219,
     MSP_SET_SENSOR_ALIGNMENT: 220,
+    MSP_SET_LED_STRIP_MODECOLOR:221,
     
     // MSP_BIND:               240,
     
@@ -142,7 +146,9 @@ var MSP = {
     unsupported:                0,
 
     ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
-    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b'], // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b', 'l'], // in LSB bit order
+    ledBaseFunctionLetters:     ['c', 'f', 'a', 'l', 's', 'g', 'r'], // in LSB bit 
+    ledOverlayLetters:          ['t', 'o', 'b', 'n', 'i', 'w'], // in LSB bit 
 
     last_received_timestamp:   null,
     analog_last_received_timestamp: null,
@@ -930,49 +936,147 @@ var MSP = {
                 SENSOR_CONFIG.baro_hardware = data.getUint8(offset++, 1);
                 SENSOR_CONFIG.mag_hardware = data.getUint8(offset, 1);
                 break;
+                
             case MSP_codes.MSP_LED_STRIP_CONFIG:
                 LED_STRIP = [];
                 
                 var ledCount = data.byteLength / 7; // v1.4.0 and below incorrectly reported 4 bytes per led.
-                
+                if (semver.gte(CONFIG.apiVersion, "1.17.0"))
+                    ledCount = data.byteLength / 4;
+                    
                 var offset = 0;
                 for (var i = 0; offset < data.byteLength && i < ledCount; i++) {
-                    
-                    var directionMask = data.getUint16(offset, 1);
-                    offset += 2;
-                    
-                    var directions = [];
-                    for (var directionLetterIndex = 0; directionLetterIndex < MSP.ledDirectionLetters.length; directionLetterIndex++) {
-                        if (bit_check(directionMask, directionLetterIndex)) {
-                            directions.push(MSP.ledDirectionLetters[directionLetterIndex]);
-                        }
-                    }
 
-                    var functionMask = data.getUint16(offset, 1);
-                    offset += 2;
-
-                    var functions = [];
-                    for (var functionLetterIndex = 0; functionLetterIndex < MSP.ledFunctionLetters.length; functionLetterIndex++) {
-                        if (bit_check(functionMask, functionLetterIndex)) {
-                            functions.push(MSP.ledFunctionLetters[functionLetterIndex]);
+                    if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                        var directionMask = data.getUint16(offset, 1);
+                        offset += 2;
+                        
+                        var directions = [];
+                        for (var directionLetterIndex = 0; directionLetterIndex < MSP.ledDirectionLetters.length; directionLetterIndex++) {
+                            if (bit_check(directionMask, directionLetterIndex)) {
+                                directions.push(MSP.ledDirectionLetters[directionLetterIndex]);
+                            }
                         }
+    
+                        var functionMask = data.getUint16(offset, 1);
+                        offset += 2;
+    
+                        var functions = [];
+                        for (var functionLetterIndex = 0; functionLetterIndex < MSP.ledFunctionLetters.length; functionLetterIndex++) {
+                            if (bit_check(functionMask, functionLetterIndex)) {
+                                functions.push(MSP.ledFunctionLetters[functionLetterIndex]);
+                            }
+                        }
+                        
+                        var led = {
+                            directions: directions,
+                            functions: functions,
+                            x: data.getUint8(offset++, 1),
+                            y: data.getUint8(offset++, 1),
+                            color: data.getUint8(offset++, 1)
+                        };
+                        
+                        LED_STRIP.push(led);
+                    } else {
+                        var mask = data.getUint32(offset, 1);
+                        offset +=4;
+                        
+                        var functionId = (mask >> 8) & 0xF;
+                        var functions = [];
+                        for (var baseFunctionLetterIndex = 0; baseFunctionLetterIndex < MSP.ledBaseFunctionLetters.length; baseFunctionLetterIndex++) {
+                            if (functionId == baseFunctionLetterIndex) {
+                                functions.push(MSP.ledBaseFunctionLetters[baseFunctionLetterIndex]);
+                                break;
+                            }
+                        }
+                        
+                        var overlayMask = (mask >> 12) & 0x3F;
+                        for (var overlayLetterIndex = 0; overlayLetterIndex < MSP.ledOverlayLetters.length; overlayLetterIndex++) {
+                            if (bit_check(overlayMask, overlayLetterIndex)) {
+                                functions.push(MSP.ledOverlayLetters[overlayLetterIndex]);
+                            }
+                        }
+                        
+                        var directionMask = (mask >> 22) & 0x3F;
+                        var directions = [];
+                        for (var directionLetterIndex = 0; directionLetterIndex < MSP.ledDirectionLetters.length; directionLetterIndex++) {
+                            if (bit_check(directionMask, directionLetterIndex)) {
+                                directions.push(MSP.ledDirectionLetters[directionLetterIndex]);
+                            }
+                        }
+                        var led = {
+                            y: (mask) & 0xF,
+                            x: (mask >> 4) & 0xF,
+                            functions: functions,
+                            color: (mask >> 18) & 0xF,
+                            directions: directions,
+                            parameters: (mask >> 28) & 0xF
+                        };
+                        
+                        LED_STRIP.push(led);
                     }
-                    
-                    var led = {
-                        directions: directions,
-                        functions: functions,
-                        x: data.getUint8(offset++, 1),
-                        y: data.getUint8(offset++, 1),
-                        color: data.getUint8(offset++, 1)
-                    };
-                    
-                    LED_STRIP.push(led);
                 }
-                
                 break;
             case MSP_codes.MSP_SET_LED_STRIP_CONFIG:
                 console.log('Led strip config saved');
                 break;
+            case MSP_codes.MSP_LED_COLORS:
+                
+                LED_COLORS = [];
+                
+                var colorCount = data.byteLength / 4;
+                
+                var offset = 0;
+                for (var i = 0; offset < data.byteLength && i < colorCount; i++) {
+
+                    var h = data.getUint16(offset, 1);
+                    var s = data.getUint8(offset + 2, 1);
+                    var v = data.getUint8(offset + 3, 1);
+                    offset += 4;
+
+                    var color = {
+                        h: h,
+                        s: s,
+                        v: v
+                    };
+                    
+                    LED_COLORS.push(color);
+                }
+                
+                break;
+            case MSP_codes.MSP_SET_LED_COLORS:
+                console.log('Led strip colors saved');
+                break;
+            case MSP_codes.MSP_LED_STRIP_MODECOLOR:
+                if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+
+                    LED_MODE_COLORS = [];
+                    
+                    var colorCount = data.byteLength / 3;
+                    
+                    var offset = 0;
+                    for (var i = 0; offset < data.byteLength && i < colorCount; i++) {
+
+                        var mode = data.getUint8(offset++, 1);
+                        var direction = data.getUint8(offset++, 1);
+                        var color = data.getUint8(offset++, 1);
+
+                        var mode_color = {
+                            mode: mode,
+                            direction: direction,
+                            color: color
+                        };
+                        
+                        LED_MODE_COLORS.push(mode_color);
+                    }
+                }
+                break;
+            case MSP_codes.MSP_SET_LED_STRIP_MODECOLOR:
+                console.log('Led strip mode colors saved');
+                break;
+                
+                
+                
             case MSP_codes.MSP_DATAFLASH_SUMMARY:
                 if (data.byteLength >= 13) {
                     var
@@ -1721,36 +1825,88 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
     function send_next_led_strip_config() {
         
         var led = LED_STRIP[ledIndex];
-                        
+        /*
+        var led = {
+            directions: directions,
+            functions: functions,
+            x: data.getUint8(offset++, 1),
+            y: data.getUint8(offset++, 1),
+            color: data.getUint8(offset++, 1)
+        };
+        */       
         var buffer = [];
         
         buffer.push(ledIndex);
 
-        var directionMask = 0;
-        for (var directionLetterIndex = 0; directionLetterIndex < led.directions.length; directionLetterIndex++) {
-            var bitIndex = MSP.ledDirectionLetters.indexOf(led.directions[directionLetterIndex]);
-            if (bitIndex >= 0) {
-                directionMask = bit_set(directionMask, bitIndex);
+        if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+            var directionMask = 0;
+            for (var directionLetterIndex = 0; directionLetterIndex < led.directions.length; directionLetterIndex++) {
+                var bitIndex = MSP.ledDirectionLetters.indexOf(led.directions[directionLetterIndex]);
+                if (bitIndex >= 0) {
+                    directionMask = bit_set(directionMask, bitIndex);
+                }
             }
-        }
-        buffer.push(specificByte(directionMask, 0));
-        buffer.push(specificByte(directionMask, 1));
-
-        var functionMask = 0;
-        for (var functionLetterIndex = 0; functionLetterIndex < led.functions.length; functionLetterIndex++) {
-            var bitIndex = MSP.ledFunctionLetters.indexOf(led.functions[functionLetterIndex]);
-            if (bitIndex >= 0) {
-                functionMask = bit_set(functionMask, bitIndex);
+            buffer.push(specificByte(directionMask, 0));
+            buffer.push(specificByte(directionMask, 1));
+    
+            var functionMask = 0;
+            for (var functionLetterIndex = 0; functionLetterIndex < led.functions.length; functionLetterIndex++) {
+                var bitIndex = MSP.ledFunctionLetters.indexOf(led.functions[functionLetterIndex]);
+                if (bitIndex >= 0) {
+                    functionMask = bit_set(functionMask, bitIndex);
+                }
             }
+            buffer.push(specificByte(functionMask, 0));
+            buffer.push(specificByte(functionMask, 1));
+    
+            buffer.push(led.x);
+            buffer.push(led.y);
+    
+            buffer.push(led.color);
+        } else {
+            var mask = 0;
+            /*
+    ledDirectionLetters:        ['n', 'e', 's', 'w', 'u', 'd'],      // in LSB bit order
+    ledFunctionLetters:         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b', 'l'], // in LSB bit order
+    ledBaseFunctionLetters:     ['c', 'f', 'a', 'l', 's', 'g', 'r'], // in LSB bit 
+    ledOverlayLetters:          ['t', 'o', 'b', 'n', 'i', 'w'], // in LSB bit 
+    
+             */
+            mask |= (led.y << 0);
+            mask |= (led.x << 4);
+
+            for (var functionLetterIndex = 0; functionLetterIndex < led.functions.length; functionLetterIndex++) {
+                var fnIndex = MSP.ledBaseFunctionLetters.indexOf(led.functions[functionLetterIndex]);
+                if (fnIndex >= 0) {
+                    mask |= (fnIndex << 8);
+                    break;
+                }
+            }
+            
+            for (var overlayLetterIndex = 0; overlayLetterIndex < led.functions.length; overlayLetterIndex++) {
+                var bitIndex = MSP.ledOverlayLetters.indexOf(led.functions[overlayLetterIndex]);
+                if (bitIndex >= 0) {
+                    mask |= bit_set(mask, bitIndex + 12);
+                }
+            }
+
+            mask |= (led.color << 18);
+
+            for (var directionLetterIndex = 0; directionLetterIndex < led.directions.length; directionLetterIndex++) {
+                var bitIndex = MSP.ledDirectionLetters.indexOf(led.directions[directionLetterIndex]);
+                if (bitIndex >= 0) {
+                    mask |= bit_set(mask, bitIndex + 22);
+                }
+            }
+            
+            mask |= (0 << 28); // parameters
+            
+            
+            buffer.push(specificByte(mask, 0));
+            buffer.push(specificByte(mask, 1));
+            buffer.push(specificByte(mask, 2));
+            buffer.push(specificByte(mask, 3));
         }
-        buffer.push(specificByte(functionMask, 0));
-        buffer.push(specificByte(functionMask, 1));
-
-        buffer.push(led.x);
-        buffer.push(led.y);
-
-        buffer.push(led.color);
-
         
         // prepare for next iteration
         ledIndex++;
@@ -1759,6 +1915,54 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
         }
         
         MSP.send_message(MSP_codes.MSP_SET_LED_STRIP_CONFIG, buffer, false, nextFunction);
+    }
+}
+
+MSP.sendLedStripColors = function(onCompleteCallback) {
+    if (LED_COLORS.length == 0) {
+        onCompleteCallback();
+    } else {
+        var buffer = [];
+        
+        for (var colorIndex = 0; colorIndex < LED_COLORS.length; colorIndex++) {
+            var color = LED_COLORS[colorIndex];
+            
+            buffer.push(specificByte(color.h, 0));
+            buffer.push(specificByte(color.h, 1));
+            buffer.push(color.s);
+            buffer.push(color.v);
+        }
+        MSP.send_message(MSP_codes.MSP_SET_LED_COLORS, buffer, false, onCompleteCallback);
+    }
+}
+
+MSP.sendLedStripModeColors = function(onCompleteCallback) {
+    
+    var nextFunction = send_next_led_strip_mode_color; 
+    var index = 0;
+    
+    if (LED_MODE_COLORS.length == 0) {
+        onCompleteCallback();
+    } else {
+        send_next_led_strip_mode_color();
+    }
+    
+    function send_next_led_strip_mode_color() {
+        var buffer = [];
+        
+        var mode_color = LED_MODE_COLORS[index];
+        
+        buffer.push(mode_color.mode);
+        buffer.push(mode_color.direction);
+        buffer.push(mode_color.color);
+
+        // prepare for next iteration
+        index++;
+        if (index == LED_MODE_COLORS.length) {
+            nextFunction = onCompleteCallback;
+        }
+
+        MSP.send_message(MSP_codes.MSP_SET_LED_STRIP_MODECOLOR, buffer, false, nextFunction);
     }
 }
 
