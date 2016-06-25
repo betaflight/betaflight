@@ -2563,12 +2563,12 @@ static void cliRateProfile(char *cmdline) {
     }
 }
 
-static void cliReboot(void) {
+static void cliReboot(void)
+{
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
-    handleOneshotFeatureChangeOnRestart();
     systemReset();
 }
 
