@@ -82,7 +82,7 @@
 }
 
 .tab-configuration .number input {
-    width: 50px;
+    width: 55px;
     padding-left: 3px;
     height: 20px;
     line-height: 20px;
@@ -95,7 +95,7 @@
 }
 
 .tab-configuration .numberwide input {
-    width: 50px;
+    width: 55px;
     padding-left: 3px;
     height: 20px;
     line-height: 20px;
@@ -109,7 +109,7 @@
 
 
 .tab-configuration .number .disabled {
-    width: 43px;
+    width: 48px;
     padding: 0px 5px;
     background-color: #ececec;
 }
