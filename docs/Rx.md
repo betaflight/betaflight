@@ -88,7 +88,9 @@ Supported receivers:
 
 #### Multiplex:
 All receivers with SRXL (also FLEXX receivers)
-Gaupner / SJ HOTT: all receiver with SUMD support
+
+####Gaupner / SJ HOTT:
+All receiver with SUMD support
 
 #### Spektrum:
 AR7700 / AR9020 receiver 
