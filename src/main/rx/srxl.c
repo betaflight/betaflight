@@ -49,9 +49,6 @@
 // Frame is: ID(1 byte) + 16*channel(2 bytes) + CRC(2 bytes) = 35
 #define SRXL_FRAME_SIZE_A2 (SRXL_CHANNEL_COUNT_A2*2 + 3)
 
-#define SRXL_CRC_AND_VALUE 0x8000
-#define SRXL_CRC_POLY 0x1021
-
 #define SRXL_BAUDRATE 115200
 #define SRXL_MAX_FRAME_TIME 8000
 
@@ -124,7 +121,7 @@ uint8_t srxlCRC_OK()
 
     // Calculate on all bytes except the final two CRC bytes
     for (i = 0; i < srxlFrameLength - 2; i++) {
-        inCrc =  crc16(SRXL_CRC_AND_VALUE, SRXL_CRC_POLY, inCrc, srxlFrame[i]);
+        inCrc =  crc16_CCITT(inCrc, srxlFrame[i]);
     }
 
     // Get the received CRC

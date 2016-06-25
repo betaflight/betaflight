@@ -23,15 +23,15 @@
 
 #include "common/crc.h"
  
-uint16_t crc16(uint16_t crcAndValue, uint16_t crcPoly, uint16_t crc, uint8_t value)
+uint16_t crc16_CCITT(uint16_t crc, uint8_t value)
 {
     uint8_t i;
     
     crc = crc ^ (int16_t)value << 8;
 
     for (i = 0; i < 8; i++) {
-        if (crc & crcAndValue) {
-            crc = crc << 1 ^ crcPoly;
+        if (crc & CRCCCITTANDVALUE) {
+            crc = crc << 1 ^ CRCCCITTPOLY;
         } else {
             crc = crc << 1;
         }

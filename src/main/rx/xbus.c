@@ -41,9 +41,6 @@
 #define XBUS_RJ01_MESSAGE_LENGTH 30
 #define XBUS_RJ01_OFFSET_BYTES 3
 
-#define XBUS_CRC_AND_VALUE 0x8000
-#define XBUS_CRC_POLY 0x1021
-
 #define XBUS_BAUDRATE 115200
 #define XBUS_RJ01_BAUDRATE 250000
 #define XBUS_MAX_FRAME_TIME 8000
@@ -132,7 +129,7 @@ static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 
     // Calculate on all bytes except the final two CRC bytes
     for (i = 0; i < xBusFrameLength - 2; i++) {
-        inCrc =  crc16(XBUS_CRC_AND_VALUE, XBUS_CRC_POLY, inCrc, xBusFrame[i]);
+        inCrc =  crc16_CCITT(inCrc, xBusFrame[i]);
     }
 
     // Get the received CRC
