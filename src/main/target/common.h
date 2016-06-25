@@ -17,13 +17,19 @@
  
 #pragma once
 
+#define I2C1_OVERCLOCK true
+#define I2C2_OVERCLOCK true
+
+
+/* STM32F4 specific settings that apply to all F4 targets */
 #ifdef STM32F4
 
 #define TASK_GYROPID_DESIRED_PERIOD 125
 #define SCHEDULER_DELAY_LIMIT 10
 #define USE_SLOW_SERIAL_CLI
+#define I2C3_OVERCLOCK true
 
-#else
+#else /* when not an F4 */
 
 #define TASK_GYROPID_DESIRED_PERIOD 1000
 #define SCHEDULER_DELAY_LIMIT 100
