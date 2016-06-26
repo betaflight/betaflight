@@ -165,8 +165,8 @@
 #define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
 #define MSP_SET_TRANSPONDER_CONFIG      83 //in  message         Set transponder settings
 
-#define MSP_LED_STRIP_MODECOLOR         86 //out message         Get LED strip mode_color settings
-#define MSP_SET_LED_STRIP_MODECOLOR     87 //in  message         Set LED strip mode_color settings
+#define MSP_LED_STRIP_MODECOLOR         127//out message         Get LED strip mode_color settings
+#define MSP_SET_LED_STRIP_MODECOLOR     221//in  message         Set LED strip mode_color settings
 
 #define MSP_VOLTAGE_METERS              92 //out message         Voltage (per meter)
 #define MSP_CURRENT_METERS              93 //out message         Amperage (per meter)
