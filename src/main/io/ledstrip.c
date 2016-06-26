@@ -1094,8 +1094,6 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, MAX_LED_STRIP_LENGTH * sizeof(ledConfig_t));
     memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-
-    reevalulateLedConfig();
 }
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
