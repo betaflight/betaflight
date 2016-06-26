@@ -1456,9 +1456,9 @@ MSP.crunch = function (code) {
         case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
             buffer.push(Math.round(SPECIAL_PARAMETERS.RC_RATE_YAW * 100));
             if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                buffer.push(SPECIAL_PARAMETERS.airModeActivateThreshold);
+                buffer.push16(SPECIAL_PARAMETERS.airModeActivateThreshold);
                 buffer.push(SPECIAL_PARAMETERS.rcSmoothInterval);
-                buffer.push(SPECIAL_PARAMETERS.escDesyncProtection);
+                buffer.push16(SPECIAL_PARAMETERS.escDesyncProtection);
             }
             break;
         case MSP_codes.MSP_SET_SENSOR_CONFIG:
