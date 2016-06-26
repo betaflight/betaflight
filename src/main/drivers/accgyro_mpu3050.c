@@ -30,7 +30,6 @@
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu3050.h"
-#include "gyro_sync.h"
 
 // MPU3050, Standard address 0x68
 #define MPU3050_ADDRESS         0x68

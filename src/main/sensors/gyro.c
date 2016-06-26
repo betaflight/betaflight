@@ -28,7 +28,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
 #include "sensors/sensors.h"
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -36,18 +35,18 @@
 
 #include "sensors/gyro.h"
 
-uint16_t calibratingG = 0;
+gyro_t gyro;                      // gyro access functions
+sensor_align_e gyroAlign = 0;
+
 int32_t gyroADC[XYZ_AXIS_COUNT];
 float gyroADCf[XYZ_AXIS_COUNT];
-int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
+static uint16_t calibratingG = 0;
+static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
 static bool gyroFilterStateIsSet;
 static float gyroLpfCutFreq;
-
-gyro_t gyro;                      // gyro access functions
-sensor_align_e gyroAlign = 0;
 
 void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
 {
@@ -55,10 +54,11 @@ void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
     gyroLpfCutFreq = gyro_lpf_hz;
 }
 
-void initGyroFilterCoefficients(void) {
+void initGyroFilterCoefficients(void)
+{
     int axis;
-    if (gyroLpfCutFreq && targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], targetLooptime);
+    if (gyroLpfCutFreq && gyro.targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], gyro.targetLooptime);
         gyroFilterStateIsSet = true;
     }
 }
@@ -79,7 +79,7 @@ bool isOnFinalGyroCalibrationCycle(void)
 }
 
 uint16_t calculateCalibratingCycles(void) {
-    return (CALIBRATING_GYRO_CYCLES / targetLooptime) * CALIBRATING_GYRO_CYCLES;
+    return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime) * CALIBRATING_GYRO_CYCLES;
 }
 
 bool isOnFirstGyroCalibrationCycle(void)

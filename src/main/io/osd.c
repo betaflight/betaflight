@@ -52,7 +52,6 @@
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/sdcard.h"

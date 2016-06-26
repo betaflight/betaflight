@@ -40,7 +40,6 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
@@ -109,8 +108,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
     uint16_t gyroSampleRate = 1000;
     uint8_t maxDivider = 1;
 
-    if (looptime != targetLooptime || looptime == 0) {
-        if (looptime == 0) looptime = targetLooptime; // needed for pid controller changes
+    if (looptime != gyro.targetLooptime || looptime == 0) {
+        if (looptime == 0) looptime = gyro.targetLooptime; // needed for pid controller changes
 #ifdef STM32F303xC
         if (looptime < 1000) {
             masterConfig.gyro_lpf = 0;
@@ -854,7 +853,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_LOOP_TIME:
         headSerialReply(2);
-        serialize16((uint16_t)targetLooptime);
+        serialize16((uint16_t)gyro.targetLooptime);
         break;
     case MSP_RC_TUNING:
         headSerialReply(11);

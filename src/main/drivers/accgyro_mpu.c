@@ -32,7 +32,6 @@
 #include "gpio.h"
 #include "exti.h"
 #include "bus_i2c.h"
-#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -300,11 +299,14 @@ bool mpuGyroRead(int16_t *gyroADC)
     return true;
 }
 
-void checkMPUDataReady(bool *mpuDataReadyPtr) {
+bool checkMPUDataReady(void)
+{
+    bool ret;
     if (mpuDataReady) {
-        *mpuDataReadyPtr = true;
+        ret = true;
         mpuDataReady= false;
     } else {
-        *mpuDataReadyPtr = false;
+        ret = false;
     }
+    return ret;
 }
