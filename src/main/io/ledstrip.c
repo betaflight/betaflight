@@ -249,7 +249,7 @@ STATIC_UNIT_TESTED void updateLedCount(void)
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
         const ledConfig_t *ledConfig = ledConfigs(ledIndex);
 
-        if (!(*ledConfig & (LED_POS_MASK | LED_FUNCTION_MASK | LED_OVERLAY_MASK)))
+        if (!(*ledConfig))
             break;
 
         count++;
