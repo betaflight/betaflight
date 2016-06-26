@@ -43,7 +43,6 @@ int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
-uint16_t acc_1G = 256;          // this is the 1G measured acceleration.
 uint32_t accTargetLooptime;
 
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
@@ -109,7 +108,7 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
         accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc_1G;
+        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -164,7 +163,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
         AccInflightCalibrationSavetoEEProm = false;
         accelerationTrims->raw[X] = b[X] / 50;
         accelerationTrims->raw[Y] = b[Y] / 50;
-        accelerationTrims->raw[Z] = b[Z] / 50 - acc_1G;    // for nunchuck 200=1G
+        accelerationTrims->raw[Z] = b[Z] / 50 - acc.acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 

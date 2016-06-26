@@ -16,7 +16,7 @@
  */
 
 #pragma once
-#include "gpio.h"
+
 #include "timer.h"
 
 #define MAX_PWM_MOTORS  12
@@ -30,23 +30,19 @@
 #error Invalid motor/servo/port configuration
 #endif
 
-
 #define PULSE_1MS   (1000)      // 1ms pulse width
-
 #define MAX_INPUTS  8
-
 #define PWM_TIMER_MHZ 1
 
-#define PWM_BRUSHED_TIMER_MHZ 8
-#define MULTISHOT_TIMER_MHZ 72
-#define ONESHOT42_TIMER_MHZ 24
-#define ONESHOT125_TIMER_MHZ 8
+#define PWM_BRUSHED_TIMER_MHZ 24
+#define MULTISHOT_TIMER_MHZ   72
+#define ONESHOT42_TIMER_MHZ   24
+#define ONESHOT125_TIMER_MHZ  8
 
-typedef struct sonarGPIOConfig_s {
-    GPIO_TypeDef *gpio;
-    uint16_t triggerPin;
-    uint16_t echoPin;
-} sonarGPIOConfig_t;
+typedef struct sonarIOConfig_s {
+    ioTag_t triggerTag;
+    ioTag_t echoTag;
+} sonarIOConfig_t;
 
 typedef struct drv_pwm_config_s {
     bool useParallelPWM;
@@ -54,15 +50,11 @@ typedef struct drv_pwm_config_s {
     bool useSerialRx;
     bool useRSSIADC;
     bool useCurrentMeterADC;
-#ifdef STM32F10X
     bool useUART2;
-#endif
-#ifdef STM32F303xC
     bool useUART3;
-#endif
+    bool useUART6;
     bool useVbat;
     bool useFastPwm;
-    bool useUnsyncedPwm;
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef SONAR
@@ -71,7 +63,6 @@ typedef struct drv_pwm_config_s {
 #ifdef USE_SERVOS
     bool useServos;
     bool useChannelForwarding;    // configure additional channels as servos
-    uint8_t pwmProtocolType;
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif
@@ -79,12 +70,19 @@ typedef struct drv_pwm_config_s {
     bool useBuzzerP6;
 #endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
+    uint8_t pwmProtocolType;
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    sonarGPIOConfig_t *sonarGPIOConfig;
+    sonarIOConfig_t sonarConfig;
 } drv_pwm_config_t;
 
+enum {
+    MAP_TO_PPM_INPUT    = 1,
+    MAP_TO_PWM_INPUT,
+    MAP_TO_MOTOR_OUTPUT,
+    MAP_TO_SERVO_OUTPUT,
+};
 
 typedef enum {
   PWM_PF_NONE = 0,
@@ -95,6 +93,7 @@ typedef enum {
   PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
+enum {PWM_INVERTED = 1};
 
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
@@ -126,7 +125,23 @@ enum {
     PWM13,
     PWM14,
     PWM15,
-    PWM16
+    PWM16, 
+    PWM17,
+    PWM18,
+    PWM19,
+    PWM20
 };
+
+extern const uint16_t multiPPM[];
+extern const uint16_t multiPWM[];
+extern const uint16_t airPPM[];
+extern const uint16_t airPWM[];
+
+#ifdef CC3D
+extern const uint16_t multiPPM_BP6[];
+extern const uint16_t multiPWM_BP6[];
+extern const uint16_t airPPM_BP6[];
+extern const uint16_t airPWM_BP6[];
+#endif
 
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);

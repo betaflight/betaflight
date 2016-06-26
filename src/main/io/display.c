@@ -63,9 +63,9 @@
 #include "config/runtime_config.h"
 #include "config/config_profile.h"
 
-#include "display.h"
+#include "io/display.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 extern profile_t *currentProfile;
 

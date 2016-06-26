@@ -21,7 +21,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -65,6 +64,8 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
+
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -85,6 +86,9 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
 
 // June 2013     V2.2-dev
 
@@ -119,7 +123,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float angleRate[3], angleRateSmooth[2];
+float angleRate[3], angleRateSmooth[3];
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -765,7 +769,7 @@ void subTaskMotorUpdate(void)
 #endif
 
     if (motorControlEnable) {
-        writeMotors(masterConfig.fast_pwm_protocol, masterConfig.use_unsyncedPwm);
+        writeMotors();
     }
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
@@ -862,8 +866,9 @@ void taskUpdateBattery(void)
     }
 }
 
-bool taskUpdateRxCheck(void)
+bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
+    UNUSED(currentDeltaTime);
     updateRx(currentTime);
     return shouldProcessRx(currentTime);
 }
@@ -983,6 +988,15 @@ void taskTransponder(void)
 {
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
+    }
+}
+#endif
+
+#ifdef OSD
+void taskUpdateOsd(void)
+{
+    if (feature(FEATURE_OSD)) {
+        updateOsd();
     }
 }
 #endif
