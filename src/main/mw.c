@@ -698,6 +698,8 @@ void subTaskMainSubprocesses(void) {
     #endif
 
     #if defined(BARO) || defined(SONAR)
+            // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+            updateRcCommands();
             if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
                 if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
                     applyAltHold(&masterConfig.airplaneConfig);
@@ -878,8 +880,10 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
+#if !defined(BARO) && !defined(SONAR)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
+#endif
     updateLEDs();
 
 #ifdef BARO
