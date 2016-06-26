@@ -62,7 +62,7 @@ typedef struct serialPort_s {
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
 
-    uint8_t (*serialTotalRxWaiting)(serialPort_t *instance);
+    uint32_t (*serialTotalRxWaiting)(serialPort_t *instance);
     uint8_t (*serialTotalTxFree)(serialPort_t *instance);
 
     uint8_t (*serialRead)(serialPort_t *instance);

@@ -66,6 +66,7 @@ static flight3DConfig_t *flight3DConfig;
 static escAndServoConfig_t *escAndServoConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
+static bool syncPwm = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -420,13 +421,15 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
     }
 }
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
 {
     int i;
 
     motorCount = 0;
     servoCount = pwmOutputConfiguration->servoCount;
-
+    
+    syncPwm = use_unsyncedPwm;
+    
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -635,15 +638,14 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm)
+void writeMotors(void)
 {
     uint8_t i;
 
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
 
-
-    if (fastPwmProtocol && !unsyncedPwm) {
+    if (syncPwm) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -655,7 +657,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(1,1);
+    writeMotors();
 }
 
 void stopMotors(void)
@@ -752,7 +754,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 void mixTable(void)
 {
-    uint32_t i;
+    uint32_t i = 0;
     fix12_t vbatCompensationFactor = 0;
     static fix12_t mixReduction;
     bool use_vbat_compensation = false;

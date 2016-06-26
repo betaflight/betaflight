@@ -19,22 +19,19 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_5  // Green (Rev 1) / Red (Rev 2) - PB5
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define BEEP_GPIO   GPIOA  //USE PWM10 as beeper signal
-#define BEEP_PIN    Pin_1
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED0    PB4  // Blue (Rev 1 & 2) - PB4
+#define LED1    PB5  // Green (Rev 1) / Red (Rev 2) - PB5
+
+#define BEEPER      PA1
 #define BEEPER_INVERTED
-#define BEEPER
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU6050 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI PA15
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 
@@ -57,9 +54,6 @@
 #define USE_MAG_AK8975
 
 #define MAG_AK8975_ALIGN CW180_DEG_FLIP
-
-#define LED0
-#define LED1
 
 #define USE_VCP
 #define USE_USART1 // Conn 1 - TX (PB6) RX PB7 (AF7)
@@ -93,45 +87,17 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
 
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-
 #define USE_ADC
-
 #define ADC_INSTANCE                ADC2
-#define ADC_DMA_CHANNEL             DMA2_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
+#define VBAT_ADC_PIN                PA4
+#define CURRENT_METER_ADC_PIN       PA7
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
-
-#define BLACKBOX
-#define GPS
-//#define GTUNE
-#define DISPLAY
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE          FEATURE_RX_PPM
 
 #define LED_STRIP
 #if 1
 // LED strip configuration using PWM motor output pin 5.
-#define LED_STRIP_TIMER TIM16
+#define LED_STRIP_TIMER                 TIM16
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOA
@@ -168,5 +134,21 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT GPIOA
-#define BIND_PIN Pin_3
+#define BIND_PIN PA3
+
+//#define SONAR
+//#define SONAR_ECHO_PIN      PB1
+//#define SONAR_TRIGGER_PIN   PA2
+
+// available IO pins (from schematics)
+//#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+//#define TARGET_IO_PORTB (BIT(0)|BIT(1)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9))
+// !!TODO - check following lines are correct
+#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTB (BIT(0)|BIT(1)|BIT(6)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(12)|BIT(13))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+
+
+#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
+
+
