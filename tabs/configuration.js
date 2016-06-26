@@ -159,6 +159,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
              features.push(
+                {bit: 22, group: 'other', name: 'AIRMODE'},
                 {bit: 23, group: 'other', name: 'SUPEREXPO_RATES'}
             );
         }
