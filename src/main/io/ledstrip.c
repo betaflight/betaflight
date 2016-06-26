@@ -349,7 +349,7 @@ STATIC_UNIT_TESTED void updateLedCount(void)
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
         const ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
 
-        if (!(*ledConfig & (LED_POS_MASK | LED_FUNCTION_MASK | LED_OVERLAY_MASK)))
+        if (!(*ledConfig))
             break;
 
         count++;
@@ -608,7 +608,7 @@ static void applyLedFixedLayers()
 
         switch (fn) {
             case LED_FUNCTION_COLOR:
-                color = *&masterConfig.colors[ledGetColor(ledConfig)];
+                color = masterConfig.colors[ledGetColor(ledConfig)];
                 break;
 
             case LED_FUNCTION_FLIGHT_MODE:
