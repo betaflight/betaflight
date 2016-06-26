@@ -157,6 +157,12 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             );
         }
 
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+             features.push(
+                {bit: 23, group: 'other', name: 'SUPEREXPO_RATES'}
+            );
+        }
+
         function isFeatureEnabled(featureName) {
             for (var i = 0; i < features.length; i++) {
                 if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {

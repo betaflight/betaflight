@@ -526,6 +526,9 @@
     "featureTRANSPONDERTip": {
         "message": "Configure via the Race Transponder tab after enabling."
     },
+    "featureSUPEREXPO_RATES": {
+        "message": "Rate value adds instead of rate also Super Expo. Mid stick stays same. Rc rate is always liniear"
+    },
     
     "configurationFeatureEnabled": {
         "message": "Enabled"
