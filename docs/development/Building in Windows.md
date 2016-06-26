@@ -11,7 +11,7 @@ Execute the download Setup and step through the installation  wizard (no need to
 for Installation:
 
 - Devel/git
-- Devel/git-completion (Optional)
+- Devel/bash-completion (was git-completion, Optional)
 - Devel/make
 - Devel/binutils
 - Editors/vim	 
