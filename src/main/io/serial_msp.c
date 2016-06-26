@@ -1804,7 +1804,7 @@ static bool processInCommand(void)
             }
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             *ledConfig = read32();
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 
