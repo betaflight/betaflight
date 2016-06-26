@@ -11,7 +11,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     var selectedColorIndex = null;
     var selectedModeColor = null;
 
-    if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+    if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
         TABS.led_strip.functions = ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b'];
         TABS.led_strip.baseFuncs = ['c', 'f', 'a', 'b', 'g', 'r'];
         TABS.led_strip.overlays = ['t', 's', 'i', 'w'];
@@ -36,7 +36,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
 
     function load_led_mode_colors() {
-        if (semver.gte(CONFIG.apiVersion, "1.17.0"))
+        if (semver.gte(CONFIG.apiVersion, "1.19.0"))
             MSP.send_message(MSP_codes.MSP_LED_STRIP_MODECOLOR, false, false, load_html);
         else
             load_html();
@@ -73,7 +73,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         var theHTML = [];
         var theHTMLlength = 0;
         for (var i = 0; i < 256; i++) {
-            if (semver.lt(CONFIG.apiVersion, "1.17.0"))
+            if (semver.lte(CONFIG.apiVersion, "1.19.0"))
                 theHTML[theHTMLlength++] = ('<div class="gPoint"><div class="indicators"><span class="north"></span><span class="south"></span><span class="west"></span><span class="east"></span><span class="up">U</span><span class="down">D</span></div><span class="wire"></span><span class="overlay-t"> </span><span class="overlay-s"> </span><span class="overlay-w"> </span><span class="overlay-i"> </span><span class="overlay-color"> </span></div>');
             else
                 theHTML[theHTMLlength++] = ('<div class="gPoint"><div class="indicators"><span class="north"></span><span class="south"></span><span class="west"></span><span class="east"></span><span class="up">U</span><span class="down">D</span></div><span class="wire"></span><span class="overlay-t"> </span><span class="overlay-o"> </span><span class="overlay-b"> </span><span class="overlay-n"> </span><span class="overlay-w"> </span><span class="overlay-i"> </span><span class="overlay-color"> </span></div>');
@@ -520,7 +520,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             }
             
             function send_led_strip_mode_colors() {
-                if (semver.gte(CONFIG.apiVersion, "1.17.0"))
+                if (semver.gte(CONFIG.apiVersion, "1.19.0"))
                     MSP.sendLedStripModeColors(save_to_eeprom);
                 else
                     save_to_eeprom();
@@ -645,7 +645,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
 
     // refresh mode color buttons
     function setModeBackgroundColor(element) {
-        if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
             element.find('[class*="mode_color"]').each(function() { 
                 var m = 0;
                 var d = 0;
@@ -678,19 +678,19 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('select.functionSelect').addClass(activeFunction);
 
 
-        if (semver.lte(CONFIG.apiVersion, "1.16.0")) { 
-            // <= 16
+        if (semver.lte(CONFIG.apiVersion, "1.18.0")) { 
+            // <= 18
             // Hide GPS (Func)
             // Hide RSSI (O/L), Blink (Func)
             // Hide Battery, RSSI (Func), Larson (O/L), Blink (O/L), Landing (O/L)
-            $(".extra_functions17").hide();
+            $(".extra_functions20").hide();
             $(".mode_colors").hide();
         } else { 
-            // >= 17
+            // >= 20
             // Show GPS (Func)
             // Hide RSSI (O/L), Blink (Func)
             // Show Battery, RSSI (Func), Larson (O/L), Blink (O/L), Landing (O/L)
-            $(".extra_functions17").show();
+            $(".extra_functions20").show();
             $(".mode_colors").show();
         }
         
@@ -701,7 +701,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.modifiers').hide();
         $('.blinkers').hide();
 
-        if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
             switch (activeFunction) {
                 case "function-c": 
                 case "function-a": 
@@ -751,7 +751,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 break;
             case "function-r":
             case "function-b":
-                if (semver.lt(CONFIG.apiVersion, "1.17.0"))
+                if (semver.lt(CONFIG.apiVersion, "1.20.0"))
                     $('.warningOverlay').hide();
             break;
             default: 
@@ -783,7 +783,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         
         // set overlays (checkboxes) visibility
         // set directions visibility
-        if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
             switch (activeFunction) {
                 case "function-r":
                     $('.indicatorOverlay').hide();
@@ -796,7 +796,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             }
         }
         $('.mode_colors').hide();
-        if (semver.gte(CONFIG.apiVersion, "1.17.0")) { 
+        if (semver.gte(CONFIG.apiVersion, "1.19.0")) { 
             // set mode colors visibility
             if (activeFunction == "function-f")
                 $('.mode_colors').show(); 
@@ -868,7 +868,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
     
     function unselectOverlays(letter) {
-        if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
             if (letter == 'b' || letter == 'r') {
                 unselectOverlay(letter, 'i');
             }
@@ -878,7 +878,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 unselectOverlay(letter, 's');
             }
         } else {
-            // MSP 1.17
+            // MSP 1.20
             if (letter == 'r' || letter == '') {
                 unselectOverlay(letter, 'o');
                 unselectOverlay(letter, 'b');

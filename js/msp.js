@@ -941,13 +941,13 @@ var MSP = {
                 LED_STRIP = [];
                 
                 var ledCount = data.byteLength / 7; // v1.4.0 and below incorrectly reported 4 bytes per led.
-                if (semver.gte(CONFIG.apiVersion, "1.17.0"))
+                if (semver.gte(CONFIG.apiVersion, "1.20.0"))
                     ledCount = data.byteLength / 4;
                     
                 var offset = 0;
                 for (var i = 0; offset < data.byteLength && i < ledCount; i++) {
 
-                    if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+                    if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
                         var directionMask = data.getUint16(offset, 1);
                         offset += 2;
                         
@@ -1048,7 +1048,7 @@ var MSP = {
                 console.log('Led strip colors saved');
                 break;
             case MSP_codes.MSP_LED_STRIP_MODECOLOR:
-                if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+                if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
 
                     LED_MODE_COLORS = [];
                     
@@ -1838,7 +1838,7 @@ MSP.sendLedStripConfig = function(onCompleteCallback) {
         
         buffer.push(ledIndex);
 
-        if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
             var directionMask = 0;
             for (var directionLetterIndex = 0; directionLetterIndex < led.directions.length; directionLetterIndex++) {
                 var bitIndex = MSP.ledDirectionLetters.indexOf(led.directions[directionLetterIndex]);

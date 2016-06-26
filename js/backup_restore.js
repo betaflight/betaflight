@@ -112,7 +112,7 @@ function configuration_backup(callback) {
             uniqueData.push(MSP_codes.MSP_FAILSAFE_CONFIG);
             uniqueData.push(MSP_codes.MSP_RXFAIL_CONFIG);
         }
-        if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+        if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
             uniqueData.push(MSP_codes.MSP_LED_STRIP_MODECOLOR);
         }
     }
@@ -136,7 +136,7 @@ function configuration_backup(callback) {
                 configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
                 configuration.LED_COLORS = jQuery.extend(true, [], LED_COLORS);
 
-                if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+                if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
                     configuration.LED_MODE_COLORS = jQuery.extend(true, [], LED_MODE_COLORS);
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
@@ -612,7 +612,7 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
 
-        if (!compareVersions(migratedVersion, '1.2.1')) {
+        if (!compareVersions(migratedVersion, '1.3.1')) {
             
             // LED_COLORS & LED_MODE_COLORS support was added.
             if (!configuration.LED_COLORS) {
@@ -622,7 +622,7 @@ function configuration_restore(callback) {
                 configuration.LED_MODE_COLORS = [];
             }
 
-            migratedVersion = '1.2.1';
+            migratedVersion = '1.3.1';
             GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
             appliedMigrationsCount++;
         }
@@ -793,7 +793,7 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_mode_colors() {
-                if (semver.gte(CONFIG.apiVersion, "1.17.0"))
+                if (semver.gte(CONFIG.apiVersion, "1.19.0"))
                     MSP.sendLedStripModeColors(send_rxfail_config);
                 else
                     send_rxfail_config();
