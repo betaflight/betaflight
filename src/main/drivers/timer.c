@@ -44,7 +44,6 @@
     TIM4 4 channels
 */
 
-
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
 #define CC_CHANNELS_PER_TIMER 4              // TIM_Channel_1..4
 
@@ -54,7 +53,7 @@ typedef struct timerConfig_s {
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
-	uint32_t forcedOverflowTimerValue;
+    uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
@@ -326,19 +325,6 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
     TIM_ClearFlag(timHw->tim, TIM_IT_CCx(timHw->channel));
 }
 
-#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
-
-// configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t *timHw, ioConfig_t mode)
-{
-    gpio_config_t cfg;
-
-    cfg.pin = IO_PINBYTAG(timHw->tag);
-    cfg.mode = GPIO_MODE_FROM_IOMODE(mode);
-    cfg.speed = Speed_2MHz;
-    gpioInit(IO_GPIOBYTAG(timHw->tag), &cfg);
-}
-
 // calculate input filter constant
 // TODO - we should probably setup DTS to higher value to allow reasonable input filtering
 //   - notice that prescaler[0] does use DTS for sampling - the sequence won't be monotonous anymore
@@ -453,8 +439,6 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
         break;
     }
 }
-
-
 
 static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 {
@@ -603,14 +587,14 @@ void timerInit(void)
     RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
 #endif
 
-#ifdef STM32F303xC
+#if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        GPIO_PinAFConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), (uint16_t)IO_GPIO_PinSource(IOGetByTag(timerHardwarePtr->tag)), timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
 
-// initialize timer channel structures
+    // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
