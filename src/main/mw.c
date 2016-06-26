@@ -377,7 +377,7 @@ void mwArm(void)
     static bool firstArmingCalibrationWasCompleted;
 
     if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
-        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        gyroSetCalibrationCycles(gyroCalculateCalibratingCycles());
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
     }

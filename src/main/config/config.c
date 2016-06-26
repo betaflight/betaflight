@@ -750,7 +750,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

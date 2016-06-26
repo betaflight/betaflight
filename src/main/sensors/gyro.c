@@ -45,21 +45,20 @@ static uint16_t calibratingG = 0;
 static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 static gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[3];
-static bool gyroFilterStateIsSet;
-static float gyroLpfCutFreq;
+static uint8_t gyroLpfHz;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, float gyro_lpf_hz)
+void gyroUseConfig(gyroConfig_t *gyroConfigToUse, uint8_t gyro_lpf_hz)
 {
     gyroConfig = gyroConfigToUse;
-    gyroLpfCutFreq = gyro_lpf_hz;
+    gyroLpfHz = gyro_lpf_hz;
 }
 
-void initGyroFilterCoefficients(void)
+void gyroInit(void)
 {
-    int axis;
-    if (gyroLpfCutFreq && gyro.targetLooptime) {  /* Initialisation needs to happen once samplingrate is known */
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(gyroLpfCutFreq, &gyroFilterState[axis], gyro.targetLooptime);
-        gyroFilterStateIsSet = true;
+    if (gyroLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+        for (int axis = 0; axis < 3; axis++) {
+            BiQuadNewLpf(gyroLpfHz, &gyroFilterState[axis], gyro.targetLooptime);
+        }
     }
 }
 
@@ -73,27 +72,27 @@ bool isGyroCalibrationComplete(void)
     return calibratingG == 0;
 }
 
-bool isOnFinalGyroCalibrationCycle(void)
+static bool isOnFinalGyroCalibrationCycle(void)
 {
     return calibratingG == 1;
 }
 
-uint16_t calculateCalibratingCycles(void) {
+uint16_t gyroCalculateCalibratingCycles(void)
+{
     return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime) * CALIBRATING_GYRO_CYCLES;
 }
 
-bool isOnFirstGyroCalibrationCycle(void)
+static bool isOnFirstGyroCalibrationCycle(void)
 {
-    return calibratingG == calculateCalibratingCycles();
+    return calibratingG == gyroCalculateCalibratingCycles();
 }
 
 static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
-    int8_t axis;
     static int32_t g[3];
     static stdev_t var[3];
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
 
         // Reset g[axis] at start of calibration
         if (isOnFirstGyroCalibrationCycle()) {
@@ -113,10 +112,10 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
             float dev = devStandardDeviation(&var[axis]);
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
-                gyroSetCalibrationCycles(calculateCalibratingCycles());
+                gyroSetCalibrationCycles(gyroCalculateCalibratingCycles());
                 return;
             }
-            gyroZero[axis] = (g[axis] + (calculateCalibratingCycles() / 2)) / calculateCalibratingCycles();
+            gyroZero[axis] = (g[axis] + (gyroCalculateCalibratingCycles() / 2)) / gyroCalculateCalibratingCycles();
         }
     }
 
@@ -129,8 +128,7 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
 
 static void applyGyroZero(void)
 {
-    int8_t axis;
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         gyroADC[axis] -= gyroZero[axis];
     }
 }
@@ -138,14 +136,13 @@ static void applyGyroZero(void)
 void gyroUpdate(void)
 {
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-    int axis;
 
     // range: +/- 8192; +/- 2000 deg/sec
     if (!gyro.read(gyroADCRaw)) {
         return;
     }
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (debugMode == DEBUG_GYRO) debug[axis] = gyroADC[axis];
         gyroADC[axis] = gyroADCRaw[axis];
     }
@@ -158,16 +155,10 @@ void gyroUpdate(void)
 
     applyGyroZero();
 
-    if (gyroLpfCutFreq) {
-        if (!gyroFilterStateIsSet) initGyroFilterCoefficients(); /* initialise filter coefficients */
-
-        for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            if (gyroFilterStateIsSet) {
-                gyroADCf[axis] = applyBiQuadFilter((float) gyroADC[axis], &gyroFilterState[axis]);
-                gyroADC[axis] = lrintf(gyroADCf[axis]);
-            } else {
-                gyroADCf[axis] = gyroADC[axis]; // Otherwise float pid controller will not have gyro input when filter disabled
-            }
+    if (gyroLpfHz) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroADCf[axis] = applyBiQuadFilter((float)gyroADC[axis], &gyroFilterState[axis]);
+            gyroADC[axis] = lrintf(gyroADCf[axis]);
         }
     }
 }
