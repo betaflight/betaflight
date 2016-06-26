@@ -1658,10 +1658,10 @@
         "message": "Accelerometer"
     },
     "configurationBaroHardware": {
-        "message": "Barometer"
+        "message": "Barometer (if supported)"
     },
     "configurationMagHardware": {
-        "message": "Magnetometer"
+        "message": "Magnetometer (if supported)"
     }
           
 }
