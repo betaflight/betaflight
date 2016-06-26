@@ -378,7 +378,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
                 // math magic by englishman
                 var ratey = rateHeight * rate;
-                ratey = 1 / (1 - ((ratey / rateHeight) * sRate))
+                ratey = ratey + (1 / (1 - ((ratey / rateHeight) * sRate)))
 
                 // draw
                 context.clearRect(0, 0, rateWidth, rateHeight);
