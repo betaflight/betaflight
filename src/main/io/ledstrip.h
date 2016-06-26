@@ -155,7 +155,7 @@ bool parseColor(int index, const char *colorConfig);
 
 bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize);
-void reevalulateLedConfig(void);
+void reevaluateLedConfig(void);
 
 void ledStripInit(void);
 void ledStripEnable(void);

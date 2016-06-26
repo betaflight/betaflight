@@ -266,7 +266,7 @@ STATIC_UNIT_TESTED void updateLedCount(void)
     ledCounts.larson = countScanner;
 }
 
-void reevalulateLedConfig(void)
+void reevaluateLedConfig(void)
 {
     updateLedCount();
     determineLedStripDimensions();
@@ -368,7 +368,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
 
     *ledConfig = DEFINE_LED(x, y, color, direction_flags, baseFunction, overlay_flags, 0);
 
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 
     return true;
 }
@@ -1128,7 +1128,7 @@ void ledStripInit(void)
 
 void ledStripEnable(void)
 {
-    reevalulateLedConfig();
+    reevaluateLedConfig();
     ledStripInitialised = true;
 
     ws2811LedStripInit();

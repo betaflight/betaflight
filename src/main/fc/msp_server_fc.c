@@ -1447,7 +1447,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             ledConfig_t *ledConfig = ledConfigs(i);
             *ledConfig = sbufReadU32(src);
 
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 
