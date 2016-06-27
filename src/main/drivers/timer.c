@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -27,8 +26,7 @@
 #include "nvic.h"
 
 #include "gpio.h"
-#include "io.h"
-#include "io_impl.h"
+#include "rcc.h"
 #include "system.h"
 
 #include "timer.h"
@@ -141,6 +139,16 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
     return channel >> 2;
+}
+
+static rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].rcc;
+        }
+    }
+    return 0;
 }
 
 void timerNVICConfigure(uint8_t irq)
@@ -415,6 +423,9 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     if(outEnable) {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Inactive;
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        if (timHw->outputInverted) {
+            stateHigh = !stateHigh;
+        }
         TIM_OCInitStructure.TIM_OCPolarity = stateHigh ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     } else {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Timing;
@@ -549,6 +560,9 @@ _TIM_IRQ_HANDLER(TIM3_IRQHandler, 3);
 #if USED_TIMERS & TIM_N(4)
 _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #endif
+#if USED_TIMERS & TIM_N(5)
+_TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
+#endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 # if defined(STM32F10X_XL)
@@ -556,6 +570,15 @@ _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);
 # else  // f10x_hd, f30x
 _TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
 # endif
+#endif
+#if USED_TIMERS & TIM_N(9)
+_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
+#endif
+#  if USED_TIMERS & TIM_N(11)
+_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
+#  endif
+#if USED_TIMERS & TIM_N(12)
+_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
 #if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
@@ -575,17 +598,10 @@ void timerInit(void)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
-#ifdef TIMER_APB1_PERIPHERALS
-    RCC_APB1PeriphClockCmd(TIMER_APB1_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef TIMER_APB2_PERIPHERALS
-    RCC_APB2PeriphClockCmd(TIMER_APB2_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef TIMER_AHB_PERIPHERALS
-    RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
-#endif
+    // enable the timer peripherals
+    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    }
 
 #if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
