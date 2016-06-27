@@ -667,24 +667,36 @@ $(VALID_TARGETS):
 		$(MAKE) -j binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
 
-## clean             : clean up all temporary / machine-generated files
+
+
+CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
+TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
+
+## clean             : clean up temporary / machine-generated files
 clean:
+	echo "Cleaning $(TARGET)"
 	rm -f $(CLEAN_ARTIFACTS)
 	rm -rf $(OBJECT_DIR)/$(TARGET)
+	echo "Cleaning $(TARGET) succeeded."
 
-## clean_test        : clean up all temporary / machine-generated files (tests)
+## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:
 	cd src/test && $(MAKE) clean || true
 
-## clean_all_targets : clean all valid target platforms
-clean_all:
-	for clean_target in $(VALID_TARGETS); do \
-		echo "" && \
-		echo "Cleaning $$clean_target" && \
-		$(MAKE) -j TARGET=$$clean_target clean || \
-		break; \
-		echo "Cleaning $$clean_target succeeded."; \
-	done
+## clean_<TARGET>    : clean up one specific target
+$(CLEAN_TARGETS) :
+	$(MAKE) -j TARGET=$(subst clean_,,$@) clean
+
+## <TARGET>_clean    : clean up one specific target (alias for above)
+$(TARGETS_CLEAN) :
+	$(MAKE) -j TARGET=$(subst _clean,,$@) clean
+
+## clean_all         : clean all valid targets
+clean_all:$(CLEAN_TARGETS)
+
+## all_clean         : clean all valid targets (alias for above)
+all_clean:$(TARGETS_CLEAN)
+
 
 flash_$(TARGET): $(TARGET_HEX)
 	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
