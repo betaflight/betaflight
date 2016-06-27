@@ -86,7 +86,7 @@ uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NON
 const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
-    static const extiConfig_t mpuIntExtiConfig = { .io = IO_TAG(MPU_INT_EXTI) };
+    static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
 #elif defined(USE_HARDWARE_REVISION_DETECTION) 
     return selectMPUIntExtiConfigByHardwareRevision();
@@ -97,7 +97,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 
 #ifdef USE_FAKE_GYRO
 int16_t fake_gyro_values[XYZ_AXIS_COUNT] = { 0,0,0 };
-static void fakeGyroInit(uint16_t lpf)
+static void fakeGyroInit(uint8_t lpf)
 {
     UNUSED(lpf);
 }
@@ -129,7 +129,7 @@ bool fakeGyroDetect(gyro_t *gyro)
 
 #ifdef USE_FAKE_ACC
 int16_t fake_acc_values[XYZ_AXIS_COUNT] = {0,0,0};
-static void fakeAccInit(void) {}
+static void fakeAccInit(acc_t *acc) {UNUSED(acc);}
 static bool fakeAccRead(int16_t *accData) {
     for(int i=0;i<XYZ_AXIS_COUNT;++i) {
         accData[i] = fake_acc_values[i];
@@ -216,7 +216,7 @@ bool detectGyro(void)
             ; // fallthrough
 
         case GYRO_MPU6500:
-#ifdef USE_GYRO_MPU6500
+#if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
 #ifdef USE_GYRO_SPI_MPU6500
             if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro))
 #else
@@ -361,7 +361,7 @@ retry:
 #endif
             ; // fallthrough
         case ACC_MPU6500:
-#ifdef USE_ACC_MPU6500
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
             if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc))
 #else

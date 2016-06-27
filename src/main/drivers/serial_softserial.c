@@ -218,11 +218,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->pin);
-    serialOutputPortConfig(softSerial->txTimerHardware->pin);
+    softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->tag);
+    serialOutputPortConfig(softSerial->txTimerHardware->tag);
     
-    softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->pin);
-    serialInputPortConfig(softSerial->rxTimerHardware->pin);
+    softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->tag);
+    serialInputPortConfig(softSerial->rxTimerHardware->tag);
 
     setTxSignal(softSerial, ENABLE);
     delay(50);
@@ -408,7 +408,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
+uint32_t softSerialRxBytesWaiting(serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;

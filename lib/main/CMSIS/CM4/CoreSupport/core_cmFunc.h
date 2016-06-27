@@ -1,13 +1,13 @@
 /**************************************************************************//**
  * @file     core_cmFunc.h
  * @brief    CMSIS Cortex-M Core Function Access Header File
- * @version  V4.00
- * @date     28. August 2014
+ * @version  V4.10
+ * @date     18. March 2015
  *
  * @note
  *
  ******************************************************************************/
-/* Copyright (c) 2009 - 2014 ARM LIMITED
+/* Copyright (c) 2009 - 2015 ARM LIMITED
 
    All rights reserved.
    Redistribution and use in source and binary forms, with or without
@@ -239,6 +239,20 @@ __STATIC_INLINE void __set_BASEPRI(uint32_t basePri)
 {
   register uint32_t __regBasePri         __ASM("basepri");
   __regBasePri = (basePri & 0xff);
+}
+
+
+/** \brief  Set Base Priority with condition
+
+    This function assigns the given value to the Base Priority register only if BASEPRI masking is disabled,
+    or the new value increases the BASEPRI priority level.
+
+    \param [in]    basePri  Base Priority value to set
+ */
+__STATIC_INLINE void __set_BASEPRI_MAX(uint32_t basePri)
+{
+  register uint32_t __regBasePriMax      __ASM("basepri_max");
+  __regBasePriMax = (basePri & 0xff);
 }
 
 
@@ -518,7 +532,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_BASEPRI(void)
 {
   uint32_t result;
 
-  __ASM volatile ("MRS %0, basepri_max" : "=r" (result) );
+  __ASM volatile ("MRS %0, basepri" : "=r" (result) );
   return(result);
 }
 
@@ -532,6 +546,19 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_BASEPRI(void)
 __attribute__( ( always_inline ) ) __STATIC_INLINE void __set_BASEPRI(uint32_t value)
 {
   __ASM volatile ("MSR basepri, %0" : : "r" (value) : "memory");
+}
+
+
+/** \brief  Set Base Priority with condition
+
+    This function assigns the given value to the Base Priority register only if BASEPRI masking is disabled,
+	or the new value increases the BASEPRI priority level.
+
+    \param [in]    basePri  Base Priority value to set
+ */
+__attribute__( ( always_inline ) ) __STATIC_INLINE void __set_BASEPRI_MAX(uint32_t value)
+{
+  __ASM volatile ("MSR basepri_max, %0" : : "r" (value) : "memory");
 }
 
 

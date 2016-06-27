@@ -38,7 +38,6 @@
 #define NVIC_PRIO_MPU_DATA_READY           NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_MAG_DATA_READY           NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_CALLBACK                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
-#define NVIC_PRIO_BST_READ_DATA            NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_MAX7456_DMA              NVIC_BUILD_PRIORITY(3, 0)
 
 // utility macros to join/split priority

@@ -39,7 +39,7 @@
 #if defined(SONAR)
 STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
-static sonarHardware_t const *sonarHardware;
+sonarHardware_t sonarHardwareHCSR04;
 
 extiCallbackRec_t hcsr04_extiCallbackRec;
 
@@ -63,9 +63,8 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sonarRange)
+void hcsr04_init(sonarRange_t *sonarRange)
 {
-    sonarHardware = initialSonarHardware;
     sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
     sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
     sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
@@ -83,12 +82,12 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
 #endif
 
     // trigger pin
-    triggerIO = IOGetByTag(sonarHardware->triggerIO);
+    triggerIO = IOGetByTag(sonarHardwareHCSR04.triggerTag);
     IOInit(triggerIO, OWNER_SONAR, RESOURCE_INPUT);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
     
     // echo pin
-    echoIO = IOGetByTag(sonarHardware->echoIO);
+    echoIO = IOGetByTag(sonarHardwareHCSR04.echoTag);
     IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 

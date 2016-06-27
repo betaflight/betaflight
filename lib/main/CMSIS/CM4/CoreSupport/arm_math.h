@@ -1,8 +1,8 @@
 /* ----------------------------------------------------------------------
-* Copyright (C) 2010-2014 ARM Limited. All rights reserved.
+* Copyright (C) 2010-2015 ARM Limited. All rights reserved.
 *
-* $Date:        12. March 2014
-* $Revision: 	V1.4.4
+* $Date:        19. March 2015
+* $Revision: 	V.1.4.5
 *
 * Project: 	    CMSIS DSP Library
 * Title:	    arm_math.h
@@ -66,19 +66,25 @@
    * ------------
    *
    * The library installer contains prebuilt versions of the libraries in the <code>Lib</code> folder.
+   * - arm_cortexM7lfdp_math.lib (Little endian and Double Precision Floating Point Unit on Cortex-M7)
+   * - arm_cortexM7bfdp_math.lib (Big endian and Double Precision Floating Point Unit on Cortex-M7)
+   * - arm_cortexM7lfsp_math.lib (Little endian and Single Precision Floating Point Unit on Cortex-M7)
+   * - arm_cortexM7bfsp_math.lib (Big endian and Single Precision Floating Point Unit on Cortex-M7)
+   * - arm_cortexM7l_math.lib (Little endian on Cortex-M7)
+   * - arm_cortexM7b_math.lib (Big endian on Cortex-M7)
    * - arm_cortexM4lf_math.lib (Little endian and Floating Point Unit on Cortex-M4)
    * - arm_cortexM4bf_math.lib (Big endian and Floating Point Unit on Cortex-M4)
    * - arm_cortexM4l_math.lib (Little endian on Cortex-M4)
    * - arm_cortexM4b_math.lib (Big endian on Cortex-M4)
    * - arm_cortexM3l_math.lib (Little endian on Cortex-M3)
    * - arm_cortexM3b_math.lib (Big endian on Cortex-M3)
-   * - arm_cortexM0l_math.lib (Little endian on Cortex-M0)
-   * - arm_cortexM0b_math.lib (Big endian on Cortex-M3)
+   * - arm_cortexM0l_math.lib (Little endian on Cortex-M0 / CortexM0+)
+   * - arm_cortexM0b_math.lib (Big endian on Cortex-M0 / CortexM0+)
    *
    * The library functions are declared in the public file <code>arm_math.h</code> which is placed in the <code>Include</code> folder.
    * Simply include this file and link the appropriate library in the application and begin calling the library functions. The Library supports single
-   * public header file <code> arm_math.h</code> for Cortex-M4/M3/M0 with little endian and big endian. Same header file will be used for floating point unit(FPU) variants.
-   * Define the appropriate pre processor MACRO ARM_MATH_CM4 or  ARM_MATH_CM3 or
+   * public header file <code> arm_math.h</code> for Cortex-M7/M4/M3/M0/M0+ with little endian and big endian. Same header file will be used for floating point unit(FPU) variants.
+   * Define the appropriate pre processor MACRO ARM_MATH_CM7 or ARM_MATH_CM4 or  ARM_MATH_CM3 or
    * ARM_MATH_CM0 or ARM_MATH_CM0PLUS depending on the target processor in the application.
    *
    * Examples
@@ -89,17 +95,17 @@
    * Toolchain Support
    * ------------
    *
-   * The library has been developed and tested with MDK-ARM version 4.60.
+   * The library has been developed and tested with MDK-ARM version 5.14.0.0
    * The library is being tested in GCC and IAR toolchains and updates on this activity will be made available shortly.
    *
    * Building the Library
    * ------------
    *
    * The library installer contains a project file to re build libraries on MDK-ARM Tool chain in the <code>CMSIS\\DSP_Lib\\Source\\ARM</code> folder.
-   * - arm_cortexM_math.uvproj
+   * - arm_cortexM_math.uvprojx
    *
    *
-   * The libraries can be built by opening the arm_cortexM_math.uvproj project in MDK-ARM, selecting a specific target, and defining the optional pre processor MACROs detailed above.
+   * The libraries can be built by opening the arm_cortexM_math.uvprojx project in MDK-ARM, selecting a specific target, and defining the optional pre processor MACROs detailed above.
    *
    * Pre-processor Macros
    * ------------
@@ -125,7 +131,8 @@
    * - ARM_MATH_CMx:
    *
    * Define macro ARM_MATH_CM4 for building the library on Cortex-M4 target, ARM_MATH_CM3 for building library on Cortex-M3 target
-   * and ARM_MATH_CM0 for building library on cortex-M0 target, ARM_MATH_CM0PLUS for building library on cortex-M0+ target.
+   * and ARM_MATH_CM0 for building library on Cortex-M0 target, ARM_MATH_CM0PLUS for building library on Cortex-M0+ target, and
+   * ARM_MATH_CM7 for building the library on cortex-M7.
    *
    * - __FPU_PRESENT:
    *
@@ -151,7 +158,7 @@
    * Copyright Notice
    * ------------
    *
-   * Copyright (C) 2010-2014 ARM Limited. All rights reserved.
+   * Copyright (C) 2010-2015 ARM Limited. All rights reserved.
    */
 
 
@@ -400,19 +407,22 @@ extern "C"
    * @brief definition to read/write two 16 bit values.
    */
 #if defined __CC_ARM
-#define __SIMD32_TYPE int32_t __packed
-#define CMSIS_UNUSED __attribute__((unused))
+  #define __SIMD32_TYPE int32_t __packed
+  #define CMSIS_UNUSED __attribute__((unused))
 #elif defined __ICCARM__
-#define CMSIS_UNUSED
-#define __SIMD32_TYPE int32_t __packed
+  #define __SIMD32_TYPE int32_t __packed
+  #define CMSIS_UNUSED
 #elif defined __GNUC__
-#define __SIMD32_TYPE int32_t
-#define CMSIS_UNUSED __attribute__((unused))
+  #define __SIMD32_TYPE int32_t
+  #define CMSIS_UNUSED __attribute__((unused))
 #elif defined __CSMC__			/* Cosmic */
-#define CMSIS_UNUSED
-#define __SIMD32_TYPE int32_t
+  #define __SIMD32_TYPE int32_t
+  #define CMSIS_UNUSED
+#elif defined __TASKING__
+  #define __SIMD32_TYPE __unaligned int32_t
+  #define CMSIS_UNUSED
 #else
-#error Unknown compiler
+  #error Unknown compiler
 #endif
 
 #define __SIMD32(addr)  (*(__SIMD32_TYPE **) & (addr))
@@ -506,11 +516,12 @@ extern "C"
   }
 
 
-#if defined (ARM_MATH_CM0_FAMILY) && defined ( __CC_ARM   )
-#define __CLZ __clz
-#endif
+//#if defined (ARM_MATH_CM0_FAMILY) && defined ( __CC_ARM   )
+//#define __CLZ __clz
+//#endif
 
-#if defined (ARM_MATH_CM0_FAMILY) && ((defined (__ICCARM__)) ||(defined (__GNUC__)) || defined (__TASKING__) )
+//note: function can be removed when all toolchain support __CLZ for Cortex-M0
+#if defined (ARM_MATH_CM0_FAMILY) && ((defined (__ICCARM__))  )
 
   static __INLINE uint32_t __CLZ(
   q31_t data);
@@ -6090,7 +6101,7 @@ void arm_rfft_fast_f32(
   float32_t in,
   float32_t * pOut)
   {
-    if(in > 0)
+    if(in >= 0.0f)
     {
 
 //      #if __FPU_USED
@@ -7516,6 +7527,13 @@ void arm_rfft_fast_f32(
   #define IAR_ONLY_LOW_OPTIMIZATION_EXIT
 
 #elif defined(__CSMC__)		// Cosmic
+
+#define LOW_OPTIMIZATION_ENTER
+#define LOW_OPTIMIZATION_EXIT
+#define IAR_ONLY_LOW_OPTIMIZATION_ENTER
+#define IAR_ONLY_LOW_OPTIMIZATION_EXIT
+
+#elif defined(__TASKING__)		// TASKING
 
 #define LOW_OPTIMIZATION_ENTER
 #define LOW_OPTIMIZATION_EXIT

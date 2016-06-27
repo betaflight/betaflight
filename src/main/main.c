@@ -137,8 +137,7 @@ void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
-void sonarInit(const sonarHardware_t *sonarHardware);
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 void osdInit(void);
 
 typedef enum {
@@ -264,15 +263,13 @@ void init(void)
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
-    const sonarHardware_t *sonarHardware = NULL;
-
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(&masterConfig.batteryConfig);
-        sonarIOConfig_t sonarConfig = {
-            .triggerPin = sonarHardware->triggerIO,
-            .echoPin = sonarHardware->echoIO
-        };
-        pwm_params.sonarConfig = &sonarConfig;
+        const sonarHardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
+        if (sonarHardware) {
+            pwm_params.useSonar = true;
+            pwm_params.sonarConfig.triggerTag = sonarHardware->triggerTag;
+            pwm_params.sonarConfig.echoTag = sonarHardware->echoTag;
+        }
     }
 #endif
 
@@ -302,9 +299,6 @@ void init(void)
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
-#ifdef SONAR
-    pwm_params.useSonar = feature(FEATURE_SONAR);
-#endif
 
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
@@ -320,7 +314,7 @@ void init(void)
     }
     
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
-    
+
     // Configurator feature abused for enabling Fast PWM
     pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
@@ -328,7 +322,9 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+    
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
+        featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
         use_unsyncedPwm = false;
     }
@@ -341,9 +337,12 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
+/*
+    // TODO is this needed here? enables at the end
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
 
+*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -548,7 +547,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        sonarInit(sonarHardware);
+        sonarInit();
     }
 #endif
 
@@ -730,7 +729,7 @@ void main_init(void)
 #endif
 #ifdef MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#ifdef SPRACINGF3EVO
+#if defined(USE_SPI) && defined(USE_MAG_AK8963)
     // fixme temporary solution for AK6983 via slave I2C on MPU9250
     rescheduleTask(TASK_COMPASS, 1000000 / 40);
 #endif

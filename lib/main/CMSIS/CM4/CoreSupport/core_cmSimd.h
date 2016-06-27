@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_cmSimd.h
  * @brief    CMSIS Cortex-M SIMD Header File
- * @version  V4.00
- * @date     22. August 2014
+ * @version  V4.10
+ * @date     18. March 2015
  *
  * @note
  *

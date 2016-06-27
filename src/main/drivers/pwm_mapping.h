@@ -30,21 +30,18 @@
 #error Invalid motor/servo/port configuration
 #endif
 
-
 #define PULSE_1MS   (1000)      // 1ms pulse width
-
 #define MAX_INPUTS  8
-
 #define PWM_TIMER_MHZ 1
 
-#define PWM_BRUSHED_TIMER_MHZ 8
-#define MULTISHOT_TIMER_MHZ 72
-#define ONESHOT42_TIMER_MHZ 24
-#define ONESHOT125_TIMER_MHZ 8
+#define PWM_BRUSHED_TIMER_MHZ 24
+#define MULTISHOT_TIMER_MHZ   72
+#define ONESHOT42_TIMER_MHZ   24
+#define ONESHOT125_TIMER_MHZ  8
 
 typedef struct sonarIOConfig_s {
-    ioTag_t triggerPin;
-    ioTag_t echoPin;
+    ioTag_t triggerTag;
+    ioTag_t echoTag;
 } sonarIOConfig_t;
 
 typedef struct drv_pwm_config_s {
@@ -77,7 +74,7 @@ typedef struct drv_pwm_config_s {
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    sonarIOConfig_t *sonarConfig;
+    sonarIOConfig_t sonarConfig;
 } drv_pwm_config_t;
 
 enum {

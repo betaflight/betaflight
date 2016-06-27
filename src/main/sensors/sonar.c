@@ -22,6 +22,8 @@
 #include "platform.h"
 #include "build_config.h"
 
+#ifdef SONAR
+
 #include "common/maths.h"
 #include "common/axis.h"
 
@@ -36,10 +38,9 @@
 
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
 // Inclination is adjusted by imu
-    float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
-    float baro_cf_alt;                      // apply CF to use ACC for height estimation
 
-#ifdef SONAR
+extern sonarHardware_t sonarHardwareHCSR04;
+
 int16_t sonarMaxRangeCm;
 int16_t sonarMaxAltWithTiltCm;
 int16_t sonarCfAltCm; // Complimentary Filter altitude
@@ -48,34 +49,38 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-#ifdef SONAR_CUSTOM_CONFIG
-const sonarHardware_t *sonarGetTargetHardwareConfiguration(batteryConfig_t *batteryConfig);
-#endif
-
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
+const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor)
 {
-#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
-    UNUSED(batteryConfig);
-    static const sonarHardware_t const sonarHardware = {
-		.triggerIO = IO_TAG(SONAR_TRIGGER_PIN),
-		.echoIO = IO_TAG(SONAR_ECHO_PIN),
-    };
-    return &sonarHardware;
-#elif defined(SONAR_CUSTOM_CONFIG)
-    return sonarGetTargetHardwareConfiguration(batteryConfig);
+#if defined(SONAR_TRIGGER_PIN_PWM) && defined(SONAR_ECHO_PIN_PWM)
+    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
+    if (feature(FEATURE_SOFTSERIAL)
+            || feature(FEATURE_RX_PARALLEL_PWM )
+            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
+        sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN_PWM);
+        sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN_PWM);
+    } else {
+        sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+        sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN);
+    }
+    return &sonarHardwareHCSR04;
+#elif defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
+    UNUSED(currentSensor);
+    sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+    sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN);
+    return &sonarHardwareHCSR04;
 #elif defined(UNIT_TEST)
-    UNUSED(batteryConfig);
-    return 0;
+    UNUSED(currentSensor);
+    return NULL;
 #else
 #error Sonar not defined for target
 #endif
 }
 
-void sonarInit(const sonarHardware_t *sonarHardware)
+void sonarInit(void)
 {
     sonarRange_t sonarRange;
 
-    hcsr04_init(sonarHardware, &sonarRange);
+    hcsr04_init(&sonarRange);
     sensorsSet(SENSOR_SONAR);
     sonarMaxRangeCm = sonarRange.maxRangeCm;
     sonarCfAltCm = sonarMaxRangeCm / 2;

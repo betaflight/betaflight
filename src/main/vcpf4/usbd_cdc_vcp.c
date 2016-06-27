@@ -65,8 +65,8 @@ CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_
  */
 static uint16_t VCP_Init(void)
 {
-	bDeviceState = CONFIGURED;
-	return USBD_OK;
+    bDeviceState = CONFIGURED;
+    return USBD_OK;
 }
 
 /**
@@ -77,8 +77,8 @@ static uint16_t VCP_Init(void)
  */
 static uint16_t VCP_DeInit(void)
 {
-	bDeviceState = UNCONNECTED;
-	return USBD_OK;
+    bDeviceState = UNCONNECTED;
+    return USBD_OK;
 }
 
 void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
@@ -99,12 +99,12 @@ void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
  */
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 {
-	(void)Len;
-   LINE_CODING* plc = (LINE_CODING*)Buf;
+    (void)Len;
+    LINE_CODING* plc = (LINE_CODING*)Buf;
 
-   assert_param(Len>=sizeof(LINE_CODING));
+    assert_param(Len>=sizeof(LINE_CODING));
 
-   switch (Cmd) {
+    switch (Cmd) {
        /* Not  needed for this driver, AT modem commands */   
       case SEND_ENCAPSULATED_COMMAND:
       case GET_ENCAPSULATED_RESPONSE:
@@ -139,9 +139,9 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 
       default:
          break;
-	}
+    }
 
-   return USBD_OK;
+    return USBD_OK;
 }
 
 /*******************************************************************************
@@ -153,12 +153,11 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
  *******************************************************************************/
 uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
 {
-	if(USB_Tx_State!=1)
-	{
-		VCP_DataTx(ptrBuffer,sendLength);
-		return sendLength;
-	}
-	return 0;
+    if (USB_Tx_State) 
+        return 0;
+
+    VCP_DataTx(ptrBuffer, sendLength);
+    return sendLength;
 }
 
 /**
@@ -171,20 +170,19 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
  */
 static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
 {
-
     uint16_t ptr = APP_Rx_ptr_in;
     uint32_t i;
 
     for (i = 0; i < Len; i++)
-    	APP_Rx_Buffer[ptr++ & (APP_RX_DATA_SIZE-1)] = Buf[i];
+        APP_Rx_Buffer[ptr++ & (APP_RX_DATA_SIZE-1)] = Buf[i];
 
     APP_Rx_ptr_in = ptr % APP_RX_DATA_SIZE;
-
+    
     return USBD_OK;
 }
 
-
-uint8_t usbAvailable(void) {
+uint8_t usbAvailable(void) 
+{
     return (usbData.rxBufHead != usbData.rxBufTail);
 }
 
@@ -197,13 +195,12 @@ uint8_t usbAvailable(void) {
  *******************************************************************************/
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
-	(void)len;
-    uint8_t ch = 0;
+    uint32_t ch = 0;
 
-    if (usbAvailable()) {
-    	recvBuf[0] = usbData.rxBuf[usbData.rxBufTail];
-    	usbData.rxBufTail = (usbData.rxBufTail + 1) % USB_RX_BUFSIZE;
-    	ch=1;
+    while (usbAvailable() && ch < len) {
+        recvBuf[ch] = usbData.rxBuf[usbData.rxBufTail];
+        usbData.rxBufTail = (usbData.rxBufTail + 1) % USB_RX_BUFSIZE;
+        ch++;
         receiveLength--;
     }
     return ch;
@@ -231,13 +228,17 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
     uint32_t i;
 
     for (i = 0; i < Len; i++)
-    	usbData.rxBuf[ptr++ & (USB_RX_BUFSIZE-1)] = Buf[i];
+        usbData.rxBuf[ptr++ & (USB_RX_BUFSIZE-1)] = Buf[i];
 
     usbData.rxBufHead = ptr % USB_RX_BUFSIZE;
 
-    receiveLength = ((usbData.rxBufHead - usbData.rxBufTail)>0?(usbData.rxBufHead - usbData.rxBufTail):(usbData.rxBufHead + USB_RX_BUFSIZE - usbData.rxBufTail)) % USB_RX_BUFSIZE;
-    if((receiveLength) > (USB_RX_BUFSIZE-1))
-    	return USBD_FAIL;
+    receiveLength = ((usbData.rxBufHead - usbData.rxBufTail) > 0 ?
+        (usbData.rxBufHead - usbData.rxBufTail) :
+        (usbData.rxBufHead + USB_RX_BUFSIZE - usbData.rxBufTail)) % USB_RX_BUFSIZE;
+    
+    if(receiveLength > (USB_RX_BUFSIZE-1))
+        return USBD_FAIL;
+    
     return USBD_OK;
 }
 
@@ -274,7 +275,7 @@ uint8_t usbIsConnected(void)
  *******************************************************************************/
 uint32_t CDC_BaudRate(void)
 {
-	return g_lc.bitrate;
+    return g_lc.bitrate;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

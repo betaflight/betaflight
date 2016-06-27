@@ -47,8 +47,9 @@ typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
 #else
-# error "Unknown CPU defined"
+#error "Unknown CPU defined"
 #endif
+
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
 struct timerCCHandlerRec_s;
@@ -70,9 +71,9 @@ typedef struct timerDef_s {
     rccPeriphTag_t rcc;
 } timerDef_t;
 
-typedef struct {
+typedef struct timerHardware_s {
     TIM_TypeDef *tim;
-    ioTag_t pin;
+    ioTag_t tag;
     uint8_t channel;
     uint8_t irq;
     uint8_t outputEnable;

@@ -61,11 +61,11 @@ const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
 {
     // MPU_INT output on V1 PA15
     static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
-        .io = IO_TAG(PA15)
+        .tag = IO_TAG(PA15)
     };
     // MPU_INT output on V2 PB13
     static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
-        .io = IO_TAG(PB13)
+        .tag = IO_TAG(PB13)
     };
 
     if (hardwareRevision == AFF3_REV_1) {

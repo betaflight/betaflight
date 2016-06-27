@@ -22,7 +22,7 @@
 
 // old EXTI interface, to be replaced
 typedef struct extiConfig_s {
-    ioTag_t io;
+    ioTag_t tag;
 } extiConfig_t;
 
 typedef struct extiCallbackRec_s extiCallbackRec_t;

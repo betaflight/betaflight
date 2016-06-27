@@ -31,7 +31,7 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
-void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
+void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t fastPwmProtocolType, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
@@ -144,7 +144,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->pin, UART3_GPIO, UART3_RX_PIN)))
+        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_RX_PIN)))
             continue;
 #endif
 
@@ -163,7 +163,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerHardwarePtr->tim == LED_STRIP_TIMER)
                 continue;
 #if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (CheckGPIOPinSource(timerHardwarePtr->pin, WS2811_GPIO, WS2811_PIN_SOURCE))
+            if (CheckGPIOPinSource(timerHardwarePtr->tag, WS2811_GPIO, WS2811_PIN_SOURCE))
                 continue;
 #endif
         }
@@ -171,28 +171,28 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef VBAT_ADC_GPIO
-        if (init->useVbat && CheckGPIOPin(timerHardwarePtr->pin, VBAT_ADC_GPIO, VBAT_ADC_GPIO_PIN)) {
+        if (init->useVbat && CheckGPIOPin(timerHardwarePtr->tag, VBAT_ADC_GPIO, VBAT_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef RSSI_ADC_GPIO
-        if (init->useRSSIADC && CheckGPIOPin(timerHardwarePtr->pin, RSSI_ADC_GPIO, RSSI_ADC_GPIO_PIN)) {
+        if (init->useRSSIADC && CheckGPIOPin(timerHardwarePtr->tag, RSSI_ADC_GPIO, RSSI_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && CheckGPIOPin(timerHardwarePtr->pin, CURRENT_METER_ADC_GPIO, CURRENT_METER_ADC_GPIO_PIN)) {
+        if (init->useCurrentMeterADC && CheckGPIOPin(timerHardwarePtr->tag, CURRENT_METER_ADC_GPIO, CURRENT_METER_ADC_GPIO_PIN)) {
             continue;
         }
 #endif
 
 #ifdef SONAR
-        if (init->sonarConfig && 
+        if (init->useSonar &&
             (
-                timerHardwarePtr->pin == init->sonarConfig->triggerPin ||
-                timerHardwarePtr->pin == init->sonarConfig->echoPin
+                timerHardwarePtr->tag == init->sonarConfig.triggerTag ||
+                timerHardwarePtr->tag == init->sonarConfig.echoTag
             )) {
             continue;
         }
@@ -327,7 +327,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->pwmProtocolType, init->motorPwmRate, init->idlePulse);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
             } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
-                pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+                pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
             } else {
                 pwmBrushlessMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
