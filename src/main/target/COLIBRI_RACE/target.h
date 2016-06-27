@@ -34,7 +34,7 @@
 #define MPU6500_CS_PIN                   PA4
 #define MPU6500_SPI_INSTANCE             SPI1
 
-#define MPU6000_CS_PIN				 PA4
+#define MPU6000_CS_PIN                   PA4
 #define MPU6000_SPI_INSTANCE             SPI1
 
 #define USE_SPI

@@ -306,7 +306,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
         if (type == MAP_TO_PPM_INPUT) {
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-	        if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif

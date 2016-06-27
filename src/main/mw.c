@@ -185,7 +185,7 @@ float calculateRate(int axis, int16_t rc) {
     }
 
 
-	return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
 }
 
 void processRcCommand(void)
@@ -778,7 +778,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void) {
     if (masterConfig.gyro_soft_lpf_hz) {
-	    return masterConfig.pid_process_denom - 1;
+        return masterConfig.pid_process_denom - 1;
     } else {
         return 1;
     }

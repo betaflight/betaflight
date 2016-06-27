@@ -23,7 +23,7 @@
 
 #define USBD_PRODUCT_STRING "Revolution"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
+#define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0            PB5

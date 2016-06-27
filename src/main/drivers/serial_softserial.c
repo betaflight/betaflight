@@ -96,7 +96,7 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     if (state) {
         IOHi(softSerial->txIO);
     } else {
-	    IOLo(softSerial->txIO);
+        IOLo(softSerial->txIO);
     }
 }
 

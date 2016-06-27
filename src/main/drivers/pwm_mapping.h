@@ -78,19 +78,19 @@ typedef struct drv_pwm_config_s {
 } drv_pwm_config_t;
 
 enum {
-    MAP_TO_PPM_INPUT    = 1,
+    MAP_TO_PPM_INPUT = 1,
     MAP_TO_PWM_INPUT,
     MAP_TO_MOTOR_OUTPUT,
     MAP_TO_SERVO_OUTPUT,
 };
 
 typedef enum {
-  PWM_PF_NONE = 0,
-  PWM_PF_MOTOR = (1 << 0),
-  PWM_PF_SERVO = (1 << 1),
-  PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
-  PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
-  PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
+    PWM_PF_NONE = 0,
+    PWM_PF_MOTOR = (1 << 0),
+    PWM_PF_SERVO = (1 << 1),
+    PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
+    PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
+    PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
 enum {PWM_INVERTED = 1};
