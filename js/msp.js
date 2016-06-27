@@ -896,13 +896,13 @@ var MSP = {
                 break;
 
             case MSP_codes.MSP_ADVANCED_TUNING:
-                var offset = 0;
-                ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1); 
-                offset += 2;
-                ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1); 
-                offset += 2;
-                ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                    var offset = 0;
+                    ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
                     offset += 2;
                     ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
                     ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
@@ -1445,12 +1445,12 @@ MSP.crunch = function (code) {
               .push16(FILTER_CONFIG.yaw_lpf_hz);
             break;
         case MSP_codes.MSP_SET_ADVANCED_TUNING:
-            buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
-              .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-              .push16(ADVANCED_TUNING.yaw_p_limit);
             if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-              buffer.push(ADVANCED_TUNING.deltaMethod)
-              buffer.push(ADVANCED_TUNING.vbatPidCompensation);
+                buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
+                .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                .push16(ADVANCED_TUNING.yaw_p_limit)
+                .buffer.push(ADVANCED_TUNING.deltaMethod)
+                .buffer.push(ADVANCED_TUNING.vbatPidCompensation);
             }
             break;
         case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
