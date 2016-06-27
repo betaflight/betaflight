@@ -17,11 +17,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #include "platform.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -153,9 +153,6 @@ static uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
 {
-    uint8_t i;
-    drv_pwm_config_t pwm_params;
-
     printfSupportInit();
 
     initEEPROM();
@@ -260,6 +257,7 @@ void init(void)
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
 #endif
 
+    drv_pwm_config_t pwm_params;
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
@@ -307,12 +305,6 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
-        featureSet(FEATURE_ONESHOT125);
-    } else {
-        featureClear(FEATURE_ONESHOT125);
-    }
-    
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
 
     // Configurator feature abused for enabling Fast PWM
@@ -333,16 +325,11 @@ void init(void)
 #endif
     pwmRxInit(masterConfig.inputFilteringMode);
 
+    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
-/*
-    // TODO is this needed here? enables at the end
-    if (!feature(FEATURE_ONESHOT125))
-        motorControlEnable = true;
-
-*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -488,12 +475,12 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-                masterConfig.acc_hardware, 
-                masterConfig.mag_hardware, 
-                masterConfig.baro_hardware, 
-                masterConfig.mag_declination, 
-                masterConfig.gyro_lpf, 
-                masterConfig.gyro_sync_denom)) {
+            masterConfig.acc_hardware,
+            masterConfig.mag_hardware,
+            masterConfig.baro_hardware,
+            masterConfig.mag_declination,
+            masterConfig.gyro_lpf,
+            masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -504,7 +491,7 @@ void init(void)
     LED0_OFF;
     LED2_OFF;
     
-    for (i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
@@ -688,7 +675,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) 
+void main_init(void)
 {
     init();
 

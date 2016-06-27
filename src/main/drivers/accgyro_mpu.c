@@ -228,43 +228,43 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
 
 void mpuIntExtiInit(void)
 {
-	static bool mpuExtiInitDone = false;
+    static bool mpuExtiInitDone = false;
 
-	if (mpuExtiInitDone || !mpuIntExtiConfig) {
-		return;
-	}
+    if (mpuExtiInitDone || !mpuIntExtiConfig) {
+        return;
+    }
 
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
-	IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
-	
+    IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
+    
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
-	uint8_t status = IORead(mpuIntIO);
-	if (status) {
-		return;
-	}
+    uint8_t status = IORead(mpuIntIO);
+    if (status) {
+        return;
+    }
 #endif
 
-	IOInit(mpuIntIO, OWNER_SYSTEM, RESOURCE_INPUT | RESOURCE_EXTI);
-	IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+    IOInit(mpuIntIO, OWNER_SYSTEM, RESOURCE_INPUT | RESOURCE_EXTI);
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
-	EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
-	EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-	EXTIEnable(mpuIntIO, true);
+    EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(mpuIntIO, true);
 #endif
     
-	mpuExtiInitDone = true; 
+    mpuExtiInitDone = true; 
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
 {
-	bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
+    bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
 {
-	bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
+    bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
 }
 

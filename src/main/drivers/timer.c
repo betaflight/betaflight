@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -26,7 +25,6 @@
 
 #include "nvic.h"
 
-#include "gpio.h"
 #include "gpio.h"
 #include "rcc.h"
 #include "system.h"
@@ -148,7 +146,7 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
             return timerDefinitions[i].rcc;
-        }            
+        }
     }
     return 0;
 }
@@ -190,7 +188,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 #else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
 #endif 
-    
+
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
@@ -660,7 +658,7 @@ void timerInit(void)
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
-    
+
     // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;

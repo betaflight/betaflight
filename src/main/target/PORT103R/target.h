@@ -81,13 +81,13 @@
 #define USE_FLASHTOOLS
 #define USE_FLASH_M25P16
 
-#define SONAR
+//#define SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_USART1
 #define USE_USART2
@@ -117,6 +117,9 @@
 
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM3
+
+#define SKIP_CLI_COMMAND_HELP
+#define SKIP_PID_LUXFLOAT
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
