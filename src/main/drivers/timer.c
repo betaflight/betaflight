@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -26,7 +25,6 @@
 
 #include "nvic.h"
 
-#include "gpio.h"
 #include "gpio.h"
 #include "rcc.h"
 #include "system.h"
