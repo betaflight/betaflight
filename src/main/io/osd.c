@@ -700,8 +700,7 @@ void osdDrawArtificialHorizon(int rollAngle, int pitchAngle, uint8_t show_sideba
 
 void updateOsd(void)
 {
-    static uint8_t skip = 0;
-    static bool blink = false;
+    static uint8_t blink = 0;
     static uint8_t arming = 0;
     uint32_t seconds;
     char line[30];
@@ -712,8 +711,7 @@ void updateOsd(void)
         return;
     }
     next_osd_update_at = now + OSD_UPDATE_FREQUENCY;
-    if ( !(skip % 2))
-        blink = !blink;
+    blink++;
 
     if (ARMING_FLAG(ARMED)) {
         if (!armed) {
@@ -740,10 +738,10 @@ void updateOsd(void)
     if (in_menu) {
         show_menu();
     } else {
-        if (batteryWarningVoltage > vbat && blink && masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING] != -1) {
+        if (batteryWarningVoltage > vbat && (blink & 1) && masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING] != -1) {
             max7456_write_string("LOW VOLTAGE", masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]);
         }
-        if (arming && blink && masterConfig.osdProfile.item_pos[OSD_ARMED] != -1) {
+        if (arming && (blink & 1) && masterConfig.osdProfile.item_pos[OSD_ARMED] != -1) {
             max7456_write_string("ARMED", masterConfig.osdProfile.item_pos[OSD_ARMED]);
             arming--;
         }
