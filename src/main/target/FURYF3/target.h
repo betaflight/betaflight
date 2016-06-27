@@ -25,9 +25,9 @@
 #define USE_EXTI
 #define CONFIG_PREFER_ACC_ON
  
-#define LED0 	    PC14
+#define LED0        PC14
 
-#define BEEPER 		PC15
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
@@ -188,7 +188,7 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTF	(BIT(4))
+#define TARGET_IO_PORTF (BIT(4))
 
 #define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))
 

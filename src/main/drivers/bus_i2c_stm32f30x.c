@@ -83,8 +83,8 @@ void i2cInit(I2CDevice device)
     RCC_ClockCmd(i2c->rcc, ENABLE);
     RCC_I2CCLKConfig(I2Cx == I2C2 ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
 
-    IOConfigGPIOAF(scl, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL), GPIO_AF_4);
-    IOConfigGPIOAF(sda, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL), GPIO_AF_4);
+    IOConfigGPIOAF(scl, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP), GPIO_AF_4);
+    IOConfigGPIOAF(sda, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP), GPIO_AF_4);
 
     I2C_InitTypeDef i2cInit = {
         .I2C_Mode = I2C_Mode_I2C,

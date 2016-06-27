@@ -84,7 +84,6 @@ const uint16_t airPWM[] = {
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1,  0}, // RC_CH1 - PA0  - *TIM2_CH1
     { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1,  0}, // RC_CH2 - PA1  - *TIM2_CH2, TIM15_CH1N
-    // Production boards swapped RC_CH3/4 swapped to make it easier to use SerialRX using supplied cables - compared to first prototype.
     { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1,  0}, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
     { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1,  0}, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
     { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2,  0}, // RC_CH5 - PB4  - *TIM3_CH1
@@ -92,15 +91,15 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2,  0}, // RC_CH7 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
     { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2,  0}, // RC_CH8 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
 
-    { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1,  0},  // PWM1 - PA6  - TIM3_CH1, TIM8_BKIN, TIM1_BKIN, *TIM16_CH1
-    { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_1,  0},  // PWM2 - PA7  - TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
+    { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1,  0}, // PWM1 - PA6  - TIM3_CH1, TIM8_BKIN, TIM1_BKIN, *TIM16_CH1
+    { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_1,  0}, // PWM2 - PA7  - TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
     { TIM4,  IO_TAG(PA11), TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_10, 0}, // PWM3 - PA11
     { TIM4,  IO_TAG(PA12), TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_10, 0}, // PWM4 - PA12
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0},  // PWM5 - PB8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0},  // PWM6 - PB9
-    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9,  0},  // PWM7 - PA2
-    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9,  0},  // PWM8 - PA3
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0}, // PWM5 - PB8
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0}, // PWM6 - PB9
+    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9,  0}, // PWM7 - PA2
+    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9,  0}, // PWM8 - PA3
 
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6,  0},  // GPIO_TIMER / LED_STRIP
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6,  0}, // GPIO_TIMER / LED_STRIP
 };
 

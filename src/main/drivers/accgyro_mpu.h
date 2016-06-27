@@ -120,12 +120,12 @@ typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
 typedef void(*mpuResetFuncPtr)(void);   
 
 typedef struct mpuConfiguration_s {
-	uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
-	mpuReadRegisterFunc read;
-	mpuWriteRegisterFunc write;
-	mpuReadRegisterFunc slowread;
-	mpuWriteRegisterFunc verifywrite;
-	mpuResetFuncPtr reset;
+    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
+    mpuReadRegisterFunc read;
+    mpuWriteRegisterFunc write;
+    mpuReadRegisterFunc slowread;
+    mpuWriteRegisterFunc verifywrite;
+    mpuResetFuncPtr reset;
 } mpuConfiguration_t;
 
 extern mpuConfiguration_t mpuConfiguration;
@@ -185,4 +185,4 @@ void mpuIntExtiInit(void);
 bool mpuAccRead(int16_t *accData);
 bool mpuGyroRead(int16_t *gyroADC);
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-void checkMPUDataReady(bool *mpuDataReadyPtr);
+bool checkMPUDataReady(void);

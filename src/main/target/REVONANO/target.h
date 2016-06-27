@@ -22,7 +22,7 @@
 
 #define USBD_PRODUCT_STRING "Revo Nano"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8010000"
+#define USBD_SERIALNUMBER_STRING "0x8010000"
 #endif
 
 #define LED0 PC14

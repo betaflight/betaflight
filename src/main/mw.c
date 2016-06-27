@@ -185,7 +185,7 @@ float calculateRate(int axis, int16_t rc) {
     }
 
 
-	return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
 }
 
 void processRcCommand(void)
@@ -377,7 +377,7 @@ void mwArm(void)
     static bool firstArmingCalibrationWasCompleted;
 
     if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
-        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        gyroSetCalibrationCycles();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
     }
@@ -778,7 +778,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void) {
     if (masterConfig.gyro_soft_lpf_hz) {
-	    return masterConfig.pid_process_denom - 1;
+        return masterConfig.pid_process_denom - 1;
     } else {
         return 1;
     }
@@ -802,7 +802,7 @@ void taskMainPidLoopCheck(void)
 
     const uint32_t startTime = micros();
     while (true) {
-        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
             if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting

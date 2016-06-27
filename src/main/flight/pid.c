@@ -29,7 +29,6 @@
 #include "common/filter.h"
 
 #include "drivers/sensor.h"
-#include "drivers/gyro_sync.h"
 
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
@@ -74,7 +73,7 @@ pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we
 
 void setTargetPidLooptime(uint8_t pidProcessDenom) 
 {
-    targetPidLooptime = targetLooptime * pidProcessDenom;
+    targetPidLooptime = gyro.targetLooptime * pidProcessDenom;
 }
 
 uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate) 

@@ -55,5 +55,5 @@ void updateHardwareRevision(void)
 
 const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
 {
-	return NULL;
+    return NULL;
 }
