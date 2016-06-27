@@ -101,6 +101,8 @@ void i2cInit(I2CDevice device)
     
     I2C_Init(I2Cx, &i2cInit);
 
+    I2C_StretchClockCmd(I2Cx, ENABLE);
+      
     I2C_Cmd(I2Cx, ENABLE);
 }
 
