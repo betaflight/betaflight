@@ -488,12 +488,12 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-                masterConfig.acc_hardware, 
-                masterConfig.mag_hardware, 
-                masterConfig.baro_hardware, 
-                masterConfig.mag_declination, 
-                masterConfig.gyro_lpf, 
-                masterConfig.gyro_sync_denom)) {
+            masterConfig.acc_hardware,
+            masterConfig.mag_hardware,
+            masterConfig.baro_hardware,
+            masterConfig.mag_declination,
+            masterConfig.gyro_lpf,
+            masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -688,7 +688,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) 
+void main_init(void)
 {
     init();
 
