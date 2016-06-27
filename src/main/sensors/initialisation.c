@@ -216,7 +216,7 @@ bool detectGyro(void)
             ; // fallthrough
 
         case GYRO_MPU6500:
-#ifdef USE_GYRO_MPU6500
+#if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
 #ifdef USE_GYRO_SPI_MPU6500
             if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro))
 #else
@@ -361,7 +361,7 @@ retry:
 #endif
             ; // fallthrough
         case ACC_MPU6500:
-#ifdef USE_ACC_MPU6500
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
             if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc))
 #else

@@ -82,10 +82,10 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #endif
 
 static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = false, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = false, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
+    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
 #ifdef STM32F4
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = false, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
+    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
 #endif
 };
 
@@ -396,7 +396,7 @@ void i2cInit(I2CDevice device)
     i2cUnstick(scl, sda);
      
     // Init pins
-#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+#ifdef STM32F4
     IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_I2C);
     IOConfigGPIOAF(sda, IOCFG_I2C, GPIO_AF_I2C);
 #else
@@ -416,8 +416,7 @@ void i2cInit(I2CDevice device)
 
     if (i2c->overClock) {
         i2cInit.I2C_ClockSpeed = 800000; // 800khz Maximum speed tested on various boards without issues
-    }
-    else {
+    } else {
         i2cInit.I2C_ClockSpeed = 400000; // 400khz Operation according specs
     }
 

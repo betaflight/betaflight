@@ -463,7 +463,7 @@ static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
 };
 
-static const char * const lookupTableFastPwm[] = {
+static const char * const lookupTablePwmProtocol[] = {
     "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED"
 };
 
@@ -525,7 +525,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
-    { lookupTableFastPwm, sizeof(lookupTableFastPwm) / sizeof(char *) },
+    { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
@@ -1902,10 +1902,11 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
-        
-#ifdef STM32F4
-        delayMicroseconds(1000);
+
+#ifdef USE_SLOW_SERIAL_CLI
+        delay(2);
 #endif
+
     }
 }
 
@@ -1979,6 +1980,9 @@ static void cliDump(char *cmdline)
             if (yaw < 0)
                 cliWrite(' ');
             cliPrintf("%s\r\n", ftoa(yaw, buf));
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 #ifdef USE_SERVOS
@@ -2000,6 +2004,10 @@ static void cliDump(char *cmdline)
                 masterConfig.customServoMixer[i].max,
                 masterConfig.customServoMixer[i].box
             );
+
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 #endif
@@ -2012,12 +2020,18 @@ static void cliDump(char *cmdline)
             if (featureNames[i] == NULL)
                 break;
             cliPrintf("feature -%s\r\n", featureNames[i]);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
                 cliPrintf("feature %s\r\n", featureNames[i]);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
 
 
@@ -2077,6 +2091,9 @@ static void cliDump(char *cmdline)
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
                 }
             }
         }
@@ -2109,6 +2126,9 @@ static void cliDump(char *cmdline)
 
                 changeControlRateProfile(currentRateIndex);
                 cliRateProfile("");
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2133,7 +2153,8 @@ static void cliDump(char *cmdline)
     }
 }
 
-void cliDumpProfile(uint8_t profileIndex) {
+void cliDumpProfile(uint8_t profileIndex)
+{
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
         
@@ -2148,7 +2169,8 @@ void cliDumpProfile(uint8_t profileIndex) {
         cliRateProfile("");
 }
 
-void cliDumpRateProfile(uint8_t rateProfileIndex) {
+void cliDumpRateProfile(uint8_t rateProfileIndex)
+{
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
     
@@ -2541,12 +2563,12 @@ static void cliRateProfile(char *cmdline) {
     }
 }
 
-static void cliReboot(void) {
+static void cliReboot(void)
+{
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
-    handleOneshotFeatureChangeOnRestart();
     systemReset();
 }
 
@@ -2653,7 +2675,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
-            cliPrintf("Allowed range: %d - %d\n", var->config.minmax.min, var->config.minmax.max);
+            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         }
         break;
         case (MODE_LOOKUP): {
@@ -2665,7 +2687,7 @@ static void cliPrintVarRange(const clivalue_t *var)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
-            cliPrint("\n");
+            cliPrint("\r\n");
         }
         break;
     }
@@ -2717,6 +2739,10 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
+            
+#ifdef USE_SLOW_SERIAL_CLI
+            delay(2);
+#endif            
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -2891,14 +2917,14 @@ static void cliTasks(char *cmdline)
                 subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
                 if (masterConfig.pid_process_denom > 1) {
                     taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-                    cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
-                cliPrintf("%d - (%s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
             }
 
             cliPrintf("max: %dus, avg: %dus, rate: %dhz, total: ", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
@@ -2909,7 +2935,7 @@ static void cliTasks(char *cmdline)
                 cliPrintf("%dms", taskTotalTime);
             }
 
-            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n- - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
+            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n - - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
             cliPrintf("\r\n", taskTotalTime);
         }
     }
@@ -3038,7 +3064,7 @@ void cliProcess(void)
     }
 }
 
-const char * const ownerNames[] = {
+const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE",
     "PWM IN",
     "PPM IN",
@@ -3060,6 +3086,8 @@ const char * const ownerNames[] = {
     "FLASH",
     "USB",
     "BEEPER",
+    "OSD",
+    "BARO",
 };
 
 static void cliResource(char *cmdline)

@@ -339,8 +339,8 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
 
 static void pwmGPIOConfig(ioTag_t pin, ioConfig_t mode)
 {
-	IOInit(IOGetByTag(pin), OWNER_PWMINPUT, RESOURCE_INPUT);
-	IOConfigGPIO(IOGetByTag(pin), mode);
+    IOInit(IOGetByTag(pin), OWNER_PWMINPUT, RESOURCE_INPUT);
+    IOConfigGPIO(IOGetByTag(pin), mode);
 }
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)

@@ -34,7 +34,7 @@
 #define MPU6500_CS_PIN                   PA4
 #define MPU6500_SPI_INSTANCE             SPI1
 
-#define MPU6000_CS_PIN				 PA4
+#define MPU6000_CS_PIN                   PA4
 #define MPU6000_SPI_INSTANCE             SPI1
 
 #define USE_SPI
@@ -103,16 +103,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
+#define I2C2_SCL_PIN         PA9
+#define I2C2_SDA_PIN         PA10
 
 #define USE_BST
 #define BST_DEVICE (BSTDEV_1)
@@ -120,32 +112,17 @@
 #define BST_CRC_POLYNOM                         0xD5
 
 #define USE_ADC
-
 #define ADC_INSTANCE                ADC1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define VBAT_ADC_GPIO               GPIOC
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_6
-
-#define CURRENT_METER_ADC_GPIO      GPIOC
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_7
-
-#define RSSI_ADC_GPIO               GPIOC
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
-
-#define EXTERNAL1_ADC_GPIO          GPIOC
-#define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
-#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
+#define VBAT_ADC_PIN                PC0
+#define CURRENT_METER_ADC_PIN       PC1
+#define RSSI_ADC_PIN                PC2
+#define EXTERNAL1_ADC_PIN           PC3
 
 #define LED_STRIP
 #define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
-#define LED_STRIP_TIMER TIM16
+#define LED_STRIP_TIMER                 TIM16
 
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA

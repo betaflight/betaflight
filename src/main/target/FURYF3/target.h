@@ -25,9 +25,9 @@
 #define USE_EXTI
 #define CONFIG_PREFER_ACC_ON
  
-#define LED0 	    PC14
+#define LED0        PC14
 
-#define BEEPER 		PC15
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
@@ -150,25 +150,13 @@
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define ADC_INSTANCE                ADC1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_2
-
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_3
+#define VBAT_ADC_PIN                PA0
+#define RSSI_ADC_PIN                PA1
+#define CURRENT_METER_ADC_PIN       PA2
 
 #define LED_STRIP
-#define LED_STRIP_TIMER TIM1
+#define LED_STRIP_TIMER                 TIM1
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_GPIO                     GPIOA
@@ -200,7 +188,7 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTF	(BIT(4))
+#define TARGET_IO_PORTF (BIT(4))
 
 #define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))
 

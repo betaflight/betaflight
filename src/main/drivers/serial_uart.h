@@ -38,15 +38,15 @@
 
 typedef struct {
     serialPort_t port;
-    
+
 #ifdef STM32F4
-	DMA_Stream_TypeDef *rxDMAStream;
-	DMA_Stream_TypeDef *txDMAStream;
-	uint32_t rxDMAChannel;
-	uint32_t txDMAChannel;
+    DMA_Stream_TypeDef *rxDMAStream;
+    DMA_Stream_TypeDef *txDMAStream;
+    uint32_t rxDMAChannel;
+    uint32_t txDMAChannel;
 #else
-	DMA_Channel_TypeDef *rxDMAChannel;
-	DMA_Channel_TypeDef *txDMAChannel;
+    DMA_Channel_TypeDef *rxDMAChannel;
+    DMA_Channel_TypeDef *txDMAChannel;
 #endif
 
     uint32_t rxDMAIrq;
@@ -65,7 +65,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
 // serialPort API
 void uartWrite(serialPort_t *instance, uint8_t ch);
-uint8_t uartTotalRxBytesWaiting(serialPort_t *instance);
+uint32_t uartTotalRxBytesWaiting(serialPort_t *instance);
 uint8_t uartTotalTxBytesFree(serialPort_t *instance);
 uint8_t uartRead(serialPort_t *instance);
 void uartSetBaudRate(serialPort_t *s, uint32_t baudRate);

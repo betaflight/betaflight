@@ -185,7 +185,7 @@ float calculateRate(int axis, int16_t rc) {
     }
 
 
-	return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
 }
 
 void processRcCommand(void)
@@ -698,6 +698,8 @@ void subTaskMainSubprocesses(void) {
     #endif
 
     #if defined(BARO) || defined(SONAR)
+            // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+            updateRcCommands();
             if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
                 if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
                     applyAltHold(&masterConfig.airplaneConfig);
@@ -776,7 +778,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void) {
     if (masterConfig.gyro_soft_lpf_hz) {
-	    return masterConfig.pid_process_denom - 1;
+        return masterConfig.pid_process_denom - 1;
     } else {
         return 1;
     }
@@ -878,8 +880,10 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
+#if !defined(BARO) && !defined(SONAR)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
+#endif
     updateLEDs();
 
 #ifdef BARO

@@ -1545,7 +1545,6 @@ void taskBstMasterProcess(void)
     bstMasterWriteLoop();
     if (isRebootScheduled) {
         stopMotors();
-        handleOneshotFeatureChangeOnRestart();
         systemReset();
     }
     resetBstChecker();
@@ -1555,12 +1554,14 @@ void taskBstMasterProcess(void)
 static uint8_t masterWriteBufferPointer;
 static uint8_t masterWriteData[DATA_BUFFER_SIZE];
 
-static void bstMasterStartBuffer(uint8_t address) {
+static void bstMasterStartBuffer(uint8_t address)
+{
     masterWriteData[0] = address;
     masterWriteBufferPointer = 2;
 }
 
-static void bstMasterWrite8(uint8_t data) {
+static void bstMasterWrite8(uint8_t data)
+{
     masterWriteData[masterWriteBufferPointer++] = data;
     masterWriteData[1] = masterWriteBufferPointer;
 }

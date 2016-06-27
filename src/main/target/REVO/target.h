@@ -20,23 +20,17 @@
 #define TARGET_BOARD_IDENTIFIER "REVO"
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-#define CONFIG_SERIALRX_PROVIDER SERIALRX_SBUS
-#define CONFIG_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
-#define CONFIG_FEATURE_RX_SERIAL
-#define CONFIG_FEATURE_ONESHOT125
-#define CONFIG_MSP_PORT 2
-#define CONFIG_RX_SERIAL_PORT 1
 
 #define USBD_PRODUCT_STRING "Revolution"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
+#define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
-#define LED0 PB5
-#define LED1 PB4
-#define BEEPER PB4
-#define INVERTER PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART USART1
+#define LED0            PB5
+#define LED1            PB4
+#define BEEPER          PB4
+#define INVERTER        PC0 // PC0 used as inverter select GPIO
+#define INVERTER_USART  USART1
 
 #define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
@@ -110,14 +104,10 @@
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN       PC1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_11
+#define VBAT_ADC_PIN                PC2
+#define RSSI_ADC_GPIO_PIN           PA0
 
-#define VBAT_ADC_PIN           PC2
-#define VBAT_ADC_CHANNEL       ADC_Channel_12
-
-#define RSSI_ADC_GPIO_PIN      PA0
-#define RSSI_ADC_CHANNEL       ADC_Channel_0
-
+ 
 #define SENSORS_SET (SENSOR_ACC)
 
 //#define LED_STRIP

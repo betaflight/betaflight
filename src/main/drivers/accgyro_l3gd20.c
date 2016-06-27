@@ -62,7 +62,7 @@
 
 #define BLOCK_DATA_UPDATE_CONTINUOUS  ((uint8_t)0x00)
 
-#define BLE_MSB	                      ((uint8_t)0x40)
+#define BLE_MSB                       ((uint8_t)0x40)
 
 #define BOOT                          ((uint8_t)0x80)
 
@@ -81,7 +81,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     DISABLE_L3GD20;
 
-    spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(L3GD20_SPI, SPI_CLOCK_STANDARD);
 }
 
 void l3gd20GyroInit(uint8_t lpf)

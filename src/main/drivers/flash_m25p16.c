@@ -95,7 +95,7 @@ static void m25p16_writeEnable()
 
 static uint8_t m25p16_readStatus()
 {
-    uint8_t command[2] = {M25P16_INSTRUCTION_READ_STATUS_REG, 0};
+    uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     uint8_t in[2];
 
     ENABLE_M25P16;
@@ -134,7 +134,7 @@ bool m25p16_waitForReady(uint32_t timeoutMillis)
  */
 static bool m25p16_readIdentification()
 {
-    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0};
+    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
     uint32_t chipID;
 
@@ -210,7 +210,7 @@ bool m25p16_init()
 
 #ifndef M25P16_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
-    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_CLOCK_FAST);
 #endif
 
     return m25p16_readIdentification();

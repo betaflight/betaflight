@@ -228,8 +228,8 @@ enum EP_BUF_NUM
 /* GetDADDR */
 #define _GetDADDR()  ((__IO uint16_t) *DADDR)
 
-/* GetBTABLE */
-#define _GetBTABLE() ((__IO uint16_t) *BTABLE)
+/* GetBTABLE ; clear low-order bits explicitly to avoid problems in gcc 5.x */
+#define _GetBTABLE() (((__IO uint16_t) *BTABLE) & ~0x07)
 
 /* SetENDPOINT */
 #define _SetENDPOINT(bEpNum,wRegValue)  (*(EP0REG + bEpNum)= \

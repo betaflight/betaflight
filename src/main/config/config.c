@@ -23,6 +23,8 @@
 
 #include "build_config.h"
 
+#include "blackbox/blackbox_io.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -178,7 +180,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-static void resetPidProfile(pidProfile_t *pidProfile)
+void resetPidProfile(pidProfile_t *pidProfile)
 {
 
 #if (defined(STM32F10X))
@@ -193,7 +195,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 50;
     pidProfile->I8[PITCH] = 40;
     pidProfile->D8[PITCH] = 18;
-    pidProfile->P8[YAW] = 90;
+    pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
     pidProfile->P8[PIDALT] = 50;
@@ -218,10 +220,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->rollPitchItermIgnoreRate = 180;
     pidProfile->yawItermIgnoreRate = 35;
-    pidProfile->dterm_lpf_hz = 50;    // filtering ON by default
-    pidProfile->deltaMethod = DELTA_FROM_ERROR;
+    pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
+    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->dynamic_pid = 1;
 
 #ifdef GTUNE
@@ -397,7 +399,7 @@ uint8_t getCurrentControlRateProfile(void)
 static void setControlRateProfile(uint8_t profileIndex)
 {
     currentControlRateProfileIndex = profileIndex;
-	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
+    masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
     currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];
 }
 
@@ -536,10 +538,10 @@ static void resetConf(void)
 
 #ifdef GPS
     // gps/nav stuff
-    masterConfig.gpsConfig.provider = GPS_NMEA;
-    masterConfig.gpsConfig.sbasMode = SBAS_AUTO;
+    masterConfig.gpsConfig.provider   = GPS_NMEA;
+    masterConfig.gpsConfig.sbasMode   = SBAS_AUTO;
     masterConfig.gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
-    masterConfig.gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
+    masterConfig.gpsConfig.autoBaud   = GPS_AUTOBAUD_OFF;
 #endif
 
     resetSerialConfig(&masterConfig.serialConfig);
@@ -615,13 +617,13 @@ static void resetConf(void)
     masterConfig.vtx_mhz = 5740;  //F0
 #endif
 
-#ifdef SPRACINGF3
-    masterConfig.blackbox_device = 1;
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
 
     memcpy(masterConfig.transponderData, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
+
+#ifdef BLACKBOX
 
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     featureSet(FEATURE_BLACKBOX);
@@ -630,13 +632,14 @@ static void resetConf(void)
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
-    masterConfig.blackbox_device = 0;
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
 #endif
 
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
-#endif
 
+#endif // BLACKBOX
+    
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
     masterConfig.escAndServoConfig.minthrottle = 1025;
@@ -651,20 +654,21 @@ static void resetConf(void)
     
 #if defined(ALIENFLIGHT) 
     featureClear(FEATURE_ONESHOT125);
-#ifdef ALIENFLIGHTF3
+#ifdef ALIENFLIGHTF1
+    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
+#else
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+#endif
+#ifdef ALIENFLIGHTF3
     masterConfig.batteryConfig.vbatscale = 20;
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-#else
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
-    masterConfig.rxConfig.serialrx_provider = 1;
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
     currentControlRateProfile->rates[FD_PITCH] = 40;
@@ -684,10 +688,6 @@ static void resetConf(void)
 
 #if defined(SINGULARITY)
     // alternative defaults settings for SINGULARITY target
-    masterConfig.blackbox_device = 1;
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
-    
     masterConfig.batteryConfig.vbatscale = 77;
 
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
@@ -1046,23 +1046,13 @@ void changeProfile(uint8_t profileIndex)
     beeperConfirmationBeeps(profileIndex + 1);
 }
 
-void changeControlRateProfile(uint8_t profileIndex) {    
+void changeControlRateProfile(uint8_t profileIndex)
+{    
     if (profileIndex > MAX_RATEPROFILES) {    
         profileIndex = MAX_RATEPROFILES - 1;    
     }        
     setControlRateProfile(profileIndex);    
     activateControlRateConfig();    
-}
-
-void handleOneshotFeatureChangeOnRestart(void)
-{
-    // Shutdown PWM on all motors prior to soft restart
-    StopPwmAllMotors();
-    delay(50);
-    // Apply additional delay when OneShot125 feature changed from on to off state
-    if (feature(FEATURE_ONESHOT125) && !featureConfigured(FEATURE_ONESHOT125)) {
-        delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
-    }
 }
 
 void latchActiveFeatures()
