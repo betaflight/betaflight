@@ -1449,8 +1449,8 @@ MSP.crunch = function (code) {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
                 .push16(ADVANCED_TUNING.yawItermIgnoreRate)
                 .push16(ADVANCED_TUNING.yaw_p_limit)
-                .buffer.push(ADVANCED_TUNING.deltaMethod)
-                .buffer.push(ADVANCED_TUNING.vbatPidCompensation);
+                .push8(ADVANCED_TUNING.deltaMethod)
+                .push8(ADVANCED_TUNING.vbatPidCompensation);
             }
             break;
         case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
