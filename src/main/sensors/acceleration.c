@@ -28,7 +28,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
-#include "drivers/gyro_sync.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"

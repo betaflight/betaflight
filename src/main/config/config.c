@@ -38,7 +38,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 
@@ -751,7 +750,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

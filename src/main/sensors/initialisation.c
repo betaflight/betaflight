@@ -79,6 +79,7 @@ extern float magneticDeclination;
 extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
+extern sensor_align_e gyroAlign;
 
 uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
@@ -632,8 +633,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
         acc.init(&acc);
     }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro refresh rate before initialisation
+    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf);
+    gyroInit();
 
     detectMag(magHardwareToUse);
 

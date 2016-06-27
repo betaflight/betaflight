@@ -377,7 +377,7 @@ void mwArm(void)
     static bool firstArmingCalibrationWasCompleted;
 
     if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
-        gyroSetCalibrationCycles(calculateCalibratingCycles());
+        gyroSetCalibrationCycles();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
     }
@@ -802,7 +802,7 @@ void taskMainPidLoopCheck(void)
 
     const uint32_t startTime = micros();
     while (true) {
-        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
             if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
