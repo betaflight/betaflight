@@ -359,3 +359,4 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 	if (device != SPIINVALID)
 		spiHardwareMap[device].errorCount = 0;
 }
+
