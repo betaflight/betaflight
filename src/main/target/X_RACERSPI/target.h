@@ -17,44 +17,50 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "ZCF3"
+#define TARGET_BOARD_IDENTIFIER "XRC3"
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0        PB8
 
-#define BEEPER      PC15
+#define LED0 PC14
+#define BEEPER PC15
 #define BEEPER_INVERTED
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
+#define USABLE_TIMER_CHANNEL_COUNT 17
 
-#define USE_EXTI
-#define MPU_INT_EXTI PC13
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
+
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
+#define MPU6000_CS_PIN        PA15
+#define MPU6000_SPI_INSTANCE  SPI1
+
 
 #define GYRO
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW270_DEG
 
 #define ACC
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW270_DEG
 
-#define ACC_MPU6500_ALIGN   CW180_DEG
-#define GYRO_MPU6500_ALIGN  CW180_DEG
+// MPU6000 interrupts
+#define USE_MPU_DATA_READY_SIGNAL
+#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
+#define MPU_INT_EXTI PC13
+#define USE_EXTI
 
-#define BARO
-#define USE_BARO_BMP280
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USE_USART1
 #define USE_USART2
 #define USE_USART3
-#define SERIAL_PORT_COUNT 3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT 5
 
 #ifndef UART1_GPIO
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
@@ -65,12 +71,12 @@
 #define UART1_RX_PINSOURCE  GPIO_PinSource10
 #endif
 
-#define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
-#define UART2_RX_PIN        GPIO_Pin_15 // PA15
+#define UART2_TX_PIN        GPIO_Pin_2 // PA14 / SWCLK
+#define UART2_RX_PIN        GPIO_Pin_3 // PA15
 #define UART2_GPIO          GPIOA
 #define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PINSOURCE  GPIO_PinSource2
+#define UART2_RX_PINSOURCE  GPIO_PinSource3
 
 #ifndef UART3_GPIO
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
@@ -81,23 +87,31 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
+#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+#define SOFTSERIAL_2_TIMER TIM3
+#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
+#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
-#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5 SPI2 (SDCard)
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
+//GPIO_AF_1
 
-#define SPI1_NSS_PIN            PB9
+#define SPI1_NSS_PIN            PA15
 #define SPI1_SCK_PIN            PB3
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
- 
-#define MPU6500_CS_PIN          PB9
-#define MPU6500_SPI_INSTANCE    SPI1
 
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
@@ -109,8 +123,30 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
+#define LED_STRIP
+#define LED_STRIP_TIMER             TIM1
+
+#define USE_LED_STRIP_ON_DMA1_CHANNEL2
+#define WS2811_GPIO                     GPIOA
+#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define WS2811_GPIO_AF                  GPIO_AF_6
+#define WS2811_PIN                      GPIO_Pin_8
+#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_TIMER                    TIM1
+#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define WS2811_DMA_CHANNEL              DMA1_Channel2
+#define WS2811_IRQ                      DMA1_Channel2_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
+#define DEFAULT_FEATURES FEATURE_BLACKBOX
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PIN   PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -120,7 +156,6 @@
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 17 // PPM, 8 PWM, UART3 RX/TX, LED Strip
-
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+
 

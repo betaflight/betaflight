@@ -62,7 +62,7 @@
 
 #define BLOCK_DATA_UPDATE_CONTINUOUS  ((uint8_t)0x00)
 
-#define BLE_MSB	                      ((uint8_t)0x40)
+#define BLE_MSB                       ((uint8_t)0x40)
 
 #define BOOT                          ((uint8_t)0x80)
 

@@ -52,23 +52,23 @@ typedef enum {
 } SPIClockDivider_e;
 
 typedef enum SPIDevice {
-	SPIINVALID = -1,
-	SPIDEV_1   = 0,
-	SPIDEV_2,
-	SPIDEV_3,
-	SPIDEV_MAX = SPIDEV_3,
+    SPIINVALID = -1,
+    SPIDEV_1   = 0,
+    SPIDEV_2,
+    SPIDEV_3,
+    SPIDEV_MAX = SPIDEV_3,
 } SPIDevice;
 
 typedef struct SPIDevice_s {
-	SPI_TypeDef *dev;
-	ioTag_t nss;
-	ioTag_t sck;
-	ioTag_t mosi;
-	ioTag_t miso;
-	rccPeriphTag_t rcc;
-	uint8_t af;
-	volatile uint16_t errorCount;
-	bool sdcard;
+    SPI_TypeDef *dev;
+    ioTag_t nss;
+    ioTag_t sck;
+    ioTag_t mosi;
+    ioTag_t miso;
+    rccPeriphTag_t rcc;
+    uint8_t af;
+    volatile uint16_t errorCount;
+    bool sdcard;
 } spiDevice_t;
 
 bool spiInit(SPIDevice device);
