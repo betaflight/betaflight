@@ -444,6 +444,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.2")) {
             $('.delta').hide();
+            $('.note').hide();
         }
 
         // update == save.
