@@ -11,10 +11,6 @@ TABS.receiver.initialize = function (callback) {
         GUI.active_tab = 'receiver';
     }
 
-    function get_misc_data() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);
-    }
-
     function get_rc_data() {
         MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_map);
     }
@@ -41,15 +37,11 @@ TABS.receiver.initialize = function (callback) {
         $('#content').load("./tabs/receiver.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_misc_data);
+    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);
 
     function process_html() {
         // translate to user-selected language
         localize();
-
-        // fill in data from RC_tuning
-        $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
-        $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
 
         chrome.storage.local.get('rx_refresh_rate', function (result) {
             if (result.rx_refresh_rate) {
@@ -199,65 +191,11 @@ TABS.receiver.initialize = function (callback) {
         var rateHeight = TABS.receiver.rateChartHeight;
 
         // UI Hooks
-        // curves
-        $('.tunings .throttle input').on('input change', function () {
-            setTimeout(function () { // let global validation trigger and adjust the values first
-                var throttleMidE = $('.tunings .throttle input[name="mid"]'),
-                    throttleExpoE = $('.tunings .throttle input[name="expo"]'),
-                    mid = parseFloat(throttleMidE.val()),
-                    expo = parseFloat(throttleExpoE.val()),
-                    throttle_curve = $('.throttle_curve canvas').get(0),
-                    context = throttle_curve.getContext("2d");
-
-                // local validation to deal with input event
-                if (mid >= parseFloat(throttleMidE.prop('min')) &&
-                    mid <= parseFloat(throttleMidE.prop('max')) &&
-                    expo >= parseFloat(throttleExpoE.prop('min')) &&
-                    expo <= parseFloat(throttleExpoE.prop('max'))) {
-                    // continue
-                } else {
-                    return;
-                }
-
-                // math magic by englishman
-                var midx = 200 * mid,
-                    midxl = midx * 0.5,
-                    midxr = (((200 - midx) * 0.5) + midx),
-                    midy = rateHeight - (midx * (rateHeight / 200)),
-                    midyl = rateHeight - ((rateHeight - midy) * 0.5 *(expo + 1)),
-                    midyr = (midy / 2) * (expo + 1);
-
-                // draw
-                context.clearRect(0, 0, 200, rateHeight);
-                context.beginPath();
-                context.moveTo(0, rateHeight);
-                context.quadraticCurveTo(midxl, midyl, midx, midy);
-                context.moveTo(midx, midy);
-                context.quadraticCurveTo(midxr, midyr, 200, 0);
-                context.lineWidth = 2;
-				context.strokeStyle = '#ffbb00';
-                context.stroke();
-            }, 0);
-        }).trigger('input');
-
         $('a.refresh').click(function () {
-            MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, function () {
-                GUI.log(chrome.i18n.getMessage('receiverDataRefreshed'));
-
-                // fill in data from RC_tuning
-                $('.tunings .throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
-                $('.tunings .throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
-
-                // update visual representation
-                $('.tunings .throttle input').change();
-            });
+	    // Todo: refresh data here
         });
 
         $('a.update').click(function () {
-            // catch RC_tuning changes
-            RC_tuning.throttle_MID = parseFloat($('.tunings .throttle input[name="mid"]').val());
-            RC_tuning.throttle_EXPO = parseFloat($('.tunings .throttle input[name="expo"]').val());
-
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
                RC_deadband.yaw_deadband = parseInt($('.deadband input[name="yaw_deadband"]').val());
                RC_deadband.deadband = parseInt($('.deadband input[name="deadband"]').val());
@@ -273,10 +211,6 @@ TABS.receiver.initialize = function (callback) {
 
             // catch rssi aux
             MISC.rssi_channel = parseInt($('select[name="rssi_channel"]').val());
-
-            function save_rc_map() {
-                MSP.send_message(MSP_codes.MSP_SET_RX_MAP, MSP.crunch(MSP_codes.MSP_SET_RX_MAP), false, save_misc);
-            }
 
             function save_misc() {
                 MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_rc_configs);
@@ -297,7 +231,7 @@ TABS.receiver.initialize = function (callback) {
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING), false, save_rc_map);
+            MSP.send_message(MSP_codes.MSP_SET_RX_MAP, MSP.crunch(MSP_codes.MSP_SET_RX_MAP), false, save_misc);
         });
 
         $("a.sticks").click(function() {

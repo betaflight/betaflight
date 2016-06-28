@@ -174,6 +174,9 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
         $('.pid_tuning input[name="rc_rate_yaw"]').val(SPECIAL_PARAMETERS.RC_RATE_YAW.toFixed(2));
 
+	$('.throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
+	$('.throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
+
         $('.tpa input[name="tpa"]').val(RC_tuning.dynamic_THR_PID.toFixed(2));
         $('.tpa input[name="tpa-breakpoint"]').val(RC_tuning.dynamic_THR_breakpoint);
 
@@ -253,6 +256,9 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
         RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
         SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
+
+        RC_tuning.throttle_MID = parseFloat($('.throttle input[name="mid"]').val());
+        RC_tuning.throttle_EXPO = parseFloat($('.throttle input[name="expo"]').val())
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
@@ -404,14 +410,57 @@ TABS.pid_tuning.initialize = function (callback) {
                     rcCurveElement = $('.pitch_roll_curve canvas').get(0),
                     rcYawCurveElement = $('.yaw_curve canvas').get(0);
 
-                    var rateElementYaw = 1;
-                    if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-                        rateElementYaw = $('.pid_tuning input[name="rc_rate_yaw"]');
-                    }
+                var rateElementYaw = 1;
+                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+                    rateElementYaw = $('.pid_tuning input[name="rc_rate_yaw"]');
+                }
 
-                    drawRateCurve(rateElement, sRateElementRoll, expoElement, rcCurveElement);
-                    //drawRateCurve(rateElement, sRateElementPitch, expoElement, rcCurveElement);  // Add Pitch Curve
-                    drawRateCurve(rateElementYaw, sRateElementYaw, yawExpoElement, rcYawCurveElement);
+                drawRateCurve(rateElement, sRateElementRoll, expoElement, rcCurveElement);
+                //drawRateCurve(rateElement, sRateElementPitch, expoElement, rcCurveElement);  // Add Pitch Curve
+                drawRateCurve(rateElementYaw, sRateElementYaw, yawExpoElement, rcYawCurveElement);
+            }, 0);
+        }).trigger('input');
+
+        $('.throttle input').on('input change', function () {
+            setTimeout(function () { // let global validation trigger and adjust the values firs
+                var throttleMidE = $('.throttle input[name="mid"]'),
+                    throttleExpoE = $('.throttle input[name="expo"]'),
+                    mid = parseFloat(throttleMidE.val()),
+                    expo = parseFloat(throttleExpoE.val()),
+                    throttleCurve = $('.throttle .throttle_curve canvas').get(0),
+                    context = throttleCurve.getContext("2d");
+
+                // local validation to deal with input event
+                if (mid >= parseFloat(throttleMidE.prop('min')) &&
+                    mid <= parseFloat(throttleMidE.prop('max')) &&
+                    expo >= parseFloat(throttleExpoE.prop('min')) &&
+                    expo <= parseFloat(throttleExpoE.prop('max'))) {
+                    // continue
+                } else {
+                    return;
+                }
+
+                var canvasHeight = throttleCurve.height;
+                var canvasWidth = throttleCurve.width;
+
+                // math magic by englishman
+                var midx = canvasWidth * mid,
+                    midxl = midx * 0.5,
+                    midxr = (((canvasWidth - midx) * 0.5) + midx),
+                    midy = canvasHeight - (midx * (canvasHeight / canvasWidth)),
+                    midyl = canvasHeight - ((canvasHeight - midy) * 0.5 *(expo + 1)),
+                    midyr = (midy / 2) * (expo + 1);
+
+                // draw
+                context.clearRect(0, 0, canvasWidth, canvasHeight);
+                context.beginPath();
+                context.moveTo(0, canvasHeight);
+                context.quadraticCurveTo(midxl, midyl, midx, midy);
+                context.moveTo(midx, midy);
+                context.quadraticCurveTo(midxr, midyr, canvasWidth, 0);
+                context.lineWidth = 2;
+                context.strokeStyle = '#ffbb00';
+                context.stroke();
             }, 0);
         }).trigger('input');
 

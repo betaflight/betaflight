@@ -242,6 +242,34 @@
 			</tbody>
                     </table>
                 </div>
+                <div class="spacer_left throttle topspacer">
+                    <table class="cf">
+                        <thead>
+                            <tr>
+                                <th colspan=2 i18n="throttle"></th>
+			    </tr>
+		        </thead>
+			</tbody>
+			    <tr>
+			        <td colspan=2>
+                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="throttle_curve">
+                                            <canvas height="120px" style="width: 100%; height: 100%"></canvas>
+                                        </div>
+                                    </div>
+			        </td>
+		            </tr>
+                            <tr>
+                                <th i18n="receiverThrottleMid"></th>
+                                <th i18n="receiverThrottleExpo"></th>
+                            </tr>
+                            <tr>
+                                <td><input type="number" name="mid" step="0.01" min="0" max="1" /></td>
+                                <td><input type="number" name="expo" step="0.01" min="0" max="1" /></td>
+                            </tr>
+			</tbody>
+                    </table>
+                </div>
                 <div class="spacer_left topspacer">
                     <table class="tpa cf">
                         <thead>

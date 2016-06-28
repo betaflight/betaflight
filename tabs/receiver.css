@@ -144,16 +144,27 @@
 
 .tab-receiver .tunings {
     float: right;
-    width: 45%;
+    position: relative;
+    margin: 0px 0px 20px 0;
+    width: 100%
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    background-color: #DEDEDE;
 }
 
+.tab-receiver .tunings .head {
+    height: 15px;
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+    font-weight: normal;
+    background: #828885;
+    color: white;
+    border-top-left-radius: 3px;
+    border-right: 1px solid silver;
+}
 .tab-receiver .tunings table {
     border-collapse: collapse;
-    width: calc(100% - 2px);
-}
-
-.tab-receiver .tunings .throttle {
-    margin-bottom: 10px;
 }
 
 .tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
@@ -209,7 +220,6 @@
     line-height: 20px;
     text-align: right;
 }
-
 
 .tab-receiver .rssi_channel_wrapper {
     float: right;
