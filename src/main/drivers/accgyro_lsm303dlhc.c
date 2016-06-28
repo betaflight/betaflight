@@ -26,7 +26,7 @@
 #include "common/axis.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "bus_i2c.h"
 
 #include "sensor.h"

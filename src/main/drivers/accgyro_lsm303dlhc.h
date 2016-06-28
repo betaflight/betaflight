@@ -22,8 +22,7 @@
   */
 
 /* LSM303DLHC ACC struct */
-typedef struct
-{
+typedef struct {
   uint8_t Power_Mode;                         /* Power-down/Normal Mode */
   uint8_t AccOutput_DataRate;                 /* OUT data rate */
   uint8_t Axes_Enable;                        /* Axes enable */
@@ -31,25 +30,23 @@ typedef struct
   uint8_t BlockData_Update;                   /* Block Data Update */
   uint8_t Endianness;                         /* Endian Data selection */
   uint8_t AccFull_Scale;                      /* Full Scale selection */
-}LSM303DLHCAcc_InitTypeDef;
+} LSM303DLHCAcc_InitTypeDef;
 
 /* LSM303DLHC Acc High Pass Filter struct */
-typedef struct
-{
+typedef struct {
   uint8_t HighPassFilter_Mode_Selection;      /* Internal filter mode */
   uint8_t HighPassFilter_CutOff_Frequency;    /* High pass filter cut-off frequency */
   uint8_t HighPassFilter_AOI1;                /* HPF_enabling/disabling for AOI function on interrupt 1 */
   uint8_t HighPassFilter_AOI2;                /* HPF_enabling/disabling for AOI function on interrupt 2 */
-}LSM303DLHCAcc_FilterConfigTypeDef;
+} LSM303DLHCAcc_FilterConfigTypeDef;
 
 /* LSM303DLHC Mag struct */
-typedef struct
-{
+typedef struct {
   uint8_t Temperature_Sensor;                /* Temperature sensor enable/disable */
   uint8_t MagOutput_DataRate;                /* OUT data rate */
   uint8_t Working_Mode;                      /* operating mode */
   uint8_t MagFull_Scale;                     /* Full Scale selection */
-}LSM303DLHCMag_InitTypeDef;
+} LSM303DLHCMag_InitTypeDef;
 /**
   * @}
   */
@@ -78,43 +75,11 @@ typedef struct
   * @brief  LSM303DLHC I2C Interface pins
   */
 #define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_CLK                   RCC_APB1Periph_I2C1
-
-#define LSM303DLHC_I2C_SCK_PIN               GPIO_Pin_6                  /* PB.06 */
-#define LSM303DLHC_I2C_SCK_GPIO_PORT         GPIOB                       /* GPIOB */
-#define LSM303DLHC_I2C_SCK_GPIO_CLK          RCC_AHBPeriph_GPIOB
-#define LSM303DLHC_I2C_SCK_SOURCE            GPIO_PinSource6
-#define LSM303DLHC_I2C_SCK_AF                GPIO_AF_4
-
-#define LSM303DLHC_I2C_SDA_PIN               GPIO_Pin_7                  /* PB.7 */
-#define LSM303DLHC_I2C_SDA_GPIO_PORT         GPIOB                       /* GPIOB */
-#define LSM303DLHC_I2C_SDA_GPIO_CLK          RCC_AHBPeriph_GPIOB
-#define LSM303DLHC_I2C_SDA_SOURCE            GPIO_PinSource7
-#define LSM303DLHC_I2C_SDA_AF                GPIO_AF_4
-
-#define LSM303DLHC_DRDY_PIN                  GPIO_Pin_2                  /* PE.02 */
-#define LSM303DLHC_DRDY_GPIO_PORT            GPIOE                       /* GPIOE */
-#define LSM303DLHC_DRDY_GPIO_CLK             RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_DRDY_EXTI_LINE            EXTI_Line2
-#define LSM303DLHC_DRDY_EXTI_PORT_SOURCE     EXTI_PortSourceGPIOE
-#define LSM303DLHC_DRDY_EXTI_PIN_SOURCE      EXTI_PinSource2
-#define LSM303DLHC_DRDY_EXTI_IRQn            EXTI2_TS_IRQn
-
-#define LSM303DLHC_I2C_INT1_PIN              GPIO_Pin_4                  /* PE.04 */
-#define LSM303DLHC_I2C_INT1_GPIO_PORT        GPIOE                       /* GPIOE */
-#define LSM303DLHC_I2C_INT1_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_LINE        EXTI_Line4
-#define LSM303DLHC_I2C_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_PIN_SOURCE  EXTI_PinSource4
-#define LSM303DLHC_I2C_INT1_EXTI_IRQn        EXTI4_IRQn
-
-#define LSM303DLHC_I2C_INT2_PIN              GPIO_Pin_5                  /* PE.05 */
-#define LSM303DLHC_I2C_INT2_GPIO_PORT        GPIOE                       /* GPIOE */
-#define LSM303DLHC_I2C_INT2_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_LINE        EXTI_Line5
-#define LSM303DLHC_I2C_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_PIN_SOURCE  EXTI_PinSource5ss
-#define LSM303DLHC_I2C_INT2_EXTI_IRQn        EXTI9_5_IRQn
+#define LSM303DLHC_I2C_SCK_PIN               PB6                         /* PB.06 */
+#define LSM303DLHC_I2C_SDA_PIN               PB7                         /* PB.7 */
+#define LSM303DLHC_DRDY_PIN                  PE2                         /* PE.02 */
+#define LSM303DLHC_I2C_INT1_PIN              PE4                         /* PE.04 */
+#define LSM303DLHC_I2C_INT2_PIN              PE5                         /* PE.05 */
 
 /******************************************************************************/
 /*************************** START REGISTER MAPPING  **************************/
