@@ -27,7 +27,8 @@ typedef enum {
     GYRO_MPU6000,
     GYRO_MPU6500,
     GYRO_MPU9250,
-    GYRO_FAKE
+    GYRO_FAKE,
+    GYRO_MAX = GYRO_FAKE
 } gyroSensor_e;
 
 extern gyro_t gyro;
