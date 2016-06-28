@@ -35,7 +35,7 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 

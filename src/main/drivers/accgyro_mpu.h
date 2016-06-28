@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "exti.h"
+ 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
