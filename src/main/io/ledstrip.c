@@ -1083,7 +1083,7 @@ void updateLedStrip(void)
         return;
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXLEDLOW)) {
+    if (IS_RC_MODE_ACTIVE(BOXLEDLOW) && !(masterConfig.ledstrip_visual_beeper && isBeeperOn())) {
         if (ledStripEnabled) {
             ledStripDisable();
             ledStripEnabled = false;
