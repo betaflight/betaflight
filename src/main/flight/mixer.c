@@ -66,9 +66,12 @@ static flight3DConfig_t *flight3DConfig;
 static escAndServoConfig_t *escAndServoConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
+static bool syncPwm = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
+
+float errorLimiter = 1.0f;
 
 #ifdef USE_SERVOS
 static uint8_t servoRuleCount = 0;
@@ -418,13 +421,15 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
     }
 }
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration)
+void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
 {
     int i;
 
     motorCount = 0;
     servoCount = pwmOutputConfiguration->servoCount;
-
+    
+    syncPwm = use_unsyncedPwm;
+    
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -633,15 +638,14 @@ void writeServos(void)
 }
 #endif
 
-void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm)
+void writeMotors(void)
 {
     uint8_t i;
 
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
 
-
-    if (fastPwmProtocol && !unsyncedPwm) {
+    if (syncPwm) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -653,7 +657,7 @@ void writeAllMotors(int16_t mc)
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
         motor[i] = mc;
-    writeMotors(1,1);
+    writeMotors();
 }
 
 void stopMotors(void)
@@ -750,7 +754,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 void mixTable(void)
 {
-    uint32_t i;
+    uint32_t i = 0;
     fix12_t vbatCompensationFactor = 0;
     static fix12_t mixReduction;
     bool use_vbat_compensation = false;
@@ -817,7 +821,6 @@ void mixTable(void)
     throttleRange = throttleMax - throttleMin;
 
     if (rollPitchYawMixRange > throttleRange) {
-        motorLimitReached = true;
         mixReduction = qConstruct(throttleRange, rollPitchYawMixRange);
 
         for (i = 0; i < motorCount; i++) {
@@ -825,13 +828,14 @@ void mixTable(void)
         }
         // Get the maximum correction by setting offset to center
         if (!escAndServoConfig->escDesyncProtection) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
-
-        if (debugMode == DEBUG_AIRMODE && i < 3) debug[1] = rollPitchYawMixRange;
     } else {
-        motorLimitReached = false;
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
+
+    // adjust feedback to scale PID error inputs to our limitations.
+    errorLimiter = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.1f, 1.0f);
+    if (debugMode == DEBUG_AIRMODE) debug[1] = errorLimiter * 100;
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
@@ -851,7 +855,7 @@ void mixTable(void)
         }
 
         // Motor stop handling
-        if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                 motor[i] = escAndServoConfig->mincommand;
             }

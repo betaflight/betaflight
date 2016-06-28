@@ -28,11 +28,13 @@
 #include "barometer.h"
 #include "barometer_bmp280.h"
 
-#define DISABLE_BMP280       GPIO_SetBits(BMP280_CS_GPIO,   BMP280_CS_PIN)
-#define ENABLE_BMP280        GPIO_ResetBits(BMP280_CS_GPIO, BMP280_CS_PIN)
+#define DISABLE_BMP280       IOHi(bmp280CsPin)
+#define ENABLE_BMP280        IOLo(bmp280CsPin)
 
 extern int32_t bmp280_up;
 extern int32_t bmp280_ut;
+
+static IO_t bmp280CsPin = IO_NONE;
 
 bool bmp280WriteRegister(uint8_t reg, uint8_t data)
 {
@@ -62,32 +64,13 @@ void bmp280SpiInit(void)
         return;
     }
 
-#ifdef STM32F303
-    RCC_AHBPeriphClockCmd(BMP280_CS_GPIO_CLK_PERIPHERAL, ENABLE);
+    bmp280CsPin = IOGetByTag(IO_TAG(BMP280_CS_PIN));
+    IOInit(bmp280CsPin, OWNER_BARO, RESOURCE_SPI);
+    IOConfigGPIO(bmp280CsPin, IOCFG_OUT_PP);
 
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Pin = BMP280_CS_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    DISABLE_BMP280;
 
-    GPIO_Init(BMP280_CS_GPIO, &GPIO_InitStructure);
-#endif
-
-#ifdef STM32F10X
-    RCC_APB2PeriphClockCmd(BMP280_CS_GPIO_CLK_PERIPHERAL, ENABLE);
-
-    gpio_config_t gpio;
-    gpio.mode = Mode_Out_PP;
-    gpio.pin = BMP280_CS_PIN;
-    gpio.speed = Speed_50MHz;
-    gpioInit(BMP280_CS_GPIO, &gpio);
-#endif
-
-    GPIO_SetBits(BMP280_CS_GPIO, BMP280_CS_PIN);
-
-    spiSetDivisor(BMP280_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(BMP280_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }

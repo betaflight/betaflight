@@ -21,7 +21,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -65,6 +64,8 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
+
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -85,6 +86,9 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
 
 // June 2013     V2.2-dev
 
@@ -119,6 +123,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
+float angleRate[3], angleRateSmooth[3];
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -167,19 +172,42 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void filterRc(void)
+float calculateRate(int axis, int16_t rc) {
+    float angleRate;
+
+    if (isSuperExpoActive()) {
+        float rcFactor = (axis == YAW) ? (ABS(rc) / (500.0f * (currentControlRateProfile->rcYawRate8 / 100.0f))) : (ABS(rc) / (500.0f * (currentControlRateProfile->rcRate8 / 100.0f)));
+        rcFactor = 1.0f / (constrainf(1.0f - (rcFactor * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+
+        angleRate = rcFactor * ((27 * rc) / 16.0f);
+    } else {
+        angleRate = (float)((currentControlRateProfile->rates[axis] + 27) * rc) / 16.0f;
+    }
+
+
+	return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+}
+
+void processRcCommand(void)
 {
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     uint16_t rxRefreshRate;
+    int axis;
 
     // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
+    if (masterConfig.rxConfig.rcSmoothInterval) {
+        rxRefreshRate = 1000 * masterConfig.rxConfig.rcSmoothInterval;
+    } else {
+        initRxRefreshRate(&rxRefreshRate);
+    }
 
     rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
     if (isRXDataNew) {
+        for (axis = 0; axis < 3; axis++) angleRate[axis] = calculateRate(axis, rcCommand[axis]);
+
         for (int channel=0; channel < 4; channel++) {
             deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
             lastCommand[channel] = rcCommand[channel];
@@ -194,8 +222,9 @@ void filterRc(void)
     // Interpolate steps of rcCommand
     if (factor > 0) {
         for (int channel=0; channel < 4; channel++) {
-            rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-         }
+            rcCommandSmooth[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+        }
+        for (axis = 0; axis < 2; axis++) angleRateSmooth[axis] = calculateRate(axis, rcCommandSmooth[axis]);
     } else {
         factor = 0;
     }
@@ -640,7 +669,6 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         &currentProfile->pidProfile,
-        currentControlRateProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
         &masterConfig.rxConfig
@@ -652,9 +680,7 @@ void subTaskMainSubprocesses(void) {
 
     const uint32_t startTime = micros();
 
-    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
-        filterRc();
-    }
+    processRcCommand();
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.temperature) {
@@ -692,7 +718,8 @@ void subTaskMainSubprocesses(void) {
                     && masterConfig.mixerMode != MIXER_FLYING_WING
     #endif
         ) {
-            rcCommand[YAW] = 0;
+            rcCommand[YAW] = rcCommandSmooth[YAW] = 0;
+            angleRate[YAW] = angleRateSmooth[YAW] = 0;
         }
 
         if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
@@ -742,7 +769,7 @@ void subTaskMotorUpdate(void)
 #endif
 
     if (motorControlEnable) {
-        writeMotors(masterConfig.fast_pwm_protocol, masterConfig.use_unsyncedPwm);
+        writeMotors();
     }
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
@@ -839,8 +866,9 @@ void taskUpdateBattery(void)
     }
 }
 
-bool taskUpdateRxCheck(void)
+bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
+    UNUSED(currentDeltaTime);
     updateRx(currentTime);
     return shouldProcessRx(currentTime);
 }
@@ -960,6 +988,15 @@ void taskTransponder(void)
 {
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
+    }
+}
+#endif
+
+#ifdef OSD
+void taskUpdateOsd(void)
+{
+    if (feature(FEATURE_OSD)) {
+        updateOsd();
     }
 }
 #endif

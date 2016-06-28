@@ -6,6 +6,29 @@
 */
 
 #include "stm32f10x.h"
+#include "rcc.h"
+#include "timer.h"
+
+const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+#if defined(STM32F10X_HD) || defined(STM32F10X_CL) || defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5)  },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+#endif
+#if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+    { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
+    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
+    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) }, 
+    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
+    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) }, 
+#endif
+};
 
 /**
   * @brief  Selects the TIM Output Compare Mode.

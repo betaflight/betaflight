@@ -41,14 +41,14 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_MWREWRITE = 1,
-    PID_CONTROLLER_LUX_FLOAT,
+    PID_CONTROLLER_INTEGER = 1,           // Integer math to gain some more performance from F1 targets
+    PID_CONTROLLER_FLOAT,
     PID_COUNT
 } pidControllerType_e;
 
 typedef enum {
-	DELTA_FROM_ERROR = 0,
-	DELTA_FROM_MEASUREMENT
+    DELTA_FROM_ERROR = 0,
+    DELTA_FROM_MEASUREMENT
 } pidDeltaType_e;
 
 typedef enum {
@@ -68,6 +68,7 @@ typedef struct pidProfile_s {
 
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
@@ -86,8 +87,8 @@ typedef struct pidProfile_s {
 struct controlRateConfig_s;
 union rollAndPitchTrims_u;
 struct rxConfig_s;
-typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig,
-        uint16_t max_angle_inclination, const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
+typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
