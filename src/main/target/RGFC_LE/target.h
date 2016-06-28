@@ -76,8 +76,8 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW180_DEG
 
-//#define USE_MPU_DATA_READY_SIGNAL
-//#define ENSURE_MPU_DATA_READY_IS_LOW
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define BARO
 #define USE_BARO_BMP280
@@ -109,8 +109,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel3
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -248,24 +247,9 @@
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 */
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+//#define DEFAULT_FEATURES (FEATURE_TRANSPONDER )
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-//#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-//#define USE_SERIAL_4WAY_SK_BOOTLOADER
-
-//#if !(defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) || defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
-//#ifdef USE_VCP
-//#define USE_SERIAL_1WIRE_VCP
-//#else
-//#define USE_SERIAL_1WIRE
-//#endif
-//#endif
-
-#define S1W_TX_GPIO         GPIOC
-#define S1W_TX_PIN          GPIO_Pin_4
-#define S1W_RX_GPIO         GPIOC
-#define S1W_RX_PIN          GPIO_Pin_5
 
 #define SPEKTRUM_BIND
 // UART5, PD2
