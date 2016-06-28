@@ -31,6 +31,12 @@
 
 #ifndef SOFT_I2C
 
+#if defined(USE_I2C_PULLUP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#else
+#define IOCFG_I2C IOCFG_AF_OD
+#endif
+
 #define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.
 #define I2C_STANDARD_TIMING   0x00E0257A  // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
 
@@ -86,8 +92,8 @@ void i2cInit(I2CDevice device)
     RCC_ClockCmd(i2c->rcc, ENABLE);
     RCC_I2CCLKConfig(I2Cx == I2C2 ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
 
-    IOConfigGPIOAF(scl, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP), GPIO_AF_4);
-    IOConfigGPIOAF(sda, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP), GPIO_AF_4);
+    IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_4);
+    IOConfigGPIOAF(sda, IOCFG_I2C, GPIO_AF_4);
 
     I2C_InitTypeDef i2cInit = {
         .I2C_Mode = I2C_Mode_I2C,
