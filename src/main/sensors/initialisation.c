@@ -499,11 +499,11 @@ static void detectMag(magSensor_e magHardwareToUse)
 #endif
 
 #ifdef MAG_INT_EXTI
-    static const hmc5883Config_t spRacingF3Hmc5883Config = {
+    static const hmc5883Config_t extiHmc5883Config = {
         .intTag = IO_TAG(MAG_INT_EXTI)
     };
 
-    hmc5883Config = &spRacingF3Hmc5883Config;
+	hmc5883Config = &extiHmc5883Config;
 #endif
 
 #endif
