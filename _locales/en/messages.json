@@ -787,6 +787,9 @@
     "rcYawCurve": {
 	"message": "RC Yaw Curve"
     },
+    "throttle": {
+	"message": "Throttle"
+    },
     "pidTuningButtonSave": {
         "message": "Save"
     },

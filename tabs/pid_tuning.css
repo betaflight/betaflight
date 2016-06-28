@@ -44,6 +44,127 @@
     border: 1px solid silver;
 }
 
+.tab-pid_tuning .curves {
+    float: left;
+    margin-right: 10px;
+}
+
+.tab-pid_tuning .throttle_curve {
+    float: right;
+    width: calc(100% - 2px); /* - ( "virtual" margin) */
+    margin: 0 0px 0px 0;
+    border: 1px solid silver;
+    border-radius: 3px;
+    background-image: url(../images/paper.jpg);
+    background-size: 200%;
+    background-position: center;
+}
+
+.tab-pid_tuning .throttle {
+    float: right;
+    width: 45%;
+}
+
+.tab-pid_tuning .throttle table {
+    border-collapse: collapse;
+    width: calc(100% - 2px);
+}
+
+.tab-pid_tuning .throttle table, .tab-pid_tuning .throttle table th, .tab-pid_tuning .throttle table td {
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+}
+
+.tab-pid_tuning .throttle table th {
+    background: #828885;
+    color: white;
+    border-right: 1px solid silver;
+    font-weight: normal;
+}
+
+.tab-pid_tuning .throttle table th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .throttle table th:last-child {
+    border-top-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-pid_tuning .throttle table td {
+    background: #DEDEDE;
+    border-right: 1px solid silver;
+}
+
+.tab-pid_tuning .throttle table td:first-child {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-pid_tuning .throttle {
+    float: right;
+    width: 45%;
+}
+
+.tab-pid_tuning .throttle table {
+    border-collapse: collapse;
+    width: calc(100% - 2px);
+}
+
+.tab-pid_tuning .throttle table, .tab-pid_tuning .throttle table th, .tab-pid_tuning .throttle table td {
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+}
+
+.tab-pid_tuning .throttle table th {
+    background: #828885;
+    color: white;
+    border-right: 1px solid silver;
+    font-weight: normal;
+}
+
+.tab-pid_tuning .throttle table th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-pid_tuning .throttle table th:last-child {
+    border-top-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-pid_tuning .throttle table td {
+    background: #DEDEDE;
+    border-right: 1px solid silver;
+}
+
+.tab-pid_tuning .throttle table td:first-child {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-pid_tuning .throttle table td:last-child {
+    border-bottom-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-pid_tuning .throttle table td {
+    padding: 1px;
+}
+
+.tab-pid_tuning .throttle table tr:nth-child(odd) {
+    background-color: #ececec;
+}
+
+.tab-pid_tuning .throttle table input {
+    width: calc(100% - 8px);
+    border: 1px solid silver;
+    border-radius: 3px;
+    height: 20px;
+    margin: 3px;
+    line-height: 20px;
+    text-align: right;
+}
+
 .tab-pid_tuning .tpa th:nth-child(2) {
     border-top-left-radius: 3px;
 }
