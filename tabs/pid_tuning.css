@@ -137,7 +137,7 @@
     float: left;
     margin: 0px;
     border-collapse: collapse;
-    width: calc(100% - -1px);
+    width: 100%;
 }
 
 .tab-pid_tuning .gui_box {
@@ -215,7 +215,7 @@
     font-weight: normal;
     padding: 2px;
     padding-left: 6px;
-    border-top-left-radius: 3px; 
+    border-top-left-radius: 3px;
     border-top-right-radius: 3px;
 }
 
@@ -335,11 +335,11 @@
 }
 
 .show {
-    width:130px; 
-    float:right; 
+    width:130px;
+    float:right;
     margin-right:3px;
 }
-    
+
 .show a {
     margin-left: 10px;
     width: calc(100% - 10px);
@@ -359,7 +359,7 @@
     margin-right: 5px;
 }
 
-.tab-pid_tuning .spacer_left {    
+.tab-pid_tuning .spacer_left {
     padding-left: 15px;
     float: right;
     width: calc(100% - 20px)
@@ -406,7 +406,7 @@
 }
 
 .tab-pid_tuning .resetbt {
-    width: 140px; 
+    width: 140px;
     float: right;
 }
 
@@ -436,13 +436,13 @@
 }
 
 .tab-pid_tuning .borderleft {
-    border-top-left-radius: 3px; 
+    border-top-left-radius: 3px;
     border-top-right-radius: 3px;
 }
 
 .tab-pid_tuning .textleft {
-    width: 25%; 
-    float: left; 
+    width: 25%;
+    float: left;
     text-align: left;
 }
 
