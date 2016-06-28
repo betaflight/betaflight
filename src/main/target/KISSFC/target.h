@@ -72,11 +72,11 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
-//#define USE_ADC
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA4
-#define CURRENT_METER_ADC_PIN       PA5
-#define RSSI_ADC_PIN                PB2
+#define USE_ADC
+#define ADC_INSTANCE                ADC1
+#define VBAT_ADC_PIN                PA0
+//#define CURRENT_METER_ADC_PIN       PA5
+//#define RSSI_ADC_PIN                PB2
 
 
 #define SPEKTRUM_BIND
