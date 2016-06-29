@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
+#define ALIENFLIGHT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -118,9 +119,7 @@
 #define ADC_INSTANCE         ADC2
 //#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN         PA4
-
-// alternative defaults for AlienFlight F3 target
-#define ALIENFLIGHT
+#define VBAT_SCALE_DEFAULT   20
 
 #define SPEKTRUM_BIND
 // USART2, PA3
