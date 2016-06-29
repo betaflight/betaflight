@@ -115,7 +115,17 @@ Model.prototype.rotateTo = function (x, y, z) {
     this.modelWrapper.rotation.y = y;
     this.model.rotation.z = z;
 
-     this.render();
+    this.render();
+};
+
+Model.prototype.rotateBy = function (x, y, z) {
+    if (!this.model) { return; }
+
+    this.model.rotateX(x);
+    this.model.rotateY(y);
+    this.model.rotateZ(z);
+
+    this.render();
 };
 
 Model.prototype.render = function () {
