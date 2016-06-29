@@ -53,6 +53,11 @@ typedef enum {
     PID_DELTA_FROM_ERROR
 } pidDeltaMethod_e;
 
+typedef enum {
+    HORIZON_TILT_MODE_SAFE = 0,
+    HORIZON_TILT_MODE_EXPERT
+} horizonTiltMode_e;
+
 typedef struct pidProfile_s {
     uint8_t  P8[PID_ITEM_COUNT];
     uint8_t  I8[PID_ITEM_COUNT];
@@ -62,6 +67,8 @@ typedef struct pidProfile_s {
     uint16_t dterm_lpf;                     // dterm filtering
     uint16_t yaw_lpf;                       // additional yaw filter when yaw axis too noisy
     uint8_t  deltaMethod;
+    uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
+    uint8_t horizon_tilt_mode;              // SAFE or EXPERT
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
@@ -82,3 +89,5 @@ void pidSetController(pidControllerType_e type);
 void pidResetITermAngle(void);
 void pidResetITerm(void);
 
+int calcHorizonLevelStrength(uint16_t rxConfigMidrc, int horizonTiltEffect,
+        uint8_t horizonTiltMode, int horizonSensitivity);

@@ -401,6 +401,10 @@ static const char * const lookupTablePidDeltaMethod[] = {
     "MEASUREMENT", "ERROR"
 };
 
+static const char * const lookupTableHorizonTiltMode[] = {
+    "SAFE", "EXPERT"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -424,6 +428,7 @@ typedef enum {
     TABLE_GYRO_FILTER,
     TABLE_GYRO_LPF,
     TABLE_PID_DELTA_METHOD,
+    TABLE_HORIZON_TILT_MODE,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -444,6 +449,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTablePidDeltaMethod, sizeof(lookupTablePidDeltaMethod) / sizeof(char *) },
+    { lookupTableHorizonTiltMode, sizeof(lookupTableHorizonTiltMode) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -705,6 +711,8 @@ const clivalue_t valueTable[] = {
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_p_limit)},
     { "yaw_lpf",                    VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf)},
     { "dterm_cut_hz",               VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf)},
+    { "horizon_tilt_effect",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 250 } , PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_effect)},
+    { "horizon_tilt_mode",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_HORIZON_TILT_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_mode)},
 
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 10,  200 } , PG_GTUNE_CONFIG, offsetof(gtuneConfig_t, gtune_lolimP[FD_ROLL])},
