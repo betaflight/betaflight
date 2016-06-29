@@ -93,6 +93,9 @@
     "tabTransponder": {
         "message": "Race Transponder"
     },
+    "tabOsd": {
+        "message": "OSD"
+    },
     "tabGPS": {
         "message": "GPS"
     },

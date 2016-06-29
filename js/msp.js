@@ -40,7 +40,12 @@ var MSP_codes = {
     MSP_SET_BLACKBOX_CONFIG:    81,
     MSP_TRANSPONDER_CONFIG:     82,
     MSP_SET_TRANSPONDER_CONFIG: 83,
-    
+    MSP_OSD_CONFIG:             84,
+    MSP_SET_OSD_CONFIG:         85,
+    MSP_OSD_CHAR_READ:          86,
+    MSP_OSD_CHAR_WRITE:         87,
+    MSP_VTX_CONFIG:             88,
+    MSP_SET_VTX_CONFIG:         89,
     MSP_PID_ADVANCED_CONFIG:    90,
     MSP_SET_PID_ADVANCED_CONFIG: 91,
     MSP_FILTER_CONFIG:          92,
@@ -1062,6 +1067,20 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
                 console.log('Failsafe config saved');
+                break;
+            case MSP_codes.MSP_OSD_CONFIG:
+                break;
+            case MSP_codes.MSP_SET_OSD_CONFIG:
+                console.log('OSD config set');
+                break;
+            case MSP_codes.MSP_OSD_CHAR_READ:
+                break;
+            case MSP_codes.MSP_OSD_CHAR_WRITE:
+                console.log('OSD char uploaded');
+                break;
+            case MSP_codes.MSP_VTX_CONFIG:
+                break;
+            case MSP_codes.MSP_SET_VTX_CONFIG:
                 break;
             default:
                 console.log('Unknown code detected: ' + code);

@@ -1,0 +1,43 @@
+<div class="tab-osd toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <h1 class="tab_title">
+            OSD
+            <div class="fontbuttons supported hide">
+                <button data-font-file="default">Default</button>
+                <button data-font-file="bold">Bold</button>
+                <button data-font-file="large">Large</button>
+                <button class="load_font_file">Open Font File</button>
+            </div>
+        </h1>
+
+        <div class="unsupported hide">
+            <p class="note">Your flight controller isn't responding to OSD commands. This probably means that it does not have an integrated BetaFlight OSD.</p>
+            <p class="note">Note that some flight controllers have an onboard <a href="https://www.youtube.com/watch?v=ikKH_6SQ-Tk" target="_blank">MinimOSD</a> that can be flashed and configured with <a href="https://github.com/ShikOfTheRa/scarab-osd/releases/latest" target="_blank">scarab-osd</a>, however the MinimOSD cannot be configured through this interface.</p>
+        </div>
+        <div class="supported hide">
+            <div class="display-layout">
+                <div class="col left">
+                    <div class="video-types">
+                    </div>
+                    <div class="display-fields">
+                    </div>
+                </div>
+                <div class="col right">
+                    <div class="preview">
+                    </div>
+                </div>
+            </div>
+
+            <div class="font-preview"></div>
+
+            <div class="info"><a name="progressbar"></a>
+                <progress class="progress" value="0" min="0" max="100"></progress>
+                <span class="progressLabel"></span>
+            </div>
+        </div>
+    </div>
+    <div class="content_toolbar supported hide">
+      <button class="save active">Save Layout</button>
+      <button class="flash_font active">Upload Font</button>
+    </div>
+</div>
