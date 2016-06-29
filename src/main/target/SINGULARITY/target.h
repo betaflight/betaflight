@@ -95,6 +95,7 @@
 
 #define ADC_INSTANCE                ADC2
 #define VBAT_ADC_PIN                PB2
+#define VBAT_SCALE_DEFAULT          77
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1

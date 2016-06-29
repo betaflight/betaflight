@@ -41,7 +41,7 @@ sensor_align_e gyroAlign = 0;
 int32_t gyroADC[XYZ_AXIS_COUNT];
 float gyroADCf[XYZ_AXIS_COUNT];
 
-static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
+static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
 static biquad_t gyroFilterState[XYZ_AXIS_COUNT];
 static uint8_t gyroSoftLpfHz;
@@ -159,6 +159,10 @@ void gyroUpdate(void)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             gyroADCf[axis] = applyBiQuadFilter((float)gyroADC[axis], &gyroFilterState[axis]);
             gyroADC[axis] = lrintf(gyroADCf[axis]);
+        }
+    } else {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroADCf[axis] = gyroADC[axis];
         }
     }
 }

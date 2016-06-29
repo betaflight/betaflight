@@ -100,45 +100,25 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef VBAT_ADC_PIN
     if (init->enableVBat) {
-        IOInit(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_BATTERY].adcChannel = adcChannelByTag(IO_TAG(VBAT_ADC_PIN)); //VBAT_ADC_CHANNEL;
-        adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_BATTERY].enabled = true;
-        adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_480Cycles;
-    }
-#endif
-
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        IOInit(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_EXTERNAL1].adcChannel = adcChannelByTag(IO_TAG(EXTERNAL1_ADC_PIN)); //EXTERNAL1_ADC_CHANNEL;
-        adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_EXTERNAL1].enabled = true;
-        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_480Cycles;
+        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN); //VBAT_ADC_CHANNEL;
     }
 #endif
 
 #ifdef RSSI_ADC_PIN
     if (init->enableRSSI) {
-        IOInit(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_RSSI].adcChannel = adcChannelByTag(IO_TAG(RSSI_ADC_PIN));  //RSSI_ADC_CHANNEL;
-        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_RSSI].enabled = true;
-        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_480Cycles;
+        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
+    }
+#endif
+    
+#ifdef EXTERNAL1_ADC_PIN
+    if (init->enableExternal1) {
+        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
     }
 #endif
 
 #ifdef CURRENT_METER_ADC_PIN
     if (init->enableCurrentMeter) {
-        IOInit(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[ADC_CURRENT].adcChannel = adcChannelByTag(IO_TAG(CURRENT_METER_ADC_PIN));  //CURRENT_METER_ADC_CHANNEL;
-        adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_CURRENT].enabled = true;
-        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_480Cycles;
+        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);  //CURRENT_METER_ADC_CHANNEL;
     }
 #endif
 
@@ -149,6 +129,18 @@ void adcInit(drv_adc_config_t *init)
         return;
     
     adcDevice_t adc = adcHardware[device];   
+    
+    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcConfig[i].tag)
+            continue;
+
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_SYSTEM, RESOURCE_ADC);
+        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
+        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
+        adcConfig[i].dmaIndex = configuredAdcChannels++;
+        adcConfig[i].sampleTime = ADC_SampleTime_480Cycles;
+        adcConfig[i].enabled = true;
+    }
     
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
@@ -174,20 +166,20 @@ void adcInit(drv_adc_config_t *init)
     ADC_CommonInitTypeDef ADC_CommonInitStructure;
 
     ADC_CommonStructInit(&ADC_CommonInitStructure);
-    ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
-    ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div8;
-    ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_Disabled;
+    ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
+    ADC_CommonInitStructure.ADC_Prescaler        = ADC_Prescaler_Div8;
+    ADC_CommonInitStructure.ADC_DMAAccessMode    = ADC_DMAAccessMode_Disabled;
     ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
     ADC_CommonInit(&ADC_CommonInitStructure);
 
     ADC_StructInit(&ADC_InitStructure);
 
-    ADC_InitStructure.ADC_ContinuousConvMode    = ENABLE;
-    ADC_InitStructure.ADC_Resolution            = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ContinuousConvMode       = ENABLE;
+    ADC_InitStructure.ADC_Resolution               = ADC_Resolution_12b;
     ADC_InitStructure.ADC_ExternalTrigConv         = ADC_ExternalTrigConv_T1_CC1;
     ADC_InitStructure.ADC_ExternalTrigConvEdge     = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign             = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfConversion       = configuredAdcChannels;
+    ADC_InitStructure.ADC_DataAlign                = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfConversion          = configuredAdcChannels;
     ADC_InitStructure.ADC_ScanConvMode             = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
 
     ADC_Init(adc.ADCx, &ADC_InitStructure);
