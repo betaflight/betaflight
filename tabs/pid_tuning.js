@@ -315,7 +315,6 @@ TABS.pid_tuning.initialize = function (callback) {
           }
         });
 
-
         pid_and_rc_to_form();
 
         var pidController_e = $('select[name="controller"]');
@@ -339,12 +338,12 @@ TABS.pid_tuning.initialize = function (callback) {
                 { name: "Float"},
             ]
         }
-        
+
         for (var i = 0; i < pidControllerList.length; i++) {
             pidController_e.append('<option value="' + (i) + '">' + pidControllerList[i].name + '</option>');
         }
-       
-        
+
+
         var form_e = $('#pid-tuning');
 
         if (GUI.canChangePidController) {
@@ -532,6 +531,13 @@ TABS.pid_tuning.initialize = function (callback) {
             }
         });
 
+        // Setup model for rates preview
+        self.initRatesPreview();
+        self.renderModel();
+
+        // enable RC data pulling for rates preview
+        GUI.interval_add('receiver_pull', self.getRecieverData, true);
+
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
@@ -541,8 +547,42 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 };
 
-TABS.pid_tuning.cleanup = function (callback) {
-    if (callback) {
-        callback();
+TABS.pid_tuning.getRecieverData = function () {
+    MSP.send_message(MSP_codes.MSP_RC, false, false);
+};
+
+TABS.pid_tuning.initRatesPreview = function () {
+    this.keepRendering = true;
+    this.model = new Model($('.rates_preview'), $('.rates_preview canvas'));
+
+    var scale = d3.scale.linear().domain([900, 2100]);
+
+    this.rollScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.pitchScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.yawScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+
+    $(window).on('resize', $.proxy(this.model.resize, this.model));
+};
+
+TABS.pid_tuning.renderModel = function () {
+    if (this.keepRendering) { requestAnimationFrame(this.renderModel.bind(this)); }
+
+    if (!this.clock) { this.clock = new THREE.Clock(); }
+
+    if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
+        var delta = this.clock.getDelta(),
+            roll  = delta * this.rollScale(RC.channels[0]),
+            pitch = delta * this.pitchScale(RC.channels[1]),
+            yaw   = delta * this.yawScale(RC.channels[2]);
+
+        this.model.rotateBy(pitch, yaw, roll);
     }
+};
+
+TABS.pid_tuning.cleanup = function (callback) {
+    $(window).off('resize', $.proxy(this.model.resize, this.model));
+
+    this.keepRendering = false;
+
+    if (callback) callback();
 };

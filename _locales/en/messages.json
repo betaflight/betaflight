@@ -232,7 +232,7 @@
     "defaultWelcomeIntro": {
         "message": "Welcome to <strong>Betaflight - Configurator</strong>, a utility designed to simplify updating, configuring and tuning of your flight controller."
     },
-    
+
     "defaultWelcomeText": {
         "message": "The application supports all hardware that can run Betaflight (<a href=\"http://seriouslypro.com/spracingf3\" target=\"_blank\">SPRacingF3</a>, <a href=\"http://www.immersionrc.com/fpv-products/vortex-racing-quad/\" target=\"_blank\">Vortex</a>, <a href=\"https://github.com/TauLabs/TauLabs/wiki/Sparky\" target=\"_blank\">Sparky</a>, <a href=\"http://www.readymaderc.com/store/index.php?main_page=product_info&cPath=76_156&products_id=4221\" target=\"_blank\">DoDo</a>, <a href=\"https://www.openpilot.org/product/coptercontrol/\" target=\"_blank\">CC3D/EVO</a>, <a href=\"http://www.multiwiicopter.com/products/paris-air-hero-32-naze\" target=\"_blank\">Air Hero 32</a>, <a href=\"http://www.readytoflyquads.com/flight-controllers/flip-series\" target=\"_blank\">Flip32/+/Deluxe</a>, <a href=\"http://multirotormania.com/129-dragonfly32\" target=\"_blank\">DragonFly32</a>, <a href=\"http://www.goodluckbuy.com/micro-quadcopter-flight-driver-controller-9dof-9-axis-altitude-sensor-stm32f103.html\" target=\"_blank\">CJMCU Microquad</a>, Chebuzz F3, <a href=\"http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044\" target=\"_blank\">STM32F3Discovery</a>, <a href=\"http://www.overskyrc.com/hermit-micro-fpv-brushless-quadcopter-145mm-98g-fully-assembled-p-621.html\" target=\"_blank\">Hermit</a>, <a href=\"http://rcexplorer.se/blog/2015/05/introducing-the-naze32-tricopter-frame/\" target=\"_blank\">Naze32 Tricopter Frame</a>, <a href=\"http://www.2dogrc.com/skyline-32-naze-32-bit-flight-controller-acro-version.html\" target=\"_blank\">Skyline32</a>, <a href=\"http://abusemark.com/store/index.php?main_page=index&cPath=1\" target=\"_blank\">Naze/32/Mini/Pro</a>/<a href=\"http://www.massiverc.com/Shop/en/574-massive-acro-blackbox-flight-control-board.html\" target=\"_blank\">Blackbox</a> etc)<br /><br />The firmware source code can be downloaded from <a href=\"https://github.com/Betaflight/Betaflight\" title=\"www.github.com\" target=\"_blank\">here</a><br />The newest binary firmware image is available <a href=\"https://github.com/Betaflight/Betaflight/releases\" title=\"www.github.com\" target=\"_blank\">here</a>, development builds available <a href=\"http://Betaflight.memoryleaks.org/builds/\" target=\"_blank\">here</a><br /><br />Latest <strong>CP210x Drivers</strong> can be downloaded from <a href=\"http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx\" title=\"http://www.silabs.com\" target=\"_blank\">here</a><br />Latest <strong>STM USB VCP Drivers</strong> can be downloaded from <a href=\"http://www.st.com/web/en/catalog/tools/PF257938\" title=\"http://www.st.com\" target=\"_blank\">here</a><br />Latest <strong>Zadig</strong> for Windows DFU flashing can be downloaded from <a href=\"http://zadig.akeo.ie/\" title=\"http://zadig.akeo.ie\" target=\"_blank\">here</a><br />"
     },
@@ -296,7 +296,7 @@
     "defaultSupport5": {
         "message": "<a href=\"http://webchat.freenode.net/?channels=Betaflight\" target=\"_blank\">Join via WebClient</a>"
     },
-    
+
     "initialSetupBackupAndRestoreApiVersion": {
         "message": "<span style=\"color: red\">Backup and restore functionality disabled.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, backup and restore requires <span style=\"color: #ffbb00\">$2</span>.  Please backup your settings via the CLI, see Betaflight documentation for procedure."
     },
@@ -532,7 +532,7 @@
     "featureAIRMODE": {
         "message": "Airmode always enabled!"
     },
-    
+
     "configurationFeatureEnabled": {
         "message": "Enabled"
     },
@@ -668,7 +668,7 @@
     "configurationLoopTime": {
         "message": "Flight Controller Loop Time"
     },
-    "configurationCalculatedCyclesSec": {    
+    "configurationCalculatedCyclesSec": {
         "message": "Cycles/Sec (Hz)"
     },
     "configurationLoopTimeHelp": {
@@ -766,6 +766,9 @@
     "pidTuningRate": {
         "message": "Rate"
     },
+    "pidTuningRatesPreview": {
+        "message": "Rates Preview"
+    },
     "pidTuningRcExpo": {
         "message": "RC Expo"
     },
@@ -832,7 +835,7 @@
     },
     "receiverHelpYawDeadband": {
         "message": "These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased if rc inputs twitch while idle. <strong>This setting is for Yaw only.</strong>"
-    },    
+    },
     "receiverYawDeadband": {
         "message": "Yaw Deadband"
     },
@@ -1078,7 +1081,7 @@
     },
     "transponderDataInvalid": {
         "message": "Transponder data is <span style=\"color: red\">invalid</span>"
-    },    
+    },
     "transponderEepromSaved": {
         "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
@@ -1251,14 +1254,14 @@
     "blackboxButtonSave": {
         "message": "Save and reboot"
     },
-    
+
     "serialLoggingSupportedNote": {
         "message": "You can log to an external logging device (such as an OpenLog or compatible clone) by using a serial port. Configure the port on the Ports tab."
     },
     "sdcardNote": {
         "message": "Flight logs can be recorded to your flight controller's onboard SD card slot."
     },
-    
+
     "dataflashNote": {
         "message": "Flight logs can be recorded to your flight controller's onboard dataflash chip."
     },
@@ -1304,7 +1307,7 @@
     "dataflashFileWriteFailed": {
         "message": "Failed to write to the file you selected, are the permissions on that folder okay?"
     },
-    
+
     "firmwareFlasherReleaseSummaryHead": {
         "message": "Release info"
     },
@@ -1460,7 +1463,7 @@
     "ledStripEepromSaved": {
         "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
-    
+
     "controlAxisRoll": {
         "message": "Roll"
     },
@@ -1521,7 +1524,7 @@
     "controlAxisAux16": {
         "message": "AUX 16"
     },
-    
+
     "pidTuningBasic": {
         "message": "Basic/Acro"
     },
@@ -1545,7 +1548,7 @@
     },
     "pidTuningLevelD": {
         "message": "Transition (Horizon)"
-    },    
+    },
     "pidTuningLevelHelp": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
     },
@@ -1669,5 +1672,5 @@
     "configurationMagHardware": {
         "message": "Magnetometer (if supported)"
     }
-          
+
 }
