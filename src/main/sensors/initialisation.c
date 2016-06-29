@@ -81,7 +81,7 @@ extern baro_t baro;
 extern acc_t acc;
 extern sensor_align_e gyroAlign;
 
-uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
