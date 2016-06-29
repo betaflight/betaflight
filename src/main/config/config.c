@@ -659,7 +659,6 @@ static void resetConf(void)
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 #ifdef ALIENFLIGHTF3
-    masterConfig.batteryConfig.vbatscale = 20;
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
 #endif
     masterConfig.rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
@@ -687,8 +686,6 @@ static void resetConf(void)
 
 #if defined(SINGULARITY)
     // alternative defaults settings for SINGULARITY target
-    masterConfig.batteryConfig.vbatscale = 77;
-
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 
