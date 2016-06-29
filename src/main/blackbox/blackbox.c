@@ -79,6 +79,15 @@
 #include "blackbox.h"
 #include "blackbox_io.h"
 
+#ifndef BLACKBOX_PRINT_HEADER_LINE
+#define BLACKBOX_PRINT_HEADER_LINE(x, ...) case __COUNTER__: \
+                                                blackboxPrintfHeaderLine(x, __VA_ARGS__); \
+                                                break;
+#define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) case __COUNTER__: \
+                                                    {__VA_ARGS__}; \
+                                               break;
+#endif
+
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 #define SLOW_FRAME_INTERVAL 4096
@@ -1215,53 +1224,37 @@ static bool blackboxWriteSysinfo()
     }
 
     switch (xmitState.headerIndex) {
-        case 0:
-            blackboxPrintfHeaderLine("Firmware type:Cleanflight");
-        break;
-        case 1:
-            blackboxPrintfHeaderLine("Firmware revision:%s", shortGitRevision);
-        break;
-        case 2:
-            blackboxPrintfHeaderLine("Firmware date:%s %s", buildDate, buildTime);
-        break;
-        case 3:
-            blackboxPrintfHeaderLine("P interval:%d/%d", masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
-        break;
-        case 4:
-            blackboxPrintfHeaderLine("rcRate:%d", 100); //For compatibility reasons write rc_rate 100
-        break;
-        case 5:
-            blackboxPrintfHeaderLine("minthrottle:%d", masterConfig.escAndServoConfig.minthrottle);
-        break;
-        case 6:
-            blackboxPrintfHeaderLine("maxthrottle:%d", masterConfig.escAndServoConfig.maxthrottle);
-        break;
-        case 7:
-            blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));
-        break;
-        case 8:
-            blackboxPrintfHeaderLine("acc_1G:%u", acc.acc_1G);
-        break;
-        case 9:
+        BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                      "Cleanflight");
+        BLACKBOX_PRINT_HEADER_LINE("Firmware revision:INAV %s (%s) %s",     FC_VERSION_STRING, shortGitRevision, targetName);
+        BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                   buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
+        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        masterConfig.escAndServoConfig.minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        masterConfig.escAndServoConfig.maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.scale));
+        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.acc_1G);
+
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
                 blackboxPrintfHeaderLine("vbatscale:%u", masterConfig.batteryConfig.vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
-        break;
-        case 10:
-            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u", masterConfig.batteryConfig.vbatmincellvoltage,
-                masterConfig.batteryConfig.vbatwarningcellvoltage, masterConfig.batteryConfig.vbatmaxcellvoltage);
-        break;
-        case 11:
-            blackboxPrintfHeaderLine("vbatref:%u", vbatReference);
-        break;
-        case 12:
+            );
+        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage:%u,%u,%u",              masterConfig.batteryConfig.vbatmincellvoltage,
+                                                                            masterConfig.batteryConfig.vbatwarningcellvoltage,
+                                                                            masterConfig.batteryConfig.vbatmaxcellvoltage);
+        BLACKBOX_PRINT_HEADER_LINE("vbatref:%u",                            vbatReference);
+
+        BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d", masterConfig.batteryConfig.currentMeterOffset, masterConfig.batteryConfig.currentMeterScale);
+                blackboxPrintfHeaderLine("currentMeter:%d,%d",              masterConfig.batteryConfig.currentMeterOffset,
+                                                                            masterConfig.batteryConfig.currentMeterScale);
             }
-        break;
+            );
+
+        
         default:
             return true;
     }
