@@ -1543,17 +1543,32 @@
     "pidTuningGps": {
         "message": "GPS Navigation"
     },
-    "pidTuningLevelP": {
-        "message": "Strength (Angle)"
+    "pidTuningStrength": {
+        "message": "Strength"
     },
-    "pidTuningLevelI": {
-        "message": "Strength (Horizon)"
+    "pidTuningTransition": {
+        "message": "Transition"
     },
-    "pidTuningLevelD": {
-        "message": "Transition (Horizon)"
+    "pidTuningHorizon": {
+        "message": "Horizon"
+    },
+    "pidTuningAngle": {
+        "message": "Angle"
     },
     "pidTuningLevelHelp": {
-        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
+        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the values differently. Please check the documentation."
+    },
+    "pidTuningLfpFilters": {
+        "message": "LFP Filters"
+    },
+    "pidTuningGyro": {
+        "message": "Gyro Soft (Hz)"
+    },
+    "pidTuningDTerm": {
+        "message": "D Term (Hz)"
+    },
+    "pidTuningYaw": {
+        "message": "Yaw (Hz)"
     },
     "configHelp2": {
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "

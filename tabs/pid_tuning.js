@@ -130,7 +130,7 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         i = 0;
-        $('.pid_tuning .LEVEL input').each(function () {
+        $('.pid_tuning .HORIZON input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[7][i++]);
@@ -138,6 +138,10 @@ TABS.pid_tuning.initialize = function (callback) {
                 case 1:
                     $(this).val(PIDs[7][i++]);
                     break;
+            }
+        });
+        $('.pid_tuning .ANGLE input').each(function () {
+            switch (i) {
                 case 2:
                     $(this).val(PIDs[7][i++]);
                     break;
@@ -185,11 +189,11 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
         }
 
-        $('.pid_filter .gyro').val(FILTER_CONFIG.gyro_soft_lpf_hz);
-        $('.pid_filter .dterm').val(FILTER_CONFIG.dterm_lpf_hz);
-        $('.pid_filter .yaw').val(FILTER_CONFIG.yaw_lpf_hz);
+        $('.pid_tuning input[name="gyro"]').val(FILTER_CONFIG.gyro_soft_lpf_hz);
+        $('.pid_tuning input[name="dterm"]').val(FILTER_CONFIG.dterm_lpf_hz);
+        $('.pid_tuning input[name="yaw"]').val(FILTER_CONFIG.yaw_lpf_hz);
 
-        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+        if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
             $('.pid_filter').hide();
             $('.pid_tuning input[name="rc_rate_yaw"]').hide();
         }
@@ -238,7 +242,10 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         i = 0;
-        $('table.pid_tuning tr.LEVEL input').each(function () {
+        $('table.pid_tuning tr.HORIZON input').each(function () {
+            PIDs[7][i++] = parseFloat($(this).val());
+        });
+        $('table.pid_tuning tr.ANGLE input').each(function () {
             PIDs[7][i++] = parseFloat($(this).val());
         });
 
@@ -262,30 +269,44 @@ TABS.pid_tuning.initialize = function (callback) {
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
-        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.pid_filter .gyro').val());
-        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.pid_filter .dterm').val());
-        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_filter .yaw').val());
+        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.pid_tuning input[name="gyro"]').val());
+        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.pid_tuning input[name="dterm"]').val());
+        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_tuning input[name="yaw"]').val());
     }
-    function hideUnusedPids(sensors_detected) {
-      $('.tab-pid_tuning table.pid_tuning').hide();
-      $('#pid_main').show();
 
-      if (have_sensor(sensors_detected, 'acc')) {
-        $('#pid_accel').show();
-      }
-      if (have_sensor(sensors_detected, 'baro')) {
-        $('#pid_baro').show();
-      }
-      if (have_sensor(sensors_detected, 'mag')) {
-        $('#pid_mag').show();
-      }
-      if (bit_check(BF_CONFIG.features, 7)) {   //This will need to be reworked to remove BF_CONFIG reference eventually
-        $('#pid_gps').show();
-      }
-      if (have_sensor(sensors_detected, 'sonar')) {
-        $('#pid_baro').show();
-      }
+    function hideUnusedPids(sensors_detected) {
+        $('.tab-pid_tuning .pid_tuning').hide();
+
+        $('#pid_main').show();
+
+        if (CONFIG.flightControllerIdentifier === "BTFL" || semver.ge(CONFIG.flightControllerVersion, "2.9.0")) {
+            $('#pid_filter').show();
+	}
+
+        if (have_sensor(sensors_detected, 'acc')) {
+            $('#pid_accel').show();
+        }
+
+        var showTitle = false;
+        if (have_sensor(sensors_detected, 'baro') ||
+            have_sensor(sensors_detected, 'sonar')) {
+            $('#pid_baro').show();
+	    showTitle = true;
+        }
+        if (have_sensor(sensors_detected, 'mag')) {
+            $('#pid_mag').show();
+	    showTitle = true;
+        }
+        if (bit_check(BF_CONFIG.features, 7)) {   //This will need to be reworked to remove BF_CONFIG reference eventually
+            $('#pid_gps').show();
+	    showTitle = true;
+        }
+
+        if (showTitle) {
+            $('#pid_optional').show();
+        }
     }
+
     function process_html() {
         // translate to user-selected language
         localize();
@@ -294,7 +315,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         $('#showAllPids').on('click', function(){
           if($(this).text() == "Show all PIDs") {
-            $('.tab-pid_tuning table.pid_tuning').show();
+            $('.tab-pid_tuning .pid_tuning').show();
             $(this).text('Hide unused PIDs');
           } else {
             hideUnusedPids(CONFIG.activeSensors);
