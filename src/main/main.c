@@ -304,12 +304,6 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
-        featureSet(FEATURE_ONESHOT125);
-    } else {
-        featureClear(FEATURE_ONESHOT125);
-    }
-    
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
 
     // Configurator feature abused for enabling Fast PWM
@@ -335,12 +329,6 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
-/*
-    // TODO is this needed here? enables at the end
-    if (!feature(FEATURE_ONESHOT125))
-        motorControlEnable = true;
-
-*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
