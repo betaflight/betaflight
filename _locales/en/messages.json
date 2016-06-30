@@ -1691,7 +1691,7 @@
         "message": "Magnetometer (if supported)"
     },
       "PIDTip": {
-        "message": "<strong><i>Derivative from Error</i></strong> provides more direct stick response and is mostly prefered for Racing.<br><strong><i>Derivative from Measurement</i></strong> provides smoother stick response what is more usefull for freestyling"
+        "message": "<b>Derivative from Error</b> provides more direct stick response and is mostly prefered for Racing.<br><br><b>Derivative from Measurement</b> provides smoother stick response what is more usefull for freestyling"
     }  
     
 
