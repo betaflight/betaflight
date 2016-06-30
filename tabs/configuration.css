@@ -122,6 +122,7 @@
 
 .tab-configuration .serialRX {
     width: 100%;
+    height: 68px;
     border: 1px solid silver;
     margin-bottom: 5px;
 }
@@ -271,7 +272,6 @@
 }
 
 .tab-configuration .rssi .gui_box, .tab-configuration .system .gui_box {
-    min-height: 145px;
     float: left;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
-    min-height: 355px;
+    min-height: 263px;
     float: left;
     margin-bottom: 10px;
 }
@@ -296,7 +296,7 @@
 }
 
 .tab-configuration .rxprovider {
-    min-height: 214px;
+    min-height: 184px;
 }
 
 .tab-configuration .current td:nth-child(2) {
@@ -512,15 +512,18 @@
         float: left;
     }
     .tab-configuration .mixer .gui_box, .tab-configuration .motorstop .gui_box {
-        min-height: 290px;
+        min-height: 296px;
         float: left;
+    }
+    .tab-configuration .rxprovider {
+        min-height: 190px;
     }
     .tab-configuration .board .gui_box, .tab-configuration .acc .gui_box {
         min-height: 137px;
         float: left;
     }
     .tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
-        min-height: 355px;
+        min-height: 259px;
         float: left;
     }
     .tab-configuration .current .gui_box {

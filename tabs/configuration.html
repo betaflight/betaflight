@@ -33,14 +33,13 @@
                 </div>
                 <div class="spacer_box">
                     <div class="selectProtocol">
-                        <label> 
+                        <label>
                             <select class="escprotocol">
                                 <!-- list generated here -->
                             </select>
                             <span i18n="configurationEscProtocol"></span>
                         </label>
                     </div>
-                    
                     <div class="checkboxPwm" style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">
                         <div style="float: left; height: 20px; margin-right: 5px; margin-left: 3px;">
                             <input type="checkbox" name="unsyncedPWMSwitch" class="toggle" />
@@ -57,15 +56,13 @@
                             <span i18n="configurationUnsyncedPWMFreq"></span>
                         </label>
                     </div>
-                    
-                    
                     <table cellpadding="0" cellspacing="0">
                         <tbody class="features esc">
                             <!-- table generated here -->
                         </tbody>
                     </table>
                     <!--   -->
-                    <div class="disarm"> 
+                    <div class="disarm">
                         <div class="checkbox">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
                                 <input type="checkbox" name="disarmkillswitch" class="toggle" />
@@ -149,7 +146,7 @@
                     </div>
                     <div class="sensoralignment">
                         <div class="select">
-                            <label> 
+                            <label>
                                 <span i18n="configurationSensorAlignmentGyro"></span>
                                 <select class="gyroalign">
                                     <option value="0">Default</option>
@@ -158,7 +155,7 @@
                             </label>
                         </div>
                         <div class="select">
-                            <label> 
+                            <label>
                                 <span i18n="configurationSensorAlignmentAcc"></span>
                                 <select class="accalign">
                                     <option value="0">Default</option>
@@ -229,9 +226,29 @@
                             <p i18n="configurationSerialRXHelp"></p>
                         </div>
                     </div>
-                    <select class="serialRX" size="8">
+                    <select class="serialRX" size="5">
                         <!-- list generated here -->
                     </select>
+                </div>
+            </div>
+            <div class="gui_box grey">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="configurationRSSI"></div>
+                    <div class="helpicon cf_tip" i18n_title="configurationRSSIHelp"></div>
+                </div>
+                <div class="spacer_box">
+                    <table cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th i18n="configurationFeatureEnabled"></th>
+                                <th i18n="configurationFeatureDescription"></th>
+                                <th i18n="configurationFeatureName"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="features rssi">
+                            <!-- table generated here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -273,7 +290,7 @@
                             i18n="configurationBatteryScale"></span>
                         </label>
                     </div>
-                     <div class="number">
+                    <div class="number">
                         <label> <input type="text" name="batteryvoltage" readonly class="disabled" /> <span
                             i18n="configurationBatteryVoltage"></span>
                         </label>
@@ -308,94 +325,16 @@
                         </label>
                     </div>
                     <div class="number">
-                        <label> <input type="text" name="batterycurrent" readonly class="disabled" /> <span
-                            i18n="configurationBatteryCurrent"></span>
+                        <label>
+                            <input type="text" name="batterycurrent" readonly class="disabled" /> <span
+                                i18n="configurationBatteryCurrent"></span>
                     </div>
                     <div class="checkbox">
-                        <div class="numberspacer">
-                            <input type="checkbox" name="multiwiicurrentoutput" class="toggle" />
-                        </div>
-                        <label> <span i18n="configurationBatteryMultiwiiCurrent"></span>
-                        </label>
+                    <div class="numberspacer">
+                    <input type="checkbox" name="multiwiicurrentoutput" class="toggle" />
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="clear-both"></div>
-        <div class="leftWrapper rssi">
-            <div class="gui_box grey">
-                <div class="gui_box_titlebar">
-                    <div class="spacer_box_title" i18n="configurationRSSI"></div>
-                        <div class="helpicon cf_tip" i18n_title="configurationRSSIHelp"></div>
-                    </div>
-                <div class="spacer_box">
-                    <table cellpadding="0" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th i18n="configurationFeatureEnabled"></th>
-                                <th i18n="configurationFeatureDescription"></th>
-                                <th i18n="configurationFeatureName"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="features rssi">
-                            <!-- table generated here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="rightWrapper system">
-            <div class="gui_box grey">
-                <div class="gui_box_titlebar">
-                    <div class="spacer_box_title" i18n="configurationSystem"></div>
-                </div>
-                <div class="spacer_box">
-                    <div class="note">
-                        <div class="note_spacer">
-                            <p i18n="configurationLoopTimeHelp"></p>
-                        </div>
-                    </div>
-                    <div class="select">
-                        <label> 
-                            <select class="gyroSyncDenom">
-                                    <!-- list generated here -->
-                            </select>
-                            <span i18n="configurationGyroSyncDenom"></span>
-                        </label>
-                    </div>
-                    <div class="select selectPidProcessDenom">
-                        <label> 
-                            <select class="pidProcessDenom">
-                                    <!-- list generated here -->
-                            </select>
-                            <span i18n="configurationPidProcessDenom"></span>
-                        </label>
-                    </div>
-                    <div class="hardwareSelection">
-                        <div class="select">
-                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                    <input type="checkbox" name="accHardwareSwitch" class="toggle" />
-                                </div>
-                                <label for="accHardwareSwitch"> <span class="freelabel"
-                                    i18n="configurationAccHardware"></span>
-                                </label>
-                        </div>
-                        <div class="select">
-                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                    <input type="checkbox" name="baroHardwareSwitch" class="toggle" />
-                                </div>
-                                <label for="baroHardwareSwitch"> <span class="freelabel"
-                                    i18n="configurationBaroHardware"></span>
-                                </label>
-                        </div>
-                        <div class="select">
-                                <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                    <input type="checkbox" name="magHardwareSwitch" class="toggle" />
-                                </div>
-                                <label for="magHardwareSwitch"> <span class="freelabel"
-                                    i18n="configurationMagHardware"></span>
-                                </label>
-                        </div>
+                    <label> <span i18n="configurationBatteryMultiwiiCurrent"></span>
+                    </label>
                     </div>
                 </div>
             </div>
@@ -450,27 +389,63 @@
                 </div>
             </div>
         </div>
-        <div class="rightWrapper other">
+        <div class="rightWrapper system">
             <div class="gui_box grey">
                 <div class="gui_box_titlebar">
-                    <div class="spacer_box_title" i18n="configurationFeatures"></div>
+                    <div class="spacer_box_title" i18n="configurationSystem"></div>
                 </div>
                 <div class="spacer_box">
-                    <table cellpadding="0" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th i18n="configurationFeatureEnabled"></th>
-                                <th i18n="configurationFeatureDescription"></th>
-                                <th i18n="configurationFeatureName"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="features other" id="noline">
-                            <!-- table generated here -->
-                        </tbody>
-                    </table>
+                    <div class="note">
+                        <div class="note_spacer">
+                            <p i18n="configurationLoopTimeHelp"></p>
+                        </div>
+                    </div>
+                    <div class="select">
+                        <label>
+                            <select class="gyroSyncDenom">
+                                <!-- list generated here -->
+                            </select>
+                            <span i18n="configurationGyroSyncDenom"></span>
+                        </label>
+                    </div>
+                    <div class="select selectPidProcessDenom">
+                        <label>
+                            <select class="pidProcessDenom">
+                                <!-- list generated here -->
+                            </select>
+                            <span i18n="configurationPidProcessDenom"></span>
+                        </label>
+                    </div>
+                    <div class="hardwareSelection">
+                        <div class="select">
+                            <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                <input type="checkbox" name="accHardwareSwitch" class="toggle" />
+                            </div>
+                            <label for="accHardwareSwitch"> <span class="freelabel"
+                                i18n="configurationAccHardware"></span>
+                            </label>
+                        </div>
+                        <div class="select">
+                            <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                <input type="checkbox" name="baroHardwareSwitch" class="toggle" />
+                            </div>
+                            <label for="baroHardwareSwitch"> <span class="freelabel"
+                                i18n="configurationBaroHardware"></span>
+                            </label>
+                        </div>
+                        <div class="select">
+                            <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
+                                <input type="checkbox" name="magHardwareSwitch" class="toggle" />
+                            </div>
+                            <label for="magHardwareSwitch"> <span class="freelabel"
+                                i18n="configurationMagHardware"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="clear-both"></div>
         <div class="leftWrapper 3d">
             <div class="gui_box grey">
                 <div class="gui_box_titlebar">
@@ -497,6 +472,27 @@
                             i18n="configuration3dDeadbandThrottle"></span>
                         </label>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="rightWrapper other">
+            <div class="gui_box grey">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="configurationFeatures"></div>
+                </div>
+                <div class="spacer_box">
+                    <table cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th i18n="configurationFeatureEnabled"></th>
+                                <th i18n="configurationFeatureDescription"></th>
+                                <th i18n="configurationFeatureName"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="features other" id="noline">
+                            <!-- table generated here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
