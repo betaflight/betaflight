@@ -754,6 +754,12 @@
     "pidTuningName": {
         "message": "Name"
     },
+    "pidTuningShowAllPids": {
+        "message": "Show all PIDs"
+    },
+    "pidTuningHideUnusedPids": {
+        "message": "Hide unused PIDs"
+    },
     "pidTuningProportional": {
         "message": "Proportional"
     },
@@ -781,16 +787,16 @@
     "pidTuningTPABreakPoint": {
         "message": "TPA Breakpoint"
     },
-	"pidTuningFilter": {
+    "pidTuningFilter": {
         "message": "Filter"
     },
-	"pidTuningFilterFrequency": {
+    "pidTuningFilterFrequency": {
         "message": "Frequency"
     },
-    "rcCurve": {
+    "pidTuningRcCurve": {
 	"message": "RC Curve"
     },
-    "rcYawCurve": {
+    "pidTuningRcYawCurve": {
 	"message": "RC Yaw Curve"
     },
     "throttle": {
