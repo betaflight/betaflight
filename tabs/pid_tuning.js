@@ -316,29 +316,27 @@ TABS.pid_tuning.initialize = function (callback) {
         localize();
 
         var showAllButton = $('#showAllPids');
-        var showAllMsg = "Show all PIDs";
-        var hideUnusedMsg = "Hide unused PIDs";
+        var showAllMsg = chrome.i18n.getMessage("pidTuningShowAllPids");
+        var hideUnusedMsg = chrome.i18n.getMessage("pidTuningHideUnusedPids");
 
-        if (!TABS.pid_tuning.showAllPids) {
-            hideUnusedPids();
-            showAllButton.text(showAllMsg);
-        } else {
-            showAllPids();
-            showAllButton.text(hideUnusedMsg);
+        function updatePidDisplay() {
+            if (!TABS.pid_tuning.showAllPids) {
+                hideUnusedPids();
+
+                showAllButton.text(showAllMsg);
+            } else {
+                showAllPids();
+
+                showAllButton.text(hideUnusedMsg);
+            }
         }
 
-        $('#showAllPids').on('click', function(){
-          if($(this).text() == showAllMsg) {
-            showAllPids();
-            $(this).text(hideUnusedMsg);
+        updatePidDisplay();
 
-            TABS.pid_tuning.showAllPids = true;
-          } else {
-            hideUnusedPids();
-            $(this).text(showAllMsg);
+        showAllButton.on('click', function(){
+            TABS.pid_tuning.showAllPids = !TABS.pid_tuning.showAllPids;
 
-            TABS.pid_tuning.showAllPids = false;
-          }
+            updatePidDisplay();
         });
 
         $('#resetPIDs').on('click', function(){
