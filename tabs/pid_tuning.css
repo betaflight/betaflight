@@ -29,6 +29,7 @@
 .tab-pid_tuning .cf td:last-child {
     border-bottom-right-radius: 3px;
     border-right: 0px;
+    padding-bottom: 0px;
 }
 
 .tab-pid_tuning .cf input {
@@ -52,7 +53,7 @@
 .tab-pid_tuning .throttle_curve {
     float: right;
     width: calc(100% - 2px); /* - ( "virtual" margin) */
-    margin: 0 0px 0px 0;
+    margin: 0 2px 0px 0;
     border: 1px solid silver;
     border-radius: 3px;
     background-image: url(../images/paper.jpg);
@@ -201,8 +202,7 @@
 }
 
 .tab-pid_tuning .pitch_roll_curve {
-    margin: 0 0px 0px 0;
-    width: 100%;
+    margin: 0 4px 0px 0;
     height: 100%;
     border: 1px solid silver;
     border-radius: 3px;
@@ -235,8 +235,7 @@
 }
 
 .tab-pid_tuning .yaw_curve {
-    margin: 0 0px 0px 0;
-    width: 100%;
+    margin: 0 4px 0px 0;
     height: 100%;
     border: 1px solid silver;
     border-radius: 3px;
@@ -318,8 +317,9 @@
 }
 
 .tab-pid_tuning .single-field {
-  display: inline-block;
-  margin-bottom: 10px;
+    display: inline-block;
+    margin-bottom: 10px;
+    margin-right: 5px;
 }
 
 .tab-pid_tuning .single-field .head {
@@ -414,6 +414,13 @@
   /* font-family: 'open_sans', Arial; */
   background-image: linear-gradient(-45deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%, rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%, rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%, rgba(255, 255, 255, .2) 80%, rgba(255, 255, 255, .2) 90%, transparent 90%, transparent 100%, rgba(255, 255, 255, .2) 100%, transparent);
 }
+
+.fancy.header th {
+    padding-bottom: 4px;
+    padding-top: 4px;
+    padding-left: 5px;
+}
+
 
 .pid_mode {
     width: calc(100% - 5px);
@@ -566,6 +573,41 @@
     margin-top:15px;
 }
 
+.tab-pid_tuning .bottomarea {
+    float: left;
+    width: calc(100% - 2px);
+    border-bottom: 1px solid silver;
+    border-left: 1px solid silver;
+    border-right: 1px solid silver;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+
+.tab-pid_tuning .controller {
+    width: 100px; 
+}
+
+.tab-pid_tuning .controller select {
+    border: 1px solid silver;
+    margin-left: 5px;
+    width: calc(100% - 10px);
+}
+
+
+.tab-pid_tuning .delta {
+    width: 150px; 
+}
+
+.tab-pid_tuning .delta select {
+    border: 1px solid silver;
+    margin-left: 5px;
+    width: calc(100% - 10px);
+}
+
+
 .tab-pid_tuning .bracket {
     position: absolute;
     background-image: url(/images/icons/icon_bracket.svg);
@@ -592,4 +634,9 @@
     background-image: url(../images/paper.jpg);
     background-size: 100%;
     background-position: center;
+    border: 1px solid silver;
+    margin-top: -1px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    height: 260px;
 }

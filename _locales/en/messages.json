@@ -822,7 +822,7 @@
         "message": "Please read receiver chapter of the documentation.  Configure serial port (if required), receiver mode (serial/ppm/pwm), provider (for serial receivers), bind receiver, set channel map, configure channel endpoints/range on TX so that all channels go from ~1000 to ~2000.  Set midpoint (default 1500), trim channels to 1500, configure stick deadband, verify behaviour when TX is off or out of range.<br /><span style=\"color: red\">IMPORTANT:</span> Before flying read failsafe chapter of documentation and configure failsafe."
     },
     "tuningHelp": {
-        "message": "<b>Tuning tips</b><br><i>Derivative from Error</i> provides more direct stick response and is mostly prefered for Racing.<br><i>Derivative from Measurement</i> provides smoother stick response what is more usefull for freestyling<br><br /><span style=\"color: red\">IMPORTANT:</span> It is important to verify motor temperatures during first flights. The higher the filter value gets the better it may fly, but you do to get more noise into the motors. <br>Default value of 100hz is optimal, but for noiser setups you can try lowering Dterm filter to 50hz and possibly also the gyro filter."
+        "message": "<b>Tuning tips</b><br /><span style=\"color: red\">IMPORTANT:</span> It is important to verify motor temperatures during first flights. The higher the filter value gets the better it may fly, but you do to get more noise into the motors. <br>Default value of 100hz is optimal, but for noiser setups you can try lowering Dterm filter to 50hz and possibly also the gyro filter."
     },
     "receiverThrottleMid": {
         "message": "Throttle MID"
@@ -1674,6 +1674,13 @@
     },
     "configurationMagHardware": {
         "message": "Magnetometer (if supported)"
-    }
+    },
+      "PIDTip": {
+        "message": "<strong><i>Derivative from Error</i></strong> provides more direct stick response and is mostly prefered for Racing.<br><strong><i>Derivative from Measurement</i></strong> provides smoother stick response what is more usefull for freestyling"
+    }  
+    
+
+    
+    
 
 }
