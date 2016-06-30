@@ -20,6 +20,7 @@ var GUI_control = function () {
     this.defaultAllowedTabsWhenConnected = [
         'failsafe',
         'transponder',
+        'osd',
         'adjustments',
         'auxiliary',
         'cli',
@@ -239,8 +240,7 @@ GUI_control.prototype.tab_switch_cleanup = function (callback) {
     }
 };
 
-GUI_control.prototype.content_ready = function (callback) {
-
+GUI_control.prototype.switchery = function() {
     $('.togglesmall').each(function(index, elem) {
         var switchery = new Switchery(elem, {
           size: 'small',
@@ -275,6 +275,11 @@ GUI_control.prototype.content_ready = function (callback) {
          });
          $(elem).removeClass('togglemedium');
     });
+};
+
+GUI_control.prototype.content_ready = function (callback) {
+
+    this.switchery();
 
     if (CONFIGURATOR.connectionValid) {
         // Build link to in-use CF version documentation
