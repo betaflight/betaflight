@@ -1408,9 +1408,6 @@
     "firmwareFlasherButtonLoadOnline": {
         "message": "Load Firmware [Online]"
     },
-    "firmwareFlasherButtonUpdateReleasesList": {
-        "message": "Force Releases update"
-    },
     "firmwareFlasherFlashFirmware": {
         "message": "Flash Firmware"
     },
@@ -1546,17 +1543,32 @@
     "pidTuningGps": {
         "message": "GPS Navigation"
     },
-    "pidTuningLevelP": {
-        "message": "Strength (Angle)"
+    "pidTuningStrength": {
+        "message": "Strength"
     },
-    "pidTuningLevelI": {
-        "message": "Strength (Horizon)"
+    "pidTuningTransition": {
+        "message": "Transition"
     },
-    "pidTuningLevelD": {
-        "message": "Transition (Horizon)"
+    "pidTuningHorizon": {
+        "message": "Horizon"
+    },
+    "pidTuningAngle": {
+        "message": "Angle"
     },
     "pidTuningLevelHelp": {
-        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the LEVEL values differently. Please check the documentation."
+        "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the values differently. Please check the documentation."
+    },
+    "pidTuningLfpFilters": {
+        "message": "LFP Filters"
+    },
+    "pidTuningGyro": {
+        "message": "Gyro Soft (Hz)"
+    },
+    "pidTuningDTerm": {
+        "message": "D Term (Hz)"
+    },
+    "pidTuningYaw": {
+        "message": "Yaw (Hz)"
     },
     "configHelp2": {
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
@@ -1679,11 +1691,11 @@
         "message": "Magnetometer (if supported)"
     },
       "PIDTip": {
-        "message": "<strong><i>Derivative from Error</i></strong> provides more direct stick response and is mostly prefered for Racing.<br><strong><i>Derivative from Measurement</i></strong> provides smoother stick response what is more usefull for freestyling"
-    }
+        "message": "<b>Derivative from Error</b> provides more direct stick response and is mostly prefered for Racing.<br><br><b>Derivative from Measurement</b> provides smoother stick response what is more usefull for freestyling"
+    }  
+    
 
-
-
-
+    
+    
 
 }

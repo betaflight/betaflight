@@ -134,56 +134,28 @@ TABS.firmware_flasher.initialize = function (callback) {
             })
         };
 
-        var updateReleases = function (){
-          $.get('https://api.github.com/repos/betaflight/betaflight/releases', function (releases){
-              processReleases(releases);
-              updateReleasesList(releases);
+        $.get('https://api.github.com/repos/betaflight/betaflight/releases', function (releases){
+            processReleases(releases);
+            TABS.firmware_flasher.releases = releases;
 
-              chrome.storage.local.set({'releases': releases, 'lastReleasesSync': Date()}, function() {
-                console.log('Releases saved');
-              });
+            // bind events
+            $('select[name="release"]').change(function() {
+                if (!GUI.connect_lock) {
+                    $('.progress').val(0).removeClass('valid invalid');
+                    $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
+                    $('div.git_info').slideUp();
+                    $('div.release_info').slideUp();
+                    $('a.flash_firmware').addClass('disabled');
+                }
+            });
 
-          }).fail(function (data){
-              if (data["responseJSON"]){
-                  GUI.log("<b>GITHUB Query Failed: <code>{0}</code></b>".format(data["responseJSON"].message));
-              }
-              $('select[name="release"]').empty().append('<option value="0">Offline</option>');
-          });
-        };
-
-        var updateReleasesList = function(releases){
-          TABS.firmware_flasher.releases = releases;
-
-          // bind events
-          $('select[name="release"]').change(function() {
-              if (!GUI.connect_lock) {
-                  $('.progress').val(0).removeClass('valid invalid');
-                  $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherLoadFirmwareFile'));
-                  $('div.git_info').slideUp();
-                  $('div.release_info').slideUp();
-                  $('a.flash_firmware').addClass('disabled');
-              }
-          });
-        }
-
-        chrome.storage.local.get('lastReleasesSync', function (result) {
-            // calculate time between last online sync and now
-            var lastReleasesSync = new Date(result.lastReleasesSync);
-            var currentDate = new Date();
-            var timeDiff = Math.abs(currentDate.getTime() - lastReleasesSync.getTime());
-            var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            console.log(result.lastReleasesSync);
-            if(diffDays > 1) {
-                console.log("Last sync older than one day, updating releases");
-                updateReleases();
-            } else {
-                console.log("Last sync younger than one day, using stored releases");
-                chrome.storage.local.get('releases', function (result) {
-                    updateReleasesList(result.releases);
-                    buildFirmwareOptions();
-                });
+        }).fail(function (data){
+            if (data["responseJSON"]){
+                GUI.log("<b>GITHUB Query Failed: <code>{0}</code></b>".format(data["responseJSON"].message));
             }
+            $('select[name="release"]').empty().append('<option value="0">Offline</option>');
         });
+
 
         // UI Hooks
         $('a.load_file').click(function () {
@@ -382,10 +354,6 @@ TABS.firmware_flasher.initialize = function (callback) {
                     }
                 }
             }
-        });
-
-        $('a.updateReleasesList').click(function() {
-            updateReleases();
         });
 
         $(document).on('click', 'span.progressLabel a.save_firmware', function () {
