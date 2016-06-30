@@ -412,6 +412,8 @@ TABS.pid_tuning.initialize = function (callback) {
                 var rateElementYaw = 1;
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
                     rateElementYaw = $('.pid_tuning input[name="rc_rate_yaw"]');
+                } else {
+                    rateElementYaw = rateElement;
                 }
 
                 drawRateCurve(rateElement, sRateElementRoll, expoElement, rcCurveElement);
