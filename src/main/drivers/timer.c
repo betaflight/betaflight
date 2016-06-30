@@ -456,7 +456,7 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     if(outEnable) {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Inactive;
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        if (timHw->outputInverted) {
+        if (timHw->output & TIMER_OUTPUT_INVERTED) {
             stateHigh = !stateHigh;
         }
         TIM_OCInitStructure.TIM_OCPolarity = stateHigh ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
