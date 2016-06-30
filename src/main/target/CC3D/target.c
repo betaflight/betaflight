@@ -128,17 +128,17 @@ const uint16_t airPWM_BP6[] = {
 
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM4, IO_TAG(PB6), TIM_Channel_1, TIM4_IRQn,    0, IOCFG_IPD,   0}, // S1_IN
-    { TIM3, IO_TAG(PB5), TIM_Channel_2, TIM3_IRQn,    0, IOCFG_IPD,   0}, // S2_IN - SoftSerial TX - GPIO_PartialRemap_TIM3 / Sonar trigger
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,    0, IOCFG_IPD,   0}, // S3_IN - SoftSerial RX / Sonar echo / RSSI ADC
-    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,    0, IOCFG_IPD,   0}, // S4_IN - Current
-    { TIM2, IO_TAG(PA0), TIM_Channel_1, TIM2_IRQn,    0, IOCFG_IPD,   0}, // S5_IN - Vbattery
-    { TIM2, IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn,    0, IOCFG_IPD,   0}, // S6_IN - PPM IN
-    { TIM4, IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP, 0},    // S1_OUT
-    { TIM4, IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP, 0},    // S2_OUT
-    { TIM4, IO_TAG(PB7), TIM_Channel_2, TIM4_IRQn,    1, IOCFG_AF_PP, 0},    // S3_OUT
-    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM1_CC_IRQn, 1, IOCFG_AF_PP, 0}, // S4_OUT
-    { TIM3, IO_TAG(PB4), TIM_Channel_1, TIM3_IRQn,    1, IOCFG_AF_PP, 0},    // S5_OUT - GPIO_PartialRemap_TIM3 - LED Strip
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,    1, IOCFG_AF_PP, 0}     // S6_OUT
+    { TIM4, IO_TAG(PB6), TIM_Channel_1, TIM4_IRQn,    0, IOCFG_IPD },   // S1_IN
+    { TIM3, IO_TAG(PB5), TIM_Channel_2, TIM3_IRQn,    0, IOCFG_IPD },   // S2_IN - SoftSerial TX - GPIO_PartialRemap_TIM3 / Sonar trigger
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,    0, IOCFG_IPD },   // S3_IN - SoftSerial RX / Sonar echo / RSSI ADC
+    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,    0, IOCFG_IPD },   // S4_IN - Current
+    { TIM2, IO_TAG(PA0), TIM_Channel_1, TIM2_IRQn,    0, IOCFG_IPD },   // S5_IN - Vbattery
+    { TIM2, IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn,    0, IOCFG_IPD },   // S6_IN - PPM IN
+    { TIM4, IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP }, // S1_OUT
+    { TIM4, IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP }, // S2_OUT
+    { TIM4, IO_TAG(PB7), TIM_Channel_2, TIM4_IRQn,    1, IOCFG_AF_PP }, // S3_OUT
+    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM1_CC_IRQn, 1, IOCFG_AF_PP }, // S4_OUT
+    { TIM3, IO_TAG(PB4), TIM_Channel_1, TIM3_IRQn,    1, IOCFG_AF_PP }, // S5_OUT - GPIO_PartialRemap_TIM3 - LED Strip
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,    1, IOCFG_AF_PP }  // S6_OUT
 };
 
