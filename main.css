@@ -1354,6 +1354,10 @@ dialog {
     border-style: dotted;
 }
 
+.third {
+    width: 33%;
+}
+
 .noboarder td {
     border: none;
 }
