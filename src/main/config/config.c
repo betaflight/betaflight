@@ -268,8 +268,13 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 
 void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
+#ifdef BRUSHED_MOTORS
+    escAndServoConfig->minthrottle = 1000;
+    escAndServoConfig->maxthrottle = 2000;
+#else
     escAndServoConfig->minthrottle = 1150;
     escAndServoConfig->maxthrottle = 1850;
+#endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
     escAndServoConfig->escDesyncProtection = 0;
@@ -415,8 +420,6 @@ uint16_t getCurrentMinthrottle(void)
 // Default settings
 static void resetConf(void)
 {
-    int i;
-
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
@@ -477,7 +480,11 @@ static void resetConf(void)
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
+#ifdef SERIALRX_PROVIDER
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_PROVIDER;
+#else
     masterConfig.rxConfig.serialrx_provider = 0;
+#endif
     masterConfig.rxConfig.sbus_inversion = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
@@ -487,7 +494,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
 
-    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
         channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
@@ -549,8 +556,7 @@ static void resetConf(void)
 
     resetPidProfile(&currentProfile->pidProfile);
     
-    uint8_t rI;
-    for (rI = 0; rI<MAX_RATEPROFILES; rI++) {
+    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
         resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
     }
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
@@ -581,7 +587,7 @@ static void resetConf(void)
 
 #ifdef USE_SERVOS
     // servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         masterConfig.servoConf[i].min = DEFAULT_SERVO_MIN;
         masterConfig.servoConf[i].max = DEFAULT_SERVO_MAX;
         masterConfig.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
@@ -600,8 +606,9 @@ static void resetConf(void)
 #endif
 
     // custom mixer. clear by defaults.
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         masterConfig.customMotorMixer[i].throttle = 0.0f;
+    }
 
 #ifdef LED_STRIP
     applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
@@ -650,7 +657,7 @@ static void resetConf(void)
 #if defined(TARGET_CONFIG)
     targetConfiguration(&masterConfig);
 #endif
-    
+
 #if defined(ALIENFLIGHT) 
     featureClear(FEATURE_ONESHOT125);
 #ifdef ALIENFLIGHTF1
@@ -661,11 +668,8 @@ static void resetConf(void)
 #ifdef ALIENFLIGHTF3
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
 #endif
-    masterConfig.rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
-    masterConfig.escAndServoConfig.minthrottle = 1000;
-    masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
@@ -690,7 +694,7 @@ static void resetConf(void)
 #endif
 
     // copy first profile into remaining profile
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
     }
 
@@ -802,7 +806,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
+        featureSet(DEFAULT_RX_FEATURE);
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
