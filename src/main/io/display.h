@@ -35,7 +35,7 @@ typedef enum {
 #endif
 } pageId_e;
 
-void updateDisplay(void);
+void updateDisplay(uint32_t currentTime);
 
 void displayShowFixedPage(pageId_e pageId);
 

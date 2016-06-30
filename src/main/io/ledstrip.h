@@ -84,7 +84,7 @@ extern uint8_t ledsInRingCount;
 
 
 bool parseLedStripConfig(uint8_t ledIndex, const char *config);
-void updateLedStrip(void);
+void updateLedStrip(uint32_t currentTime);
 void updateLedRing(void);
 
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);

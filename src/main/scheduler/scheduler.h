@@ -98,8 +98,8 @@ typedef struct {
     /* Configuration */
     const char * taskName;
     const char * subTaskName;
-    bool (*checkFunc)(uint32_t currentDeltaTime);
-    void (*taskFunc)(void);
+    bool (*checkFunc)(uint32_t currentTime, uint32_t currentDeltaTime);
+    void (*taskFunc)(uint32_t currentTime, uint32_t currentDeltaTime);
     uint32_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
@@ -125,7 +125,6 @@ extern uint16_t averageSystemLoadPercent;
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
-uint32_t getTaskDeltaTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);

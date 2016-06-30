@@ -22,7 +22,7 @@
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
-void handleBlackbox(void);
+void handleBlackbox(uint32_t currentTime);
 void startBlackbox(void);
 void finishBlackbox(void);
 

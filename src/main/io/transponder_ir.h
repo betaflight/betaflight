@@ -21,7 +21,7 @@ void transponderInit(uint8_t* transponderCode);
 
 void transponderEnable(void);
 void transponderDisable(void);
-void updateTransponder(void);
+void updateTransponder(uint32_t currentTime);
 void transponderUpdateData(uint8_t* transponderData);
 void transponderTransmitOnce(void);
 void transponderStartRepeating(void);

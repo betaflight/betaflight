@@ -935,7 +935,7 @@ static void applyLedAnimationLayer(void)
 }
 #endif
 
-void updateLedStrip(void)
+void updateLedStrip(uint32_t currentTime)
 {
 
 	if (!(ledStripInitialised && isWS2811LedStripReady())) {
@@ -956,13 +956,11 @@ void updateLedStrip(void)
     }
     
 
-    uint32_t now = micros();
-
-    bool indicatorFlashNow = (int32_t)(now - nextIndicatorFlashAt) >= 0L;
-    bool warningFlashNow = (int32_t)(now - nextWarningFlashAt) >= 0L;
-    bool rotationUpdateNow = (int32_t)(now - nextRotationUpdateAt) >= 0L;
+    bool indicatorFlashNow = (int32_t)(currentTime - nextIndicatorFlashAt) >= 0L;
+    bool warningFlashNow = (int32_t)(currentTime - nextWarningFlashAt) >= 0L;
+    bool rotationUpdateNow = (int32_t)(currentTime - nextRotationUpdateAt) >= 0L;
 #ifdef USE_LED_ANIMATION
-    bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
+    bool animationUpdateNow = (int32_t)(currentTime - nextAnimationUpdateAt) >= 0L;
 #endif
     if (!(
             indicatorFlashNow ||
@@ -984,7 +982,7 @@ void updateLedStrip(void)
     // LAYER 2
 
     if (warningFlashNow) {
-        nextWarningFlashAt = now + LED_STRIP_10HZ;
+        nextWarningFlashAt = currentTime + LED_STRIP_10HZ;
     }
     applyLedWarningLayer(warningFlashNow);
 
@@ -995,7 +993,7 @@ void updateLedStrip(void)
         uint8_t rollScale = ABS(rcCommand[ROLL]) / 50;
         uint8_t pitchScale = ABS(rcCommand[PITCH]) / 50;
         uint8_t scale = MAX(rollScale, pitchScale);
-        nextIndicatorFlashAt = now + (LED_STRIP_5HZ / MAX(1, scale));
+        nextIndicatorFlashAt = currentTime + (LED_STRIP_5HZ / MAX(1, scale));
 
         if (indicatorFlashState == 0) {
             indicatorFlashState = 1;
@@ -1008,7 +1006,7 @@ void updateLedStrip(void)
 
 #ifdef USE_LED_ANIMATION
     if (animationUpdateNow) {
-        nextAnimationUpdateAt = now + LED_STRIP_20HZ;
+        nextAnimationUpdateAt = currentTime + LED_STRIP_20HZ;
         updateLedAnimationState();
     }
     applyLedAnimationLayer();
@@ -1024,7 +1022,7 @@ void updateLedStrip(void)
             animationSpeedScale = scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 1, 10);
         }
 
-        nextRotationUpdateAt = now + LED_STRIP_5HZ/animationSpeedScale;
+        nextRotationUpdateAt = currentTime + LED_STRIP_5HZ/animationSpeedScale;
     }
 
     ws2811UpdateStrip();
