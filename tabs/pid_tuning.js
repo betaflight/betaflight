@@ -274,32 +274,36 @@ TABS.pid_tuning.initialize = function (callback) {
         FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_tuning input[name="yaw"]').val());
     }
 
-    function hideUnusedPids(sensors_detected) {
+    function showAllPids() {
+        $('.tab-pid_tuning .pid_tuning').show();
+    }
+
+    function hideUnusedPids() {
         $('.tab-pid_tuning .pid_tuning').hide();
 
         $('#pid_main').show();
 
         if (CONFIG.flightControllerIdentifier === "BTFL" || semver.ge(CONFIG.flightControllerVersion, "2.9.0")) {
             $('#pid_filter').show();
-	}
+        }
 
-        if (have_sensor(sensors_detected, 'acc')) {
+        if (have_sensor(CONFIG.activeSensors, 'acc')) {
             $('#pid_accel').show();
         }
 
         var showTitle = false;
-        if (have_sensor(sensors_detected, 'baro') ||
-            have_sensor(sensors_detected, 'sonar')) {
+        if (have_sensor(CONFIG.activeSensors, 'baro') ||
+            have_sensor(CONFIG.activeSensors, 'sonar')) {
             $('#pid_baro').show();
-	    showTitle = true;
+            showTitle = true;
         }
-        if (have_sensor(sensors_detected, 'mag')) {
+        if (have_sensor(CONFIG.activeSensors, 'mag')) {
             $('#pid_mag').show();
-	    showTitle = true;
+            showTitle = true;
         }
         if (bit_check(BF_CONFIG.features, 7)) {   //This will need to be reworked to remove BF_CONFIG reference eventually
             $('#pid_gps').show();
-	    showTitle = true;
+            showTitle = true;
         }
 
         if (showTitle) {
@@ -311,15 +315,29 @@ TABS.pid_tuning.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        hideUnusedPids(CONFIG.activeSensors);
+        var showAllButton = $('#showAllPids');
+        var showAllMsg = "Show all PIDs";
+        var hideUnusedMsg = "Hide unused PIDs";
+
+        if (!TABS.pid_tuning.showAllPids) {
+            hideUnusedPids();
+            showAllButton.text(showAllMsg);
+        } else {
+            showAllPids();
+            showAllButton.text(hideUnusedMsg);
+        }
 
         $('#showAllPids').on('click', function(){
-          if($(this).text() == "Show all PIDs") {
-            $('.tab-pid_tuning .pid_tuning').show();
-            $(this).text('Hide unused PIDs');
+          if($(this).text() == showAllMsg) {
+            showAllPids();
+            $(this).text(hideUnusedMsg);
+
+            TABS.pid_tuning.showAllPids = true;
           } else {
-            hideUnusedPids(CONFIG.activeSensors);
-            $(this).text('Show all PIDs');
+            hideUnusedPids();
+            $(this).text(showAllMsg);
+
+            TABS.pid_tuning.showAllPids = false;
           }
         });
 
