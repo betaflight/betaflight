@@ -23,43 +23,66 @@
 
 #include "build_config.h"
 
+#include "drivers/nvic.h"
 #include "drivers/dma.h"
 
 /*
- * DMA handlers for DMA resources that are shared between different features depending on run-time configuration.
+ * DMA descriptors.
  */
-static dmaHandlers_t dmaHandlers;
+static dmaChannelDescriptor_t dmaDescriptors[] = {
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream0,  0, DMA1_Stream0_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream1,  6, DMA1_Stream1_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream2, 16, DMA1_Stream2_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream3, 22, DMA1_Stream3_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream4, 32, DMA1_Stream4_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream5, 38, DMA1_Stream5_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream6, 48, DMA1_Stream6_IRQn, RCC_AHB1Periph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream7, 54, DMA1_Stream7_IRQn, RCC_AHB1Periph_DMA1),
 
-void dmaNoOpHandler(DMA_Stream_TypeDef *stream)
-{
-    UNUSED(stream);
-}
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream0,  0, DMA2_Stream0_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream1,  6, DMA2_Stream1_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream2, 16, DMA2_Stream2_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream3, 22, DMA2_Stream3_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream4, 32, DMA2_Stream4_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream5, 38, DMA2_Stream5_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream6, 48, DMA2_Stream6_IRQn, RCC_AHB1Periph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Stream7, 54, DMA2_Stream7_IRQn, RCC_AHB1Periph_DMA2),
 
-void DMA1_Stream2_IRQHandler(void)
-{
-    dmaHandlers.dma1Stream2IRQHandler(DMA1_Stream2);
-}
+};
 
-void DMA1_Stream7_IRQHandler(void)
-{
-    dmaHandlers.dma1Stream7IRQHandler(DMA1_Stream7);
-}
+/*
+ * DMA IRQ Handlers
+ */
+DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1_CH1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1_CH2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1_CH3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1_CH4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1_CH5_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1_CH6_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1_CH7_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2_CH1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2_CH2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2_CH3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
+
 
 void dmaInit(void)
 {
-    memset(&dmaHandlers, 0, sizeof(dmaHandlers));
-    dmaHandlers.dma1Stream2IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Stream7IRQHandler = dmaNoOpHandler;
+    // TODO: Do we need this?
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback)
+void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority)
 {
-    switch (identifier) {
-        case DMA1_ST2_HANDLER:
-            dmaHandlers.dma1Stream2IRQHandler = callback;
-            break;
-        case DMA1_ST7_HANDLER:
-            dmaHandlers.dma1Stream7IRQHandler = callback;
-            break;
-    }
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].periphClk, ENABLE);
+    dmaDescriptors[identifier].irqHandlerCallback = callback;
+
+    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[identifier].irqN;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
+

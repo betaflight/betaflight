@@ -114,10 +114,7 @@
 
 #define MAX7456_DMA_CHANNEL_TX              DMA2_Channel2
 #define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
-#define MAX7456_DMA_TC_FLAG                 DMA2_FLAG_TC1
-#define MAX7456_DMA_PERIPH_CLOCK            RCC_AHBPeriph_DMA2
-#define MAX7456_DMA_IRQ_HANDLER_FUNCTION    DMA2_Channel1_IRQHandler
-#define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_Channel1_IRQn
+#define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
 
 #define USE_RTC6705
 #define RTC6705_SPIDATA_PIN         PC15

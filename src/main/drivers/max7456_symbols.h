@@ -176,7 +176,7 @@
 #define SYM_FT 0x0F
 
 // Voltage and amperage
-#define SYM_VOLT 0x00
+#define SYM_VOLT 0x06
 #define SYM_AMP 0x9A
 #define SYM_MAH 0xA4
 #define SYM_WATT 0x57

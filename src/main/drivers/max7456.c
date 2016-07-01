@@ -30,6 +30,7 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/nvic.h"
+#include "drivers/dma.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"
@@ -119,8 +120,8 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
             SPI_I2S_DMAReq_Tx, ENABLE);
 }
 
-void MAX7456_DMA_IRQ_HANDLER_FUNCTION (void) {
-    if (DMA_GetFlagStatus(MAX7456_DMA_TC_FLAG)) {
+void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 #ifdef MAX7456_DMA_CHANNEL_RX
         DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
 #else
@@ -131,7 +132,7 @@ void MAX7456_DMA_IRQ_HANDLER_FUNCTION (void) {
 #endif
         DMA_Cmd(MAX7456_DMA_CHANNEL_TX, DISABLE);
 
-        DMA_ClearFlag(MAX7456_DMA_TC_FLAG);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
 
         SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
 #ifdef MAX7456_DMA_CHANNEL_RX
@@ -141,7 +142,7 @@ void MAX7456_DMA_IRQ_HANDLER_FUNCTION (void) {
 
         DISABLE_MAX7456;
         for (uint16_t x = 0; x < max_screen_size; x++)
-            max7456_screen[x + 3] = MAX7456ADD_DMDI;
+            max7456_screen[x + 3] = MAX7456_CHAR(' ');
         dma_transaction_in_progress = 0;
     }
 }
@@ -206,7 +207,7 @@ void max7456_init(uint8_t video_system)
     delay(100);
 
     for (x = 0; x < max_screen_size; x++)
-        SCREEN_BUFFER[x] = MAX7456_CHAR(0);
+        SCREEN_BUFFER[x] = MAX7456_CHAR(' ');
 
 #ifdef MAX7456_DMA_CHANNEL_TX
     max7456_screen[0] = (uint16_t)(MAX7456ADD_DMAH | (0 << 8));
@@ -215,14 +216,7 @@ void max7456_init(uint8_t video_system)
     max7456_screen[max_screen_size + 3] = (uint16_t)(MAX7456ADD_DMDI | (0xFF << 8));
     max7456_screen[max_screen_size + 4] = (uint16_t)(MAX7456ADD_DMM  | (0 << 8));
 
-    RCC_AHBPeriphClockCmd(MAX7456_DMA_PERIPH_CLOCK, ENABLE);
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = MAX7456_DMA_IRQ_HANDLER_ID;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MAX7456_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MAX7456_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
 #endif
 }
 

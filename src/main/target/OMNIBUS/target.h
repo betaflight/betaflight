@@ -125,7 +125,9 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE              SPI1
 #define MAX7456_SPI_CS_PIN                SPI1_NSS_PIN
-
+#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
+//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2  // <- Conflicts with WS2811 DMA
+#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5

@@ -23,6 +23,15 @@
 #include "common/color.h"
 #include "drivers/light_ws2811strip.h"
 #include "nvic.h"
+#include "dma.h"
+
+static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        ws2811LedDataTransferInProgress = 0;
+        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    }
+}
 
 void ws2811LedStripHardwareInit(void)
 {
@@ -100,13 +109,7 @@ void ws2811LedStripHardwareInit(void)
 
     DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel6_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaSetHandler(DMA1_CH6_HANDLER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
     setStripColor(&hsv_white);
     ws2811UpdateStrip();

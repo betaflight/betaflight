@@ -31,6 +31,7 @@
 #include "system.h"
 #include "gpio.h"
 #include "nvic.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -83,6 +84,22 @@ void usartIrqCallback(uartPort_t *s)
 }
 
 #ifdef USE_USART1
+
+// USART1 Tx DMA Handler
+void USART1_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+{
+    uartPort_t *s = &uartPort1;
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    DMA_Cmd(descriptor->channel, DISABLE);
+
+    if (s->port.txBufferHead != s->port.txBufferTail)
+        uartStartTxDMA(s);
+    else
+        s->txDMAEmpty = true;
+}
+
+
+
 // USART1 - Telemetry (RX/TX by DMA)
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
@@ -90,7 +107,6 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
     static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
     gpio_config_t gpio;
-    NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
@@ -137,14 +153,12 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     }
 
     // DMA TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART1_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaSetHandler(DMA1_CH4_HANDLER, USART1_DMA_IRQHandler, NVIC_PRIO_SERIALUART1_TXDMA, 0);
 
 #ifndef USE_USART1_RX_DMA
     // RX/TX Interrupt
+    NVIC_InitTypeDef NVIC_InitStructure;
+
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1);
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART1);
@@ -155,19 +169,6 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     return s;
 }
 
-
-// USART1 Tx DMA Handler
-void DMA1_Channel4_IRQHandler(void)
-{
-    uartPort_t *s = &uartPort1;
-    DMA_ClearITPendingBit(DMA1_IT_TC4);
-    DMA_Cmd(s->txDMAChannel, DISABLE);
-
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
-}
 
 // USART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
