@@ -17,8 +17,5 @@
 
 #pragma once
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
-
-int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate);
-int16_t rcLookupThrottle(int32_t tmp);
-
+int16_t rcLookup(int32_t input, uint8_t expo, uint8_t rate);
+int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
