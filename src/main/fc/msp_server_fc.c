@@ -883,10 +883,9 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
                 };
                 sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
                 sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[0]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[1]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[2]);
-                sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[3]);
+                for (int baudRateIndex = 0; baudRateIndex < FUNCTION_BAUD_RATE_COUNT; baudRateIndex++) {
+                	sbufWriteU8(dst, serialConfig()->portConfigs[i].baudRates[baudRateIndex]);
+                }
             }
             break;
 
@@ -1406,10 +1405,9 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
 
                 portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
-                portConfig->baudRates[0] = sbufReadU8(src);
-                portConfig->baudRates[1] = sbufReadU8(src);
-                portConfig->baudRates[2] = sbufReadU8(src);
-                portConfig->baudRates[3] = sbufReadU8(src);
+                for (int baudRateIndex = 0; baudRateIndex < FUNCTION_BAUD_RATE_COUNT; baudRateIndex++) {
+                	portConfig->baudRates[baudRateIndex] = sbufReadU8(src);
+                }
             }
             break;
         }
