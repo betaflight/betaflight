@@ -24,24 +24,6 @@
 
 #include "scheduler/scheduler.h"
 
-void taskMainPidLoopChecker(void);
-void taskUpdateAccelerometer(void);
-void taskHandleSerial(void);
-void taskUpdateBeeper(void);
-void taskUpdateBattery(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskProcessGPS(void);
-void taskUpdateCompass(void);
-void taskUpdateBaro(void);
-void taskUpdateSonar(void);
-void taskCalculateAltitude(void);
-void taskUpdateDisplay(void);
-void taskTelemetry(void);
-void taskLedStrip(void);
-void taskTransponder(void);
-void taskSystem(void);
-
 // No need for a linked list for the queue, since items are only inserted at startup
 #ifdef UNIT_TEST
 #define TASK_QUEUE_ARRAY_SIZE (TASK_COUNT + 2) // 1 extra space so test code can check for buffer overruns

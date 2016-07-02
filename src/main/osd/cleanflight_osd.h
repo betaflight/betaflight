@@ -16,13 +16,3 @@
  */
 
 #pragma once
-
-void taskUpdateCycleTime(void);
-void taskMSP(void);
-void taskUpdateBattery(void);
-void taskStatusLed(void);
-void taskHardwareWatchdog(void);
-void taskSystem(void);
-void taskDrawScreen(void);
-void taskUpdateFCState(void);
-void taskTest(void);

@@ -32,3 +32,13 @@ typedef enum {
     /* Count of real tasks */
     TASK_COUNT
 } cfTaskId_e;
+
+void taskUpdateCycleTime(void);
+void taskMSP(void);
+void taskUpdateBattery(void);
+void taskStatusLed(void);
+void taskHardwareWatchdog(void);
+void taskSystem(void);
+void taskDrawScreen(void);
+void taskUpdateFCState(void);
+void taskTest(void);
