@@ -363,8 +363,6 @@ COMMON_SRC = \
             $(TARGET_DIR_SRC) \
             main.c \
             mw.c \
-            scheduler/scheduler.c \
-            scheduler/scheduler_tasks.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -379,11 +377,13 @@ COMMON_SRC = \
             drivers/bus_spi_soft.c \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
+            drivers/io.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_xn297.c \
             drivers/pwm_mapping.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
+            drivers/rcc.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -419,6 +419,8 @@ COMMON_SRC = \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
+            scheduler/scheduler.c \
+            scheduler/scheduler_tasks.c \
             sensors/acceleration.c \
             sensors/battery.c \
             sensors/boardalignment.c \

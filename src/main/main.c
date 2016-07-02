@@ -17,12 +17,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
-
-#include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -63,6 +60,8 @@
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
@@ -169,6 +168,9 @@ void init(void)
     readEEPROM();
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
 
 #ifdef STM32F303
     // start fpu
@@ -395,8 +397,12 @@ void init(void)
     // Set gyro sampling rate divider before initialization
     gyroSetSampleRate(masterConfig.looptime, masterConfig.gyro_lpf, masterConfig.gyroSync, masterConfig.gyroSyncDenominator);
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig, masterConfig.gyro_lpf,
-        masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, currentProfile->mag_declination)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
+            masterConfig.gyro_lpf,
+            masterConfig.acc_hardware,
+            masterConfig.mag_hardware,
+            masterConfig.baro_hardware,
+            currentProfile->mag_declination)) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -535,7 +541,8 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-int main(void) {
+int main(void)
+{
     init();
 
     /* Setup scheduler */
@@ -572,7 +579,7 @@ int main(void) {
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
 
-    while (1) {
+    while (true) {
         scheduler();
         processLoopback();
     }

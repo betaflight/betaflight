@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -27,6 +26,7 @@
 #include "nvic.h"
 
 #include "gpio.h"
+#include "rcc.h"
 #include "system.h"
 
 #include "timer.h"
@@ -42,7 +42,6 @@
     TIM4 4 channels
 */
 
-
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
 #define CC_CHANNELS_PER_TIMER 4              // TIM_Channel_1..4
 
@@ -52,7 +51,7 @@ typedef struct timerConfig_s {
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
-	uint32_t forcedOverflowTimerValue;
+    uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
@@ -140,6 +139,16 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
     return channel >> 2;
+}
+
+static rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].rcc;
+        }
+    }
+    return 0;
 }
 
 void timerNVICConfigure(uint8_t irq)
@@ -324,17 +333,6 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
     TIM_ClearFlag(timHw->tim, TIM_IT_CCx(timHw->channel));
 }
 
-// configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t *timHw, GPIO_Mode mode)
-{
-    gpio_config_t cfg;
-
-    cfg.pin = timHw->pin;
-    cfg.mode = mode;
-    cfg.speed = Speed_2MHz;
-    gpioInit(timHw->gpio, &cfg);
-}
-
 // calculate input filter constant
 // TODO - we should probably setup DTS to higher value to allow reasonable input filtering
 //   - notice that prescaler[0] does use DTS for sampling - the sequence won't be monotonous anymore
@@ -425,6 +423,9 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     if(outEnable) {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Inactive;
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        if (timHw->outputInverted) {
+            stateHigh = !stateHigh;
+        }
         TIM_OCInitStructure.TIM_OCPolarity = stateHigh ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     } else {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Timing;
@@ -449,8 +450,6 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
         break;
     }
 }
-
-
 
 static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 {
@@ -561,6 +560,9 @@ _TIM_IRQ_HANDLER(TIM3_IRQHandler, 3);
 #if USED_TIMERS & TIM_N(4)
 _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #endif
+#if USED_TIMERS & TIM_N(5)
+_TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
+#endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 # if defined(STM32F10X_XL)
@@ -568,6 +570,15 @@ _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);
 # else  // f10x_hd, f30x
 _TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
 # endif
+#endif
+#if USED_TIMERS & TIM_N(9)
+_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
+#endif
+#  if USED_TIMERS & TIM_N(11)
+_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
+#  endif
+#if USED_TIMERS & TIM_N(12)
+_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
 #if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
@@ -587,26 +598,19 @@ void timerInit(void)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
-#ifdef TIMER_APB1_PERIPHERALS
-    RCC_APB1PeriphClockCmd(TIMER_APB1_PERIPHERALS, ENABLE);
-#endif
+    // enable the timer peripherals
+    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    }
 
-#ifdef TIMER_APB2_PERIPHERALS
-    RCC_APB2PeriphClockCmd(TIMER_APB2_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef TIMER_AHB_PERIPHERALS
-    RCC_AHBPeriphClockCmd(TIMER_AHB_PERIPHERALS, ENABLE);
-#endif
-
-#ifdef STM32F303xC
+#if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        GPIO_PinAFConfig(timerHardwarePtr->gpio, (uint16_t)timerHardwarePtr->gpioPinSource, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
 
-// initialize timer channel structures
+    // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }

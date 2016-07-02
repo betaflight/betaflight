@@ -33,6 +33,8 @@
 
 #include "nvic.h"
 #include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 #include "timer.h"
 
 #include "pwm_mapping.h"
@@ -369,6 +371,8 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
 
+#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
+
 void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 {
     pwmInputPort_t *self = &pwmInputPorts[channel];
@@ -379,7 +383,7 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     self->mode = INPUT_MODE_PWM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
+    pwmGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -408,7 +412,7 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     self->mode = INPUT_MODE_PPM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
+    pwmGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);

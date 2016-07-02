@@ -23,6 +23,8 @@
 #include "platform.h"
 
 #include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 #include "timer.h"
 
 #include "pwm_output.h"
@@ -68,8 +70,7 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
     PWM11.14 used for servos
 */
 
-
-static const uint16_t * const hardwareMaps[] = {
+const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
     airPWM,
@@ -80,6 +81,16 @@ static pwmIOConfiguration_t pwmIOConfiguration;
 
 pwmIOConfiguration_t *pwmGetOutputConfiguration(void){
     return &pwmIOConfiguration;
+}
+
+bool CheckGPIOPin(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
+{
+    return IO_GPIOBYTAG(tag) == gpio && IO_PINBYTAG(tag) == pin;
+}
+
+bool CheckGPIOPinSource(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
+{
+    return IO_GPIOBYTAG(tag) == gpio && IO_GPIO_PinSource(IOGetByTag(tag)) == pin;
 }
 
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
@@ -119,7 +130,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && timerHardwarePtr->gpio == UART3_GPIO && (timerHardwarePtr->pin == UART3_TX_PIN || timerHardwarePtr->pin == UART3_RX_PIN))
+        if (init->useUART3 && IO_GPIOBYTAG(timerHardwarePtr->tag) == UART3_GPIO && (IO_PINBYTAG(timerHardwarePtr->tag) == UART3_TX_PIN || IO_PINBYTAG(timerHardwarePtr->tag) == UART3_RX_PIN))
             continue;
 #endif
 
@@ -138,7 +149,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerHardwarePtr->tim == LED_STRIP_TIMER)
                 continue;
 #if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (timerHardwarePtr->gpio == WS2811_GPIO && timerHardwarePtr->gpioPinSource == WS2811_PIN_SOURCE)
+            if (IO_GPIOBYTAG(timerHardwarePtr->tag) == WS2811_GPIO && IO_GPIO_PinSource(IOGetByTag(timerHardwarePtr->tag)) == WS2811_PIN_SOURCE)
                 continue;
 #endif
         }
@@ -146,28 +157,28 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef VBAT_ADC_GPIO
-        if (init->useVbat && timerHardwarePtr->gpio == VBAT_ADC_GPIO && timerHardwarePtr->pin == VBAT_ADC_GPIO_PIN) {
+        if (init->useVbat && IO_GPIOBYTAG(timerHardwarePtr->tag) == VBAT_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == VBAT_ADC_GPIO_PIN) {
             continue;
         }
 #endif
 
 #ifdef RSSI_ADC_GPIO
-        if (init->useRSSIADC && timerHardwarePtr->gpio == RSSI_ADC_GPIO && timerHardwarePtr->pin == RSSI_ADC_GPIO_PIN) {
+        if (init->useRSSIADC && IO_GPIOBYTAG(timerHardwarePtr->tag) == RSSI_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == RSSI_ADC_GPIO_PIN) {
             continue;
         }
 #endif
 
 #ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && timerHardwarePtr->gpio == CURRENT_METER_ADC_GPIO && timerHardwarePtr->pin == CURRENT_METER_ADC_GPIO_PIN) {
+        if (init->useCurrentMeterADC && IO_GPIOBYTAG(timerHardwarePtr->tag) == CURRENT_METER_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == CURRENT_METER_ADC_GPIO_PIN) {
             continue;
         }
 #endif
 
 #ifdef SONAR
-        if (init->sonarGPIOConfig && timerHardwarePtr->gpio == init->sonarGPIOConfig->gpio &&
+        if (init->sonarGPIOConfig && IO_GPIOBYTAG(timerHardwarePtr->tag) == init->sonarGPIOConfig->gpio &&
             (
-                timerHardwarePtr->pin == init->sonarGPIOConfig->triggerPin ||
-                timerHardwarePtr->pin == init->sonarGPIOConfig->echoPin
+                IO_PINBYTAG(timerHardwarePtr->tag) == init->sonarGPIOConfig->triggerPin ||
+                IO_PINBYTAG(timerHardwarePtr->tag) == init->sonarGPIOConfig->echoPin
             )
         ) {
             continue;
@@ -213,7 +224,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
+#if (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
                 if (timerIndex == PWM5 || timerIndex == PWM6)
