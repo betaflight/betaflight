@@ -44,15 +44,15 @@
 #define USE_TXRX_LED
 
 #if defined(USE_TXRX_LED) && defined(LED0)
-# define RX_LED_OFF   LED0_OFF
-# define RX_LED_ON    LED0_ON
-# ifdef  LED1
-#  define TX_LED_OFF  LED1_OFF
-#  define TX_LED_ON   LED1_ON
-# else
-#  define TX_LED_OFF  LED0_OFF
-#  define TX_LED_ON   LED0_ON
-# endif
+#define RX_LED_OFF      LED0_OFF
+#define RX_LED_ON       LED0_ON
+#ifdef  LED1
+#define TX_LED_OFF      LED1_OFF
+#define TX_LED_ON       LED1_ON
+#else
+#define TX_LED_OFF  LED0_OFF
+#define TX_LED_ON   LED0_ON
+#endif
 #else
 # define RX_LED_OFF   do {} while(0)
 # define RX_LED_ON    do {} while(0)
@@ -120,12 +120,12 @@ void setEscLo(uint8_t selEsc)
 
 void setEscInput(uint8_t selEsc)
 {
-    IOConfigGPIO(escHardware[selEsc].io, IOCFG_IPU);
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_IPU_25);
 }
 
 void setEscOutput(uint8_t selEsc)
 {
-    IOConfigGPIO(escHardware[selEsc].io, IOCFG_OUT_PP);
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_OUT_PP_25);
 }
 
 // Initialize 4way ESC interface
@@ -330,6 +330,7 @@ void esc4wayProcess(serialPort_t *serial)
     while(!esc4wayExitRequested) {
         // restart looking for new sequence from host
         crcIn = 0;
+
         uint8_t esc = readByteCrc();
         if(esc != cmd_Local_Escape)
             continue;                          // wait for sync character
@@ -348,7 +349,6 @@ void esc4wayProcess(serialPort_t *serial)
             paramBuf[i] = readByteCrc();
 
         readByteCrc(); readByteCrc();         // update input CRC
-        RX_LED_OFF;
 
         outLen = 0;                           // output handling code will send single zero byte if necessary
         replyAck = esc4wayAck_OK;
@@ -356,8 +356,10 @@ void esc4wayProcess(serialPort_t *serial)
         if(crcIn != 0)                        // CRC of correct message == 0
             replyAck = esc4wayAck_I_INVALID_CRC;
 
+        TX_LED_ON;
         if (replyAck == esc4wayAck_OK)
             replyAck = esc4wayProcessCmd(command, addr, paramBuf, inLen, &outLen);
+        RX_LED_OFF;
 
         // send single '\0' byte is output when length is zero (len ==0 -> 256 bytes)
         if(!outLen) {
@@ -366,14 +368,13 @@ void esc4wayProcess(serialPort_t *serial)
         }
 
         crcOut = 0;
-        TX_LED_ON;
         serialBeginWrite(port);
         writeByteCrc(cmd_Remote_Escape);
         writeByteCrc(command);
         writeByteCrc(addr >> 8);
         writeByteCrc(addr & 0xff);
         writeByteCrc(outLen & 0xff);          // only low byte is send, 0x00 -> 256B
-        for(int i = 0; i < outLen; i++)
+        for(int i = 0; i < outLen % 0x100; i++)
             writeByteCrc(paramBuf[i]);
         writeByteCrc(replyAck);
         writeByte(crcOut >> 8);
