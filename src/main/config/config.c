@@ -221,7 +221,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.gps_min_sats = 6;
     navConfig->inav.gps_delay_ms = 200;
     navConfig->inav.accz_unarmed_cal = 1;
-    navConfig->inav.use_gps_velned = 0;         // "Disabled" is mandatory with gps_nav_model = LOW_G
+    navConfig->inav.use_gps_velned = 1;         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
     navConfig->inav.w_z_baro_p = 0.35f;
 
