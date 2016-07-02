@@ -56,7 +56,7 @@
 #define MAX7456_REG_DMAL  0x06
 #define MAX7456_REG_DMDI  0x07
 #define MAX7456_REG_OSDM  0x0c
-#define MAX7456_REG_OSDBL 0x6c
+#define MAX7456_REG_OSDBL 0x6c // WARNING - see datasheet before writing to this register, there are factory preset bits.
 
 //MAX7456 write addresses
 #define MAX7456_REG_CMM   0x08
