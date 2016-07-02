@@ -73,7 +73,7 @@
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_ADC
-#define VBAT_SCALE_DEFAULT          164
+#define VBAT_SCALE_DEFAULT          160
 #define ADC_INSTANCE                ADC1
 #define VBAT_ADC_PIN                PA0
 //#define CURRENT_METER_ADC_PIN       PA5
