@@ -118,10 +118,9 @@
   #define BLACKBRIGHTNESS 0x00
 #endif
 
-#define BWBRIGHTNESS ((BLACKBRIGHTNESS << 2) | WHITEBRIGHTNESS)
+#define BWBRIGHTNESS(black, white) ((black << 2) | white)
 
 uint8_t max7456_videoModeMask;
-uint8_t max7456_screenRows;
 
 #define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
 #define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
@@ -391,20 +390,19 @@ void max7456_init(videoMode_e videoMode)
     max7456_softReset();
 
     max7456_write(MAX7456_REG_OSDM, 0x00);
-    //read black level register
-    uint8_t blackLevelResult = max7456_read(MAX7456_REG_OSDBL_READ);
 
-    // set all rows to same charactor black/white level
+    // set black/white level fo each row
     uint8_t row;
-    for(row = 0; row < max7456_screenRows; row++) {
-        max7456_write(MAX7456_REG_RB0 + row, BWBRIGHTNESS);
+    for(row = 0; row < max7456Screen.height; row++) {
+		max7456_write(MAX7456_REG_RB0 + row, BWBRIGHTNESS(BLACKBRIGHTNESS, WHITEBRIGHTNESS));
     }
 
     max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_OSD_ENABLE | max7456_videoModeMask);
     delay(100);
 
     // Set black level
-    uint8_t blackLevelValue = (blackLevelResult & 0xef); // Set bit 4 to zero 11101111 (bit is 0 based index)
+    uint8_t blackLevelResult = max7456_read(MAX7456_REG_OSDBL_READ);
+    uint8_t blackLevelValue = blackLevelResult &= ~(1<<4);
 
     max7456_write(MAX7456_REG_OSDBL, blackLevelValue);
 }
