@@ -96,32 +96,31 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.TIM_Pulse = 0;
     
     uint32_t channelAddress = 0;
-    switch (WS2811_TIMER_CHANNEL)
-    {
-    case TIM_Channel_1:
-        TIM_OC1Init(WS2811_TIMER, &TIM_OCInitStructure);
-        timDMASource = TIM_DMA_CC1;
-        channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
-        TIM_OC1PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-        break;        
-    case TIM_Channel_2:
-        TIM_OC2Init(WS2811_TIMER, &TIM_OCInitStructure);
-        timDMASource = TIM_DMA_CC2;
-        channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
-        TIM_OC2PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-        break;        
-    case TIM_Channel_3:
-        TIM_OC3Init(WS2811_TIMER, &TIM_OCInitStructure);
-        timDMASource = TIM_DMA_CC3;
-        channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
-        TIM_OC3PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-        break;        
-    case TIM_Channel_4:
-        TIM_OC4Init(WS2811_TIMER, &TIM_OCInitStructure);
-        timDMASource = TIM_DMA_CC4;
-        channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
-        TIM_OC4PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-        break;        
+    switch (WS2811_TIMER_CHANNEL) {
+        case TIM_Channel_1:
+            TIM_OC1Init(WS2811_TIMER, &TIM_OCInitStructure);
+            timDMASource = TIM_DMA_CC1;
+            channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
+            TIM_OC1PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
+            break;        
+        case TIM_Channel_2:
+            TIM_OC2Init(WS2811_TIMER, &TIM_OCInitStructure);
+            timDMASource = TIM_DMA_CC2;
+            channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
+            TIM_OC2PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
+            break;        
+        case TIM_Channel_3:
+            TIM_OC3Init(WS2811_TIMER, &TIM_OCInitStructure);
+            timDMASource = TIM_DMA_CC3;
+            channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
+            TIM_OC3PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
+            break;        
+        case TIM_Channel_4:
+            TIM_OC4Init(WS2811_TIMER, &TIM_OCInitStructure);
+            timDMASource = TIM_DMA_CC4;
+            channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
+            TIM_OC4PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
+            break;        
     }
     
     TIM_CtrlPWMOutputs(WS2811_TIMER, ENABLE);    
