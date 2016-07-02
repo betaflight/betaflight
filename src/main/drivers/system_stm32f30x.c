@@ -35,7 +35,8 @@ void systemReset(void)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
-void systemResetToBootloader(void) {
+void systemResetToBootloader(void) 
+{
     // 1FFFF000 -> 20000200 -> SP
     // 1FFFF004 -> 1FFFF021 -> PC
 
@@ -82,6 +83,8 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
+	checkForBootLoaderRequest();
+
     // Enable FPU
     SCB->CPACR = (0x3 << (10 * 2)) | (0x3 << (11 * 2));
     SetSysClock();
@@ -101,4 +104,8 @@ void systemInit(void)
     memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
+}
+
+void checkForBootLoaderRequest(void)
+{
 }

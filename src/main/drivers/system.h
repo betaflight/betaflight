@@ -42,6 +42,7 @@ void systemReset(void);
 void systemResetToBootloader(void);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
+void checkForBootLoaderRequest(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz

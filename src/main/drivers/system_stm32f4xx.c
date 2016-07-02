@@ -169,6 +169,8 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
+	checkForBootLoaderRequest();
+
     SetSysClock();
 
     // Configure NVIC preempt/priority groups
@@ -194,3 +196,16 @@ void systemInit(void)
     SysTick_Config(SystemCoreClock / 1000);
 }
 
+void(*bootJump)(void);
+void checkForBootLoaderRequest(void)
+{
+	__enable_irq();
+	if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
+		*((uint32_t *)0x2001FFFC) = 0x0; 
+		__set_MSP(0x20001000);
+		                                               
+		bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004)); 
+		bootJump();
+		while (1);
+	}
+}
