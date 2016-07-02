@@ -687,7 +687,6 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
 
 extern "C" {
 void saveConfigAndNotify(void) {}
-void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
