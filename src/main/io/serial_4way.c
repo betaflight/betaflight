@@ -359,6 +359,7 @@ void esc4wayProcess(serialPort_t *serial)
         TX_LED_ON;
         if (replyAck == esc4wayAck_OK)
             replyAck = esc4wayProcessCmd(command, addr, paramBuf, inLen, &outLen);
+        RX_LED_OFF;
 
         // send single '\0' byte is output when length is zero (len ==0 -> 256 bytes)
         if(!outLen) {
@@ -366,7 +367,6 @@ void esc4wayProcess(serialPort_t *serial)
             outLen = 1;
         }
 
-        RX_LED_OFF;
         crcOut = 0;
         serialBeginWrite(port);
         writeByteCrc(cmd_Remote_Escape);
@@ -374,7 +374,7 @@ void esc4wayProcess(serialPort_t *serial)
         writeByteCrc(addr >> 8);
         writeByteCrc(addr & 0xff);
         writeByteCrc(outLen & 0xff);          // only low byte is send, 0x00 -> 256B
-        for(int i = 0; i < outLen; i++)
+        for(int i = 0; i < outLen % 0x100; i++)
             writeByteCrc(paramBuf[i]);
         writeByteCrc(replyAck);
         writeByte(crcOut >> 8);

@@ -218,17 +218,19 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
  * @param  Len: Number of data received (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
+static uint32_t rxTotalBytes = 0;
+static uint32_t rxPackets = 0;
+
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 {
-    __disable_irq();
+    rxPackets++;
 
     for (uint32_t i = 0; i < Len; i++) {
         usbData.buffer[usbData.bufferInPosition] = Buf[i];
         usbData.bufferInPosition = (usbData.bufferInPosition + 1) % USB_RX_BUFSIZE;
         receiveLength++;
+        rxTotalBytes++;
     }
-
-    __enable_irq();
 
     if(receiveLength > (USB_RX_BUFSIZE-1))
         return USBD_FAIL;

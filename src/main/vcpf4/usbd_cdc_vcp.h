@@ -34,7 +34,7 @@
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-#define USB_RX_BUFSIZE      1024
+#define USB_RX_BUFSIZE      2048
 
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
