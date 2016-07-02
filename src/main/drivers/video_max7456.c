@@ -354,14 +354,11 @@ static bool max7456_isResetComplete(void)
 
 static void max7456_softReset()
 {
-    static uint32_t resetWait = 0;
-
     // force soft reset on Max7456
     max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_SOFTWARE_RESET); // without video mode
     delayMicroseconds(100);
 
     while(!max7456_isResetComplete()) {
-        resetWait++;
         delayMicroseconds(100);
     }
 }
