@@ -132,12 +132,11 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
  */
 void ws2811UpdateStrip(void)
 {
-    static uint32_t waitCounter = 0;
     static rgbColor24bpp_t *rgb24;
 
-    // wait until previous transfer completes
-    while(ws2811LedDataTransferInProgress) {
-        waitCounter++;
+    // don't wait - risk of infinite block, just get an update next time round
+    if (ws2811LedDataTransferInProgress) {
+        return;
     }
 
     dmaBufferOffset = 0;                // reset buffer memory index

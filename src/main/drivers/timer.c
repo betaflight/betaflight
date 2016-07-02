@@ -151,6 +151,18 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     return 0;
 }
 
+#if defined(STM32F3) || defined(STM32F4)
+uint8_t timerGPIOAF(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].alternateFunction;
+        }
+    }
+    return 0;
+}
+#endif
+
 void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -456,7 +468,7 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     if(outEnable) {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Inactive;
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        if (timHw->outputInverted) {
+        if (timHw->output & TIMER_OUTPUT_INVERTED) {
             stateHigh = !stateHigh;
         }
         TIM_OCInitStructure.TIM_OCPolarity = stateHigh ? TIM_OCPolarity_High : TIM_OCPolarity_Low;

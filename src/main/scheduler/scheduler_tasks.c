@@ -168,8 +168,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
+        .desiredPeriod = 1000000 / 10,         // 10 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
