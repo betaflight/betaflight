@@ -678,10 +678,8 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-int main(void) {
-    init();
-
-    // Setup scheduler
+void configureScheduler(void)
+{
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
     setTaskEnabled(TASK_GYROPID, true);
@@ -724,6 +722,12 @@ int main(void) {
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
+}
+
+int main(void) {
+    init();
+
+	configureScheduler();
 
     while (true) {
         scheduler();
