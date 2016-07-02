@@ -15,7 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
@@ -24,16 +23,16 @@
 
 const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),     // Swap to servo if needed
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
     0xFFFF
 };
 
