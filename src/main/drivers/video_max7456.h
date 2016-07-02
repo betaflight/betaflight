@@ -15,6 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef MAX7456_SPI_CLOCK_DIVIDER
+#define MAX7456_SPI_CLOCK_DIVIDER SPI_9MHZ_CLOCK_DIVIDER // rated for 10mhz but using 9mhz due to available prescalers.
+#endif
 
 #define MAX7456_COLUMN_COUNT 30
 

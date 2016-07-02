@@ -384,8 +384,7 @@ void max7456_disableOSD(void)
 
 void max7456_init(videoMode_e videoMode)
 {
-    // device is rated for 10mhz max
-    spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
 
     max7456_setVideoMode(videoMode);
 
