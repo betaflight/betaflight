@@ -645,7 +645,13 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 
 #endif // BLACKBOX
-    
+
+#ifdef SERIALRX_UART
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
+        masterConfig.serialConfig.portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+    }
+#endif
+
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
     masterConfig.escAndServoConfig.minthrottle = 1025;
@@ -660,11 +666,6 @@ static void resetConf(void)
 
 #if defined(ALIENFLIGHT) 
     featureClear(FEATURE_ONESHOT125);
-#ifdef ALIENFLIGHTF1
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-#else
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-#endif
 #ifdef ALIENFLIGHTF3
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
 #endif
@@ -686,11 +687,6 @@ static void resetConf(void)
     masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
     masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
     masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
-#endif
-
-#if defined(SINGULARITY)
-    // alternative defaults settings for SINGULARITY target
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 #endif
 
     // copy first profile into remaining profile
@@ -901,14 +897,10 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_MSP);
         featureSet(FEATURE_RX_PPM);
-    }
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
-        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-        //masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
     }
 #endif
 
