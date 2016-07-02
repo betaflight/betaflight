@@ -316,7 +316,7 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_USART5
     case SERIAL_PORT_USART5:
-        serialPort = uartOpen(USART5, callback, baudRate, mode, options);
+        serialPort = uartOpen(UART5, callback, baudRate, mode, options);
         break;
 #endif
 #ifdef USE_USART6
