@@ -21,6 +21,9 @@
 
 #include "build_config.h"
 #include "platform.h"
+
+#if defined(NAV)
+
 #include "debug.h"
 
 #include "common/axis.h"
@@ -41,8 +44,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-
-#if defined(NAV)
 
 #if defined(NAV_AUTO_MAG_DECLINATION)
 /* Declination calculation code from PX4 project */

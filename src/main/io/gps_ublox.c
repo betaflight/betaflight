@@ -24,6 +24,9 @@
 
 #include "platform.h"
 #include "build_config.h"
+
+#if defined(GPS) && defined(GPS_PROTO_UBLOX)
+
 #include "debug.h"
 
 #include "common/maths.h"
@@ -42,8 +45,6 @@
 
 #include "config/config.h"
 #include "config/runtime_config.h"
-
-#if defined(GPS) && defined(GPS_PROTO_UBLOX)
 
 //#define GPS_PROTO_UBLOX_NEO7PLUS
 #define GPS_VERSION_DETECTION_TIMEOUT_MS    300

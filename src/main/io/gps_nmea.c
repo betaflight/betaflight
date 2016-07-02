@@ -23,6 +23,9 @@
 
 #include "platform.h"
 #include "build_config.h"
+
+#if defined(GPS) && defined(GPS_PROTO_NMEA)
+
 #include "debug.h"
 
 #include "common/maths.h"
@@ -41,8 +44,6 @@
 
 #include "config/config.h"
 #include "config/runtime_config.h"
-
-#if defined(GPS) && defined(GPS_PROTO_NMEA)
 
 /* This is a light implementation of a GPS frame decoding
    This should work with most of modern GPS devices configured to output 5 frames.
