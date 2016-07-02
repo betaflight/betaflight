@@ -23,16 +23,16 @@
 
 const uint16_t multiPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #1
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #2
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #3
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #4
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #3
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #4
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
     0xFFFF
 };
 
