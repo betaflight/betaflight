@@ -23,6 +23,9 @@
 
 #include "platform.h"
 #include "build_config.h"
+
+#if defined(GPS) && defined(GPS_PROTO_NAZA)
+
 #include "debug.h"
 
 #include "common/maths.h"
@@ -41,8 +44,6 @@
 
 #include "config/config.h"
 #include "config/runtime_config.h"
-
-#if defined(GPS) && defined(GPS_PROTO_NAZA)
 
 #define NAZA_MAX_PAYLOAD_SIZE   256
 

@@ -21,6 +21,9 @@
 
 #include "build_config.h"
 #include "platform.h"
+
+#if defined(NAV)
+
 #include "debug.h"
 
 #include "common/axis.h"
@@ -42,8 +45,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-
-#if defined(NAV)
 
 // If we are going slower than NAV_FW_MIN_VEL_SPEED_BOOST - boost throttle to fight against the wind
 #define NAV_FW_THROTTLE_SPEED_BOOST_GAIN        1.5f
