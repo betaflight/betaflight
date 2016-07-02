@@ -32,6 +32,8 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 
+#include "common/utils.h"
+
 #include "osd/fonts/font_max7456_12x18.h"
 
 #define MAX7456_MODE_MASK_PAL 0x40
@@ -569,13 +571,28 @@ void max7456_showFont(void)
     }
 }
 
+#define MAX7456_CLEAR_SCREEN_COMPLETE_TIMEOUT_INTERVAL (1000)
+
+void max7456_ensureDisplayClearIsComplete(void)
+{
+	uint32_t now, start = micros();
+    uint8_t dmmStatus;
+    do {
+    	dmmStatus = max7456_read(MAX7456_REG_DMM_READ);
+    	if ((dmmStatus & MAX7456_DMM_BIT_CLEAR) == 0) {
+    		break;
+    	}
+    	delayMicroseconds(20);
+    	now = micros();
+    } while (cmp32(start, now) < MAX7456_CLEAR_SCREEN_COMPLETE_TIMEOUT_INTERVAL);
+
+}
 void max7456_clearScreen(void)
 {
     uint8_t dmmStatus = max7456_read(MAX7456_REG_DMM_READ);
 
     dmmStatus |= MAX7456_DMM_BIT_CLEAR;
     max7456_write(MAX7456_REG_DMM, dmmStatus);
-    delayMicroseconds(20);
 }
 
 void max7456_clearScreenAtNextVSync(void)

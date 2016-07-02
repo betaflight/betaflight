@@ -58,6 +58,7 @@ bool max7456_isOSDEnabled(void);
 
 void max7456_clearScreen(void);
 void max7456_clearScreenAtNextVSync(void);
+void max7456_ensureDisplayClearIsComplete(void);
 
 void max7456_showFont(void);
 

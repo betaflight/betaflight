@@ -173,8 +173,9 @@ void osdHardwareInit(void)
         osdFontConfig()->fontVersion = FONT_VERSION;
         writeEEPROM();
 
-        max7456_clearScreen();
-    }
+    	max7456_clearScreen();
+    	max7456_ensureDisplayClearIsComplete();
+	}
 }
 
 void osdHardwareUpdate(void)
