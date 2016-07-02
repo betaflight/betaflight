@@ -23,9 +23,9 @@
 
 extern "C" {
     #include <platform.h>
-    #include "build_config.h"
-    #include "version.h"
-    #include "debug.h"
+    #include "build/build_config.h"
+    #include "build/version.h"
+    #include "build/debug.h"
 
     #include "common/streambuf.h"
     #include "common/utils.h"

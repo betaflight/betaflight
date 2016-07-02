@@ -23,7 +23,7 @@
 
 #include "osd/osd_tasks.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "cleanflight_osd.h"
 

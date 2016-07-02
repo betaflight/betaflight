@@ -22,7 +22,7 @@
 
 #include <platform.h>
 #include "common/utils.h"
-#include "common/atomic.h"
+#include "build/atomic.h"
 
 #include "nvic.h"
 

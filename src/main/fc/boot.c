@@ -22,12 +22,12 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/atomic.h"
+#include "build/atomic.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
@@ -112,7 +112,7 @@
 #endif
 
 #include "fc/fc_tasks.h"
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 extern uint8_t motorControlEnable;
 

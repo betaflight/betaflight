@@ -18,7 +18,7 @@
 #include "stdint.h"
 
 
-#include "debug.h"
+#include "build/debug.h"
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 

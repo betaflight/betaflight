@@ -19,8 +19,8 @@
 #include <math.h>
 
 extern "C" {
-    #include "build_config.h"
-    #include "debug.h"
+    #include "build/build_config.h"
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"

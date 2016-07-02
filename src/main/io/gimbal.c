@@ -19,9 +19,9 @@
 #include <stdint.h>
 
 #include <platform.h>
-#include "build_config.h"
+#include "build/build_config.h"
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

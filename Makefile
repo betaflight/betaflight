@@ -233,9 +233,9 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 VPATH		:= $(VPATH):$(TARGET_DIR)
 
 SYSTEM_SRC = \
-		   build_config.c \
-		   debug.c \
-		   version.c \
+		   build/build_config.c \
+		   build/debug.c \
+		   build/version.c \
 		   config/config_streamer.c \
 		   config/parameter_group.c \
 		   config/config_eeprom.c \
@@ -249,7 +249,7 @@ SYSTEM_SRC = \
 		   drivers/dma.c \
 		   drivers/serial.c \
 		   drivers/system.c \
-		   scheduler.c \
+		   scheduler/scheduler.c \
 		   io/serial.c \
 		   io/statusindicator.c \
 		   msp/msp.c \

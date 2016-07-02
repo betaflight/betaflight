@@ -22,7 +22,7 @@
 #include <limits.h>
 
 extern "C" {
-    #include "debug.h"
+    #include "build/debug.h"
 
     #include <platform.h>
 

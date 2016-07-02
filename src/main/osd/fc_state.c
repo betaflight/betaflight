@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "osd/fc_state.h"
 

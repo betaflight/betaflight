@@ -21,14 +21,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifdef UNIT_TEST
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
-#endif
 #include "platform.h"
 
-#include "scheduler.h"
-#include "debug.h"
-#include "build_config.h"
+#include "scheduler/scheduler.h"
+#include "build/debug.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 

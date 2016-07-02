@@ -21,8 +21,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 #include <platform.h>
 
 #include "config/parameter_group.h"
@@ -49,8 +49,8 @@
 #include "msp/msp_serial.h"
 
 
-#include "version.h"
-#include "scheduler.h"
+#include "build/version.h"
+#include "scheduler/scheduler.h"
 
 #include "osd/config.h"
 #include "osd/osd.h"

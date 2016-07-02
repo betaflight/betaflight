@@ -24,9 +24,9 @@
 #include <ctype.h>
 
 #include <platform.h>
-#include "version.h"
+#include "build/version.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 #include "common/axis.h"
@@ -58,7 +58,7 @@
 #include "fc/fc_serial.h"
 #include "fc/fc_tasks.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "io/gps.h"
 #include "io/gimbal.h"

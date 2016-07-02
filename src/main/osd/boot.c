@@ -22,12 +22,12 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/atomic.h"
+#include "build/atomic.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
@@ -69,7 +69,7 @@
 #include "config/config_system.h"
 
 #include "osd/osd_tasks.h"
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c

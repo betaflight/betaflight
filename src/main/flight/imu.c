@@ -24,9 +24,9 @@
 
 #include "common/maths.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/filter.h"

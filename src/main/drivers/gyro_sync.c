@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include <platform.h>
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"

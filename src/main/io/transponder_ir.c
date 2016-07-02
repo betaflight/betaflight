@@ -23,7 +23,7 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#include "build/build_config.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

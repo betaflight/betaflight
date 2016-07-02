@@ -22,9 +22,9 @@
 #include <math.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #ifdef USE_SERVOS
 #ifndef USE_QUAD_MIXER_ONLY

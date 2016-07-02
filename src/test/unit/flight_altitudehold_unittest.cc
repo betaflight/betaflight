@@ -22,14 +22,14 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 //#define DEBUG_ALTITUDE_HOLD
 
 #define BARO
 
 extern "C" {
-    #include "debug.h"
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"

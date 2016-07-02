@@ -23,7 +23,7 @@
 //#define DEBUG_LEDSTRIP
 
 extern "C" {
-    #include "build_config.h"
+    #include "build/build_config.h"
 
     #include "common/color.h"
     #include "common/axis.h"

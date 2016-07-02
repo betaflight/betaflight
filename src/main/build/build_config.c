@@ -15,9 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
+#include "stdbool.h"
+#include "stdint.h"
 
-const char * const targetName = __TARGET__;
-const char * const shortGitRevision = __REVISION__;
-const char * const buildDate = __DATE__;
-const char * const buildTime = __TIME__;
+#include <platform.h>
+
+#include "config/parameter_group.h"
+
+#include "drivers/gpio.h"
+#include "drivers/timer.h"
+#include "drivers/pwm_mapping.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+
+#include "build/build_config.h"
+
+#if MAX_PWM_MOTORS != MAX_SUPPORTED_MOTORS
+#error Motor configuration mismatch
+#endif
+
+#if MAX_PWM_SERVOS != MAX_SUPPORTED_SERVOS
+#error Servo configuration mismatch
+#endif

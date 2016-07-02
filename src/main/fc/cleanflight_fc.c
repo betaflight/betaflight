@@ -21,7 +21,7 @@
 #include <math.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -49,7 +49,7 @@
 #include "fc/fc_serial.h"
 #include "fc/fc_tasks.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"

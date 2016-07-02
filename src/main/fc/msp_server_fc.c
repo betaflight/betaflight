@@ -21,8 +21,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 #include <platform.h>
 
 #include "common/axis.h"
@@ -61,7 +61,7 @@
 #include "fc/runtime_config.h"
 #include "fc/config.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "io/motor_and_servo.h"
 #include "io/gps.h"
@@ -96,7 +96,7 @@
 
 #include "fc/cleanflight_fc.h"
 
-#include "version.h"
+#include "build/version.h"
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif

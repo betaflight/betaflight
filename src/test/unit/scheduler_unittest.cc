@@ -20,7 +20,7 @@
 extern "C" {
     #include "platform.h"
     #include "fc/fc_tasks.h"
-    #include "scheduler.h"
+    #include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"

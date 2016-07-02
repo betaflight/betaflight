@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#include <debug.h>
+#include "build/debug.h"
 
 #include "drivers/exti.h"
 #include "drivers/video.h"

@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

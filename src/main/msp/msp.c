@@ -22,10 +22,10 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 #include <platform.h>
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/utils.h"

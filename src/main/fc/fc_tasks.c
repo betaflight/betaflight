@@ -22,7 +22,7 @@
 
 #include "fc/fc_tasks.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 void taskMainPidLoopChecker(void);
 void taskUpdateAccelerometer(void);

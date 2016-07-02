@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include <platform.h>
-#include "version.h"
+#include "build/version.h"
 
 #ifdef BLACKBOX
 

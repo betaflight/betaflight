@@ -21,8 +21,8 @@
 #include <math.h>
 
 #include <platform.h>
-#include "scheduler.h"
-#include "debug.h"
+#include "scheduler/scheduler.h"
+#include "build/debug.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

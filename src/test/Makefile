@@ -729,13 +729,13 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/version.o : \
-	$(USER_DIR)/version.c \
-	$(USER_DIR)/version.h \
+$(OBJECT_DIR)/build/version.o : \
+	$(USER_DIR)/build/version.c \
+	$(USER_DIR)/build/version.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/version.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/build/version.c -o $@
 
 $(OBJECT_DIR)/drivers/buf_writer.o : \
 	$(USER_DIR)/drivers/buf_writer.c \
@@ -787,7 +787,7 @@ $(OBJECT_DIR)/msp_serial_unittest.o : \
 $(OBJECT_DIR)/msp_serial_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/streambuf.o \
-	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/build/version.o \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/msp/msp_serial.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
@@ -807,7 +807,7 @@ $(OBJECT_DIR)/msp_fc_unittest.o : \
 $(OBJECT_DIR)/msp_fc_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/streambuf.o \
-	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/build/version.o \
 	$(OBJECT_DIR)/io/serial.o \
 	$(OBJECT_DIR)/fc/msp_server_fc.o \
 	$(OBJECT_DIR)/msp/msp.o \
@@ -820,23 +820,23 @@ $(OBJECT_DIR)/msp_fc_unittest : \
 
 $(OBJECT_DIR)/fc_tasks.o : \
 	$(USER_DIR)/fc/fc_tasks.c \
-	$(USER_DIR)/scheduler.h \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/fc_tasks.c -o $@
 
-$(OBJECT_DIR)/scheduler.o : \
-	$(USER_DIR)/scheduler.c \
-	$(USER_DIR)/scheduler.h \
+$(OBJECT_DIR)/scheduler/scheduler.o : \
+	$(USER_DIR)/scheduler/scheduler.c \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler/scheduler.c -o $@
 
 $(OBJECT_DIR)/scheduler_unittest.o : \
 	$(TEST_DIR)/scheduler_unittest.cc \
-	$(USER_DIR)/scheduler.h \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -845,7 +845,7 @@ $(OBJECT_DIR)/scheduler_unittest.o : \
 $(OBJECT_DIR)/scheduler_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/fc_tasks.o \
-	$(OBJECT_DIR)/scheduler.o \
+	$(OBJECT_DIR)/scheduler/scheduler.o \
 	$(OBJECT_DIR)/scheduler_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

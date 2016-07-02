@@ -21,12 +21,12 @@
 #include <string.h>
 
 #include <platform.h>
-#include "build_config.h"
+#include "build/build_config.h"
 
 #ifdef DISPLAY
 
-#include "version.h"
-#include "debug.h"
+#include "build/version.h"
+#include "build/debug.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
@@ -66,7 +66,7 @@
 #include "fc/config.h"
 #include "fc/fc_tasks.h"
 
-#include "scheduler.h"
+#include "scheduler/scheduler.h"
 
 static uint32_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
