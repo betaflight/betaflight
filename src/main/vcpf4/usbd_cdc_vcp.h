@@ -71,9 +71,9 @@ typedef struct
 } LINE_CODING;
 
 typedef struct {
-    uint8_t rxBuf[USB_RX_BUFSIZE];
-    uint16_t rxBufHead;
-    uint16_t rxBufTail;
+    uint8_t buffer[USB_RX_BUFSIZE];
+    uint16_t bufferInPosition;
+    uint16_t bufferOutPosition;
 } usbStruct_t;
 
 
