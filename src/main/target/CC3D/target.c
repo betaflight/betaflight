@@ -1,5 +1,20 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
@@ -8,16 +23,16 @@
 
 const uint16_t multiPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #1
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #2
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #3
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),      // motor #4
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #3
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #4
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
     0xFFFF
 };
 
