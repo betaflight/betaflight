@@ -120,12 +120,12 @@ void setEscLo(uint8_t selEsc)
 
 void setEscInput(uint8_t selEsc)
 {
-    IOConfigGPIO(escHardware[selEsc].io, IOCFG_IPU_25);
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_IPU);
 }
 
 void setEscOutput(uint8_t selEsc)
 {
-    IOConfigGPIO(escHardware[selEsc].io, IOCFG_OUT_PP_25);
+    IOConfigGPIO(escHardware[selEsc].io, IOCFG_OUT_PP);
 }
 
 // Initialize 4way ESC interface
