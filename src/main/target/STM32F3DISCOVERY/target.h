@@ -146,14 +146,8 @@
 #define EXTERNAL1_ADC_PIN           PC3
 
 #define LED_STRIP
-#define LED_STRIP_TIMER                 TIM16
-#define WS2811_GPIO                     GPIOB
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_8 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
