@@ -52,7 +52,7 @@ int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *contr
     float minThrottle, maxThrottle;
     if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
         minThrottle = PWM_RANGE_MIN;
-        maxThrottle = escAndServoConfig->maxthrottle; //shouldn't this be PWM_RANGE_MAX?
+        maxThrottle = escAndServoConfig->maxthrottle;
     } else { //normal (non-bidirecitonal)
         minThrottle = escAndServoConfig->minthrottle;
         maxThrottle = escAndServoConfig->maxthrottle;
@@ -65,7 +65,7 @@ int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *contr
         float thrMidf = (float)controlRateConfig->thrMid8 / 100.0f;
         float thrf = inputf - thrMidf;
 
-        //normalize
+        //normalize to [-1, 1]
         if (thrf >= 0) {
             thrf /= (1.0f - thrMidf);
         } else {
