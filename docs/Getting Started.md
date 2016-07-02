@@ -92,6 +92,7 @@ If one of these tests fail, do not attempt to fly, but go back to the configurat
 ## Using it (AKA: Flying)
 
 Go to the field, turn Tx on, place aircraft on the ground, connect flight battery and wait. Arm and fly. Good luck!
+If the aircraft won't arm, count the red Warning LED flashes and find out the reason in [Controls](Controls.md).
 
 ## Advanced Matters
 

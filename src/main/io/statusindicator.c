@@ -20,71 +20,101 @@
 
 #include <platform.h>
 
+#include "common/axis.h"
+#include "common/maths.h"
+
+#include "config/parameter_group.h"
+#include "config/runtime_config.h"
+
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/serial.h"
+#include "drivers/sensor.h"
+#include "drivers/pwm_mapping.h"
+#include "drivers/accgyro.h"
+
+#include "io/serial_cli.h"
+#include "io/rc_controls.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+
+#include "mw.h"
+#include "scheduler.h"
 
 #include "statusindicator.h"
 
 static uint32_t warningLedTimer = 0;
 
 typedef enum {
-    WARNING_LED_OFF = 0,
-    WARNING_LED_ON,
-    WARNING_LED_FLASH
-} warningLedState_e;
+    ARM_PREV_NONE       = 0,
+    ARM_PREV_CLI        = 0x00205, //         0b1000000101  2 flashes - CLI active in the configurator
+    ARM_PREV_FAILSAFE   = 0x00815, //       0b100000010101  3 flashes - Failsafe mode
+    ARM_PREV_ANGLE      = 0x02055, //     0b10000001010101  4 flashes - Maximum arming angle exceeded
+    ARM_PREV_CALIB      = 0x08155, //   0b1000000101010101  5 flashes - Calibration active
+    ARM_PREV_OVERLOAD   = 0x20555  // 0b100000010101010101  6 flashes - System overload
+} armingPreventedReason_e;
 
-static warningLedState_e warningLedState = WARNING_LED_OFF;
+static uint32_t blinkMask = 0;
 
-void warningLedResetTimer(void)
+armingPreventedReason_e getArmingPreventionReason(void)
 {
-    uint32_t now = millis();
-    warningLedTimer = now + 500000;
+    if (isCalibrating()) {
+        return ARM_PREV_CALIB;
+    }
+    if (rcModeIsActive(BOXFAILSAFE) || failsafePhase() == FAILSAFE_LANDED) {
+        return ARM_PREV_FAILSAFE;
+    }
+    if (!imuIsAircraftArmable(armingConfig()->max_arm_angle)) {
+        return ARM_PREV_ANGLE;
+    }
+    if (cliMode) {
+        return ARM_PREV_CLI;
+    }
+    if (isSystemOverloaded()) {
+        return ARM_PREV_OVERLOAD;
+    }
+    return ARM_PREV_NONE;
 }
 
-void warningLedEnable(void)
-{
-    warningLedState = WARNING_LED_ON;
-}
-
-void warningLedDisable(void)
-{
-    warningLedState = WARNING_LED_OFF;
-}
-
-void warningLedFlash(void)
-{
-    warningLedState = WARNING_LED_FLASH;
-}
 
 void warningLedRefresh(void)
 {
-    switch (warningLedState) {
-        case WARNING_LED_OFF:
-            LED0_OFF;
-            break;
-        case WARNING_LED_ON:
-            LED0_ON;
-            break;
-        case WARNING_LED_FLASH:
-            LED0_TOGGLE;
-            break;
+    if (blinkMask <= 1) {  // skip interval for terminator bit, allow continuous on
+        blinkMask = getArmingPreventionReason();
     }
+    if (blinkMask) {
+        if (blinkMask & 1)
+            LED0_ON;
+        else
+            LED0_OFF;
+        blinkMask >>= 1;
+    }
+}
 
-    uint32_t now = micros();
-    warningLedTimer = now + 500000;
+void warningLedBeeper(bool on)
+{
+    if (!blinkMask) {
+        if (on) {
+            LED0_ON;
+        } else {
+            LED0_OFF;
+        }
+    }
 }
 
 void warningLedUpdate(void)
 {
     uint32_t now = micros();
-
-    if ((int32_t)(now - warningLedTimer) < 0) {
-        return;
+    if ((int32_t)(now - warningLedTimer) > 0) {
+        warningLedRefresh();
+        warningLedTimer = now + WARNING_LED_BLINK_DELAY;
     }
-
-    warningLedRefresh();
 }
 
 
