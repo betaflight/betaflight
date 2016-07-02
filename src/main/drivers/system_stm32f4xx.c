@@ -199,9 +199,11 @@ void systemInit(void)
 void(*bootJump)(void);
 void checkForBootLoaderRequest(void)
 {
-	__enable_irq();
 	if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
+
 		*((uint32_t *)0x2001FFFC) = 0x0; 
+
+		__enable_irq();
 		__set_MSP(0x20001000);
 		                                               
 		bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004)); 
