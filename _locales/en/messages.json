@@ -793,11 +793,8 @@
     "pidTuningFilterFrequency": {
         "message": "Frequency"
     },
-    "pidTuningRcCurve": {
-	"message": "RC Curve"
-    },
-    "pidTuningRcYawCurve": {
-	"message": "RC Yaw Curve"
+    "pidTuningRatesCurve": {
+	"message": "Rates"
     },
     "throttle": {
 	"message": "Throttle"
@@ -1575,6 +1572,12 @@
     },
     "pidTuningYaw": {
         "message": "Yaw (Hz)"
+    },
+    "pidTuningShowRatesWithSuperExpo": {
+        "message": "Show rates with SuperExpo"
+    },
+    "pidTuningRatesSuperExpoHelp": {
+        "message": "To enable SuperExpo, enable 'SUPEREXPO_RATES' in 'Other Features' on the 'Configuration' tab."
     },
     "configHelp2": {
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
