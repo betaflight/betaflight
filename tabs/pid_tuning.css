@@ -201,40 +201,7 @@
     border-top-right-radius: 3px;
 }
 
-.tab-pid_tuning .pitch_roll_curve {
-    margin: 0 4px 0px 0;
-    height: 100%;
-    border: 1px solid silver;
-    border-radius: 3px;
-    background-image: url(../images/paper.jpg);
-    background-size: 200%;
-    background-position: center;
-}
-
-.tab-pid_tuning .rc_yaw_curve {
-    float: right;
-    width: calc(100% - 2px); /* - ( "virtual" margin) */
-}
-
-.tab-pid_tuning .rc_yaw_curve th {
-    background-color: #828885;
-    padding: 4px;
-    border-left: 0px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    font-weight: bold;
-    color: white;
-    text-align: left;
-}
-
-.tab-pid_tuning .rc_yaw_curve th:first-child {
-    border-top-left-radius: 3px;
-}
-
-.tab-pid_tuning .rc_yaw_curve th:last-child {
-    border-top-right-radius: 3px;
-}
-
-.tab-pid_tuning .yaw_curve {
+.tab-pid_tuning .rate_curve {
     margin: 0 4px 0px 0;
     height: 100%;
     border: 1px solid silver;

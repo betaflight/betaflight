@@ -60,7 +60,7 @@
                         </tr>
                         <tr class="ROLL">
                             <!-- 0 -->
-                            <td></td>
+                            <td bgcolor="#FF8080"></td>
                             <td><input type="number" name="p" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
@@ -77,7 +77,7 @@
                         </tr>
                         <tr class="PITCH">
                             <!-- 1 -->
-                            <td></td>
+                            <td bgcolor="#80FF80"></td>
                             <td><input type="number" name="p" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
@@ -85,7 +85,7 @@
                         </tr>
                         <tr class="YAW">
                             <!-- 2 -->
-                            <td></td>
+                            <td bgcolor="#8080FF"></td>
                             <td><input type="number" name="p" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="i" step="1" min="0" max="255" /></td>
                             <td><input type="number" name="d" step="1" min="0" max="255" /></td>
@@ -221,73 +221,76 @@
                         </tr>
                     </table>
                 </div>
-                <div class="cf_column half topspacer">
-                    <div>
-                        <table class="rc_curve cf">
-                            <thead>
-                                <tr>
-                                    <th i18n="pidTuningRcCurve"></th>
-                                </tr>
-                            </thead>
-                            </tbody>
+                <div class="gui_box grey topspacer">
+                    <table class="pid_titlebar">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
-                                        <div class="pitch_roll_curve">
-                                            <canvas height="120px" style="width: 100%; height: 100%"></canvas>
-                                        </div>
+                                <th i18n="pidTuningRatesPreview"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="rates_preview_cell">
+                                    <div class="rates_preview">
+                                        <canvas id="canvas"></canvas>
                                     </div>
                                 </td>
                             </tr>
-                            </tbody>
-                        </table>
-                        <div class="clear-both"></div>
-                    </div>
-                    <div class="topspacer">
-                        <table class="rc_yaw_curve cf">
-                            <thead>
-                                <tr>
-                                    <th i18n="pidTuningRcYawCurve"></th>
-                                </tr>
-                            </thead>
-                            </tbody>
-                            <tr>
-                                <td>
-                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
-                                        <div class="yaw_curve">
-                                            <canvas height="120px" style="width: 100%; height: 100%"></canvas>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        <div class="clear-both"></div>
-                    </div>
-                </div>
-                <div class="cf_column half topspacer">
-                    <div class="spacer_left">
-                        <table class="tpa cf">
-                            <thead>
-                                <tr>
-                                    <th i18n="pidTuningRatesPreview" style="font-weight: bold;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="rates_preview_cell">
-                                        <div class="rates_preview">
-                                            <canvas id="canvas"></canvas>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="cf_column third_right">
-                <div class="spacer_left throttle">
+                <div class="spacer_left rc_curve">
+                    <table class="cf">
+                        <thead>
+                            <tr>
+                                <th i18n="pidTuningRatesCurve"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="rate_curve">
+                                            <canvas height="120px" style="width: 100%; height: 100%"></canvas>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox super_expo_checkbox">
+                                        <div style="float: left; margin-right: 5px; margin-left: 3px; margin-bottom: 5px;">
+                                            <input type="checkbox" name="show_superexpo_rates" class="toggle" />
+                                        </div>
+                                        <label for="showSuperExpoRates">
+                                            <span i18n="pidTuningShowRatesWithSuperExpo"></span>
+                                        </label>
+                                        <div class="helpicon cf_tip" i18n_title="pidTuningRatesSuperExpoHelp"></div>
+                                    </div>
+                                </td>
+			    </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="spacer_left topspacer throttle">
+                    <table class="cf">
+                        <thead>
+                            <tr>
+                                <th i18n="receiverThrottleMid"></th>
+                                <th i18n="receiverThrottleExpo"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="number" name="mid" step="0.01" min="0" max="1" /></td>
+                                <td><input type="number" name="expo" step="0.01" min="0" max="1" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="spacer_left topspacer throttle">
                     <table class="cf">
                         <thead>
                             <tr>
@@ -307,24 +310,8 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="spacer_left topspacer throttle">
-                    <table class="tpa cf">
-                        <thead>
-                            <tr>
-                                <th i18n="receiverThrottleMid"></th>
-                                <th i18n="receiverThrottleExpo"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><input type="number" name="mid" step="0.01" min="0" max="1" /></td>
-                                <td><input type="number" name="expo" step="0.01" min="0" max="1" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="spacer_left topspacer">
-                    <table class="tpa cf">
+                <div class="spacer_left topspacer tpa">
+                    <table class="cf">
                         <thead>
                             <tr>
                                 <th i18n="pidTuningTPA"></th>
