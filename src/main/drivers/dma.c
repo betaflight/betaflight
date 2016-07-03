@@ -75,7 +75,7 @@ void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr 
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rrc, ENABLE);
+    RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
     dmaDescriptors[identifier].irqHandlerCallback = callback;
     dmaDescriptors[identifier].userParam = userParam;
 
