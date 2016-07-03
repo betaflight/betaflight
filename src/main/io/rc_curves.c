@@ -42,49 +42,62 @@ int16_t rcLookup(int32_t input, uint8_t expo, uint8_t rate)
 
 /*
     maps input from [0, 1000] to [min throttle, max throttle] with expo
-    max expo is cubic, i.e., x^3
 */
 int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
 {
     float inputf = (float)input / 1000.0f; //[0, 1] where 0 = 0% thr and 1 = 100% thr
-    float expof = (float)expo / 100.0f; //[0, 1] where 0 = no expo and 1 = max expo
 
-    float minThrottle, maxThrottle;
-    if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
-        minThrottle = PWM_RANGE_MIN;
-        maxThrottle = escAndServoConfig->maxthrottle;
-    } else { //normal (non-bidirecitonal)
-        minThrottle = escAndServoConfig->minthrottle;
-        maxThrottle = escAndServoConfig->maxthrottle;
-    }
+    if (controlRateConfig->thrExpoMethod == THR_EXPO_NO_EXPO) {
+        //no expo, we use ints for min/max throttle for speed
 
-    if (controlRateConfig->thrExpoMethod == THR_EXPO_TX_STYLE) {
-        float expoAppliedInputf = inputf * ((1.0f - expof) + expof * inputf * inputf); //[0, 1] input with expo applied
-        return (int16_t)(minThrottle + (maxThrottle - minThrottle) * expoAppliedInputf);
-    } else { //THR_EXPO_FLATSPOT
-        float thrMidf = (float)controlRateConfig->thrMid8 / 100.0f;
-        float thrf = inputf - thrMidf;
-
-        //normalize to [-1, 1]
-        if (thrf >= 0) {
-            thrf /= (1.0f - thrMidf);
-        } else {
-            thrf /= thrMidf;
+        int16_t maxThrottle = escAndServoConfig->maxthrottle;
+        int16_t minThrottle;
+        if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
+            minThrottle = PWM_RANGE_MIN;
+        } else { //normal (non-bidirecitonal)
+            minThrottle = escAndServoConfig->minthrottle;
         }
 
-        //apply expo
-        thrf *= ((1.0f - expof) + expof * thrf * thrf); //[-1, 1]
+        return minThrottle + (int16_t)((float)(maxThrottle-minThrottle)*inputf);
+    } else {
+        float expof = (float)expo / 100.0f; //[0, 1] where 0 = no expo and 1 = max expo
 
-        //find mid throttle pwm
-        float midThrottle = minThrottle + (maxThrottle - minThrottle) * thrMidf;
-
-        //scale back
-        if (thrf >= 0) {
-            thrf *= maxThrottle - midThrottle;
-        } else {
-            thrf *= midThrottle - minThrottle;
+        float maxThrottle = escAndServoConfig->maxthrottle;
+        float minThrottle;
+        if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
+            minThrottle = PWM_RANGE_MIN;
+        } else { //normal (non-bidirecitonal)
+            minThrottle = escAndServoConfig->minthrottle;
         }
 
-        return (int16_t)(midThrottle + thrf);
+        if (controlRateConfig->thrExpoMethod == THR_EXPO_RC) { //max expo is cubic, i.e., x^3, same as rc
+            float expoAppliedInputf = inputf * ((1.0f - expof) + expof * inputf * inputf); //[0, 1] input with expo applied
+            return (int16_t)(minThrottle + (maxThrottle - minThrottle) * expoAppliedInputf);
+        } else { //THR_EXPO_FLATSPOT, max expo has a flatspot at thrMid
+            float thrMidf = (float)controlRateConfig->thrMid8 / 100.0f;
+            float thrf = inputf - thrMidf;
+
+            //normalize to [-1, 1]
+            if (thrf >= 0) {
+                thrf /= (1.0f - thrMidf);
+            } else {
+                thrf /= thrMidf;
+            }
+
+            //apply expo
+            thrf *= ((1.0f - expof) + expof * thrf * thrf); //[-1, 1]
+
+            //find mid throttle pwm
+            float midThrottle = minThrottle + (maxThrottle - minThrottle) * thrMidf;
+
+            //scale back
+            if (thrf >= 0) {
+                thrf *= maxThrottle - midThrottle;
+            } else {
+                thrf *= midThrottle - minThrottle;
+            }
+
+            return (int16_t)(midThrottle + thrf);
+        }
     }
 }
