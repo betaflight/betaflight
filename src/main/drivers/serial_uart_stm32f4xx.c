@@ -25,6 +25,7 @@
 #include "io.h"
 #include "rcc.h"
 #include "nvic.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -278,9 +279,9 @@ static void handleUsartTxDma(uartPort_t *s)
         s->txDMAEmpty = true;
 }
 
-void dmaIRQHandler(dmaChannelDescriptor_t descriptor)
+void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
-    uartPort_t *s = &((uartDevice_t*)(descriptor->userParam)->port);
+    uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
     {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);

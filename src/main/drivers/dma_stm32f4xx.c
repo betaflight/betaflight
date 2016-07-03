@@ -53,18 +53,18 @@ static dmaChannelDescriptor_t dmaDescriptors[] = {
 /*
  * DMA IRQ Handlers
  */
-DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1_CH1_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1_CH2_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1_CH3_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1_CH4_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1_CH5_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1_CH6_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1_CH7_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2_CH1_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2_CH2_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2_CH3_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
-DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1_ST1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1_ST2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1_ST3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1_ST4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1_ST5_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1_ST6_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1_ST7_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2_ST1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2_ST2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2_ST3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_ST4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 
 
 void dmaInit(void)
@@ -72,12 +72,13 @@ void dmaInit(void)
     // TODO: Do we need this?
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority)
+void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].periphClk, ENABLE);
+    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rrc, ENABLE);
     dmaDescriptors[identifier].irqHandlerCallback = callback;
+    dmaDescriptors[identifier].userParam = userParam;
 
     NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[identifier].irqN;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
