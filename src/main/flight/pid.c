@@ -29,7 +29,6 @@
 #include "common/filter.h"
 
 #include "drivers/sensor.h"
-#include "drivers/gyro_sync.h"
 
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
@@ -74,7 +73,7 @@ pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we
 
 void setTargetPidLooptime(uint8_t pidProcessDenom) 
 {
-    targetPidLooptime = targetLooptime * pidProcessDenom;
+    targetPidLooptime = gyro.targetLooptime * pidProcessDenom;
 }
 
 uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate) 
@@ -113,8 +112,8 @@ float getdT (void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static filterStatePt1_t deltaFilterState[3];
-static filterStatePt1_t yawFilterState;
+static pt1Filter_t deltaFilter[3];
+static pt1Filter_t yawFilter;
 
 #ifndef SKIP_PID_LUXFLOAT
 static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
@@ -206,7 +205,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
 
         //-----calculate D-term
         if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
 
             axisPID[axis] = lrintf(PTerm + ITerm);
 
@@ -231,7 +230,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
             delta *= (1.0f / getdT());
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1(delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
 
             DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
 
@@ -345,7 +344,7 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
 
         //-----calculate D-term
         if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = filterApplyPt1(PTerm, &yawFilterState, pidProfile->yaw_lpf_hz, getdT());
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
 
             axisPID[axis] = PTerm + ITerm;
 
@@ -370,7 +369,7 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
             delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = filterApplyPt1((float)delta, &deltaFilterState[axis], pidProfile->dterm_lpf_hz, getdT());
+            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, getdT());
 
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 

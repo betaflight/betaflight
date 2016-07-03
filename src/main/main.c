@@ -17,11 +17,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #include "platform.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -49,7 +49,6 @@
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
@@ -153,9 +152,6 @@ static uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
 {
-    uint8_t i;
-    drv_pwm_config_t pwm_params;
-
     printfSupportInit();
 
     initEEPROM();
@@ -260,6 +256,7 @@ void init(void)
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
 #endif
 
+    drv_pwm_config_t pwm_params;
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
@@ -333,6 +330,7 @@ void init(void)
 #endif
     pwmRxInit(masterConfig.inputFilteringMode);
 
+    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
@@ -488,12 +486,12 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-                masterConfig.acc_hardware, 
-                masterConfig.mag_hardware, 
-                masterConfig.baro_hardware, 
-                masterConfig.mag_declination, 
-                masterConfig.gyro_lpf, 
-                masterConfig.gyro_sync_denom)) {
+            masterConfig.acc_hardware,
+            masterConfig.mag_hardware,
+            masterConfig.baro_hardware,
+            masterConfig.mag_declination,
+            masterConfig.gyro_lpf,
+            masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -504,7 +502,7 @@ void init(void)
     LED0_OFF;
     LED2_OFF;
     
-    for (i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
@@ -626,7 +624,7 @@ void init(void)
     if (masterConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroSetCalibrationCycles(calculateCalibratingCycles());
+    gyroSetCalibrationCycles();
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
@@ -688,18 +686,18 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) 
+void main_init(void)
 {
     init();
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, targetLooptime);
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
     if(sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        switch(gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
              case(500):
              case(375):
              case(250):
