@@ -43,7 +43,7 @@ float gyroADCf[XYZ_AXIS_COUNT];
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
-static biquad_t gyroFilterState[XYZ_AXIS_COUNT];
+static biquadFilter_t gyroFilter[XYZ_AXIS_COUNT];
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 
@@ -57,7 +57,7 @@ void gyroInit(void)
 {
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            BiQuadNewLpf(gyroSoftLpfHz, &gyroFilterState[axis], gyro.targetLooptime);
+            biquadFilterInit(&gyroFilter[axis], gyroSoftLpfHz, gyro.targetLooptime);
         }
     }
 }
@@ -157,7 +157,7 @@ void gyroUpdate(void)
 
     if (gyroSoftLpfHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            gyroADCf[axis] = applyBiQuadFilter((float)gyroADC[axis], &gyroFilterState[axis]);
+            gyroADCf[axis] = biquadFilterApply(&gyroFilter[axis], (float)gyroADC[axis]);
             gyroADC[axis] = lrintf(gyroADCf[axis]);
         }
     } else {

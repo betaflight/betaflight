@@ -47,7 +47,6 @@ uint32_t accTargetLooptime;
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
-extern bool AccInflightCalibrationArmed;
 extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
@@ -55,7 +54,7 @@ extern bool AccInflightCalibrationActive;
 static flightDynamicsTrims_t *accelerationTrims;
 
 static float accLpfCutHz = 0;
-static biquad_t accFilterState[XYZ_AXIS_COUNT];
+static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 static bool accFilterInitialised = false;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -87,9 +86,8 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
-    int axis;
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
 
         // Reset a[axis] at start of calibration
         if (isOnFirstAccelerationCalibrationCycle())
@@ -179,14 +177,13 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-	int16_t accADCRaw[XYZ_AXIS_COUNT];
-	int axis;
+    int16_t accADCRaw[XYZ_AXIS_COUNT];
 
     if (!acc.read(accADCRaw)) {
         return;
     }
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];
         accSmooth[axis] = accADCRaw[axis];
     }
@@ -194,13 +191,17 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     if (accLpfCutHz) {
         if (!accFilterInitialised) {
             if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
-                for (axis = 0; axis < 3; axis++) BiQuadNewLpf(accLpfCutHz, &accFilterState[axis], accTargetLooptime);
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    biquadFilterInit(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+                }
                 accFilterInitialised = true;
             }
         }
 
         if (accFilterInitialised) {
-            for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) accSmooth[axis] = lrintf(applyBiQuadFilter((float) accSmooth[axis], &accFilterState[axis]));
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
+            }
         }
     }
 
