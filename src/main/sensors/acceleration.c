@@ -192,7 +192,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
         if (!accFilterInitialised) {
             if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInit(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+                    biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
                 }
                 accFilterInitialised = true;
             }
