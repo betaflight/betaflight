@@ -473,7 +473,7 @@ static const char * const lookupDeltaMethod[] = {
 };
 
 static const char * const lookupThrExpoMethod[] = {
-    "TX_STYLE", "FLATSPOT"
+    "NO_EXPO", "RC", "FLATSPOT"
 };
 
 typedef struct lookupTableEntry_s {

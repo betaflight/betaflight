@@ -200,7 +200,8 @@ typedef enum {
 } adjustmentMode_e;
 
 typedef enum {
-    THR_EXPO_TX_STYLE = 0,
+    THR_EXPO_NO_EXPO,
+    THR_EXPO_RC,
     THR_EXPO_FLATSPOT
 } thrExpoMethod_e;
 
