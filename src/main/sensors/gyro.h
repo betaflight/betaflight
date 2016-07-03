@@ -40,7 +40,7 @@ typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
 } gyroConfig_t;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_lpf_hz);
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint8_t gyro_notch_hz, uint8_t gyro_notch_q);
 void gyroSetCalibrationCycles(void);
 void gyroInit(void);
 void gyroUpdate(void);

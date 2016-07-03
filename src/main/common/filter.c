@@ -86,6 +86,37 @@ void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refr
     filter->d1 = filter->d2 = 0;
 }
 
+/* sets up a biquad Filter */
+void biquadFilterNotchInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate, float Q)
+{
+    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
+
+    // setup variables
+    const float omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    const float sn = sinf(omega);
+    const float cs = cosf(omega);
+    //this is wrong, should be hyperbolic sine
+    //alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+    const float alpha = sn / (2 * Q);
+
+    const float b0 =  1;
+    const float b1 = -2 * cs;
+    const float b2 =  1;
+    const float a0 =  1 + alpha;
+    const float a1 = -2 * cs;
+    const float a2 =  1 - alpha;
+
+    // precompute the coefficients
+    filter->b0 = b0 / a0;
+    filter->b1 = b1 / a0;
+    filter->b2 = b2 / a0;
+    filter->a1 = a1 / a0;
+    filter->a2 = a2 / a0;
+
+    // zero initial samples
+    filter->d1 = filter->d2 = 0;
+}
+
 /* Computes a biquad_t filter on a sample */
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {

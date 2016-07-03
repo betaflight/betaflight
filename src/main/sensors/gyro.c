@@ -27,6 +27,7 @@
 #include "common/filter.h"
 
 #include "drivers/sensor.h"
+#include "drivers/system.h"
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
 #include "io/beeper.h"
@@ -44,20 +45,29 @@ float gyroADCf[XYZ_AXIS_COUNT];
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilter[XYZ_AXIS_COUNT];
+static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
+static biquadFilter_t gyroFilterOld[XYZ_AXIS_COUNT];
+static uint8_t gyroNotchHz;
+static uint8_t gyroNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint8_t gyro_notch_hz, uint8_t gyro_notch_q)
 {
     gyroConfig = gyroConfigToUse;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
+    gyroNotchHz = gyro_notch_hz;
+    gyroNotchQ = gyro_notch_q;
 }
 
 void gyroInit(void)
 {
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
+            biquadFilterNotchInit(&gyroFilterNotch[axis], gyroNotchHz, gyro.targetLooptime, ((float) gyroNotchQ) / 10);
             biquadFilterInit(&gyroFilter[axis], gyroSoftLpfHz, gyro.targetLooptime);
+            if (debugMode == DEBUG_NOTCH)
+                biquadFilterInit(&gyroFilterOld[axis], 70, gyro.targetLooptime);
         }
     }
 }
@@ -157,7 +167,23 @@ void gyroUpdate(void)
 
     if (gyroSoftLpfHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            gyroADCf[axis] = biquadFilterApply(&gyroFilter[axis], (float)gyroADC[axis]);
+            //gyroADCf[axis] = biquadFilterApply(&gyroFilter[axis], (float)gyroADC[axis]);
+            float sample = (float) gyroADC[axis];
+            if (gyroNotchHz > 0) {
+                sample = biquadFilterApply(&gyroFilterNotch[axis], sample);
+            }
+
+            gyroADCf[axis] = biquadFilterApply(&gyroFilter[axis], sample);;
+
+            if (debugMode == DEBUG_NOTCH && axis == 0){
+                float oldFilter = biquadFilterApply(&gyroFilterOld[axis], (float) gyroADC[axis]);
+                debug[0] = gyroADC[axis];
+                debug[1] = lrintf(sample);
+                debug[2] = lrintf(gyroADCf[axis]);
+                debug[3] = lrintf(oldFilter);
+            }
+
+
             gyroADC[axis] = lrintf(gyroADCf[axis]);
         }
     } else {

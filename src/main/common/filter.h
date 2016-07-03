@@ -31,6 +31,7 @@ typedef struct biquadFilter_s {
 
 
 void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate);
+void biquadFilterNotchInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate, float Q);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
