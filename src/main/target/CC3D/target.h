@@ -207,6 +207,7 @@
 #define TARGET_MOTOR_COUNT 6
 #else
 #define TARGET_MOTOR_COUNT 4
+#undef USE_SONAR_SRF10
 #endif
 #undef USE_BARO_MS5611
 #undef BLACKBOX

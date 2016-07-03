@@ -33,8 +33,6 @@
 
 #include "nvic.h"
 #include "gpio.h"
-#include "io.h"
-#include "io_impl.h"
 #include "timer.h"
 
 #include "pwm_mapping.h"
@@ -342,14 +340,10 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     }
 }
 
-static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
+static void pwmGPIOConfig(ioTag_t pin, ioConfig_t mode)
 {
-    gpio_config_t cfg;
-
-    cfg.pin = pin;
-    cfg.mode = mode;
-    cfg.speed = Speed_2MHz;
-    gpioInit(gpio, &cfg);
+    IOInit(IOGetByTag(pin), OWNER_PWMINPUT, RESOURCE_INPUT);
+    IOConfigGPIO(IOGetByTag(pin), mode);
 }
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -371,8 +365,6 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
 
-#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
-
 void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 {
     pwmInputPort_t *self = &pwmInputPorts[channel];
@@ -383,7 +375,7 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     self->mode = INPUT_MODE_PWM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
+    pwmGPIOConfig(timerHardwarePtr->tag, timerHardwarePtr->ioMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -412,7 +404,7 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     self->mode = INPUT_MODE_PPM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
+    pwmGPIOConfig(timerHardwarePtr->tag, timerHardwarePtr->ioMode);
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);

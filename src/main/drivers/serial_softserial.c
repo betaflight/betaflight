@@ -30,9 +30,7 @@
 
 #include "nvic.h"
 #include "system.h"
-#include "gpio.h"
 #include "io.h"
-#include "io_impl.h"
 #include "timer.h"
 
 #include "serial.h"
@@ -50,6 +48,8 @@
 typedef struct softSerial_s {
     serialPort_t     port;
 
+    IO_t rxIO;
+    IO_t txIO;
     const timerHardware_t *rxTimerHardware;
     volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
 
@@ -94,27 +94,25 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 
     if (state) {
-        digitalHi(IO_GPIOBYTAG(softSerial->txTimerHardware->tag), IO_PINBYTAG(softSerial->txTimerHardware->tag));
+        IOHi(softSerial->txIO);
     } else {
-        digitalLo(IO_GPIOBYTAG(softSerial->txTimerHardware->tag), IO_PINBYTAG(softSerial->txTimerHardware->tag));
+        IOLo(softSerial->txIO);
     }
 }
 
-static void softSerialGPIOConfig(GPIO_TypeDef *gpio, uint16_t pin, GPIO_Mode mode)
+static void softSerialGPIOConfig(ioTag_t pin, ioConfig_t mode)
 {
-    gpio_config_t cfg;
-
-    cfg.pin = pin;
-    cfg.mode = mode;
-    cfg.speed = Speed_2MHz;
-    gpioInit(gpio, &cfg);
+    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL_RXTX, RESOURCE_USART);
+    IOConfigGPIO(IOGetByTag(pin), mode);
 }
 
-#define GPIO_MODE_FROM_IOMODE(ioMode) (ioMode & 0x03)
-
-void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
+void serialInputPortConfig(ioTag_t pin)
 {
-    softSerialGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), GPIO_MODE_FROM_IOMODE(timerHardwarePtr->ioMode));
+#ifdef STM32F1
+    softSerialGPIOConfig(pin, IOCFG_IPU);
+#else
+    softSerialGPIOConfig(pin, IOCFG_AF_PP_UP);
+#endif
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -166,9 +164,9 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].edgeCb, NULL);
 }
 
-static void serialOutputPortConfig(const timerHardware_t *timerHardwarePtr)
+static void serialOutputPortConfig(ioTag_t pin)
 {
-    softSerialGPIOConfig(IO_GPIOBYTAG(timerHardwarePtr->tag), IO_PINBYTAG(timerHardwarePtr->tag), Mode_Out_PP);
+    softSerialGPIOConfig(pin, IOCFG_OUT_PP);
 }
 
 static void resetBuffers(softSerial_t *softSerial)
@@ -220,8 +218,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    serialOutputPortConfig(softSerial->txTimerHardware);
-    serialInputPortConfig(softSerial->rxTimerHardware);
+    softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->tag);
+    serialOutputPortConfig(softSerial->txTimerHardware->tag);
+    
+    softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->tag);
+    serialInputPortConfig(softSerial->rxTimerHardware->tag);
 
     setTxSignal(softSerial, ENABLE);
     delay(50);
