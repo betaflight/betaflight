@@ -1,8 +1,24 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
@@ -52,15 +68,15 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1,  0}, // PPM IN
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2,  0}, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2,  0}, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
+    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // PPM IN
+    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
+    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
 
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0}, // PWM4 - S1
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  0}, // PWM5 - S2
-    { TIM17, IO_TAG(PB5),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_10, 0}, // PWM6 - S3
-    { TIM16, IO_TAG(PB4),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1,  0}, // PWM7 - S4
+    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM4 - S1
+    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM5 - S2
+    { TIM17, IO_TAG(PB5),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_10}, // PWM6 - S3
+    { TIM16, IO_TAG(PB4),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM7 - S4
  
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6,  0}, // GPIO TIMER - LED_STRIP
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6 }, // GPIO TIMER - LED_STRIP
 };
 

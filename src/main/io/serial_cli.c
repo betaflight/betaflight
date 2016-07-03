@@ -48,7 +48,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
-#include "drivers/gyro_sync.h"
 
 #include "drivers/buf_writer.h"
 
@@ -113,6 +112,7 @@ static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
+void cliDfu(char *cmdLine); 
 static void cliDump(char *cmdLine);
 void cliDumpProfile(uint8_t profileIndex);
 void cliDumpRateProfile(uint8_t rateProfileIndex) ;
@@ -123,6 +123,7 @@ static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
+static void cliRebootEx(bool bootLoader);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
 #ifndef SKIP_SERIAL_PASSTHROUGH
@@ -264,8 +265,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile]", cliDump),
+    CLI_COMMAND_DEF("dfu", "DFU mode on reboot", NULL, cliDfu),
+    CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile]", cliDump),
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -450,6 +451,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "MIXER",
     "AIRMODE",
     "PIDLOOP",
+    "NOTCH",
 };
 #ifdef OSD
 static const char * const lookupTableOsdType[] = {
@@ -695,6 +697,8 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
+    { "gyro_notch_hz",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_notch_hz, .config.minmax = { 0,  500 } },
+    { "gyro_notch_q",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_notch_q, .config.minmax = { 1,  100 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
@@ -2565,10 +2569,19 @@ static void cliRateProfile(char *cmdline) {
 
 static void cliReboot(void)
 {
-    cliPrint("\r\nRebooting");
+	cliRebootEx(false);
+}
+
+static void cliRebootEx(bool bootLoader)
+{
+	cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
+    if (bootLoader) {
+	    systemResetToBootloader();
+	    return;
+    }
     systemReset();
 }
 
@@ -3106,6 +3119,13 @@ static void cliResource(char *cmdline)
         }
         cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
+}
+
+void cliDfu(char *cmdLine)
+{
+	UNUSED(cmdLine);
+	cliPrint("\r\nRestarting in DFU mode");
+	cliRebootEx(true);
 }
 
 void cliInit(serialConfig_t *serialConfig)

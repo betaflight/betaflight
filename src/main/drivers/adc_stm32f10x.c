@@ -81,7 +81,7 @@ void adcInit(drv_adc_config_t *init)
 {
     
 #if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-	UNUSED(init);
+    UNUSED(init);
 #endif
 
     uint8_t i;
@@ -91,60 +91,50 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef VBAT_ADC_PIN
     if (init->enableVBat) {
-        IOInit(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(VBAT_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_BATTERY].adcChannel = adcChannelByTag(IO_TAG(VBAT_ADC_PIN));
-        adcConfig[ADC_BATTERY].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_BATTERY].enabled = true;
-        adcConfig[ADC_BATTERY].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
     }
 #endif
 
 #ifdef RSSI_ADC_PIN
     if (init->enableRSSI) {
-        IOInit(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-        IOConfigGPIO(IOGetByTag(IO_TAG(RSSI_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_RSSI].adcChannel = adcChannelByTag(IO_TAG(RSSI_ADC_PIN));
-        adcConfig[ADC_RSSI].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_RSSI].enabled = true;
-        adcConfig[ADC_RSSI].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
     }
 #endif
 
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
-        IOInit(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-	    IOConfigGPIO(IOGetByTag(IO_TAG(EXTERNAL1_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_EXTERNAL1].adcChannel = adcChannelByTag(IO_TAG(EXTERNAL1_ADC_PIN));
-        adcConfig[ADC_EXTERNAL1].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_EXTERNAL1].enabled = true;
-        adcConfig[ADC_EXTERNAL1].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
     }
 #endif
 
 #ifdef CURRENT_METER_ADC_PIN
     if (init->enableCurrentMeter) {
-        IOInit(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), OWNER_SYSTEM, RESOURCE_ADC);
-	    IOConfigGPIO(IOGetByTag(IO_TAG(CURRENT_METER_ADC_PIN)), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[ADC_CURRENT].adcChannel = adcChannelByTag(IO_TAG(CURRENT_METER_ADC_PIN));
-        adcConfig[ADC_CURRENT].dmaIndex = configuredAdcChannels++;
-        adcConfig[ADC_CURRENT].enabled = true;
-        adcConfig[ADC_CURRENT].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
     }
 #endif
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
-    
+
     adcDevice_t adc = adcHardware[device];  
+
+    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcConfig[i].tag)
+            continue;
+
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_SYSTEM, RESOURCE_ADC);
+        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
+        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
+        adcConfig[i].dmaIndex = configuredAdcChannels++;
+        adcConfig[i].sampleTime = ADC_SampleTime_239Cycles5;
+        adcConfig[i].enabled = true;
+    }
     
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     
-    // FIXME ADC driver assumes all the GPIO was already placed in 'AIN' mode
-
     DMA_DeInit(adc.DMAy_Channelx);
     DMA_InitTypeDef DMA_InitStructure;
     DMA_StructInit(&DMA_InitStructure);

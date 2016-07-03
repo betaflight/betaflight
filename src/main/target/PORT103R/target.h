@@ -115,9 +115,6 @@
 #define RSSI_ADC_PIN                PA1
 #define EXTERNAL1_ADC_PIN           PA5
 
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f103RCT6 in 64pin package
