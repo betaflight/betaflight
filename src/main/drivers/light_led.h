@@ -17,12 +17,12 @@
 
 #pragma once
 
-struct led_config_t{
+typedef struct led_config_s {
     GPIO_TypeDef *gpio;
     uint16_t pin;
-};
+} led_config_t;
 
-extern struct led_config_t led_config[3];
+extern led_config_t led_config[3];
 
 // Helpful macros
 #ifdef LED0
