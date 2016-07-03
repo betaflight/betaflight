@@ -2675,7 +2675,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
-            cliPrintf("Allowed range: %d - %d\n", var->config.minmax.min, var->config.minmax.max);
+            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         }
         break;
         case (MODE_LOOKUP): {
@@ -2687,7 +2687,7 @@ static void cliPrintVarRange(const clivalue_t *var)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
-            cliPrint("\n");
+            cliPrint("\r\n");
         }
         break;
     }
