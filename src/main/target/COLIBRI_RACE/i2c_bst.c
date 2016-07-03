@@ -1403,7 +1403,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
                ledConfig->color = bstRead8();
 
-               reevalulateLedConfig();
+               reevaluateLedConfig();
            }
            break;
 #endif

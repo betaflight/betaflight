@@ -664,7 +664,13 @@ void createDefaultConfig(master_t *config)
     config->blackbox_rate_num = 1;
     config->blackbox_rate_denom = 1;
 #endif // BLACKBOX
-    
+
+#ifdef SERIALRX_UART
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
+        masterConfig.serialConfig.portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+    }
+#endif
+
     // alternative defaults settings for COLIBRI RACE targets
 #if defined(COLIBRI_RACE)
     config->escAndServoConfig.minthrottle = 1025;
@@ -678,11 +684,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #if defined(ALIENFLIGHT) 
-#ifdef ALIENFLIGHTF1
-    config->serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-#else
-    config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-#endif
+    featureClear(FEATURE_ONESHOT125);
 #ifdef ALIENFLIGHTF3
     config->mag_hardware = MAG_NONE;            // disabled by default
 #endif
@@ -705,11 +707,6 @@ void createDefaultConfig(master_t *config)
     config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 #endif
 
-#if defined(SINGULARITY)
-    // alternative defaults settings for SINGULARITY target
-    config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-#endif
-
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
@@ -723,7 +720,7 @@ static void resetConf(void)
     setProfile(0);
 
 #ifdef LED_STRIP
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 #endif
 }
 
@@ -875,10 +872,10 @@ void validateAndFixConfig(void)
     if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0
 #ifdef USE_SOFTSERIAL1
-            || (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
+            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
 #endif
 #ifdef USE_SOFTSERIAL2
-            || (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
+            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
 #endif
     )) {
         // led strip needs the same timer as softserial
@@ -928,14 +925,10 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_MSP);
         featureSet(FEATURE_RX_PPM);
-    }
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
-        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-        //masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
     }
 #endif
 

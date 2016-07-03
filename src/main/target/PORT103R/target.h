@@ -115,9 +115,6 @@
 #define RSSI_ADC_PIN                PA1
 #define EXTERNAL1_ADC_PIN           PA5
 
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
-
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_LUXFLOAT
 

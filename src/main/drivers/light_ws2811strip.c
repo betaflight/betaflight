@@ -80,18 +80,9 @@ void setStripColors(const hsvColor_t *colors)
     }
 }
 
-void ws2811DMAHandler(DMA_Channel_TypeDef *channel) {
-    if (DMA_GetFlagStatus(WS2811_DMA_TC_FLAG)) {
-        ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(channel, DISABLE);
-        DMA_ClearFlag(WS2811_DMA_TC_FLAG);
-    }
-}
-
 void ws2811LedStripInit(void)
 {
     memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
     ws2811LedStripHardwareInit();
     ws2811UpdateStrip();
 }
@@ -141,12 +132,11 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
  */
 void ws2811UpdateStrip(void)
 {
-    static uint32_t waitCounter = 0;
     static rgbColor24bpp_t *rgb24;
 
-    // wait until previous transfer completes
-    while(ws2811LedDataTransferInProgress) {
-        waitCounter++;
+    // don't wait - risk of infinite block, just get an update next time round
+    if (ws2811LedDataTransferInProgress) {
+        return;
     }
 
     dmaBufferOffset = 0;                // reset buffer memory index

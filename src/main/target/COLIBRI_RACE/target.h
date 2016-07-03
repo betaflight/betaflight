@@ -113,7 +113,6 @@
 
 #define USE_ADC
 #define ADC_INSTANCE                ADC1
-#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN                PC0
 #define CURRENT_METER_ADC_PIN       PC1
 #define RSSI_ADC_PIN                PC2
@@ -122,15 +121,8 @@
 #define LED_STRIP
 #define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
-#define LED_STRIP_TIMER                 TIM16
-
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_6 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
@@ -144,7 +136,10 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_FEATURES        FEATURE_VBAT
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

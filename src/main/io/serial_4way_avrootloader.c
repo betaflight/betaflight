@@ -238,7 +238,7 @@ void BL_SendCMDRunRestartBootloader(void)
 static uint8_t BL_SendCMDSetAddress(ioMem_t *pMem) //supports only 16 bit Adr
 {
     // skip if adr == 0xFFFF
-    if((pMem->addr == 0xffff))
+    if(pMem->addr == 0xffff)
         return 1;
     uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->addr >> 8, pMem->addr & 0xff };
     BL_SendBuf(sCMD, sizeof(sCMD), true);

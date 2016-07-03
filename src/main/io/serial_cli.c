@@ -112,6 +112,7 @@ static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
+void cliDfu(char *cmdLine); 
 static void cliDump(char *cmdLine);
 static void cliDiff(char *cmdLine);
 static void printConfig(char *cmdLine, bool doDiff);
@@ -124,6 +125,7 @@ static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
+static void cliRebootEx(bool bootLoader);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
 #ifndef SKIP_SERIAL_PASSTHROUGH
@@ -278,8 +280,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
         "[master|profile|rates|all] {commented}", cliDiff),
-    CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile|rates|all]", cliDump),
+    CLI_COMMAND_DEF("dfu", "DFU mode on reboot", NULL, cliDfu),
+    CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile]", cliDump),
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -2812,10 +2814,19 @@ static void cliRateProfile(char *cmdline) {
 
 static void cliReboot(void)
 {
-    cliPrint("\r\nRebooting");
+	cliRebootEx(false);
+}
+
+static void cliRebootEx(bool bootLoader)
+{
+	cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
+    if (bootLoader) {
+	    systemResetToBootloader();
+	    return;
+    }
     systemReset();
 }
 
@@ -3368,6 +3379,13 @@ static void cliResource(char *cmdline)
         }
         cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
+}
+
+void cliDfu(char *cmdLine)
+{
+	UNUSED(cmdLine);
+	cliPrint("\r\nRestarting in DFU mode");
+	cliRebootEx(true);
 }
 
 void cliInit(serialConfig_t *serialConfig)
