@@ -35,6 +35,23 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
+static bool mpu6500ReadTemp(int16_t *tempData)
+{
+    uint8_t buf[2];
+    if (!mpuConfiguration.read(MPU_RA_TEMP_OUT_H, 2, buf)) {
+        return false;
+    }
+
+    // MPU-6500-Datasheet2.pdf P12
+    const int16_t RoomTemp_Offset = 21;
+    const int16_t Temp_Sensitivity = 333;
+
+    // RM-MPU-6500A-00.pdf P33
+    *tempData = RoomTemp_Offset + ((int16_t)(buf[0] << 8 | buf[1]) - RoomTemp_Offset) / Temp_Sensitivity;
+
+    return true;
+}
+
 bool mpu6500AccDetect(acc_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
@@ -55,6 +72,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
+    gyro->temperature = mpu6500ReadTemp;
     gyro->isDataReady = mpuIsDataReady;
 
     // 16.4 dps/lsb scalefactor
