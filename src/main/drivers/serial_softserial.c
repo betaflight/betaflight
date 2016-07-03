@@ -408,7 +408,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
+uint32_t softSerialRxBytesWaiting(serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;

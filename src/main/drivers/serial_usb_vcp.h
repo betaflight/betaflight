@@ -30,9 +30,4 @@ typedef struct {
 } vcpPort_t;
 
 serialPort_t *usbVcpOpen(void);
-
-uint8_t usbVcpAvailable(serialPort_t *instance);
-
-uint8_t usbVcpRead(serialPort_t *instance);
-
 uint32_t usbVcpGetBaudRate(serialPort_t *instance);
