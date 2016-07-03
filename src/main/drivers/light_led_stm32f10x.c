@@ -28,7 +28,7 @@
 
 #include "light_led.h"
 
-led_config_t led_config[3];
+struct led_config_t led_config[3];
 
 void ledInit(bool alternative_led)
 {
