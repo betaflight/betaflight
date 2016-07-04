@@ -34,9 +34,12 @@
 
 #include "flight/mixer.h"
 
-#include "fc/config.h"
-#include "fc/runtime_config.h"
+#ifdef OSD
+#include "osd/osd_serial.h"
+#else
 #include "fc/fc_serial.h"
+#endif
+
 #include "io/serial.h"
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
@@ -64,9 +67,9 @@ static mspPort_t* mspPortFindFree(void)
 
 void mspSerialAllocatePorts(void)
 {
-    for(serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+    for(serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT);
         portConfig != NULL;
-        portConfig = findNextSerialPortConfig(FUNCTION_MSP)) {
+        portConfig = findNextSerialPortConfig(FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT)) {
         if(isSerialPortOpen(portConfig))
             continue; // port is already open
 
@@ -77,8 +80,16 @@ void mspSerialAllocatePorts(void)
             // this error should be signalized to user (invalid configuration)
             return;
         }
-        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL,
-                                                  baudRates[portConfig->baudRates[BAUDRATE_MSP_SERVER]], MODE_RXTX, SERIAL_NOT_INVERTED);
+
+        uint16_t function = portConfig->functionMask & (FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT);
+#ifdef USE_MSP_CLIENT
+        uint8_t baudRatesIndex = function & FUNCTION_MSP_SERVER ? BAUDRATE_MSP_SERVER : BAUDRATE_MSP_CLIENT;
+#else
+        uint8_t baudRatesIndex = BAUDRATE_MSP_SERVER;
+#endif
+
+        serialPort_t *serialPort = openSerialPort(portConfig->identifier, function, NULL,
+        		baudRates[portConfig->baudRates[baudRatesIndex]], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
         } else {

@@ -52,8 +52,8 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
         serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
     }
 
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP; // Server (USB)
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP; // Client of FC
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP_SERVER; // for USB/UART configuration.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP_CLIENT; // for communication with FC.
 
     serialConfig->reboot_character = 'R';
 }

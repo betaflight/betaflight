@@ -89,7 +89,7 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_VCP)
-    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP_SERVER;
 #endif
 }
 

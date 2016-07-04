@@ -57,11 +57,11 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
         serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
     }
 
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP_SERVER;
 
 #if defined(USE_VCP)
     // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP_SERVER;
 #endif
 
     serialConfig->reboot_character = 'R';

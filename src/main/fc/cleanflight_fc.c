@@ -322,10 +322,10 @@ void mwDisarm(void)
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
 
 void releaseSharedTelemetryPorts(void) {
-    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP_SERVER);
      while (sharedPort) {
          mspSerialReleasePortIfAllocated(sharedPort);
-         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP_SERVER);
      }
 }
 
@@ -344,7 +344,7 @@ void mwArm(void)
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
-                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP_SERVER);
                 if (sharedBlackboxAndMspPort) {
                     mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }

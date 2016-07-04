@@ -134,19 +134,19 @@ typedef struct findSerialPortConfigState_s {
 
 static findSerialPortConfigState_t findSerialPortConfigState;
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+serialPortConfig_t *findSerialPortConfig(uint16_t mask)
 {
     memset(&findSerialPortConfigState, 0, sizeof(findSerialPortConfigState));
 
-    return findNextSerialPortConfig(function);
+    return findNextSerialPortConfig(mask);
 }
 
-serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
+serialPortConfig_t *findNextSerialPortConfig(uint16_t mask)
 {
     while (findSerialPortConfigState.lastIndex < SERIAL_PORT_COUNT) {
         serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSerialPortConfigState.lastIndex++];
 
-        if (candidate->functionMask & function) {
+        if (candidate->functionMask & mask) {
             return candidate;
         }
     }
@@ -203,7 +203,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 }
 
 #define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP_SERVER (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
 
 bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 {
@@ -211,7 +211,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     /*
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
-     * - Only MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+     * - Only MSP SERVER is allowed to be shared with EITHER any telemetry OR blackbox.
      * - No other sharing combinations are valid.
      */
     uint8_t mspPortCount = 0;
@@ -220,7 +220,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
 
-        if (portConfig->functionMask & FUNCTION_MSP) {
+        if (portConfig->functionMask & (FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT)) {
             mspPortCount++;
         }
 
@@ -231,11 +231,11 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
                 return false;
             }
 
-            if (!(portConfig->functionMask & FUNCTION_MSP)) {
+            if (!(portConfig->functionMask & FUNCTION_MSP_SERVER)) {
                 return false;
             }
 
-            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP_SERVER)) {
                 // some other bit must have been set.
                 return false;
             }
