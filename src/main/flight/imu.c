@@ -28,7 +28,6 @@
 #include "debug.h"
 
 #include "common/axis.h"
-#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
