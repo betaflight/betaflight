@@ -23,35 +23,41 @@
 #include "common/color.h"
 #include "drivers/light_ws2811strip.h"
 #include "nvic.h"
+#include "io.h"
+#include "dma.h"
+#include "timer.h"
+
+#ifdef LED_STRIP
+
+static IO_t ws2811IO = IO_NONE;
+bool ws2811Initialised = false;
+
+void ws2811DMAHandler(DMA_Channel_TypeDef *channel)
+{
+    if (DMA_GetFlagStatus(WS2811_DMA_TC_FLAG)) {
+        ws2811LedDataTransferInProgress = 0;
+        DMA_Cmd(channel, DISABLE);
+        DMA_ClearFlag(WS2811_DMA_TC_FLAG);
+    }
+}
 
 void ws2811LedStripHardwareInit(void)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_OCInitTypeDef  TIM_OCInitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
     uint16_t prescalerValue;
 
-#ifdef CC3D
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-#else
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-    /* GPIOA Configuration: TIM3 Channel 1 as alternate function push-pull */
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-#endif
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
+    
+    ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
+/* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
+    IOInit(ws2811IO, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
+    
+    RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
+    
     /* Compute the prescaler value */
     prescalerValue = (uint16_t) (SystemCoreClock / 24000000) - 1;
     /* Time base configuration */
@@ -108,16 +114,20 @@ void ws2811LedStripHardwareInit(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }
 
 void ws2811LedStripDMAEnable(void)
 {
+    if (!ws2811Initialised)
+        return;
+    
     DMA_SetCurrDataCounter(DMA1_Channel6, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(TIM3, 0);
     TIM_Cmd(TIM3, ENABLE);
     DMA_Cmd(DMA1_Channel6, ENABLE);
 }
 
-
+#endif

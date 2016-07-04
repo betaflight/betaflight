@@ -365,22 +365,22 @@ void DMA2_Stream7_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_1]->port);
     if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF7))
     {
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
-		}
-		handleUsartTxDma(s);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
+        }
+        handleUsartTxDma(s);
     }
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
-	}
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
+    }
 }
 
 // USART1 Rx/Tx IRQ Handler
@@ -402,30 +402,30 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
 void DMA1_Stream6_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_2]->port);
-	if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF6))
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
-		}
-		handleUsartTxDma(s);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
-	}
+    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF6))
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
+        }
+        handleUsartTxDma(s);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
+    }
 }
 
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_2]->port);
-	usartIrqHandler(s);
+    usartIrqHandler(s);
 }
 #endif
 
@@ -442,22 +442,22 @@ void DMA1_Stream3_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_3]->port);
     if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF3))
     {
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF3);
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF3);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF3)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF3);
-		}
-		handleUsartTxDma(s);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF3);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF3);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF3)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF3);
+        }
+        handleUsartTxDma(s);
     }
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF3)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF3);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF3)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF3);
-	}
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF3)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF3);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF3)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF3);
+    }
 }
 
 void USART3_IRQHandler(void)
@@ -480,22 +480,22 @@ void DMA1_Stream4_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_4]->port);
     if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF4))
     {
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF4);
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF4);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF4)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF4);
-		}
-		handleUsartTxDma(s);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF4);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF4);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF4)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF4);
+        }
+        handleUsartTxDma(s);
     }
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF4)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF4);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF4)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF4);
-	}
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF4)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF4);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF4)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF4);
+    }
 }
 
 void UART4_IRQHandler(void)
@@ -518,22 +518,22 @@ void DMA1_Stream7_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_5]->port);
     if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF7))
     {
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
-		}
-		handleUsartTxDma(s);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
+        }
+        handleUsartTxDma(s);
     }
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
-	}
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
+    }
 }
 
 void UART5_IRQHandler(void)
@@ -556,22 +556,22 @@ void DMA2_Stream6_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_6]->port);
     if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF6))
     {
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
-    	DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
-		if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
-		{
-			DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
-		}
-		handleUsartTxDma(s);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
+        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
+        {
+            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
+        }
+        handleUsartTxDma(s);
     }
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
-	}
-	if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
-	{
-		DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
-	}
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
+    }
+    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
+    {
+        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
+    }
 }
 
 void USART6_IRQHandler(void)

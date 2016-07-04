@@ -157,33 +157,33 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef LED_STRIP_TIMER
+#ifdef WS2811_TIMER
         // skip LED Strip output
         if (init->useLEDStrip) {
-            if (timerHardwarePtr->tim == LED_STRIP_TIMER)
+            if (timerHardwarePtr->tim == WS2811_TIMER)
                 continue;
-#if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (CheckGPIOPinSource(timerHardwarePtr->tag, WS2811_GPIO, WS2811_PIN_SOURCE))
+#if defined(STM32F303xC) && defined(WS2811_PIN)
+            if (timerHardwarePtr->tag == IO_TAG(WS2811_PIN))
                 continue;
 #endif
         }
 
 #endif
 
-#ifdef VBAT_ADC_GPIO
-        if (init->useVbat && CheckGPIOPin(timerHardwarePtr->tag, VBAT_ADC_GPIO, VBAT_ADC_GPIO_PIN)) {
+#ifdef VBAT_ADC_PIN
+        if (init->useVbat && timerHardwarePtr->tag == IO_TAG(VBAT_ADC_PIN)) {
             continue;
         }
 #endif
 
 #ifdef RSSI_ADC_GPIO
-        if (init->useRSSIADC && CheckGPIOPin(timerHardwarePtr->tag, RSSI_ADC_GPIO, RSSI_ADC_GPIO_PIN)) {
+        if (init->useRSSIADC && timerHardwarePtr->tag == IO_TAG(RSSI_ADC_PIN)) {
             continue;
         }
 #endif
 
 #ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && CheckGPIOPin(timerHardwarePtr->tag, CURRENT_METER_ADC_GPIO, CURRENT_METER_ADC_GPIO_PIN)) {
+        if (init->useCurrentMeterADC && timerHardwarePtr->tag == IO_TAG(CURRENT_METER_ADC_PIN)) {
             continue;
         }
 #endif
@@ -274,7 +274,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 
         if (init->useChannelForwarding && !init->airplane) {
-#if defined(NAZE) && defined(LED_STRIP_TIMER)
+#if defined(NAZE) && defined(WS2811_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
             if (init->useLEDStrip) { 
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
@@ -306,7 +306,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
         if (type == MAP_TO_PPM_INPUT) {
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-	        if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif

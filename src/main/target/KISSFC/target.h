@@ -73,12 +73,17 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
-//#define USE_ADC
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA4
-#define CURRENT_METER_ADC_PIN       PA5
-#define RSSI_ADC_PIN                PB2
+#define USE_ADC
+#define VBAT_SCALE_DEFAULT          160
+#define ADC_INSTANCE                ADC1
+#define VBAT_ADC_PIN                PA0
+//#define CURRENT_METER_ADC_PIN       PA5
+//#define RSSI_ADC_PIN                PB2
 
+#define DEFAULT_FEATURES        FEATURE_VBAT
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define SPEKTRUM_BIND
 #define BIND_PIN   PB4
@@ -87,6 +92,6 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTF	(BIT(4))
+#define TARGET_IO_PORTF (BIT(4))
 
 #define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))

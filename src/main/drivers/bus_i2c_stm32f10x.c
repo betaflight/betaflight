@@ -422,6 +422,9 @@ void i2cInit(I2CDevice device)
 
     I2C_Cmd(i2c->dev, ENABLE);
     I2C_Init(i2c->dev, &i2cInit);
+
+    I2C_StretchClockCmd(i2c->dev, ENABLE);
+    
     
     // I2C ER Interrupt
     nvic.NVIC_IRQChannel = i2c->er_irq;

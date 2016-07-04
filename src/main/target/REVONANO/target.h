@@ -22,7 +22,7 @@
 
 #define USBD_PRODUCT_STRING "Revo Nano"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8010000"
+#define USBD_SERIALNUMBER_STRING "0x8010000"
 #endif
 
 #define LED0 PC14
@@ -84,12 +84,6 @@
 #define CURRENT_METER_ADC_PIN       PA7
 #define VBAT_ADC_PIN                PA6
 #define RSSI_ADC_PIN                PA5
-
-
-//#define SENSORS_SET (SENSOR_ACC|SENSOR_MAG)
-
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM5
 
 #define GPS
 #define BLACKBOX

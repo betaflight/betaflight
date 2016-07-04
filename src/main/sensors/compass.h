@@ -23,15 +23,13 @@ typedef enum {
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
     MAG_AK8975 = 3,
-    MAG_AK8963 = 4
+    MAG_AK8963 = 4,
+    MAG_MAX = MAG_AK8963
 } magSensor_e;
 
-#define MAG_MAX  MAG_AK8963
-
-#ifdef MAG
 void compassInit(void);
-void updateCompass(flightDynamicsTrims_t *magZero);
-#endif
+union flightDynamicsTrims_u;
+void updateCompass(union flightDynamicsTrims_u *magZero);
 
 extern int32_t magADC[XYZ_AXIS_COUNT];
 

@@ -35,18 +35,19 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
 mag_t mag;                   // mag access functions
+int32_t magADC[XYZ_AXIS_COUNT];
+sensor_align_e magAlign = 0;
+
+#ifdef MAG
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
-int16_t magADCRaw[XYZ_AXIS_COUNT];
-int32_t magADC[XYZ_AXIS_COUNT];
-sensor_align_e magAlign = 0;
-#ifdef MAG
+static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
 void compassInit(void)

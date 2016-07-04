@@ -325,9 +325,6 @@ extern uint32_t currentTime;
 //From rx.c:
 extern uint16_t rssi;
 
-//From gyro.c
-extern uint32_t targetLooptime;
-
 //From rc_controls.c
 extern uint32_t rcModeActivationMask;
 
@@ -1169,7 +1166,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawRate:%d",                        masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);

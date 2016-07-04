@@ -57,7 +57,7 @@
   * @{
   */ 
 #define USBD_LANGID_STRING              0x409
-#define USBD_MANUFACTURER_STRING        "RaceFlight"
+#define USBD_MANUFACTURER_STRING        "BetaFlight"
 
 #ifdef USBD_PRODUCT_STRING
   #define USBD_PRODUCT_HS_STRING          USBD_PRODUCT_STRING
@@ -197,7 +197,7 @@ __ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID] __ALIGN_END =
 */
 uint8_t *  USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length)
 {
-	(void)speed;
+    (void)speed;
   *length = sizeof(USBD_DeviceDesc);
   return USBD_DeviceDesc;
 }
@@ -211,7 +211,7 @@ uint8_t *  USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length)
 */
 uint8_t *  USBD_USR_LangIDStrDescriptor( uint8_t speed , uint16_t *length)
 {
-	(void)speed;
+    (void)speed;
   *length =  sizeof(USBD_LangIDDesc);  
   return USBD_LangIDDesc;
 }
@@ -245,7 +245,7 @@ uint8_t *  USBD_USR_ProductStrDescriptor( uint8_t speed , uint16_t *length)
 */
 uint8_t *  USBD_USR_ManufacturerStrDescriptor( uint8_t speed , uint16_t *length)
 {
-	(void)speed;
+    (void)speed;
   USBD_GetString ((uint8_t*)USBD_MANUFACTURER_STRING, USBD_StrDesc, length);
   return USBD_StrDesc;
 }
