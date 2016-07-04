@@ -139,17 +139,17 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, uint8_t *data, int len)
     return checksum;
 }
 
-void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
+void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
 {
     serialBeginWrite(msp->port);
-    int len = sbufBytesRemaining(&reply->buf);
-    uint8_t hdr[] = {'$', 'M', reply->result < 0 ? '!' : (msp->mode == MSP_MODE_SERVER ? '>' : '<'), len, reply->cmd};
+    int len = sbufBytesRemaining(&packet->buf);
+    uint8_t hdr[] = {'$', 'M', packet->result < 0 ? '!' : (msp->mode == MSP_MODE_SERVER ? '>' : '<'), len, packet->cmd};
     uint8_t csum = 0;                                       // initial checksum value
     serialWriteBuf(msp->port, hdr, sizeof(hdr));
     csum = mspSerialChecksumBuf(csum, hdr + 3, 2);          // checksum starts from len field
     if(len > 0) {
-        serialWriteBuf(msp->port, sbufPtr(&reply->buf), len);
-        csum = mspSerialChecksumBuf(csum, sbufPtr(&reply->buf), len);
+        serialWriteBuf(msp->port, sbufPtr(&packet->buf), len);
+        csum = mspSerialChecksumBuf(csum, sbufPtr(&packet->buf), len);
     }
     serialWrite(msp->port, csum);
     serialEndWrite(msp->port);
@@ -186,7 +186,7 @@ STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
     if (status) {
         // reply should be sent back
         sbufSwitchToReader(&reply->buf, outBufHead); // change streambuf direction
-        mspSerialResponse(msp, reply);
+        mspSerialEncode(msp, reply);
     }
 
     msp->c_state = IDLE;
@@ -318,16 +318,16 @@ void mspSerialProcess(void)
                 .result = 0,
             };
 
-            mspPacket_t *request = &message;
+            mspPacket_t *command = &message;
 
-            uint8_t *outBufHead = request->buf.ptr;
+            uint8_t *outBufHead = command->buf.ptr;
 
-            bool shouldSend = msp->commandSenderFn(request); // FIXME rename to request builder
+            bool shouldSend = msp->commandSenderFn(command); // FIXME rename to request builder
 
             if (shouldSend) {
-                sbufSwitchToReader(&request->buf, outBufHead); // change streambuf direction
+                sbufSwitchToReader(&command->buf, outBufHead); // change streambuf direction
 
-                mspSerialResponse(msp, request);
+                mspSerialEncode(msp, command);
             }
 
             msp->commandSenderFn = NULL;
