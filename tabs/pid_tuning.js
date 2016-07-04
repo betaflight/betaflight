@@ -289,6 +289,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         if (have_sensor(CONFIG.activeSensors, 'acc')) {
             $('#pid_accel').show();
+            $('#pid_level').show();
         }
 
         var showTitle = false;
