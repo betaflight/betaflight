@@ -93,16 +93,6 @@ pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
     return &pwmOutputConfiguration;
 }
 
-bool CheckGPIOPin(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
-{
-    return IO_GPIOBYTAG(tag) == gpio && IO_PINBYTAG(tag) == pin;
-}
-
-bool CheckGPIOPinSource(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
-{
-    return IO_GPIOBYTAG(tag) == gpio && IO_GPIO_PinSource(IOGetByTag(tag)) == pin;
-}
-
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
     int i = 0;
