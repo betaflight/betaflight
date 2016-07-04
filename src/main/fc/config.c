@@ -270,7 +270,7 @@ static void validateAndFixConfig(void)
 #endif // CC3D
 
 #if defined(COLIBRI_RACE)
-    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP_SERVER;
     if (featureConfigured(FEATURE_RX_SERIAL)) {
         serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
