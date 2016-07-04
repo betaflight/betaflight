@@ -155,7 +155,8 @@
 
 
 #define LED_STRIP
-#define LED_STRIP_TIMER              TIM3
+#define WS2811_TIMER                 TIM3
+#define WS2811_PIN                   PA6 
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
@@ -180,6 +181,7 @@
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define HARDWARE_BIND_PLUG
 // Hardware bind plug at PB5 (Pin 41)

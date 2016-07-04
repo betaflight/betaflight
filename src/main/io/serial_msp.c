@@ -1807,7 +1807,7 @@ static bool processInCommand(void)
 
             ledConfig->color = read8();
 
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 #endif

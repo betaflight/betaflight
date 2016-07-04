@@ -63,20 +63,19 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 
 static void updateBatteryVoltage(void)
 {
-    uint16_t vbatSample;
-    static biquad_t vbatFilterState;
-    static bool vbatFilterStateIsSet;
+    static biquadFilter_t vbatFilter;
+    static bool vbatFilterIsInitialised;
 
     // store the battery voltage with some other recent battery voltage readings
-    vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
+    uint16_t vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
 
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
-    if (!vbatFilterStateIsSet) {
-        BiQuadNewLpf(VBATT_LPF_FREQ, &vbatFilterState, 50000); //50HZ Update
-        vbatFilterStateIsSet = true;
+    if (!vbatFilterIsInitialised) {
+        biquadFilterInit(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+        vbatFilterIsInitialised = true;
     }
-    vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
+    vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
     vbat = batteryAdcToVoltage(vbatSample);
 
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;

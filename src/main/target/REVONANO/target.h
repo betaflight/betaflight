@@ -85,12 +85,6 @@
 #define VBAT_ADC_PIN                PA6
 #define RSSI_ADC_PIN                PA5
 
-
-//#define SENSORS_SET (SENSOR_ACC|SENSOR_MAG)
-
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM5
-
 #define GPS
 #define BLACKBOX
 #define TELEMETRY

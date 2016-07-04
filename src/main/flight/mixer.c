@@ -946,7 +946,7 @@ void filterServos(void)
 #ifdef USE_SERVOS
     static int16_t servoIdx;
     static bool servoFilterIsSet;
-    static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
+    static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
@@ -955,11 +955,11 @@ void filterServos(void)
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             if (!servoFilterIsSet) {
-                BiQuadNewLpf(mixerConfig->servo_lowpass_freq, &servoFilterState[servoIdx], targetPidLooptime);
+                biquadFilterInit(&servoFilter[servoIdx], mixerConfig->servo_lowpass_freq, targetPidLooptime);
                 servoFilterIsSet = true;
             }
 
-            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFilterState[servoIdx]));
+            servo[servoIdx] = lrintf(biquadFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
         }
