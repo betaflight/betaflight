@@ -30,63 +30,57 @@
 #include <platform.h>
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "nvic.h"
+#include "rcc.h"
 
 #include "serial.h"
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-// Using RX DMA disables the use of receive callbacks
-//#define USE_USART1_RX_DMA
-//#define USE_USART2_RX_DMA
-//#define USE_USART2_TX_DMA
-//#define USE_USART3_RX_DMA
-//#define USE_USART3_TX_DMA
-
-#ifndef UART1_GPIO
-#define UART1_TX_PIN        GPIO_Pin_9  // PA9
-#define UART1_RX_PIN        GPIO_Pin_10 // PA10
-#define UART1_GPIO          GPIOA
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource9
-#define UART1_RX_PINSOURCE  GPIO_PinSource10
+#ifdef USE_USART1
+#ifndef UART1_TX_PIN
+#define UART1_TX_PIN        PA9  // PA9
+#endif
+#ifndef UART1_RX_PIN
+#define UART1_RX_PIN        PA10 // PA10
+#endif
 #endif
 
-#ifndef UART2_GPIO
-#define UART2_TX_PIN        GPIO_Pin_5 // PD5
-#define UART2_RX_PIN        GPIO_Pin_6 // PD6
-#define UART2_GPIO          GPIOD
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource5
-#define UART2_RX_PINSOURCE  GPIO_PinSource6
+#ifdef USE_USART2
+#ifndef UART2_TX_PIN
+#define UART2_TX_PIN        PD5 // PD5
+#endif
+#ifndef UART2_RX_PIN
+#define UART2_RX_PIN        PD6 // PD6
+#endif
 #endif
 
-#ifndef UART3_GPIO
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#ifdef USE_USART3
+#ifndef UART3_TX_PIN
+#define UART3_TX_PIN        PB10 // PB10 (AF7)
+#endif
+#ifndef UART3_RX_PIN
+#define UART3_RX_PIN        PB11 // PB11 (AF7)
+#endif
 #endif
 
-#ifndef UART4_GPIO
-#define UART4_TX_PIN        GPIO_Pin_10 // PC10 (AF5)
-#define UART4_RX_PIN        GPIO_Pin_11 // PC11 (AF5)
-#define UART4_GPIO_AF       GPIO_AF_5
-#define UART4_GPIO          GPIOC
-#define UART4_TX_PINSOURCE  GPIO_PinSource10
-#define UART4_RX_PINSOURCE  GPIO_PinSource11
+#ifdef USE_USART4
+#ifndef UART4_TX_PIN
+#define UART4_TX_PIN        PC10 // PC10 (AF5)
+#endif
+#ifndef UART4_RX_PIN
+#define UART4_RX_PIN        PC11 // PC11 (AF5)
+#endif
 #endif
 
-#ifndef UART5_GPIO			// The real UART5_RX is on PD2, no board is using.
-#define UART5_TX_PIN        GPIO_Pin_12 // PC12 (AF5)
-#define UART5_RX_PIN        GPIO_Pin_12 // PC12 (AF5)
-#define UART5_GPIO_AF       GPIO_AF_5
-#define UART5_GPIO          GPIOC
-#define UART5_TX_PINSOURCE  GPIO_PinSource12
-#define UART5_RX_PINSOURCE  GPIO_PinSource12
+#ifdef USE_USART5
+#ifndef UART5_TX_PIN             // The real UART5_RX is on PD2, no board is using.
+#define UART5_TX_PIN        PC12 // PC12 (AF5)
+#endif
+#ifndef UART5_RX_PIN
+#define UART5_RX_PIN        PC12 // PC12 (AF5)
+#endif
 #endif
 
 #ifdef USE_USART1
@@ -105,6 +99,33 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
+void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af)
+{
+    if (options & SERIAL_BIDIR) {
+        ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, 
+            (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD, 
+            (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
+        );
+
+        IOInit(tx, OWNER_SERIAL_RXTX, RESOURCE_USART);
+        IOConfigGPIOAF(tx, ioCfg, af);
+
+        if (!(options & SERIAL_INVERTED))
+            IOLo(tx);   // OpenDrain output should be inactive
+    } else {
+        ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
+        if (mode & MODE_TX) {
+            IOInit(tx, OWNER_SERIAL_TX, RESOURCE_USART);
+            IOConfigGPIOAF(tx, ioCfg, af);
+        }
+
+        if (mode & MODE_RX) {
+            IOInit(tx, OWNER_SERIAL_RX, RESOURCE_USART);
+            IOConfigGPIOAF(rx, ioCfg, af);
+        }
+    }
+}
+
 #ifdef USE_USART1
 uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
@@ -112,7 +133,6 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
     static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
@@ -134,34 +154,10 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
+    RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-
-    if (options & SERIAL_BIDIR) {
-        GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-        GPIO_InitStructure.GPIO_OType = (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD;
-        GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
-        GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-        if(!(options & SERIAL_INVERTED))
-            GPIO_SetBits(UART1_GPIO, UART1_TX_PIN);   // OpenDrain output should be inactive
-    } else {
-        if (mode & MODE_TX) {
-            GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-            GPIO_PinAFConfig(UART1_GPIO, UART1_TX_PINSOURCE, UART1_GPIO_AF);
-            GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-        }
-
-        if (mode & MODE_RX) {
-            GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
-            GPIO_PinAFConfig(UART1_GPIO, UART1_RX_PINSOURCE, UART1_GPIO_AF);
-            GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
-        }
-    }
+    serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7);
 
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
@@ -189,7 +185,6 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
     static volatile uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
@@ -212,37 +207,13 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+    RCC_ClockCmd(RCC_APB1(USART2), ENABLE);
 
 #if defined(USE_USART2_TX_DMA) || defined(USE_USART2_RX_DMA)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 #endif
 
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-
-    if (options & SERIAL_BIDIR) {
-        GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
-        GPIO_InitStructure.GPIO_OType = (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD;
-        GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
-        GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
-        if(!(options & SERIAL_INVERTED))
-            GPIO_SetBits(UART2_GPIO, UART2_TX_PIN);   // OpenDrain output should be inactive
-    } else {
-        if (mode & MODE_TX) {
-            GPIO_InitStructure.GPIO_Pin = UART2_TX_PIN;
-            GPIO_PinAFConfig(UART2_GPIO, UART2_TX_PINSOURCE, UART2_GPIO_AF);
-            GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
-        }
-
-        if (mode & MODE_RX) {
-            GPIO_InitStructure.GPIO_Pin = UART2_RX_PIN;
-            GPIO_PinAFConfig(UART2_GPIO, UART2_RX_PINSOURCE, UART2_GPIO_AF);
-            GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
-        }
-    }
+    serialUARTInit(IOGetByTag(IO_TAG(UART2_TX_PIN)), IOGetByTag(IO_TAG(UART2_RX_PIN)), mode, options, GPIO_AF_7);
 
 #ifdef USE_USART2_TX_DMA
     // DMA TX Interrupt
@@ -272,7 +243,6 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
     static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort3;
     s->port.vTable = uartVTable;
@@ -295,37 +265,13 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+    RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
 #if defined(USE_USART3_TX_DMA) || defined(USE_USART3_RX_DMA)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    RCC_AHBClockCmd(RCC_AHB(DMA1), ENABLE);
 #endif
 
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-
-    if (options & SERIAL_BIDIR) {
-        GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
-        GPIO_InitStructure.GPIO_OType = (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD;
-        GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, UART3_GPIO_AF);
-        GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-        if(!(options & SERIAL_INVERTED))
-            GPIO_SetBits(UART3_GPIO, UART3_TX_PIN);   // OpenDrain output should be inactive
-    } else {
-        if (mode & MODE_TX) {
-            GPIO_InitStructure.GPIO_Pin = UART3_TX_PIN;
-            GPIO_PinAFConfig(UART3_GPIO, UART3_TX_PINSOURCE, UART3_GPIO_AF);
-            GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-        }
-
-        if (mode & MODE_RX) {
-            GPIO_InitStructure.GPIO_Pin = UART3_RX_PIN;
-            GPIO_PinAFConfig(UART3_GPIO, UART3_RX_PINSOURCE, UART3_GPIO_AF);
-            GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-        }
-    }
+    serialUARTInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOGetByTag(IO_TAG(UART3_RX_PIN)), mode, options, GPIO_AF_7);
 
 #ifdef USE_USART3_TX_DMA
     // DMA TX Interrupt
@@ -355,7 +301,6 @@ uartPort_t *serialUSART4(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx4Buffer[UART4_RX_BUFFER_SIZE];
     static volatile uint8_t tx4Buffer[UART4_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort4;
     s->port.vTable = uartVTable;
@@ -369,33 +314,9 @@ uartPort_t *serialUSART4(uint32_t baudRate, portMode_t mode, portOptions_t optio
 
     s->USARTx = UART4;
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);
+    RCC_ClockCmd(RCC_APB1(UART4), ENABLE);
 
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-
-    if (options & SERIAL_BIDIR) {
-        GPIO_InitStructure.GPIO_Pin = UART4_TX_PIN;
-        GPIO_InitStructure.GPIO_OType = (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD;
-        GPIO_PinAFConfig(UART4_GPIO, UART4_TX_PINSOURCE, UART4_GPIO_AF);
-        GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
-        if(!(options & SERIAL_INVERTED))
-            GPIO_SetBits(UART4_GPIO, UART4_TX_PIN);   // OpenDrain output should be inactive
-    } else {
-        if (mode & MODE_TX) {
-            GPIO_InitStructure.GPIO_Pin = UART4_TX_PIN;
-            GPIO_PinAFConfig(UART4_GPIO, UART4_TX_PINSOURCE, UART4_GPIO_AF);
-            GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
-        }
-
-        if (mode & MODE_RX) {
-            GPIO_InitStructure.GPIO_Pin = UART4_RX_PIN;
-            GPIO_PinAFConfig(UART4_GPIO, UART4_RX_PINSOURCE, UART4_GPIO_AF);
-            GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
-        }
-    }
+    serialUARTInit(IOGetByTag(IO_TAG(UART4_TX_PIN)), IOGetByTag(IO_TAG(UART4_RX_PIN)), mode, options, GPIO_AF_5);
 
     NVIC_InitStructure.NVIC_IRQChannel = UART4_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART4);
@@ -414,7 +335,6 @@ uartPort_t *serialUSART5(uint32_t baudRate, portMode_t mode, portOptions_t optio
     static volatile uint8_t rx5Buffer[UART5_RX_BUFFER_SIZE];
     static volatile uint8_t tx5Buffer[UART5_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
-    GPIO_InitTypeDef  GPIO_InitStructure;
 
     s = &uartPort5;
     s->port.vTable = uartVTable;
@@ -428,33 +348,9 @@ uartPort_t *serialUSART5(uint32_t baudRate, portMode_t mode, portOptions_t optio
 
     s->USARTx = UART5;
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5, ENABLE);
+    RCC_ClockCmd(RCC_APB1(UART5), ENABLE);
 
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP;
-
-    if (options & SERIAL_BIDIR) {
-        GPIO_InitStructure.GPIO_Pin = UART5_TX_PIN;
-        GPIO_InitStructure.GPIO_OType = (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD;
-        GPIO_PinAFConfig(UART5_GPIO, UART5_TX_PINSOURCE, UART5_GPIO_AF);
-        GPIO_Init(UART5_GPIO, &GPIO_InitStructure);
-        if(!(options & SERIAL_INVERTED))
-            GPIO_SetBits(UART5_GPIO, UART5_TX_PIN);   // OpenDrain output should be inactive
-    } else {
-        if (mode & MODE_TX) {
-            GPIO_InitStructure.GPIO_Pin = UART5_TX_PIN;
-            GPIO_PinAFConfig(UART5_GPIO, UART5_TX_PINSOURCE, UART5_GPIO_AF);
-            GPIO_Init(UART5_GPIO, &GPIO_InitStructure);
-        }
-
-        if (mode & MODE_RX) {
-            GPIO_InitStructure.GPIO_Pin = UART5_RX_PIN;
-            GPIO_PinAFConfig(UART5_GPIO, UART5_RX_PINSOURCE, UART5_GPIO_AF);
-            GPIO_Init(UART5_GPIO, &GPIO_InitStructure);
-        }
-    }
+    serialUARTInit(IOGetByTag(IO_TAG(UART5_TX_PIN)), IOGetByTag(IO_TAG(UART5_RX_PIN)), mode, options, GPIO_AF_5);
 
     NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART5);
