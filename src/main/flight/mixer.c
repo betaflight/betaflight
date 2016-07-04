@@ -955,7 +955,7 @@ void filterServos(void)
     if (mixerConfig->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             if (!servoFilterIsSet) {
-                biquadFilterInit(&servoFilter[servoIdx], mixerConfig->servo_lowpass_freq, targetPidLooptime);
+                biquadFilterInitLPF(&servoFilter[servoIdx], mixerConfig->servo_lowpass_freq, targetPidLooptime);
                 servoFilterIsSet = true;
             }
 

@@ -72,7 +72,7 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
     if (!vbatFilterIsInitialised) {
-        biquadFilterInit(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
     vbatSample = biquadFilterApply(&vbatFilter, vbatSample);

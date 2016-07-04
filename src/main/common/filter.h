@@ -29,9 +29,13 @@ typedef struct biquadFilter_s {
     float d1, d2;
 } biquadFilter_t;
 
+typedef enum {
+    FILTER_LPF,
+    FILTER_NOTCH
+} filterType_e;
 
-void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate);
-void biquadFilterNotchInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate, float Q);
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, filterType_e filterType);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
