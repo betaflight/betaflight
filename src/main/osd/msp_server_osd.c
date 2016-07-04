@@ -64,13 +64,6 @@ extern uint16_t cycleTime;
 static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
-const pgToMSPMapEntry_t pgToMSPMap[] = {
-    { 0, 0, 0 },
-};
-
-const uint8_t pgToMSPMapSize = ARRAYLEN(pgToMSPMap);
-
-
 void mspRebootFn(mspPort_t *msp)
 {
     waitForSerialPortToFinishTransmitting(msp->port);  // TODO - postpone reboot, allow all modules to react

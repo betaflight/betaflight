@@ -187,14 +187,6 @@ typedef enum {
     MSP_FLASHFS_BIT_SUPPORTED    = 2,
 } mspFlashfsFlags_e;
 
-const pgToMSPMapEntry_t pgToMSPMap[] =
-{
-    { PG_BOARD_ALIGNMENT, MSP_BOARD_ALIGNMENT, MSP_SET_BOARD_ALIGNMENT },
-    { PG_FAILSAFE_CONFIG, MSP_FAILSAFE_CONFIG, MSP_SET_FAILSAFE_CONFIG }
-};
-
-const uint8_t pgToMSPMapSize = ARRAYLEN(pgToMSPMap);
-
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 void msp4WayIfFn(mspPort_t *msp)
 {
@@ -817,6 +809,12 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, featureMask());
             break;
 
+        case MSP_BOARD_ALIGNMENT:
+        	sbufWriteU16(dst, boardAlignment()->rollDegrees);
+        	sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+        	sbufWriteU16(dst, boardAlignment()->yawDegrees);
+            break;
+
         case MSP_VOLTAGE_METER_CONFIG:
             sbufWriteU8(dst, batteryConfig()->vbatscale);
             sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
@@ -843,6 +841,15 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, rxConfig()->spektrum_sat_bind);
             sbufWriteU16(dst, rxConfig()->rx_min_usec);
             sbufWriteU16(dst, rxConfig()->rx_max_usec);
+            break;
+
+        case MSP_FAILSAFE_CONFIG:
+            sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
+            sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
+            sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
+            sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+            sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
+            sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
             break;
 
         case MSP_RXFAIL_CONFIG:
@@ -1319,6 +1326,12 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
             featureSet(sbufReadU32(src)); // features bitmap
             break;
 
+        case MSP_SET_BOARD_ALIGNMENT:
+            boardAlignment()->rollDegrees = sbufReadU16(src);
+            boardAlignment()->pitchDegrees = sbufReadU16(src);
+            boardAlignment()->yawDegrees = sbufReadU16(src);
+            break;
+
         case MSP_SET_VOLTAGE_METER_CONFIG:
             batteryConfig()->vbatscale = sbufReadU8(src);               // actual vbatscale as intended
             batteryConfig()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
@@ -1349,6 +1362,15 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
                 break;
             rxConfig()->rx_min_usec = sbufReadU16(src);
             rxConfig()->rx_max_usec = sbufReadU16(src);
+            break;
+
+        case MSP_SET_FAILSAFE_CONFIG:
+            failsafeConfig()->failsafe_delay = sbufReadU8(src);
+            failsafeConfig()->failsafe_off_delay = sbufReadU8(src);
+            failsafeConfig()->failsafe_throttle = sbufReadU16(src);
+            failsafeConfig()->failsafe_kill_switch = sbufReadU8(src);
+            failsafeConfig()->failsafe_throttle_low_delay = sbufReadU16(src);
+            failsafeConfig()->failsafe_procedure = sbufReadU8(src);
             break;
 
         case MSP_SET_RXFAIL_CONFIG: {

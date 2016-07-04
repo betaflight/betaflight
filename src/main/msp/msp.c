@@ -33,78 +33,10 @@
 #include "common/maths.h"
 #include "common/streambuf.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/feature.h"
-#include "config/profile.h"
-
 #include "fc/runtime_config.h"
 #include "fc/config.h"
 
 #include "msp/msp.h"
-
-// criteria is passed by value; cast as (void *)
-// TODO - the search is quadratic, the code should first map mspId to pgN, then search for pgN
-uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria)
-{
-    int mspIdForSet = (intptr_t)criteria;
-
-    for (unsigned i = 0; i < pgToMSPMapSize; i++) {
-        const pgToMSPMapEntry_t *entry = &pgToMSPMap[i];
-        if (entry->pgn == pgN(candidate) && entry->mspIdForSet == mspIdForSet) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// criteria is passed by value; cast as (void *)
-uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria)
-{
-    int mspId = (intptr_t)criteria;
-
-    for (unsigned i = 0; i < pgToMSPMapSize; i++) {
-        const pgToMSPMapEntry_t *entry = &pgToMSPMap[i];
-        if (entry->pgn == pgN(candidate) && entry->mspId == mspId) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// process commands that match registered parameter_group
-int mspServerProcessPgCommand(mspPacket_t *command, mspPacket_t *reply)
-{
-    sbuf_t *src = &command->buf;
-    sbuf_t *dst = &reply->buf;
-    int cmdLength = sbufBytesRemaining(src);
-
-    // MSP IN - read config structure
-    {
-        const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)(intptr_t)command->cmd);
-        if (reg) {
-            // this works for system and profile settings as
-            //  the profile index will be ignored by pgLoad if the reg is a system registration.
-            int stored = pgStore(reg, sbufPtr(dst), sbufBytesRemaining(dst), getCurrentProfile());
-            if(stored < 0)
-                return stored;
-            sbufAdvance(dst, stored);       // commit saved data
-            return 1;
-        }
-    }
-    // MSP OUT - write config structure
-    {
-        const pgRegistry_t *reg = pgMatcher(pgMatcherForMSPSet, (void*)(intptr_t)command->cmd);
-        if (reg != NULL) {
-            // this works for system and profile settings as
-            //  the profile index will be ignored by pgLoad if the reg is a system registration.
-            pgLoad(reg, sbufPtr(src), cmdLength, getCurrentProfile());
-            sbufAdvance(src, cmdLength);    // consume data explicitly
-            return 1;
-        }
-    }
-    return 0;
-}
 
 // handle received command, possibly generate reply.
 // return nonzero when reply was generated (including reported error)
@@ -117,8 +49,6 @@ int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply)
         if((status = mspServerProcessInCommand(command)) != 0)
             break;
         if((status = mspServerProcessOutCommand(command, reply)) != 0)
-            break;
-        if((status = mspServerProcessPgCommand(command, reply)) != 0)
             break;
         // command was not handled, return error
         status = -1;

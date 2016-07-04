@@ -47,14 +47,3 @@ int mspClientProcessCommand(mspPacket_t *command, mspPacket_t *reply);
 
 // return positive for ACK, negative on error, zero for no reply
 int mspClientProcessInCommand(mspPacket_t *cmd);
-
-// FIXME implies that MSP requires PG, probably belongs elsewhere.
-typedef struct pgToMSPMapEntry_s {
-    pgn_t pgn;
-    uint8_t mspId;
-    uint8_t mspIdForSet;
-} pgToMSPMapEntry_t;
-
-extern const pgToMSPMapEntry_t pgToMSPMap[];
-extern const uint8_t pgToMSPMapSize;
-
