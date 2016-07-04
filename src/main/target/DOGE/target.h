@@ -95,32 +95,14 @@
 #define USE_USART3
 #define SERIAL_PORT_COUNT 4
 
-// tqfp48 pin 42
-#define UART1_TX_PIN        GPIO_Pin_6
-// tqfp48 pin 43
-#define UART1_RX_PIN        GPIO_Pin_7
-#define UART1_GPIO          GPIOB
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource6
-#define UART1_RX_PINSOURCE  GPIO_PinSource7
+#define UART1_TX_PIN        PB6
+#define UART1_RX_PIN        PB7
 
-// tqfp48 pin 12
-#define UART2_TX_PIN        GPIO_Pin_2
-// tqfp48 pin 13
-#define UART2_RX_PIN        GPIO_Pin_3
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource2
-#define UART2_RX_PINSOURCE  GPIO_PinSource3
+#define UART2_TX_PIN        PA2
+#define UART2_RX_PIN        PA3
 
-// tqfp48 pin 21
-#define UART3_TX_PIN        GPIO_Pin_10
-// tqfp48 pin 22
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO          GPIOB
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10
+#define UART3_RX_PIN        PB11
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER

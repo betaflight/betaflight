@@ -144,7 +144,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(STM32F303xC) && defined(USE_USART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_RX_PIN)))
+        if (init->useUART3 && (timerHardwarePtr->tag == IO_TAG(UART3_TX_PIN) || timerHardwarePtr->tag == IO_TAG(UART3_RX_PIN)))
             continue;
 #endif
 
