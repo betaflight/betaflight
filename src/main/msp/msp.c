@@ -40,37 +40,21 @@
 
 // handle received command, possibly generate reply.
 // return nonzero when reply was generated (including reported error)
-int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply)
+int mspProcessCommand(mspPacket_t *command, mspPacket_t *reply)
 {
     // initialize reply by default
     reply->cmd = command->cmd;
-    int status;
-    do {
-        if((status = mspServerProcessInCommand(command)) != 0)
-            break;
-        if((status = mspServerProcessOutCommand(command, reply)) != 0)
-            break;
-        // command was not handled, return error
-        status = -1;
-    } while(0);
+
+    int status = mspServerCommandHandler(command, reply);
     reply->result = status;
+
     return status;
 }
 
 #ifdef USE_MSP_CLIENT
-// handle received command
-int mspClientProcessCommand(mspPacket_t *command, mspPacket_t *reply)
+void mspProcessReply(mspPacket_t *reply)
 {
-    // initialize reply by default
-    reply->cmd = command->cmd;
-    int status;
-    do {
-        if((status = mspClientProcessInCommand(command)) != 0)
-            break;
-        // command was not handled, return error
-        status = -1;
-    } while(0);
-    reply->result = status;
-    return status;
+	int status = mspClientReplyHandler(reply);
+	UNUSED(status);
 }
 #endif

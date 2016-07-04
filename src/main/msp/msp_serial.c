@@ -27,12 +27,9 @@
 #include "common/utils.h"
 
 #include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
-
-#include "flight/mixer.h"
 
 #ifdef OSD
 #include "osd/osd_serial.h"
@@ -82,16 +79,26 @@ void mspSerialAllocatePorts(void)
         }
 
         uint16_t function = portConfig->functionMask & (FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT);
+
+        uint8_t baudRatesIndex;
+
+        mspPortMode_e mode;
+        if (function & FUNCTION_MSP_SERVER) {
+        	baudRatesIndex = BAUDRATE_MSP_SERVER;
+        	mode = MSP_MODE_SERVER;
+        }
 #ifdef USE_MSP_CLIENT
-        uint8_t baudRatesIndex = function & FUNCTION_MSP_SERVER ? BAUDRATE_MSP_SERVER : BAUDRATE_MSP_CLIENT;
-#else
-        uint8_t baudRatesIndex = BAUDRATE_MSP_SERVER;
+        if (function & FUNCTION_MSP_CLIENT) {
+        	baudRatesIndex = BAUDRATE_MSP_CLIENT;
+        	mode = MSP_MODE_CLIENT;
+        }
 #endif
 
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, function, NULL,
         		baudRates[portConfig->baudRates[baudRatesIndex]], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
+            mspPort->mode = mode;
         } else {
             // unexpected error, inform user
         }
@@ -111,8 +118,10 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 
 void mspSerialInit(void)
 {
-    for(int i = 0; i < MAX_MSP_PORT_COUNT; i++)
+    for(int i = 0; i < MAX_MSP_PORT_COUNT; i++) {
         resetMspPort(&mspPorts[i], NULL);
+    }
+
     mspSerialAllocatePorts();
 }
 
@@ -123,8 +132,10 @@ static uint8_t mspSerialChecksum(uint8_t checksum, uint8_t byte)
 
 static uint8_t mspSerialChecksumBuf(uint8_t checksum, uint8_t *data, int len)
 {
-    while(len-- > 0)
+    while(len-- > 0) {
         checksum = mspSerialChecksum(checksum, *data++);
+    }
+
     return checksum;
 }
 
@@ -132,7 +143,7 @@ void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
 {
     serialBeginWrite(msp->port);
     int len = sbufBytesRemaining(&reply->buf);
-    uint8_t hdr[] = {'$', 'M', reply->result < 0 ? '!' : (reply->direction == OUTGOING ? '>' : '<'), len, reply->cmd};
+    uint8_t hdr[] = {'$', 'M', reply->result < 0 ? '!' : (msp->mode == MSP_MODE_SERVER ? '>' : '<'), len, reply->cmd};
     uint8_t csum = 0;                                       // initial checksum value
     serialWriteBuf(msp->port, hdr, sizeof(hdr));
     csum = mspSerialChecksumBuf(csum, hdr + 3, 2);          // checksum starts from len field
@@ -144,11 +155,11 @@ void mspSerialResponse(mspPort_t *msp, mspPacket_t *reply)
     serialEndWrite(msp->port);
 }
 
-
-static mspPacket_t *mspCreateMessage(void)
+STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
 {
-    static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
-    static mspPacket_t message = {
+    uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
+
+    mspPacket_t message = {
         .buf = {
             .ptr = outBuf,
             .end = ARRAYEND(outBuf),
@@ -157,49 +168,20 @@ static mspPacket_t *mspCreateMessage(void)
         .result = 0,
     };
 
-    return &message;
-}
-
-static mspPacket_t *mspCreateOutgoing(void)
-{
-    mspPacket_t *reply = mspCreateMessage();
-    reply->direction = OUTGOING;
-    return reply;
-}
-
-static mspPacket_t *mspCreateIncoming(void)
-{
-    mspPacket_t *reply = mspCreateMessage();
-    reply->direction = INCOMING;
-    return reply;
-}
-
-STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
-{
     mspPacket_t command = {
         .buf = {
             .ptr = msp->inBuf,
             .end = msp->inBuf + msp->dataSize,
         },
         .cmd = msp->cmdMSP,
-        .direction = msp->direction,
         .result = 0,
     };
 
-    mspPacket_t *reply = mspCreateOutgoing();
+    mspPacket_t *reply = &message;
 
     uint8_t *outBufHead = reply->buf.ptr;
 
-    int status = 0;
-    if (msp->direction == INCOMING) {
-        // SERVER
-        status = mspServerProcessCommand(&command, reply);
-    } else {
-#ifdef USE_MSP_CLIENT
-        // CLIENT
-        status = mspClientProcessCommand(&command, reply);
-#endif
-    }
+    int status = mspProcessCommand(&command, reply);
 
     if (status) {
         // reply should be sent back
@@ -209,6 +191,25 @@ STATIC_UNIT_TESTED void mspSerialProcessReceivedCommand(mspPort_t *msp)
 
     msp->c_state = IDLE;
 }
+
+#ifdef USE_MSP_CLIENT
+static void mspSerialProcessReceivedReply(mspPort_t *msp)
+{
+    mspPacket_t reply = {
+        .buf = {
+            .ptr = msp->inBuf,
+            .end = msp->inBuf + msp->dataSize,
+        },
+        .cmd = msp->cmdMSP,
+        .result = 0,
+    };
+
+	mspProcessReply(&reply);
+
+    msp->c_state = IDLE;
+}
+#endif
+
 
 static bool mspSerialProcessReceivedByte(mspPort_t *msp, uint8_t c)
 {
@@ -223,17 +224,20 @@ static bool mspSerialProcessReceivedByte(mspPort_t *msp, uint8_t c)
             msp->c_state = (c == 'M') ? HEADER_ARROW : IDLE;
             break;
         case HEADER_ARROW:
+            msp->c_state = IDLE;
             switch(c) {
-                case '<':
-                    msp->direction = INCOMING;
-                    msp->c_state = HEADER_SIZE;
+                case '<': // COMMAND
+                	if (msp->mode == MSP_MODE_SERVER) {
+                		msp->c_state = HEADER_SIZE;
+                	}
                     break;
-                case '>':
-                    msp->direction = OUTGOING;
-                    msp->c_state = HEADER_SIZE;
-                    break;
+                case '>': // REPLY
+                	if (msp->mode == MSP_MODE_CLIENT) {
+						msp->c_state = HEADER_SIZE;
+                	}
+					break;
                 default:
-                    msp->c_state = IDLE;
+					break;
             }
             break;
         case HEADER_SIZE:
@@ -258,7 +262,7 @@ static bool mspSerialProcessReceivedByte(mspPort_t *msp, uint8_t c)
                 checksum = mspSerialChecksum(checksum, msp->cmdMSP);
                 checksum = mspSerialChecksumBuf(checksum, msp->inBuf, msp->dataSize);
                 if(c == checksum)
-                    msp->c_state = COMMAND_RECEIVED;
+                    msp->c_state = MESSAGE_RECEIVED;
                 else
                     msp->c_state = IDLE;
             }
@@ -284,8 +288,15 @@ void mspSerialProcess(void)
                 evaluateOtherData(msp->port, c);
             }
 
-            if (msp->c_state == COMMAND_RECEIVED) {
-                mspSerialProcessReceivedCommand(msp);
+            if (msp->c_state == MESSAGE_RECEIVED) {
+            	if (msp->mode == MSP_MODE_SERVER) {
+            		mspSerialProcessReceivedCommand(msp);
+            	}
+#ifdef USE_MSP_CLIENT
+				if (msp->mode == MSP_MODE_CLIENT) {
+            		mspSerialProcessReceivedReply(msp);
+            	}
+#endif
                 break; // process one command at a time so as not to block and handle modal command immediately
             }
         }
@@ -297,14 +308,23 @@ void mspSerialProcess(void)
         // TODO consider extracting this outside the loop and create a new loop in mspClientProcess and rename mspProcess to mspServerProcess
         if (msp->c_state == IDLE && msp->commandSenderFn && !bytesWaiting) {
 
-            mspPacket_t *request = mspCreateIncoming();
+            uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
+            mspPacket_t message = {
+                .buf = {
+                    .ptr = outBuf,
+                    .end = ARRAYEND(outBuf),
+                },
+                .cmd = -1,
+                .result = 0,
+            };
+
+            mspPacket_t *request = &message;
 
             uint8_t *outBufHead = request->buf.ptr;
 
             bool shouldSend = msp->commandSenderFn(request); // FIXME rename to request builder
 
             if (shouldSend) {
-                // reply should be sent back
                 sbufSwitchToReader(&request->buf, outBufHead); // change streambuf direction
 
                 mspSerialResponse(msp, request);

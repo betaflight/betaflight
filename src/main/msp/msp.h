@@ -17,15 +17,9 @@
 
 #pragma once
 
-typedef enum {
-    INCOMING,
-    OUTGOING
-} mspMessageDirection_e;
-
 typedef struct mspPacket_s {
     sbuf_t buf;
     int16_t cmd;
-    mspMessageDirection_e direction;
     int16_t result;
 } mspPacket_t;
 
@@ -34,16 +28,15 @@ void mspInit(void);
 //
 // server
 //
-int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply);
+int mspProcessCommand(mspPacket_t *command, mspPacket_t *reply);
 
 // return positive for ACK, negative on error, zero for no reply
-int mspServerProcessInCommand(mspPacket_t *cmd);
-int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply);
+int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply);
 
 //
 // client
 //
-int mspClientProcessCommand(mspPacket_t *command, mspPacket_t *reply);
+void mspProcessReply(mspPacket_t *reply);
 
-// return positive for ACK, negative on error, zero for no reply
-int mspClientProcessInCommand(mspPacket_t *cmd);
+// return positive for ACK, negative on error
+int mspClientReplyHandler(mspPacket_t *reply);

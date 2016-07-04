@@ -73,7 +73,7 @@ TEST(IoSerialTest, TestFindPortConfig)
     serialInit(true);
 
     // and
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP_SERVER);
 
     // then
     EXPECT_EQ(NULL, portConfig);

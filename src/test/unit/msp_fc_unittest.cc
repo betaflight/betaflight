@@ -89,9 +89,6 @@ extern "C" {
 
 
 extern "C" {
-    uint8_t pgMatcherForMSPSet(const pgRegistry_t *candidate, const void *criteria);
-    uint8_t pgMatcherForMSP(const pgRegistry_t *candidate, const void *criteria);
-
     PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
@@ -173,7 +170,7 @@ TEST_F(MspTest, TestMsp_API_VERSION)
 {
     cmd.cmd = MSP_API_VERSION;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(3, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_API_VERSION, reply.cmd);
@@ -186,7 +183,7 @@ TEST_F(MspTest, TestMsp_FC_VARIANT)
 {
     cmd.cmd = MSP_FC_VARIANT;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(FLIGHT_CONTROLLER_IDENTIFIER_LENGTH, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_FC_VARIANT, reply.cmd);
@@ -200,7 +197,7 @@ TEST_F(MspTest, TestMsp_FC_VERSION)
 {
     cmd.cmd = MSP_FC_VERSION;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(FLIGHT_CONTROLLER_VERSION_LENGTH, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_FC_VERSION, reply.cmd);
@@ -216,7 +213,7 @@ TEST_F(MspTest, TestMsp_PID_CONTROLLER)
 
     cmd.cmd = MSP_PID_CONTROLLER;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(1, reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_PID_CONTROLLER, reply.cmd);
@@ -231,7 +228,7 @@ TEST_F(MspTest, TestMsp_SET_PID_CONTROLLER)
     cmd.cmd = MSP_SET_PID_CONTROLLER;
     *cmd.buf.end++ = PID_CONTROLLER_MWREWRITE;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(PID_CONTROLLER_MWREWRITE, pidProfile()->pidController);
 }
@@ -305,7 +302,7 @@ TEST_F(MspTest, TestMsp_PID)
     // use the MSP to write out the PID values
     cmd.cmd = MSP_PID;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(3 * PID_ITEM_COUNT, reply.buf.ptr - rbuf) << "Reply size";
     // check few values, just to make sure they have been written correctly
@@ -321,7 +318,7 @@ TEST_F(MspTest, TestMsp_PID)
     copyReplyDataToCmd();
     resetReply();
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     // check the values are as expected
     EXPECT_EQ(P8_ROLL, pidProfile()->P8[PIDROLL]);
@@ -355,13 +352,8 @@ TEST_F(MspTest, TestMsp_PID)
 }
 
 
-TEST_F(MspTest, TestParameterGroup_BOARD_ALIGNMENT)
+TEST_F(MspTest, TestMsp_BOARD_ALIGNMENT)
 {
-    // check that pgRegistry mapping is setup correctly
-    const pgRegistry_t *reg = pgMatcher(pgMatcherForMSP, (void*)(intptr_t)MSP_BOARD_ALIGNMENT);
-    EXPECT_NE(static_cast<const pgRegistry_t*>(0), reg);
-    EXPECT_EQ(reinterpret_cast<boardAlignment_t*>(reg->address), boardAlignment());
-
     const boardAlignment_t testBoardAlignment = {295, 147, -202};
 
     *boardAlignment() = testBoardAlignment;
@@ -369,7 +361,7 @@ TEST_F(MspTest, TestParameterGroup_BOARD_ALIGNMENT)
 
     cmd.cmd = MSP_BOARD_ALIGNMENT;
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     EXPECT_EQ(sizeof(boardAlignment_t), reply.buf.ptr - rbuf) << "Reply size";
     EXPECT_EQ(MSP_BOARD_ALIGNMENT, reply.cmd);
@@ -379,17 +371,12 @@ TEST_F(MspTest, TestParameterGroup_BOARD_ALIGNMENT)
     // reset test values to zero, so we can check if they get read properly
     memset(boardAlignment(), 0, sizeof(*boardAlignment()));
 
-    // check that pgRegistry mapping is setup correctly
-    const pgRegistry_t *regSet = pgMatcher(pgMatcherForMSPSet, (void*)(intptr_t)MSP_SET_BOARD_ALIGNMENT);
-    EXPECT_NE(static_cast<const pgRegistry_t*>(0), regSet);
-    EXPECT_EQ(reinterpret_cast<boardAlignment_t*>(regSet->address), boardAlignment());
-
     // now use the MSP to set the values and check they are the same
     cmd.cmd = MSP_SET_BOARD_ALIGNMENT;
     copyReplyDataToCmd();
     resetReply();
 
-    EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
     // check the values are as expected
     EXPECT_FLOAT_EQ(testBoardAlignment.rollDegrees, boardAlignment()->rollDegrees);
@@ -480,7 +467,7 @@ TEST_F(MspTest, TestMspCommands)
         resetPackets();
         cmd.cmd = outMessages[ii];
 
-        EXPECT_GT(mspServerProcessCommand(&cmd, &reply), 0);
+        EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
 
         EXPECT_EQ(outMessages[ii], reply.cmd) << "Command index " << ii;
         EXPECT_LT(0, reply.result) << "Command index " << ii;

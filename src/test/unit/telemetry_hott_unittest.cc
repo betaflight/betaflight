@@ -221,7 +221,7 @@ void closeSerialPort(serialPort_t *serialPort) {
     UNUSED(serialPort);
 }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
+serialPortConfig_t *findSerialPortConfig(uint16_t function) {
     UNUSED(function);
 
     return NULL;

@@ -64,7 +64,7 @@ typedef enum {
     HEADER_SIZE,
     HEADER_CMD,
     HEADER_DATA,
-    COMMAND_RECEIVED
+    MESSAGE_RECEIVED
 } mspState_e;
 
 typedef bool (*mspCommandSenderFuncPtr)(); // msp command sender function prototype
@@ -72,11 +72,16 @@ typedef bool (*mspCommandSenderFuncPtr)(); // msp command sender function protot
 #define MSP_PORT_INBUF_SIZE 64
 #define MSP_PORT_OUTBUF_SIZE 256
 
+typedef enum {
+    MSP_MODE_SERVER,
+    MSP_MODE_CLIENT
+} mspPortMode_e;
+
 typedef struct mspPort_s {
     serialPort_t *port;                      // NULL when unused.
+    mspPortMode_e mode;
 
     mspCommandSenderFuncPtr commandSenderFn;   // NULL when unused.
-    mspMessageDirection_e direction;
 
     mspState_e c_state;
     uint8_t offset;

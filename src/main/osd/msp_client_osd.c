@@ -95,17 +95,17 @@ void mspClientProcess(void)
     mspClientStatus.timeoutOccured = (cmp32(now, mspClientStatus.lastReplyAt) >= MSP_CLIENT_TIMEOUT_INTERVAL);
 }
 
-// return positive for ACK, negative on error, zero for no reply
-int mspClientProcessInCommand(mspPacket_t *cmd)
+// return positive for ACK, negative on error
+int mspClientReplyHandler(mspPacket_t *reply)
 {
-    sbuf_t * src = &cmd->buf;
+    sbuf_t * src = &reply->buf;
     int len = sbufBytesRemaining(src);
 
     mspClientStatus.lastReplyAt = micros();
 
     UNUSED(len);
 
-    switch (cmd->cmd) {
+    switch (reply->cmd) {
         case MSP_STATUS:
             fcStatus.cycleTime = sbufReadU16(src);
             fcStatus.i2cErrors = sbufReadU16(src);
@@ -128,10 +128,10 @@ int mspClientProcessInCommand(mspPacket_t *cmd)
         break;
 
         default:
-            // we do not know how to handle the (valid) message, try another message handler
-            return 0;
+            // we do not know how to handle the message
+            return -1;
     }
-    return 1;     // message was handled succesfully
+    return 1;
 }
 
 

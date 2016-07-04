@@ -155,7 +155,7 @@ uint8_t msp_echo_data[]="PING\0PONG";
 uint8_t msp_request_data[]={0xbe, 0xef};
 uint8_t msp_reply_data[]={0x55,0xaa};
 
-int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply)
+int mspServerCommandHandler(mspPacket_t *command, mspPacket_t *reply)
 {
     sbuf_t *src = &command->buf;
     sbuf_t *dst = &reply->buf;
@@ -180,7 +180,7 @@ int mspServerProcessCommand(mspPacket_t *command, mspPacket_t *reply)
     return 1;
 }
 
-int mspClientProcessCommand(mspPacket_t *command, mspPacket_t *reply)
+int mspClientReplyHandler(mspPacket_t *command, mspPacket_t *reply)
 {
     UNUSED(command);
     UNUSED(reply);

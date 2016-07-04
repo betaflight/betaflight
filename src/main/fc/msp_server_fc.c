@@ -480,11 +480,12 @@ static void serializeDataflashReadReply(mspPacket_t *reply, uint32_t address, in
 #endif
 
 // return positive for ACK, negative on error, zero for no reply
-int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
+int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 {
     sbuf_t *dst = &reply->buf;
     sbuf_t *src = &cmd->buf;
-    UNUSED(src);
+
+    int len = sbufBytesRemaining(src);
 
     switch (cmd->cmd) {
         case MSP_API_VERSION:
@@ -1007,19 +1008,6 @@ int mspServerProcessOutCommand(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 #endif
 
-        default:
-            return 0;   // unknown command
-    }
-    return 1;           // command processed
-}
-
-// return positive for ACK, negative on error, zero for no reply
-int mspServerProcessInCommand(mspPacket_t *cmd)
-{
-    sbuf_t * src = &cmd->buf;
-    int len = sbufBytesRemaining(src);
-
-    switch (cmd->cmd) {
         case MSP_SELECT_SETTING:
             if (!ARMING_FLAG(ARMED)) {
                 int profile = sbufReadU8(src);
@@ -1498,10 +1486,10 @@ int mspServerProcessInCommand(mspPacket_t *cmd)
             break;
 
         default:
-            // we do not know how to handle the (valid) message, try another message handler
-            return 0;
+            // we do not know how to handle the message
+            return -1;
     }
-    return 1;     // message was handled succesfully
+    return 1;     // message was handled successfully
 }
 
 void mspInit(void)

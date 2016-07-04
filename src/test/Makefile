@@ -789,6 +789,7 @@ $(OBJECT_DIR)/msp_serial_unittest : \
 	$(OBJECT_DIR)/common/streambuf.o \
 	$(OBJECT_DIR)/build/version.o \
 	$(OBJECT_DIR)/io/serial.o \
+	$(OBJECT_DIR)/msp/msp.o \
 	$(OBJECT_DIR)/msp/msp_serial.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
 	$(OBJECT_DIR)/config/parameter_group.o \
