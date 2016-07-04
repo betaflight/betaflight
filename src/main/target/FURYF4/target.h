@@ -17,13 +17,10 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FYF4" //Call it a revo for now so it connects to RFC for testing.
+#define TARGET_BOARD_IDENTIFIER "FYF4"
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-#define CONFIG_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
-#define CONFIG_MSP_PORT 2
-#define CONFIG_RX_SERIAL_PORT 1
 
-#define USBD_PRODUCT_STRING "FURYF4"
+#define USBD_PRODUCT_STRING "FuryF4"
 
 #define LED0 PB5
 #define LED1 PB4
@@ -67,8 +64,8 @@
 #define SDCARD_DETECT_INVERTED
 
 #define SDCARD_DETECT_PIN                   PD2
-#define SDCARD_SPI_INSTANCE                 SPI3
-#define SDCARD_SPI_CS_PIN                   PB3
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_PIN                   PB12
 
 /*
 #define SDCARD_DETECT_PIN                   PD2
@@ -86,10 +83,17 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
+
+//#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
+//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
+//#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+//#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -149,10 +153,18 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+
+#define SPEKTRUM_BIND
+// USART3 Rx, PB11
+#define BIND_PIN             PB11
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTD (BIT(2))
 
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
 
