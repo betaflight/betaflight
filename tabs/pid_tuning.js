@@ -312,9 +312,9 @@ TABS.pid_tuning.initialize = function (callback) {
         }
     }
 
-    function drawAxes(curveContext, width, height) {
+    function drawAxes(curveContext, width, height, scaleHeight) {
         curveContext.strokeStyle = '#000000';
-        curveContext.lineWidth = 1;
+        curveContext.lineWidth = 4;
 
         // Horizontal
         curveContext.beginPath();
@@ -327,104 +327,31 @@ TABS.pid_tuning.initialize = function (callback) {
         curveContext.moveTo(width / 2, 0);
         curveContext.lineTo(width / 2, height);
         curveContext.stroke();
-    }
 
-    function constrain(value, min, max) {
-        return Math.max(min, Math.min(value, max));
-    }
-
-    function rcCommand(rcData, rcRate, rcExpo, midRc) {
-        var tmp = Math.min(Math.abs(rcData - midRc), 500) / 100;
-
-	var result = ((2500 + rcExpo * (tmp * tmp - 25)) * tmp * rcRate / 2500).toFixed(0);
-	if (rcData < midRc) {
-            result = -result;
-        }
-
-        return result;
-    }
-
-    function rcCommandRawToDegreesPerSecond(value, rate, rcRate, superExpoActive) {
-        var angleRate;
-        if (superExpoActive) {
-            var rcFactor = Math.abs(value) / (500 * rcRate / 100);
-            rcFactor = 1 / constrain(1 - rcFactor * rate / 100, 0.01, 1);
-
-            angleRate = rcFactor * 27 * value / 16;
-        } else {
-            angleRate = (rate + 27) * value / 16;
-        }
-
-        angleRate = constrain(angleRate, -8190, 8190); // Rate limit protection
-        return angleRate >> 2; // the shift by 2 is to counterbalance the divide by 4 that occurs on the gyro to calculate the error
-    };
-
-    function drawRateCurve(rcRateElement, rateElement, rcExpoElement, curveContext, width, height, superExpoActive) {
-		var rcRate = parseFloat(rcRateElement.val());
-        var rate = parseFloat(rateElement.val());
-        var rcExpo = parseFloat(rcExpoElement.val());
-
-        // local validation to deal with input event
-        if (rcRate >= parseFloat(rcRateElement.prop('min')) &&
-            rcRate <= parseFloat(rcRateElement.prop('max')) &&
-            rate >= parseFloat(rateElement.prop('min')) &&
-            rate <= parseFloat(rateElement.prop('max')) &&
-            rcExpo >= parseFloat(rcExpoElement.prop('min')) &&
-            rcExpo <= parseFloat(rcExpoElement.prop('max'))) {
-
-            rcRate = rcRate * 100;
-            rate = rate * 100;
-            rcExpo = rcExpo * 100;
-
-            var minRc = 1000;
-            var midRc = 1500;
-            var maxRc = 2000;
-
-            var canvasHeightScale = height / Math.abs(
-                rcCommandRawToDegreesPerSecond(rcCommand(maxRc, rcRate, rcExpo, midRc), rate, rcRate, superExpoActive)
-                - rcCommandRawToDegreesPerSecond(rcCommand(minRc, rcRate, rcExpo, midRc), rate, rcRate, superExpoActive));
-
-            curveContext.save();
-            curveContext.translate(width / 2, height / 2);
+        if (scaleHeight <= height / 2) {
+            curveContext.strokeStyle = '#202020';
+            curveContext.lineWidth = 1;
 
             curveContext.beginPath();
-            var rcData = minRc;
-            curveContext.moveTo(-500, -canvasHeightScale * rcCommandRawToDegreesPerSecond(rcCommand(rcData, rcRate, rcExpo, midRc), rate, rcRate, superExpoActive));
-            rcData = rcData + 1;
-            while (rcData <= maxRc) {
-                curveContext.lineTo(rcData - midRc, -canvasHeightScale * rcCommandRawToDegreesPerSecond(rcCommand(rcData, rcRate, rcExpo, midRc), rate, rcRate, superExpoActive));
-
-		rcData = rcData + 1;
-            }
+            curveContext.moveTo(0, height / 2 + scaleHeight);
+            curveContext.lineTo(width, height / 2 + scaleHeight);
             curveContext.stroke();
 
-	    curveContext.restore();
+            curveContext.beginPath();
+            curveContext.moveTo(0, height / 2 - scaleHeight);
+            curveContext.lineTo(width, height / 2 - scaleHeight);
+            curveContext.stroke();
         }
     }
 
-    function drawLegacyRateCurve(rcRateElement, rateElement, rcExpoElement, curveContext, width, height) {
-        var rcRate = parseFloat(rcRateElement.val());
-        var rate = parseFloat(rateElement.val());
-        var rcExpo = parseFloat(rcExpoElement.val());
-
-        // local validation to deal with input event
-        if (rcRate >= parseFloat(rcRateElement.prop('min')) &&
-            rcRate <= parseFloat(rcRateElement.prop('max')) &&
-            rate >= parseFloat(rateElement.prop('min')) &&
-            rate <= parseFloat(rateElement.prop('max')) &&
-            rcExpo >= parseFloat(rcExpoElement.prop('min')) &&
-            rcExpo <= parseFloat(rcExpoElement.prop('max'))) {
-
-            // math magic by englishman
-            var rateY = height * rcRate;
-            rateY = rateY + (1 / (1 - ((rateY / height) * rate)))
-
-            // draw
-            curveContext.beginPath();
-            curveContext.moveTo(0, height);
-            curveContext.quadraticCurveTo(width * 11 / 20, height - ((rateY / 2) * (1 - rcExpo)), width, height - rateY);
-            curveContext.stroke();
+    function checkInput(element) {
+        var value = parseFloat(element.val());
+        if (value < parseFloat(element.prop('min'))
+            || value > parseFloat(element.prop('max'))) {
+            value = undefined;
         }
+
+        return value;
     }
 
     function process_html() {
@@ -472,7 +399,6 @@ TABS.pid_tuning.initialize = function (callback) {
 
         var pidController_e = $('select[name="controller"]');
 
-
         var pidControllerList;
 
         if (semver.lt(CONFIG.apiVersion, "1.14.0")) {
@@ -495,7 +421,6 @@ TABS.pid_tuning.initialize = function (callback) {
         for (var i = 0; i < pidControllerList.length; i++) {
             pidController_e.append('<option value="' + (i) + '">' + pidControllerList[i].name + '</option>');
         }
-
 
         var form_e = $('#pid-tuning');
 
@@ -521,30 +446,38 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // Getting the DOM elements for curve display
 	var rcRateElement = $('.pid_tuning input[name="rc_rate"]');
-        var rcRateElementYaw;
+        var rcRateYawElement;
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            rcRateElementYaw = $('.pid_tuning input[name="rc_rate_yaw"]');
+            rcRateYawElement = $('.pid_tuning input[name="rc_rate_yaw"]');
         } else {
-            rcRateElementYaw = rcRateElement;
+            rcRateYawElement = rcRateElement;
         }
 
-        var rateElementRoll = $('.pid_tuning input[name="roll_rate"]');
-        var rateElementPitch = $('.pid_tuning input[name="pitch_rate"]');
-        var rateElementYaw = $('.pid_tuning input[name="yaw_rate"]');
+        var rateRollElement = $('.pid_tuning input[name="roll_rate"]');
+        var ratePitchElement = $('.pid_tuning input[name="pitch_rate"]');
+        var rateYawElement = $('.pid_tuning input[name="yaw_rate"]');
 
         var rcExpoElement = $('.pid_tuning input[name="rc_expo"]');
-        var yawExpoElement = $('.pid_tuning input[name="rc_yaw_expo"]');
+        var rcExpoYawElement = $('.pid_tuning input[name="rc_yaw_expo"]');
 
         var rcCurveElement = $('.rate_curve canvas').get(0);
         var curveContext = rcCurveElement.getContext("2d");
         rcCurveElement.width = 1000;
         rcCurveElement.height = 1000;
 
+	var maxAngularVelRollElement = $('.rc_curve .maxAngularVelRoll');
+	var maxAngularVelPitchElement = $('.rc_curve .maxAngularVelPitch');
+	var maxAngularVelYawElement = $('.rc_curve .maxAngularVelYaw');
+
         var superExpoElement = $('.rc_curve input[name="show_superexpo_rates"]');
 
+	var useLegacyCurve = false;
         if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
-            $('.pid_tuning .super_expo_checkbox').hide();
+            $('.pid_tuning .new_rates').hide();
+            useLegacyCurve = true;
         }
+
+	var rateCurve = new RateCurve(useLegacyCurve);
 
         // UI Hooks
         // curves
@@ -555,34 +488,45 @@ TABS.pid_tuning.initialize = function (callback) {
 
 		var useSuperExpo = superExpoElement.is(':checked');
 
+                var rateRoll = checkInput(rateRollElement);
+                var ratePitch = checkInput(ratePitchElement);
+                var rateYaw = checkInput(rateYawElement);
+                var rcRate = checkInput(rcRateElement);
+                var rcRateYaw = checkInput(rcRateYawElement);
+                var rcExpo = checkInput(rcExpoElement);
+                var rcExpoYaw = checkInput(rcExpoYawElement);
+
+                var maxAngularVelRoll = rateCurve.getMaxAngularVel(rateRoll, rcRate, rcExpo, useSuperExpo);
+		maxAngularVelRollElement.text(maxAngularVelRoll);
+                var maxAngularVelPitch = rateCurve.getMaxAngularVel(ratePitch, rcRate, rcExpo, useSuperExpo);
+		maxAngularVelPitchElement.text(maxAngularVelPitch);
+                var maxAngularVelYaw = rateCurve.getMaxAngularVel(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo);
+		maxAngularVelYawElement.text(maxAngularVelYaw);
+		var maxAngularVel = Math.max(maxAngularVelRoll, maxAngularVelPitch, maxAngularVelYaw);
+
                 curveContext.clearRect(0, 0, curveWidth, curveHeight);
 
-                var drawingFunc;
-                if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
-                    drawingFunc = drawLegacyRateCurve;
-                } else {
-		    drawAxes(curveContext, curveWidth, curveHeight);
-
-                    drawingFunc = drawRateCurve;
+                if (!useLegacyCurve) {
+                    drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
                 }
 
                 curveContext.lineWidth = 4;
 
                 curveContext.save();
                 curveContext.strokeStyle = '#ff0000';
-                drawingFunc(rcRateElement, rateElementRoll, rcExpoElement, curveContext, curveWidth, curveHeight, useSuperExpo);
+                rateCurve.draw(rateRoll, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
 
                 curveContext.save();
                 curveContext.translate(0, -4);
                 curveContext.strokeStyle = '#00ff00';
-                drawingFunc(rcRateElement, rateElementPitch, rcExpoElement, curveContext, curveWidth, curveHeight, useSuperExpo);
+                rateCurve.draw(ratePitch, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
 
                 curveContext.save();
                 curveContext.strokeStyle = '#0000ff';
-                curveContext.translate(0, -4);
-                drawingFunc(rcRateElementYaw, rateElementYaw, yawExpoElement, curveContext, curveWidth, curveHeight, useSuperExpo);
+                curveContext.translate(0, 4);
+                rateCurve.draw(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
             }, 0);
         };
