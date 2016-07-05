@@ -117,13 +117,13 @@ void adcInit(drv_adc_config_t *init)
     }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
+#ifdef CURRENT_METER_ADC_PIN
     if (init->enableCurrentMeter) {
         adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
     }
 #endif
 
-#ifdef EXTERNAL1_ADC_GPIO
+#ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
         adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
     }
