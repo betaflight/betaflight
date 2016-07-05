@@ -80,13 +80,10 @@ void mspSerialAllocatePorts(void)
 
         uint16_t function = portConfig->functionMask & (FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT);
 
-        uint8_t baudRatesIndex;
+        // assume server unless the function indicates client.
+        uint8_t baudRatesIndex = BAUDRATE_MSP_SERVER;
+        mspPortMode_e mode = MSP_MODE_SERVER;
 
-        mspPortMode_e mode;
-        if (function & FUNCTION_MSP_SERVER) {
-        	baudRatesIndex = BAUDRATE_MSP_SERVER;
-        	mode = MSP_MODE_SERVER;
-        }
 #ifdef USE_MSP_CLIENT
         if (function & FUNCTION_MSP_CLIENT) {
         	baudRatesIndex = BAUDRATE_MSP_CLIENT;
