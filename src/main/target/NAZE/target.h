@@ -172,7 +172,7 @@
 // alternative defaults for AlienFlight F1 target
 #undef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
-#define ALIENFLIGHT
+#define TARGET_CONFIG
 
 #undef BOARD_HAS_VOLTAGE_DIVIDER
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE

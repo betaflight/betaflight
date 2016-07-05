@@ -17,6 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "AFF4"
+#define TARGET_CONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -152,9 +153,6 @@
 //#define WS2811_TIMER                  TIM8
 //#define WS2811_DMA_CHANNEL            DMA1_Channel3
 //#define WS2811_IRQ                    DMA1_Channel3_IRQn
-
-// alternative defaults for AlienFlight F4 target
-#define ALIENFLIGHT
 
 #define SPEKTRUM_BIND
 // USART2, PA3
