@@ -1366,8 +1366,11 @@
     "firmwareFlasherNoReboot": {
         "message": "No reboot sequence"
     },
-    "firmwareFlasherOnlineReleasesDescription": {
-        "message": "Available online firmware releases - Select the correct firmware appropriate for your board."
+    "firmwareFlasherOnlineSelectBoardDescription": {
+        "message": "Select your board to see available online firmware releases - Select the correct firmware appropriate for your board."
+    },
+    "firmwareFlasherOnlineSelectFirmwareVersionDescription": {
+        "message": "Select firmware version for your board."
     },
     "firmwareFlasherNoRebootDescription": {
         "message": "Enable if you powered your FC while the bootloader pins are jumpered or have your FC's BOOT button pressed."
@@ -1404,6 +1407,15 @@
     },
     "firmwareFlasherOptionLabelSelectFirmware": {
         "message": "Choose a Firmware / Board"
+    },
+    "firmwareFlasherOptionLabelSelectBoard": {
+        "message": "Choose a Board"
+    },
+    "firmwareFlasherOptionLabelSelectFirmwareVersion": {
+        "message": "Choose a Firmware version"
+    },
+    "firmwareFlasherOptionLabelSelectFirmwareVersionFor": {
+        "message": "Choose a Firmware version for"
     },
     "firmwareFlasherButtonLoadLocal": {
         "message": "Load Firmware [Local]"
