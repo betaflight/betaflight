@@ -44,6 +44,27 @@ TABS.firmware_flasher.initialize = function (callback) {
             versions_e.append($("<option value='0'>{0}</option>".format(chrome.i18n.getMessage('firmwareFlasherOptionLabelSelectFirmwareVersion'))));
 
             var releases = {};
+            var unsortedReleases = {};
+            var sortedTargets = [];
+            var unsortedTargets = [];
+            TABS.firmware_flasher.releasesData.forEach(function(release){
+                release.assets.forEach(function(asset){
+                    var targetFromFilenameExpression = /betaflight_([\d.]+)?_?([^.]+)\.(.*)/;
+                    var match = targetFromFilenameExpression.exec(asset.name);
+
+                    if ((!showDevReleases && release.prerelease) || !match) {
+                        return;
+                    }
+                    var target = match[2];
+                    if($.inArray(target, unsortedTargets) == -1) {
+                        unsortedTargets.push(target);
+                    }
+                });
+                sortedTargets = unsortedTargets.sort();
+            });
+            sortedTargets.forEach(function(release) {
+                releases[release] = [];
+            });
 
             TABS.firmware_flasher.releasesData.forEach(function(release){
 
@@ -55,11 +76,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                     var targetFromFilenameExpression = /betaflight_([\d.]+)?_?([^.]+)\.(.*)/;
                     var match = targetFromFilenameExpression.exec(asset.name);
 
-                    if (!showDevReleases && release.prerelease) {
-                        return;
-                    }
-
-                    if (!match) {
+                    if ((!showDevReleases && release.prerelease) || !match) {
                         return;
                     }
 
@@ -76,7 +93,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
                     var descriptor = {
                         "releaseUrl": release.html_url,
-                        "name"      : semver.clean(release.name),
+                        "name"      : version,
                         "version"   : version,
                         "url"       : asset.browser_download_url,
                         "file"      : asset.name,
@@ -85,19 +102,25 @@ TABS.firmware_flasher.initialize = function (callback) {
                         "notes"     : release.body,
                         "status"    : release.prerelease ? "release-candidate" : "stable"
                     };
-
-                    if (typeof releases[target] === "undefined") {
-                        releases[target] = [];
-                        var select_e =
-                                $("<option value='{0}'>{0}</option>".format(
-                                        descriptor.target
-                                )).data('summary', descriptor);
-
-                        boards_e.append(select_e);
-                    }
                     releases[target].push(descriptor);
                 });
             });
+            var selectTargets = [];
+            Object.keys(releases)
+                .sort()
+                .forEach(function(target, i) {
+                    var descriptors = releases[target];
+                    descriptors.forEach(function(descriptor){
+                        if($.inArray(target, selectTargets) == -1) {
+                            selectTargets.push(target);
+                            var select_e =
+                                    $("<option value='{0}'>{0}</option>".format(
+                                            descriptor.target
+                                    )).data('summary', descriptor);
+                            boards_e.append(select_e);
+                        }
+                    });
+                });
             TABS.firmware_flasher.releases = releases;
         };
 
