@@ -42,7 +42,6 @@
             <div class="clear-both"></div>
             <div class="cf_column twothird">
                 <div class="gui_box grey">
-                  <div class="helpicon cf_tip" i18n_title="PIDTuningTip"></div>
                     <table class="pid_titlebar">
                         <tr>
                             <th class="name" i18n="pidTuningName"></th>
@@ -57,7 +56,10 @@
                     <table id="pid_main" class="pid_tuning">
                         <tr>
                             <th colspan="8">
-                                <div class="pid_mode" i18n="pidTuningBasic"></div>
+                                <div class="pid_mode">
+                                    <div i18n="pidTuningBasic" style="float:left;"></div>
+                                    <div class="helpicon cf_tip" i18n_title="PIDTuningTip"></div>
+                                </div>
                             </th>
                         </tr>
                         <tr class="ROLL">
@@ -250,13 +252,17 @@
                     <table class="cf">
                         <thead>
                             <tr>
-                                <th i18n="pidTuningRatesCurve"></th>
+                                <th>
+                                    <div>
+                                        <div i18n="pidTuningRatesCurve" style="float:left;"></div>
+                                        <div class="helpicon cf_tip" i18n_title="pidTuningRatesTip"></div>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                 <div class="helpicon cf_tip" i18n_title="pidTuningRatesTip"></div>
                                     <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
                                         <div class="rate_curve">
                                             <canvas height="120px" style="width: 100%; height: 100%"></canvas>
