@@ -796,6 +796,15 @@
     "pidTuningRatesCurve": {
 	"message": "Rates"
     },
+    "pidTuningMaxAngularVelRoll": {
+	"message": "Max roll speed (deg/s):"
+    },
+    "pidTuningMaxAngularVelPitch": {
+	"message": "Max pitch speed (deg/s):"
+    },
+    "pidTuningMaxAngularVelYaw": {
+	"message": "Max yaw speed (deg/s):"
+    },
     "throttle": {
 	"message": "Throttle"
     },
