@@ -59,7 +59,7 @@ typedef struct master_t {
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
     uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
-    uint8_t gyro_soft_notch_hz;             // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
     uint8_t gyro_soft_notch_q;              // Biquad gyro notch quality
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)

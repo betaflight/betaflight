@@ -46,12 +46,12 @@ static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
-static uint8_t gyroSoftNotchHz;
+static uint16_t gyroSoftNotchHz;
 static uint8_t gyroSoftNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint8_t gyro_soft_notch_hz, uint8_t gyro_soft_notch_q)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint8_t gyro_soft_notch_q)
 {
     gyroConfig = gyroConfigToUse;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
