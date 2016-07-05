@@ -747,7 +747,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
-        //serialize16(averageSystemLoadPercent);
+        serialize16(constrain(averageSystemLoadPercent, 0, 100));
         break;
 
     case MSP_STATUS:
