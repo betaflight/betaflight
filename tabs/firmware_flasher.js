@@ -44,7 +44,6 @@ TABS.firmware_flasher.initialize = function (callback) {
             versions_e.append($("<option value='0'>{0}</option>".format(chrome.i18n.getMessage('firmwareFlasherOptionLabelSelectFirmwareVersion'))));
 
             var releases = {};
-            var unsortedReleases = {};
             var sortedTargets = [];
             var unsortedTargets = [];
             TABS.firmware_flasher.releasesData.forEach(function(release){
