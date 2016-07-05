@@ -25,9 +25,9 @@
 #define USE_EXTI
 #define CONFIG_PREFER_ACC_ON
  
-#define LED0 	    PC14
+#define LED0        PC14
 
-#define BEEPER 		PC15
+#define BEEPER      PC15
 #define BEEPER_INVERTED
 
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
@@ -156,16 +156,10 @@
 #define CURRENT_METER_ADC_PIN       PA2
 
 #define LED_STRIP
-#define LED_STRIP_TIMER                 TIM1
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_6
-#define WS2811_PIN                      GPIO_Pin_8
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
@@ -175,8 +169,8 @@
 #define SONAR_ECHO_PIN      PB1
 #define SONAR_TRIGGER_PIN   PB0
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES FEATURE_BLACKBOX
+#define DEFAULT_FEATURES        FEATURE_BLACKBOX
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -188,7 +182,7 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTF	(BIT(4))
+#define TARGET_IO_PORTF (BIT(4))
 
 #define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))
 

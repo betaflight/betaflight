@@ -92,9 +92,9 @@ void hcsr04_init(sonarRange_t *sonarRange)
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
 #ifdef USE_EXTI
-	EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
-	EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
-	EXTIEnable(echoIO, true);
+    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
+    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
+    EXTIEnable(echoIO, true);
 #endif
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()

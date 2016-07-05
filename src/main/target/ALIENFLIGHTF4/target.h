@@ -17,6 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "AFF4"
+#define TARGET_CONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -146,21 +147,12 @@
 
 // LED strip configuration using RC5 pin.
 //#define LED_STRIP
-//#define LED_STRIP_TIMER               TIM8
 
 //#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-//#define WS2811_GPIO                   GPIOB
-//#define WS2811_GPIO_AHB_PERIPHERAL    RCC_AHBPeriph_GPIOB
-//#define WS2811_GPIO_AF                GPIO_AF_3
-//#define WS2811_PIN                    GPIO_Pin_15 // TIM8_CH3
-//#define WS2811_PIN_SOURCE             GPIO_PinSource15
+//#define WS2811_PIN                    PB15 // TIM8_CH3
 //#define WS2811_TIMER                  TIM8
-//#define WS2811_TIMER_APB2_PERIPHERAL  RCC_APB2Periph_TIM8
 //#define WS2811_DMA_CHANNEL            DMA1_Channel3
 //#define WS2811_IRQ                    DMA1_Channel3_IRQn
-
-// alternative defaults for AlienFlight F4 target
-#define ALIENFLIGHT
 
 #define SPEKTRUM_BIND
 // USART2, PA3
@@ -173,8 +165,10 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define BRUSHED_MOTORS
-#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES (FEATURE_MOTOR_STOP | FEATURE_BLACKBOX)
+#define DEFAULT_FEATURES        (FEATURE_MOTOR_STOP | FEATURE_BLACKBOX)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
+#define SERIALRX_UART           SERIAL_PORT_USART3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

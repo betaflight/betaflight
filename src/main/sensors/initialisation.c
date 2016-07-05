@@ -79,8 +79,9 @@ extern float magneticDeclination;
 extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
+extern sensor_align_e gyroAlign;
 
-uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
@@ -483,27 +484,12 @@ static void detectMag(magSensor_e magHardwareToUse)
 #ifdef USE_MAG_HMC5883
     const hmc5883Config_t *hmc5883Config = 0;
 
-#ifdef NAZE
+#ifdef NAZE // TODO remove this target specific define
     static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
-            .gpioPin = Pin_12,
-            .gpioPort = GPIOB,
-
-            /* Disabled for v4 needs more work.
-            .exti_port_source = GPIO_PortSourceGPIOB,
-            .exti_pin_source = GPIO_PinSource12,
-            .exti_line = EXTI_Line12,
-            .exti_irqn = EXTI15_10_IRQn
-            */
+            .intTag = IO_TAG(PB12) /* perhaps disabled? */
     };
     static const hmc5883Config_t nazeHmc5883Config_v5 = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-            .gpioPin = Pin_14,
-            .gpioPort = GPIOC,
-            .exti_port_source = GPIO_PortSourceGPIOC,
-            .exti_line = EXTI_Line14,
-            .exti_pin_source = GPIO_PinSource14,
-            .exti_irqn = EXTI15_10_IRQn
+            .intTag = IO_TAG(MAG_INT_EXTI)
     };
     if (hardwareRevision < NAZE32_REV5) {
         hmc5883Config = &nazeHmc5883Config_v1_v4;
@@ -512,18 +498,12 @@ static void detectMag(magSensor_e magHardwareToUse)
     }
 #endif
 
-#ifdef SPRACINGF3
-    static const hmc5883Config_t spRacingF3Hmc5883Config = {
-        .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-        .gpioPin = Pin_14,
-        .gpioPort = GPIOC,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource14,
-        .exti_line = EXTI_Line14,
-        .exti_irqn = EXTI15_10_IRQn
+#ifdef MAG_INT_EXTI
+    static const hmc5883Config_t extiHmc5883Config = {
+        .intTag = IO_TAG(MAG_INT_EXTI)
     };
 
-    hmc5883Config = &spRacingF3Hmc5883Config;
+	hmc5883Config = &extiHmc5883Config;
 #endif
 
 #endif
@@ -632,8 +612,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
         acc.init(&acc);
     }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro refresh rate before initialisation
+    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf);
+    gyroInit();
 
     detectMag(magHardwareToUse);
 

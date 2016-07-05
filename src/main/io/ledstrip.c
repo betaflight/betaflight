@@ -440,7 +440,7 @@ void updateLedCount(void)
     }
 }
 
-void reevalulateLedConfig(void)
+void reevaluateLedConfig(void)
 {
     updateLedCount();
     determineLedStripDimensions();
@@ -534,7 +534,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         memset(ledConfig, 0, sizeof(ledConfig_t));
     }
 
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 
     return ok;
 }
@@ -1095,7 +1095,7 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     memset(ledConfigs, 0, MAX_LED_STRIP_LENGTH * sizeof(ledConfig_t));
     memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
 
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 }
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
@@ -1107,7 +1107,7 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
 
 void ledStripEnable(void)
 {
-    reevalulateLedConfig();
+    reevaluateLedConfig();
     ledStripInitialised = true;
 
     ws2811LedStripInit();

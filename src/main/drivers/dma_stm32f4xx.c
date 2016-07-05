@@ -32,7 +32,7 @@ static dmaHandlers_t dmaHandlers;
 
 void dmaNoOpHandler(DMA_Stream_TypeDef *stream)
 {
-	UNUSED(stream);
+    UNUSED(stream);
 }
 
 void DMA1_Stream2_IRQHandler(void)
