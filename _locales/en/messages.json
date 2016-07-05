@@ -881,6 +881,9 @@
     "receiverEepromSaved": {
         "message": "EEPROM <span style=\"color: #ffbb00\">saved</span>"
     },
+    "receiverModelPreview": {
+        "message": "Preview"
+    },
 
     "auxiliaryHelp": {
         "message": "Use ranges to define the switches on your transmitter and corresponding mode assignments.  A receiver channel that gives a reading between a range min/max will activate the mode.  Remember to save your settings using the Save button."
@@ -1735,9 +1738,9 @@
       "pidTuningRatesTip": {
         "message": "Play with the rates and see how those affect the stick curve"
     }
-    
 
-    
-    
+
+
+
 
 }

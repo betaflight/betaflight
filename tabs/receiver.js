@@ -23,7 +23,7 @@ TABS.receiver.initialize = function (callback) {
     function load_config() {
         MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_rc_configs);
     }
-    
+
     function load_rc_configs() {
         var next_callback = load_html;
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
@@ -200,7 +200,7 @@ TABS.receiver.initialize = function (callback) {
                RC_deadband.yaw_deadband = parseInt($('.deadband input[name="yaw_deadband"]').val());
                RC_deadband.deadband = parseInt($('.deadband input[name="deadband"]').val());
             }
-   
+
             // catch rc map
             var RC_MAP_Letters = ['A', 'E', 'R', 'T', '1', '2', '3', '4'];
             var strBuffer = $('input[name="rcmap"]').val().split('');
@@ -215,7 +215,7 @@ TABS.receiver.initialize = function (callback) {
             function save_misc() {
                 MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_rc_configs);
             }
-            
+
             function save_rc_configs() {
                 var next_callback = save_to_eeprom;
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
@@ -367,6 +367,13 @@ TABS.receiver.initialize = function (callback) {
             GUI.interval_add('receiver_pull', get_rc_data, plot_update_rate, true);
         });
 
+        // Setup model for preview
+        self.initModelPreview();
+        self.renderModel();
+
+        // TODO: Combine two polls together
+        GUI.interval_add('receiver_pull_for_model_preview', self.getRecieverData, 33, false);
+
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
             MSP.send_message(MSP_codes.MSP_STATUS);
@@ -376,8 +383,44 @@ TABS.receiver.initialize = function (callback) {
     }
 };
 
+TABS.receiver.getRecieverData = function () {
+    MSP.send_message(MSP_codes.MSP_RC, false, false);
+};
+
+TABS.receiver.initModelPreview = function () {
+    this.keepRendering = true;
+    this.model = new Model($('.model_preview'), $('.model_preview canvas'));
+
+    var scale = d3.scale.linear().domain([900, 2100]);
+
+    this.rollScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.pitchScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.yawScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+
+    $(window).on('resize', $.proxy(this.model.resize, this.model));
+};
+
+TABS.receiver.renderModel = function () {
+    if (this.keepRendering) { requestAnimationFrame(this.renderModel.bind(this)); }
+
+    if (!this.clock) { this.clock = new THREE.Clock(); }
+
+    if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
+        var delta = this.clock.getDelta(),
+            roll  = delta * this.rollScale(RC.channels[0]),
+            pitch = delta * this.pitchScale(RC.channels[1]),
+            yaw   = delta * this.yawScale(RC.channels[2]);
+
+        this.model.rotateBy(pitch, yaw, roll);
+    }
+};
+
+
 TABS.receiver.cleanup = function (callback) {
     $(window).off('resize', this.resize);
+    $(window).off('resize', $.proxy(this.model.resize, this.model));
+
+    this.keepRendering = false;
 
     if (callback) callback();
 };
