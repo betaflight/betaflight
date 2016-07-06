@@ -701,32 +701,31 @@ void osdDrawArtificialHorizon(int rollAngle, int pitchAngle, uint8_t show_sideba
     }
 }
 
-void updateOsd(void)
+void updateOsd(uint32_t currentTime)
 {
     static uint8_t blink = 0;
     static uint8_t arming = 0;
     uint32_t seconds;
     char line[30];
-    uint32_t now = micros();
 
-    bool updateNow = (int32_t)(now - next_osd_update_at) >= 0L;
+    const bool updateNow = (int32_t)(currentTime - next_osd_update_at) >= 0L;
     if (!updateNow) {
         return;
     }
-    next_osd_update_at = now + OSD_UPDATE_FREQUENCY;
+    next_osd_update_at = currentTime + OSD_UPDATE_FREQUENCY;
     blink++;
 
     if (ARMING_FLAG(ARMED)) {
         if (!armed) {
             armed = true;
-            armed_at = now;
+            armed_at = currentTime;
             in_menu = false;
             arming = 5;
         }
     } else {
         if (armed) {
             armed = false;
-            armed_seconds += ((now - armed_at) / 1000000);
+            armed_seconds += ((currentTime - armed_at) / 1000000);
         }
         for (uint8_t channelIndex = 0; channelIndex < 4; channelIndex++) {
             sticks[channelIndex] = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
@@ -792,12 +791,12 @@ void updateOsd(void)
         }
         if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
             if (armed) {
-                seconds = armed_seconds + ((now-armed_at) / 1000000);
+                seconds = armed_seconds + ((currentTime - armed_at) / 1000000);
                 line[0] = SYM_FLY_M;
                 sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
             } else {
                 line[0] = SYM_ON_M;
-                seconds = now  / 1000000;
+                seconds = currentTime / 1000000;
                 sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
             }
             max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);

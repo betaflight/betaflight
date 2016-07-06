@@ -119,7 +119,6 @@ uint8_t motorControlEnable = false;
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
 
 uint16_t filteredCycleTime;
@@ -537,7 +536,7 @@ void updateMagHold(void)
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
-void processRx(void)
+void processRx(uint32_t currentTime)
 {
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
@@ -741,7 +740,8 @@ void subTaskPidController(void)
     if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
 
-void subTaskMainSubprocesses(void) {
+void subTaskMainSubprocesses(void)
+{
 
     const uint32_t startTime = micros();
 
@@ -807,12 +807,12 @@ void subTaskMainSubprocesses(void) {
 
     #ifdef BLACKBOX
         if (!cliMode && feature(FEATURE_BLACKBOX)) {
-            handleBlackbox();
+            handleBlackbox(startTime);
         }
     #endif
 
     #ifdef TRANSPONDER
-        updateTransponder();
+        updateTransponder(startTime);
     #endif
     if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }
@@ -841,7 +841,8 @@ void subTaskMotorUpdate(void)
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
-uint8_t setPidUpdateCountDown(void) {
+uint8_t setPidUpdateCountDown(void)
+{
     if (masterConfig.gyro_soft_lpf_hz) {
         return masterConfig.pid_process_denom - 1;
     } else {
@@ -850,8 +851,11 @@ uint8_t setPidUpdateCountDown(void) {
 }
 
 // Function for loop trigger
-void taskMainPidLoopCheck(void)
+void taskMainPidLoopCheck(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
+    static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
@@ -879,26 +883,33 @@ void taskMainPidLoopCheck(void)
     }
 }
 
-void taskUpdateAccelerometer(void)
+void taskUpdateAccelerometer(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
 }
 
-void taskUpdateAttitude(void) {
-    imuUpdateAttitude();
+void taskUpdateAttitude(uint32_t currentTime)
+{
+    imuUpdateAttitude(currentTime);
 }
 
-void taskHandleSerial(void)
+void taskHandleSerial(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     handleSerial();
 }
 
-void taskUpdateBeeper(void)
+void taskUpdateBeeper(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     beeperUpdate();          //call periodic beeper handler
 }
 
-void taskUpdateBattery(void)
+void taskUpdateBattery(uint32_t currentTime)
 {
 #ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
@@ -912,7 +923,7 @@ void taskUpdateBattery(void)
 
     static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
-        int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
+        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
@@ -921,16 +932,17 @@ void taskUpdateBattery(void)
     }
 }
 
-bool taskUpdateRxCheck(uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
 {
-    UNUSED(currentDeltaTime);
-    updateRx(currentTime);
+	UNUSED(currentDeltaTime);
+
+	updateRx(currentTime);
     return shouldProcessRx(currentTime);
 }
 
-void taskUpdateRxMain(void)
+void taskUpdateRxMain(uint32_t currentTime)
 {
-    processRx();
+    processRx(currentTime);
     isRXDataNew = true;
 
 #if !defined(BARO) && !defined(SONAR)
@@ -953,8 +965,10 @@ void taskUpdateRxMain(void)
 }
 
 #ifdef GPS
-void taskProcessGPS(void)
+void taskProcessGPS(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
     // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
     // change this based on available hardware
@@ -969,17 +983,19 @@ void taskProcessGPS(void)
 #endif
 
 #ifdef MAG
-void taskUpdateCompass(void)
+void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(&masterConfig.magZero);
+        updateCompass(currentTime, &masterConfig.magZero);
     }
 }
 #endif
 
 #ifdef BARO
-void taskUpdateBaro(void)
+void taskUpdateBaro(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     if (sensors(SENSOR_BARO)) {
         uint32_t newDeadline = baroUpdate();
         rescheduleTask(TASK_SELF, newDeadline);
@@ -988,8 +1004,10 @@ void taskUpdateBaro(void)
 #endif
 
 #ifdef SONAR
-void taskUpdateSonar(void)
+void taskUpdateSonar(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     if (sensors(SENSOR_SONAR)) {
         sonarUpdate();
     }
@@ -997,7 +1015,7 @@ void taskUpdateSonar(void)
 #endif
 
 #if defined(BARO) || defined(SONAR)
-void taskCalculateAltitude(void)
+void taskCalculateAltitude(uint32_t currentTime)
 {
     if (false
 #if defined(BARO)
@@ -1012,17 +1030,19 @@ void taskCalculateAltitude(void)
 #endif
 
 #ifdef DISPLAY
-void taskUpdateDisplay(void)
+void taskUpdateDisplay(uint32_t currentTime)
 {
     if (feature(FEATURE_DISPLAY)) {
-        updateDisplay();
+        updateDisplay(currentTime);
     }
 }
 #endif
 
 #ifdef TELEMETRY
-void taskTelemetry(void)
+void taskTelemetry(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
@@ -1032,28 +1052,28 @@ void taskTelemetry(void)
 #endif
 
 #ifdef LED_STRIP
-void taskLedStrip(void)
+void taskLedStrip(uint32_t currentTime)
 {
     if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip();
+        updateLedStrip(currentTime);
     }
 }
 #endif
 
 #ifdef TRANSPONDER
-void taskTransponder(void)
+void taskTransponder(uint32_t currentTime)
 {
     if (feature(FEATURE_TRANSPONDER)) {
-        updateTransponder();
+        updateTransponder(currentTime);
     }
 }
 #endif
 
 #ifdef OSD
-void taskUpdateOsd(void)
+void taskUpdateOsd(uint32_t currentTime)
 {
     if (feature(FEATURE_OSD)) {
-        updateOsd();
+        updateOsd(currentTime);
     }
 }
 #endif
