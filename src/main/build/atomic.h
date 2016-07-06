@@ -17,6 +17,8 @@
 
 #pragma once
 
+#ifdef __arm__
+
 // only set_BASEPRI is implemented in device library. It does always create memory barrier
 // missing versions are implemented here
 
@@ -104,6 +106,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
     typeof(data)  __attribute__((__cleanup__(__UNIQL(__barrierEnd)))) *__UNIQL(__barrier) = &data; \
     __asm__ volatile ("\t# barier (" #data ") start\n" : "=m" (*__UNIQL(__barrier)))
 
+#endif //__arm__
 
 // define these wrappers for atomic operations, use gcc buildins
 #define ATOMIC_OR(ptr, val) __sync_fetch_and_or(ptr, val)
