@@ -27,6 +27,8 @@
 
 #include "light_led.h"
 
+led_config_t led_config[3];
+
 void ledInit(bool alternative_led)
 {
 #if defined(LED0) || defined(LED1) || defined(LED2)
