@@ -200,20 +200,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + feature_tip_html + '</td></tr>');
                 radioGroups.push(features[i].group);
             } else {
-                var readonlyModifier = '';
-                if (features[i].mode === 'readonly') {
-                    readonlyModifier = ' readonly';
-                }
-
                 row_e = $('<tr><td><input class="feature toggle"'
                         + i
                         + '" name="'
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox"'
-			+ readonlyModifier
-                        + '/></td><td><label for="feature-'
+                        + '" type="checkbox"/></td><td><label for="feature-'
                         + i
                         + '">'
                         + features[i].name
