@@ -26,36 +26,76 @@
 
 #include "config/config.h"
 
-#define THROTTLE_LOOKUP_LENGTH 12
-static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
-
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
+/*
+    maps input from [-500, 500] to [-500, 500]*(rate/100) with expo
+    max expo (100) is cubic, i.e., x^3
+*/
+int16_t rcLookup(int32_t input, uint8_t expo, uint8_t rate)
 {
-    uint8_t i;
-    uint16_t minThrottle = (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) ? PWM_RANGE_MIN : escAndServoConfig->minthrottle);
+    float inputf = (float)input / 500.0f;
+    float expof = (float)expo / 100.0f;
 
-    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        int16_t tmp = 10 * i - controlRateConfig->thrMid8;
-        uint8_t y = 1;
-        if (tmp > 0)
-            y = 100 - controlRateConfig->thrMid8;
-        if (tmp < 0)
-            y = controlRateConfig->thrMid8;
-        lookupThrottleRC[i] = 10 * controlRateConfig->thrMid8 + tmp * (100 - controlRateConfig->thrExpo8 + (int32_t) controlRateConfig->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = minThrottle + (int32_t) (escAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+    float expoAppliedInputf = inputf * ((1.0f - expof) + expof * inputf * inputf);
+
+    return (int16_t)(expoAppliedInputf * 5.0f * (float)rate);
+}
+
+/*
+    maps input from [0, 1000] to [min throttle, max throttle] with expo
+*/
+int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
+{
+    float inputf = (float)input / 1000.0f; //[0, 1] where 0 = 0% thr and 1 = 100% thr
+
+    if (controlRateConfig->thrExpoMethod == THR_EXPO_NO_EXPO || expo == 0) {
+        //no expo, we use ints for min/max throttle for speed
+
+        int16_t maxThrottle = escAndServoConfig->maxthrottle;
+        int16_t minThrottle;
+        if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
+            minThrottle = PWM_RANGE_MIN;
+        } else { //normal (non-bidirecitonal)
+            minThrottle = escAndServoConfig->minthrottle;
+        }
+
+        return minThrottle + (int16_t)((float)(maxThrottle-minThrottle)*inputf);
+    } else {
+        float expof = (float)expo / 100.0f; //[0, 1] where 0 = no expo and 1 = max expo
+
+        float maxThrottle = escAndServoConfig->maxthrottle;
+        float minThrottle;
+        if (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH))) { //3D, bidirectional
+            minThrottle = PWM_RANGE_MIN;
+        } else { //normal (non-bidirecitonal)
+            minThrottle = escAndServoConfig->minthrottle;
+        }
+
+        if (controlRateConfig->thrExpoMethod == THR_EXPO_RC) { //max expo is cubic, i.e., x^3, same as rc
+            float expoAppliedInputf = inputf * ((1.0f - expof) + expof * inputf * inputf); //[0, 1] input with expo applied
+            return (int16_t)(minThrottle + (maxThrottle - minThrottle) * expoAppliedInputf);
+        } else { //THR_EXPO_FLATSPOT, max expo has a flatspot at thrMid
+            float thrMidf = (float)controlRateConfig->thrMid8 / 100.0f;
+            float thrf = inputf - thrMidf;
+
+            //normalize to [-1, 1]
+            if (!(controlRateConfig->thrMid8 == 0 || controlRateConfig->thrMid8 == 100)) {
+                thrf /= thrf > 0 ? (1.0f - thrMidf) : thrMidf;
+            }
+
+            //apply expo
+            thrf *= ((1.0f - expof) + expof * thrf * thrf); //[-1, 1]
+
+            //find mid throttle pwm
+            float midThrottle = minThrottle + (maxThrottle - minThrottle) * thrMidf;
+
+            //scale back
+            if (thrf >= 0) {
+                thrf *= maxThrottle - midThrottle;
+            } else {
+                thrf *= midThrottle - minThrottle;
+            }
+
+            return (int16_t)(midThrottle + thrf);
+        }
     }
 }
-
-int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate)
-{
-    float tmpf = tmp / 100.0f;
-    return (int16_t)((2500.0f + (float)expo * (tmpf * tmpf - 25.0f)) * tmpf * (float)(rate) / 2500.0f );
-}
-
-int16_t rcLookupThrottle(int32_t tmp)
-{
-    const int32_t tmp2 = tmp / 100;
-    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
-    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
-}
-

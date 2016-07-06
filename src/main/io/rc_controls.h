@@ -140,6 +140,7 @@ typedef struct controlRateConfig_s {
     uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;
+    uint8_t thrExpoMethod;
     uint8_t rates[3];
     uint8_t dynThrPID;
     uint8_t rcYawExpo8;
@@ -197,6 +198,12 @@ typedef enum {
     ADJUSTMENT_MODE_STEP,
     ADJUSTMENT_MODE_SELECT
 } adjustmentMode_e;
+
+typedef enum {
+    THR_EXPO_NO_EXPO,
+    THR_EXPO_RC,
+    THR_EXPO_FLATSPOT
+} thrExpoMethod_e;
 
 typedef struct adjustmentStepConfig_s {
     uint8_t step;

@@ -472,6 +472,10 @@ static const char * const lookupDeltaMethod[] = {
     "ERROR", "MEASUREMENT"
 };
 
+static const char * const lookupThrExpoMethod[] = {
+    "NO_EXPO", "RC", "FLATSPOT"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -486,7 +490,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,  
+    TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -500,6 +504,7 @@ typedef enum {
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_DELTA_METHOD,
+    TABLE_THR_EXPO_METHOD,
 #ifdef OSD
     TABLE_OSD,
 #endif
@@ -528,6 +533,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) },
+    { lookupThrExpoMethod, sizeof(lookupThrExpoMethod) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
@@ -724,6 +730,7 @@ const clivalue_t valueTable[] = {
     { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
     { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
     { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
+    { "thr_expo_method",            VAR_UINT8  | PROFILE_RATE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].controlRateProfile[0].thrExpoMethod, .config.lookup = { TABLE_THR_EXPO_METHOD } },
     { "roll_rate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
     { "pitch_rate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
     { "yaw_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
@@ -1941,7 +1948,7 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_PROFILE; // only
     }
     if (strcasecmp(cmdline, "rates") == 0) {
-        dumpMask = DUMP_RATES; 
+        dumpMask = DUMP_RATES;
     }
 
     if (strcasecmp(cmdline, "all") == 0) {
@@ -1983,7 +1990,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #ifdef USE_SERVOS
@@ -2008,7 +2015,7 @@ static void cliDump(char *cmdline)
 
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #endif
@@ -2023,7 +2030,7 @@ static void cliDump(char *cmdline)
             cliPrintf("feature -%s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
@@ -2032,7 +2039,7 @@ static void cliDump(char *cmdline)
                 cliPrintf("feature %s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 
@@ -2094,7 +2101,7 @@ static void cliDump(char *cmdline)
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
                 }
             }
         }
@@ -2111,7 +2118,7 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
-        
+
         if (dumpMask & DUMP_ALL) {
             uint8_t activeProfile = masterConfig.current_profile_index;
             uint8_t profileCount;
@@ -2129,7 +2136,7 @@ static void cliDump(char *cmdline)
                 cliRateProfile("");
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2158,7 +2165,7 @@ void cliDumpProfile(uint8_t profileIndex)
 {
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
-        
+
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
@@ -2174,7 +2181,7 @@ void cliDumpRateProfile(uint8_t rateProfileIndex)
 {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
-    
+
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
@@ -2551,7 +2558,7 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline) {
     int i;
-    
+
     if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
@@ -2681,7 +2688,7 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-static void cliPrintVarRange(const clivalue_t *var) 
+static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
@@ -2693,7 +2700,7 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrint("Allowed values:");
             uint8_t i;
             for (i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0) 
+                if (i > 0)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
@@ -2749,10 +2756,10 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
-            
+
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals

@@ -356,6 +356,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
     controlRateConfig->rcExpo8 = 10;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
+    controlRateConfig->thrExpoMethod = THR_EXPO_NO_EXPO;
     controlRateConfig->dynThrPID = 20;
     controlRateConfig->rcYawExpo8 = 10;
     controlRateConfig->tpa_breakpoint = 1650;
@@ -696,16 +697,9 @@ static bool isEEPROMContentValid(void)
     return true;
 }
 
-void activateControlRateConfig(void)
-{
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
-}
-
 void activateConfig(void)
 {
     static imuRuntimeConfig_t imuRuntimeConfig;
-
-    activateControlRateConfig();
 
     resetAdjustmentStates();
 
@@ -1012,7 +1006,6 @@ void changeControlRateProfile(uint8_t profileIndex)
         profileIndex = MAX_RATEPROFILES - 1;    
     }        
     setControlRateProfile(profileIndex);    
-    activateControlRateConfig();    
 }
 
 void latchActiveFeatures()
