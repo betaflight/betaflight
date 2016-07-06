@@ -47,7 +47,7 @@ int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *contr
 {
     float inputf = (float)input / 1000.0f; //[0, 1] where 0 = 0% thr and 1 = 100% thr
 
-    if (controlRateConfig->thrExpoMethod == THR_EXPO_NO_EXPO) {
+    if (controlRateConfig->thrExpoMethod == THR_EXPO_NO_EXPO || expo == 0) {
         //no expo, we use ints for min/max throttle for speed
 
         int16_t maxThrottle = escAndServoConfig->maxthrottle;
@@ -78,10 +78,8 @@ int16_t rcLookupThrottle(int32_t input, uint8_t expo, controlRateConfig_t *contr
             float thrf = inputf - thrMidf;
 
             //normalize to [-1, 1]
-            if (thrf >= 0) {
-                thrf /= (1.0f - thrMidf);
-            } else {
-                thrf /= thrMidf;
+            if (!(controlRateConfig->thrMid8 == 0 || controlRateConfig->thrMid8 == 100)) {
+                thrf /= thrf > 0 ? (1.0f - thrMidf) : thrMidf;
             }
 
             //apply expo
