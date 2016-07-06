@@ -14,6 +14,7 @@
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
+#include "config/feature.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -23,8 +24,10 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "fc/rc_controls.h"
+#include "fc/fc_serial.h"
+
 #include "io/motor_and_servo.h"
-#include "io/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -42,10 +45,9 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 
-#include "config/feature.h"
 
 enum
 {

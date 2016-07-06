@@ -20,10 +20,9 @@
 #include <stdlib.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "config/parameter_group.h"
-#include "config/config.h"
 
 #include "drivers/gpio.h"
 #include "drivers/system.h"
@@ -33,6 +32,8 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
+
+#include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"

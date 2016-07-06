@@ -37,7 +37,7 @@
 
 #include <stdbool.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 #include "drivers/usb_io.h"

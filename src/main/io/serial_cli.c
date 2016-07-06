@@ -24,10 +24,9 @@
 #include <ctype.h>
 
 #include <platform.h>
-#include "scheduler.h"
-#include "version.h"
+#include "build/version.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 #include "common/axis.h"
@@ -53,11 +52,16 @@
 
 #include "drivers/buf_writer.h"
 
+#include "fc/rc_controls.h"
+#include "fc/rate_profile.h"
+#include "fc/rc_adjustments.h"
+#include "fc/fc_serial.h"
+#include "fc/fc_tasks.h"
+
+#include "scheduler/scheduler.h"
+
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "io/rc_controls.h"
-#include "io/rate_profile.h"
-#include "io/rc_adjustments.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
@@ -90,8 +94,8 @@
 #include "telemetry/frsky.h"
 #include "telemetry/hott.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 #include "config/config_system.h"
 #include "config/feature.h"
 #include "config/profile.h"
@@ -921,10 +925,10 @@ static void cliSerial(char *cmdline)
             cliPrintf("serial %d %d %ld %ld %ld %ld\r\n" ,
                 serialConfig()->portConfigs[i].identifier,
                 serialConfig()->portConfigs[i].functionMask,
-                baudRates[serialConfig()->portConfigs[i].msp_baudrateIndex],
-                baudRates[serialConfig()->portConfigs[i].gps_baudrateIndex],
-                baudRates[serialConfig()->portConfigs[i].telemetry_baudrateIndex],
-                baudRates[serialConfig()->portConfigs[i].blackbox_baudrateIndex]
+                baudRates[serialConfig()->portConfigs[i].baudRates[0]],
+                baudRates[serialConfig()->portConfigs[i].baudRates[1]],
+                baudRates[serialConfig()->portConfigs[i].baudRates[2]],
+                baudRates[serialConfig()->portConfigs[i].baudRates[3]]
             );
         }
         return;
@@ -971,25 +975,25 @@ static void cliSerial(char *cmdline)
                 if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.msp_baudrateIndex = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_MSP_SERVER] = baudRateIndex;
                 break;
             case 1:
                 if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.gps_baudrateIndex = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_GPS] = baudRateIndex;
                 break;
             case 2:
                 if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
                     continue;
                 }
-                portConfig.telemetry_baudrateIndex = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_TELEMETRY] = baudRateIndex;
                 break;
             case 3:
                 if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
                     continue;
                 }
-                portConfig.blackbox_baudrateIndex = baudRateIndex;
+                portConfig.baudRates[BAUDRATE_BLACKBOX] = baudRateIndex;
                 break;
         }
 

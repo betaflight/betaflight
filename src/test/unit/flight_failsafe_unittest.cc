@@ -21,25 +21,26 @@
 #include <limits.h>
 
 extern "C" {
-    #include "debug.h"
+    #include "build/debug.h"
 
     #include <platform.h>
 
-    #include "build_config.h"
+    #include "build/build_config.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
+    #include "config/profile.h"
 
-    #include "config/runtime_config.h"
-    #include "config/config.h"
+    #include "fc/runtime_config.h"
 
     #include "io/beeper.h"
-    #include "io/rc_controls.h"
+    #include "fc/rc_controls.h"
 
     #include "rx/rx.h"
+
     #include "flight/failsafe.h"
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);

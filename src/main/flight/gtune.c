@@ -24,15 +24,14 @@
 
 #ifdef GTUNE
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "config/profile.h"
 #include "config/feature.h"
 #include "config/config_reset.h"
 
@@ -49,7 +48,9 @@
 
 #include "blackbox/blackbox.h"
 
-#include "io/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
+#include "fc/config.h"
 
 #include "gtune.h"
 

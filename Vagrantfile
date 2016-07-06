@@ -20,6 +20,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: <<-SHELL
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi
     add-apt-repository ppa:terry.guo/gcc-arm-embedded
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6D1D8367A3421AFB
     apt-get update
     apt-get install -y git gcc-arm-none-eabi=4.9.3.2015q3-1trusty1
   SHELL

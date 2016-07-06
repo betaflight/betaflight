@@ -21,10 +21,10 @@
 #include <limits.h>
 
 extern "C" {
-    #include "debug.h"
+    #include "build/debug.h"
 
     #include <platform.h>
-    #include "build_config.h"
+    #include "build/build_config.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
@@ -32,6 +32,7 @@ extern "C" {
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
+    #include "config/profile.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
@@ -49,9 +50,8 @@ extern "C" {
 
     #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
-    #include "io/rc_controls.h"
+    #include "fc/rc_controls.h"
 
-    #include "config/config.h"
 
     extern uint8_t servoCount;
     void forwardAuxChannelsToServos(uint8_t firstServoIndex);

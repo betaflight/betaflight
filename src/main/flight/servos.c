@@ -22,9 +22,9 @@
 #include <math.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #ifdef USE_SERVOS
 #ifndef USE_QUAD_MIXER_ONLY
@@ -35,10 +35,9 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/feature.h"
 #include "config/config_reset.h"
+#include "config/profile.h"
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
@@ -48,9 +47,13 @@
 #include "drivers/system.h"
 
 #include "rx/rx.h"
+
 #include "io/gimbal.h"
 #include "io/motor_and_servo.h"
-#include "io/rc_controls.h"
+
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
