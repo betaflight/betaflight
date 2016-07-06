@@ -35,7 +35,8 @@
 #include "common/crc.h"
 
 #define XBUS_RJ01_CHANNEL_COUNT 12
-
+// Frame is: ID(1 byte) + 12*channel(2 bytes) + CRC(2 bytes) = 27
+#define XBUS_FRAME_SIZE 27
 #define XBUS_MAX_FRAME_SIZE 33
 
 #define XBUS_RJ01_OFFSET_BYTES 3
@@ -130,7 +131,7 @@ static void xBusUnpackModeBFrame(uint8_t offsetBytes)
     uint8_t frameAddr;
 
     // crc should be 0, if we have no biterrors
-    for (i = 0; i < xBusFrameLength; i++) {
+    for (i = 0; i < XBUS_FRAME_SIZE; i++) {
         crc = crc16_CCITT(crc, xBusFrame[i+offsetBytes]);
     }
 
