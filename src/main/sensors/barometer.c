@@ -21,19 +21,19 @@
 #include <math.h>
 
 #include <platform.h>
-#include "build_config.h"
-#include "scheduler.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
+#include "config/profile.h"
 
 #include "drivers/barometer.h"
 #include "drivers/system.h"
 
-#include "config/config.h"
-#include "config/config_reset.h"
+//#include "fc/config.h"
 
 #include "sensors/barometer.h"
 

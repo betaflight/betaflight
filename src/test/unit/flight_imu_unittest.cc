@@ -25,14 +25,15 @@
 
 extern "C" {
     #include <platform.h>
-    #include "build_config.h"
-    #include "debug.h"
+    #include "build/build_config.h"
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
+    #include "config/profile.h"
 
     #include "sensors/sensors.h"
 
@@ -45,15 +46,14 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
 
-    #include "config/runtime_config.h"
-    #include "config/config.h"
+    #include "fc/runtime_config.h"
 
     #include "io/motor_and_servo.h"
-    #include "io/rc_controls.h"
+    #include "fc/rc_controls.h"
 
     #include "rx/rx.h"
 
-    #include "io/rc_controls.h"
+    #include "fc/rc_controls.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"

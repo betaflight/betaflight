@@ -23,7 +23,7 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#include "build/build_config.h"
 
 #ifdef LED_STRIP
 
@@ -36,6 +36,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/feature.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
@@ -44,7 +45,10 @@
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 
-#include "io/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+
 #include "io/gps.h"
 #include "rx/rx.h"
 
@@ -53,9 +57,6 @@
 
 #include "io/ledstrip.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/feature.h"
 
 PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
 PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);

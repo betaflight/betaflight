@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"

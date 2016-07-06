@@ -32,7 +32,7 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/gpio.h"
 #include "io/serial.h"
-#include "io/serial_msp.h"
+//#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_avrootloader.h"

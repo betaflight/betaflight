@@ -23,7 +23,7 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#include "build/build_config.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -34,7 +34,7 @@
 #include "drivers/usb_io.h"
 
 #include "io/transponder_ir.h"
-#include "config/config.h"
+#include "fc/config.h"
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;

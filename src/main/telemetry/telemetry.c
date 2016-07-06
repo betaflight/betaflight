@@ -23,8 +23,6 @@
 
 #ifdef TELEMETRY
 
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -32,10 +30,15 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
+
+#include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/fc_serial.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
-#include "io/rc_controls.h"
+
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"

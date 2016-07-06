@@ -66,6 +66,11 @@
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100
 
+// OSD configuration (subject to change)
+#define PG_OSD_FONT_CONFIG 32768
+#define PG_OSD_VIDEO_CONFIG 32769
+
+
 #define PG_RESERVED_FOR_TESTING_1 65533
 #define PG_RESERVED_FOR_TESTING_2 65534
 #define PG_RESERVED_FOR_TESTING_3 65535

@@ -20,74 +20,39 @@
 
 #include <platform.h>
 
-#include "common/axis.h"
-#include "common/maths.h"
-
-#include "config/parameter_group.h"
-#include "config/runtime_config.h"
-
 #include "drivers/system.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
-#include "drivers/serial.h"
-#include "drivers/sensor.h"
-#include "drivers/pwm_mapping.h"
-#include "drivers/accgyro.h"
-
-#include "io/serial_cli.h"
-#include "io/rc_controls.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-
-#include "mw.h"
-#include "scheduler.h"
 
 #include "statusindicator.h"
 
 static uint32_t warningLedTimer = 0;
-
-typedef enum {
-    ARM_PREV_NONE       = 0,
-    ARM_PREV_CLI        = 0x00205, //         0b1000000101  2 flashes - CLI active in the configurator
-    ARM_PREV_FAILSAFE   = 0x00815, //       0b100000010101  3 flashes - Failsafe mode
-    ARM_PREV_ANGLE      = 0x02055, //     0b10000001010101  4 flashes - Maximum arming angle exceeded
-    ARM_PREV_CALIB      = 0x08155, //   0b1000000101010101  5 flashes - Calibration active
-    ARM_PREV_OVERLOAD   = 0x20555  // 0b100000010101010101  6 flashes - System overload
-} armingPreventedReason_e;
-
 static uint32_t blinkMask = 0;
+static uint32_t nextBlinkMask = 0;
 
-armingPreventedReason_e getArmingPreventionReason(void)
-{
-    if (isCalibrating()) {
-        return ARM_PREV_CALIB;
-    }
-    if (rcModeIsActive(BOXFAILSAFE) || failsafePhase() == FAILSAFE_LANDED) {
-        return ARM_PREV_FAILSAFE;
-    }
-    if (!imuIsAircraftArmable(armingConfig()->max_arm_angle)) {
-        return ARM_PREV_ANGLE;
-    }
-    if (cliMode) {
-        return ARM_PREV_CLI;
-    }
-    if (isSystemOverloaded()) {
-        return ARM_PREV_OVERLOAD;
-    }
-    return ARM_PREV_NONE;
-}
-
+/*
+ * The blinkMask combines a MSB terminator bit of 1, followed by up to 31 1 or 0 bits indicating ON or OFF.
+ * The duration of each ON or OFF bit is defined by WARNING_LED_BLINK_BIT_DELAY.
+ *
+ * Examples:
+ *
+ * 0b101 = on then off
+ * 0b1000001 = on then off for 5 consecutive intervals.
+ * 0b100000101 = on, then off, then on, then off for 5 consecutive intervals.
+ *
+ * When the terminator is reached any new blink mask is then used (see nextBlinkMask).
+ * The nextBlinkMask is reset after use.
+ * To repeat the same pattern update the nextBlinkMask before the amount of time it takes to blink the pattern.
+ */
 
 void warningLedRefresh(void)
 {
     if (blinkMask <= 1) {  // skip interval for terminator bit, allow continuous on
-        blinkMask = getArmingPreventionReason();
+        blinkMask = nextBlinkMask;
+        nextBlinkMask = 0;
     }
+
     if (blinkMask) {
         if (blinkMask & 1)
             LED0_ON;
@@ -108,13 +73,35 @@ void warningLedBeeper(bool on)
     }
 }
 
+void warningLedPulse(void)
+{
+	// FIXME this is not really pulse now - original code pulsed the light once a second (on short, off long), this code is a result of rebasing onto commit beac0a35cec690f33a2ef5d13f41f3e3a9d8e57a
+	nextBlinkMask = 0b1000001;
+}
+
+void warningLedSetBlinkMask(uint32_t newBlinkMask)
+{
+	nextBlinkMask = newBlinkMask;
+}
+
+void warningLedCode(uint8_t code)
+{
+    nextBlinkMask = 0b100000;
+ 	int bitsRemaining = 32 - 6;  // must be an even number
+    for (int i = 0; i < code && bitsRemaining; i++) {
+    	nextBlinkMask <<= 2;
+    	nextBlinkMask |= 1;
+    	
+    	bitsRemaining -= 2;
+    }
+}
+
 void warningLedUpdate(void)
 {
     uint32_t now = micros();
     if ((int32_t)(now - warningLedTimer) > 0) {
         warningLedRefresh();
-        warningLedTimer = now + WARNING_LED_BLINK_DELAY;
+        warningLedTimer = now + WARNING_LED_BLINK_BIT_DELAY;
     }
 }
-
 

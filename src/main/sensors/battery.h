@@ -71,7 +71,8 @@ const  char * getBatteryStateString(void);
 void updateBattery(void);
 void batteryInit(void);
 
-void updateCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus);
+void updateCurrentMeter(int32_t lastUpdateAt);
+void updateVirtualCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

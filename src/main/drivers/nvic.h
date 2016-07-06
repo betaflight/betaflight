@@ -31,6 +31,9 @@
 #define NVIC_PRIO_SONAR_ECHO               NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_MPU_DATA_READY           NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_MAG_DATA_READY           NVIC_BUILD_PRIORITY(0x0f, 0x0f)
+#define NVIC_PRIO_OSD_HSYNC                NVIC_BUILD_PRIORITY(4, 0)
+#define NVIC_PRIO_OSD_VSYNC                NVIC_BUILD_PRIORITY(4, 1)
+#define NVIC_PRIO_OSD_LOS                  NVIC_BUILD_PRIORITY(4, 2)
 #define NVIC_PRIO_CALLBACK                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 
 // utility macros to join/split priority

@@ -24,14 +24,13 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
 
 #include "config/parameter_group.h"
-#include "config/runtime_config.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -43,8 +42,9 @@
 
 #include "rx/rx.h"
 
-#include "io/rc_controls.h"
-#include "io/rate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rate_profile.h"
+#include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "config/config_unittest.h"

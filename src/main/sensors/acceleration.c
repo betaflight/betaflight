@@ -20,25 +20,26 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/profile.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+#include "fc/config.h"
+
 #include "io/beeper.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
 #include "config/config_reset.h"
 #include "config/feature.h"
 
