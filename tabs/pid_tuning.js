@@ -8,9 +8,7 @@ var SUPEREXPO_FEATURE_BIT = 23;
 
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
-    if (GUI.active_tab != 'pid_tuning') {
-        GUI.active_tab = 'pid_tuning';
-    }
+    if (GUI.active_tab != 'pid_tuning') { GUI.active_tab = 'pid_tuning'; }
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
     MSP.promise(MSP_codes.MSP_STATUS).then(function() {
@@ -383,6 +381,17 @@ TABS.pid_tuning.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
+        // Local cache of current rates
+        self.currentRates = {
+            rateRoll:  RC_tuning.roll_rate * 100,
+            ratePitch: RC_tuning.pitch_rate * 100,
+            rateYaw:   RC_tuning.yaw_rate * 100,
+            rcRate:    RC_tuning.RC_RATE * 100,
+            rcRateYaw: SPECIAL_PARAMETERS.RC_RATE_YAW * 100,
+            rcExpo:    RC_tuning.RC_EXPO * 100,
+            rcExpoYaw: RC_tuning.RC_YAW_EXPO * 100
+        };
+
         var showAllButton = $('#showAllPids');
         var showAllMsg = chrome.i18n.getMessage("pidTuningShowAllPids");
         var hideUnusedMsg = chrome.i18n.getMessage("pidTuningHideUnusedPids");
@@ -502,7 +511,7 @@ TABS.pid_tuning.initialize = function (callback) {
             useLegacyCurve = true;
         }
 
-	var rateCurve = new RateCurve(useLegacyCurve);
+        self.rateCurve = new RateCurve(useLegacyCurve);
 
         // UI Hooks
         // curves
@@ -521,11 +530,19 @@ TABS.pid_tuning.initialize = function (callback) {
                 var rcExpo = checkInput(rcExpoElement);
                 var rcExpoYaw = checkInput(rcExpoYawElement);
 
-                var maxAngularVelRoll = rateCurve.getMaxAngularVel(rateRoll, rcRate, rcExpo, useSuperExpo);
+                self.currentRates.rateRoll  = rateRoll * 100;
+                self.currentRates.ratePitch = ratePitch * 100;
+                self.currentRates.rateYaw   = rateYaw * 100;
+                self.currentRates.rcRate    = rcRate * 100;
+                self.currentRates.rcRateYaw = rcRateYaw * 100;
+                self.currentRates.rcExpo    = rcExpo * 100;
+                self.currentRates.rcExpoYaw = rcExpoYaw * 100;
+
+                var maxAngularVelRoll = self.rateCurve.getMaxAngularVel(rateRoll, rcRate, rcExpo, useSuperExpo);
 		maxAngularVelRollElement.text(maxAngularVelRoll);
-                var maxAngularVelPitch = rateCurve.getMaxAngularVel(ratePitch, rcRate, rcExpo, useSuperExpo);
+                var maxAngularVelPitch = self.rateCurve.getMaxAngularVel(ratePitch, rcRate, rcExpo, useSuperExpo);
 		maxAngularVelPitchElement.text(maxAngularVelPitch);
-                var maxAngularVelYaw = rateCurve.getMaxAngularVel(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo);
+                var maxAngularVelYaw = self.rateCurve.getMaxAngularVel(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo);
 		maxAngularVelYawElement.text(maxAngularVelYaw);
 		var maxAngularVel = Math.max(maxAngularVelRoll, maxAngularVelPitch, maxAngularVelYaw);
 
@@ -539,19 +556,19 @@ TABS.pid_tuning.initialize = function (callback) {
 
                 curveContext.save();
                 curveContext.strokeStyle = '#ff0000';
-                rateCurve.draw(rateRoll, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
+                self.rateCurve.draw(rateRoll, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
 
                 curveContext.save();
                 curveContext.translate(0, -4);
                 curveContext.strokeStyle = '#00ff00';
-                rateCurve.draw(ratePitch, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
+                self.rateCurve.draw(ratePitch, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
 
                 curveContext.save();
                 curveContext.strokeStyle = '#0000ff';
                 curveContext.translate(0, 4);
-                rateCurve.draw(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo, maxAngularVel, curveContext);
+                self.rateCurve.draw(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo, maxAngularVel, curveContext);
                 curveContext.restore();
             }, 0);
         };
@@ -701,11 +718,8 @@ TABS.pid_tuning.initRatesPreview = function () {
     this.keepRendering = true;
     this.model = new Model($('.rates_preview'), $('.rates_preview canvas'));
 
-    var scale = d3.scale.linear().domain([900, 2100]);
-
-    this.rollScale = scale.range([Math.PI * 2, -Math.PI * 2]);
-    this.pitchScale = scale.range([Math.PI * 2, -Math.PI * 2]);
-    this.yawScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.$superExpo = $('.pid_tuning input[name="show_superexpo_rates"]');
+    this.degreeToRadianRatio = Math.PI / 180;
 
     $(window).on('resize', $.proxy(this.model.resize, this.model));
 };
@@ -717,11 +731,13 @@ TABS.pid_tuning.renderModel = function () {
 
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta(),
-            roll  = delta * this.rollScale(RC.channels[0]),
-            pitch = delta * this.pitchScale(RC.channels[1]),
-            yaw   = delta * this.yawScale(RC.channels[2]);
+            useSuperExpo = this.$superExpo.is(':checked');
 
-        this.model.rotateBy(pitch, yaw, roll);
+        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], this.currentRates.rateRoll,  this.currentRates.rcRate,    this.currentRates.rcExpo,    useSuperExpo),
+            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], this.currentRates.ratePitch, this.currentRates.rcRate,    this.currentRates.rcExpo,    useSuperExpo),
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], this.currentRates.rateYaw,   this.currentRates.rcRateYaw, this.currentRates.rcExpoYaw, useSuperExpo);
+
+        this.model.rotateBy(-pitch * this.degreeToRadianRatio, -yaw * this.degreeToRadianRatio, -roll * this.degreeToRadianRatio);
     }
 };
 
