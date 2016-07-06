@@ -12,7 +12,15 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_map);
+        MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_tuning_data);
+    }
+
+    function get_rc_tuning_data() {
+        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_bt_config_data);
+    }
+
+    function get_bt_config_data() {
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_rc_map);
     }
 
     function get_rc_map() {
@@ -391,11 +399,13 @@ TABS.receiver.initModelPreview = function () {
     this.keepRendering = true;
     this.model = new Model($('.model_preview'), $('.model_preview canvas'));
 
-    var scale = d3.scale.linear().domain([900, 2100]);
+    this.useSuperExpo = false;
+    if (CONFIG.flightControllerIdentifier === 'BTFL' && semver.gte(CONFIG.flightControllerVersion, '2.8.0')) {
+        this.useSuperExpo = bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
+    }
 
-    this.rollScale = scale.range([Math.PI * 2, -Math.PI * 2]);
-    this.pitchScale = scale.range([Math.PI * 2, -Math.PI * 2]);
-    this.yawScale = scale.range([Math.PI * 2, -Math.PI * 2]);
+    this.rateCurve = new RateCurve(CONFIG.flightControllerIdentifier !== 'BTFL' || semver.lt(CONFIG.flightControllerVersion, '2.8.0'));
+    this.degreeToRadianRatio = Math.PI / 180;
 
     $(window).on('resize', $.proxy(this.model.resize, this.model));
 };
@@ -406,12 +416,13 @@ TABS.receiver.renderModel = function () {
     if (!this.clock) { this.clock = new THREE.Clock(); }
 
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
-        var delta = this.clock.getDelta(),
-            roll  = delta * this.rollScale(RC.channels[0]),
-            pitch = delta * this.pitchScale(RC.channels[1]),
-            yaw   = delta * this.yawScale(RC.channels[2]);
+        var delta = this.clock.getDelta();
 
-        this.model.rotateBy(pitch, yaw, roll);
+        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate * 100, RC_tuning.RC_RATE * 100, RC_tuning.RC_EXPO * 100, this.useSuperExpo),
+            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate * 100, RC_tuning.RC_RATE * 100, RC_tuning.RC_EXPO * 100, this.useSuperExpo),
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate * 100, SPECIAL_PARAMETERS.RC_RATE_YAW * 100, RC_tuning.RC_YAW_EXPO * 100, this.useSuperExpo);
+
+        this.model.rotateBy(-pitch * this.degreeToRadianRatio, -yaw * this.degreeToRadianRatio, -roll * this.degreeToRadianRatio);
     }
 };
 
