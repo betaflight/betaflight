@@ -56,7 +56,7 @@
  *-----------------------------------------------------------*/
 static int16_t rcCommandAdjustedThrottle;
 static int16_t altHoldThrottleRCZero = 1500;
-static filterStatePt1_t altholdThrottleFilterState;
+static pt1Filter_t altholdThrottleFilterState;
 static bool prepareForTakeoffOnReset = false;
 
 /* Calculate global altitude setpoint based on surface setpoint */
@@ -107,7 +107,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
     posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
 
-    posControl.rcAdjustment[THROTTLE] = filterApplyPt1(posControl.rcAdjustment[THROTTLE], &altholdThrottleFilterState, NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
+    posControl.rcAdjustment[THROTTLE] = pt1FilterApply4(&altholdThrottleFilterState, posControl.rcAdjustment[THROTTLE], NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
 }
 
@@ -174,7 +174,7 @@ void resetMulticopterAltitudeController(void)
 {
     navPidReset(&posControl.pids.vel[Z]);
     navPidReset(&posControl.pids.surface);
-    filterResetPt1(&altholdThrottleFilterState, 0.0f);
+    pt1FilterReset(&altholdThrottleFilterState, 0.0f);
     posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;
 
@@ -247,7 +247,7 @@ bool adjustMulticopterHeadingFromRCInput(void)
 /*-----------------------------------------------------------
  * XY-position controller for multicopter aircraft
  *-----------------------------------------------------------*/
-static filterStatePt1_t mcPosControllerAccFilterStateX, mcPosControllerAccFilterStateY;
+static pt1Filter_t mcPosControllerAccFilterStateX, mcPosControllerAccFilterStateY;
 static float lastAccelTargetX = 0.0f, lastAccelTargetY = 0.0f;
 
 void resetMulticopterPositionController(void)
@@ -256,8 +256,8 @@ void resetMulticopterPositionController(void)
     for (axis = 0; axis < 2; axis++) {
         navPidReset(&posControl.pids.vel[axis]);
         posControl.rcAdjustment[axis] = 0;
-        filterResetPt1(&mcPosControllerAccFilterStateX, 0.0f);
-        filterResetPt1(&mcPosControllerAccFilterStateY, 0.0f);
+        pt1FilterReset(&mcPosControllerAccFilterStateX, 0.0f);
+        pt1FilterReset(&mcPosControllerAccFilterStateY, 0.0f);
         lastAccelTargetX = 0.0f;
         lastAccelTargetY = 0.0f;
     }
@@ -394,8 +394,8 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     lastAccelTargetY = newAccelY;
 
     // Apply LPF to jerk limited acceleration target
-    float accelN = filterApplyPt1(newAccelX, &mcPosControllerAccFilterStateX, NAV_ACCEL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
-    float accelE = filterApplyPt1(newAccelY, &mcPosControllerAccFilterStateY, NAV_ACCEL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
+    float accelN = pt1FilterApply4(&mcPosControllerAccFilterStateX, newAccelX, NAV_ACCEL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
+    float accelE = pt1FilterApply4(&mcPosControllerAccFilterStateY, newAccelY, NAV_ACCEL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
 
     // Rotate acceleration target into forward-right frame (aircraft)
     float accelForward = accelN * posControl.actualState.cosYaw + accelE * posControl.actualState.sinYaw;

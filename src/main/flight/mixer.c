@@ -84,7 +84,7 @@ static uint8_t minServoIndex;
 static uint8_t maxServoIndex;
 
 static servoParam_t *servoConf;
-static biquad_t servoFitlerState[MAX_SUPPORTED_SERVOS];
+static biquadFilter_t servoFitlerState[MAX_SUPPORTED_SERVOS];
 static bool servoFilterIsSet;
 #endif
 
@@ -889,7 +889,7 @@ void filterServos(void)
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
         if (!servoFilterIsSet) {
             for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                filterInitBiQuad(mixerConfig->servo_lowpass_freq, &servoFitlerState[servoIdx], 0);
+                biquadFilterInit(&servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, 0);
             }
 
             servoFilterIsSet = true;
@@ -897,7 +897,7 @@ void filterServos(void)
 
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             // Apply servo lowpass filter and do sanity cheching
-            servo[servoIdx] = (int16_t) filterApplyBiQuad((float)servo[servoIdx], &servoFitlerState[servoIdx]);
+            servo[servoIdx] = (int16_t) biquadFilterApply(&servoFitlerState[servoIdx], (float)servo[servoIdx]);
         }
     }
 

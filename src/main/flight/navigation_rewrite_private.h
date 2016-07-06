@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
     pidControllerParam_t param;
-    filterStatePt1_t dterm_filter_state;  // last derivative for low-pass filter
+    pt1Filter_t dterm_filter_state;  // last derivative for low-pass filter
     float integrator;       // integrator value
     float last_input;       // last input for derivative
 } pidController_t;

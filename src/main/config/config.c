@@ -789,6 +789,8 @@ void activateConfig(void)
 
     imuConfigure(&imuRuntimeConfig, &currentProfile->pidProfile);
 
+    pidInit();
+
 #ifdef NAV
     navigationUseConfig(&masterConfig.navConfig);
     navigationUsePIDs(&currentProfile->pidProfile);

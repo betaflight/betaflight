@@ -49,7 +49,7 @@ static flightDynamicsTrims_t * accZero;
 static flightDynamicsTrims_t * accGain;
 
 static int8_t accLpfCutHz = 0;
-static biquad_t accFilterState[XYZ_AXIS_COUNT];
+static biquadFilter_t accFilterState[XYZ_AXIS_COUNT];
 static bool accFilterInitialised = false;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -184,7 +184,7 @@ void updateAccelerationReadings(void)
         if (!accFilterInitialised) {
             if (targetLooptime) {  /* Initialisation needs to happen once sample rate is known */
                 for (int axis = 0; axis < 3; axis++) {
-                    filterInitBiQuad(accLpfCutHz, &accFilterState[axis], 0);
+                    biquadFilterInit(&accFilterState[axis], accLpfCutHz, 0);
                 }
 
                 accFilterInitialised = true;
@@ -193,7 +193,7 @@ void updateAccelerationReadings(void)
 
         if (accFilterInitialised) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                accADC[axis] = lrintf(filterApplyBiQuad((float) accADC[axis], &accFilterState[axis]));
+                accADC[axis] = lrintf(biquadFilterApply(&accFilterState[axis], (float) accADC[axis]));
             }
         }
     }

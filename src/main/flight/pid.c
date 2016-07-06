@@ -59,8 +59,9 @@ typedef struct {
     float rateTarget;
 
     // Buffer for derivative calculation
-#define DTERM_BUF_COUNT 5
-    float dTermBuf[DTERM_BUF_COUNT];
+#define PID_GYRO_RATE_BUF_LENGTH 5
+    float gyroRateBuf[PID_GYRO_RATE_BUF_LENGTH];
+    firFilter_t gyroRateFilter;
 
     // Rate integrator
     float errorGyroIf;
@@ -70,11 +71,11 @@ typedef struct {
     float axisLockAccum;
 
     // Used for ANGLE filtering
-    filterStatePt1_t angleFilterState;
+    pt1Filter_t angleFilterState;
 
     // Rate filtering
-    filterStatePt1_t ptermLpfState;
-    filterStatePt1_t deltaLpfState;
+    pt1Filter_t ptermLpfState;
+    pt1Filter_t deltaLpfState;
 } pidState_t;
 
 extern uint8_t motorCount;
@@ -92,6 +93,17 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 #endif
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
+
+void pidInit(void)
+{
+    // Calculate derivative using 5-point noise-robust differentiators without time delay (one-sided or forward filters)
+    // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+    // h[0] = 5/8, h[-1] = 1/4, h[-2] = -1, h[-3] = -1/4, h[-4] = 3/8
+    static const float dtermCoeffs[PID_GYRO_RATE_BUF_LENGTH] = {5.0f/8, 2.0f/8, -8.0f/8, -2.0f/8, 3.0f/8};
+    for (int axis = 0; axis < 3; ++ axis) {
+        firFilterInit(&pidState[axis].gyroRateFilter, pidState[axis].gyroRateBuf, PID_GYRO_RATE_BUF_LENGTH, dtermCoeffs);
+    }
+}
 
 void pidResetErrorAccumulators(void)
 {
@@ -245,7 +257,7 @@ static void pidLevel(const pidProfile_t *pidProfile, pidState_t *pidState, fligh
     //     response to rapid attitude changes and smoothing out self-leveling reaction
     if (pidProfile->I8[PIDLEVEL]) {
         // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
-        pidState->rateTarget = filterApplyPt1(pidState->rateTarget, &pidState->angleFilterState, pidProfile->I8[PIDLEVEL], dT);
+        pidState->rateTarget = pt1FilterApply4(&pidState->angleFilterState, pidState->rateTarget, pidProfile->I8[PIDLEVEL], dT);
     }
 }
 
@@ -262,7 +274,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 
     // Additional P-term LPF on YAW axis
     if (axis == FD_YAW && pidProfile->yaw_lpf_hz) {
-        newPTerm = filterApplyPt1(newPTerm, &pidState->ptermLpfState, pidProfile->yaw_lpf_hz, dT);
+        newPTerm = pt1FilterApply4(&pidState->ptermLpfState, newPTerm, pidProfile->yaw_lpf_hz, dT);
     }
 
     // Calculate new D-term
@@ -271,16 +283,12 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         // optimisation for when D8 is zero, often used by YAW axis
         newDTerm = 0;
     } else {
-        // Calculate derivative using 5-point noise-robust differentiators without time delay (one-sided or forward filters)
-        // by Pavel Holoborodko, see http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
-        // h[0] = 5/8, h[-1] = 1/4, h[-2] = -1, h[-3] = -1/4, h[-4] = 3/8
-        static const float dtermCoeffs[DTERM_BUF_COUNT] = {5.0f, 2.0f, -8.0f, -2.0f, 3.0f};
-        filterUpdateFIR(DTERM_BUF_COUNT, pidState->dTermBuf, pidState->gyroRate);
-        newDTerm = filterApplyFIR(DTERM_BUF_COUNT, pidState->dTermBuf, dtermCoeffs, -pidState->kD / (8 * dT));
+        firFilterUpdate(&pidState->gyroRateFilter, pidState->gyroRate);
+        newDTerm = firFilterApply(&pidState->gyroRateFilter) * (-pidState->kD / dT);
 
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
-            newDTerm = filterApplyPt1(newDTerm, &pidState->deltaLpfState, pidProfile->dterm_lpf_hz, dT);
+            newDTerm = pt1FilterApply4(&pidState->deltaLpfState, newDTerm, pidProfile->dterm_lpf_hz, dT);
         }
     }
 
@@ -355,7 +363,7 @@ uint8_t getMagHoldState()
 float pidMagHold(const pidProfile_t *pidProfile)
 {
 
-    static filterStatePt1_t magHoldRateFilter;
+    static pt1Filter_t magHoldRateFilter;
     float magHoldRate;
 
     int16_t error = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHoldTargetHeading;
@@ -403,7 +411,7 @@ float pidMagHold(const pidProfile_t *pidProfile)
 
     magHoldRate = error * pidProfile->P8[PIDMAG] / 30;
     magHoldRate = constrainf(magHoldRate, -pidProfile->mag_hold_rate_limit, pidProfile->mag_hold_rate_limit);
-    magHoldRate = filterApplyPt1(magHoldRate, &magHoldRateFilter, MAG_HOLD_ERROR_LPF_FREQ, dT);
+    magHoldRate = pt1FilterApply4(&magHoldRateFilter, magHoldRate, MAG_HOLD_ERROR_LPF_FREQ, dT);
 
     return magHoldRate;
 }

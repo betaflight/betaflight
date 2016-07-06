@@ -96,7 +96,7 @@ bool adjustFixedWingAltitudeFromRCInput(void)
 // Position to velocity controller for Z axis
 static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
 {
-    static filterStatePt1_t velzFilterState;
+    static pt1Filter_t velzFilterState;
 
     // On a fixed wing we might not have a reliable climb rate source (if no BARO available), so we can't apply PID controller to
     // velocity error. We use PID controller on altitude error and calculate desired pitch angle from desired climb rate and forward velocity
@@ -109,7 +109,7 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
     float maxVelocityDive = -forwardVelocity * sin_approx(DEGREES_TO_RADIANS(posControl.navConfig->fw_max_dive_angle));
 
     posControl.desiredState.vel.V.Z = navPidApply2(posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), &posControl.pids.fw_alt, maxVelocityDive, maxVelocityClimb, false);
-    posControl.desiredState.vel.V.Z = filterApplyPt1(posControl.desiredState.vel.V.Z, &velzFilterState, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
+    posControl.desiredState.vel.V.Z = pt1FilterApply4(&velzFilterState, posControl.desiredState.vel.V.Z, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
     int16_t climbAngleDeciDeg = RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
@@ -177,7 +177,7 @@ bool adjustFixedWingHeadingFromRCInput(void)
  * XY-position controller for multicopter aircraft
  *-----------------------------------------------------------*/
 static t_fp_vector virtualDesiredPosition;
-static filterStatePt1_t fwPosControllerCorrectionFilterState;
+static pt1Filter_t fwPosControllerCorrectionFilterState;
 
 void resetFixedWingPositionController(void)
 {
@@ -189,7 +189,7 @@ void resetFixedWingPositionController(void)
     posControl.rcAdjustment[ROLL] = 0;
     isRollAdjustmentValid = false;
 
-    filterResetPt1(&fwPosControllerCorrectionFilterState, 0.0f);
+    pt1FilterReset(&fwPosControllerCorrectionFilterState, 0.0f);
 }
 
 static void calculateVirtualPositionTarget_FW(float trackingPeriod)
@@ -279,7 +279,7 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
                                         true);
 
     // Apply low-pass filter to prevent rapid correction
-    rollAdjustment = filterApplyPt1(rollAdjustment, &fwPosControllerCorrectionFilterState, NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
+    rollAdjustment = pt1FilterApply4(&fwPosControllerCorrectionFilterState, rollAdjustment, NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
 
     // Convert rollAdjustment to decidegrees (rcAdjustment holds decidegrees)
     posControl.rcAdjustment[ROLL] = CENTIDEGREES_TO_DECIDEGREES(rollAdjustment);

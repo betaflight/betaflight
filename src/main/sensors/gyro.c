@@ -48,7 +48,7 @@ static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
 static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
 static int8_t gyroLpfCutHz = 0;
-static biquad_t gyroFilterState[XYZ_AXIS_COUNT];
+static biquadFilter_t gyroFilterState[XYZ_AXIS_COUNT];
 static bool gyroFilterInitialised = false;
 
 void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t initialGyroLpfCutHz)
@@ -137,7 +137,7 @@ void gyroUpdate(void)
         if (!gyroFilterInitialised) {
             if (targetLooptime) {  /* Initialisation needs to happen once sample rate is known */
                 for (int axis = 0; axis < 3; axis++) {
-                    filterInitBiQuad(gyroLpfCutHz, &gyroFilterState[axis], 0);
+                    biquadFilterInit(&gyroFilterState[axis], gyroLpfCutHz, 0);
                 }
 
                 gyroFilterInitialised = true;
@@ -146,7 +146,7 @@ void gyroUpdate(void)
 
         if (gyroFilterInitialised) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroADC[axis] = lrintf(filterApplyBiQuad((float) gyroADC[axis], &gyroFilterState[axis]));
+                gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterState[axis], (float) gyroADC[axis]));
             }
         }
     }
