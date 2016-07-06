@@ -124,6 +124,8 @@
 #undef SONAR
 #endif
 
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+
 // IO - from schematics
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
