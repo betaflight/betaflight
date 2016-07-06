@@ -473,7 +473,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
 	var useLegacyCurve = false;
         if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
-            $('.pid_tuning .new_rates').hide();
+            $('.rc_curve .new_rates').hide();
             useLegacyCurve = true;
         }
 
