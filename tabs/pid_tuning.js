@@ -4,6 +4,8 @@ TABS.pid_tuning = {
     controllerChanged: false
 };
 
+var SUPEREXPO_FEATURE_BIT = 23;
+
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
     if (GUI.active_tab != 'pid_tuning') {
@@ -29,10 +31,23 @@ TABS.pid_tuning.initialize = function (callback) {
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_FILTER_CONFIG);
     }).then(function() {
+        var promise = true;
+        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+            promise = MSP.promise(MSP_codes.MSP_BF_CONFIG);
+        }
+
+        return promise;
+    }).then(function() {
         $('#content').load("./tabs/pid_tuning.html", process_html);
     });
 
     function pid_and_rc_to_form() {
+        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+            //This will need to be reworked to remove BF_CONFIG reference eventually
+            $('.pid_tuning input[name="show_superexpo_rates"]').prop(
+                'checked', bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT));
+        }
+
         // Fill in the data from PIDs array
         var i = 0;
         $('.pid_tuning .ROLL input').each(function () {
@@ -200,6 +215,16 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     function form_to_pid_and_rc() {
+        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+            //This will need to be reworked to remove BF_CONFIG reference eventually
+            if ($('.pid_tuning input[name="show_superexpo_rates"]').is(':checked')) {
+                BF_CONFIG.features = bit_set(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
+            } else {
+                BF_CONFIG.features = bit_clear(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
+            }
+        }
+
+        // Fill in the data from PIDs array
         // Catch all the changes and stuff the inside PIDs array
         var i = 0;
         $('table.pid_tuning tr.ROLL input').each(function () {
@@ -469,11 +494,11 @@ TABS.pid_tuning.initialize = function (callback) {
 	var maxAngularVelPitchElement = $('.rc_curve .maxAngularVelPitch');
 	var maxAngularVelYawElement = $('.rc_curve .maxAngularVelYaw');
 
-        var superExpoElement = $('.rc_curve input[name="show_superexpo_rates"]');
+        var superExpoElement = $('.pid_tuning input[name="show_superexpo_rates"]');
 
 	var useLegacyCurve = false;
         if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
-            $('.rc_curve .new_rates').hide();
+            $('.new_rates').hide();
             useLegacyCurve = true;
         }
 
@@ -637,6 +662,13 @@ TABS.pid_tuning.initialize = function (callback) {
                     }
                 }).then(function() {
                     return MSP.promise(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING));
+                }).then(function() {
+		    var promise = true;
+                    if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+                        promise = MSP.promise(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG));
+                    }
+
+                    return promise;
                 }).then(function() {
                     return MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
                 }).then(function() {

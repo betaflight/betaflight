@@ -157,10 +157,10 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             );
         }
 
-        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
              features.push(
                 {bit: 22, group: 'other', name: 'AIRMODE'},
-                {bit: 23, group: 'other', name: 'SUPEREXPO_RATES'}
+                {bit: 23, group: 'other', mode: 'readonly', name: 'SUPEREXPO_RATES', haveTip: true}
             );
         }
 
@@ -201,13 +201,20 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                         + feature_tip_html + '</td></tr>');
                 radioGroups.push(features[i].group);
             } else {
+                var readonlyModifier = '';
+                if (features[i].mode === 'readonly') {
+                    readonlyModifier = ' readonly';
+                }
+
                 row_e = $('<tr><td><input class="feature toggle"'
                         + i
                         + '" name="'
                         + features[i].name
                         + '" title="'
                         + features[i].name
-                        + '" type="checkbox"/></td><td><label for="feature-'
+                        + '" type="checkbox"'
+			+ readonlyModifier
+                        + '/></td><td><label for="feature-'
                         + i
                         + '">'
                         + features[i].name

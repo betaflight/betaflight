@@ -530,7 +530,10 @@
         "message": "Configure via the Race Transponder tab after enabling."
     },
     "featureSUPEREXPO_RATES": {
-        "message": "Rate value adds instead of rate also Super Expo. Mid stick stays same. Rc rate is always linear"
+        "message": "Use Super Expo rates curve"
+    },
+    "featureSUPEREXPO_RATESTip": {
+        "message": "Rate value adds instead of rate also Super Expo. Mid stick stays same. Rc rate is always linear. You can modify this setting in the PID tuning tab."
     },
     "featureAIRMODE": {
         "message": "Airmode always enabled!"
@@ -1597,11 +1600,11 @@
     "pidTuningYaw": {
         "message": "Yaw (Hz)"
     },
-    "pidTuningShowRatesWithSuperExpo": {
-        "message": "Show rates with SuperExpo"
+    "pidTuningSuperExpo": {
+        "message": "Enable SuperExpo"
     },
     "pidTuningRatesSuperExpoHelp": {
-        "message": "To enable SuperExpo, enable 'SUPEREXPO_RATES' in 'Other Features' on the 'Configuration' tab."
+        "message": "This setting controls the feature 'SUPEREXPO_RATES'"
     },
     "configHelp2": {
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
