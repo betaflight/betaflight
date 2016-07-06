@@ -529,9 +529,6 @@
     "featureTRANSPONDERTip": {
         "message": "Configure via the Race Transponder tab after enabling."
     },
-    "featureSUPEREXPO_RATES": {
-        "message": "Use Super Expo rates curve"
-    },
     "featureSUPEREXPO_RATESTip": {
         "message": "Rate value adds instead of rate also Super Expo. Mid stick stays same. Rc rate is always linear. You can modify this setting in the PID tuning tab."
     },
@@ -1601,7 +1598,7 @@
         "message": "Yaw (Hz)"
     },
     "pidTuningSuperExpo": {
-        "message": "Enable SuperExpo"
+        "message": "Enable SuperExpo Rates"
     },
     "pidTuningRatesSuperExpoHelp": {
         "message": "This setting controls the feature 'SUPEREXPO_RATES'"
