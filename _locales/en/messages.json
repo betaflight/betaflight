@@ -529,13 +529,9 @@
     "featureTRANSPONDERTip": {
         "message": "Configure via the Race Transponder tab after enabling."
     },
-    "featureSUPEREXPO_RATESTip": {
-        "message": "Rate value adds instead of rate also Super Expo. Mid stick stays same. Rc rate is always linear. You can modify this setting in the PID tuning tab."
-    },
     "featureAIRMODE": {
         "message": "Airmode always enabled!"
     },
-
     "configurationFeatureEnabled": {
         "message": "Enabled"
     },
