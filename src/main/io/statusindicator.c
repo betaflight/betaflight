@@ -75,8 +75,8 @@ void warningLedBeeper(bool on)
 
 void warningLedPulse(void)
 {
-	// FIXME this is not really pulse now - original code pulsed the light once a second (on short, off long), this code is a result of rebasing onto commit beac0a35cec690f33a2ef5d13f41f3e3a9d8e57a
-	nextBlinkMask = 0b1000001;
+    // FIXME this is not really pulse now - original code pulsed the light once a second (on short, off long), this code is a result of rebasing onto commit beac0a35cec690f33a2ef5d13f41f3e3a9d8e57a
+    nextBlinkMask = 0x41; // 0b1000001
 }
 
 void warningLedSetBlinkMask(uint32_t newBlinkMask)
@@ -86,19 +86,19 @@ void warningLedSetBlinkMask(uint32_t newBlinkMask)
 
 void warningLedCode(uint8_t code)
 {
-    nextBlinkMask = 0b100000;
- 	int bitsRemaining = 32 - 6;  // must be an even number
+    nextBlinkMask = 0x20; // 0b100000
+    int bitsRemaining = 32 - 6;  // must be an even number
     for (int i = 0; i < code && bitsRemaining; i++) {
-    	nextBlinkMask <<= 2;
-    	nextBlinkMask |= 1;
-    	
-    	bitsRemaining -= 2;
+        nextBlinkMask <<= 2;
+        nextBlinkMask |= 1;
+
+        bitsRemaining -= 2;
     }
 }
 
 void warningLedUpdate(void)
 {
-    uint32_t now = micros();
+    const uint32_t now = micros();
     if ((int32_t)(now - warningLedTimer) > 0) {
         warningLedRefresh();
         warningLedTimer = now + WARNING_LED_BLINK_BIT_DELAY;
