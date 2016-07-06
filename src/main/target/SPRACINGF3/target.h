@@ -65,9 +65,9 @@
 #define SONAR_ECHO_PIN      PB1
 #define SONAR_TRIGGER_PIN   PB0
 
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 5

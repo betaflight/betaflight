@@ -43,9 +43,9 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
-#define USE_USART1          // JST-SH Serial - TX (PA9) RX (PA10)
-#define USE_USART2          // Input - TX (NC) RX (PA15)
-#define USE_USART3          // Solder Pads - TX (PB10) RX (PB11)
+#define USE_UART1          // JST-SH Serial - TX (PA9) RX (PA10)
+#define USE_UART2          // Input - TX (NC) RX (PA15)
+#define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
 #define SERIAL_PORT_COUNT 5
 

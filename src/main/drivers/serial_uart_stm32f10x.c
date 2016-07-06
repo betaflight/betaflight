@@ -37,19 +37,19 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-#ifdef USE_USART1
+#ifdef USE_UART1
 static uartPort_t uartPort1;
 #endif
 
-#ifdef USE_USART2
+#ifdef USE_UART2
 static uartPort_t uartPort2;
 #endif
 
-#ifdef USE_USART3
+#ifdef USE_UART3
 static uartPort_t uartPort3;
 #endif
 
-void usartIrqCallback(uartPort_t *s)
+void uartIrqCallback(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
@@ -76,9 +76,9 @@ void usartIrqCallback(uartPort_t *s)
     }
 }
 
-#ifdef USE_USART1
+#ifdef USE_UART1
 // USART1 - Telemetry (RX/TX by DMA)
-uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
@@ -99,7 +99,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     s->USARTx = USART1;
 
 
-#ifdef USE_USART1_RX_DMA
+#ifdef USE_UART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 #endif
@@ -109,8 +109,8 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 
-    // USART1_TX    PA9
-    // USART1_RX    PA10
+    // UART1_TX    PA9
+    // UART1_RX    PA10
     if (options & SERIAL_BIDIR) {
         IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_RXTX, RESOURCE_USART);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), IOCFG_AF_OD);
@@ -133,7 +133,7 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-#ifndef USE_USART1_RX_DMA
+#ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1);
@@ -162,14 +162,14 @@ void DMA1_Channel4_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
     uartPort_t *s = &uartPort1;
-    usartIrqCallback(s);
+    uartIrqCallback(s);
 }
 
 #endif
 
-#ifdef USE_USART2
+#ifdef USE_UART2
 // USART2 - GPS or Spektrum or ?? (RX + TX by IRQ)
-uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
@@ -195,8 +195,8 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
     RCC_ClockCmd(RCC_APB1(USART2), ENABLE);
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 
-    // USART2_TX    PA2
-    // USART2_RX    PA3
+    // UART2_TX    PA2
+    // UART2_RX    PA3
     if (options & SERIAL_BIDIR) {
         IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_RXTX, RESOURCE_USART);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), IOCFG_AF_OD);
@@ -227,14 +227,14 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &uartPort2;
-    usartIrqCallback(s);
+    uartIrqCallback(s);
 }
 
 #endif
 
-#ifdef USE_USART3
+#ifdef USE_UART3
 // USART3
-uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
     static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
@@ -260,17 +260,17 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(USART3_TX_PIN)), OWNER_SERIAL_RXTX, RESOURCE_USART);
-        IOConfigGPIO(IOGetByTag(IO_TAG(USART3_TX_PIN)), IOCFG_AF_OD);
+        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_RXTX, RESOURCE_USART);
+        IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(USART3_TX_PIN)), OWNER_SERIAL_TX, RESOURCE_USART);
-            IOConfigGPIO(IOGetByTag(IO_TAG(USART3_TX_PIN)), IOCFG_AF_PP);
+            IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, RESOURCE_USART);
+            IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_PP);
         }
 
         if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(USART3_RX_PIN)), OWNER_SERIAL_RX, RESOURCE_USART);
-            IOConfigGPIO(IOGetByTag(IO_TAG(USART3_RX_PIN)), IOCFG_IPU);
+            IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL_RX, RESOURCE_USART);
+            IOConfigGPIO(IOGetByTag(IO_TAG(UART3_RX_PIN)), IOCFG_IPU);
         }
     }
 
@@ -288,6 +288,6 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &uartPort3;
-    usartIrqCallback(s);
+    uartIrqCallback(s);
 }
 #endif

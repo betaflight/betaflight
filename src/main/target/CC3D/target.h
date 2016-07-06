@@ -69,8 +69,8 @@
 #define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART3
+#define USE_UART1
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 4
 
@@ -82,8 +82,8 @@
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
-#define USART3_RX_PIN       PB11
-#define USART3_TX_PIN       PB10
+#define UART3_RX_PIN       PB11
+#define UART3_TX_PIN       PB10
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

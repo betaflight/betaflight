@@ -119,9 +119,9 @@
 
 #define DISPLAY
 
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 5
@@ -134,8 +134,8 @@
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
 // USART3 only on NAZE32_SP - Flex Port
-#define USART3_RX_PIN PB11
-#define USART3_TX_PIN PB10
+#define UART3_RX_PIN PB11
+#define UART3_TX_PIN PB10
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
