@@ -24,6 +24,7 @@ env:
   - TARGET=CHEBUZZF3
   - TARGET=OLIMEXINO
   - TARGET=IRCFUSIONF3
+  - TARGET=F3FCRACING
 
 # use new docker environment
 sudo: false

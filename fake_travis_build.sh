@@ -20,7 +20,8 @@ targets=("PUBLISHMETA=True" \
     "TARGET=EUSTM32F103RC" \
     "TARGET=CHEBUZZF3" \
     "TARGET=OLIMEXINO" \
-    "TARGET=IRCFUSIONF3" )
+    "TARGET=IRCFUSIONF3" \
+    "TARGET=F3FCRACING" )
 
 #fake a travis build environment
 export TRAVIS_BUILD_NUMBER=$(date +%s)
