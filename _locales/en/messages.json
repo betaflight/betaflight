@@ -565,6 +565,9 @@
     "configurationSerialRXHelp": {
         "message": "<strong>Note:</strong> Remember to configure a Serial Port (via Ports tab) and choose a Serial Receiver Provider when using RX_SERIAL feature."
     },
+    "configurationOtherFeaturesHelp": {
+        "message": "<strong>Note:</strong> Some of the features of the firmware are not shown in this list any more, because they have been moved to other places in the configurator."
+    },
     "configurationBoardAlignment": {
         "message": "Board and Sensor Alignment"
     },
