@@ -405,7 +405,6 @@ TABS.receiver.initModelPreview = function () {
     }
 
     this.rateCurve = new RateCurve(CONFIG.flightControllerIdentifier !== 'BTFL' || semver.lt(CONFIG.flightControllerVersion, '2.8.0'));
-    this.degreeToRadianRatio = Math.PI / 180;
 
     $(window).on('resize', $.proxy(this.model.resize, this.model));
 };
@@ -422,7 +421,7 @@ TABS.receiver.renderModel = function () {
             pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate * 100, RC_tuning.RC_RATE * 100, RC_tuning.RC_EXPO * 100, this.useSuperExpo),
             yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate * 100, SPECIAL_PARAMETERS.RC_RATE_YAW * 100, RC_tuning.RC_YAW_EXPO * 100, this.useSuperExpo);
 
-        this.model.rotateBy(-pitch * this.degreeToRadianRatio, -yaw * this.degreeToRadianRatio, -roll * this.degreeToRadianRatio);
+        this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
     }
 };
 
