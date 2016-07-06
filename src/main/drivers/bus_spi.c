@@ -113,31 +113,26 @@ void spiInitDevice(SPIDevice device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
-    IOInit(IOGetByTag(spi->sck), OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(IOGetByTag(spi->sck),  OWNER_SYSTEM, RESOURCE_SPI);
     IOInit(IOGetByTag(spi->miso), OWNER_SYSTEM, RESOURCE_SPI);
     IOInit(IOGetByTag(spi->mosi), OWNER_SYSTEM, RESOURCE_SPI);
     
-#if defined(STM32F303xC) || defined(STM32F4)
-    if (spi->sdcard) {
-        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG, spi->af);
-        IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
-    }
-    else {
-        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_CFG, spi->af);
-        IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
-    }
-    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
+#if defined(STM32F3) || defined(STM32F4)
+    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_SCK_CFG,  spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG, spi->af);
 
     if (spi->nss)
         IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
-#endif
-#if defined(STM32F10X)
-    IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
+#elif defined(STM32F1)
+    IOConfigGPIO(IOGetByTag(spi->sck),  SPI_IO_AF_SCK_CFG);
     IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
     IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
     
     if (spi->nss)
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
+#else
+#error "Invalid target for SPI"
 #endif
     
             // Init SPI hardware
