@@ -76,13 +76,14 @@ typedef struct timerHardware_s {
     ioTag_t tag;
     uint8_t channel;
     uint8_t irq;
-    uint8_t outputEnable;
+    uint8_t output;
     ioConfig_t ioMode;
 #if defined(STM32F3) || defined(STM32F4)
     uint8_t alternateFunction;
 #endif
-    uint8_t outputInverted;
 } timerHardware_t;
+enum {TIMER_OUTPUT_ENABLED = 0x01, TIMER_OUTPUT_INVERTED = 0x02};
+
 
 #ifdef STM32F1
 #if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
