@@ -34,6 +34,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -207,14 +208,31 @@ void osdHardwareCheck(void)
     max7456_updateLOSState();
 }
 
+static const uint8_t logoElement[] = {
+	FONT_CHARACTER_CF_LOGO_W3xH2__1x1,
+	FONT_CHARACTER_CF_LOGO_W3xH2__1x2,
+	FONT_CHARACTER_CF_LOGO_W3xH2__1x3,
+	FONT_CHARACTER_CF_LOGO_W3xH2__2x1,
+	FONT_CHARACTER_CF_LOGO_W3xH2__2x2,
+	FONT_CHARACTER_CF_LOGO_W3xH2__2x3
+};
+
+static void osdDrawStaticElement(uint8_t x, uint8_t y, const uint8_t element[], uint8_t elementLength, uint8_t width) {
+	uint8_t w = 0;
+
+	for (uint8_t i = 0; i < elementLength; i++) {
+	    osdSetRawCharacterAtPosition(x + w, y, element[i]);
+	    w++;
+	    if (w == width) {
+	    	w = 0;
+	    	y++;
+	    }
+	}
+}
+
 void osdHardwareDrawLogo(void)
 {
-    osdSetRawCharacterAtPosition(14, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x1);
-    osdSetRawCharacterAtPosition(15, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x2);
-    osdSetRawCharacterAtPosition(16, 5, FONT_CHARACTER_CF_LOGO_W3xH2__1x3);
-    osdSetRawCharacterAtPosition(14, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x1);
-    osdSetRawCharacterAtPosition(15, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x2);
-    osdSetRawCharacterAtPosition(16, 6, FONT_CHARACTER_CF_LOGO_W3xH2__2x3);
+	osdDrawStaticElement(14,5, logoElement, ARRAYLEN(logoElement), 3);
 }
 
 void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
