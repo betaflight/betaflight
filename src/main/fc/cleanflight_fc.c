@@ -177,9 +177,7 @@ Those are: TPA, throttle expo
 */
 static void updateRcCommands(void)
 {
-
-    int32_t tmp, tmp2;
-    int32_t axis, prop1 = 0, prop2;
+    int32_t prop2;
 
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
@@ -192,8 +190,9 @@ static void updateRcCommands(void)
         }
     }
 
-    for (axis = 0; axis < 3; axis++) {
-        tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+    for (int axis = 0; axis < 3; axis++) {
+        int32_t prop1;
+        int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
         if (axis == ROLL || axis == PITCH) {
             if (rcControlsConfig()->deadband) {
                 if (tmp > rcControlsConfig()->deadband) {
@@ -203,11 +202,12 @@ static void updateRcCommands(void)
                 }
             }
 
-            tmp2 = tmp / 100;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
+            rcCommand[axis] = rcLookupPitchRoll(tmp);
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
             prop1 = (uint16_t)prop1 * prop2 / 100;
-        } else if (axis == YAW) {
+            // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. 100 means 100% of the pids
+            PIDweight[axis] = prop2;
+        } else {
             if (rcControlsConfig()->yaw_deadband) {
                 if (tmp > rcControlsConfig()->yaw_deadband) {
                     tmp -= rcControlsConfig()->yaw_deadband;
@@ -215,9 +215,10 @@ static void updateRcCommands(void)
                     tmp = 0;
                 }
             }
-            tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -rcControlsConfig()->yaw_control_direction;
+            rcCommand[axis] = rcLookupYaw(tmp) * -rcControlsConfig()->yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
+            // YAW TPA disabled.
+            PIDweight[axis] = 100;
         }
 #ifndef SKIP_PID_MW23
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
@@ -225,22 +226,15 @@ static void updateRcCommands(void)
         dynI8[axis] = (uint16_t)pidProfile()->I8[axis] * prop1 / 100;
         dynD8[axis] = (uint16_t)pidProfile()->D8[axis] * prop1 / 100;
 #endif
-        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
-        if (axis == YAW) {
-            PIDweight[axis] = 100;
-        }
-        else {
-            PIDweight[axis] = prop2;
-        }
 
-        if (rcData[axis] < rxConfig()->midrc)
+        if (rcData[axis] < rxConfig()->midrc) {
             rcCommand[axis] = -rcCommand[axis];
+        }
     }
 
-    tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+    int32_t tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
     tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
