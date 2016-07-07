@@ -20,7 +20,11 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_bt_config_data() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_rc_map);
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_special_parameters_data);
+    }
+
+    function get_special_parameters_data() {
+        MSP.send_message(MSP_codes.MSP_SPECIAL_PARAMETERS, false, false, get_rc_map);
     }
 
     function get_rc_map() {
