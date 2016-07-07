@@ -86,7 +86,7 @@ This is a new floating point based PID controller. MW23 and MWREWRITE use intege
 
 In Cleanflight v1.13 the LUX PID controller was changed so that it uses the same PID settings as MWREWRITE.
 
-This controller has code that attempts to compensate for variations in the looptime, which should mean that the PIDs don't have to be retuned when the looptime setting changes. 
+This controller has code that attempts to compensate for variations in the looptime, which should mean that the PIDs don't have to be retuned when the looptime setting changes.
 
 There were initially some problems with *Horizon* mode, and sluggishness in *Acro* mode, that were recently fixed by [nebbian](https://github.com/nebbian) in v1.6.0.
 
@@ -96,7 +96,7 @@ The strength of the auto-leveling correction applied during *Angle* mode is cont
 
 The strength of the auto-leveling correction applied during *Horizon* mode is set by the LEVEL "I" PID term which is labeled "LEVEL Integral" in the GUI (prior to version v1.13.0 the parameter `level_horizon` was used). The default is 3.0, which makes the *Horizon* mode apply weaker self-leveling than the *Angle* mode. Note: There is currently a bug in the Configurator which shows this parameter divided by 100 (so it shows as 0.03 rather than 3.0).
 
-The transition between self-leveling and acro behavior in *Horizon* mode is controlled by the LEVEL "D" term which is labeled "LEVEL Derivative" in the GUI  (prior to version of v1.13.0 the parameter `sensitivity_horizon` parameter was used) . This sets the percentage of your stick travel that should have self-leveling applied to it, so smaller values cause more of the stick area to fly using only the gyros. The default is 75% 
+The transition between self-leveling and acro behavior in *Horizon* mode is controlled by the LEVEL "D" term which is labeled "LEVEL Derivative" in the GUI  (prior to version of v1.13.0 the parameter `sensitivity_horizon` parameter was used) . This sets the percentage of your stick travel that should have self-leveling applied to it, so smaller values cause more of the stick area to fly using only the gyros. The default is 75%
 
 For example, at a setting of "100" for sensitivity horizon, 100% self-leveling strength will be applied at center stick, 50% self-leveling will be applied at 50% stick, and no self-leveling will be applied at 100% stick. If sensitivity is decreased to 75, 100% self-leveling will be applied at center stick, 50% will be applied at 63% stick, and no self-leveling will be applied at 75% stick and onwards.
 
@@ -104,7 +104,7 @@ For example, at a setting of "100" for sensitivity horizon, 100% self-leveling s
 
 ### RC Rate
 
-An overall multiplier on the RC stick inputs for pitch, roll, and yaw. 
+An overall multiplier on the RC stick inputs for pitch, roll, and yaw.
 
 On PID Controller MW23 can be used to set the "feel" around center stick for small control movements. (RC Expo also affects this). For PID Controllers MWREWRITE and LUX, this basically sets the baseline stick sensitivity.
 
@@ -120,10 +120,8 @@ In PID Controllers MWREWRITE and LUX, it acts as a stick sensitivity multiplier,
 
 ### Filters
 
-`gyro_lpf` sets the hardware gyro low pass filter value. If 0 or 256 the gyro uses the least hardware filtering available (256Hz) and the internal sampling rate is the fastest possible (8kHz) with the least possible delay. The lower the number the stronger the filtering. Stronger filtering reduces noise in the gyro signal before that data gets into the PID calculations. Stronger filtering adds delays that can be associated with wobble and reduced responsiveness. Filtering is needed because motor/frame noise can cause overheating of motors especially when amplified by Dterm in quads with low mass and fast braking ESCs. If 188 or lower are chosen, the gyro sampling is internally at 1kHz and delays are greater. Faster sampling is good because things are slightly more responsive but can cause aliasing noise. Setting to 188 allows syncing of the FC to the gyro at 1kHz (if `gyro_sync` is enabled and available in the code) which reduces aliasing a lot. 
+`gyro_lpf` sets the hardware gyro low pass filter value. If 0 or 256 the gyro uses the least hardware filtering available (256Hz) and the internal sampling rate is the fastest possible (8kHz) with the least possible delay. The lower the number the stronger the filtering. Stronger filtering reduces noise in the gyro signal before that data gets into the PID calculations. Stronger filtering adds delays that can be associated with wobble and reduced responsiveness. Filtering is needed because motor/frame noise can cause overheating of motors especially when amplified by Dterm in quads with low mass and fast braking ESCs. If 188 or lower are chosen, the gyro sampling is internally at 1kHz and delays are greater. Faster sampling is good because things are slightly more responsive but can cause aliasing noise. Setting to 188 allows syncing of the FC to the gyro at 1kHz (if `gyro_sync` is enabled and available in the code) which reduces aliasing a lot.
 
-`gyro_cut_hz` is an IIR (Infinite Impulse Response) software low-pass filter that can be configured to any desired frequency. If set to a value above zero it is active. It works after the hardware filter on the gyro (in the FC code) and further reduces noise. The two filters in series have twice the cut rate of one alone. There's not a lot of sense running `gyro_cut_hz` at a value above `gyro_lpf`. If used, it is typically set about half the hardware filter rate to enhance the cut of higher frequencies before the PID calculations. Frequencies above 100Hz are of no interest to us from a flight control perspective - they can and should be removed from the signal before it gets to the PID calculation stage. 
-
-`pterm_cut_hz` is an IIR software low-pass filter that can be configured to any desired frequency. If enabled, it works after both the gyro_cut filters. It specifically filters only the P term data. Lower values can therefore specifically help remove noise in the P term part of the PID calculation. Blackbox recording is needed to determine what value works best on this filter. It is only really needed if you have P term noise despite the gyro filters, but typically it is needed with the commonly used relatively high gyro filter values.
+`gyro_soft_lpf` is an IIR (Infinite Impulse Response) software low-pass filter that can be configured to any desired frequency. If set to a value above zero it is active. It works after the hardware filter on the gyro (in the FC code) and further reduces noise. The two filters in series have twice the cut rate of one alone. There's not a lot of sense running `gyro_soft_lpf` at a value above `gyro_lpf`. If used, it is typically set about half the hardware filter rate to enhance the cut of higher frequencies before the PID calculations. Frequencies above 100Hz are of no interest to us from a flight control perspective - they can and should be removed from the signal before it gets to the PID calculation stage. 
 
 `dterm_cut_hz` is an IIR software low-pass filter that can be configured to any desired frequency. It works after the gyro_cut filters and specifically filters only the D term data. D term data is frequency dependent, the higher the frequency, the greater the computed D term value. This filter is required if despite the gyro filtering there remains excessive D term noise. Typically it needs to be set quite low because D term noise is a major problem with typical IIR filters. If set too low the phase shift in D term reduces the effectiveness of D term in controlling stop wobble, so this value needs some care when varying it. Again blackbox recording is needed to properly optimise the value for this filter.
