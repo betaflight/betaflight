@@ -34,6 +34,7 @@
 #include "common/color.h"
 #include "common/colorconversion.h"
 #include "drivers/dma.h"
+#include "drivers/nvic.h"
 #include "drivers/light_ws2811strip.h"
 
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
@@ -75,19 +76,19 @@ void setStripColors(const hsvColor_t *colors)
     }
 }
 
-void ws2811DMAHandler(DMA_Channel_TypeDef *channel)
+void ws2811DMAHandler(dmaChannelDescriptor_t* descriptor)
 {
-    if (DMA_GetFlagStatus(WS2811_DMA_TC_FLAG)) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(channel, DISABLE);
-        DMA_ClearFlag(WS2811_DMA_TC_FLAG);
+        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
 void ws2811LedStripInit(void)
 {
     memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
+    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler, NVIC_PRIO_WS2811_DMA, 0);
     ws2811LedStripHardwareInit();
     ws2811UpdateStrip();
 }
