@@ -20,7 +20,6 @@ targets=("PUBLISHMETA=True" \
     "TARGET=EUSTM32F103RC" \
     "TARGET=CHEBUZZF3" \
     "TARGET=OLIMEXINO" \
-    "TARGET=NAZE32PRO" \
     "TARGET=IRCFUSIONF3" )
 
 #fake a travis build environment
