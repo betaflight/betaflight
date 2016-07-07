@@ -25,8 +25,6 @@
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 
-#define DTERM_AVERAGE_COUNT 4
-
 typedef enum {
     PIDROLL,
     PIDPITCH,
@@ -56,7 +54,8 @@ typedef struct pidProfile_s {
     uint8_t D8[PID_ITEM_COUNT];
     uint8_t pidController;
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
-    uint16_t dterm_cut_hz;                  // dterm filtering
+    uint16_t dterm_lpf;                     // dterm filtering
+    uint16_t yaw_lpf;                       // additional yaw filter when yaw axis too noisy
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);

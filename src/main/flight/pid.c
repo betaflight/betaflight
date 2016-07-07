@@ -59,6 +59,10 @@ uint8_t PIDweight[3];
 int32_t lastITerm[3], ITermLimit[3];
 float lastITermf[3], ITermLimitf[3];
 
+pt1Filter_t deltaFilter[3];
+pt1Filter_t yawFilter;
+
+
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
@@ -102,7 +106,8 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .D8[PIDVEL] = 1,
 
     .yaw_p_limit = YAW_P_LIMIT_MAX,
-    .dterm_cut_hz = 0,
+    .dterm_lpf = 100,   // DTERM filtering ON by default
+    .yaw_lpf = 80,
 );
 
 void pidResetITerm(void)
@@ -110,19 +115,6 @@ void pidResetITerm(void)
     for (int axis = 0; axis < 3; axis++) {
         lastITerm[axis] = 0;
         lastITermf[axis] = 0.0f;
-    }
-}
-
-biquad_t deltaFilterState[3];
-
-void pidFilterIsSetCheck(const pidProfile_t *pidProfile)
-{
-    static bool deltaStateIsSet = false;
-    if (!deltaStateIsSet && pidProfile->dterm_cut_hz) {
-        for (int axis = 0; axis < 3; axis++) {
-            BiQuadNewLpf(pidProfile->dterm_cut_hz, &deltaFilterState[axis], targetLooptime);
-        }
-        deltaStateIsSet = true;
     }
 }
 
