@@ -337,6 +337,20 @@ TABS.pid_tuning.initialize = function (callback) {
         }
     }
 
+    var showAllButton = $('#showAllPids');
+
+    function updatePidDisplay() {
+        if (!TABS.pid_tuning.showAllPids) {
+            hideUnusedPids();
+
+            showAllButton.text(chrome.i18n.getMessage("pidTuningShowAllPids"));
+        } else {
+            showAllPids();
+
+            showAllButton.text(chrome.i18n.getMessage("pidTuningHideUnusedPids"));
+        }
+    }
+
     function drawAxes(curveContext, width, height, scaleHeight) {
         curveContext.strokeStyle = '#000000';
         curveContext.lineWidth = 4;
@@ -354,8 +368,8 @@ TABS.pid_tuning.initialize = function (callback) {
         curveContext.stroke();
 
         if (scaleHeight <= height / 2) {
-            curveContext.strokeStyle = '#202020';
-            curveContext.lineWidth = 1;
+            curveContext.strokeStyle = '#c0c0c0';
+            curveContext.lineWidth = 4;
 
             curveContext.beginPath();
             curveContext.moveTo(0, height / 2 + scaleHeight);
@@ -379,6 +393,28 @@ TABS.pid_tuning.initialize = function (callback) {
         return value;
     }
 
+    var useLegacyCurve = false;
+    if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
+        useLegacyCurve = true;
+    }
+
+    self.rateCurve = new RateCurve(useLegacyCurve);
+
+    function printMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo, maxAngularVelElement) {
+        var maxAngularVel = self.rateCurve.getMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo);
+        maxAngularVelElement.text(maxAngularVel);
+
+        return maxAngularVel;
+    }
+
+    function drawCurve(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, colour, yOffset, context) {
+        context.save();
+        context.strokeStyle = colour;
+        context.translate(0, yOffset);
+        self.rateCurve.draw(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, context);
+        context.restore();
+    }
+
     function process_html() {
         // translate to user-selected language
         localize();
@@ -392,23 +428,16 @@ TABS.pid_tuning.initialize = function (callback) {
             rc_rate_yaw: SPECIAL_PARAMETERS.RC_RATE_YAW * 100,
             rc_expo:     RC_tuning.RC_EXPO * 100,
             rc_yaw_expo: RC_tuning.RC_YAW_EXPO * 100,
-            superexpo:   false
+            superexpo:   bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT)
         };
 
-        var showAllButton = $('#showAllPids');
-        var showAllMsg = chrome.i18n.getMessage("pidTuningShowAllPids");
-        var hideUnusedMsg = chrome.i18n.getMessage("pidTuningHideUnusedPids");
+        if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+            self.currentRates.rc_rate_yaw = self.currentRates.rc_rate;
+        }
 
-        function updatePidDisplay() {
-            if (!TABS.pid_tuning.showAllPids) {
-                hideUnusedPids();
-
-                showAllButton.text(showAllMsg);
-            } else {
-                showAllPids();
-
-                showAllButton.text(hideUnusedMsg);
-            }
+        if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
+            self.currentRates.roll_rate = RC_tuning.roll_pitch_rate * 100;
+            self.currentRates.pitch_rate = RC_tuning.roll_pitch_rate * 100;
         }
 
         updatePidDisplay();
@@ -481,58 +510,22 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning .roll_pitch_rate').hide();
         }
 
-        // Getting the DOM elements for curve display
-	var rcRateElement = $('.pid_tuning input[name="rc_rate"]');
-        var rcRateYawElement;
-        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            rcRateYawElement = $('.pid_tuning input[name="rc_rate_yaw"]');
-        } else {
-            rcRateYawElement = rcRateElement;
+        if (useLegacyCurve) {
+            $('.new_rates').hide();
         }
 
-        var rateRollElement = $('.pid_tuning input[name="roll_rate"]');
-        var ratePitchElement = $('.pid_tuning input[name="pitch_rate"]');
-        var rateYawElement = $('.pid_tuning input[name="yaw_rate"]');
-
-        var rcExpoElement = $('.pid_tuning input[name="rc_expo"]');
-        var rcExpoYawElement = $('.pid_tuning input[name="rc_yaw_expo"]');
-
+        // Getting the DOM elements for curve display
         var rcCurveElement = $('.rate_curve canvas').get(0);
         var curveContext = rcCurveElement.getContext("2d");
         rcCurveElement.width = 1000;
         rcCurveElement.height = 1000;
 
-	var maxAngularVelRollElement = $('.rc_curve .maxAngularVelRoll');
-	var maxAngularVelPitchElement = $('.rc_curve .maxAngularVelPitch');
-	var maxAngularVelYawElement = $('.rc_curve .maxAngularVelYaw');
+        var maxAngularVelRollElement = $('.rc_curve .maxAngularVelRoll');
+        var maxAngularVelPitchElement = $('.rc_curve .maxAngularVelPitch');
+        var maxAngularVelYawElement = $('.rc_curve .maxAngularVelYaw');
 
-        var superExpoElement = $('.pid_tuning input[name="show_superexpo_rates"]');
-
-	var useLegacyCurve = false;
-        if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
-            $('.new_rates').hide();
-            useLegacyCurve = true;
-        }
-
-        self.rateCurve = new RateCurve(useLegacyCurve);
-
-        // UI Hooks
-        // curves
-        function redrawRateCurves(event) {
+        function updateRates(event) {
             setTimeout(function () { // let global validation trigger and adjust the values first
-                var curveHeight = rcCurveElement.height;
-                var curveWidth = rcCurveElement.width;
-
-		var useSuperExpo = superExpoElement.is(':checked');
-
-                var rateRoll = checkInput(rateRollElement);
-                var ratePitch = checkInput(ratePitchElement);
-                var rateYaw = checkInput(rateYawElement);
-                var rcRate = checkInput(rcRateElement);
-                var rcRateYaw = checkInput(rcRateYawElement);
-                var rcExpo = checkInput(rcExpoElement);
-                var rcExpoYaw = checkInput(rcExpoYawElement);
-
                 var targetElement = $(event.target),
                     targetValue = checkInput(targetElement);
 
@@ -540,15 +533,26 @@ TABS.pid_tuning.initialize = function (callback) {
                     self.currentRates[targetElement.attr('name')] = targetValue * 100;
                 }
 
-                self.currentRates.superexpo = useSuperExpo;
+                if (targetElement.attr('name') === 'rc_rate' && CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+                    self.currentRates.rc_rate_yaw = targetValue * 100;
+                }
 
-                var maxAngularVelRoll = self.rateCurve.getMaxAngularVel(rateRoll, rcRate, rcExpo, useSuperExpo);
-		maxAngularVelRollElement.text(maxAngularVelRoll);
-                var maxAngularVelPitch = self.rateCurve.getMaxAngularVel(ratePitch, rcRate, rcExpo, useSuperExpo);
-		maxAngularVelPitchElement.text(maxAngularVelPitch);
-                var maxAngularVelYaw = self.rateCurve.getMaxAngularVel(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo);
-		maxAngularVelYawElement.text(maxAngularVelYaw);
-		var maxAngularVel = Math.max(maxAngularVelRoll, maxAngularVelPitch, maxAngularVelYaw);
+                if (targetElement.attr('name') === 'roll_pitch_rate' && semver.lt(CONFIG.apiVersion, "1.7.0")) {
+                    self.currentRates.roll_rate = targetValue * 100;
+                    self.currentRates.pitch_rate = targetValue * 100;
+	        }
+
+                if (targetElement.attr('name') === 'show_superexpo_rates') {
+                    self.currentRates.superexpo = targetElement.is(':checked');
+		}
+
+                var curveHeight = rcCurveElement.height;
+                var curveWidth = rcCurveElement.width;
+
+		var maxAngularVel = Math.max(
+                    printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelRollElement),
+                    printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelPitchElement),
+                    printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVelYawElement));
 
                 curveContext.clearRect(0, 0, curveWidth, curveHeight);
 
@@ -558,27 +562,18 @@ TABS.pid_tuning.initialize = function (callback) {
 
                 curveContext.lineWidth = 4;
 
-                curveContext.save();
-                curveContext.strokeStyle = '#ff0000';
-                self.rateCurve.draw(rateRoll, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
-                curveContext.restore();
+		drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#ff0000', 0, curveContext);
 
-                curveContext.save();
-                curveContext.translate(0, -4);
-                curveContext.strokeStyle = '#00ff00';
-                self.rateCurve.draw(ratePitch, rcRate, rcExpo, useSuperExpo, maxAngularVel, curveContext);
-                curveContext.restore();
+		drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#00ff00', -4, curveContext);
 
-                curveContext.save();
-                curveContext.strokeStyle = '#0000ff';
-                curveContext.translate(0, 4);
-                self.rateCurve.draw(rateYaw, rcRateYaw, rcExpoYaw, useSuperExpo, maxAngularVel, curveContext);
-                curveContext.restore();
+		drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVel, '#0000ff', 4, curveContext);
             }, 0);
         };
 
-        $('.pid_tuning').on('input change', redrawRateCurves).trigger('input');
-        $('.super_expo_checkbox').on('input change', redrawRateCurves).trigger('input');
+        // UI Hooks
+        // curves
+        $('.pid_tuning').on('input change', updateRates);
+        $('.super_expo_checkbox').on('input change', updateRates).trigger('input');
 
         $('.throttle input').on('input change', function () {
             setTimeout(function () { // let global validation trigger and adjust the values first

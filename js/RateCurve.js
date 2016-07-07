@@ -40,10 +40,6 @@ var RateCurve = function (useLegacyCurve) {
     };
 
     this.drawRateCurve = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height) {
-        rate = rate * 100;
-	rcRate = rcRate * 100;
-	rcExpo = rcExpo * 100;
-
         var canvasHeightScale = height / (2 * maxAngularVel);
 
         var stepWidth = context.lineWidth;
@@ -66,6 +62,10 @@ var RateCurve = function (useLegacyCurve) {
     }
 
     this.drawLegacyRateCurve = function (rate, rcRate, rcExpo, context, width, height) {
+	rate = rate / 100;
+	rcRate = rcRate / 100;
+	rcExpo = rcExpo / 100;
+
         // math magic by englishman
         var rateY = height * rcRate;
         rateY = rateY + (1 / (1 - ((rateY / height) * rate)))
@@ -82,10 +82,6 @@ RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpo
     var maxAngularVel;
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined
         && !this.useLegacyCurve) {
-        rate = rate * 100;
-	rcRate = rcRate * 100;
-	rcExpo = rcExpo * 100;
-
         maxAngularVel = this.rcCommandRawToDegreesPerSecond(maxRc, rate, rcRate, rcExpo, superExpoActive);
     }
 
