@@ -33,14 +33,6 @@
 #define BEEPER      PB2
 #define BEEPER_INVERTED
 
-// tqfp48 pin 3
-#define MPU6500_CS_PIN                   PC14
-#define MPU6500_SPI_INSTANCE             SPI1
-
-// tqfp48 pin 25
-#define BMP280_CS_PIN                    PB12
-#define BMP280_SPI_INSTANCE              SPI2
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -51,18 +43,31 @@
 #define SPI1_MISO_PIN           PB4
 // tqfp48 pin 41
 #define SPI1_MOSI_PIN           PB5
+// tqfp48 pin 3
+#define SPI1_NSS_PIN            PC14
+
 // tqfp48 pin 26
 #define SPI2_SCK_PIN            PB13
 // tqfp48 pin 27
 #define SPI2_MISO_PIN           PB14
 // tqfp48 pin 28
 #define SPI2_MOSI_PIN           PB15
+// tqfp48 pin 25
+#define SPI2_NSS_PIN            PB12
+
+// tqfp48 pin 3
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
+
+// tqfp48 pin 25
+#define BMP280_CS_PIN           SPI2_NSS_PIN
+#define BMP280_SPI_INSTANCE     SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #define M25P16_SPI_SHARED
-#define M25P16_CS_PIN       PC15
-#define M25P16_SPI_INSTANCE SPI2
+#define M25P16_CS_PIN           PC15
+#define M25P16_SPI_INSTANCE     SPI2
 
 // timer definitions in drivers/timer.c
 // channel mapping in drivers/pwm_mapping.c
