@@ -616,9 +616,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navigationFSMState_t previousState)
 {
-    /* If previous controller was NOT executing NAV_CTL_ALT controller, we must reset altitude setpoint */
-    if ((navGetStateFlags(previousState) & NAV_CTL_ALT) == 0) {
+    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    if ((prevFlags & NAV_CTL_ALT) == 0) {
         resetAltitudeController();
+    }
+
+    if (((prevFlags & NAV_CTL_ALT) == 0) || ((prevFlags & NAV_AUTO_RTH) != 0) || ((prevFlags & NAV_AUTO_WP) != 0)) {
         setupAltitudeController();
         setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);  // This will reset surface offset
     }
