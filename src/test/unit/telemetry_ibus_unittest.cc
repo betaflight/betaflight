@@ -113,7 +113,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
-    // printf("w: 0x%02x\n", ch);
+    printf("w: 0x%02x\n", ch);
 }
 
 
@@ -201,6 +201,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
 class IbusTelemteryProtocolUnitTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
+        ibusTelemetryConfig()->report_cell_voltage = false;
         serialTestResetBuffers();
         initIbusTelemetry();
         checkIbusTelemetryState();
@@ -261,16 +262,45 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToSensorTypeQueryRpm)
 }
 
 
-TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbatt)
+TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattZero)
 {
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0 volts
     vbat = 0;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x00\x00\x58\xFF", 6);
+}
+
+TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellVoltage)
+{
+    ibusTelemetryConfig()->report_cell_voltage = true;
+ 
+    //Given ibus command: Sensor at address 1, please send your measurement
+    //then we respond with: I'm reading 0.1 volts
+    batteryCellCount = 3;
+    vbat = 30;
+    checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    vbat = 30;
+    batteryCellCount = 1;
+    vbat = 10;
+    checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
+}
+
+TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattPackVoltage)
+{
+    ibusTelemetryConfig()->report_cell_voltage = false;
+
+    //Given ibus command: Sensor at address 1, please send your measurement
+    //then we respond with: I'm reading 0.1 volts
+    batteryCellCount = 3;
+    vbat = 10;
+    checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
+
+    //Given ibus command: Sensor at address 1, please send your measurement
+    //then we respond with: I'm reading 0.1 volts
+    batteryCellCount = 1;
+    vbat = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 

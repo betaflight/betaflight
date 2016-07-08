@@ -68,6 +68,7 @@
 #define PG_AMPERAGE_METER_CONFIG 50
 #define PG_DEBUG_CONFIG 51
 #define PG_SERVO_CONFIG 52
+#define PG_IBUS_TELEMETRY_CONFIG 53
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

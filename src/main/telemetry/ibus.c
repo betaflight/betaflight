@@ -31,6 +31,7 @@
 #ifdef TELEMETRY
 
 #include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "common/axis.h"
 
@@ -158,6 +159,13 @@
  *
  */
 
+
+PG_REGISTER_WITH_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig, PG_IBUS_TELEMETRY_CONFIG, 0);
+
+PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
+    .report_cell_voltage = false,
+);
+
 #define IBUS_UART_MODE     (MODE_RXTX)
 #define IBUS_BAUDRATE      (115200)
 #define IBUS_CYCLE_TIME_MS (8)
@@ -206,6 +214,7 @@ static uint16_t calculateChecksum(uint8_t ibusPacket[static IBUS_CHECKSUM_SIZE],
     for (size_t i = 0; i < packetLength - IBUS_CHECKSUM_SIZE; i++) {
         checksum -= ibusPacket[i];
     }
+
     return checksum;
 }
 
@@ -249,7 +258,11 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
 
 static void dispatchMeasurementRequest(ibusAddress_t address) {
     if (1 == address) {
-        sendIbusMeasurement(address, vbat * 10 / batteryCellCount);
+        uint16_t value = vbat * 10;
+        if (ibusTelemetryConfig()->report_cell_voltage) {
+            value /= batteryCellCount;
+        }
+        sendIbusMeasurement(address, value);
     } else if (2 == address) {
 #ifdef BARO
         float temperature = (baroTemperature + 50) / 100.f;

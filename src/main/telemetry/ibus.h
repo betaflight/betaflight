@@ -17,6 +17,13 @@
 
 #pragma once
 
+
+typedef struct ibusTelemetryConfig_s {
+    uint8_t report_cell_voltage;            // report vbatt divided with cellcount
+} ibusTelemetryConfig_t;
+
+PG_DECLARE(ibusTelemetryConfig_t, ibusTelemetryConfig);
+
 void initIbusTelemetry(void);
 
 void handleIbusTelemetry(void);
