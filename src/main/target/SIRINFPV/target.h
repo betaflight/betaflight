@@ -112,6 +112,10 @@
 #define MAX7456_SPI_INSTANCE              SPI3
 #define MAX7456_SPI_CS_PIN                PA15
 
+#define MAX7456_DMA_CHANNEL_TX              DMA2_Channel2
+#define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
+#define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
+
 #define USE_RTC6705
 #define RTC6705_SPIDATA_PIN         PC15
 #define RTC6705_SPILE_PIN           PC14

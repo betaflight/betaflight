@@ -25,6 +25,7 @@
 #include "io.h"
 #include "rcc.h"
 #include "nvic.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -87,7 +88,7 @@ static uartDevice_t uart1 =
     .rcc_ahb1 = USART1_AHB1_PERIPHERALS,
 #endif
     .rcc_apb2 = RCC_APB2(USART1),
-    .txIrq = DMA2_Stream7_IRQn,
+    .txIrq = DMA2_ST7_HANDLER,
     .rxIrq = USART1_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART1
@@ -110,7 +111,7 @@ static uartDevice_t uart2 =
     .rcc_ahb1 = USART2_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(USART2),
-    .txIrq = DMA1_Stream6_IRQn,
+    .txIrq = DMA1_ST6_HANDLER,
     .rxIrq = USART2_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART2
@@ -133,7 +134,7 @@ static uartDevice_t uart3 =
     .rcc_ahb1 = USART3_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(USART3),
-    .txIrq = DMA1_Stream3_IRQn,
+    .txIrq = DMA1_ST3_HANDLER,
     .rxIrq = USART3_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART3
@@ -156,7 +157,7 @@ static uartDevice_t uart4 =
     .rcc_ahb1 = USART4_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(UART4),
-    .txIrq = DMA1_Stream4_IRQn,
+    .txIrq = DMA1_ST4_HANDLER,
     .rxIrq = UART4_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART4
@@ -179,7 +180,7 @@ static uartDevice_t uart5 =
     .rcc_ahb1 = USART5_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(UART5),
-    .txIrq = DMA2_Stream7_IRQn,
+    .txIrq = DMA2_ST7_HANDLER,
     .rxIrq = UART5_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART5
@@ -202,7 +203,7 @@ static uartDevice_t uart6 =
     .rcc_ahb1 = USART6_AHB1_PERIPHERALS,
 #endif
     .rcc_apb2 = RCC_APB2(USART6),
-    .txIrq = DMA2_Stream6_IRQn,
+    .txIrq = DMA2_ST6_HANDLER,
     .rxIrq = USART6_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART6
@@ -278,6 +279,29 @@ static void handleUsartTxDma(uartPort_t *s)
         s->txDMAEmpty = true;
 }
 
+void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
+{
+    uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
+        {
+            DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+        }
+        handleUsartTxDma(s);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
+    }
+}
+
 uartPort_t *serialUSART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
@@ -336,11 +360,7 @@ uartPort_t *serialUSART(UARTDevice device, uint32_t baudRate, portMode_t mode, p
     }
 
     // DMA TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = uart->txIrq;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(uart->txPriority); 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(uart->txPriority);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaSetHandler(uart->txIrq, dmaIRQHandler, uart->txPriority, (uint32_t)uart);
 
     if (!(s->rxDMAChannel)) {
         NVIC_InitStructure.NVIC_IRQChannel = uart->rxIrq;
@@ -359,30 +379,6 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
     return serialUSART(UARTDEV_1, baudRate, mode, options);
 }
 
-// USART1 Tx DMA Handler
-void DMA2_Stream7_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_1]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF7))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
-    }
-}
-
 // USART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
@@ -396,30 +392,6 @@ void USART1_IRQHandler(void)
 uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUSART(UARTDEV_2, baudRate, mode, options);
-}
-
-// USART2 Tx DMA Handler
-void DMA1_Stream6_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_2]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF6))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
-    }
 }
 
 void USART2_IRQHandler(void)
@@ -436,30 +408,6 @@ uartPort_t *serialUSART3(uint32_t baudRate, portMode_t mode, portOptions_t optio
     return serialUSART(UARTDEV_3, baudRate, mode, options);
 }
 
-// USART3 Tx DMA Handler
-void DMA1_Stream3_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_3]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF3))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF3);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF3);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF3)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF3);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF3)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF3);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF3)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF3);
-    }
-}
-
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_3]->port);
@@ -472,30 +420,6 @@ void USART3_IRQHandler(void)
 uartPort_t *serialUSART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUSART(UARTDEV_4, baudRate, mode, options);
-}
-
-// USART4 Tx DMA Handler
-void DMA1_Stream4_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_4]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF4))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF4);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF4);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF4)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF4);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF4)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF4);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF4)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF4);
-    }
 }
 
 void UART4_IRQHandler(void)
@@ -512,30 +436,6 @@ uartPort_t *serialUSART5(uint32_t baudRate, portMode_t mode, portOptions_t optio
     return serialUSART(UARTDEV_5, baudRate, mode, options);
 }
 
-// USART5 Tx DMA Handler
-void DMA1_Stream7_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_5]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF7))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF7);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF7);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF7)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF7);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF7)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF7);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF7)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF7);
-    }
-}
-
 void UART5_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_5]->port);
@@ -548,30 +448,6 @@ void UART5_IRQHandler(void)
 uartPort_t *serialUSART6(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUSART(UARTDEV_6, baudRate, mode, options);
-}
-
-// USART6 Tx DMA Handler
-void DMA2_Stream6_IRQHandler(void)
-{
-    uartPort_t *s = &(uartHardwareMap[UARTDEV_6]->port);
-    if(DMA_GetITStatus(s->txDMAStream,DMA_IT_TCIF6))
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TCIF6);
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_HTIF6);
-        if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_FEIF6)==SET)
-        {
-            DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_FEIF6);
-        }
-        handleUsartTxDma(s);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_TEIF6)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_TEIF6);
-    }
-    if(DMA_GetFlagStatus(s->txDMAStream,DMA_IT_DMEIF6)==SET)
-    {
-        DMA_ClearITPendingBit(s->txDMAStream,DMA_IT_DMEIF6);
-    }
 }
 
 void USART6_IRQHandler(void)

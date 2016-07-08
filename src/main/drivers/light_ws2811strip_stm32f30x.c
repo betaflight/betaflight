@@ -35,20 +35,17 @@
 #define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 #endif
 
 static IO_t ws2811IO = IO_NONE;
 bool ws2811Initialised = false;
 
-void ws2811DMAHandler(DMA_Channel_TypeDef *channel) 
-{
-    if (DMA_GetFlagStatus(WS2811_DMA_TC_FLAG)) {
+static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(channel, DISABLE);
-        DMA_ClearFlag(WS2811_DMA_TC_FLAG);
+        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
@@ -59,8 +56,6 @@ void ws2811LedStripHardwareInit(void)
     DMA_InitTypeDef DMA_InitStructure;
 
     uint16_t prescalerValue;
-    
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
     
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
@@ -92,9 +87,6 @@ void ws2811LedStripHardwareInit(void)
     TIM_CtrlPWMOutputs(WS2811_TIMER, ENABLE);
 
     /* configure DMA */
-    /* DMA clock enable */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
     /* DMA1 Channel Config */
     DMA_DeInit(WS2811_DMA_CHANNEL);
 
@@ -117,13 +109,7 @@ void ws2811LedStripHardwareInit(void)
 
     DMA_ITConfig(WS2811_DMA_CHANNEL, DMA_IT_TC, ENABLE);
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = WS2811_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
     ws2811Initialised = true;
     setStripColor(&hsv_white);

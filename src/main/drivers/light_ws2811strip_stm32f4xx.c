@@ -22,8 +22,8 @@
 
 #include "common/color.h"
 #include "light_ws2811strip.h"
-#include "dma.h"
 #include "nvic.h"
+#include "dma.h"
 #include "io.h"
 #include "system.h"
 #include "rcc.h"
@@ -36,10 +36,8 @@
 #define WS2811_TIMER                    TIM5
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
 #define WS2811_DMA_IT                   DMA_IT_TCIF2
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
 #define WS2811_TIMER_CHANNEL            TIM_Channel_1
 #endif
 
@@ -47,13 +45,13 @@ static IO_t ws2811IO = IO_NONE;
 static uint16_t timDMASource = 0;
 bool ws2811Initialised = false;
 
-void ws2811DMAHandler(DMA_Stream_TypeDef *stream)
+static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
-    if (DMA_GetFlagStatus(stream, WS2811_DMA_FLAG)) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_ClearITPendingBit(stream, WS2811_DMA_IT);
-        DMA_Cmd(stream, DISABLE);
-        TIM_DMACmd(WS2811_TIMER, timDMASource, DISABLE);
+        DMA_Cmd(descriptor->stream, DISABLE);
+        TIM_DMACmd(TIM5, TIM_DMA_CC1, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
@@ -129,8 +127,6 @@ void ws2811LedStripHardwareInit(void)
     TIM_CCxCmd(WS2811_TIMER, WS2811_TIMER_CHANNEL, TIM_CCx_Enable);
     TIM_Cmd(WS2811_TIMER, ENABLE);
 
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
-
     /* configure DMA */
     DMA_Cmd(WS2811_DMA_STREAM, DISABLE);            
     DMA_DeInit(WS2811_DMA_STREAM);
@@ -151,21 +147,13 @@ void ws2811LedStripHardwareInit(void)
     DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
     DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
-    
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);    
     DMA_Init(WS2811_DMA_STREAM, &DMA_InitStructure);
 
     DMA_ITConfig(WS2811_DMA_STREAM, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(WS2811_DMA_STREAM, WS2811_DMA_IT);              
-    
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = WS2811_DMA_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_WS2811_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
+ 
+    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
+   
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
