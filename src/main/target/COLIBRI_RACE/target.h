@@ -32,11 +32,6 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU6500_CS_PIN                   PA4
-#define MPU6500_SPI_INSTANCE             SPI1
-
-#define MPU6000_CS_PIN                   PA4
-#define MPU6000_SPI_INSTANCE             SPI1
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -44,6 +39,13 @@
 #define SPI1_SCK_PIN            PB3
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
+#define SPI1_NSS_PIN            PA4
+
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
+
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
