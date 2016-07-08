@@ -1640,13 +1640,14 @@ void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t dista
 /*-----------------------------------------------------------
  * NAV land detector
  *-----------------------------------------------------------*/
-static uint32_t landingTimer;
-static bool hasHadSomeVelocity;
-
 void resetLandingDetector(void)
 {
-    landingTimer = micros();
-    hasHadSomeVelocity = false;
+    if (STATE(FIXED_WING)) { // FIXED_WING
+        resetFixedWingLandingDetector();
+    }
+    else {
+        resetMulticopterLandingDetector();
+    }
 }
 
 bool isLandingDetected(void)
@@ -1654,10 +1655,10 @@ bool isLandingDetected(void)
     bool landingDetected;
 
     if (STATE(FIXED_WING)) { // FIXED_WING
-        landingDetected = isFixedWingLandingDetected(&landingTimer);
+        landingDetected = isFixedWingLandingDetected();
     }
     else {
-        landingDetected = isMulticopterLandingDetected(&landingTimer, &hasHadSomeVelocity);
+        landingDetected = isMulticopterLandingDetected();
     }
 
     return landingDetected;

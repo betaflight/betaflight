@@ -23,7 +23,6 @@
 
 #include "config/runtime_config.h"
 
-#define LAND_DETECTOR_TRIGGER_TIME_MS       2000        // 2 seconds
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
 #define NAV_ACCEL_CUTOFF_FREQUENCY_HZ       2       // low-pass filter on XY-acceleration target
@@ -329,7 +328,12 @@ bool adjustMulticopterPositionFromRCInput(void);
 
 void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
 
-bool isMulticopterLandingDetected(uint32_t * landingTimer, bool * hasHadSomeVelocity);
+void resetFixedWingLandingDetector(void);
+void resetMulticopterLandingDetector(void);
+
+bool isMulticopterLandingDetected(void);
+bool isFixedWingLandingDetected(void);
+
 void calculateMulticopterInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing specific functions */
@@ -345,7 +349,6 @@ bool adjustFixedWingPositionFromRCInput(void);
 
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
 
-bool isFixedWingLandingDetected(uint32_t * landingTimer);
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
 
 #endif
