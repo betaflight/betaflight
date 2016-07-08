@@ -116,7 +116,10 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->sck), OWNER_SYSTEM, RESOURCE_SPI);
     IOInit(IOGetByTag(spi->miso), OWNER_SYSTEM, RESOURCE_SPI);
     IOInit(IOGetByTag(spi->mosi), OWNER_SYSTEM, RESOURCE_SPI);
-    
+    if (spi->nss) {
+        IOInit(IOGetByTag(spi->nss), OWNER_SYSTEM, RESOURCE_SPI);
+    }
+
 #if defined(STM32F303xC) || defined(STM32F4)
     if (spi->sdcard) {
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG, spi->af);
@@ -356,3 +359,4 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     if (device != SPIINVALID)
         spiHardwareMap[device].errorCount = 0;
 }
+
