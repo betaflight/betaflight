@@ -83,8 +83,8 @@ void EXTI15_10_IRQHandler(void)
     extiHandler(EXTI15_10_IRQn);
 }
 
-#if defined(CC3D)
- void EXTI3_IRQHandler(void)
+#if defined(CC3D) || defined(FURYF3)
+void EXTI3_IRQHandler(void)
 {
     extiHandler(EXTI3_IRQn);
 }
