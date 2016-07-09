@@ -669,7 +669,7 @@ void stopMotors(void)
 void stopPwmAllMotors()
 {
     pwmShutdownPulsesForAllMotors(motorCount);
-	delayMicroseconds(1500);
+    delayMicroseconds(1500);
 }
 
 #ifndef USE_QUAD_MIXER_ONLY

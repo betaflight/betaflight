@@ -2574,7 +2574,7 @@ static void cliRebootEx(bool bootLoader)
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
-	stopPwmAllMotors();
+    stopPwmAllMotors();
     if (bootLoader) {
         systemResetToBootloader();
         return;
