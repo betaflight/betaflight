@@ -666,9 +666,10 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-void StopPwmAllMotors()
+void stopPwmAllMotors()
 {
     pwmShutdownPulsesForAllMotors(motorCount);
+    delayMicroseconds(1500);
 }
 
 #ifndef USE_QUAD_MIXER_ONLY

@@ -335,12 +335,6 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
-/*
-    // TODO is this needed here? enables at the end
-    if (!feature(FEATURE_ONESHOT125))
-        motorControlEnable = true;
-
-*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
