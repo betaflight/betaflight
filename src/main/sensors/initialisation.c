@@ -418,20 +418,20 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 
 #ifdef USE_BARO_BMP085
 
-	const bmp085Config_t *bmp085Config = NULL;
+    const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-	static const bmp085Config_t defaultBMP085Config = {
-		.xclrIO = IO_TAG(BARO_XCLR_PIN),
-		.eocIO = IO_TAG(BARO_EOC_PIN),
-	};
-	bmp085Config = &defaultBMP085Config;
+    static const bmp085Config_t defaultBMP085Config = {
+        .xclrIO = IO_TAG(BARO_XCLR_PIN),
+        .eocIO = IO_TAG(BARO_EOC_PIN),
+    };
+    bmp085Config = &defaultBMP085Config;
 #endif
 
 #ifdef NAZE
-	if (hardwareRevision == NAZE32) {
-		bmp085Disable(bmp085Config);
-	}
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
 #endif
 
 #endif
@@ -455,7 +455,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
-	    ; // fallthough
+        ; // fallthough
         case BARO_BMP280:
 #ifdef USE_BARO_BMP280
             if (bmp280Detect(&baro)) {
@@ -503,7 +503,7 @@ static void detectMag(magSensor_e magHardwareToUse)
         .intTag = IO_TAG(MAG_INT_EXTI)
     };
 
-	hmc5883Config = &extiHmc5883Config;
+    hmc5883Config = &extiHmc5883Config;
 #endif
 
 #endif
