@@ -90,9 +90,9 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
     configTimeBase(timerHardware->tim, period, mhz);
 
-	IO_t io = IOGetByTag(timerHardware->tag);
-	IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
-	IOConfigGPIO(io, IOCFG_AF_PP);
+    IO_t io = IOGetByTag(timerHardware->tag);
+    IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
+    IOConfigGPIO(io, IOCFG_AF_PP);
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
 

@@ -550,7 +550,7 @@ void sdcard_init(bool useDMA)
     IOInit(sdCardCsPin, OWNER_SDCARD, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(sdCardCsPin, SPI_IO_CS_CFG);
 #endif // SDCARD_SPI_CS_PIN
-    
+
     // Max frequency is initially 400kHz
     spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
 
@@ -559,7 +559,7 @@ void sdcard_init(bool useDMA)
 
     // Transmit at least 74 dummy clock cycles with CS high so the SD card can start up
     SET_CS_HIGH;
-        
+
     spiTransfer(SDCARD_SPI_INSTANCE, NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES);
 
     // Wait for that transmission to finish before we enable the SDCard, so it receives the required number of cycles:
@@ -1059,7 +1059,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
         sdcard.pendingOperation.blockIndex = blockIndex;
         sdcard.pendingOperation.callback = callback;
         sdcard.pendingOperation.callbackData = callbackData;
-        
+
         sdcard.state = SDCARD_STATE_READING;
 
         sdcard.operationStartTime = millis();

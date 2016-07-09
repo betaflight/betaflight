@@ -367,7 +367,7 @@ static void bmp085_get_cal_param(void)
 bool bmp085TestEOCConnected(const bmp085Config_t *config)
 {
     UNUSED(config);
-    
+
     if (!bmp085InitDone && eocIO) {
         bmp085_start_ut();
         delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure

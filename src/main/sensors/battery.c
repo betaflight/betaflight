@@ -86,7 +86,7 @@ static void updateBatteryVoltage(void)
 void updateBattery(void)
 {
     updateBatteryVoltage();
-    
+
     /* battery has just been connected*/
     if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
     {
@@ -115,7 +115,7 @@ void updateBattery(void)
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
-    }    
+    }
 
     switch(batteryState)
     {

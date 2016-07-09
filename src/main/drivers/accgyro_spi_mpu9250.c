@@ -193,7 +193,7 @@ bool mpu9250SpiDetect(void)
 #endif
     IOInit(mpuSpi9250CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
-        
+
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 

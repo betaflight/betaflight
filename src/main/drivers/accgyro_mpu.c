@@ -165,7 +165,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         return true;
     }
 #endif
-    
+
     return false;
 }
 #endif
@@ -236,7 +236,7 @@ void mpuIntExtiInit(void)
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
     IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
-    
+
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
     uint8_t status = IORead(mpuIntIO);
     if (status) {
@@ -251,7 +251,7 @@ void mpuIntExtiInit(void)
     EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(mpuIntIO, true);
 #endif
-    
+
     mpuExtiInitDone = true; 
 }
 

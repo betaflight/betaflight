@@ -68,7 +68,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
     static int currentFilterSampleIndex = 0;
     static bool medianFilterReady = false;
     int nextSampleIndex;
-    
+
     nextSampleIndex = (currentFilterSampleIndex + 1);
     if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
         nextSampleIndex = 0;
@@ -77,7 +77,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
 
     barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
     currentFilterSampleIndex = nextSampleIndex;
-    
+
     if (medianFilterReady)
         return quickMedianFilter3(barometerFilterSamples);
     else

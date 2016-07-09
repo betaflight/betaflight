@@ -37,7 +37,7 @@ typedef enum ADCDevice {
 #elif defined(STM32F4)
     ADCDEV_2,
     ADCDEV_3,
-    ADCDEV_MAX = ADCDEV_3,    
+    ADCDEV_MAX = ADCDEV_3,
 #else
     ADCDEV_MAX = ADCDEV_1,
 #endif
@@ -47,7 +47,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t channel;
 } adcTagMap_t;
-    
+
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;

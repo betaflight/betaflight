@@ -63,7 +63,7 @@ void USBD_USR_DeviceReset(uint8_t speed )
      break;
  default:
      break;
-     
+ 
  }
 }
 

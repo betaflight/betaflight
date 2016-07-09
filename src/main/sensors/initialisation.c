@@ -93,7 +93,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return selectMPUIntExtiConfigByHardwareRevision();
 #else
     return NULL;
-#endif    
+#endif
 }
 
 #ifdef USE_FAKE_GYRO
@@ -233,7 +233,7 @@ bool detectGyro(void)
             }
 #endif
             ; // fallthrough
-        
+
     case GYRO_MPU9250:
 #ifdef USE_GYRO_SPI_MPU9250
 

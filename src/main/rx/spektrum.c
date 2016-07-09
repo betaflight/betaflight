@@ -245,7 +245,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 #ifndef HARDWARE_BIND_PLUG
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
-	// Reset only when autoreset is enabled
+    // Reset only when autoreset is enabled
     if (rxConfig->spektrum_sat_bind_autoreset == 1 && !isMPUSoftReset()) {
         rxConfig->spektrum_sat_bind = 0;
         saveConfigAndNotify();
