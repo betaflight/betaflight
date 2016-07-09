@@ -145,18 +145,18 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         i = 0;
-        $('.pid_tuning .HORIZON input').each(function () {
+        $('.pid_tuning .ANGLE input').each(function () {
             switch (i) {
                 case 0:
                     $(this).val(PIDs[7][i++]);
                     break;
+            }
+        });
+        $('.pid_tuning .HORIZON input').each(function () {
+            switch (i) {
                 case 1:
                     $(this).val(PIDs[7][i++]);
                     break;
-            }
-        });
-        $('.pid_tuning .ANGLE input').each(function () {
-            switch (i) {
                 case 2:
                     $(this).val(PIDs[7][i++]);
                     break;
@@ -267,10 +267,10 @@ TABS.pid_tuning.initialize = function (callback) {
         });
 
         i = 0;
-        $('table.pid_tuning tr.HORIZON input').each(function () {
+        $('table.pid_tuning tr.ANGLE input').each(function () {
             PIDs[7][i++] = parseFloat($(this).val());
         });
-        $('table.pid_tuning tr.ANGLE input').each(function () {
+        $('table.pid_tuning tr.HORIZON input').each(function () {
             PIDs[7][i++] = parseFloat($(this).val());
         });
 
