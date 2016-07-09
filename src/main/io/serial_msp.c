@@ -293,7 +293,7 @@ static uint32_t read32(void)
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialBeginWrite(mspSerialPort);
-    
+
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
