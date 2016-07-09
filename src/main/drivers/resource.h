@@ -29,6 +29,7 @@ typedef enum {
     OWNER_LED_STRIP,
     OWNER_LED,
     OWNER_RX,
+    OWNER_TX,
     OWNER_TOTAL_COUNT
 } resourceOwner_t;
 

@@ -53,19 +53,19 @@ static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705LePin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
-void rtc6705_soft_spi_init(void) {
-
+void rtc6705_soft_spi_init(void)
+{
     rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPIDATA_PIN));
     rtc6705LePin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
     rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
 
-    IOInit(rtc6705DataPin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705DataPin, OWNER_TX, RESOURCE_SPI_MOSI, 0);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705LePin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705LePin, OWNER_TX, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(rtc6705LePin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705ClkPin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705ClkPin, OWNER_TX, RESOURCE_SPI_SCK, 0);
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
 }
 

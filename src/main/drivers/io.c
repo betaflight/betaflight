@@ -56,7 +56,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
 	"FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
 	"SONAR", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-	"BARO", "MPU", "INVERTER", "LED STRIP", "LED", "RECEIVER",
+	"BARO", "MPU", "INVERTER", "LED STRIP", "LED", "RECEIVER", "TRANSMITTER"
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
