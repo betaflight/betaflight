@@ -65,11 +65,11 @@ int16_t navActualHeading;
 int16_t navDesiredHeading;
 int16_t navTargetPosition[3];
 int32_t navLatestActualPosition[3];
-int16_t navDebug[4];
 int16_t navTargetSurface;
 int16_t navActualSurface;
 uint16_t navFlags;
 #endif
+int16_t navDebug[4];
 
 static void updateDesiredRTHAltitude(void);
 static void resetAltitudeController(void);

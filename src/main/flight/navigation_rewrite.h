@@ -267,7 +267,6 @@ rthState_e getStateOfForcedRTH(void);
 /* Compatibility data */
 extern navSystemStatus_t    NAV_Status;
 
-#if defined(BLACKBOX)
 extern int16_t navCurrentState;
 extern int16_t navActualVelocity[3];
 extern int16_t navDesiredVelocity[3];
@@ -277,6 +276,7 @@ extern int16_t navTargetSurface;
 extern int16_t navActualSurface;
 extern int16_t navDebug[4];
 extern uint16_t navFlags;
+#if defined(BLACKBOX)
 #define NAV_BLACKBOX_DEBUG(x,y) navDebug[x] = constrain((y), -32678, 32767)
 #else
 #define NAV_BLACKBOX_DEBUG(x,y)
