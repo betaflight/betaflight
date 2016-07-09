@@ -69,7 +69,8 @@ void rtc6705_soft_spi_init(void)
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
 }
 
-static void rtc6705_write_register(uint8_t addr, uint32_t data) {
+static void rtc6705_write_register(uint8_t addr, uint32_t data)
+{
     uint8_t i;
 
     RTC6705_SPILE_OFF;
@@ -107,7 +108,8 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data) {
 }
 
 
-void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
+void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
+{
 
     uint32_t freq = (uint32_t)channel_freq * 1000;
     uint32_t N, A;
@@ -119,7 +121,8 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power) {
+void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power)
+{
     rtc6705_write_register(7, (reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT));
 }
 
