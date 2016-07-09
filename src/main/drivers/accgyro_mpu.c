@@ -244,7 +244,7 @@ void mpuIntExtiInit(void)
     }
 #endif
 
-    IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 1);
+    IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
     EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
