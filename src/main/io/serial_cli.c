@@ -1983,7 +1983,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #ifdef USE_SERVOS
@@ -2008,7 +2008,7 @@ static void cliDump(char *cmdline)
 
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #endif
@@ -2023,7 +2023,7 @@ static void cliDump(char *cmdline)
             cliPrintf("feature -%s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
@@ -2032,7 +2032,7 @@ static void cliDump(char *cmdline)
                 cliPrintf("feature %s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 
@@ -2094,7 +2094,7 @@ static void cliDump(char *cmdline)
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
                 }
             }
         }
@@ -2111,7 +2111,7 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
-        
+
         if (dumpMask & DUMP_ALL) {
             uint8_t activeProfile = masterConfig.current_profile_index;
             uint8_t profileCount;
@@ -2129,7 +2129,7 @@ static void cliDump(char *cmdline)
                 cliRateProfile("");
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2158,7 +2158,7 @@ void cliDumpProfile(uint8_t profileIndex)
 {
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
-        
+
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
@@ -2174,7 +2174,7 @@ void cliDumpRateProfile(uint8_t rateProfileIndex)
 {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
-    
+
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
@@ -2551,7 +2551,7 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline) {
     int i;
-    
+
     if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
@@ -2566,18 +2566,18 @@ static void cliRateProfile(char *cmdline) {
 
 static void cliReboot(void)
 {
-	cliRebootEx(false);
+    cliRebootEx(false);
 }
 
 static void cliRebootEx(bool bootLoader)
 {
-	cliPrint("\r\nRebooting");
+    cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
     stopMotors();
     if (bootLoader) {
-	    systemResetToBootloader();
-	    return;
+        systemResetToBootloader();
+        return;
     }
     systemReset();
 }
@@ -2749,10 +2749,10 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
-            
+
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -3082,22 +3082,22 @@ static void cliResource(char *cmdline)
         const char* owner;
         owner = ownerNames[ioRecs[i].owner];
 
-	    const char* resource;
-	    resource = resourceNames[ioRecs[i].resource];
+        const char* resource;
+        resource = resourceNames[ioRecs[i].resource];
 
-	    if (ioRecs[i].index > 0) {
-		    cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
-	    } else {
-		    cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+        if (ioRecs[i].index > 0) {
+            cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+        } else {
+            cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
         }
     }
 }
 
 void cliDfu(char *cmdLine)
 {
-	UNUSED(cmdLine);
-	cliPrint("\r\nRestarting in DFU mode");
-	cliRebootEx(true);
+    UNUSED(cmdLine);
+    cliPrint("\r\nRestarting in DFU mode");
+    cliRebootEx(true);
 }
 
 void cliInit(serialConfig_t *serialConfig)
