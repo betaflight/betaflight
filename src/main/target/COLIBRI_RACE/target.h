@@ -77,31 +77,19 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-#define UART1_TX_PIN        GPIO_Pin_4
-#define UART1_RX_PIN        GPIO_Pin_5
-#define UART1_GPIO          GPIOC
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource4
-#define UART1_RX_PINSOURCE  GPIO_PinSource5
+#define UART1_TX_PIN        PC4
+#define UART1_RX_PIN        PC5
 
-#define UART2_TX_PIN        GPIO_Pin_14
-#define UART2_RX_PIN        GPIO_Pin_15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14
+#define UART2_RX_PIN        PA15
 
-#define UART3_TX_PIN        GPIO_Pin_10
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO          GPIOB
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10
+#define UART3_RX_PIN        PB11
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)

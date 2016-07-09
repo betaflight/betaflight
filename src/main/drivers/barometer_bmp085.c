@@ -143,7 +143,7 @@ void bmp085InitXclrIO(const bmp085Config_t *config)
 {
     if (!xclrIO && config && config->xclrIO) {
         xclrIO = IOGetByTag(config->xclrIO);
-        IOInit(xclrIO, OWNER_SYSTEM, RESOURCE_OUTPUT);
+        IOInit(xclrIO, OWNER_BARO, RESOURCE_OUTPUT, 0);
         IOConfigGPIO(xclrIO, IOCFG_OUT_PP);
     }
 }

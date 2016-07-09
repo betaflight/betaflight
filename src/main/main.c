@@ -275,16 +275,16 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_USART2) && defined(STM32F10X)
+#if defined(USE_UART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
 #ifdef STM32F303xC
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
-#if defined(USE_USART2) && defined(STM32F40_41xxx)
+#if defined(USE_UART2) && defined(STM32F40_41xxx)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
-#if defined(USE_USART6) && defined(STM32F40_41xxx)
+#if defined(USE_UART6) && defined(STM32F40_41xxx)
     pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
 #endif    
     pwm_params.useVbat = feature(FEATURE_VBAT);

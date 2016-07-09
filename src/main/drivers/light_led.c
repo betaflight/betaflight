@@ -97,7 +97,7 @@ void ledInit(bool alternative_led)
 
 	for (i = 0; i < LED_NUMBER; i++) {
 		if (leds[i + ledOffset]) {
-			IOInit(leds[i + ledOffset], OWNER_SYSTEM, RESOURCE_OUTPUT);
+			IOInit(leds[i + ledOffset], OWNER_LED, RESOURCE_OUTPUT, RESOURCE_INDEX(i));
 			IOConfigGPIO(leds[i + ledOffset], IOCFG_OUT_PP);
 		}
 	}

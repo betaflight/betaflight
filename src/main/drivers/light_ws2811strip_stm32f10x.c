@@ -53,7 +53,7 @@ void ws2811LedStripHardwareInit(void)
     
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
 /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
-    IOInit(ws2811IO, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
     
     RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
