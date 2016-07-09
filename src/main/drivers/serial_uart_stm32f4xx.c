@@ -312,17 +312,17 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
         RCC_AHB1PeriphClockCmd(uart->rcc_ahb1, ENABLE);
         
     if (options & SERIAL_BIDIR) {
-        IOInit(tx, OWNER_SERIAL_TX, RESOURCE_USART);
+	    IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
     }
     else {
         if (mode & MODE_TX) {
-            IOInit(tx, OWNER_SERIAL_TX, RESOURCE_USART);
+	        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
         }
         
         if (mode & MODE_RX) { 
-            IOInit(rx, OWNER_SERIAL_RX, RESOURCE_USART);
+	        IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(rx, IOCFG_AF_PP, uart->af);
         }
     }

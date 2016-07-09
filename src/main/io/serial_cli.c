@@ -3074,47 +3074,22 @@ void cliProcess(void)
     }
 }
 
-const char * const ownerNames[OWNER_TOTAL_COUNT] = {
-    "FREE",
-    "PWM IN",
-    "PPM IN",
-    "MOTOR",
-    "SERVO",
-    "SOFTSERIAL RX",
-    "SOFTSERIAL TX",
-    "SOFTSERIAL RXTX",        // bidirectional pin for softserial
-    "SOFTSERIAL AUXTIMER",    // timer channel is used for softserial. No IO function on pin
-    "ADC",
-    "SERIAL RX",
-    "SERIAL TX",
-    "SERIAL RXTX",
-    "PINDEBUG",
-    "TIMER",
-    "SONAR",
-    "SYSTEM",
-    "SDCARD",
-    "FLASH",
-    "USB",
-    "BEEPER",
-    "OSD",
-    "BARO",
-};
-
 static void cliResource(char *cmdline)
 {
     UNUSED(cmdline);
-    cliPrintf("IO:\r\n");
+    cliPrintf("IO:\r\n----------------------\r\n");
     for (unsigned i = 0; i < DEFIO_IO_USED_COUNT; i++) {
         const char* owner;
-        char buff[15];
-        if (ioRecs[i].owner < ARRAYLEN(ownerNames)) {
-            owner = ownerNames[ioRecs[i].owner];
+        owner = ownerNames[ioRecs[i].owner];
+
+	    const char* resource;
+	    resource = resourceNames[ioRecs[i].resource];
+
+	    if (ioRecs[i].index > 0) {
+		    cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+	    } else {
+		    cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
         }
-        else {
-            sprintf(buff, "O=%d", ioRecs[i].owner);
-            owner = buff;
-        }
-        cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
 }
 

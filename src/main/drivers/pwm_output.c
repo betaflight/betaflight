@@ -84,18 +84,15 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     }
 }
 
-static void pwmGPIOConfig(ioTag_t pin, ioConfig_t mode)
-{
-    IOInit(IOGetByTag(pin), OWNER_PWMOUTPUT_MOTOR, RESOURCE_OUTPUT);
-    IOConfigGPIO(IOGetByTag(pin), mode);
-}
-
 static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value)
 {
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 
     configTimeBase(timerHardware->tim, period, mhz);
-    pwmGPIOConfig(timerHardware->tag, IOCFG_AF_PP);
+
+	IO_t io = IOGetByTag(timerHardware->tag);
+	IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
+	IOConfigGPIO(io, IOCFG_AF_PP);
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
 

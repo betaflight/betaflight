@@ -99,7 +99,7 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
-void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af)
+void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
     if (options & SERIAL_BIDIR) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, 
@@ -107,7 +107,7 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
             (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
-        IOInit(tx, OWNER_SERIAL_RXTX, RESOURCE_USART);
+        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, index);
         IOConfigGPIOAF(tx, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
@@ -115,12 +115,12 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if (mode & MODE_TX) {
-            IOInit(tx, OWNER_SERIAL_TX, RESOURCE_USART);
+            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
             IOConfigGPIOAF(tx, ioCfg, af);
         }
 
         if (mode & MODE_RX) {
-            IOInit(tx, OWNER_SERIAL_RX, RESOURCE_USART);
+	        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
@@ -157,7 +157,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 
-    serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7);
+    serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7, 1);
 
     // DMA TX Interrupt
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
@@ -213,7 +213,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
 #endif
 
-    serialUARTInit(IOGetByTag(IO_TAG(UART2_TX_PIN)), IOGetByTag(IO_TAG(UART2_RX_PIN)), mode, options, GPIO_AF_7);
+    serialUARTInit(IOGetByTag(IO_TAG(UART2_TX_PIN)), IOGetByTag(IO_TAG(UART2_RX_PIN)), mode, options, GPIO_AF_7, 2);
 
 #ifdef USE_UART2_TX_DMA
     // DMA TX Interrupt
@@ -271,7 +271,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_AHBClockCmd(RCC_AHB(DMA1), ENABLE);
 #endif
 
-    serialUARTInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOGetByTag(IO_TAG(UART3_RX_PIN)), mode, options, GPIO_AF_7);
+    serialUARTInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOGetByTag(IO_TAG(UART3_RX_PIN)), mode, options, GPIO_AF_7, 3);
 
 #ifdef USE_UART3_TX_DMA
     // DMA TX Interrupt
@@ -316,7 +316,7 @@ uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     RCC_ClockCmd(RCC_APB1(UART4), ENABLE);
 
-    serialUARTInit(IOGetByTag(IO_TAG(UART4_TX_PIN)), IOGetByTag(IO_TAG(UART4_RX_PIN)), mode, options, GPIO_AF_5);
+    serialUARTInit(IOGetByTag(IO_TAG(UART4_TX_PIN)), IOGetByTag(IO_TAG(UART4_RX_PIN)), mode, options, GPIO_AF_5, 4);
 
     NVIC_InitStructure.NVIC_IRQChannel = UART4_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART4);
@@ -350,7 +350,7 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     RCC_ClockCmd(RCC_APB1(UART5), ENABLE);
 
-    serialUARTInit(IOGetByTag(IO_TAG(UART5_TX_PIN)), IOGetByTag(IO_TAG(UART5_RX_PIN)), mode, options, GPIO_AF_5);
+    serialUARTInit(IOGetByTag(IO_TAG(UART5_TX_PIN)), IOGetByTag(IO_TAG(UART5_RX_PIN)), mode, options, GPIO_AF_5, 5);
 
     NVIC_InitStructure.NVIC_IRQChannel = UART5_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART5);
