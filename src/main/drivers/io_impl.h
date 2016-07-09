@@ -13,7 +13,7 @@ typedef struct ioRec_s {
     uint16_t pin;
     resourceOwner_t owner;
     resourceType_t resource; 
-	uint8_t index;
+    uint8_t index;
 } ioRec_t;
 
 extern ioRec_t ioRecs[DEFIO_IO_USED_COUNT];

@@ -33,7 +33,7 @@ void initInverter(void)
 {
     IOInit(pin, OWNER_INVERTER, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(pin, IOCFG_OUT_PP);
-    
+
     inverterSet(false);
 }
 

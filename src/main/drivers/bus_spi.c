@@ -114,9 +114,9 @@ void spiInitDevice(SPIDevice device)
     RCC_ResetCmd(spi->rcc, ENABLE);
 
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI, RESOURCE_SPI_SCK,  device + 1);
-	IOInit(IOGetByTag(spi->miso), OWNER_SPI, RESOURCE_SPI_MISO, device + 1);
-	IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
-    
+    IOInit(IOGetByTag(spi->miso), OWNER_SPI, RESOURCE_SPI_MISO, device + 1);
+    IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
+
 #if defined(STM32F3) || defined(STM32F4)
     IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
@@ -129,11 +129,11 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
     IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
     IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
-    
+
     if (spi->nss)
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
 #endif
-    
+
             // Init SPI hardware
     SPI_I2S_DeInit(spi->dev);
 

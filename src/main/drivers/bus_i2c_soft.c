@@ -178,7 +178,7 @@ void i2cInit(I2CDevice device)
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 {
     UNUSED(device);
-    
+
     int i;
     if (!I2C_Start()) {
         i2cErrorCount++;
@@ -206,7 +206,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, ui
 bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
 {
     UNUSED(device);
-    
+
     if (!I2C_Start()) {
         return false;
     }
@@ -227,7 +227,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
 bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
 {
     UNUSED(device);
-    
+
     if (!I2C_Start()) {
         return false;
     }

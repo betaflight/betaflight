@@ -85,10 +85,10 @@ void hcsr04_init(sonarRange_t *sonarRange)
     triggerIO = IOGetByTag(sonarHardwareHCSR04.triggerTag);
     IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
-    
+
     // echo pin
     echoIO = IOGetByTag(sonarHardwareHCSR04.echoTag);
-	IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
+    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
 #ifdef USE_EXTI

@@ -111,23 +111,23 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
          break;
 
       // Not needed for this driver
-      case SET_COMM_FEATURE:                  
+      case SET_COMM_FEATURE:
       case GET_COMM_FEATURE:
       case CLEAR_COMM_FEATURE:
          break;
 
-         
+ 
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING: 
          ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          break;
-         
-         
+ 
+ 
       case GET_LINE_CODING:
          ust_cpy(plc, &g_lc);
          break;
 
-         
+ 
       case SET_CONTROL_LINE_STATE:
          /* Not  needed for this driver */
          //RSW - This tells how to set RTS and DTR
@@ -234,7 +234,7 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 
     if(receiveLength > (USB_RX_BUFSIZE-1))
         return USBD_FAIL;
-    
+
     return USBD_OK;
 }
 

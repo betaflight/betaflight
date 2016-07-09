@@ -59,14 +59,14 @@ void ws2811LedStripHardwareInit(void)
     DMA_InitTypeDef DMA_InitStructure;
 
     uint16_t prescalerValue;
-    
+
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler);
-    
+
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(WS2811_TIMER));
-    
+
     RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
 
     /* Compute the prescaler value */
@@ -134,7 +134,7 @@ void ws2811LedStripDMAEnable(void)
 {
     if (!ws2811Initialised)
         return;
-    
+
     DMA_SetCurrDataCounter(WS2811_DMA_CHANNEL, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(WS2811_TIMER, 0);
     TIM_Cmd(WS2811_TIMER, ENABLE);

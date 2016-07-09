@@ -117,7 +117,7 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (count == 0) {
         return true;
     }
-    
+
     if (!usbIsConnected() || !usbIsConfigured()) {
         return false;
     }

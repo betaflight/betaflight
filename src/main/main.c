@@ -166,8 +166,8 @@ void init(void)
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
     // initialize IO (needed for all IO operations)
-	IOInitGlobal();
-    
+    IOInitGlobal();
+
     debugMode = masterConfig.debug_mode;
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -188,7 +188,7 @@ void init(void)
     ledInit(false);
 #endif
     LED2_ON;
-    
+
 #ifdef USE_EXTI
     EXTIInit();
 #endif
@@ -286,7 +286,7 @@ void init(void)
 #endif
 #if defined(USE_UART6) && defined(STM32F40_41xxx)
     pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
-#endif    
+#endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -309,7 +309,7 @@ void init(void)
     } else {
         featureClear(FEATURE_ONESHOT125);
     }
-    
+
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
 
     // Configurator feature abused for enabling Fast PWM
@@ -319,7 +319,7 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    
+
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
@@ -363,7 +363,7 @@ void init(void)
 #endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
-		beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif
 
     beeperInit(&beeperConfig);
@@ -501,7 +501,7 @@ void init(void)
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
-    
+
     for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;

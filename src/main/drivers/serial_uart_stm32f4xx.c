@@ -277,17 +277,17 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     uartDevice_t *uart = uartHardwareMap[device];
     if (!uart) return NULL;
-    
+
     s = &(uart->port);
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBuffer = uart->rxBuffer;
     s->port.txBuffer = uart->txBuffer;
     s->port.rxBufferSize = sizeof(uart->rxBuffer);
     s->port.txBufferSize = sizeof(uart->txBuffer);
-    
+
     s->USARTx = uart->dev;
     if (uart->rxDMAStream) {
         s->rxDMAChannel = uart->DMAChannel;
@@ -295,34 +295,34 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     }
     s->txDMAChannel = uart->DMAChannel;
     s->txDMAStream = uart->txDMAStream;
-    
+
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
-    
+
     IO_t tx = IOGetByTag(uart->tx);
     IO_t rx = IOGetByTag(uart->rx);
-    
+
     if (uart->rcc_apb2)
         RCC_ClockCmd(uart->rcc_apb2, ENABLE);
-    
+
     if (uart->rcc_apb1)
         RCC_ClockCmd(uart->rcc_apb1, ENABLE);
-    
+
     if (uart->rcc_ahb1)
         RCC_AHB1PeriphClockCmd(uart->rcc_ahb1, ENABLE);
-        
+
     if (options & SERIAL_BIDIR) {
-	    IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, RESOURCE_INDEX(device));
+        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
     }
     else {
         if (mode & MODE_TX) {
-	        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(device));
+            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
         }
-        
+
         if (mode & MODE_RX) { 
-	        IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(device));
+            IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(rx, IOCFG_AF_PP, uart->af);
         }
     }

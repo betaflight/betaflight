@@ -88,14 +88,14 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBuffer = rx1Buffer;
     s->port.txBuffer = tx1Buffer;
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
-    
+
     s->USARTx = USART1;
 
 
@@ -179,14 +179,14 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBufferSize = UART2_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART2_TX_BUFFER_SIZE;
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
-    
+
     s->USARTx = USART2;
 
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
@@ -207,7 +207,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
         }
 
         if (mode & MODE_RX) {
-	        IOInit(IOGetByTag(IO_TAG(PA3)), OWNER_SERIAL, RESOURCE_UART_RX, 2);
+            IOInit(IOGetByTag(IO_TAG(PA3)), OWNER_SERIAL, RESOURCE_UART_RX, 2);
             IOConfigGPIO(IOGetByTag(IO_TAG(PA3)), IOCFG_IPU);
         }
     }
@@ -260,16 +260,16 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
     if (options & SERIAL_BIDIR) {
-	    IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TXRX, 3);
+        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TXRX, 3);
         IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
-	        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TX, 3);
+            IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TX, 3);
             IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_PP);
         }
 
         if (mode & MODE_RX) {
-	        IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL, RESOURCE_UART_RX, 3);
+            IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL, RESOURCE_UART_RX, 3);
             IOConfigGPIO(IOGetByTag(IO_TAG(UART3_RX_PIN)), IOCFG_IPU);
         }
     }

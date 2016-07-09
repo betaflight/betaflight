@@ -56,7 +56,7 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
     (32*((v)/2L>>31 > 0) \
      + LOG2_32BIT((v)*1L >>16*((v)/2L>>31 > 0) \
                          >>16*((v)/2L>>31 > 0)))
-    
+
 #if 0
 // ISO C version, but no type checking
 #define container_of(ptr, type, member) \

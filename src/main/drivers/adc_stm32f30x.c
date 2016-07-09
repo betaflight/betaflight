@@ -132,8 +132,8 @@ void adcInit(drv_adc_config_t *init)
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
-    
-    adcDevice_t adc = adcHardware[device];     
+
+    adcDevice_t adc = adcHardware[device]; 
 
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)

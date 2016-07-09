@@ -102,18 +102,18 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
 
 void serialInputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-	IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(portIndex));
+    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(portIndex));
 #ifdef STM32F1
-	IOConfigGPIO(IOGetByTag(pin), IOCFG_IPU); 
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_IPU);
 #else
-	IOConfigGPIO(IOGetByTag(pin), IOCFG_AF_PP_UP); 
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_AF_PP_UP);
 #endif
 }
 
 static void serialOutputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-	IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(portIndex));
-	IOConfigGPIO(IOGetByTag(pin), IOCFG_OUT_PP);
+    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(portIndex));
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_OUT_PP);
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -216,9 +216,9 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->tag);
     serialOutputPortConfig(softSerial->txTimerHardware->tag, portIndex);
-    
+
     softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->tag);
-	serialInputPortConfig(softSerial->rxTimerHardware->tag, portIndex);
+    serialInputPortConfig(softSerial->rxTimerHardware->tag, portIndex);
 
     setTxSignal(softSerial, ENABLE);
     delay(50);

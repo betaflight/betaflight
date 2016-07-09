@@ -79,23 +79,23 @@ uint32_t i2cTimeoutUserCallback(void)
 
 void i2cInit(I2CDevice device)
 {
-    
+
     i2cDevice_t *i2c;
     i2c = &(i2cHardwareMap[device]);
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-       
+   
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
-    
+
     RCC_ClockCmd(i2c->rcc, ENABLE);
     RCC_I2CCLKConfig(I2Cx == I2C2 ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
 
-	IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
     IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_4);
 
-	IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
     IOConfigGPIOAF(sda, IOCFG_I2C, GPIO_AF_4);
 
     I2C_InitTypeDef i2cInit = {
@@ -107,11 +107,11 @@ void i2cInit(I2CDevice device)
         .I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit,
         .I2C_Timing = (i2c->overClock ? I2C_HIGHSPEED_TIMING : I2C_STANDARD_TIMING)
     };
-    
+
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
-      
+  
     I2C_Cmd(I2Cx, ENABLE);
 }
 
@@ -126,7 +126,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev; 
-    
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
@@ -192,7 +192,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev; 
-        
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
