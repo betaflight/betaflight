@@ -17,11 +17,11 @@
  
 #pragma once
 
-#define VTX_BAND_MIN    						1
-#define VTX_BAND_MAX    						5
-#define VTX_CHANNEL_MIN 						1
-#define VTX_CHANNEL_MAX 						8
-#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT 	10
+#define VTX_BAND_MIN                            1
+#define VTX_BAND_MAX                            5
+#define VTX_CHANNEL_MIN                         1
+#define VTX_CHANNEL_MAX                         8
+#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
 
 typedef struct vtxChannelActivationCondition_s {
     uint8_t auxChannelIndex;

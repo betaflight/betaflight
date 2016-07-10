@@ -328,12 +328,12 @@ bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationC
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
         modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-        
+
         if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -607,7 +607,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
-				changeControlRateProfile(position);  
+                changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
                 applied = true;
             }

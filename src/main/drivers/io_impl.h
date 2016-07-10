@@ -12,7 +12,8 @@ typedef struct ioRec_s {
     GPIO_TypeDef *gpio;
     uint16_t pin;
     resourceOwner_t owner;
-    resourceType_t resourcesUsed; // TODO!
+    resourceType_t resource; 
+    uint8_t index;
 } ioRec_t;
 
 extern ioRec_t ioRecs[DEFIO_IO_USED_COUNT];

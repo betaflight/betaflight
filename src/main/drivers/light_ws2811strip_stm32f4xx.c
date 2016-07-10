@@ -67,15 +67,15 @@ void ws2811LedStripHardwareInit(void)
 
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
-    IOInit(ws2811IO, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(WS2811_TIMER));
-    
+
     // Stop timer
     TIM_Cmd(WS2811_TIMER, DISABLE);
 
     /* Compute the prescaler value */
     prescalerValue = (uint16_t)(SystemCoreClock / 2 / 84000000) - 1;
-    
+
     /* Time base configuration */
     TIM_TimeBaseStructure.TIM_Period = 104; // 800kHz
     TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue;
@@ -92,7 +92,7 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = 0;
-    
+
     uint32_t channelAddress = 0;
     switch (WS2811_TIMER_CHANNEL) {
         case TIM_Channel_1:
@@ -100,35 +100,35 @@ void ws2811LedStripHardwareInit(void)
             timDMASource = TIM_DMA_CC1;
             channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
             TIM_OC1PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;        
+            break;
         case TIM_Channel_2:
             TIM_OC2Init(WS2811_TIMER, &TIM_OCInitStructure);
             timDMASource = TIM_DMA_CC2;
             channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
             TIM_OC2PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;        
+            break;
         case TIM_Channel_3:
             TIM_OC3Init(WS2811_TIMER, &TIM_OCInitStructure);
             timDMASource = TIM_DMA_CC3;
             channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
             TIM_OC3PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;        
+            break;
         case TIM_Channel_4:
             TIM_OC4Init(WS2811_TIMER, &TIM_OCInitStructure);
             timDMASource = TIM_DMA_CC4;
             channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
             TIM_OC4PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;        
+            break;
     }
-    
-    TIM_CtrlPWMOutputs(WS2811_TIMER, ENABLE);    
+
+    TIM_CtrlPWMOutputs(WS2811_TIMER, ENABLE);
     TIM_ARRPreloadConfig(WS2811_TIMER, ENABLE);
 
     TIM_CCxCmd(WS2811_TIMER, WS2811_TIMER_CHANNEL, TIM_CCx_Enable);
     TIM_Cmd(WS2811_TIMER, ENABLE);
 
     /* configure DMA */
-    DMA_Cmd(WS2811_DMA_STREAM, DISABLE);            
+    DMA_Cmd(WS2811_DMA_STREAM, DISABLE);
     DMA_DeInit(WS2811_DMA_STREAM);
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_Channel = WS2811_DMA_CHANNEL;
@@ -150,10 +150,10 @@ void ws2811LedStripHardwareInit(void)
     DMA_Init(WS2811_DMA_STREAM, &DMA_InitStructure);
 
     DMA_ITConfig(WS2811_DMA_STREAM, DMA_IT_TC, ENABLE);
-    DMA_ClearITPendingBit(WS2811_DMA_STREAM, WS2811_DMA_IT);              
- 
+    DMA_ClearITPendingBit(WS2811_DMA_STREAM, WS2811_DMA_IT);
+
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
-   
+
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
@@ -163,7 +163,7 @@ void ws2811LedStripDMAEnable(void)
 {
     if (!ws2811Initialised)
         return;
-    
+
     DMA_SetCurrDataCounter(WS2811_DMA_STREAM, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(WS2811_TIMER, 0);
     DMA_Cmd(WS2811_DMA_STREAM, ENABLE);

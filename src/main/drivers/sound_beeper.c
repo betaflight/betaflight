@@ -61,7 +61,7 @@ void beeperInit(const beeperConfig_t *config)
     beeperInverted = config->isInverted;
 
     if (beeperIO) {
-        IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT);
+        IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT, 0);
         IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
     }
     systemBeep(false);

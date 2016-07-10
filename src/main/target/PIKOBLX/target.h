@@ -49,31 +49,19 @@
 #define MPU6000_SPI_INSTANCE SPI2
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-#define UART1_TX_PIN        GPIO_Pin_6 // PB6
-#define UART1_RX_PIN        GPIO_Pin_7 // PB7
-#define UART1_GPIO          GPIOB
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource6
-#define UART1_RX_PINSOURCE  GPIO_PinSource7
+#define UART1_TX_PIN        PB6 // PB6
+#define UART1_RX_PIN        PB7 // PB7
 
-#define UART2_TX_PIN        GPIO_Pin_3 // PB3
-#define UART2_RX_PIN        GPIO_Pin_4 // PB4
-#define UART2_GPIO          GPIOB
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource3
-#define UART2_RX_PINSOURCE  GPIO_PinSource4
+#define UART2_TX_PIN        PB3 // PB3
+#define UART2_RX_PIN        PB4 // PB4
 
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10 // PB10 (AF7)
+#define UART3_RX_PIN        PB11 // PB11 (AF7)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2

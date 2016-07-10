@@ -169,7 +169,7 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
     SetSysClock();
 
@@ -183,7 +183,7 @@ void systemInit(void)
     extern void *isr_vector_table_base;
     NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
-    
+
     RCC_ClearFlag();
 
     enableGPIOPowerUsageAndNoiseReductions();
@@ -199,15 +199,15 @@ void systemInit(void)
 void(*bootJump)(void);
 void checkForBootLoaderRequest(void)
 {
-	if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
+    if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
 
-		*((uint32_t *)0x2001FFFC) = 0x0; 
+        *((uint32_t *)0x2001FFFC) = 0x0;
 
-		__enable_irq();
-		__set_MSP(0x20001000);
-		                                               
-		bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004)); 
-		bootJump();
-		while (1);
-	}
+        __enable_irq();
+        __set_MSP(0x20001000);
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004));
+        bootJump();
+        while (1);
+    }
 }

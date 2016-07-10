@@ -293,7 +293,7 @@ static uint32_t read32(void)
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialBeginWrite(mspSerialPort);
-    
+
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -1967,7 +1967,7 @@ void mspProcess(void)
 
         if (isRebootScheduled) {
             waitForSerialPortToFinishTransmitting(candidatePort->port);
-            stopMotors();
+            stopPwmAllMotors();
             // On real flight controllers, systemReset() will do a soft reset of the device,
             // reloading the program.  But to support offline testing this flag needs to be
             // cleared so that the software doesn't continuously attempt to reboot itself.

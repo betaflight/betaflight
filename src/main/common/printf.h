@@ -66,10 +66,10 @@ To use the printf you need to supply your own character output function,
 something like :
 
 void putc ( void* p, char c)
-	{
-	while (!SERIAL_PORT_EMPTY) ;
-	SERIAL_PORT_TX_REGISTER = c;
-	}
+    {
+    while (!SERIAL_PORT_EMPTY) ;
+    SERIAL_PORT_TX_REGISTER = c;
+    }
 
 Before you can call printf you need to initialize it to use your
 character output function with something like:

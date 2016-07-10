@@ -39,7 +39,7 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
         if (ioTag == adcTagMap[i].tag)
             return adcTagMap[i].channel;
     }
-    return 0;    
+    return 0;
 }
 
 uint16_t adcGetChannel(uint8_t channel)

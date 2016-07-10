@@ -28,7 +28,7 @@
 
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
 // "LED2" is using one of the PWM pins (CH2/PWM2), so we must not use PWM2 unless the jumper is cut.  @See pwmInit()
-#define LED1    PA1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
+#define LED1    PA1 // D3, PA1/UART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
 #endif
 
 #define GYRO
@@ -62,8 +62,8 @@
 #define SONAR_ECHO_PIN      PB1
 #define SONAR_TRIGGER_PIN   PB0
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 4

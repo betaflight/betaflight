@@ -43,32 +43,21 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
-#define USE_USART1          // JST-SH Serial - TX (PA9) RX (PA10)
-#define USE_USART2          // Input - TX (NC) RX (PA15)
-#define USE_USART3          // Solder Pads - TX (PB10) RX (PB11)
+#define USE_UART1          // JST-SH Serial - TX (PA9) RX (PA10)
+#define USE_UART2          // Input - TX (NC) RX (PA15)
+#define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
 #define SERIAL_PORT_COUNT 5
 
-#define UART1_TX_PIN        GPIO_Pin_9
-#define UART1_RX_PIN        GPIO_Pin_10
-#define UART1_GPIO          GPIOA
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource9
-#define UART1_RX_PINSOURCE  GPIO_PinSource10
+#define UART1_TX_PIN        PA9
+#define UART1_RX_PIN        PA10
 
-#define UART2_TX_PIN        GPIO_Pin_14 //Not connected
-#define UART2_RX_PIN        GPIO_Pin_15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14 //Not connected
+#define UART2_RX_PIN        PA15
 
-#define UART3_TX_PIN        GPIO_Pin_10
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10
+#define UART3_RX_PIN        PB11
+
 
 #define SOFTSERIAL_1_TIMER TIM15
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 7 //Not connected

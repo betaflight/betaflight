@@ -112,7 +112,7 @@
 //// Divide to under 25MHz for normal operation:
 //#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2
 //
-//// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+//// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 //#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 //#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
@@ -123,8 +123,8 @@
 #define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define SERIAL_PORT_COUNT 3
 
 // uart2 gpio for shared serial rx/ppm

@@ -79,7 +79,7 @@ const adcTagMap_t adcTagMap[] = {
 
 void adcInit(drv_adc_config_t *init)
 {
-    
+
 #if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
     UNUSED(init);
 #endif
@@ -123,18 +123,18 @@ void adcInit(drv_adc_config_t *init)
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_SYSTEM, RESOURCE_ADC);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
         adcConfig[i].sampleTime = ADC_SampleTime_239Cycles5;
         adcConfig[i].enabled = true;
     }
-    
+
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
     RCC_ClockCmd(adc.rccDMA, ENABLE);
-    
+
     DMA_DeInit(adc.DMAy_Channelx);
     DMA_InitTypeDef DMA_InitStructure;
     DMA_StructInit(&DMA_InitStructure);

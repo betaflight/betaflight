@@ -62,13 +62,13 @@
 #define USE_VCP
 #define VBUS_SENSING_PIN PA9
 
-#define USE_USART1
-#define USART1_RX_PIN PB7
-#define USART1_TX_PIN PB6
+#define USE_UART1
+#define UART1_RX_PIN PB7
+#define UART1_TX_PIN PB6
 
-#define USE_USART2
-#define USART2_RX_PIN PA3
-#define USART2_TX_PIN PA2
+#define USE_UART2
+#define UART2_RX_PIN PA3
+#define UART2_TX_PIN PA2
 
 #define SERIAL_PORT_COUNT 3 //VCP, USART1, USART2
 

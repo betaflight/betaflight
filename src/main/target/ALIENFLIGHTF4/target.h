@@ -97,26 +97,26 @@
 
 #define USE_VCP
 
-#define USE_USART1
-#define USART1_RX_PIN        PA10
-#define USART1_TX_PIN        PA9
-#define USART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
+#define USE_UART1
+#define UART1_RX_PIN        PA10
+#define UART1_TX_PIN        PA9
+#define UART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
 
-#define USE_USART2
-#define USART2_RX_PIN        PA3
-#define USART2_TX_PIN        PA2 //inverter
+#define USE_UART2
+#define UART2_RX_PIN        PA3
+#define UART2_TX_PIN        PA2 //inverter
 
-//#define USE_USART3
-//#define USART3_RX_PIN        PB11
-//#define USART3_TX_PIN        PB10
+//#define USE_UART3
+//#define UART3_RX_PIN        PB11
+//#define UART3_TX_PIN        PB10
 
-#define USE_USART4
-#define USART4_RX_PIN        PC10
-#define USART4_TX_PIN        PC11
+#define USE_UART4
+#define UART4_RX_PIN        PC10
+#define UART4_TX_PIN        PC11
 
-//#define USE_USART5
-//#define USART5_RX_PIN        PD2
-//#define USART5_TX_PIN        PC12
+//#define USE_UART5
+//#define UART5_RX_PIN        PD2
+//#define UART5_TX_PIN        PC12
 
 #define SERIAL_PORT_COUNT    4
 

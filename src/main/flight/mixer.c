@@ -395,7 +395,7 @@ void loadCustomServoMixer(void)
         // check if done
         if (customServoMixers[i].rate == 0)
             break;
-            
+
         currentServoMixer[i] = customServoMixers[i];
         servoRuleCount++;
     }
@@ -426,9 +426,9 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
 
     motorCount = 0;
     servoCount = pwmOutputConfiguration->servoCount;
-    
+
     syncPwm = use_unsyncedPwm;
-    
+
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -454,7 +454,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
                 currentServoMixer[i] = servoMixers[currentMixerMode].rule[i];
         }
     }
-    
+
     // in 3D mode, mixer gain has to be halved
     if (feature(FEATURE_3D)) {
         if (motorCount > 1) {
@@ -472,7 +472,7 @@ void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfigura
         currentMixerMode == MIXER_CUSTOM_AIRPLANE
     ) {
         ENABLE_STATE(FIXED_WING);
-        
+
         if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
             loadCustomServoMixer();
         }
@@ -666,9 +666,10 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-void StopPwmAllMotors()
+void stopPwmAllMotors()
 {
     pwmShutdownPulsesForAllMotors(motorCount);
+    delayMicroseconds(1500);
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -901,7 +902,7 @@ void mixTable(void)
 
         /*
         case MIXER_GIMBAL:
-			servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+            servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
             servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
             break;
         */

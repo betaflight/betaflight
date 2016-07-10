@@ -55,7 +55,8 @@ MAX7456_CHAR_TYPE* max7456_get_screen_buffer(void) {
     return SCREEN_BUFFER;
 }
 
-static uint8_t max7456_send(uint8_t add, uint8_t data) {
+static uint8_t max7456_send(uint8_t add, uint8_t data)
+{
     spiTransferByte(MAX7456_SPI_INSTANCE, add);
     return spiTransferByte(MAX7456_SPI_INSTANCE, data);
 }
@@ -157,7 +158,7 @@ void max7456_init(uint8_t video_system)
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif
-    IOInit(max7456CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(max7456CsPin, OWNER_OSD, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
 
     //Minimum spi clock period for max7456 is 100ns (10Mhz)
