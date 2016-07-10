@@ -374,7 +374,7 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 

@@ -70,7 +70,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA4, ADC_Channel_4  },
     { DEFIO_TAG_E__PA5, ADC_Channel_5  },
     { DEFIO_TAG_E__PA6, ADC_Channel_6  },
-    { DEFIO_TAG_E__PA7, ADC_Channel_7  },    
+    { DEFIO_TAG_E__PA7, ADC_Channel_7  },
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
@@ -109,7 +109,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
     }
 #endif
-    
+
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
         adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
@@ -123,25 +123,25 @@ void adcInit(drv_adc_config_t *init)
 #endif
 
     //RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
-    
+
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
-    
+
     adcDevice_t adc = adcHardware[device];   
-    
+
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_SYSTEM, RESOURCE_ADC);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
         adcConfig[i].sampleTime = ADC_SampleTime_480Cycles;
         adcConfig[i].enabled = true;
     }
-    
+
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
 

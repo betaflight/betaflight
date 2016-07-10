@@ -69,20 +69,21 @@
 #define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART3
+#define USE_UART1
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 4
+
+#ifdef USE_UART1_RX_DMA
+#undef USE_UART1_RX_DMA
+#endif
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
-#define USART3_RX_PIN Pin_11
-#define USART3_TX_PIN Pin_10
-#define USART3_GPIO GPIOB
-#define USART3_APB1_PERIPHERALS RCC_APB1Periph_USART3
-#define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
+#define UART3_RX_PIN       PB11
+#define UART3_TX_PIN       PB10
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -123,6 +124,8 @@
 #undef DISPLAY
 #undef SONAR
 #endif
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - from schematics
 #define TARGET_IO_PORTA 0xffff

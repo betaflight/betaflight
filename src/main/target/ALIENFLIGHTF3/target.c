@@ -84,7 +84,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     // USART3 RX/TX
     // RX conflicts with PPM port
-    //{ TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_PinSource11,  GPIO_AF_1 } // RX    - PB11 - *TIM2_CH4, USART3_RX (AF7) - PWM11
-    //{ TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_PinSource10,  GPIO_AF_1 } // TX    - PB10 - *TIM2_CH3, USART3_TX (AF7) - PWM12
+    //{ TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_PinSource11,  GPIO_AF_1 } // RX    - PB11 - *TIM2_CH4, UART3_RX (AF7) - PWM11
+    //{ TIM2,  GPIOB, Pin_10, TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_PinSource10,  GPIO_AF_1 } // TX    - PB10 - *TIM2_CH3, UART3_TX (AF7) - PWM12
 };
 

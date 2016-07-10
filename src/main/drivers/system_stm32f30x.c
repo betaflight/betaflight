@@ -83,7 +83,7 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
     // Enable FPU
     SCB->CPACR = (0x3 << (10 * 2)) | (0x3 << (11 * 2));

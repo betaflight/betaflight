@@ -538,7 +538,7 @@ static void resetConf(void)
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    
+
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;
 #endif
@@ -556,7 +556,7 @@ static void resetConf(void)
     masterConfig.emf_avoidance = 0; // TODO - needs removal
 
     resetPidProfile(&currentProfile->pidProfile);
-    
+
     for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
         resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
     }
@@ -835,7 +835,7 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
+#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
         featureClear(FEATURE_DISPLAY);
     }
@@ -1007,12 +1007,12 @@ void changeProfile(uint8_t profileIndex)
 }
 
 void changeControlRateProfile(uint8_t profileIndex)
-{    
-    if (profileIndex > MAX_RATEPROFILES) {    
-        profileIndex = MAX_RATEPROFILES - 1;    
-    }        
-    setControlRateProfile(profileIndex);    
-    activateControlRateConfig();    
+{
+    if (profileIndex > MAX_RATEPROFILES) {
+        profileIndex = MAX_RATEPROFILES - 1;
+    }
+    setControlRateProfile(profileIndex);
+    activateControlRateConfig();
 }
 
 void latchActiveFeatures()

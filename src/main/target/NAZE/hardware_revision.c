@@ -70,7 +70,7 @@ uint8_t detectSpiDevice(void)
 #ifdef NAZE_SPI_CS_PIN
     nazeSpiCsPin = IOGetByTag(IO_TAG(NAZE_SPI_CS_PIN));
 #endif
-    
+
     uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
     uint32_t flash_id;
