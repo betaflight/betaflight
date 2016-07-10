@@ -15,11 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  *
  * FlySky iBus telemetry implementation by CraigJPerry.
+ * Unit tests and some additions by Unitware
  *
  * Many thanks to Dave Borthwick's iBus telemetry dongle converter for
  * PIC 12F1572 (also distributed under GPLv3) which was referenced to
  * clarify the protocol.
- *
  */
 
 #include <stdbool.h>
@@ -195,7 +195,7 @@ typedef enum {
 } ibusSensorType_e;
 
 static const uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
-    IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE,  // Address 0, not usable since it is reserved for internal voltage
+    // IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE,  // Address 0, not usable since it is reserved for internal voltage
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,  // Address 1, VBAT
     IBUS_SENSOR_TYPE_TEMPERATURE,       // Address 2, Gyro Temp
     IBUS_SENSOR_TYPE_RPM                // Address 3, Throttle command
@@ -206,6 +206,9 @@ static serialPortConfig_t *ibusSerialPortConfig;
 
 static bool ibusTelemetryEnabled = false;
 static portSharing_e ibusPortSharing;
+
+#define INVALID_IBUS_ADDRESS 0
+static ibusAddress_t ibusBaseAddress = INVALID_IBUS_ADDRESS;
 
 static uint8_t ibusReceiveBuffer[IBUS_RX_BUF_LEN] = { 0x0 };
 
@@ -239,7 +242,10 @@ static void sendIbusCommand(ibusAddress_t address) {
 }
 
 static void sendIbusSensorType(ibusAddress_t address) {
-    uint8_t sendBuffer[] = { 0x06, IBUS_COMMAND_SENSOR_TYPE | address, SENSOR_ADDRESS_TYPE_LOOKUP[address], 0x02, 0x0, 0x0 };
+    uint8_t sendBuffer[] = {0x06,
+                            IBUS_COMMAND_SENSOR_TYPE | address,
+                            SENSOR_ADDRESS_TYPE_LOOKUP[address - ibusBaseAddress],
+                            0x02, 0x0, 0x0 };
     transmitIbusPacket(sendBuffer, sizeof sendBuffer);
 }
 
@@ -257,28 +263,46 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
 }
 
 static void dispatchMeasurementRequest(ibusAddress_t address) {
-    if (1 == address) {
-        uint16_t value = vbat * 10;
-        if (ibusTelemetryConfig()->report_cell_voltage) {
-            value /= batteryCellCount;
+    switch (SENSOR_ADDRESS_TYPE_LOOKUP[address - ibusBaseAddress]) {
+    case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
+        {
+            uint16_t value = vbat * 10;
+            if (ibusTelemetryConfig()->report_cell_voltage) {
+                value /= batteryCellCount;
+            }
+            sendIbusMeasurement(address, value);
         }
-        sendIbusMeasurement(address, value);
-    } else if (2 == address) {
-#ifdef BARO
-        float temperature = (baroTemperature + 50) / 100.f;
-#else
-        float temperature = telemTemperature1 / 10.f;
-#endif
-        sendIbusMeasurement(address, (uint16_t) ((temperature + 40)*10)); 
-    } else if (3 == address) {
+        break;
+
+    case IBUS_SENSOR_TYPE_TEMPERATURE:
+        {
+            #ifdef BARO
+                float temperature = (baroTemperature + 50) / 100.f;
+            #else
+                float temperature = telemTemperature1 / 10.f;
+            #endif
+            sendIbusMeasurement(address, (uint16_t) ((temperature + 40)*10));
+        }
+        break;
+
+    case IBUS_SENSOR_TYPE_RPM:
         sendIbusMeasurement(address, (uint16_t) rcCommand[THROTTLE]);
+        break;
     }
 }
 
 static void respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
     ibusAddress_t returnAddress = getAddress(ibusPacket);
+    
+    //autodetect first received address as our base address
+    if ((INVALID_IBUS_ADDRESS == ibusBaseAddress) && 
+        (INVALID_IBUS_ADDRESS != returnAddress))
+    {
+        ibusBaseAddress = returnAddress;
+    }
 
-    if (returnAddress < sizeof SENSOR_ADDRESS_TYPE_LOOKUP) {
+    if ((returnAddress >= ibusBaseAddress) &&
+        (ibusAddress_t)(returnAddress - ibusBaseAddress) < sizeof SENSOR_ADDRESS_TYPE_LOOKUP) {
         if (isCommand(IBUS_COMMAND_DISCOVER_SENSOR, ibusPacket)) {
             sendIbusCommand(returnAddress);
         } else if (isCommand(IBUS_COMMAND_SENSOR_TYPE, ibusPacket)) {
@@ -299,6 +323,7 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
 void initIbusTelemetry(void) {
     ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
     ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
+    ibusBaseAddress = INVALID_IBUS_ADDRESS;
 }
 
 void handleIbusTelemetry(void) {

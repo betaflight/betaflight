@@ -113,7 +113,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
-    printf("w: 0x%02x\n", ch);
+    // printf("w: 0x%02x\n", ch);
 }
 
 
@@ -198,7 +198,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
 
 
 
-class IbusTelemteryProtocolUnitTest : public ::testing::Test {
+class IbusTelemetryProtocolUnitTestBase : public ::testing::Test {
 protected:
     virtual void SetUp() {
         ibusTelemetryConfig()->report_cell_voltage = false;
@@ -218,6 +218,26 @@ protected:
 
         EXPECT_EQ(expectedTxCnt, serialWriteStub.pos);
         EXPECT_EQ(0, memcmp(serialWriteStub.buffer, expectedTx, expectedTxCnt));
+    }
+
+    void setupBaseAddressOne(void) {
+        checkResponseToCommand("\x04\x81\x7a\xff", 4, "\x04\x81\x7a\xff", 4);
+        serialTestResetBuffers();
+    }
+
+    void setupBaseAddressThree(void) {
+        checkResponseToCommand("\x04\x83\x78\xff", 4, "\x04\x83\x78\xff", 4);
+        serialTestResetBuffers();
+    }
+};
+
+
+
+class IbusTelemteryProtocolUnitTest : public ::IbusTelemetryProtocolUnitTestBase {
+protected:
+    virtual void SetUp() {
+        IbusTelemetryProtocolUnitTestBase::SetUp();
+        setupBaseAddressOne();
     }
 };
 
@@ -342,4 +362,74 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
     //then we respond with: I'm reading 100 rpm
     rcCommand[THROTTLE] = 100;
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
+}
+
+
+
+class IbusTelemteryProtocolUnitTestDaisyChained : public ::IbusTelemetryProtocolUnitTestBase {
+protected:
+    virtual void SetUp() {
+        IbusTelemetryProtocolUnitTestBase::SetUp();
+        setupBaseAddressThree();
+    }
+};
+
+
+TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToDiscoveryBaseAddressThree)
+{
+    //Given ibus commands: Hello sensor at address 3, 4, 5 are you there?
+    //then we respond with: Yes, we're here, hello!
+    checkResponseToCommand("\x04\x83\x78\xff", 4, "\x04\x83\x78\xff", 4);
+    checkResponseToCommand("\x04\x84\x77\xff", 4, "\x04\x84\x77\xff", 4);
+    checkResponseToCommand("\x04\x85\x76\xff", 4, "\x04\x85\x76\xff", 4);
+}
+
+
+TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQueryWrongAddress)
+{
+    //Given ibus commands: Sensor at address 1, 2, 6, what type are you?
+    //then we do not respond
+    checkResponseToCommand("\x04\x91\x6A\xFF", 4, "", 0);
+    checkResponseToCommand("\x04\x92\x69\xFF", 4, "", 0);
+
+    checkResponseToCommand("\x04\x96\x65\xFF", 4, "", 0);
+}
+
+
+TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToSensorTypeQueryVbattBaseThree)
+{
+    //Given ibus commands: Sensor at address 3, 4, 5, what type are you?
+    //then we respond with: I'm a voltage sensor
+    checkResponseToCommand("\x04\x93\x68\xFF", 4, "\x06\x93\x03\x02\x61\xFF", 6);
+    //then we respond with: I'm a thermometer
+    checkResponseToCommand("\x04\x94\x67\xFF", 4, "\x06\x94\x01\x02\x62\xFF", 6);
+    //then we respond with: I'm a rpm sensor
+    checkResponseToCommand("\x04\x95\x66\xFF", 4, "\x06\x95\x02\x02\x60\xFF", 6);
+}
+
+
+TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasurementsBaseThree)
+{
+    //Given ibus command: Sensor at address 3, please send your measurement
+    //then we respond with: I'm reading 0.1 volts
+    batteryCellCount = 1;
+    vbat = 10;
+    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
+
+#ifdef BARO
+    //Given ibus command: Sensor at address 4, please send your measurement
+    //then we respond
+    baroTemperature = 150;
+    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\xA4\x01\xb0\xFE", 6);
+#else
+    //Given ibus command: Sensor at address 4, please send your measurement
+    //then we respond with: I'm reading 100 degrees + constant offset 0x190
+    telemTemperature1 = 100;
+    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\xF4\x01\x60\xFE", 6);
+#endif
+
+    //Given ibus command: Sensor at address 5, please send your measurement
+    //then we respond with: I'm reading 100 rpm
+    rcCommand[THROTTLE] = 100;
+    checkResponseToCommand("\x04\xA5\x56\xff", 4, "\x06\xA5\x64\x00\xf0\xFe", 6);
 }
