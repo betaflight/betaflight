@@ -131,9 +131,19 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
     *motors[index]->ccr = value;
 }
 
+static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
+}
+
+static void pwmWriteOneShot125(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
+}
+
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = lrintf(((float)(value-1000) / 0.69444f) + 360);
+    *motors[index]->ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
@@ -218,7 +228,9 @@ void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
         motors[motorIndex] = pwmOutConfig(timerHardware, timerMhzCounter, 0xFFFF, 0);
     }
 
-    motors[motorIndex]->pwmWritePtr = (fastPwmProtocolType == PWM_TYPE_MULTISHOT) ? pwmWriteMultiShot : pwmWriteStandard;
+    motors[motorIndex]->pwmWritePtr = (fastPwmProtocolType == PWM_TYPE_MULTISHOT) ? pwmWriteMultiShot :
+            ((fastPwmProtocolType == PWM_TYPE_ONESHOT125) ? pwmWriteOneShot125 :
+            pwmWriteOneShot42);
 }
 
 #ifdef USE_SERVOS
