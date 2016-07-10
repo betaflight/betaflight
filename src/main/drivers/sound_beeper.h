@@ -17,25 +17,25 @@
 
 #pragma once
 
+#include "drivers/io.h"
+
 #ifdef BEEPER
-#define BEEP_TOGGLE             {digitalToggle(BEEP_GPIO, BEEP_PIN);}
-#define BEEP_OFF                {systemBeep(false);}
-#define BEEP_ON                 {systemBeep(true);}
+#define BEEP_TOGGLE              systemBeepToggle()
+#define BEEP_OFF                 systemBeep(false)
+#define BEEP_ON                  systemBeep(true)
 #else
-#define BEEP_TOGGLE             {}
-#define BEEP_OFF                {}
-#define BEEP_ON                 {}
+#define BEEP_TOGGLE do {} while(0)
+#define BEEP_OFF    do {} while(0)
+#define BEEP_ON     do {} while(0)
 #endif
 
 typedef struct beeperConfig_s {
-    uint32_t gpioPeripheral;
-    uint16_t gpioPin;
-    GPIO_TypeDef *gpioPort;
-    GPIO_Mode gpioMode;
-    bool isInverted;
+    ioTag_t ioTag;
+    unsigned isInverted : 1;
+    unsigned isOD : 1;
 } beeperConfig_t;
 
-void systemBeep(bool onoff);
-void beeperInit(beeperConfig_t *beeperConfig);
+void systemBeep(bool on);
+void systemBeepToggle(void);
+void beeperInit(const beeperConfig_t *beeperConfig);
 
-void initBeeperHardware(beeperConfig_t *config);

@@ -22,20 +22,9 @@
 
 #define BRUSHED_MOTORS
 
-#define LED0
-#define LED0_GPIO GPIOC
-#define LED0_PIN Pin_14 // PC14 (LED)
-#define LED0_PERIPHERAL RCC_APB2Periph_GPIOC
-
-#define LED1
-#define LED1_GPIO GPIOC
-#define LED1_PIN Pin_13 // PC13 (LED)
-#define LED1_PERIPHERAL RCC_APB2Periph_GPIOC
-
-#define LED2
-#define LED2_GPIO GPIOC
-#define LED2_PIN Pin_15 // PC15 (LED)
-#define LED2_PERIPHERAL RCC_APB2Periph_GPIOC
+#define LED0                PC14
+#define LED1                PC13
+#define LED2                PC15
 
 #undef BEEPER
 

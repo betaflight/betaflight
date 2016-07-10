@@ -19,22 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
 
-#define LED0
-#define LED0_GPIO   GPIOE
-#define LED0_PIN    Pin_8|Pin_12 // Blue LEDs - PE8/PE12
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define LED0                PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-
-#define LED1
-#define LED1_GPIO   GPIOE
-#define LED1_PIN    Pin_10|Pin_14  // Orange LEDs - PE10/PE14
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define LED1                PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER
-#define BEEP_GPIO   GPIOE
-#define BEEP_PIN    Pin_9|Pin_13 // Red LEDs - PE9/PE13
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define BEEPER              PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 18

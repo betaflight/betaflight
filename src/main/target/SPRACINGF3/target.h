@@ -19,15 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 
-#define LED0
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_3
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0                PB3
 
-#define BEEPER
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER              PC15
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 17

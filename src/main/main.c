@@ -149,8 +149,8 @@ void flashLedsAndBeep(void)
         LED1_TOGGLE;
         LED0_TOGGLE;
         delay(25);
-    	if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1))))
-        	BEEP_ON;
+        if (!(getPreferedBeeperOffMask() & (1 << (BEEPER_SYSTEM_INIT - 1))))
+            BEEP_ON;
         delay(25);
         BEEP_OFF;
     }
@@ -196,7 +196,11 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-    ledInit();
+#ifdef ALIENFLIGHTF3
+    ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
+#else
+    ledInit(false);
+#endif
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
@@ -293,21 +297,19 @@ void init(void)
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig = {
-        .gpioPeripheral = BEEP_PERIPHERAL,
-        .gpioPin = BEEP_PIN,
-        .gpioPort = BEEP_GPIO,
+        .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
-        .gpioMode = Mode_Out_PP,
+        .isOD = false,
         .isInverted = true
 #else
-        .gpioMode = Mode_Out_OD,
+        .isOD = true,
         .isInverted = false
 #endif
     };
 #ifdef NAZE
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.gpioMode = Mode_Out_PP;
+        beeperConfig.isOD = false;
         beeperConfig.isInverted = true;
     }
 #endif

@@ -19,20 +19,18 @@
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // ALIENFLIGHTF3
 
-#define LED0
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_4 // Blue LEDs - PB4
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define USE_HARDWARE_REVISION_DETECTION
+#define HW_PIN              PB2
 
-#define LED1
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_5  // Green LEDs - PB5
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
+// LED's V1
+#define LED0                PB4
+#define LED1                PB5
 
-#define BEEPER
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_5  // White LEDs - PA5
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+// LED's V2
+#define LED0_A              PB8
+#define LED1_A              PB9
+
+#define BEEPER              PA5
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 

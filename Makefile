@@ -378,6 +378,7 @@ COMMON_SRC = \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
             drivers/io.c \
+            drivers/light_led.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_xn297.c \
             drivers/pwm_mapping.c \
@@ -483,10 +484,8 @@ STM32F10x_COMMON_SRC = \
             drivers/bus_i2c_stm32f10x.c \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
-            drivers/light_led_stm32f10x.c \
             drivers/serial_softserial.c \
             drivers/serial_uart_stm32f10x.c \
-            drivers/sound_beeper_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
 
@@ -496,11 +495,9 @@ STM32F30x_COMMON_SRC = \
             drivers/adc_stm32f30x.c \
             drivers/bus_i2c_stm32f30x.c \
             drivers/gpio_stm32f30x.c \
-            drivers/light_led_stm32f30x.c \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_uart_stm32f30x.c \
-            drivers/sound_beeper_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
 

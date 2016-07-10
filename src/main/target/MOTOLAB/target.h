@@ -19,19 +19,10 @@
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 
-#define LED0
-#define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_5 // Blue LEDs - PB5
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
+#define LED0                PB5 // Blue LEDs - PB5
+#define LED1                PB9 // Green LEDs - PB9
 
-#define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_9  // Green LEDs - PB9
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
-
-#define BEEPER
-#define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_0
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define BEEPER              PA0
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
@@ -49,7 +40,7 @@
 #define ACC
 #define USE_ACC_MPU6050
 
-#define ACC_MPU6050_ALIGN CW180_DEG
+#define ACC_MPU6050_ALIGN   CW180_DEG
 
 //#define BARO
 //#define USE_BARO_MS5611
