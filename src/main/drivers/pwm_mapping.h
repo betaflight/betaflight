@@ -34,10 +34,20 @@
 #define MAX_INPUTS  8
 #define PWM_TIMER_MHZ 1
 
+#if defined(STM32F40_41xxx) // must be multiples of timer clock
+#define ONESHOT42_TIMER_MHZ 21
+#define ONESHOT125_TIMER_MHZ 12
+#define PWM_BRUSHED_TIMER_MHZ 21
+#define MULTISHOT_TIMER_MHZ 84
+#else
 #define PWM_BRUSHED_TIMER_MHZ 24
 #define MULTISHOT_TIMER_MHZ   72
 #define ONESHOT42_TIMER_MHZ   24
 #define ONESHOT125_TIMER_MHZ  8
+#endif
+
+#define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
+#define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
 typedef struct sonarIOConfig_s {
     ioTag_t triggerTag;
