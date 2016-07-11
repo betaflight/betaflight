@@ -1,8 +1,8 @@
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
