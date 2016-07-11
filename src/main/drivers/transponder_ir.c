@@ -24,6 +24,7 @@
 #include "build_config.h"
 
 #include "drivers/dma.h"
+#include "drivers/nvic.h"
 #include "drivers/transponder_ir.h"
 
 /*
