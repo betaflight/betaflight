@@ -26,7 +26,7 @@
 // FIXME The board has a bus switch, not LED1
 #define LED1_GPIO   GPIOB
 #define LED1_PIN    Pin_3 // PB3
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOA
+#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
