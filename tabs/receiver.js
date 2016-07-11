@@ -421,9 +421,9 @@ TABS.receiver.renderModel = function () {
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta();
 
-        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate * 100, RC_tuning.RC_RATE * 100, RC_tuning.RC_EXPO * 100, this.useSuperExpo),
-            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate * 100, RC_tuning.RC_RATE * 100, RC_tuning.RC_EXPO * 100, this.useSuperExpo),
-            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate * 100, SPECIAL_PARAMETERS.RC_RATE_YAW * 100, RC_tuning.RC_YAW_EXPO * 100, this.useSuperExpo);
+        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
+            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate, SPECIAL_PARAMETERS.RC_RATE_YAW, RC_tuning.RC_YAW_EXPO, this.useSuperExpo);
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
     }
