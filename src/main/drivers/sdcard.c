@@ -44,7 +44,7 @@
 // Chosen so that CMD8 will have the same CRC as CMD0:
 #define SDCARD_IF_COND_CHECK_PATTERN 0xAB
 
-#define SDCARD_TIMEOUT_INIT_MILLIS      2000
+#define SDCARD_TIMEOUT_INIT_MILLIS      200
 #define SDCARD_MAX_CONSECUTIVE_FAILURES 8
 
 /* Break up 512-byte SD card sectors into chunks of this size when writing without DMA to reduce the peak overhead
