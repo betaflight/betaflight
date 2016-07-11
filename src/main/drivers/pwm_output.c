@@ -216,20 +216,21 @@ void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motor
 void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t fastPwmProtocolType)
 {
     uint32_t timerMhzCounter;
+    pwmWriteFuncPtr pwmWritePtr;
 
     switch (fastPwmProtocolType) {
     default:
     case (PWM_TYPE_ONESHOT125):
         timerMhzCounter = ONESHOT125_TIMER_MHZ;
-        motors[motorIndex]->pwmWritePtr = pwmWriteOneShot125;
+        pwmWritePtr = pwmWriteOneShot125;
         break;
     case (PWM_TYPE_ONESHOT42):
         timerMhzCounter = ONESHOT42_TIMER_MHZ;
-        motors[motorIndex]->pwmWritePtr = pwmWriteOneShot42;
+        pwmWritePtr = pwmWriteOneShot42;
         break;
     case (PWM_TYPE_MULTISHOT):
         timerMhzCounter = MULTISHOT_TIMER_MHZ;
-        motors[motorIndex]->pwmWritePtr = pwmWriteMultiShot;
+        pwmWritePtr = pwmWriteMultiShot;
         break;
     }
 
@@ -239,6 +240,7 @@ void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
     } else {
         motors[motorIndex] = pwmOutConfig(timerHardware, timerMhzCounter, 0xFFFF, 0);
     }
+    motors[motorIndex]->pwmWritePtr = pwmWritePtr;
 }
 
 #ifdef USE_SERVOS
