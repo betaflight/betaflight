@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -36,9 +35,8 @@
 #include "drivers/serial_uart.h"
 #endif
 
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
- 
+
 #if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
 #endif
@@ -47,7 +45,6 @@
 #include "serial_cli.h"
 #include "serial_msp.h"
 
-#include "config/config.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"

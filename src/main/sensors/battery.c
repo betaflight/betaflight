@@ -32,8 +32,6 @@
 
 #include "sensors/battery.h"
 
-#include "rx/rx.h"
-
 #include "io/rc_controls.h"
 #include "io/beeper.h"
 
@@ -170,7 +168,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
 }
 
 #define ADCVREF 3300   // in mV
-int32_t currentSensorToCentiamps(uint16_t src)
+static int32_t currentSensorToCentiamps(uint16_t src)
 {
     int32_t millivolts;
 
