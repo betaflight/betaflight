@@ -17,11 +17,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <platform.h>
-
-#include "build_config.h"
 
 #include "drivers/dma.h"
 #include "drivers/nvic.h"

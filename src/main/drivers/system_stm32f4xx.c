@@ -15,26 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
+#include "accgyro_mpu.h"
 #include "gpio.h"
 #include "nvic.h"
 #include "system.h"
 
-
 #include "exti.h"
-#include "debug.h"
-#include "sensor.h"
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_mpu6000.h"
-#include "accgyro_mpu6500.h"
-#include "accgyro_spi_mpu9250.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)

@@ -15,19 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "sdcard.h"
-
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
 
+#ifdef USB_IO
+
 #include "io.h"
 #include "system.h"
 #include "usb_io.h"
+#include "sdcard.h"
 
-#ifdef USB_IO
+
 
 #ifdef USB_DETECT_PIN
 static IO_t usbDetectPin = IO_NONE;

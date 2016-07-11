@@ -22,7 +22,6 @@
  * as this header is maintained with the file at all times.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 

@@ -15,14 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
-
-#include "build_config.h"
 
 #include "gpio.h"
 #include "light_led.h"
