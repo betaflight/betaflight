@@ -19,16 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "FURY"
 
-#define LED0
+#define LED0                PC14
 
-#define LED0_GPIO   GPIOC
-#define LED0_PIN    Pin_14
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
-
-#define BEEPER
-#define BEEP_GPIO   GPIOC
-#define BEEP_PIN    Pin_15
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define BEEPER              PC15
 #define BEEPER_INVERTED
 
 //#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
