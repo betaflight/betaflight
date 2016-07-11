@@ -421,13 +421,13 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // Local cache of current rates
         self.currentRates = {
-            roll_rate:   RC_tuning.roll_rate * 100,
-            pitch_rate:  RC_tuning.pitch_rate * 100,
-            yaw_rate:    RC_tuning.yaw_rate * 100,
-            rc_rate:     RC_tuning.RC_RATE * 100,
-            rc_rate_yaw: SPECIAL_PARAMETERS.RC_RATE_YAW * 100,
-            rc_expo:     RC_tuning.RC_EXPO * 100,
-            rc_yaw_expo: RC_tuning.RC_YAW_EXPO * 100,
+            roll_rate:   RC_tuning.roll_rate,
+            pitch_rate:  RC_tuning.pitch_rate,
+            yaw_rate:    RC_tuning.yaw_rate,
+            rc_rate:     RC_tuning.RC_RATE,
+            rc_rate_yaw: SPECIAL_PARAMETERS.RC_RATE_YAW,
+            rc_expo:     RC_tuning.RC_EXPO,
+            rc_yaw_expo: RC_tuning.RC_YAW_EXPO,
             superexpo:   bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT)
         };
 
@@ -436,8 +436,8 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
-            self.currentRates.roll_rate = RC_tuning.roll_pitch_rate * 100;
-            self.currentRates.pitch_rate = RC_tuning.roll_pitch_rate * 100;
+            self.currentRates.roll_rate = RC_tuning.roll_pitch_rate;
+            self.currentRates.pitch_rate = RC_tuning.roll_pitch_rate;
         }
 
         updatePidDisplay();
@@ -524,49 +524,61 @@ TABS.pid_tuning.initialize = function (callback) {
         var maxAngularVelPitchElement = $('.rc_curve .maxAngularVelPitch');
         var maxAngularVelYawElement = $('.rc_curve .maxAngularVelYaw');
 
+        var updateNeeded = true;
+
         function updateRates(event) {
             setTimeout(function () { // let global validation trigger and adjust the values first
                 var targetElement = $(event.target),
                     targetValue = checkInput(targetElement);
 
                 if (self.currentRates.hasOwnProperty(targetElement.attr('name')) && targetValue) {
-                    self.currentRates[targetElement.attr('name')] = targetValue * 100;
+                    self.currentRates[targetElement.attr('name')] = targetValue;
+
+                    updateNeeded = true;
                 }
 
                 if (targetElement.attr('name') === 'rc_rate' && CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
-                    self.currentRates.rc_rate_yaw = targetValue * 100;
+                    self.currentRates.rc_rate_yaw = targetValue;
                 }
 
                 if (targetElement.attr('name') === 'roll_pitch_rate' && semver.lt(CONFIG.apiVersion, "1.7.0")) {
-                    self.currentRates.roll_rate = targetValue * 100;
-                    self.currentRates.pitch_rate = targetValue * 100;
+                    self.currentRates.roll_rate = targetValue;
+                    self.currentRates.pitch_rate = targetValue;
+
+                    updateNeeded = true;
 	        }
 
                 if (targetElement.attr('name') === 'show_superexpo_rates') {
                     self.currentRates.superexpo = targetElement.is(':checked');
+
+                    updateNeeded = true;
 		}
 
-                var curveHeight = rcCurveElement.height;
-                var curveWidth = rcCurveElement.width;
+                if (updateNeeded) {
+                    var curveHeight = rcCurveElement.height;
+                    var curveWidth = rcCurveElement.width;
 
-		var maxAngularVel = Math.max(
-                    printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelRollElement),
-                    printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelPitchElement),
-                    printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVelYawElement));
+		    var maxAngularVel = Math.max(
+                        printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelRollElement),
+                        printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelPitchElement),
+                        printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVelYawElement));
 
-                curveContext.clearRect(0, 0, curveWidth, curveHeight);
+                    curveContext.clearRect(0, 0, curveWidth, curveHeight);
 
-                if (!useLegacyCurve) {
-                    drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
+                    if (!useLegacyCurve) {
+                        drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
+                    }
+
+                    curveContext.lineWidth = 4;
+
+		    drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#ff0000', 0, curveContext);
+
+		    drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#00ff00', -4, curveContext);
+
+		    drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVel, '#0000ff', 4, curveContext);
+
+                    updateNeeded = false;
                 }
-
-                curveContext.lineWidth = 4;
-
-		drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#ff0000', 0, curveContext);
-
-		drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#00ff00', -4, curveContext);
-
-		drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVel, '#0000ff', 4, curveContext);
             }, 0);
         };
 

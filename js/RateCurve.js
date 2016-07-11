@@ -7,11 +7,11 @@ var maxRc = 2000;
 var RateCurve = function (useLegacyCurve) {
     this.useLegacyCurve = useLegacyCurve;
 
-    function constrain(value, min, max) {
+    this.constrain = function (value, min, max) {
         return Math.max(min, Math.min(value, max));
     }
 
-    function rcCommand(rcData, rcRate, rcExpo) {
+    this.rcCommand = function (rcData, rcRate, rcExpo) {
         var tmp = Math.min(Math.abs(rcData - midRc), 500) / 100;
 
 	var result = ((2500 + rcExpo * (tmp * tmp - 25)) * tmp * rcRate / 2500).toFixed(0);
@@ -21,23 +21,6 @@ var RateCurve = function (useLegacyCurve) {
 
         return result;
     }
-
-    this.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive) {
-        var inputValue = rcCommand(rcData, rcRate, rcExpo);
-
-        var angleRate;
-        if (superExpoActive) {
-            var rcFactor = Math.abs(inputValue) / (500 * rcRate / 100);
-            rcFactor = 1 / constrain(1 - rcFactor * rate / 100, 0.01, 1);
-
-            angleRate = rcFactor * 27 * inputValue / 16;
-        } else {
-            angleRate = (rate + 27) * inputValue / 16;
-        }
-
-        angleRate = constrain(angleRate, -8190, 8190); // Rate limit protection
-        return angleRate >> 2; // the shift by 2 is to counterbalance the divide by 4 that occurs on the gyro to calculate the error
-    };
 
     this.drawRateCurve = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height) {
         var canvasHeightScale = height / (2 * maxAngularVel);
@@ -62,10 +45,6 @@ var RateCurve = function (useLegacyCurve) {
     }
 
     this.drawLegacyRateCurve = function (rate, rcRate, rcExpo, context, width, height) {
-	rate = rate / 100;
-	rcRate = rcRate / 100;
-	rcExpo = rcExpo / 100;
-
         // math magic by englishman
         var rateY = height * rcRate;
         rateY = rateY + (1 / (1 - ((rateY / height) * rate)))
@@ -78,10 +57,34 @@ var RateCurve = function (useLegacyCurve) {
     }
 }
 
+RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive) {
+    var angleRate;
+    if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
+        rate = rate * 100;
+        rcRate = rcRate * 100;
+        rcExpo = rcExpo * 100;
+
+        var inputValue = this.rcCommand(rcData, rcRate, rcExpo);
+
+        if (superExpoActive) {
+            var rcFactor = Math.abs(inputValue) / (500 * rcRate / 100);
+            rcFactor = 1 / this.constrain(1 - rcFactor * rate / 100, 0.01, 1);
+
+            angleRate = rcFactor * 27 * inputValue / 16;
+        } else {
+            angleRate = (rate + 27) * inputValue / 16;
+        }
+
+        angleRate = this.constrain(angleRate, -8190, 8190); // Rate limit protection
+        angleRate = angleRate >> 2; // the shift by 2 is to counterbalance the divide by 4 that occurs on the gyro to calculate the error
+    }
+
+    return angleRate;
+};
+
 RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpoActive) {
     var maxAngularVel;
-    if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined
-        && !this.useLegacyCurve) {
+    if (!this.useLegacyCurve) {
         maxAngularVel = this.rcCommandRawToDegreesPerSecond(maxRc, rate, rcRate, rcExpo, superExpoActive);
     }
 
