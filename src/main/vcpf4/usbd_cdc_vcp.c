@@ -223,6 +223,8 @@ static uint32_t rxPackets = 0;
 
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 {
+	__disable_irq();
+
     rxPackets++;
 
     for (uint32_t i = 0; i < Len; i++) {
@@ -232,6 +234,7 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
         rxTotalBytes++;
     }
 
+	__enable_irq();
     if(receiveLength > (USB_RX_BUFSIZE-1))
         return USBD_FAIL;
 
