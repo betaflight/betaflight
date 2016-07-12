@@ -646,6 +646,12 @@
     "configurationBatteryScale": {
         "message": "Voltage Scale"
     },
+    "configurationVbatPidCompensation": {
+        "message": "Vbat PID Compensation"
+    },
+    "configurationVbatPidCompensationHelp": {
+        "message": "Increase the PID values to compensate when Vbat gets lower. This will give more constant flight characteristics throughout the flight."
+    },
     "configurationCurrent": {
         "message": "Current Sensor"
     },
