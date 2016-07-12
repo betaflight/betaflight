@@ -420,12 +420,12 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
         // PITCH angle is measured in opposite direction ( >0 - dive, <0 - climb)
         pitchCorrection = constrain(pitchCorrection, -DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_dive_angle), DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_climb_angle));
-        rcCommand[PITCH] = -pidAngleToRcCommand(pitchCorrection);
+        rcCommand[PITCH] = -pidAngleToRcCommand(pitchCorrection, posControl.pidProfile->max_angle_inclination[FD_PITCH]);
     }
 
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
         rollCorrection = constrain(rollCorrection, -DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_bank_angle), DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw_max_bank_angle));
-        rcCommand[ROLL] = pidAngleToRcCommand(rollCorrection);
+        rcCommand[ROLL] = pidAngleToRcCommand(rollCorrection, posControl.pidProfile->max_angle_inclination[FD_ROLL]);
 
         // Calculate coordinated turn rate based on velocity and banking angle
         if (posControl.actualState.velXY >= 300.0f) {
