@@ -28,7 +28,6 @@ int32_t BaroAlt = 0;
 
 #include "drivers/barometer.h"
 #include "drivers/system.h"
-#include "config/config.h"
 
 #include "sensors/barometer.h"
 

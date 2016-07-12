@@ -23,6 +23,9 @@
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef GPS
+
 #include "build_config.h"
 #include "debug.h"
 
@@ -49,8 +52,6 @@
 #include "config/config.h"
 #include "config/runtime_config.h"
 
-
-#ifdef GPS
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'
