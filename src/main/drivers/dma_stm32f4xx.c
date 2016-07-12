@@ -16,12 +16,10 @@
  */
 
 #include <stdbool.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
-
-#include "build_config.h"
 
 #include "drivers/nvic.h"
 #include "drivers/dma.h"

@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build_config.h"
 #include "debug.h"
 
 #include "common/maths.h"

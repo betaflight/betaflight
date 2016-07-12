@@ -15,17 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stdint.h>
 
-#include "common/printf.h"
 #include "platform.h"
 #include "version.h"
 
 #ifdef USE_MAX7456
 
+#include "common/printf.h"
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"

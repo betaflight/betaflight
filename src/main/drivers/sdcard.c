@@ -15,11 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
+
+#ifdef USE_SDCARD
 
 #include "nvic.h"
 #include "io.h"
@@ -29,8 +30,6 @@
 
 #include "sdcard.h"
 #include "sdcard_standard.h"
-
-#ifdef USE_SDCARD
 
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
