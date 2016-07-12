@@ -505,8 +505,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         }
         
         // fill throttle
+        $('input[name="midrc"]').val(MISC.midrc);
         $('input[name="minthrottle"]').val(MISC.minthrottle);
-        $('input[name="midthrottle"]').val(MISC.midrc);
         $('input[name="maxthrottle"]').val(MISC.maxthrottle);
         $('input[name="mincommand"]').val(MISC.mincommand);
         
@@ -599,8 +599,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
             }
             
+            MISC.midrc = parseInt($('input[name="midrc"]').val());
             MISC.minthrottle = parseInt($('input[name="minthrottle"]').val());
-            MISC.midrc = parseInt($('input[name="midthrottle"]').val());
             MISC.maxthrottle = parseInt($('input[name="maxthrottle"]').val());
             MISC.mincommand = parseInt($('input[name="mincommand"]').val());
 
