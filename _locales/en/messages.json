@@ -607,17 +607,26 @@
     "configurationDisarmKillSwitch": {
         "message": "Disarm motors regardless of throttle value (When arming via AUX channel)"
     },
+    "configurationMidRc": {
+        "message": "Center value for RC channels"
+    },
+    "configurationMidRcHelp": {
+        "message": "This is the center value <span style=\"font-weight: bold\">for all RC channels</span>. Set this to the value that your transmitter sends when the stick is centered for a channel. To adjust the thrust at throttle mid position, change the 'Trottle MID' value on the PID Tuning tab."
+    },
     "configurationThrottleMinimum": {
         "message": "Minimum Throttle"
     },
-    "configurationThrottleMid": {
-        "message": "Middle Throttle [RC inputs center value]"
+    "configurationThrottleMinimumHelp": {
+        "message": "This is the 'idle' value that is sent to the ESCs when the craft is armed and the trottle stick is at minimum position. Adjust this so the motors run as slow as possible while still running smoothly."
     },
     "configurationThrottleMaximum": {
         "message": "Maximum Throttle"
     },
     "configurationThrottleMinimumCommand": {
         "message": "Minimum Command"
+    },
+    "configurationThrottleMinimumCommandHelp": {
+        "message": "This is the value that is sent to the ESCs when the craft is disarmed. Set this to a value that has the motors stopped (1000 for most ESCs)."
     },
     "configurationBatteryVoltage": {
         "message": "Battery Voltage"
