@@ -120,6 +120,10 @@ TABS.pid_tuning.initialize = function (callback) {
                 case 1:
                     $(this).val(PIDs[2][i++]);
                     break;
+            }
+        });
+        $('.pid_tuning .YAW_JUMP_PREVENTION input').each(function () {
+            switch (i) {
                 case 2:
                     $(this).val(PIDs[2][i++]);
                     break;
@@ -272,17 +276,20 @@ TABS.pid_tuning.initialize = function (callback) {
         // Fill in the data from PIDs array
         // Catch all the changes and stuff the inside PIDs array
         var i = 0;
-        $('table.pid_tuning tr.ROLL input').each(function () {
+        $('table.pid_tuning tr.ROLL .pid_data input').each(function () {
             PIDs[0][i++] = parseFloat($(this).val());
         });
 
         i = 0;
-        $('table.pid_tuning tr.PITCH input').each(function () {
+        $('table.pid_tuning tr.PITCH .pid_data input').each(function () {
             PIDs[1][i++] = parseFloat($(this).val());
         });
 
         i = 0;
-        $('table.pid_tuning tr.YAW input').each(function () {
+        $('table.pid_tuning tr.YAW .pid_data input').each(function () {
+            PIDs[2][i++] = parseFloat($(this).val());
+        });
+        $('table.pid_tuning tr.YAW_JUMP_PREVENTION .pid_data input').each(function () {
             PIDs[2][i++] = parseFloat($(this).val());
         });
 
@@ -966,11 +973,15 @@ TABS.pid_tuning.checkUpdateProfile = function (updateRateProfile) {
 TABS.pid_tuning.updatePidControllerParameters = function () {
     if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
         if ($('.tab-pid_tuning select[name="controller"]').val() === '0') {
+            $('.pid_tuning .YAW_JUMP_PREVENTION').show();
+
             $('#pid-tuning .delta').show();
 
             $('#pid-tuning .ptermSetpoint').hide();
             $('#pid-tuning .dtermSetpoint').hide();
         } else {
+            $('.pid_tuning .YAW_JUMP_PREVENTION').hide();
+
             $('#pid-tuning .ptermSetpoint').show();
             $('#pid-tuning .dtermSetpoint').show();
 
