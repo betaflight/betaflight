@@ -724,7 +724,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, rxConfig()->rssi_channel);
             sbufWriteU8(dst, 0);
 
-            sbufWriteU16(dst, compassConfig()->mag_declination / 10);
+            sbufWriteU16(dst, compassConfig()->mag_declination);
 
             sbufWriteU8(dst, batteryConfig()->vbatscale);
             sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
@@ -1138,7 +1138,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             rxConfig()->rssi_channel = sbufReadU8(src);
             sbufReadU8(src);
 
-            compassConfig()->mag_declination = sbufReadU16(src) * 10;
+            compassConfig()->mag_declination = sbufReadU16(src);
 
             batteryConfig()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
             batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
