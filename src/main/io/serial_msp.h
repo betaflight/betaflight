@@ -100,6 +100,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BUILD_INFO                  5    //out message
 
 #define MSP_NAME                        10
+#define MSP_SET_NAME                    11
 
 
 //

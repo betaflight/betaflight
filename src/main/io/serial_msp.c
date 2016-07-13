@@ -1875,6 +1875,12 @@ static bool processInCommand(void)
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
         break;
+        
+    case MSP_SET_NAME:
+        for (i = 0; i < MAX_NAME_LENGTH; i++) {
+            masterConfig.name[i] = read8();
+        }
+        break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
