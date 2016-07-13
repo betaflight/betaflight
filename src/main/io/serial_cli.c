@@ -119,6 +119,7 @@ void cliDumpRateProfile(uint8_t rateProfileIndex) ;
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
+static void cliName(char *cmdline);
 static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
@@ -340,6 +341,7 @@ const clicmd_t cmdTable[] = {
 #ifdef VTX
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
+    CLI_COMMAND_DEF("name", "Name of vessel", NULL, cliName),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -1953,6 +1955,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
+        cliName("");
         cliPrint("\r\n# dump master\r\n");
         cliPrint("\r\n# mixer\r\n");
 
@@ -2492,6 +2495,22 @@ static void cliMotor(char *cmdline)
     }
 
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+}
+
+static void cliName(char *cmdline)
+{
+    
+    uint32_t len = strlen(cmdline);
+    if (isEmpty(cmdline)) {
+        cliPrintf("name %s\r\n", masterConfig.name);
+    } else if (len <= MAX_NAME_LENGTH) {
+        strcpy(masterConfig.name, cmdline); 
+        cliPrintf("name %s\r\n", masterConfig.name);
+    } else {
+        cliPrintf("Max allowed name size is %d\r\n", MAX_NAME_LENGTH);
+    }
+    
+    return;
 }
 
 static void cliPlaySound(char *cmdline)
