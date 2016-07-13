@@ -25,6 +25,7 @@
 #include "barometer.h"
 #include "barometer_bmp280.h"
 
+#ifdef USE_BARO_SPI_BMP280
 #define DISABLE_BMP280       IOHi(bmp280CsPin)
 #define ENABLE_BMP280        IOLo(bmp280CsPin)
 
@@ -88,3 +89,4 @@ void bmp280_spi_get_up(void)
     bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
     bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
 }
+#endif

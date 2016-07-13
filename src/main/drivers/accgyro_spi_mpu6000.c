@@ -40,6 +40,9 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
+
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(void);
@@ -282,3 +285,5 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro)
 
     return true;
 }
+
+#endif
