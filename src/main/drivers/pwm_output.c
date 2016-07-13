@@ -118,6 +118,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     p->period = period;
     p->tim = timerHardware->tim;
 
+	*p->ccr = 0;
     return p;
 }
 
