@@ -780,8 +780,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 }
             }
 
-            // MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
-            save_name();
+            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
+            
         });
 
         // status data pulled via separate timer with static speed
