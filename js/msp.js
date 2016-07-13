@@ -743,7 +743,7 @@ var MSP = {
                     if (letter != '\0') { 
                         name += letter;
                     }
-                } while (letter != '\0' && offset < 100);
+                } while (letter != '\0');
                 CONFIG.name = name;
                 break;
 
@@ -1507,7 +1507,7 @@ MSP.crunch = function (code) {
             break;
             
         case MSP_codes.MSP_SET_NAME:
-            for (var i = 0; i<32; i++) {
+            for (var i = 0; i<CONFIG.name.length; i++) {
                 buffer.push(CONFIG.name.charCodeAt(i));
             }
             break;
