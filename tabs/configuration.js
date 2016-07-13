@@ -397,6 +397,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         }
 
         $('input[name="vesselName"]').val(CONFIG.name);
+        
+        if (CONFIG.flightControllerIdentifier != "BTFL" || semver.lt(CONFIG.flightControllerVersion, "3.0.0")) {
+            $('.miscSettings').hide();
+        }
+         
 
 
         // generate GPS
