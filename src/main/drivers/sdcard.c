@@ -192,6 +192,11 @@ static void sdcard_deselect(void)
  */
 static void sdcard_reset(void)
 {
+    if (!sdcard_isInserted()) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
+
     if (sdcard.state >= SDCARD_STATE_READY) {
         spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
     }
