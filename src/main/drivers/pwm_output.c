@@ -84,18 +84,15 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     }
 }
 
-static void pwmGPIOConfig(ioTag_t pin, ioConfig_t mode)
-{
-    IOInit(IOGetByTag(pin), OWNER_PWMOUTPUT_MOTOR, RESOURCE_OUTPUT);
-    IOConfigGPIO(IOGetByTag(pin), mode);
-}
-
 static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value)
 {
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 
     configTimeBase(timerHardware->tim, period, mhz);
-    pwmGPIOConfig(timerHardware->tag, IOCFG_AF_PP);
+
+    IO_t io = IOGetByTag(timerHardware->tag);
+    IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
+    IOConfigGPIO(io, IOCFG_AF_PP);
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
 
@@ -134,9 +131,19 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
     *motors[index]->ccr = value;
 }
 
+static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
+}
+
+static void pwmWriteOneShot125(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
+}
+
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = lrintf(((float)(value-1000) / 0.69444f) + 360);
+    *motors[index]->ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
@@ -221,7 +228,9 @@ void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIn
         motors[motorIndex] = pwmOutConfig(timerHardware, timerMhzCounter, 0xFFFF, 0);
     }
 
-    motors[motorIndex]->pwmWritePtr = (fastPwmProtocolType == PWM_TYPE_MULTISHOT) ? pwmWriteMultiShot : pwmWriteStandard;
+    motors[motorIndex]->pwmWritePtr = (fastPwmProtocolType == PWM_TYPE_MULTISHOT) ? pwmWriteMultiShot :
+            ((fastPwmProtocolType == PWM_TYPE_ONESHOT125) ? pwmWriteOneShot125 :
+            pwmWriteOneShot42);
 }
 
 #ifdef USE_SERVOS

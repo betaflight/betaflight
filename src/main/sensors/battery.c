@@ -32,8 +32,6 @@
 
 #include "sensors/battery.h"
 
-#include "rx/rx.h"
-
 #include "io/rc_controls.h"
 #include "io/beeper.h"
 
@@ -86,7 +84,7 @@ static void updateBatteryVoltage(void)
 void updateBattery(void)
 {
     updateBatteryVoltage();
-    
+
     /* battery has just been connected*/
     if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
     {
@@ -115,7 +113,7 @@ void updateBattery(void)
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
-    }    
+    }
 
     switch(batteryState)
     {
@@ -170,7 +168,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
 }
 
 #define ADCVREF 3300   // in mV
-int32_t currentSensorToCentiamps(uint16_t src)
+static int32_t currentSensorToCentiamps(uint16_t src)
 {
     int32_t millivolts;
 
@@ -213,7 +211,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 }
 
 fix12_t calculateVbatPidCompensation(void) {
-	fix12_t batteryScaler;
+    fix12_t batteryScaler;
     if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
         uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
         batteryScaler = qConstruct(maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage));

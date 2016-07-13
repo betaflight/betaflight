@@ -166,8 +166,8 @@ void init(void)
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
     // initialize IO (needed for all IO operations)
-	IOInitGlobal();
-    
+    IOInitGlobal();
+
     debugMode = masterConfig.debug_mode;
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -188,12 +188,12 @@ void init(void)
     ledInit(false);
 #endif
     LED2_ON;
-    
+
 #ifdef USE_EXTI
     EXTIInit();
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(BUTTONS)
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
@@ -275,18 +275,18 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_USART2) && defined(STM32F10X)
+#if defined(USE_UART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
 #ifdef STM32F303xC
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
-#if defined(USE_USART2) && defined(STM32F40_41xxx)
+#if defined(USE_UART2) && defined(STM32F40_41xxx)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
-#if defined(USE_USART6) && defined(STM32F40_41xxx)
+#if defined(USE_UART6) && defined(STM32F40_41xxx)
     pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
-#endif    
+#endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -309,7 +309,7 @@ void init(void)
     } else {
         featureClear(FEATURE_ONESHOT125);
     }
-    
+
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
 
     // Configurator feature abused for enabling Fast PWM
@@ -319,7 +319,7 @@ void init(void)
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    
+
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
@@ -335,12 +335,6 @@ void init(void)
 
     mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
 
-/*
-    // TODO is this needed here? enables at the end
-    if (!feature(FEATURE_ONESHOT125))
-        motorControlEnable = true;
-
-*/
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -363,7 +357,7 @@ void init(void)
 #endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
-		beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif
 
     beeperInit(&beeperConfig);
@@ -501,7 +495,7 @@ void init(void)
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
-    
+
     for (int i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;

@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 #include "light_led.h"
@@ -191,9 +190,9 @@ bool mpu9250SpiDetect(void)
 #ifdef MPU9250_CS_PIN
     mpuSpi9250CsPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN));
 #endif
-    IOInit(mpuSpi9250CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(mpuSpi9250CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
-        
+
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 

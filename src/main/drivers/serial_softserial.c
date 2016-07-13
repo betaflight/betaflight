@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -100,19 +99,20 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
-static void softSerialGPIOConfig(ioTag_t pin, ioConfig_t mode)
+void serialInputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL_RXTX, RESOURCE_USART);
-    IOConfigGPIO(IOGetByTag(pin), mode);
+    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(portIndex));
+#ifdef STM32F1
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_IPU);
+#else
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_AF_PP_UP);
+#endif
 }
 
-void serialInputPortConfig(ioTag_t pin)
+static void serialOutputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-#ifdef STM32F1
-    softSerialGPIOConfig(pin, IOCFG_IPU);
-#else
-    softSerialGPIOConfig(pin, IOCFG_AF_PP_UP);
-#endif
+    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(portIndex));
+    IOConfigGPIO(IOGetByTag(pin), IOCFG_OUT_PP);
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -162,11 +162,6 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
     timerChCCHandlerInit(&softSerialPorts[reference].edgeCb, onSerialRxPinChange);
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].edgeCb, NULL);
-}
-
-static void serialOutputPortConfig(ioTag_t pin)
-{
-    softSerialGPIOConfig(pin, IOCFG_OUT_PP);
 }
 
 static void resetBuffers(softSerial_t *softSerial)
@@ -219,10 +214,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->softSerialPortIndex = portIndex;
 
     softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->tag);
-    serialOutputPortConfig(softSerial->txTimerHardware->tag);
-    
+    serialOutputPortConfig(softSerial->txTimerHardware->tag, portIndex);
+
     softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->tag);
-    serialInputPortConfig(softSerial->rxTimerHardware->tag);
+    serialInputPortConfig(softSerial->rxTimerHardware->tag, portIndex);
 
     setTxSignal(softSerial, ENABLE);
     delay(50);
@@ -270,8 +265,6 @@ void processTxState(softSerial_t *softSerial)
 
     softSerial->isTransmittingData = false;
 }
-
-
 
 enum {
     TRAILING,

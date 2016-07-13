@@ -70,36 +70,20 @@
 #define USB_DETECT_PIN                   PB5
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 5
 
-#ifndef UART1_GPIO
-#define UART1_TX_PIN        GPIO_Pin_9  // PA9
-#define UART1_RX_PIN        GPIO_Pin_10 // PA10
-#define UART1_GPIO          GPIOA
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource9
-#define UART1_RX_PINSOURCE  GPIO_PinSource10
-#endif
+#define UART1_TX_PIN        PA9  // PA9
+#define UART1_RX_PIN        PA10 // PA10
 
-#define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
-#define UART2_RX_PIN        GPIO_Pin_15 // PA15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14 // PA14 / SWCLK
+#define UART2_RX_PIN        PA15 // PA15
 
-#ifndef UART3_GPIO
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
-#endif
+#define UART3_TX_PIN        PB10 // PB10 (AF7)
+#define UART3_RX_PIN        PB11 // PB11 (AF7)
 
 #define SOFTSERIAL_1_TIMER TIM2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
@@ -125,7 +109,9 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE              SPI1
 #define MAX7456_SPI_CS_PIN                SPI1_NSS_PIN
-
+#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
+//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2  // <- Conflicts with WS2811 DMA
+#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -150,7 +136,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 

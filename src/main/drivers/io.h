@@ -86,7 +86,7 @@ void IOHi(IO_t io);
 void IOLo(IO_t io);
 void IOToggle(IO_t io);
 
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resources);
+void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index);
 void IORelease(IO_t io);  // unimplemented
 resourceOwner_t IOGetOwner(IO_t io);
 resourceType_t IOGetResources(IO_t io);

@@ -380,7 +380,7 @@ void esc4wayProcess(serialPort_t *serial)
         writeByte(crcOut >> 8);
         writeByte(crcOut & 0xff);
         serialEndWrite(port);
-        
+
 #ifdef STM32F4
         delay(50);
 #endif
