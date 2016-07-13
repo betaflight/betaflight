@@ -89,7 +89,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
     
     function load_advanced_tuning() {
-        var next_callback = load_html;
+        var next_callback = load_name;
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
             MSP.send_message(MSP_codes.MSP_ADVANCED_TUNING, false, false, next_callback);
         } else {
@@ -97,6 +97,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         }
     }
     
+    function load_name() {
+        var next_callback = load_html;
+        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            MSP.send_message(MSP_codes.MSP_NAME, false, false, next_callback);
+        } else {
+            next_callback();
+        }
+    }
 
     
     //Update Analog/Battery Data
@@ -387,6 +395,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.lt(CONFIG.flightControllerVersion, "2.8.2")) {
             $('.hardwareSelection').hide();
         }
+
+        $('input[name="vesselName"]').val(CONFIG.name);
 
 
         // generate GPS
@@ -711,13 +721,24 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
 
             function save_advanced_tuning() {
-                var next_callback = save_to_eeprom;
+                var next_callback = save_name;
                 
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
 
                     ADVANCED_TUNING.vbatPidCompensation = $('input[name="vbatpidcompensation"]').is(':checked') ? 1 : 0;
 
                     MSP.send_message(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING), false, next_callback);
+                } else {
+                    next_callback();
+                }
+            }
+
+            function save_name() {
+                var next_callback = save_to_eeprom;
+                
+                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+                    CONFIG.name = $.trim($('input[name="vesselName"]').val());
+                    MSP.send_message(MSP_codes.MSP_SET_NAME, MSP.crunch(MSP_codes.MSP_SET_NAME), false, next_callback);
                 } else {
                     next_callback();
                 }
@@ -754,7 +775,8 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 }
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
+            // MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_serial_config);
+            save_name();
         });
 
         // status data pulled via separate timer with static speed

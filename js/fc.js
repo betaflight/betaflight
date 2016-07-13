@@ -58,7 +58,8 @@ var FC = {
             mode:          0,
             profile:       0,
             uid:           [0, 0, 0],
-            accelerometerTrims: [0, 0]
+            accelerometerTrims: [0, 0],
+            name:          ''
         };
         
         BF_CONFIG = {
