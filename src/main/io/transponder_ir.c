@@ -25,6 +25,8 @@
 
 #include <build_config.h>
 
+#ifdef TRANSPONDER
+
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
 
@@ -114,3 +116,5 @@ void transponderTransmitOnce(void) {
     }
     transponderIrTransmit();
 }
+
+#endif

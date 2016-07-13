@@ -23,6 +23,8 @@
 
 #include "build_config.h"
 
+#ifdef TRANSPONDER
+
 #include "drivers/dma.h"
 #include "drivers/transponder_ir.h"
 
@@ -123,3 +125,5 @@ void transponderIrTransmit(void)
     transponderIrDataTransferInProgress = 1;
     transponderIrDMAEnable();
 }
+
+#endif
