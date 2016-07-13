@@ -650,7 +650,7 @@
         "message": "Vbat PID Compensation"
     },
     "configurationVbatPidCompensationHelp": {
-        "message": "Increase the PID values to compensate when Vbat gets lower. This will give more constant flight characteristics throughout the flight."
+        "message": "Increase the PID values to compensate when Vbat gets lower. This will give more constant flight characteristics throughout the flight. The amount of compensation that is applied is calculated from Maximum Cell Voltage above, so make this is set to something appropriate."
     },
     "configurationCurrent": {
         "message": "Current Sensor"
