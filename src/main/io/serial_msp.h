@@ -99,6 +99,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
 
+#define MSP_NAME                        10
+
+
 //
 // MSP commands for Cleanflight original features
 //

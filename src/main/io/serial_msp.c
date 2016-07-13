@@ -750,6 +750,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
         break;
 
+    case MSP_NAME:
+        headSerialReply(MAX_NAME_LENGTH);
+        for (uint8_t i=0; i<MAX_NAME_LENGTH; i++) {
+            serialize8(masterConfig.name[i]);
+        }
+        break;
+
     case MSP_STATUS:
         headSerialReply(11);
         serialize16(cycleTime);
