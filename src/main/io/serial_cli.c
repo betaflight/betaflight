@@ -2507,7 +2507,7 @@ static void cliName(char *cmdline)
         strcpy(masterConfig.name, cmdline); 
         cliPrintf("name %s\r\n", masterConfig.name);
     } else {
-        cliPrintf("Max allowed name size is %d\r\n", MAX_NAME_LENGTH);
+        cliPrintf("Max allowed name length is %d\r\n", MAX_NAME_LENGTH);
     }
     
     return;
