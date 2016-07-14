@@ -111,23 +111,23 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
          break;
 
       // Not needed for this driver
-      case SET_COMM_FEATURE:                  
+      case SET_COMM_FEATURE:
       case GET_COMM_FEATURE:
       case CLEAR_COMM_FEATURE:
          break;
 
-         
+ 
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING: 
          ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          break;
-         
-         
+ 
+ 
       case GET_LINE_CODING:
          ust_cpy(plc, &g_lc);
          break;
 
-         
+ 
       case SET_CONTROL_LINE_STATE:
          /* Not  needed for this driver */
          //RSW - This tells how to set RTS and DTR
@@ -170,20 +170,16 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
  */
 static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
 {
-    uint16_t ptr = APP_Rx_ptr_in;
-    uint32_t i;
-
-    for (i = 0; i < Len; i++)
-        APP_Rx_Buffer[ptr++ & (APP_RX_DATA_SIZE-1)] = Buf[i];
-
-    APP_Rx_ptr_in = ptr % APP_RX_DATA_SIZE;
-    
+    for (uint32_t i = 0; i < Len; i++) {
+        APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
+        APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
+    }
     return USBD_OK;
 }
 
 uint8_t usbAvailable(void) 
 {
-    return (usbData.rxBufHead != usbData.rxBufTail);
+    return (usbData.bufferInPosition != usbData.bufferOutPosition);
 }
 
 /*******************************************************************************
@@ -198,8 +194,8 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
     uint32_t ch = 0;
 
     while (usbAvailable() && ch < len) {
-        recvBuf[ch] = usbData.rxBuf[usbData.rxBufTail];
-        usbData.rxBufTail = (usbData.rxBufTail + 1) % USB_RX_BUFSIZE;
+        recvBuf[ch] = usbData.buffer[usbData.bufferOutPosition];
+        usbData.bufferOutPosition = (usbData.bufferOutPosition + 1) % USB_RX_BUFSIZE;
         ch++;
         receiveLength--;
     }
@@ -222,23 +218,26 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
  * @param  Len: Number of data received (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
+static uint32_t rxTotalBytes = 0;
+static uint32_t rxPackets = 0;
+
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 {
-    uint16_t ptr = usbData.rxBufHead;
-    uint32_t i;
+    __disable_irq();
 
-    for (i = 0; i < Len; i++)
-        usbData.rxBuf[ptr++ & (USB_RX_BUFSIZE-1)] = Buf[i];
+    rxPackets++;
 
-    usbData.rxBufHead = ptr % USB_RX_BUFSIZE;
+    for (uint32_t i = 0; i < Len; i++) {
+        usbData.buffer[usbData.bufferInPosition] = Buf[i];
+        usbData.bufferInPosition = (usbData.bufferInPosition + 1) % USB_RX_BUFSIZE;
+        receiveLength++;
+        rxTotalBytes++;
+    }
 
-    receiveLength = ((usbData.rxBufHead - usbData.rxBufTail) > 0 ?
-        (usbData.rxBufHead - usbData.rxBufTail) :
-        (usbData.rxBufHead + USB_RX_BUFSIZE - usbData.rxBufTail)) % USB_RX_BUFSIZE;
-    
+    __enable_irq();
     if(receiveLength > (USB_RX_BUFSIZE-1))
         return USBD_FAIL;
-    
+
     return USBD_OK;
 }
 

@@ -34,10 +34,20 @@
 #define MAX_INPUTS  8
 #define PWM_TIMER_MHZ 1
 
+#if defined(STM32F40_41xxx) // must be multiples of timer clock
+#define ONESHOT42_TIMER_MHZ 21
+#define ONESHOT125_TIMER_MHZ 12
+#define PWM_BRUSHED_TIMER_MHZ 21
+#define MULTISHOT_TIMER_MHZ 84
+#else
 #define PWM_BRUSHED_TIMER_MHZ 24
 #define MULTISHOT_TIMER_MHZ   72
 #define ONESHOT42_TIMER_MHZ   24
 #define ONESHOT125_TIMER_MHZ  8
+#endif
+
+#define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
+#define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
 typedef struct sonarIOConfig_s {
     ioTag_t triggerTag;
@@ -78,22 +88,20 @@ typedef struct drv_pwm_config_s {
 } drv_pwm_config_t;
 
 enum {
-    MAP_TO_PPM_INPUT    = 1,
+    MAP_TO_PPM_INPUT = 1,
     MAP_TO_PWM_INPUT,
     MAP_TO_MOTOR_OUTPUT,
     MAP_TO_SERVO_OUTPUT,
 };
 
 typedef enum {
-  PWM_PF_NONE = 0,
-  PWM_PF_MOTOR = (1 << 0),
-  PWM_PF_SERVO = (1 << 1),
-  PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
-  PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
-  PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
+    PWM_PF_NONE = 0,
+    PWM_PF_MOTOR = (1 << 0),
+    PWM_PF_SERVO = (1 << 1),
+    PWM_PF_MOTOR_MODE_BRUSHED = (1 << 2),
+    PWM_PF_OUTPUT_PROTOCOL_PWM = (1 << 3),
+    PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
-
-enum {PWM_INVERTED = 1};
 
 typedef struct pwmPortConfiguration_s {
     uint8_t index;

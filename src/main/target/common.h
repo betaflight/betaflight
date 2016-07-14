@@ -36,6 +36,12 @@
 
 #endif
 
+#ifdef STM32F1
+// Using RX DMA disables the use of receive callbacks
+#define USE_UART1_RX_DMA
+
+#endif
+
 #define SERIAL_RX
 #define USE_CLI
 

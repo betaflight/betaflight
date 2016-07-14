@@ -4,48 +4,39 @@
  *  Created on: 3 aug. 2015
  *      Author: borisb
  */
+
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
-#include "build_config.h"
-
-#include "common/axis.h"
-#include "common/maths.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
 
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-
-extern gyro_t gyro;
-
-uint32_t targetLooptime;
 static uint8_t mpuDividerDrops;
 
-bool getMpuDataStatus(gyro_t *gyro)
+bool gyroSyncCheckUpdate(const gyro_t *gyro)
 {
-    bool mpuDataStatus;
     if (!gyro->intStatus)
-      return false;
-    gyro->intStatus(&mpuDataStatus);
-    return mpuDataStatus;
+        return false;
+    return gyro->intStatus();
 }
 
-bool gyroSyncCheckUpdate(void) {
-    return getMpuDataStatus(&gyro);
-}
+#define GYRO_LPF_256HZ      0
+#define GYRO_LPF_188HZ      1
+#define GYRO_LPF_98HZ       2
+#define GYRO_LPF_42HZ       3
+#define GYRO_LPF_20HZ       4
+#define GYRO_LPF_10HZ       5
+#define GYRO_LPF_5HZ        6
+#define GYRO_LPF_NONE       7
 
-void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator) {
+uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)
+{
     int gyroSamplePeriod;
 
-    if (!lpf || lpf == 7) {
+    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
         gyroSamplePeriod = 125;
     } else {
         gyroSamplePeriod = 1000;
@@ -54,9 +45,11 @@ void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator) {
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
     mpuDividerDrops  = gyroSyncDenominator - 1;
-    targetLooptime = (mpuDividerDrops + 1) * gyroSamplePeriod;
+    const uint32_t targetLooptime = gyroSyncDenominator * gyroSamplePeriod;
+    return targetLooptime;
 }
 
-uint8_t gyroMPU6xxxGetDividerDrops(void) {
+uint8_t gyroMPU6xxxGetDividerDrops(void)
+{
     return mpuDividerDrops;
 }

@@ -71,7 +71,7 @@
 //      2200µs -> 0xFFF
 // Total range is: 2200 - 800 = 1400 <==> 4095
 // Use formula: 800 + value * 1400 / 4096 (i.e. a shift by 12)
-#define XBUS_CONVERT_TO_USEC(V)	(800 + ((V * 1400) >> 12))
+#define XBUS_CONVERT_TO_USEC(V) (800 + ((V * 1400) >> 12))
 
 static bool xBusFrameReceived = false;
 static bool xBusDataIncoming = false;
@@ -148,7 +148,7 @@ bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
 static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
 {
     uint8_t i;
-    
+
     crc = crc ^ (int16_t)value << 8;
 
     for (i = 0; i < 8; i++) {
@@ -181,7 +181,7 @@ uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
         inData >>= 1;
     }
 
-    return seed;    
+    return seed;
 }
 
 
@@ -240,7 +240,7 @@ static void xBusUnpackRJ01Frame(void)
     // method.
     // So, we check both these values as well as the provided length
     // of the outer/full message (LEN)
-    
+
     //
     // Check we have correct length of message
     //
@@ -249,14 +249,14 @@ static void xBusUnpackRJ01Frame(void)
         // Unknown package as length is not ok
         return;
     }
-    
+
     //
     // CRC calculation & check for full message
     //
     for (i = 0; i < xBusFrameLength - 1; i++) {
         outerCrc = xBusRj01CRC8(outerCrc, xBusFrame[i]);
     }
-    
+
     if (outerCrc != xBusFrame[xBusFrameLength - 1])
     {
         // CRC does not match, skip this frame
@@ -281,7 +281,7 @@ static void xBusDataReceive(uint16_t c)
         xBusFramePosition = 0;
         xBusDataIncoming = false;
     }
-    
+
     // Check if we shall start a frame?
     if ((xBusFramePosition == 0) && (c == XBUS_START_OF_FRAME_BYTE)) {
         xBusDataIncoming = true;
@@ -293,7 +293,7 @@ static void xBusDataReceive(uint16_t c)
         xBusFrame[xBusFramePosition] = (uint8_t)c;
         xBusFramePosition++;
     }
-    
+
     // Done?
     if (xBusFramePosition == xBusFrameLength) {
         switch (xBusProvider) {

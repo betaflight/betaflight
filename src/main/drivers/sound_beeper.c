@@ -17,11 +17,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
-
-#include "common/utils.h"
 
 #include "system.h"
 #include "io.h"
@@ -39,31 +36,31 @@ static bool beeperInverted = false;
 void systemBeep(bool onoff)
 {
 #ifndef BEEPER
-	UNUSED(onoff);
+    UNUSED(onoff);
 #else
-	IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
+    IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
 #endif
 }
 
 void systemBeepToggle(void)
 {
 #ifdef BEEPER
-	IOToggle(beeperIO);
+    IOToggle(beeperIO);
 #endif
 }
 
 void beeperInit(const beeperConfig_t *config)
 {
 #ifndef BEEPER
-	UNUSED(config);
+    UNUSED(config);
 #else
-	beeperIO = IOGetByTag(config->ioTag);
-	beeperInverted = config->isInverted;
+    beeperIO = IOGetByTag(config->ioTag);
+    beeperInverted = config->isInverted;
 
-	if (beeperIO) {
-		IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT);
-		IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
-	}
-	systemBeep(false);
+    if (beeperIO) {
+        IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT, 0);
+        IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+    }
+    systemBeep(false);
 #endif
 }

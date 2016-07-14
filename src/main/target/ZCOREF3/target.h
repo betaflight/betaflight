@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0    	PB8
+#define LED0        PB8
 
 #define BEEPER      PC15
 #define BEEPER_INVERTED
@@ -45,41 +45,23 @@
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN 	CW180_DEG
-#define GYRO_MPU6500_ALIGN 	CW180_DEG
+#define ACC_MPU6500_ALIGN   CW180_DEG
+#define GYRO_MPU6500_ALIGN  CW180_DEG
 
 #define BARO
 #define USE_BARO_BMP280
 
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define SERIAL_PORT_COUNT 3
 
-#ifndef UART1_GPIO
-#define UART1_TX_PIN        GPIO_Pin_9  // PA9
-#define UART1_RX_PIN        GPIO_Pin_10 // PA10
-#define UART1_GPIO          GPIOA
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource9
-#define UART1_RX_PINSOURCE  GPIO_PinSource10
-#endif
 
-#define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
-#define UART2_RX_PIN        GPIO_Pin_15 // PA15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14 // PA14 / SWCLK
+#define UART2_RX_PIN        PA15 // PA15
 
-#ifndef UART3_GPIO
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
-#endif
+#define UART3_TX_PIN        PB10 // PB10 (AF7)
+#define UART3_RX_PIN        PB11 // PB11 (AF7)
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA

@@ -35,8 +35,8 @@
 
 #define BRUSHED_MOTORS
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 
 #define SERIAL_PORT_COUNT 2
 

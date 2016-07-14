@@ -21,8 +21,6 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
 #include "io.h"
 #include "system.h"
 
@@ -133,7 +131,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data) 
 {
-    
+
     if (device == I2CINVALID)
         return false;
 
@@ -141,10 +139,10 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev; 
-    
+
     i2cState_t *state;
     state = &(i2cState[device]);
-    
+
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 1;
@@ -182,12 +180,12 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 {
     if (device == I2CINVALID)
         return false;
-    
+
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev;
-    
+
     i2cState_t *state;
     state = &(i2cState[device]);
 
@@ -220,13 +218,13 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 }
 
 static void i2c_er_handler(I2CDevice device) {
-    
+
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev;
-    
+
     i2cState_t *state;
     state = &(i2cState[device]);
-    
+
     // Read the I2C1 status register
     volatile uint32_t SR1Register = I2Cx->SR1;
 
@@ -255,13 +253,13 @@ static void i2c_er_handler(I2CDevice device) {
 }
 
 void i2c_ev_handler(I2CDevice device) {
-    
+
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev;
-    
+
     i2cState_t *state;
     state = &(i2cState[device]);
-    
+
     static uint8_t subaddress_sent, final_stop;                                 // flag to indicate if subaddess sent, flag to indicate final bus condition
     static int8_t index;                                                        // index is signed -1 == send the subaddress
     uint8_t SReg_1 = I2Cx->SR1;                                                 // read the status register here
@@ -384,17 +382,17 @@ void i2cInit(I2CDevice device)
 
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
-    
-    IOInit(scl, OWNER_SYSTEM, RESOURCE_I2C);
-    IOInit(sda, OWNER_SYSTEM, RESOURCE_I2C);
+
+    IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
 
     // Enable RCC
     RCC_ClockCmd(i2c->rcc, ENABLE);
-    
+
     I2C_ITConfig(i2c->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-    
+
     i2cUnstick(scl, sda);
-     
+ 
     // Init pins
 #ifdef STM32F4
     IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_I2C);
@@ -403,10 +401,10 @@ void i2cInit(I2CDevice device)
     IOConfigGPIO(scl, IOCFG_AF_OD);
     IOConfigGPIO(sda, IOCFG_AF_OD);
 #endif
-    
+
     I2C_DeInit(i2c->dev);
     I2C_StructInit(&i2cInit);
-    
+
     I2C_ITConfig(i2c->dev, I2C_IT_EVT | I2C_IT_ERR, DISABLE);               // Disable EVT and ERR interrupts - they are enabled by the first request
     i2cInit.I2C_Mode = I2C_Mode_I2C;
     i2cInit.I2C_DutyCycle = I2C_DutyCycle_2;
@@ -422,7 +420,10 @@ void i2cInit(I2CDevice device)
 
     I2C_Cmd(i2c->dev, ENABLE);
     I2C_Init(i2c->dev, &i2cInit);
-    
+
+    I2C_StretchClockCmd(i2c->dev, ENABLE);
+
+
     // I2C ER Interrupt
     nvic.NVIC_IRQChannel = i2c->er_irq;
     nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER);

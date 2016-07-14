@@ -325,9 +325,6 @@ extern uint32_t currentTime;
 //From rx.c:
 extern uint16_t rssi;
 
-//From gyro.c
-extern uint32_t targetLooptime;
-
 //From rc_controls.c
 extern uint32_t rcModeActivationMask;
 
@@ -404,7 +401,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
         case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
             return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
-        
+
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
             return masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI;
 
@@ -641,7 +638,7 @@ static void writeInterframe(void)
      */
     arraySubInt32(deltas, blackboxCurrent->axisPID_I, blackboxLast->axisPID_I, XYZ_AXIS_COUNT);
     blackboxWriteTag2_3S32(deltas);
-    
+
     /*
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
@@ -855,7 +852,7 @@ void startBlackbox(void)
          * cache those now.
          */
         blackboxBuildConditionCache();
-        
+
         blackboxModeActivationConditionPresent = isModeActivationConditionPresent(masterConfig.modeActivationConditions, BOXBLACKBOX);
 
         blackboxIteration = 0;
@@ -1169,7 +1166,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawRate:%d",                        masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);
@@ -1362,7 +1359,7 @@ static void blackboxLogIteration()
     } else {
         blackboxCheckAndLogArmingBeep();
         blackboxCheckAndLogFlightMode(); // Check for FlightMode status change event
-        
+
         if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
             /*
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
@@ -1499,7 +1496,7 @@ void handleBlackbox(void)
 
                 blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
                 blackboxSetState(BLACKBOX_STATE_RUNNING);
-                
+
                 blackboxLogIteration();
             }
 

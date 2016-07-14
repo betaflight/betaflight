@@ -33,14 +33,6 @@
 #define BEEPER      PB2
 #define BEEPER_INVERTED
 
-// tqfp48 pin 3
-#define MPU6500_CS_PIN                   PC14
-#define MPU6500_SPI_INSTANCE             SPI1
-
-// tqfp48 pin 25
-#define BMP280_CS_PIN                    PB12
-#define BMP280_SPI_INSTANCE              SPI2
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -51,18 +43,31 @@
 #define SPI1_MISO_PIN           PB4
 // tqfp48 pin 41
 #define SPI1_MOSI_PIN           PB5
+// tqfp48 pin 3
+#define SPI1_NSS_PIN            PC14
+
 // tqfp48 pin 26
 #define SPI2_SCK_PIN            PB13
 // tqfp48 pin 27
 #define SPI2_MISO_PIN           PB14
 // tqfp48 pin 28
 #define SPI2_MOSI_PIN           PB15
+// tqfp48 pin 25
+#define SPI2_NSS_PIN            PB12
+
+// tqfp48 pin 3
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
+
+// tqfp48 pin 25
+#define BMP280_CS_PIN           SPI2_NSS_PIN
+#define BMP280_SPI_INSTANCE     SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #define M25P16_SPI_SHARED
-#define M25P16_CS_PIN       PC15
-#define M25P16_SPI_INSTANCE SPI2
+#define M25P16_CS_PIN           PC15
+#define M25P16_SPI_INSTANCE     SPI2
 
 // timer definitions in drivers/timer.c
 // channel mapping in drivers/pwm_mapping.c
@@ -90,37 +95,19 @@
 
 #define USB_IO
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-// tqfp48 pin 42
-#define UART1_TX_PIN        GPIO_Pin_6
-// tqfp48 pin 43
-#define UART1_RX_PIN        GPIO_Pin_7
-#define UART1_GPIO          GPIOB
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource6
-#define UART1_RX_PINSOURCE  GPIO_PinSource7
+#define UART1_TX_PIN        PB6
+#define UART1_RX_PIN        PB7
 
-// tqfp48 pin 12
-#define UART2_TX_PIN        GPIO_Pin_2
-// tqfp48 pin 13
-#define UART2_RX_PIN        GPIO_Pin_3
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource2
-#define UART2_RX_PINSOURCE  GPIO_PinSource3
+#define UART2_TX_PIN        PA2
+#define UART2_RX_PIN        PA3
 
-// tqfp48 pin 21
-#define UART3_TX_PIN        GPIO_Pin_10
-// tqfp48 pin 22
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO          GPIOB
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10
+#define UART3_RX_PIN        PB11
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -140,15 +127,9 @@
 #define LED_STRIP
 
 // tqfp48 pin 16
-#define LED_STRIP_TIMER TIM16
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_6 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3

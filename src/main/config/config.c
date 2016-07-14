@@ -38,7 +38,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 
@@ -90,6 +89,7 @@
 #endif
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+void targetConfiguration(void);
 
 #if !defined(FLASH_SIZE)
 #error "Flash size not defined for target. (specify in KB)"
@@ -269,8 +269,13 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 
 void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
+#ifdef BRUSHED_MOTORS
+    escAndServoConfig->minthrottle = 1000;
+    escAndServoConfig->maxthrottle = 2000;
+#else
     escAndServoConfig->minthrottle = 1150;
     escAndServoConfig->maxthrottle = 1850;
+#endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
     escAndServoConfig->escDesyncProtection = 0;
@@ -416,8 +421,6 @@ uint16_t getCurrentMinthrottle(void)
 // Default settings
 static void resetConf(void)
 {
-    int i;
-
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
@@ -478,7 +481,11 @@ static void resetConf(void)
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 
+#ifdef SERIALRX_PROVIDER
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_PROVIDER;
+#else
     masterConfig.rxConfig.serialrx_provider = 0;
+#endif
     masterConfig.rxConfig.sbus_inversion = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
@@ -488,7 +495,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
 
-    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
         channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
@@ -531,7 +538,7 @@ static void resetConf(void)
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
     masterConfig.servo_pwm_rate = 50;
-    
+
 #ifdef CC3D
     masterConfig.use_buzzer_p6 = 0;
 #endif
@@ -549,9 +556,8 @@ static void resetConf(void)
     masterConfig.emf_avoidance = 0; // TODO - needs removal
 
     resetPidProfile(&currentProfile->pidProfile);
-    
-    uint8_t rI;
-    for (rI = 0; rI<MAX_RATEPROFILES; rI++) {
+
+    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
         resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
     }
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
@@ -582,7 +588,7 @@ static void resetConf(void)
 
 #ifdef USE_SERVOS
     // servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         masterConfig.servoConf[i].min = DEFAULT_SERVO_MIN;
         masterConfig.servoConf[i].max = DEFAULT_SERVO_MAX;
         masterConfig.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
@@ -601,8 +607,9 @@ static void resetConf(void)
 #endif
 
     // custom mixer. clear by defaults.
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         masterConfig.customMotorMixer[i].throttle = 0.0f;
+    }
 
 #ifdef LED_STRIP
     applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
@@ -639,62 +646,19 @@ static void resetConf(void)
     masterConfig.blackbox_rate_denom = 1;
 
 #endif // BLACKBOX
-    
-    // alternative defaults settings for COLIBRI RACE targets
-#if defined(COLIBRI_RACE)
-    masterConfig.escAndServoConfig.minthrottle = 1025;
-    masterConfig.escAndServoConfig.maxthrottle = 1980;
-    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
-    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+
+#ifdef SERIALRX_UART
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
+        masterConfig.serialConfig.portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+    }
 #endif
 
 #if defined(TARGET_CONFIG)
-    targetConfiguration(&masterConfig);
-#endif
-    
-#if defined(ALIENFLIGHT) 
-    featureClear(FEATURE_ONESHOT125);
-#ifdef ALIENFLIGHTF1
-    masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-#else
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-#endif
-#ifdef ALIENFLIGHTF3
-    masterConfig.batteryConfig.vbatscale = 20;
-    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-#endif
-    masterConfig.rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
-    masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
-    masterConfig.escAndServoConfig.minthrottle = 1000;
-    masterConfig.escAndServoConfig.maxthrottle = 2000;
-    masterConfig.motor_pwm_rate = 32000;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rates[FD_PITCH] = 40;
-    currentControlRateProfile->rates[FD_ROLL] = 40;
-    currentControlRateProfile->rates[FD_YAW] = 40;
-    parseRcChannels("TAER1234", &masterConfig.rxConfig);
-
-    masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    masterConfig.customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    masterConfig.customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    masterConfig.customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
-#endif
-
-#if defined(SINGULARITY)
-    // alternative defaults settings for SINGULARITY target
-    masterConfig.batteryConfig.vbatscale = 77;
-
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    targetConfiguration();
 #endif
 
     // copy first profile into remaining profile
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
     }
 
@@ -751,7 +715,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -806,7 +770,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
-        featureSet(FEATURE_RX_PARALLEL_PWM); // Consider changing the default to PPM
+        featureSet(DEFAULT_RX_FEATURE);
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
@@ -848,10 +812,10 @@ void validateAndFixConfig(void)
     if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0
 #ifdef USE_SOFTSERIAL1
-            || (LED_STRIP_TIMER == SOFTSERIAL_1_TIMER)
+            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
 #endif
 #ifdef USE_SOFTSERIAL2
-            || (LED_STRIP_TIMER == SOFTSERIAL_2_TIMER)
+            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
 #endif
     )) {
         // led strip needs the same timer as softserial
@@ -871,7 +835,7 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
+#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
         featureClear(FEATURE_DISPLAY);
     }
@@ -901,14 +865,10 @@ void validateAndFixConfig(void)
 
 #if defined(COLIBRI_RACE)
     masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_MSP);
         featureSet(FEATURE_RX_PPM);
-    }
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
-        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-        //masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
     }
 #endif
 
@@ -1047,12 +1007,12 @@ void changeProfile(uint8_t profileIndex)
 }
 
 void changeControlRateProfile(uint8_t profileIndex)
-{    
-    if (profileIndex > MAX_RATEPROFILES) {    
-        profileIndex = MAX_RATEPROFILES - 1;    
-    }        
-    setControlRateProfile(profileIndex);    
-    activateControlRateConfig();    
+{
+    if (profileIndex > MAX_RATEPROFILES) {
+        profileIndex = MAX_RATEPROFILES - 1;
+    }
+    setControlRateProfile(profileIndex);
+    activateControlRateConfig();
 }
 
 void latchActiveFeatures()

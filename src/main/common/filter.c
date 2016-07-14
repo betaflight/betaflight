@@ -17,76 +17,81 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
 
-#include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
 
-#define M_LN2_FLOAT	0.69314718055994530942f
-#define M_PI_FLOAT	3.14159265358979323846f
+#define M_LN2_FLOAT 0.69314718055994530942f
+#define M_PI_FLOAT  3.14159265358979323846f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
 
-// PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
-float filterApplyPt1(float input, filterStatePt1_t *filter, float f_cut, float dT) {
+// PT1 Low Pass filter
 
-	// Pre calculate and store RC
-	if (!filter->RC) {
-		filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-	}
+void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
+{
+    filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+    filter->dT = dT;
+}
 
-    filter->state = filter->state + dT / (filter->RC + dT) * (input - filter->state);
+float pt1FilterApply(pt1Filter_t *filter, float input)
+{
+    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
+    return filter->state;
+}
+
+float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
+{
+    // Pre calculate and store RC
+    if (!filter->RC) {
+        filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
+        filter->dT = dT;
+    }
+
+    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
 
     return filter->state;
 }
 
 /* sets up a biquad Filter */
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
+void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate)
 {
-    float sampleRate;
+    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
 
-    sampleRate = 1 / ((float)refreshRate * 0.000001f);
-
-    float omega, sn, cs, alpha;
-    float a0, a1, a2, b0, b1, b2;
-
-    /* setup variables */
-    omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
-    sn = sinf(omega);
-    cs = cosf(omega);
+    // setup variables
+    const float omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    const float sn = sinf(omega);
+    const float cs = cosf(omega);
     //this is wrong, should be hyperbolic sine
     //alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
-    alpha = sn / (2 * BIQUAD_Q);
+    const float alpha = sn / (2 * BIQUAD_Q);
 
-    b0 = (1 - cs) / 2;
-    b1 = 1 - cs;
-    b2 = (1 - cs) / 2;
-    a0 = 1 + alpha;
-    a1 = -2 * cs;
-    a2 = 1 - alpha;
+    const float b0 = (1 - cs) / 2;
+    const float b1 = 1 - cs;
+    const float b2 = (1 - cs) / 2;
+    const float a0 = 1 + alpha;
+    const float a1 = -2 * cs;
+    const float a2 = 1 - alpha;
 
-    /* precompute the coefficients */
-    newState->b0 = b0 / a0;
-    newState->b1 = b1 / a0;
-    newState->b2 = b2 / a0;
-    newState->a1 = a1 / a0;
-    newState->a2 = a2 / a0;
+    // precompute the coefficients
+    filter->b0 = b0 / a0;
+    filter->b1 = b1 / a0;
+    filter->b2 = b2 / a0;
+    filter->a1 = a1 / a0;
+    filter->a2 = a2 / a0;
 
-    /* zero initial samples */
-    newState->d1 = newState->d2 = 1;
+    // zero initial samples
+    filter->d1 = filter->d2 = 0;
 }
 
 /* Computes a biquad_t filter on a sample */
-float applyBiQuadFilter(float sample, biquad_t *state) //direct form 2 transposed
+float biquadFilterApply(biquadFilter_t *filter, float input)
 {
-    float result;
-
-    result = state->b0 * sample + state->d1;
-    state->d1 = state->b1 * sample - state->a1 * result + state->d2;
-    state->d2 = state->b2 * sample - state->a2 * result;
+    const float result = filter->b0 * input + filter->d1;
+    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
+    filter->d2 = filter->b2 * input - filter->a2 * result;
     return result;
 }
 

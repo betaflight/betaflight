@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define mpu9250_CONFIG		    	0x1A
+#define mpu9250_CONFIG                      0x1A
 
 /* We should probably use these. :)
 #define BITS_DLPF_CFG_256HZ         0x00

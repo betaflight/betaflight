@@ -2912,7 +2912,7 @@ bool afatfs_chdir(afatfsFilePtr_t directory)
         afatfs_initFileHandle(&afatfs.currentDirectory);
 
         afatfs.currentDirectory.mode = AFATFS_FILE_MODE_READ | AFATFS_FILE_MODE_WRITE;
-        
+
         if (afatfs.filesystemType == FAT_FILESYSTEM_TYPE_FAT16)
             afatfs.currentDirectory.type = AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY;
         else

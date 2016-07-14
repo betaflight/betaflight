@@ -16,9 +16,7 @@
  */
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -117,7 +115,7 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (count == 0) {
         return true;
     }
-    
+
     if (!usbIsConnected() || !usbIsConfigured()) {
         return false;
     }
@@ -181,14 +179,14 @@ serialPort_t *usbVcpOpen(void)
     vcpPort_t *s;
 
 #ifdef STM32F4
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_IO);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_IO);
-	USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_INPUT, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
+    USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 #else
-	Set_System();
-	Set_USBClock();
-	USB_Interrupts_Config();
-	USB_Init();
+    Set_System();
+    Set_USBClock();
+    USB_Interrupts_Config();
+    USB_Init();
 #endif
 
     s = &vcpPort;

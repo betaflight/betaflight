@@ -83,18 +83,18 @@ void hcsr04_init(sonarRange_t *sonarRange)
 
     // trigger pin
     triggerIO = IOGetByTag(sonarHardwareHCSR04.triggerTag);
-    IOInit(triggerIO, OWNER_SONAR, RESOURCE_INPUT);
+    IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
-    
+
     // echo pin
     echoIO = IOGetByTag(sonarHardwareHCSR04.echoTag);
-    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT);
+    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
 #ifdef USE_EXTI
-	EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
-	EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
-	EXTIEnable(echoIO, true);
+    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
+    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
+    EXTIEnable(echoIO, true);
 #endif
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()

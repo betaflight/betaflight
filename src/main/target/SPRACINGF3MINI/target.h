@@ -73,36 +73,20 @@
 #define USB_DETECT_PIN      PB5
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 5
 
-#ifndef UART1_GPIO
-#define UART1_TX_PIN        GPIO_Pin_9  // PA9
-#define UART1_RX_PIN        GPIO_Pin_10 // PA10
-#define UART1_GPIO          GPIOA
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource9
-#define UART1_RX_PINSOURCE  GPIO_PinSource10
-#endif
+#define UART1_TX_PIN        PA9  // PA9
+#define UART1_RX_PIN        PA10 // PA10
 
-#define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
-#define UART2_RX_PIN        GPIO_Pin_15 // PA15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14 // PA14 / SWCLK
+#define UART2_RX_PIN        PA15 // PA15
 
-#ifndef UART3_GPIO
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
-#endif
+#define UART3_TX_PIN        PB10 // PB10 (AF7)
+#define UART3_RX_PIN        PB11 // PB11 (AF7)
 
 #define SOFTSERIAL_1_TIMER TIM2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
@@ -133,7 +117,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
@@ -150,15 +134,8 @@
 #define RSSI_ADC_PIN                PB2
 
 #define LED_STRIP
-#define LED_STRIP_TIMER                 TIM1
-
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_6
-#define WS2811_PIN                      GPIO_Pin_8
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2

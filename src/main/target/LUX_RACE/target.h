@@ -29,17 +29,16 @@
 #define BEEPER      PB13
 #define BEEPER_INVERTED
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO                  GPIOA
-#define MPU6500_CS_PIN                   PA4
-#define MPU6500_SPI_INSTANCE             SPI1
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
 #define SPI1_SCK_PIN            PB3
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
+#define SPI1_NSS_PIN            PA4
+
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -58,31 +57,19 @@
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-#define UART1_TX_PIN        GPIO_Pin_4
-#define UART1_RX_PIN        GPIO_Pin_5
-#define UART1_GPIO          GPIOC
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource4
-#define UART1_RX_PINSOURCE  GPIO_PinSource5
+#define UART1_TX_PIN        PC4
+#define UART1_RX_PIN        PC5
 
-#define UART2_TX_PIN        GPIO_Pin_14
-#define UART2_RX_PIN        GPIO_Pin_15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN        PA14
+#define UART2_RX_PIN        PA15
 
-#define UART3_TX_PIN        GPIO_Pin_10
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO          GPIOB
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN        PB10
+#define UART3_RX_PIN        PB11
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
@@ -95,15 +82,8 @@
 #define EXTERNAL1_ADC_PIN           PC3
 
 #define LED_STRIP
-#define LED_STRIP_TIMER                 TIM16
-
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_6 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3

@@ -76,7 +76,7 @@ static uint8_t locked = 0;
 
 void vtxInit(void)
 {
-	rtc6705Init();
+    rtc6705Init();
     if (masterConfig.vtx_mode == 0) {
         rtc6705SetChannel(masterConfig.vtx_band, masterConfig.vtx_channel);
     } else if (masterConfig.vtx_mode == 1) {

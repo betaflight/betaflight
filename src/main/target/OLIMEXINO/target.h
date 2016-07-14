@@ -28,7 +28,7 @@
 
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
 // "LED2" is using one of the PWM pins (CH2/PWM2), so we must not use PWM2 unless the jumper is cut.  @See pwmInit()
-#define LED1    PA1 // D3, PA1/USART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
+#define LED1    PA1 // D3, PA1/UART2_RTS/ADC1/TIM2_CH3 - "LED2" on silkscreen, Yellow
 #endif
 
 #define GYRO
@@ -62,8 +62,8 @@
 #define SONAR_ECHO_PIN      PB1
 #define SONAR_TRIGGER_PIN   PB0
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 4
@@ -78,18 +78,12 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
-// #define SOFT_I2C // enable to test software i2c
-// #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
-// #define SOFT_I2C_PB67
-
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN       PB1
 #define VBAT_ADC_PIN                PA4
 #define RSSI_ADC_PIN                PA1
 #define EXTERNAL1_ADC_PIN           PA5
 
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
 
 // IO - assuming all IOs on smt32f103rb LQFP64 package
 #define TARGET_IO_PORTA 0xffff

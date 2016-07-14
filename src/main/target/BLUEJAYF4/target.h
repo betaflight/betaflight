@@ -94,21 +94,27 @@
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8
 //#define VBUS_SENSING_ENABLED
-    
-#define USE_USART1
-#define USART1_RX_PIN PA10
-#define USART1_TX_PIN PA9
-#define USART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
 
-#define USE_USART3
-#define USART3_RX_PIN PB11
-#define USART3_TX_PIN PB10
+#define USE_UART1
+#define UART1_RX_PIN PA10
+#define UART1_TX_PIN PA9
+#define UART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
 
-#define USE_USART6
-#define USART6_RX_PIN PC7
-#define USART6_TX_PIN PC6 
+#define USE_UART3
+#define UART3_RX_PIN PB11
+#define UART3_TX_PIN PB10
 
-#define SERIAL_PORT_COUNT 4
+#define USE_UART6
+#define UART6_RX_PIN PC7
+#define UART6_TX_PIN PC6 
+
+#define USE_SOFTSERIAL1
+#define SERIAL_PORT_COUNT 5
+
+#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0
@@ -134,6 +140,19 @@
 #define USE_ADC
 #define VBAT_ADC_PIN           PC3
 
+#define LED_STRIP
+// LED Strip can run off Pin 6 (PB1) of the ESC outputs.
+#define WS2811_PIN                      PB1 
+#define WS2811_TIMER                    TIM3
+#define WS2811_TIMER_CHANNEL            TIM_Channel_4
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream2
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
+#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_DMA_CHANNEL              DMA_Channel_5
+#define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
+
+
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
@@ -147,3 +166,4 @@
 #define TARGET_IO_PORTD (BIT(2))
 
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
+

@@ -22,7 +22,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
-#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"

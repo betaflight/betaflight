@@ -89,8 +89,8 @@
 
 #define DISPLAY
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 4
@@ -114,9 +114,6 @@
 #define VBAT_ADC_PIN                PA4
 #define RSSI_ADC_PIN                PA1
 #define EXTERNAL1_ADC_PIN           PA5
-
-//#define LED_STRIP
-//#define LED_STRIP_TIMER TIM3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

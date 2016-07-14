@@ -20,7 +20,9 @@
 #include "rx/rx.h"
 #include "common/maths.h"
 
+#ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
+#endif
 #define VBAT_RESDIVVAL_DEFAULT 10
 #define VBAT_RESDIVMULTIPLIER_DEFAULT 1
 #define VBAT_SCALE_MIN 0
