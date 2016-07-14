@@ -44,7 +44,7 @@
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6500_ALIGN CW90_DEG
+#define ACC_MPU6000_ALIGN CW90_DEG
 
 #define BMP280_SPI_INSTANCE              SPI1
 #define BMP280_CS_PIN                    PA13
