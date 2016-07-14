@@ -2904,6 +2904,10 @@ static void cliStatus(char *cmdline)
 #endif
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif    
 }
 
 #ifndef SKIP_TASK_STATISTICS
