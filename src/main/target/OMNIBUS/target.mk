@@ -9,5 +9,8 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_usb_vcp.c \
+            drivers/transponder_ir.c \
+            drivers/transponder_ir_stm32f30x.c \
+            io/transponder_ir.c \
             drivers/max7456.c \
             io/osd.c
