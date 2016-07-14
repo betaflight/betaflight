@@ -659,7 +659,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-
+    uint8_t len;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -751,8 +751,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_NAME:
-        headSerialReply(MAX_NAME_LENGTH);
-        for (uint8_t i=0; i<MAX_NAME_LENGTH; i++) {
+        len = strlen(masterConfig.name);
+        headSerialReply(len);
+        for (uint8_t i=0; i<len; i++) {
             serialize8(masterConfig.name[i]);
         }
         break;
@@ -1877,8 +1878,12 @@ static bool processInCommand(void)
         break;
         
     case MSP_SET_NAME:
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
+        memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
             masterConfig.name[i] = read8();
+        }
+        if (masterConfig.name[0] == '-') {
+            memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
         }
         break;
     default:

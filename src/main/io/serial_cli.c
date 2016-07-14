@@ -341,7 +341,7 @@ const clicmd_t cmdTable[] = {
 #ifdef VTX
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
-    CLI_COMMAND_DEF("name", "Name of vessel", NULL, cliName),
+    CLI_COMMAND_DEF("name", "Name of craft", NULL, cliName),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -1955,7 +1955,8 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
-        cliName("");
+        cliPrint("\r\n# name\r\n");
+        cliName(NULL);
         cliPrint("\r\n# dump master\r\n");
         cliPrint("\r\n# mixer\r\n");
 
@@ -2501,16 +2502,15 @@ static void cliName(char *cmdline)
 {
     
     uint32_t len = strlen(cmdline);
-    if (isEmpty(cmdline)) {
+    if (*cmdline == 0) {
         cliPrintf("name %s\r\n", masterConfig.name);
-    } else if (len <= MAX_NAME_LENGTH) {
-        strcpy(masterConfig.name, cmdline); 
-        for (uint8_t i = len; i<MAX_NAME_LENGTH; i++) {
-            masterConfig.name[i] = '\0';
-        }
-        cliPrintf("name %s\r\n", masterConfig.name);
+    } else if ('-' == cmdline[0]) {
+        memset(masterConfig.name, '\0', MAX_NAME_LENGTH); 
+        cliPrintf("name removed\r\n");
     } else {
-        cliPrintf("Max allowed name length is %d\r\n", MAX_NAME_LENGTH);
+        memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
+        strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH)); 
+        cliPrintf("name %s\r\n", masterConfig.name);
     }
     
     return;

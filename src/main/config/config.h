@@ -24,7 +24,7 @@
 #endif
 #define MAX_RATEPROFILES 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
-#define MAX_NAME_LENGTH 32
+#define MAX_NAME_LENGTH 16
 
 
 typedef enum {
