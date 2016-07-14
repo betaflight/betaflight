@@ -105,7 +105,7 @@ You cannot use USART3 and I2C at the same time.
 
 # Flashing
 
-Since CleanFlight version 1.11.0 "single binary image mode" is the only way to get CleanFlight on CC3D. 
+Since CleanFlight version 1.11.0 "single binary image mode" is the only way to get CleanFlight on CC3D. Prior the version 1.11.0 there was a possibility to use "OpenPilot Bootloader compatible image mode", which allows you to easily switch between OpenPilot and CleanFlight, please refer to documentation from releases prior to 1.11.0 for more details.
 
 ## Single binary image mode.
 
