@@ -662,8 +662,6 @@ static void detectMag(magSensor_e magHardwareToUse)
 
 #endif
 
-retry:
-
     magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
@@ -732,12 +730,7 @@ retry:
             break;
     }
 
-    if (magHardware == MAG_NONE && magHardwareToUse != MAG_DEFAULT && magHardwareToUse != MAG_NONE) {
-        // Nothing was found and we have a forced sensor that isn't present.
-        magHardwareToUse = MAG_NONE;
-        return;
-    }
-
+    // Nothing was found - disregard the compass
     if (magHardware == MAG_NONE) {
         return;
     }
