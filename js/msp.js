@@ -737,13 +737,9 @@ var MSP = {
             case MSP_codes.MSP_NAME:
                 var offset = 0;
                 var name = '';
-                var letter;
-                do {
-                    letter = String.fromCharCode(data.getUint8(offset++)); 
-                    if (letter != '\0') { 
-                        name += letter;
-                    }
-                } while (letter != '\0');
+                while (offset<data.byteLength) {
+                    name += String.fromCharCode(data.getUint8(offset++));;
+                }
                 CONFIG.name = name;
                 break;
 
@@ -1509,6 +1505,9 @@ MSP.crunch = function (code) {
         case MSP_codes.MSP_SET_NAME:
             for (var i = 0; i<CONFIG.name.length; i++) {
                 buffer.push(CONFIG.name.charCodeAt(i));
+            }
+            if (!buffer.length) {
+                buffer.push('-'.charCodeAt(0));
             }
             break;
         
