@@ -28,6 +28,8 @@
 
 #include <platform.h>
 
+#include "common/utils.h"
+
 #include "system.h"
 #include "gpio.h"
 #include "nvic.h"
@@ -95,9 +97,9 @@ void usartIrqHandler(uartPort_t *s)
 #ifdef USE_UART1
 
 // UART1 Tx DMA Handler
-void UART_TX_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+void UART_TX_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
 {
-    uartPort_t *s = (uartPort_t*)(descriptor->userParam); //&uartPort1;
+    uartPort_t *s = container_of(handler, uartPort_t, dmaTxHandler);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->channel, DISABLE);
 
@@ -165,7 +167,8 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     }
 
     // DMA TX Interrupt
-    dmaSetHandler(DMA1_CH4_HANDLER, UART_TX_DMA_IRQHandler, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
+    dmaHandlerInit(&uartPort1.dmaTxHandler, UART_TX_DMA_IRQHandler);
+    dmaSetHandler(DMA1_CH4_HANDLER, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
 
 #ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt

@@ -15,8 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-struct dmaChannelDescriptor_s;
-typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
+#pragma once
+
+typedef struct dmaCallbackHandler_s dmaCallbackHandler_t;
+typedef struct dmaChannelDescriptor_s dmaChannelDescriptor_t;
+
+typedef void dmaCallbackHandlerFuncPtr(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* callbackHandler);
+
+struct dmaCallbackHandler_s {
+    dmaCallbackHandlerFuncPtr*  fn;
+    dmaCallbackHandler_t*       next;
+};
+
 
 typedef enum {
     DMA1_CH1_HANDLER = 0,
@@ -33,23 +43,16 @@ typedef enum {
     DMA2_CH5_HANDLER,
 } dmaHandlerIdentifier_e;
 
-typedef struct dmaChannelDescriptor_s {
+struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
     DMA_Channel_TypeDef*        channel;
-    dmaCallbackHandlerFuncPtr   irqHandlerCallback;
+    dmaCallbackHandler_t*       handler;
     uint8_t                     flagsShift;
-    IRQn_Type                   irqN;
+    IRQn_Type                   irqn;
     uint32_t                    rcc;
-    uint32_t                    userParam;
-} dmaChannelDescriptor_t;
+};
 
-#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .channel = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
-#define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
-                                                                        if (dmaDescriptors[i].irqHandlerCallback)\
-                                                                            dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
-                                                                    }
-
-#define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR = (flag << d->flagsShift)
+#define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR |= (flag << d->flagsShift)
 #define DMA_GET_FLAG_STATUS(d, flag) (d->dma->ISR & (flag << d->flagsShift))
 
 #define DMA_IT_TCIF                          ((uint32_t)0x00000002)
@@ -57,5 +60,6 @@ typedef struct dmaChannelDescriptor_s {
 #define DMA_IT_TEIF                          ((uint32_t)0x00000008)
 
 void dmaInit(void);
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
+void dmaHandlerInit(dmaCallbackHandler_t* handlerRec, dmaCallbackHandlerFuncPtr* handler);
+void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandler_t* handler, uint32_t priority);
 

@@ -39,8 +39,12 @@ uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-void transponderDMAHandler(dmaChannelDescriptor_t* descriptor)
+static dmaCallbackHandler_t transponderDMACallbacRec;
+
+void transponderDMAHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
 {
+    UNUSED(handler);
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         transponderIrDataTransferInProgress = 0;
         DMA_Cmd(descriptor->channel, DISABLE);
@@ -51,7 +55,8 @@ void transponderDMAHandler(dmaChannelDescriptor_t* descriptor)
 void transponderIrInit(void)
 {
     memset(&transponderIrDMABuffer, 0, TRANSPONDER_DMA_BUFFER_SIZE);
-    dmaSetHandler(TRANSPONDER_DMA_HANDLER_IDENTIFER, transponderDMAHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
+    dmaHandlerInit(&transponderDMACallbacRec, transponderDMAHandler);
+    dmaSetHandler(TRANSPONDER_DMA_HANDLER_IDENTIFER, &transponderDMACallbacRec, NVIC_PRIO_TRANSPONDER_DMA);
     transponderIrHardwareInit();
 }
 

@@ -41,6 +41,7 @@ uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
 static hsvColor_t ledColorBuffer[WS2811_LED_STRIP_LENGTH];
+static dmaCallbackHandler_t ws2811DMAHandlerRec;
 
 void setLedHsv(int index, const hsvColor_t *color)
 {
@@ -76,8 +77,10 @@ void setStripColors(const hsvColor_t *colors)
     }
 }
 
-void ws2811DMAHandler(dmaChannelDescriptor_t* descriptor)
+void ws2811DMAHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
 {
+    UNUSED(handler);
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
         DMA_Cmd(descriptor->channel, DISABLE);
@@ -88,7 +91,8 @@ void ws2811DMAHandler(dmaChannelDescriptor_t* descriptor)
 void ws2811LedStripInit(void)
 {
     memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, ws2811DMAHandler, NVIC_PRIO_WS2811_DMA, 0);
+    dmaHandlerInit(&ws2811DMAHandlerRec, ws2811DMAHandler);
+    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, &ws2811DMAHandlerRec, NVIC_PRIO_WS2811_DMA);
     ws2811LedStripHardwareInit();
     ws2811UpdateStrip();
 }
