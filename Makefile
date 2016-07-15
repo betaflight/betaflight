@@ -814,8 +814,8 @@ VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 
 # Find out if ccache is installed on the system
 CCACHE := ccache
-RESULT = $(shell which $(CCACHE))
-ifeq ($(RESULT),)
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
 CCACHE :=
 endif
 
