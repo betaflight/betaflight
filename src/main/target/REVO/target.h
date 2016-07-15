@@ -21,7 +21,7 @@
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING "Revolution"
+#define USBD_PRODUCT_STRING     "Revolution"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
@@ -51,10 +51,10 @@
 
 #define MAG
 #define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN CW90_DEG
+#define MAG_HMC5883_ALIGN       CW90_DEG
 
 //#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP
+//#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
 
 #define BARO
 #define USE_BARO_MS5611
@@ -121,4 +121,4 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
