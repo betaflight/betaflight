@@ -65,23 +65,17 @@ If you are using windows and don't have an IRC client installed then take a look
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
-## Videos
-
-There is a dedicated INAV youtube channel which has progress update videos, flight demonstrations, instructions and other related videos.
-
-https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
-
-Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
-To configure INAV you should use the INAV-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure INAV you should use the INAV-configurator GUI tool (Windows/OSX/Linux).
+Currently you have to download the sourcecode and load into Chrome manually from the github page 
 
+https://github.com/iNavFlight/inav-configurator
+
+If you rather just want to use Cleanflight configurator you can download from here:
 https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
 
-The source for it is here:
-
-https://github.com/cleanflight/cleanflight-configurator
 
 ## Contributing
 
@@ -96,7 +90,7 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
 
 https://github.com/iNavFlight/inav/issues
-https://github.com/cleanflight/cleanflight-configurator/issues
+https://github.com/iNavFlight/inav-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
 
@@ -104,11 +98,6 @@ Before creating new issues please check to see if there is an existing one, sear
 
 Please refer to the development section in the [docs/development](https://github.com/iNavFlight/inav/tree/master/docs/development) folder.
 
-TravisCI is used to run automatic builds
-
-https://travis-ci.org/cleanflight/cleanflight
-
-[![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
 
 ## INAV Releases
 https://github.com/iNavFlight/inav/releases
