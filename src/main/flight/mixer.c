@@ -390,7 +390,7 @@ bool isMixerEnabled(mixerMode_e mixerMode)
 #ifdef USE_SERVOS
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers)
 {
-    uint8_t i;
+    int i;
 
     currentMixerMode = mixerMode;
 
@@ -500,7 +500,7 @@ void mixerUsePWMIOConfiguration(void)
 void mixerUsePWMIOConfiguration(void)
 {
     motorCount = 4;
-    uint8_t i;
+    int i;
     for (i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
@@ -513,7 +513,7 @@ void mixerUsePWMIOConfiguration(void)
 #ifdef USE_SERVOS
 void loadCustomServoMixer(void)
 {
-    uint8_t i;
+    int i;
 
     // reset settings
     servoRuleCount = 0;
@@ -591,7 +591,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     // start forwarding from this channel
     uint8_t channelOffset = AUX1;
 
-    uint8_t servoOffset;
+    int servoOffset;
     for (servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
         pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
@@ -599,7 +599,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
 
 void writeServos(void)
 {
-    uint8_t servoIndex = 0;
+    int servoIndex = 0;
 
     bool zeroServoValue = false;
 
@@ -635,7 +635,7 @@ void writeServos(void)
 
 void writeMotors(void)
 {
-    uint8_t i;
+    int i;
 
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
@@ -648,7 +648,7 @@ void writeMotors(void)
 
 void writeAllMotors(int16_t mc)
 {
-    uint8_t i;
+    int i;
 
     // Sends commands to all motors
     for (i = 0; i < motorCount; i++)
@@ -670,7 +670,7 @@ void StopPwmAllMotors()
 
 void mixTable(void)
 {
-    uint32_t i;
+    int i;
 
     if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
         // prevent "yaw jump" during yaw correction
@@ -783,7 +783,7 @@ void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
-    uint8_t i;
+    int i;
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
@@ -883,7 +883,7 @@ bool isMixerUsingServos(void) {
 
 void filterServos(void)
 {
-    uint8_t servoIdx;
+    int servoIdx;
 
     if (mixerConfig->servo_lowpass_enable) {
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
