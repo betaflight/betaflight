@@ -4,11 +4,9 @@
 
 Betaflight Configurator is a crossplatform configuration tool for the Betaflight flight control system.
 
-It runs as an app within Google Chrome and allows you to configure the Betaflight software running on any [supported Betaflight target](https://github.com/betaflight/betaflight/tree/betaflight/src/main/target).
+It runs as an app within Google Chrome and allows you to configure the Betaflight software running on any [supported Betaflight target](https://github.com/betaflight/betaflight/tree/master/src/main/target).
 
 Various types of aircraft are supported by the tool and by Betaflight, e.g. quadcopters, hexacopters, octocopters and fixed-wing aircraft.
-
-<!-- soon: ([![available in the Chrome web store](https://developer.chrome.com/webstore/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/betaflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) -->
 
 ## Authors
 
@@ -19,9 +17,11 @@ If you are experiencing any problems please make sure you are running the [lates
 
 ## Installation
 
-### Via chrome webstore (not released yet)
+### Via chrome webstore
 
-1. Visit [Chrome web store](https://chrome.google.com/webstore/detail/betaflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
+[![available in the Chrome web store](https://developer.chrome.com/webstore/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao)
+
+1. Visit [Chrome web store](https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao)
 2. Click **+ Free**
 
 Please note - the application will automatically update itself when new versions are released.  Please ensure you maintain configuration backups as described in the Betaflight documentation.
