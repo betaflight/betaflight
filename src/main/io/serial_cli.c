@@ -2502,7 +2502,7 @@ static void cliName(char *cmdline)
 {
     
     uint32_t len = strlen(cmdline);
-    if (*cmdline == 0) {
+    if (len == 0) {
         cliPrintf("name %s\r\n", masterConfig.name);
     } else if ('-' == cmdline[0]) {
         memset(masterConfig.name, '\0', MAX_NAME_LENGTH); 

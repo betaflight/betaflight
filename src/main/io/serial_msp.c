@@ -1878,7 +1878,7 @@ static bool processInCommand(void)
         break;
         
     case MSP_SET_NAME:
-        memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
+        memset(masterConfig.name, 0, MAX_NAME_LENGTH+1);
         for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
             masterConfig.name[i] = read8();
         }
