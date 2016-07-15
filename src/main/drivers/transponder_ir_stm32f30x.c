@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#include "drivers/dma.h"
 #include "drivers/gpio.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/nvic.h"
@@ -36,7 +37,7 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
 #define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 #endif
 
 void transponderIrHardwareInit(void)

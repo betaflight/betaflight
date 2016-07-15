@@ -29,9 +29,9 @@
 #define DEFINE_DMA_CHANNEL(d, c, f, i, r) \
     {.dma = d, .channel = c, .handler = NULL, .flagsShift = f, .irqn = i, .rcc = r}
 
-#define DEFINE_DMA_IRQ_HANDLER(d, c, i) \
+#define DEFINE_DMA_IRQ_HANDLER(d, c, h) \
     void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
-        DMA_IRQHandler(i);\
+        DMA_IRQHandler(h);\
     } \
     struct dummy
 
@@ -39,7 +39,7 @@
 /*
  * DMA descriptors.
  */
-static dmaChannelDescriptor_t dmaDescriptors[] = {
+dmaChannel_t dmaChannels[] = {
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel1,  0, DMA1_Channel1_IRQn, RCC_AHBPeriph_DMA1),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel2,  4, DMA1_Channel2_IRQn, RCC_AHBPeriph_DMA1),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel3,  8, DMA1_Channel3_IRQn, RCC_AHBPeriph_DMA1),
@@ -56,13 +56,12 @@ static dmaChannelDescriptor_t dmaDescriptors[] = {
 #endif
 };
 
-
-void DMA_IRQHandler(int id)
+void DMA_IRQHandler(dmaChannel_t* channel)
 {
-    dmaCallbackHandler_t *h = dmaDescriptors[id].handler;
-    while (h) {
-        h->fn(&dmaDescriptors[id], h);
-        h = h->next;
+    dmaCallbackHandler_t* handler = channel->handler;
+    while (handler) {
+        handler->fn(channel, handler);
+        handler = handler->next;
     }
 }
 
@@ -70,20 +69,20 @@ void DMA_IRQHandler(int id)
 /*
  * DMA IRQ Handlers
  */
-DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1_CH1_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1_CH2_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1_CH3_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1_CH4_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1_CH5_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1_CH6_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1_CH7_HANDLER);
+DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1Channel1Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1Channel2Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1Channel3Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1Channel4Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1Channel5Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1Channel6Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1Channel7Descriptor);
 
 #if defined(STM32F3) || defined(STM32F10X_CL)
-DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2_CH1_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2_CH2_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2_CH3_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER);
-DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER);
+DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2Channel1Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2Channel2Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2Channel3Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2Channel4Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2Channel5Descriptor);
 #endif
 
 
@@ -92,31 +91,31 @@ void dmaInit(void)
     // TODO: Do we need this?
 }
 
-void dmaHandlerInit(dmaCallbackHandler_t* handlerRec, dmaCallbackHandlerFuncPtr handler)
+void dmaHandlerInit(dmaCallbackHandler_t* handlerRec, dmaCallbackHandlerFunc* handler)
 {
     handlerRec->fn = handler;
     handlerRec->next = NULL;
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandler_t* handler, uint32_t priority)
+// This function initialize DMA interrupt and adds user defined handler to this interrupt
+// Note: Interrupt priority will be set only once. Call this function for highest priority handler first
+void dmaSetHandler(dmaChannel_t* channel, dmaCallbackHandler_t* handler, uint8_t priority)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    if (!dmaDescriptors[identifier].handler) {
-        dmaDescriptors[identifier].handler = handler;
+    if (!channel->handler) {
+        channel->handler = handler;
 
-        RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
+        RCC_AHBPeriphClockCmd(channel->rcc, ENABLE);
 
-        NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[identifier].irqn;
+        NVIC_InitStructure.NVIC_IRQChannel = channel->irqn;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStructure);
     } else {
-        dmaCallbackHandler_t* h = dmaDescriptors[identifier].handler;
-        while (h->next)
-            h = h->next;
-        h->next = handler;
+        handler->next = channel->handler;
+        channel->handler = handler;
     }
 }
 

@@ -77,7 +77,7 @@ void setStripColors(const hsvColor_t *colors)
     }
 }
 
-void ws2811DMAHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
+void ws2811DMAHandler(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
 {
     UNUSED(handler);
 

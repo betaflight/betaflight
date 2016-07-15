@@ -66,7 +66,7 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
-static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
+static void handleUsartTxDma(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
 {
     uartPort_t *s = container_of(handler, uartPort_t, dmaTxHandler);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
@@ -137,7 +137,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     // DMA TX Interrupt
     dmaHandlerInit(&uartPort1.dmaTxHandler, handleUsartTxDma);
-    dmaSetHandler(DMA1_CH4_HANDLER, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
+    dmaSetHandler(DMA1Channel4Descriptor, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
 
 #ifndef USE_UART1_RX_DMA
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
@@ -212,7 +212,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 #ifdef USE_UART2_TX_DMA
     // DMA TX Interrupt
     dmaHandlerInit(&uartPort2.dmaTxHandler, handleUsartTxDma);
-    dmaSetHandler(DMA1_CH7_HANDLER, &uartPort2.dmaTxHandler, NVIC_PRIO_SERIALUART2_TXDMA);
+    dmaSetHandler(DMA1Channel7Descriptor, &uartPort2.dmaTxHandler, NVIC_PRIO_SERIALUART2_TXDMA);
 #endif
 
 #ifndef USE_UART2_RX_DMA
@@ -288,7 +288,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 #ifdef USE_UART3_TX_DMA
     // DMA TX Interrupt
     dmaHandlerInit(&uartPort3.dmaTxHandler, handleUsartTxDma);
-    dmaSetHandler(DMA1_CH2_HANDLER, &uartPort3.dmaTxHandler, NVIC_PRIO_SERIALUART3_TXDMA);
+    dmaSetHandler(DMA1Channel2Descriptor, &uartPort3.dmaTxHandler, NVIC_PRIO_SERIALUART3_TXDMA);
 #endif
 
 #ifndef USE_UART3_RX_DMA

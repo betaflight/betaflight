@@ -97,7 +97,7 @@ void usartIrqHandler(uartPort_t *s)
 #ifdef USE_UART1
 
 // UART1 Tx DMA Handler
-void UART_TX_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
+void UART_TX_DMA_IRQHandler(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
 {
     uartPort_t *s = container_of(handler, uartPort_t, dmaTxHandler);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
@@ -168,7 +168,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     // DMA TX Interrupt
     dmaHandlerInit(&uartPort1.dmaTxHandler, UART_TX_DMA_IRQHandler);
-    dmaSetHandler(DMA1_CH4_HANDLER, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
+    dmaSetHandler(DMA1Channel4Descriptor, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
 
 #ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt

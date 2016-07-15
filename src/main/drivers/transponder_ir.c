@@ -41,7 +41,7 @@ volatile uint8_t transponderIrDataTransferInProgress = 0;
 
 static dmaCallbackHandler_t transponderDMACallbacRec;
 
-void transponderDMAHandler(dmaChannelDescriptor_t* descriptor, dmaCallbackHandler_t* handler)
+void transponderDMAHandler(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
 {
     UNUSED(handler);
 
