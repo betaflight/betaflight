@@ -21,7 +21,6 @@
 
 #include "platform.h"
 #include "system.h"
-#include "common/utils.h"
 #include "gpio.h"
 
 #include "sensor.h"
@@ -31,6 +30,8 @@
 #include "adc_impl.h"
 #include "io.h"
 #include "rcc.h"
+
+#include "common/utils.h"
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
@@ -100,7 +101,6 @@ void adcInit(drv_adc_config_t *init)
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    uint8_t i;
     uint8_t adcChannelCount = 0;
 
     memset(&adcConfig, 0, sizeof(adcConfig));
@@ -135,7 +135,7 @@ void adcInit(drv_adc_config_t *init)
 
     adcDevice_t adc = adcHardware[device]; 
 
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
@@ -203,7 +203,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_Init(adc.ADCx, &ADC_InitStructure);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }

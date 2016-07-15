@@ -118,9 +118,15 @@ static bool fakeGyroReadTemp(int16_t *tempData)
     return true;
 }
 
+
+static bool fakeGyroInitStatus(void) {
+    return true;
+}
+
 bool fakeGyroDetect(gyro_t *gyro)
 {
     gyro->init = fakeGyroInit;
+    gyro->intStatus = fakeGyroInitStatus;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
     gyro->scale = 1.0f / 16.4f;
@@ -143,6 +149,7 @@ bool fakeAccDetect(acc_t *acc)
 {
     acc->init = fakeAccInit;
     acc->read = fakeAccRead;
+    acc->acc_1G = 512*8;
     acc->revisionCode = 0;
     return true;
 }
@@ -584,10 +591,14 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
+        uint8_t accHardwareToUse,
+        uint8_t magHardwareToUse,
+        uint8_t baroHardwareToUse,
+        int16_t magDeclinationFromConfig,
+        uint8_t gyroLpf,
+        uint8_t gyroSyncDenominator)
 {
-    int16_t deg, min;
-
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -604,7 +615,6 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     }
     detectAcc(accHardwareToUse);
     detectBaro(baroHardwareToUse);
-
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC)) {
@@ -623,9 +633,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
         // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
+        const int16_t deg = magDeclinationFromConfig / 100;
+        const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
