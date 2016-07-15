@@ -53,13 +53,13 @@ See: https://github.com/iNavFlight/inav/blob/master/docs/Installation.md
 
 There is lots of documentation here: https://github.com/iNavFlight/inav/tree/master/docs
 
-If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
+If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #iNavflight on the Freenode IRC network
 
 ## IRC Support and Developers Channel
 
 There's a dedicated IRC channel here:
 
-irc://irc.freenode.net/#cleanflight
+irc://irc.freenode.net/#iNavflight
 
 If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
 
