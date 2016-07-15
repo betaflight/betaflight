@@ -110,10 +110,10 @@
 // #define SOFT_I2C_PB67
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN       PB1
-#define VBAT_ADC_PIN                PA4
-#define RSSI_ADC_PIN                PA1
-#define EXTERNAL1_ADC_PIN           PA5
+#define CURRENT_METER_ADC_PIN   PB1
+#define VBAT_ADC_PIN            PA4
+#define RSSI_ADC_PIN            PA1
+#define EXTERNAL1_ADC_PIN       PA5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

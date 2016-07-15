@@ -24,9 +24,6 @@
 #include "build_config.h"
 
 #include "system.h"
-
-#include "sensors/sensors.h" // FIXME dependency into the main code
-
 #include "sensor.h"
 #include "accgyro.h"
 #include "adc.h"
@@ -84,7 +81,6 @@ void adcInit(drv_adc_config_t *init)
     UNUSED(init);
 #endif
 
-    uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
     memset(&adcConfig, 0, sizeof(adcConfig));
@@ -117,9 +113,9 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
-    adcDevice_t adc = adcHardware[device];  
+    const adcDevice_t adc = adcHardware[device];
 
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int  i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
@@ -163,7 +159,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_Init(adc.ADCx, &ADC_InitStructure);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }

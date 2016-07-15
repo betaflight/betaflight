@@ -88,12 +88,12 @@
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
-#define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA4
-#define CURRENT_METER_ADC_PIN       PA5
-#define RSSI_ADC_PIN                PB2
+#define USE_ADC
+#define ADC_INSTANCE            ADC2
+#define VBAT_ADC_PIN            PA4
+#define CURRENT_METER_ADC_PIN   PA5
+#define RSSI_ADC_PIN            PB2
 
 #define LED_STRIP
 
