@@ -90,6 +90,7 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
 
 https://github.com/iNavFlight/inav/issues
+
 https://github.com/iNavFlight/inav-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
