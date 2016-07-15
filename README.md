@@ -47,11 +47,11 @@ http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
 ## Installation
 
-See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md
+See: https://github.com/iNavFlight/inav/blob/master/docs/Installation.md
 
 ## Documentation
 
-There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs
+There is lots of documentation here: https://github.com/iNavFlight/inav/tree/master/docs
 
 If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
 
@@ -95,14 +95,14 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 
 The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
 
-https://github.com/cleanflight/cleanflight/issues
+https://github.com/iNavFlight/inav/issues
 https://github.com/cleanflight/cleanflight-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
 
 ## Developers
 
-Please refer to the development section in the [docs/development](https://github.com/cleanflight/cleanflight/tree/master/docs/development) folder.
+Please refer to the development section in the [docs/development](https://github.com/iNavFlight/inav/tree/master/docs/development) folder.
 
 TravisCI is used to run automatic builds
 
@@ -111,4 +111,4 @@ https://travis-ci.org/cleanflight/cleanflight
 [![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
 
 ## INAV Releases
-https://github.com/cleanflight/cleanflight/releases
+https://github.com/iNavFlight/inav/releases
