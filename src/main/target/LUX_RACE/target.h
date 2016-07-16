@@ -21,7 +21,7 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
- 
+
 #define LED0                    PC15
 #define LED1                    PC14
 #define LED2                    PC13

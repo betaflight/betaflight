@@ -141,7 +141,7 @@
 
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.
-#define WS2811_PIN                      PB1 
+#define WS2811_PIN                      PB1
 #define WS2811_TIMER                    TIM3
 #define WS2811_TIMER_CHANNEL            TIM_Channel_4
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER

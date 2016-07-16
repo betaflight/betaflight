@@ -36,7 +36,7 @@
 #ifndef GPIO_AF_SPI3
 #define GPIO_AF_SPI3    GPIO_AF_6
 #endif
-#endif 
+#endif
 
 #ifndef SPI1_SCK_PIN
 #define SPI1_NSS_PIN    PA4
@@ -84,7 +84,7 @@ static spiDevice_t spiHardwareMap[] = {
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
-    if (instance == SPI1) 
+    if (instance == SPI1)
         return SPIDEV_1;
 
     if (instance == SPI2)

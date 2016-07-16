@@ -24,7 +24,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_EXTI
 #define CONFIG_PREFER_ACC_ON
- 
+
 #define LED0                    PC14
 
 #define BEEPER                  PC15

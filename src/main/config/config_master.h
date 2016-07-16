@@ -137,7 +137,7 @@ typedef struct master_t {
 
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
- 
+
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
@@ -161,9 +161,9 @@ typedef struct master_t {
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
-    
+   
     char name[MAX_NAME_LENGTH+1];
-    
+   
 } master_t;
 
 extern master_t masterConfig;
