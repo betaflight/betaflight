@@ -105,7 +105,6 @@ void ws2811LedStripHardwareInit(void)
 
     DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
