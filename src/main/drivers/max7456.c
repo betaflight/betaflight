@@ -157,7 +157,7 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
 }
 #endif
 
-void max7456_init(uint8_t video_system) 
+void max7456_init(uint8_t video_system)
 {
     uint8_t max_screen_rows;
     uint8_t srdata = 0;

@@ -20,40 +20,40 @@
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING "BlueJayF4"
+#define USBD_PRODUCT_STRING     "BlueJayF4"
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_EXTI
 
-#define INVERTER        PB15
-#define INVERTER_USART  USART6
+#define LED0                    PB6
+#define LED1                    PB5
+#define LED2                    PB4
 
-#define BEEPER PB7
+#define BEEPER                  PB7
 #define BEEPER_INVERTED
 
-#define LED0 PB6
-#define LED1 PB5
-#define LED2 PB4
+#define INVERTER                PB15
+#define INVERTER_USART          USART6
 
-#define MPU6500_CS_PIN        PC4
-#define MPU6500_SPI_INSTANCE  SPI1
+#define MPU6500_CS_PIN          PC4
+#define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW180_DEG
+#define ACC_MPU6500_ALIGN       CW180_DEG
 
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW180_DEG
+#define GYRO_MPU6500_ALIGN      CW180_DEG
 
 //#define MAG
 //#define USE_MAG_AK8963
 
 #define BARO
 #define USE_BARO_MS5611
-#define MS5611_I2C_INSTANCE I2CDEV_1
+#define MS5611_I2C_INSTANCE     I2CDEV_1
 
 #define USE_SDCARD
 
@@ -76,8 +76,8 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-//#define M25P16_CS_PIN         PB3
-//#define M25P16_SPI_INSTANCE   SPI3
+//#define M25P16_CS_PIN           PB3
+//#define M25P16_SPI_INSTANCE     SPI3
 
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
@@ -96,22 +96,21 @@
 //#define VBUS_SENSING_ENABLED
 
 #define USE_UART1
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
-#define UART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
+#define UART1_RX_PIN            PA10
+#define UART1_TX_PIN            PA9
 
 #define USE_UART3
-#define UART3_RX_PIN PB11
-#define UART3_TX_PIN PB10
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
 
 #define USE_UART6
-#define UART6_RX_PIN PC7
-#define UART6_TX_PIN PC6 
+#define UART6_RX_PIN            PC7
+#define UART6_TX_PIN            PC6
 
 #define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 5
+#define SERIAL_PORT_COUNT       5
 
-#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
 
@@ -134,15 +133,15 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE             (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
 
 #define USE_ADC
-#define VBAT_ADC_PIN           PC3
+#define VBAT_ADC_PIN            PC3
 
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.
-#define WS2811_PIN                      PB1 
+#define WS2811_PIN                      PB1
 #define WS2811_TIMER                    TIM3
 #define WS2811_TIMER_CHANNEL            TIM_Channel_4
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
@@ -155,15 +154,15 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES FEATURE_BLACKBOX
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
 
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

@@ -179,7 +179,7 @@ void rtc6705SetFreq(uint16_t freq)
 
     uint32_t val_a = ((((uint64_t)freq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
     uint32_t val_n = (((uint64_t)freq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
- 
+
     val_hex |= RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
     val_hex |= (val_n << 12);

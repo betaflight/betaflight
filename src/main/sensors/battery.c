@@ -70,7 +70,7 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
     if (!vbatFilterIsInitialised) {
-        biquadFilterInit(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
     vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
@@ -91,7 +91,7 @@ void updateBattery(void)
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
         /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up) 
+        (using the filtered value takes a long time to ramp up)
         We only do this on the ground so don't care if we do block, not
         worse than original code anyway*/
         delay(VBATTERY_STABLE_DELAY);

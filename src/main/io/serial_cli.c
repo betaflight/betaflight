@@ -112,13 +112,14 @@ static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
-void cliDfu(char *cmdLine); 
+void cliDfu(char *cmdLine);
 static void cliDump(char *cmdLine);
 void cliDumpProfile(uint8_t profileIndex);
 void cliDumpRateProfile(uint8_t rateProfileIndex) ;
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
+static void cliName(char *cmdline);
 static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
@@ -340,6 +341,7 @@ const clicmd_t cmdTable[] = {
 #ifdef VTX
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
+    CLI_COMMAND_DEF("name", "Name of craft", NULL, cliName),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -451,6 +453,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "MIXER",
     "AIRMODE",
     "PIDLOOP",
+    "NOTCH",
 };
 #ifdef OSD
 static const char * const lookupTableOsdType[] = {
@@ -486,7 +489,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,  
+    TABLE_BLACKBOX_DEVICE, 
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -696,6 +699,8 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
+    { "gyro_notch_hz",              VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz, .config.minmax = { 0,  500 } },
+    { "gyro_notch_q",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_notch_q, .config.minmax = { 1,  100 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
@@ -1941,7 +1946,7 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_PROFILE; // only
     }
     if (strcasecmp(cmdline, "rates") == 0) {
-        dumpMask = DUMP_RATES; 
+        dumpMask = DUMP_RATES;
     }
 
     if (strcasecmp(cmdline, "all") == 0) {
@@ -1953,6 +1958,8 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
+        cliPrint("\r\n# name\r\n");
+        cliName(NULL);
         cliPrint("\r\n# dump master\r\n");
         cliPrint("\r\n# mixer\r\n");
 
@@ -2494,6 +2501,18 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
+static void cliName(char *cmdline)
+{
+    uint32_t len = strlen(cmdline);
+    if (len > 0) {
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH));
+    }
+    cliPrintf("name %s\r\n", strlen(masterConfig.name) > 0 ? masterConfig.name : "-");
+   
+    return;
+}
+
 static void cliPlaySound(char *cmdline)
 {
 #if FLASH_SIZE <= 64
@@ -2681,7 +2700,7 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-static void cliPrintVarRange(const clivalue_t *var) 
+static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
@@ -2693,7 +2712,7 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrint("Allowed values:");
             uint8_t i;
             for (i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0) 
+                if (i > 0)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
@@ -2907,7 +2926,7 @@ static void cliStatus(char *cmdline)
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
-#endif    
+#endif   
 }
 
 #ifndef SKIP_TASK_STATISTICS

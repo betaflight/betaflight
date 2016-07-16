@@ -21,7 +21,6 @@
 
 #include "platform.h"
 #include "system.h"
-#include "common/utils.h"
 #include "gpio.h"
 
 #include "sensor.h"
@@ -32,16 +31,18 @@
 #include "io.h"
 #include "rcc.h"
 
+#include "common/utils.h"
+
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 },  
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA2), .DMAy_Channelx = DMA2_Channel1 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 }, 
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA2), .DMAy_Channelx = DMA2_Channel1 } 
 };
 
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA0,  ADC_Channel_1  }, // ADC1
     { DEFIO_TAG_E__PA1,  ADC_Channel_2  }, // ADC1
     { DEFIO_TAG_E__PA2,  ADC_Channel_3  }, // ADC1
@@ -85,7 +86,7 @@ const adcTagMap_t adcTagMap[] = {
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 
     if (instance == ADC2)
@@ -100,7 +101,6 @@ void adcInit(drv_adc_config_t *init)
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    uint8_t i;
     uint8_t adcChannelCount = 0;
 
     memset(&adcConfig, 0, sizeof(adcConfig));
@@ -133,9 +133,9 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
-    adcDevice_t adc = adcHardware[device]; 
+    adcDevice_t adc = adcHardware[device];
 
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
@@ -203,7 +203,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_Init(adc.ADCx, &ADC_InitStructure);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }

@@ -159,7 +159,7 @@ size_t custom_flash_memory_address = 0;
 #define CONFIG_START_FLASH_ADDRESS (custom_flash_memory_address)
 #else
 // use the last flash pages for storage
-#ifndef CONFIG_START_FLASH_ADDRESS 
+#ifndef CONFIG_START_FLASH_ADDRESS
 #define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 #endif
 #endif
@@ -349,7 +349,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) 
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
     controlRateConfig->rcYawRate8 = 100;
@@ -366,7 +366,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 }
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) 
+void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 0;
     rcControlsConfig->yaw_deadband = 0;
@@ -374,7 +374,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_fast_change = 1;
 }
 
-void resetMixerConfig(mixerConfig_t *mixerConfig) 
+void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
     mixerConfig->yaw_motor_direction = 1;
 #ifdef USE_SERVOS
@@ -441,6 +441,7 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
+
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
 
@@ -455,6 +456,8 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 4;
 #endif
     masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_notch_hz = 0;
+    masterConfig.gyro_soft_notch_q = 5;
 
     masterConfig.pid_process_denom = 2;
 
@@ -657,6 +660,7 @@ static void resetConf(void)
     targetConfiguration();
 #endif
 
+   
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
@@ -715,7 +719,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

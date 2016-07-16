@@ -24,14 +24,14 @@
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(STM32F3)
 #define ADC_TAG_MAP_COUNT 39
-#else 
+#else
 #define ADC_TAG_MAP_COUNT 10
-#endif 
+#endif
 
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
-#if defined(STM32F3) 
+#if defined(STM32F3)
     ADCDEV_2,
     ADCDEV_MAX = ADCDEV_2,
 #elif defined(STM32F4)

@@ -199,7 +199,7 @@ static bool m25p16_readIdentification()
 bool m25p16_init()
 {
 
-#ifdef M25P16_CS_PIN 
+#ifdef M25P16_CS_PIN
     m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
 #endif
     IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI_CS, 0);
