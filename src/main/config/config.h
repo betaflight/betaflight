@@ -46,9 +46,10 @@ typedef enum {
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SUPEREXPO_RATES = 1 << 23,
+    FEATURE_OSD = 1 << 24,
+    FEATURE_VTX = 1 << 25,
 } features_e;
 
-void handleOneshotFeatureChangeOnRestart(void);
 void latchActiveFeatures(void);
 bool featureConfigured(uint32_t mask);
 bool feature(uint32_t mask);

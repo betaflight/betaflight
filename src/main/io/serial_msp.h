@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   16 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   17 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -168,6 +168,15 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
 #define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
 
+#define MSP_OSD_CONFIG                  84 //in message          Get osd settings
+#define MSP_SET_OSD_CONFIG              85 //out message         Set osd settings
+
+#define MSP_OSD_CHAR_READ               86 //in message          Get osd settings
+#define MSP_OSD_CHAR_WRITE              87 //out message         Set osd settings
+
+#define MSP_VTX_CONFIG                  88 //in message          Get vtx settings
+#define MSP_SET_VTX_CONFIG              89 //out message         Set vtx settings
+
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -183,6 +192,22 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 // DEPRECATED - Use MSP_BUILD_INFO instead
 #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+
+// Betaflight Additional Commands
+#define MSP_PID_ADVANCED_CONFIG         90
+#define MSP_SET_PID_ADVANCED_CONFIG     91
+
+#define MSP_FILTER_CONFIG               92
+#define MSP_SET_FILTER_CONFIG           93
+
+#define MSP_ADVANCED_TUNING             94
+#define MSP_SET_ADVANCED_TUNING         95
+
+#define MSP_SENSOR_CONFIG               96
+#define MSP_SET_SENSOR_CONFIG           97
+
+#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
+#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
 
 //
 // Multwii original MSP commands

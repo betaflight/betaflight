@@ -46,11 +46,12 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
-#define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
-#define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
+#define DISABLE_M25P16       IOHi(m25p16CsPin)
+#define ENABLE_M25P16        IOLo(m25p16CsPin)
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
@@ -60,6 +61,8 @@
 #define BULK_ERASE_TIMEOUT_MILLIS    21000
 
 static flashGeometry_t geometry = {.pageSize = M25P16_PAGESIZE};
+
+static IO_t m25p16CsPin = IO_NONE;
 
 /*
  * Whether we've performed an action that could have made the device busy for writes.
@@ -94,7 +97,7 @@ static void m25p16_writeEnable()
 
 static uint8_t m25p16_readStatus()
 {
-    uint8_t command[2] = {M25P16_INSTRUCTION_READ_STATUS_REG, 0};
+    uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     uint8_t in[2];
 
     ENABLE_M25P16;
@@ -133,7 +136,7 @@ bool m25p16_waitForReady(uint32_t timeoutMillis)
  */
 static bool m25p16_readIdentification()
 {
-    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0};
+    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
     uint32_t chipID;
 
@@ -163,6 +166,7 @@ static bool m25p16_readIdentification()
         break;
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
+        case JEDEC_ID_MACRONIX_MX25L6406E:
             geometry.sectors = 128;
             geometry.pagesPerSector = 256;
         break;
@@ -197,31 +201,19 @@ static bool m25p16_readIdentification()
  */
 bool m25p16_init()
 {
-#ifdef STM32F303xC
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin   = M25P16_CS_PIN;
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-
-    GPIO_Init(M25P16_CS_GPIO, &GPIO_InitStructure);
+    
+#ifdef M25P16_CS_PIN     
+    m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
 #endif
-
-#ifdef STM32F10X
-    gpio_config_t gpio;
-
-    // NSS as gpio slave select
-    gpio.pin = M25P16_CS_PIN;
-    gpio.mode = Mode_Out_PP;
-    gpioInit(M25P16_CS_GPIO, &gpio);
-#endif
-
+    IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI);
+    IOConfigGPIO(m25p16CsPin, SPI_IO_CS_CFG);
+    
     DISABLE_M25P16;
 
+#ifndef M25P16_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
-    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_4_5MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_CLOCK_FAST);
+#endif
 
     return m25p16_readIdentification();
 }

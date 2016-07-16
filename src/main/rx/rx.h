@@ -121,7 +121,7 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
-    uint8_t rcSmoothing;
+    uint8_t rcSmoothInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
     uint8_t max_aux_channel;
     uint16_t airModeActivateThreshold;      // Throttle setpoint where airmode gets activated

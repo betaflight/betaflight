@@ -58,6 +58,7 @@
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/gps.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
 #include "flight/failsafe.h"

@@ -17,8 +17,6 @@
  
 #pragma once
 
-#include "drivers/vtx_rtc6705.h"
-
 #define VTX_BAND_MIN    						1
 #define VTX_BAND_MAX    						5
 #define VTX_CHANNEL_MIN 						1
@@ -32,9 +30,10 @@ typedef struct vtxChannelActivationCondition_s {
     channelRange_t range;
 } vtxChannelActivationCondition_t;
 
-void vtxInit();
-void vtxIncrementBand();
-void vtxDecrementBand();
-void vtxIncrementChannel();
-void vtxDecrementChannel();
-void vtxUpdateActivatedChannel();
+void vtxInit(void);
+void vtxIncrementBand(void);
+void vtxDecrementBand(void);
+void vtxIncrementChannel(void);
+void vtxDecrementChannel(void);
+void vtxUpdateActivatedChannel(void);
+

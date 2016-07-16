@@ -189,7 +189,6 @@ void filterServos(void);
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-bool motorLimitReached;
 struct escAndServoConfig_s;
 struct rxConfig_s;
 
@@ -213,6 +212,7 @@ int servoDirection(int servoIndex, int fromChannel);
 #endif
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
-void writeMotors(uint8_t fastPwmProtocol, uint8_t unsyncedPwm);
+void syncMotors(bool enabled);
+void writeMotors(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);

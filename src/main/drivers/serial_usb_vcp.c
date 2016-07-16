@@ -24,10 +24,15 @@
 
 #include "build_config.h"
 #include "common/utils.h"
+#include "drivers/io.h"
 
 #include "usb_core.h"
+#ifdef STM32F4
+#include "usbd_cdc_vcp.h"
+#else
 #include "usb_init.h"
 #include "hw_config.h"
+#endif
 
 #include "drivers/system.h"
 
@@ -61,11 +66,11 @@ static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
     return true;
 }
 
-static uint8_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
+    return receiveLength;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
@@ -112,10 +117,11 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (count == 0) {
         return true;
     }
+    
     if (!usbIsConnected() || !usbIsConfigured()) {
         return false;
     }
-    
+
     uint32_t txed;
     uint32_t start = millis();
 
@@ -142,7 +148,8 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint8_t usbTxBytesFree() {
+uint8_t usbTxBytesFree()
+{
     // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
     return 255;
 }
@@ -173,16 +180,23 @@ serialPort_t *usbVcpOpen(void)
 {
     vcpPort_t *s;
 
-    Set_System();
-    Set_USBClock();
-    USB_Interrupts_Config();
-    USB_Init();
+#ifdef STM32F4
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_IO);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_IO);
+	USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+#else
+	Set_System();
+	Set_USBClock();
+	USB_Interrupts_Config();
+	USB_Init();
+#endif
 
     s = &vcpPort;
     s->port.vTable = usbVTable;
 
     return (serialPort_t *)s;
 }
+
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 {
     UNUSED(instance);
