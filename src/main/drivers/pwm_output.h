@@ -25,6 +25,12 @@ typedef enum {
     PWM_TYPE_BRUSHED
 } motorPwmProtocolTypes_e;
 
+struct timerHardware_s;
+void pwmBrushedMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
+void pwmBrushlessMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
+void pwmFastPwmMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t fastPwmProtocolType);
+void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
+
 void pwmWriteMotor(uint8_t index, uint16_t value);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
