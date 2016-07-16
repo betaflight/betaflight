@@ -71,12 +71,12 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
 
 pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we using
 
-void setTargetPidLooptime(uint8_t pidProcessDenom) 
+void setTargetPidLooptime(uint8_t pidProcessDenom)
 {
     targetPidLooptime = gyro.targetLooptime * pidProcessDenom;
 }
 
-uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate) 
+uint16_t getDynamicKi(int axis, const pidProfile_t *pidProfile, int32_t angleRate)
 {
     uint16_t dynamicKi;
     uint16_t resetRate;

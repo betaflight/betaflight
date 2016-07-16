@@ -22,8 +22,8 @@
 
 #ifndef STM32F3DISCOVERY
 #define STM32F3DISCOVERY
-#endif 
- 
+#endif
+
 #define LED0    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
 #define LED1    PE10  // Orange LEDs - PE10/PE14

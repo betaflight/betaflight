@@ -56,7 +56,7 @@ typedef void (*putcf) (void *, char);
 static putcf stdout_putf;
 static void *stdout_putp;
 
-// print bf, padded from left to at least n characters. 
+// print bf, padded from left to at least n characters.
 // padding is zero ('0') if z!=0, space (' ') otherwise
 static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 {

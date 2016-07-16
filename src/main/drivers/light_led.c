@@ -27,12 +27,12 @@ static const IO_t leds[] = {
     DEFIO_IO(LED0),
 #else
     DEFIO_IO(NONE),
-#endif 
+#endif
 #ifdef LED1
     DEFIO_IO(LED1),
 #else
     DEFIO_IO(NONE),
-#endif 
+#endif
 #ifdef LED2
     DEFIO_IO(LED2),
 #else

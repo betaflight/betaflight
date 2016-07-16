@@ -30,11 +30,11 @@ const uint16_t multiPWM[] = {
     PWM3  | (MAP_TO_PWM_INPUT << 8),
     PWM4  | (MAP_TO_PWM_INPUT << 8),
     PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),     
-    PWM7  | (MAP_TO_SERVO_OUTPUT << 8),      
+    PWM6  | (MAP_TO_PWM_INPUT << 8),    
+    PWM7  | (MAP_TO_SERVO_OUTPUT << 8),     
     PWM8  | (MAP_TO_SERVO_OUTPUT << 8),         // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1 
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2 
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
     PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
     PWM13 | (MAP_TO_MOTOR_OUTPUT  << 8),
@@ -69,11 +69,11 @@ const uint16_t airPWM[] = {
     PWM3  | (MAP_TO_PWM_INPUT << 8),
     PWM4  | (MAP_TO_PWM_INPUT << 8),
     PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),     
-    PWM7  | (MAP_TO_PWM_INPUT << 8),      
+    PWM6  | (MAP_TO_PWM_INPUT << 8),    
+    PWM7  | (MAP_TO_PWM_INPUT << 8),     
     PWM8  | (MAP_TO_PWM_INPUT << 8),         // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1 
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2 
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
     PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
     PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #2
     PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #3
@@ -101,7 +101,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1, IO_TAG(PE11), TIM_Channel_2, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S6_OUT
     { TIM1, IO_TAG(PE13), TIM_Channel_3, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S7_OUT
     { TIM1, IO_TAG(PE14), TIM_Channel_4, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S8_OUT
-    
+   
     { TIM9, IO_TAG(PE6), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM9 },          // sonar echo if needed
 };
 

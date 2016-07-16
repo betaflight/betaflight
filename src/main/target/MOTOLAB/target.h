@@ -21,7 +21,7 @@
 #define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
- 
+
 #define LED0                    PB5 // Blue LEDs - PB5
 //#define LED1                    PB9 // Green LEDs - PB9
 

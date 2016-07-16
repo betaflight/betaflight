@@ -95,7 +95,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     int channelIndex = 0;
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
-   
+  
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
         i = 2; // switch to air hardware config
@@ -260,7 +260,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (init->useChannelForwarding && !init->airplane) {
 #if defined(NAZE) && defined(WS2811_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
-            if (init->useLEDStrip) { 
+            if (init->useLEDStrip) {
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }

@@ -35,13 +35,13 @@
 #define ADC_INSTANCE   ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 } 
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 
 /* TODO -- ADC2 available on large 10x devices.
@@ -51,7 +51,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA0, ADC_Channel_0 }, // ADC12
     { DEFIO_TAG_E__PA1, ADC_Channel_1 }, // ADC12
     { DEFIO_TAG_E__PA2, ADC_Channel_2 }, // ADC12
@@ -61,7 +61,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA6, ADC_Channel_6 }, // ADC12
     { DEFIO_TAG_E__PA7, ADC_Channel_7 }, // ADC12
     { DEFIO_TAG_E__PB0, ADC_Channel_8 }, // ADC12
-    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12   
+    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12  
 };
 
 // Driver for STM32F103CB onboard ADC

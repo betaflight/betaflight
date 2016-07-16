@@ -107,7 +107,7 @@
 #define VBAT_ADC_PIN            PC2
 #define RSSI_ADC_GPIO_PIN       PA0
 
- 
+
 #define SENSORS_SET (SENSOR_ACC)
 
 

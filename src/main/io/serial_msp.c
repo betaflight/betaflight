@@ -1876,9 +1876,9 @@ static bool processInCommand(void)
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
         break;
-        
+       
     case MSP_SET_NAME:
-        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name)); 
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
         for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
             masterConfig.name[i] = read8();
         }

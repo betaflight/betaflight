@@ -87,7 +87,7 @@ typedef struct timerHardware_s {
 } timerHardware_t;
 
 enum {
-    TIMER_OUTPUT_ENABLED = 0x01, 
+    TIMER_OUTPUT_ENABLED = 0x01,
     TIMER_OUTPUT_INVERTED = 0x02
 };
 

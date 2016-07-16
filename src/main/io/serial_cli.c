@@ -112,7 +112,7 @@ static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
-void cliDfu(char *cmdLine); 
+void cliDfu(char *cmdLine);
 static void cliDump(char *cmdLine);
 void cliDumpProfile(uint8_t profileIndex);
 void cliDumpRateProfile(uint8_t rateProfileIndex) ;
@@ -488,7 +488,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,  
+    TABLE_BLACKBOX_DEVICE, 
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -1943,7 +1943,7 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_PROFILE; // only
     }
     if (strcasecmp(cmdline, "rates") == 0) {
-        dumpMask = DUMP_RATES; 
+        dumpMask = DUMP_RATES;
     }
 
     if (strcasecmp(cmdline, "all") == 0) {
@@ -2502,11 +2502,11 @@ static void cliName(char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     if (len > 0) {
-        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name)); 
-        strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH)); 
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH));
     }
     cliPrintf("name %s\r\n", strlen(masterConfig.name) > 0 ? masterConfig.name : "-");
-    
+   
     return;
 }
 
@@ -2697,7 +2697,7 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-static void cliPrintVarRange(const clivalue_t *var) 
+static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
@@ -2709,7 +2709,7 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrint("Allowed values:");
             uint8_t i;
             for (i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0) 
+                if (i > 0)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
@@ -2923,7 +2923,7 @@ static void cliStatus(char *cmdline)
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
-#endif    
+#endif   
 }
 
 #ifndef SKIP_TASK_STATISTICS
