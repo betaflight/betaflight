@@ -1503,7 +1503,8 @@ MSP.crunch = function (code) {
             break;
             
         case MSP_codes.MSP_SET_NAME:
-            for (var i = 0; i<CONFIG.name.length; i++) {
+            var MSP_BUFFER_SIZE = 64;
+            for (var i = 0; i<CONFIG.name.length && i<MSP_BUFFER_SIZE; i++) {
                 buffer.push(CONFIG.name.charCodeAt(i));
             }
             break;
