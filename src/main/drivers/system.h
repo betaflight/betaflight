@@ -25,13 +25,13 @@ uint32_t micros(void);
 uint32_t millis(void);
 
 typedef enum {
-	FAILURE_DEVELOPER = 0,
-	FAILURE_MISSING_ACC,
-	FAILURE_ACC_INIT,
-	FAILURE_ACC_INCOMPATIBLE,
-	FAILURE_INVALID_EEPROM_CONTENTS,
-	FAILURE_FLASH_WRITE_FAILED,
-	FAILURE_GYRO_INIT_FAILED
+    FAILURE_DEVELOPER = 0,
+    FAILURE_MISSING_ACC,
+    FAILURE_ACC_INIT,
+    FAILURE_ACC_INCOMPATIBLE,
+    FAILURE_INVALID_EEPROM_CONTENTS,
+    FAILURE_FLASH_WRITE_FAILED,
+    FAILURE_GYRO_INIT_FAILED
 } failureMode_e;
 
 // failure
@@ -42,6 +42,7 @@ void systemReset(void);
 void systemResetToBootloader(void);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
+void checkForBootLoaderRequest(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz

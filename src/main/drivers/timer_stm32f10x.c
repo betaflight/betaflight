@@ -23,10 +23,10 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
     { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
     { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) }, 
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
     { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
     { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) }, 
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 #endif
 };
 
@@ -57,34 +57,31 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 
 void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t TIM_OCMode)
 {
-  uint32_t tmp = 0;
+    uint32_t tmp = 0;
 
-  /* Check the parameters */
-  assert_param(IS_TIM_LIST8_PERIPH(TIMx));
-  assert_param(IS_TIM_CHANNEL(TIM_Channel));
-  assert_param(IS_TIM_OCM(TIM_OCMode));
+    /* Check the parameters */
+    assert_param(IS_TIM_LIST8_PERIPH(TIMx));
+    assert_param(IS_TIM_CHANNEL(TIM_Channel));
+    assert_param(IS_TIM_OCM(TIM_OCMode));
 
-  tmp = (uint32_t) TIMx;
-  tmp += CCMR_Offset;
+    tmp = (uint32_t) TIMx;
+    tmp += CCMR_Offset;
 
-  if((TIM_Channel == TIM_Channel_1) ||(TIM_Channel == TIM_Channel_3))
-  {
-    tmp += (TIM_Channel>>1);
+    if((TIM_Channel == TIM_Channel_1) ||(TIM_Channel == TIM_Channel_3)) {
+        tmp += (TIM_Channel>>1);
 
-    /* Reset the OCxM bits in the CCMRx register */
-    *(__IO uint32_t *) tmp &= (uint32_t)~((uint32_t)TIM_CCMR1_OC1M);
+        /* Reset the OCxM bits in the CCMRx register */
+        *(__IO uint32_t *) tmp &= (uint32_t)~((uint32_t)TIM_CCMR1_OC1M);
 
-    /* Configure the OCxM bits in the CCMRx register */
-    *(__IO uint32_t *) tmp |= TIM_OCMode;
-  }
-  else
-  {
-    tmp += (uint16_t)(TIM_Channel - (uint16_t)4)>> (uint16_t)1;
+        /* Configure the OCxM bits in the CCMRx register */
+        *(__IO uint32_t *) tmp |= TIM_OCMode;
+    } else {
+        tmp += (uint16_t)(TIM_Channel - (uint16_t)4) >> (uint16_t)1;
 
-    /* Reset the OCxM bits in the CCMRx register */
-    *(__IO uint32_t *) tmp &= (uint32_t)~((uint32_t)TIM_CCMR1_OC2M);
+        /* Reset the OCxM bits in the CCMRx register */
+        *(__IO uint32_t *) tmp &= (uint32_t)~((uint32_t)TIM_CCMR1_OC2M);
 
-    /* Configure the OCxM bits in the CCMRx register */
-    *(__IO uint32_t *) tmp |= (uint16_t)(TIM_OCMode << 8);
-  }
+        /* Configure the OCxM bits in the CCMRx register */
+        *(__IO uint32_t *) tmp |= (uint16_t)(TIM_OCMode << 8);
+    }
 }

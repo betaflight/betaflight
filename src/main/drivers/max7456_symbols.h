@@ -125,16 +125,9 @@
 #define SYM_MAG11 0xB6
 
 // AH Center screen Graphics
-//#define SYM_AH_CENTER 0x01
-#ifdef ALT_CENTER
-  #define SYM_AH_CENTER_LINE 0xB0
-  #define SYM_AH_CENTER 0xB1
-  #define SYM_AH_CENTER_LINE_RIGHT 0xB2
-#else
-  #define SYM_AH_CENTER_LINE 0x26
-  #define SYM_AH_CENTER 0x7E
-  #define SYM_AH_CENTER_LINE_RIGHT 0xBC
-#endif
+#define SYM_AH_CENTER_LINE 0x26
+#define SYM_AH_CENTER_LINE_RIGHT 0x27
+#define SYM_AH_CENTER 0x7E
 #define SYM_AH_RIGHT 0x02
 #define SYM_AH_LEFT 0x03
 #define SYM_AH_DECORATION_UP 0xC9
@@ -183,7 +176,7 @@
 #define SYM_FT 0x0F
 
 // Voltage and amperage
-#define SYM_VOLT 0xA9
+#define SYM_VOLT 0x06
 #define SYM_AMP 0x9A
 #define SYM_MAH 0xA4
 #define SYM_WATT 0x57
@@ -214,11 +207,11 @@
 #define SYM_FLY_H 0x71
 
 // Throttle Position (%)
-#define SYM_THR 0xC8
-#define SYM_THR1 0xC9
+#define SYM_THR 0x04
+#define SYM_THR1 0x05
 
 // RSSI
-#define SYM_RSSI 0xBA
+#define SYM_RSSI 0x01
 
 // Menu cursor
 #define SYM_CURSOR SYM_AH_LEFT

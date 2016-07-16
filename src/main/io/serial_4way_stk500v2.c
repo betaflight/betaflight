@@ -16,7 +16,7 @@
  * Author: 4712
  * have a look at https://github.com/sim-/tgy/blob/master/boot.inc
  * for info about the stk500v2 implementation
- */ 
+ */
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -89,7 +89,7 @@ static uint8_t ckSumOut;
 static void StkSendByte(uint8_t dat)
 {
     ckSumOut ^= dat;
-    for (uint8_t i = 0; i < 8; i++)	{
+    for (uint8_t i = 0; i < 8; i++) {
         if (dat & 0x01) {
             // 1-bits are encoded as 64.0us high, 72.8us low (135.8us total).
             ESC_SET_HI;
@@ -248,9 +248,9 @@ static uint8_t _CMD_SPI_MULTI_EX(uint8_t * resByte, uint8_t subcmd, uint16_t add
     StkSendByte(4);             // NumTX
     StkSendByte(4);             // NumRX
     StkSendByte(0);             // RxStartAdr
-    StkSendByte(subcmd);    	// {TxData} Cmd
+    StkSendByte(subcmd);        // {TxData} Cmd
     StkSendByte(addr >> 8);     // {TxData} AdrHi
-    StkSendByte(addr & 0xff);	// {TxData} AdrLow
+    StkSendByte(addr & 0xff);   // {TxData} AdrLow
     StkSendByte(0);             // {TxData} 0
     StkSendPacketFooter();
     if (StkRcvPacket(stkInBuf, sizeof(stkInBuf))) { // NumRX + 3

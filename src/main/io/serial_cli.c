@@ -48,7 +48,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
-#include "drivers/gyro_sync.h"
 
 #include "drivers/buf_writer.h"
 
@@ -113,16 +112,19 @@ static void cliRxFail(char *cmdline);
 static void cliAdjustmentRange(char *cmdline);
 static void cliMotorMix(char *cmdline);
 static void cliDefaults(char *cmdline);
+void cliDfu(char *cmdLine);
 static void cliDump(char *cmdLine);
 void cliDumpProfile(uint8_t profileIndex);
 void cliDumpRateProfile(uint8_t rateProfileIndex) ;
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
+static void cliName(char *cmdline);
 static void cliPlaySound(char *cmdline);
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
+static void cliRebootEx(bool bootLoader);
 static void cliSave(char *cmdline);
 static void cliSerial(char *cmdline);
 #ifndef SKIP_SERIAL_PASSTHROUGH
@@ -264,8 +266,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile]", cliDump),
+    CLI_COMMAND_DEF("dfu", "DFU mode on reboot", NULL, cliDfu),
+    CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile]", cliDump),
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -339,6 +341,7 @@ const clicmd_t cmdTable[] = {
 #ifdef VTX
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
+    CLI_COMMAND_DEF("name", "Name of craft", NULL, cliName),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -450,6 +453,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "MIXER",
     "AIRMODE",
     "PIDLOOP",
+    "NOTCH",
 };
 #ifdef OSD
 static const char * const lookupTableOsdType[] = {
@@ -485,7 +489,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,  
+    TABLE_BLACKBOX_DEVICE, 
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -695,6 +699,8 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
+    { "gyro_notch_hz",              VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz, .config.minmax = { 0,  500 } },
+    { "gyro_notch_q",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_notch_q, .config.minmax = { 1,  100 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
@@ -1940,7 +1946,7 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_PROFILE; // only
     }
     if (strcasecmp(cmdline, "rates") == 0) {
-        dumpMask = DUMP_RATES; 
+        dumpMask = DUMP_RATES;
     }
 
     if (strcasecmp(cmdline, "all") == 0) {
@@ -1952,6 +1958,8 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
+        cliPrint("\r\n# name\r\n");
+        cliName(NULL);
         cliPrint("\r\n# dump master\r\n");
         cliPrint("\r\n# mixer\r\n");
 
@@ -1982,7 +1990,7 @@ static void cliDump(char *cmdline)
             cliPrintf("%s\r\n", ftoa(yaw, buf));
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #ifdef USE_SERVOS
@@ -2007,7 +2015,7 @@ static void cliDump(char *cmdline)
 
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 #endif
@@ -2022,7 +2030,7 @@ static void cliDump(char *cmdline)
             cliPrintf("feature -%s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
@@ -2031,7 +2039,7 @@ static void cliDump(char *cmdline)
                 cliPrintf("feature %s\r\n", featureNames[i]);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
 
 
@@ -2093,7 +2101,7 @@ static void cliDump(char *cmdline)
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
                 }
             }
         }
@@ -2110,7 +2118,7 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
-        
+
         if (dumpMask & DUMP_ALL) {
             uint8_t activeProfile = masterConfig.current_profile_index;
             uint8_t profileCount;
@@ -2128,7 +2136,7 @@ static void cliDump(char *cmdline)
                 cliRateProfile("");
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2157,7 +2165,7 @@ void cliDumpProfile(uint8_t profileIndex)
 {
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
-        
+
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
@@ -2173,7 +2181,7 @@ void cliDumpRateProfile(uint8_t rateProfileIndex)
 {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
-    
+
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
@@ -2493,6 +2501,18 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
+static void cliName(char *cmdline)
+{
+    uint32_t len = strlen(cmdline);
+    if (len > 0) {
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH));
+    }
+    cliPrintf("name %s\r\n", strlen(masterConfig.name) > 0 ? masterConfig.name : "-");
+   
+    return;
+}
+
 static void cliPlaySound(char *cmdline)
 {
 #if FLASH_SIZE <= 64
@@ -2550,7 +2570,7 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline) {
     int i;
-    
+
     if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
@@ -2565,10 +2585,19 @@ static void cliRateProfile(char *cmdline) {
 
 static void cliReboot(void)
 {
+    cliRebootEx(false);
+}
+
+static void cliRebootEx(bool bootLoader)
+{
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
-    stopMotors();
+    stopPwmAllMotors();
+    if (bootLoader) {
+        systemResetToBootloader();
+        return;
+    }
     systemReset();
 }
 
@@ -2671,7 +2700,7 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-static void cliPrintVarRange(const clivalue_t *var) 
+static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
@@ -2683,7 +2712,7 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrint("Allowed values:");
             uint8_t i;
             for (i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0) 
+                if (i > 0)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }
@@ -2739,10 +2768,10 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
-            
+
 #ifdef USE_SLOW_SERIAL_CLI
             delay(2);
-#endif            
+#endif
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -2894,6 +2923,10 @@ static void cliStatus(char *cmdline)
 #endif
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif   
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -3064,48 +3097,30 @@ void cliProcess(void)
     }
 }
 
-const char * const ownerNames[OWNER_TOTAL_COUNT] = {
-    "FREE",
-    "PWM IN",
-    "PPM IN",
-    "MOTOR",
-    "SERVO",
-    "SOFTSERIAL RX",
-    "SOFTSERIAL TX",
-    "SOFTSERIAL RXTX",        // bidirectional pin for softserial
-    "SOFTSERIAL AUXTIMER",    // timer channel is used for softserial. No IO function on pin
-    "ADC",
-    "SERIAL RX",
-    "SERIAL TX",
-    "SERIAL RXTX",
-    "PINDEBUG",
-    "TIMER",
-    "SONAR",
-    "SYSTEM",
-    "SDCARD",
-    "FLASH",
-    "USB",
-    "BEEPER",
-    "OSD",
-    "BARO",
-};
-
 static void cliResource(char *cmdline)
 {
     UNUSED(cmdline);
-    cliPrintf("IO:\r\n");
+    cliPrintf("IO:\r\n----------------------\r\n");
     for (unsigned i = 0; i < DEFIO_IO_USED_COUNT; i++) {
         const char* owner;
-        char buff[15];
-        if (ioRecs[i].owner < ARRAYLEN(ownerNames)) {
-            owner = ownerNames[ioRecs[i].owner];
+        owner = ownerNames[ioRecs[i].owner];
+
+        const char* resource;
+        resource = resourceNames[ioRecs[i].resource];
+
+        if (ioRecs[i].index > 0) {
+            cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+        } else {
+            cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
         }
-        else {
-            sprintf(buff, "O=%d", ioRecs[i].owner);
-            owner = buff;
-        }
-        cliPrintf("%c%02d: %19s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
     }
+}
+
+void cliDfu(char *cmdLine)
+{
+    UNUSED(cmdLine);
+    cliPrint("\r\nRestarting in DFU mode");
+    cliRebootEx(true);
 }
 
 void cliInit(serialConfig_t *serialConfig)

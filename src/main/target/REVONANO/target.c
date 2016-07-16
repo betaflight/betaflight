@@ -15,10 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
@@ -86,18 +86,18 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM2, 0},  // PPM
-    { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3, 0},  // S2_IN
-    { TIM3, IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3, 0},  // S3_IN
-    { TIM3, IO_TAG(PA7),  TIM_Channel_2, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3, 0},  // S4_IN
-    { TIM3, IO_TAG(PA6),  TIM_Channel_1, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3, 0},  // S5_IN
-    { TIM2, IO_TAG(PA5),  TIM_Channel_1, TIM2_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM2, 0},  // S6_IN
-    { TIM1, IO_TAG(PA10), TIM_Channel_3, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1, 0},  // S1_OUT
-    { TIM2, IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM2, 0},  // S2_OUT
-    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM4, 0},  // S3_OUT
-    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM4, 0},  // S4_OUT
-    { TIM5, IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM5, 0},  // S5_OUT
-    { TIM5, IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM5, 0},  // S6_OUT
+    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM2 },  // PPM
+    { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3 },  // S2_IN
+    { TIM3, IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3 },  // S3_IN
+    { TIM3, IO_TAG(PA7),  TIM_Channel_2, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3 },  // S4_IN
+    { TIM3, IO_TAG(PA6),  TIM_Channel_1, TIM3_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM3 },  // S5_IN
+    { TIM2, IO_TAG(PA5),  TIM_Channel_1, TIM2_IRQn,    0, IOCFG_AF_PP, GPIO_AF_TIM2 },  // S6_IN
+    { TIM1, IO_TAG(PA10), TIM_Channel_3, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1 },  // S1_OUT
+    { TIM2, IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM2 },  // S2_OUT
+    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM4 },  // S3_OUT
+    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM4 },  // S4_OUT
+    { TIM5, IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM5 },  // S5_OUT
+    { TIM5, IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,    1, IOCFG_AF_PP, GPIO_AF_TIM5 },  // S6_OUT
 };
 
 

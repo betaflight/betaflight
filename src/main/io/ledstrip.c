@@ -273,16 +273,16 @@ const ledConfig_t defaultLedStripConfig[] = {
 };
 #elif defined(USE_COLIBTI_RACE_LED_DEFAULT_CONFIG)
 const ledConfig_t defaultLedStripConfig[] = {
-	{ CALCULATE_LED_XY( 0,  0), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 0,  1), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 0,  8), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 7,  15), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 8,  15), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 7,  14), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 8,  14), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  8), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  1), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  0), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 0,  0), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 0,  1), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 0,  8), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 7,  15), 6, LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 8,  15), 6, LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 7,  14), 6, LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 8,  14), 6, LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 15,  8), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 15,  1), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
+    { CALCULATE_LED_XY( 15,  0), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
 };
 #else
 const ledConfig_t defaultLedStripConfig[] = {
@@ -370,8 +370,8 @@ static const uint16_t functionMappings[FUNCTION_COUNT] = {
     LED_FUNCTION_FLIGHT_MODE,
     LED_FUNCTION_ARM_STATE,
     LED_FUNCTION_THROTTLE,
-	LED_FUNCTION_THRUST_RING,
-	LED_FUNCTION_COLOR
+    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_COLOR
 };
 
 // grid offsets
@@ -440,7 +440,7 @@ void updateLedCount(void)
     }
 }
 
-void reevalulateLedConfig(void)
+void reevaluateLedConfig(void)
 {
     updateLedCount();
     determineLedStripDimensions();
@@ -534,7 +534,7 @@ bool parseLedStripConfig(uint8_t ledIndex, const char *config)
         memset(ledConfig, 0, sizeof(ledConfig_t));
     }
 
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 
     return ok;
 }
@@ -938,7 +938,7 @@ static void applyLedAnimationLayer(void)
 void updateLedStrip(void)
 {
 
-	if (!(ledStripInitialised && isWS2811LedStripReady())) {
+    if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
     }
 
@@ -950,11 +950,11 @@ void updateLedStrip(void)
     } else {
         ledStripEnabled = true;
     }
-    
+
     if (!ledStripEnabled){
         return;
     }
-    
+
 
     uint32_t now = micros();
 
@@ -1095,7 +1095,7 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     memset(ledConfigs, 0, MAX_LED_STRIP_LENGTH * sizeof(ledConfig_t));
     memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
 
-    reevalulateLedConfig();
+    reevaluateLedConfig();
 }
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
@@ -1107,7 +1107,7 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
 
 void ledStripEnable(void)
 {
-    reevalulateLedConfig();
+    reevaluateLedConfig();
     ledStripInitialised = true;
 
     ws2811LedStripInit();
@@ -1115,8 +1115,8 @@ void ledStripEnable(void)
 
 static void ledStripDisable(void)
 {
-	setStripColor(&hsv_black);
-    
-	ws2811UpdateStrip();
+    setStripColor(&hsv_black);
+
+    ws2811UpdateStrip();
 }
 #endif

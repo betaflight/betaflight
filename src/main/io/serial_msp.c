@@ -40,7 +40,6 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/gyro_sync.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
@@ -109,8 +108,8 @@ void setGyroSamplingSpeed(uint16_t looptime) {
     uint16_t gyroSampleRate = 1000;
     uint8_t maxDivider = 1;
 
-    if (looptime != targetLooptime || looptime == 0) {
-        if (looptime == 0) looptime = targetLooptime; // needed for pid controller changes
+    if (looptime != gyro.targetLooptime || looptime == 0) {
+        if (looptime == 0) looptime = gyro.targetLooptime; // needed for pid controller changes
 #ifdef STM32F303xC
         if (looptime < 1000) {
             masterConfig.gyro_lpf = 0;
@@ -294,7 +293,7 @@ static uint32_t read32(void)
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
     serialBeginWrite(mspSerialPort);
-    
+
     serialize8('$');
     serialize8('M');
     serialize8(err ? '!' : '>');
@@ -660,7 +659,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-
+    uint8_t len;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -748,7 +747,15 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
-        //serialize16(averageSystemLoadPercent);
+        serialize16(constrain(averageSystemLoadPercent, 0, 100));
+        break;
+
+    case MSP_NAME:
+        len = strlen(masterConfig.name);
+        headSerialReply(len);
+        for (uint8_t i=0; i<len; i++) {
+            serialize8(masterConfig.name[i]);
+        }
         break;
 
     case MSP_STATUS:
@@ -767,7 +774,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(18);
 
         // Hack scale due to choice of units for sensor data in multiwii
-        uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
+        const uint8_t scale = (acc.acc_1G > 512) ? 4 : 1;
 
         for (i = 0; i < 3; i++)
             serialize16(accSmooth[i] / scale);
@@ -854,7 +861,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_LOOP_TIME:
         headSerialReply(2);
-        serialize16((uint16_t)targetLooptime);
+        serialize16((uint16_t)gyro.targetLooptime);
         break;
     case MSP_RC_TUNING:
         headSerialReply(11);
@@ -1808,7 +1815,7 @@ static bool processInCommand(void)
 
             ledConfig->color = read8();
 
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 #endif
@@ -1868,6 +1875,13 @@ static bool processInCommand(void)
         masterConfig.acc_hardware = read8();
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
+        break;
+       
+    case MSP_SET_NAME:
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
+            masterConfig.name[i] = read8();
+        }
         break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
@@ -1968,7 +1982,7 @@ void mspProcess(void)
 
         if (isRebootScheduled) {
             waitForSerialPortToFinishTransmitting(candidatePort->port);
-            stopMotors();
+            stopPwmAllMotors();
             // On real flight controllers, systemReset() will do a soft reset of the device,
             // reloading the program.  But to support offline testing this flag needs to be
             // cleared so that the software doesn't continuously attempt to reboot itself.
