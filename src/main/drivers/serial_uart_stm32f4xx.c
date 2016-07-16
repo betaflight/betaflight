@@ -376,6 +376,7 @@ void USART1_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_1]->port);
     uartIrqHandler(s);
 }
+
 #endif
 
 #ifdef USE_UART2
