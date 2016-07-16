@@ -88,6 +88,7 @@ var MSP_codes = {
     MSP_RC_DEADBAND:        125,
     MSP_SENSOR_ALIGNMENT:   126,
     MSP_LED_STRIP_MODECOLOR:127,
+    MSP_STATUS_EX:          150,
     
     MSP_SET_RAW_RC:         200,
     MSP_SET_RAW_GPS:        201,
@@ -128,10 +129,10 @@ var MSP_codes = {
     // Additional private MSP for baseflight configurator (yes thats us \o/)
     MSP_RX_MAP:              64, // get channel map (also returns number of channels total)
     MSP_SET_RX_MAP:          65, // set rc map, numchannels to set comes from MSP_RX_MAP
-    MSP_BF_CONFIG:             66, // baseflight-specific settings that aren't covered elsewhere
-    MSP_SET_BF_CONFIG:         67, // baseflight-specific settings save
-    MSP_SET_REBOOT:         68, // reboot settings
-    MSP_BF_BUILD_INFO:          69  // build date as well as some space for future expansion
+    MSP_BF_CONFIG:           66, // baseflight-specific settings that aren't covered elsewhere
+    MSP_SET_BF_CONFIG:       67, // baseflight-specific settings save
+    MSP_SET_REBOOT:          68, // reboot settings
+    MSP_BF_BUILD_INFO:       69  // build date as well as some space for future expansion
 };
 
 var MSP = {
@@ -288,6 +289,21 @@ var MSP = {
                 $('span.i2c-error').text(CONFIG.i2cError);
                 $('span.cycle-time').text(CONFIG.cycleTime);
                 break;
+            case MSP_codes.MSP_STATUS_EX:
+                CONFIG.cycleTime = data.getUint16(0, 1);
+                CONFIG.i2cError = data.getUint16(2, 1);
+                CONFIG.activeSensors = data.getUint16(4, 1);
+                CONFIG.mode = data.getUint32(6, 1);
+                CONFIG.profile = data.getUint8(10);
+                CONFIG.cpuload = data.getUint16(11, 1);
+                $('select[name="profilechange"]').val(CONFIG.profile);
+
+                sensor_status(CONFIG.activeSensors);
+                $('span.i2c-error').text(CONFIG.i2cError);
+                $('span.cycle-time').text(CONFIG.cycleTime);
+                $('span.cpu-load').text(chrome.i18n.getMessage('statusbar_cpu_load', [CONFIG.cpuload]));
+                break;
+            
             case MSP_codes.MSP_RAW_IMU:
                 // 512 for mpu6050, 256 for mma
                 // currently we are unable to differentiate between the sensor types, so we are goign with 512
@@ -1201,7 +1217,6 @@ var MSP = {
             case MSP_codes.MSP_SET_NAME:
                 console.log('Name set');
                 break;
-            
             default:
                 console.log('Unknown code detected: ' + code);
         } else {

@@ -214,6 +214,9 @@
     "statusbar_cycle_time": {
         "message": "Cycle Time:"
     },
+    "statusbar_cpu_load": {
+        "message": "CPU Load: $1%"
+    },
 
     "dfu_connect_message": {
         "message": "Please use the Firmware Flasher to access DFU devices"

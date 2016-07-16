@@ -250,7 +250,7 @@ function onConnect() {
     $('#tabs ul.mode-disconnected').hide();
     $('#tabs ul.mode-connected').show(); 
      
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false);      
+    MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);      
     
     MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
     
@@ -432,7 +432,7 @@ function update_live_status() {
     
     if (GUI.active_tab != 'cli') {
         MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false);      
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false);
+        MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
         MSP.send_message(MSP_codes.MSP_ANALOG, false, false);
     }
     
