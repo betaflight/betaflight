@@ -146,11 +146,14 @@
 #define ADC_DMA_CHANNEL      DMA2_Channel1
 #define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
 
-//#define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define VBAT_ADC_GPIO        GPIOA
-#define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
-#define VBAT_ADC_CHANNEL     ADC_Channel_1
+#define ADC0_GPIO                   GPIOA
+#define ADC0_GPIO_PIN               GPIO_Pin_4
+#define ADC0_CHANNEL                ADC_Channel_1
+
+#define ADC_CHANNEL_COUNT 1
+
+#define ADC_BATTERY     ADC_CHANNEL0
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
 #define DEFAULT FEATURES FEATURE_MOTOR_STOP

@@ -20,6 +20,7 @@
 #include "string.h"
 
 #include <platform.h>
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/filter.h"
@@ -88,11 +89,13 @@ uint16_t batteryAdcToVoltage(uint16_t src)
 
 static void updateBatteryVoltage(void)
 {
+#ifdef ADC_BATTERY
     uint16_t vbatSample;
     // store the battery voltage with some other recent battery voltage readings
     vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
     vbatSample = applyBiQuadFilter(vbatSample, &vbatFilterState);
     vbat = batteryAdcToVoltage(vbatSample);
+#endif
 }
 
 #define VBATTERY_STABLE_DELAY 40
@@ -200,6 +203,9 @@ int32_t currentSensorToCentiamps(uint16_t src)
 
 void updateCurrentMeter(int32_t lastUpdateAt)
 {
+#ifndef ADC_CURRENT
+    UNUSED(lastUpdateAt);
+#else
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
 
@@ -209,6 +215,7 @@ void updateCurrentMeter(int32_t lastUpdateAt)
 
     mAhdrawnRaw += (MAX(0, amperage) * lastUpdateAt) / 1000;
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
+#endif
 }
 
 

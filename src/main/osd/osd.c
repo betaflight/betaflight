@@ -338,7 +338,7 @@ void osdUpdate(void)
 
     row = osdTextScreen.height - 3;
 
-    uint8_t voltage12v = batteryAdcToVoltage(adcGetChannel(ADC_12V));
+    uint8_t voltage12v = batteryAdcToVoltage(adcGetChannel(ADC_POWER_12V));
     tfp_sprintf(lineBuffer, "12V:%3d.%dV", voltage12v / 10, voltage12v % 10);
     osdPrintAt(2, row, lineBuffer);
 
@@ -347,7 +347,7 @@ void osdUpdate(void)
 
     row++;
 
-    uint8_t voltage5v = batteryAdcToVoltage(adcGetChannel(ADC_5V));
+    uint8_t voltage5v = batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V));
     tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltage5v / 10, voltage5v % 10);
     osdPrintAt(2, row, lineBuffer);
 

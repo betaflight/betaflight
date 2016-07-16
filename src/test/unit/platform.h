@@ -71,6 +71,15 @@ void DMA_ClearFlag(uint32_t);
 
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
+#define USE_ADC
+
+#define ADC_CHANNEL_COUNT 4
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_CURRENT     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
+#define ADC_EXTERNAL    ADC_CHANNEL3
+
 typedef enum
 {
   FLASH_BUSY = 1,

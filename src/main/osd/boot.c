@@ -150,9 +150,8 @@ void init(void)
     i2cInit(I2C_DEVICE);
 #endif
 
-    // ADC channels are used for BEC12V, BEC5V, VBAT and CURRENT METER on the OSD.
     drv_adc_config_t adc_params = {
-        .channelMask = ADC_CHANNEL1_ENABLE | ADC_CHANNEL2_ENABLE | ADC_CHANNEL3_ENABLE | ADC_CHANNEL4_ENABLE
+        .channelMask = ADC_CHANNEL_MASK(ADC_BATTERY) | ADC_CHANNEL_MASK(ADC_CURRENT) | ADC_CHANNEL_MASK(ADC_POWER_12V) | ADC_CHANNEL_MASK(ADC_POWER_5V)
     };
 
     adcInit(&adc_params);

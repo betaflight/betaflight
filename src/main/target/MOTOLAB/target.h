@@ -136,17 +136,18 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_5
-#define VBAT_ADC_CHANNEL            ADC_Channel_2
+#define ADC0_GPIO                   GPIOA
+#define ADC0_GPIO_PIN               GPIO_Pin_5
+#define ADC0_CHANNEL                ADC_Channel_2
 
-//#define CURRENT_METER_ADC_GPIO      GPIOA
-//#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_5
-//#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
+#define ADC1_GPIO                   GPIOB
+#define ADC1_GPIO_PIN               GPIO_Pin_2
+#define ADC1_CHANNEL                ADC_Channel_12
 
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_12
+#define ADC_CHANNEL_COUNT 2
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_RSSI        ADC_CHANNEL1
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
