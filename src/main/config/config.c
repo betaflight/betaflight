@@ -456,6 +456,8 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 4;
 #endif
     masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_notch_hz = 0;
+    masterConfig.gyro_soft_notch_q = 5;
 
     masterConfig.pid_process_denom = 2;
 
@@ -717,7 +719,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
