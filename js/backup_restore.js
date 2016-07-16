@@ -94,7 +94,8 @@ function configuration_backup(callback) {
         MSP_codes.MSP_RX_MAP,
         MSP_codes.MSP_BF_CONFIG,
         MSP_codes.MSP_CF_SERIAL_CONFIG,
-        MSP_codes.MSP_LED_STRIP_CONFIG
+        MSP_codes.MSP_LED_STRIP_CONFIG,
+        MSP_codes.MSP_LED_COLORS
     ];
 
     function update_unique_data_list() {
@@ -110,6 +111,9 @@ function configuration_backup(callback) {
             uniqueData.push(MSP_codes.MSP_RX_CONFIG);
             uniqueData.push(MSP_codes.MSP_FAILSAFE_CONFIG);
             uniqueData.push(MSP_codes.MSP_RXFAIL_CONFIG);
+        }
+        if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
+            uniqueData.push(MSP_codes.MSP_LED_STRIP_MODECOLOR);
         }
     }
     
@@ -130,7 +134,11 @@ function configuration_backup(callback) {
                 configuration.BF_CONFIG = jQuery.extend(true, {}, BF_CONFIG);
                 configuration.SERIAL_CONFIG = jQuery.extend(true, {}, SERIAL_CONFIG);
                 configuration.LED_STRIP = jQuery.extend(true, [], LED_STRIP);
-                
+                configuration.LED_COLORS = jQuery.extend(true, [], LED_COLORS);
+
+                if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
+                    configuration.LED_MODE_COLORS = jQuery.extend(true, [], LED_MODE_COLORS);
+                }
                 if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
                     configuration.FC_CONFIG = jQuery.extend(true, {}, FC_CONFIG);
                     configuration.ARMING_CONFIG = jQuery.extend(true, {}, ARMING_CONFIG);
@@ -604,6 +612,21 @@ function configuration_restore(callback) {
             appliedMigrationsCount++;
         }
 
+        if (!compareVersions(migratedVersion, '1.3.1')) {
+            
+            // LED_COLORS & LED_MODE_COLORS support was added.
+            if (!configuration.LED_COLORS) {
+                configuration.LED_COLORS = [];
+            }
+            if (!configuration.LED_MODE_COLORS) {
+                configuration.LED_MODE_COLORS = [];
+            }
+
+            migratedVersion = '1.3.1';
+            GUI.log(chrome.i18n.getMessage('configMigratedTo', [migratedVersion]));
+            appliedMigrationsCount++;
+        }
+        
         if (appliedMigrationsCount > 0) {
             GUI.log(chrome.i18n.getMessage('configMigrationSuccessful', [appliedMigrationsCount]));
         }        
@@ -731,6 +754,8 @@ function configuration_restore(callback) {
                     BF_CONFIG = configuration.BF_CONFIG;
                     SERIAL_CONFIG = configuration.SERIAL_CONFIG;
                     LED_STRIP = configuration.LED_STRIP;
+                    LED_COLORS = configuration.LED_COLORS;
+                    LED_MODE_COLORS = configuration.LED_MODE_COLORS;
                     ARMING_CONFIG = configuration.ARMING_CONFIG;
                     FC_CONFIG = configuration.FC_CONFIG;
                     _3D = configuration._3D;
@@ -760,7 +785,18 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_config() {
-                MSP.sendLedStripConfig(send_rxfail_config);
+                MSP.sendLedStripConfig(send_led_strip_colors);
+            }
+
+            function send_led_strip_colors() {
+                MSP.sendLedStripColors(send_led_strip_mode_colors);
+            }
+
+            function send_led_strip_mode_colors() {
+                if (semver.gte(CONFIG.apiVersion, "1.19.0"))
+                    MSP.sendLedStripModeColors(send_rxfail_config);
+                else
+                    send_rxfail_config();
             }
             
             function send_rxfail_config() {

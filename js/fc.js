@@ -4,6 +4,8 @@
 var CONFIG;
 var BF_CONFIG;
 var LED_STRIP;
+var LED_COLORS;
+var LED_MODE_COLORS;
 var PID;
 var PID_names;
 var PIDs;
@@ -73,6 +75,8 @@ var FC = {
         };
         
         LED_STRIP = [];
+        LED_COLORS = [];
+        LED_MODE_COLORS = [];
         
         PID = {
             controller:             0
