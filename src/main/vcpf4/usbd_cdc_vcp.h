@@ -34,7 +34,7 @@
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-#define USB_RX_BUFSIZE		1024
+#define USB_RX_BUFSIZE      2048
 
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
@@ -59,7 +59,7 @@ typedef enum _DEVICE_STATE {
 } DEVICE_STATE;
 
 /* Exported typef ------------------------------------------------------------*/
-/* The following structures groups all needed parameters to be configured for the 
+/* The following structures groups all needed parameters to be configured for the
    ComPort. These parameters can modified on the fly by the host through CDC class
    command class requests. */
 typedef struct
@@ -71,9 +71,9 @@ typedef struct
 } LINE_CODING;
 
 typedef struct {
-    uint8_t rxBuf[USB_RX_BUFSIZE];
-    uint16_t rxBufHead;
-    uint16_t rxBufTail;
+    uint8_t buffer[USB_RX_BUFSIZE];
+    uint16_t bufferInPosition;
+    uint16_t bufferOutPosition;
 } usbStruct_t;
 
 

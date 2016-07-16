@@ -237,7 +237,7 @@ void bstInitPort(I2C_TypeDef *BSTx/*, uint8_t Address*/)
         NVIC_Init(&nvic);
 
         I2C_ITConfig(I2C1, I2C_IT_ADDRI | I2C_IT_RXI | I2C_IT_STOPI | I2C_IT_NACKI | I2C_IT_ERRI, ENABLE);
-        
+
         I2C_Cmd(I2C1, ENABLE);
     }
 

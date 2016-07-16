@@ -89,7 +89,7 @@ bool mma8452Detect(acc_t *acc)
     bool ack = false;
     uint8_t sig = 0;
 
-	ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
+    ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
     if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
         return false;
 
@@ -105,13 +105,13 @@ static inline void mma8451ConfigureInterrupt(void)
     // PA5 - ACC_INT2 output on NAZE rev3/4 hardware
     // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
     // OLIMEXINO - The PA5 pin is wired up to LED1, if you need to use an mma8452 on an Olimexino use a different pin and provide support in code.
-    IOInit(IOGetByTag(IO_TAG(PA5)), OWNER_SYSTEM, RESOURCE_I2C);
+    IOInit(IOGetByTag(IO_TAG(PA5)), OWNER_MPU, RESOURCE_EXTI, 0);
     IOConfigGPIO(IOGetByTag(IO_TAG(PA5)), IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 #endif
 
-	i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL); // Interrupt polarity (active HIGH)
-	i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG4, MMA8452_CTRL_REG4_INT_EN_DRDY); // Enable DRDY interrupt (unused by this driver)
-	i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
+    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL); // Interrupt polarity (active HIGH)
+    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG4, MMA8452_CTRL_REG4_INT_EN_DRDY); // Enable DRDY interrupt (unused by this driver)
+    i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
 }
 
 static void mma8452Init(acc_t *acc)

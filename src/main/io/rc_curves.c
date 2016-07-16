@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx/rx.h"
 #include "io/rc_controls.h"
 #include "io/escservo.h"
 

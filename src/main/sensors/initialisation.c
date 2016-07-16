@@ -79,8 +79,9 @@ extern float magneticDeclination;
 extern gyro_t gyro;
 extern baro_t baro;
 extern acc_t acc;
+extern sensor_align_e gyroAlign;
 
-uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
@@ -88,11 +89,11 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #if defined(MPU_INT_EXTI)
     static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
-#elif defined(USE_HARDWARE_REVISION_DETECTION) 
+#elif defined(USE_HARDWARE_REVISION_DETECTION)
     return selectMPUIntExtiConfigByHardwareRevision();
 #else
     return NULL;
-#endif    
+#endif
 }
 
 #ifdef USE_FAKE_GYRO
@@ -117,9 +118,15 @@ static bool fakeGyroReadTemp(int16_t *tempData)
     return true;
 }
 
+
+static bool fakeGyroInitStatus(void) {
+    return true;
+}
+
 bool fakeGyroDetect(gyro_t *gyro)
 {
     gyro->init = fakeGyroInit;
+    gyro->intStatus = fakeGyroInitStatus;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
     gyro->scale = 1.0f / 16.4f;
@@ -142,6 +149,7 @@ bool fakeAccDetect(acc_t *acc)
 {
     acc->init = fakeAccInit;
     acc->read = fakeAccRead;
+    acc->acc_1G = 512*8;
     acc->revisionCode = 0;
     return true;
 }
@@ -232,7 +240,7 @@ bool detectGyro(void)
             }
 #endif
             ; // fallthrough
-        
+
     case GYRO_MPU9250:
 #ifdef USE_GYRO_SPI_MPU9250
 
@@ -417,20 +425,20 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 
 #ifdef USE_BARO_BMP085
 
-	const bmp085Config_t *bmp085Config = NULL;
+    const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-	static const bmp085Config_t defaultBMP085Config = {
-		.xclrIO = IO_TAG(BARO_XCLR_PIN),
-		.eocIO = IO_TAG(BARO_EOC_PIN),
-	};
-	bmp085Config = &defaultBMP085Config;
+    static const bmp085Config_t defaultBMP085Config = {
+        .xclrIO = IO_TAG(BARO_XCLR_PIN),
+        .eocIO = IO_TAG(BARO_EOC_PIN),
+    };
+    bmp085Config = &defaultBMP085Config;
 #endif
 
 #ifdef NAZE
-	if (hardwareRevision == NAZE32) {
-		bmp085Disable(bmp085Config);
-	}
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
 #endif
 
 #endif
@@ -454,7 +462,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
-	    ; // fallthough
+        ; // fallthough
         case BARO_BMP280:
 #ifdef USE_BARO_BMP280
             if (bmp280Detect(&baro)) {
@@ -483,27 +491,12 @@ static void detectMag(magSensor_e magHardwareToUse)
 #ifdef USE_MAG_HMC5883
     const hmc5883Config_t *hmc5883Config = 0;
 
-#ifdef NAZE
+#ifdef NAZE // TODO remove this target specific define
     static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOB,
-            .gpioPin = Pin_12,
-            .gpioPort = GPIOB,
-
-            /* Disabled for v4 needs more work.
-            .exti_port_source = GPIO_PortSourceGPIOB,
-            .exti_pin_source = GPIO_PinSource12,
-            .exti_line = EXTI_Line12,
-            .exti_irqn = EXTI15_10_IRQn
-            */
+            .intTag = IO_TAG(PB12) /* perhaps disabled? */
     };
     static const hmc5883Config_t nazeHmc5883Config_v5 = {
-            .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-            .gpioPin = Pin_14,
-            .gpioPort = GPIOC,
-            .exti_port_source = GPIO_PortSourceGPIOC,
-            .exti_line = EXTI_Line14,
-            .exti_pin_source = GPIO_PinSource14,
-            .exti_irqn = EXTI15_10_IRQn
+            .intTag = IO_TAG(MAG_INT_EXTI)
     };
     if (hardwareRevision < NAZE32_REV5) {
         hmc5883Config = &nazeHmc5883Config_v1_v4;
@@ -512,18 +505,12 @@ static void detectMag(magSensor_e magHardwareToUse)
     }
 #endif
 
-#ifdef SPRACINGF3
-    static const hmc5883Config_t spRacingF3Hmc5883Config = {
-        .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-        .gpioPin = Pin_14,
-        .gpioPort = GPIOC,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource14,
-        .exti_line = EXTI_Line14,
-        .exti_irqn = EXTI15_10_IRQn
+#ifdef MAG_INT_EXTI
+    static const hmc5883Config_t extiHmc5883Config = {
+        .intTag = IO_TAG(MAG_INT_EXTI)
     };
 
-    hmc5883Config = &spRacingF3Hmc5883Config;
+    hmc5883Config = &extiHmc5883Config;
 #endif
 
 #endif
@@ -604,10 +591,14 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
+        uint8_t accHardwareToUse,
+        uint8_t magHardwareToUse,
+        uint8_t baroHardwareToUse,
+        int16_t magDeclinationFromConfig,
+        uint8_t gyroLpf,
+        uint8_t gyroSyncDenominator)
 {
-    int16_t deg, min;
-
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -625,15 +616,15 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     detectAcc(accHardwareToUse);
     detectBaro(baroHardwareToUse);
 
-
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc);
     }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyroUpdateSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro refresh rate before initialisation
+    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf);
+    gyroInit();
 
     detectMag(magHardwareToUse);
 
@@ -642,9 +633,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
         // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
+        const int16_t deg = magDeclinationFromConfig / 100;
+        const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.

@@ -94,4 +94,4 @@ bool parseColor(uint8_t index, const char *colorConfig);
 void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount);
 
 void ledStripEnable(void);
-void reevalulateLedConfig(void);
+void reevaluateLedConfig(void);

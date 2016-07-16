@@ -50,5 +50,6 @@ typedef enum {
     DEBUG_MIXER,
     DEBUG_AIRMODE,
     DEBUG_PIDLOOP,
+    DEBUG_NOTCH,
     DEBUG_COUNT
 } debugType_e;

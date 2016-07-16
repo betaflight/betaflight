@@ -22,7 +22,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
-#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -508,7 +507,7 @@ void blackboxWriteFloat(float value)
 
 /**
  * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
- * 
+ *
  * Intended to be called regularly for the blackbox device to perform housekeeping.
  */
 void blackboxDeviceFlush(void)

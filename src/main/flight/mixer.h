@@ -215,4 +215,4 @@ void mixTable(void);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
-void StopPwmAllMotors(void);
+void stopPwmAllMotors(void);
