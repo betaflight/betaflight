@@ -104,74 +104,6 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-void setGyroSamplingSpeed(uint16_t looptime) {
-    uint16_t gyroSampleRate = 1000;
-    uint8_t maxDivider = 1;
-
-    if (looptime != gyro.targetLooptime || looptime == 0) {
-        if (looptime == 0) looptime = gyro.targetLooptime; // needed for pid controller changes
-#ifdef STM32F303xC
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            if (looptime < 250) {
-                masterConfig.acc_hardware = ACC_NONE;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            } else if (looptime < 375) {
-                masterConfig.acc_hardware = CONFIG_FASTLOOP_PREFERRED_ACC;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-        }
-#else
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.acc_hardware = ACC_NONE;
-            masterConfig.baro_hardware = BARO_NONE;
-            masterConfig.mag_hardware = MAG_NONE;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                masterConfig.pid_process_denom = 2;
-            }
-            if (looptime < 250) {
-                masterConfig.pid_process_denom = 4;
-            } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                    masterConfig.pid_process_denom = 3;
-                } else {
-                    masterConfig.pid_process_denom = 2;
-                }
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            masterConfig.pid_process_denom = 1;
-        }
-#endif
-    }
-}
-
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -1311,7 +1243,6 @@ static bool processInCommand(void)
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
-    uint8_t oldPid;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1358,13 +1289,11 @@ static bool processInCommand(void)
         masterConfig.disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        setGyroSamplingSpeed(read16());
+        read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        oldPid = currentProfile->pidProfile.pidController;
         currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
         pidSetController(currentProfile->pidProfile.pidController);
-        if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
