@@ -630,7 +630,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#ifdef F3FCRACING
+#ifdef RCEXPLORERF3
 static const uint16_t multiPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
@@ -849,7 +849,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(F3FCRACING)
+#if defined(RCEXPLORERF3)
             if (timerIndex == PWM2)
             {
                 type = MAP_TO_SERVO_OUTPUT;

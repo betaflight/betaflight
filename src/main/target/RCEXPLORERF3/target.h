@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "F3FCRACING"
+#define TARGET_BOARD_IDENTIFIER "REF3" // Rc Explorer F3
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue  - PB4

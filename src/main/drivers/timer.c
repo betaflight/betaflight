@@ -390,7 +390,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
 #endif
 
-#if defined(F3FCRACING)
+#if defined(RCEXPLORERF3)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  GPIOA, Pin_4,  TIM_Channel_2, TIM3_IRQn,               1, Mode_AF_PP, GPIO_PinSource4,  GPIO_AF_2}, // PWM1 - PA4
     { TIM17, GPIOA, Pin_7,  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource7,  GPIO_AF_1}, // PWM2 - PA7
