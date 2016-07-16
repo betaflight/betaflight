@@ -224,7 +224,7 @@ fix12_t calculateVbatPidCompensation(void) {
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
+    return (((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount);
 }
 
 uint8_t calculateBatteryCapacityRemainingPercentage(void)
