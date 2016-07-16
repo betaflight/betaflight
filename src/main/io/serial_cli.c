@@ -2500,18 +2500,12 @@ static void cliMotor(char *cmdline)
 
 static void cliName(char *cmdline)
 {
-    
     uint32_t len = strlen(cmdline);
-    if (len == 0) {
-        cliPrintf("name %s\r\n", masterConfig.name);
-    } else if ('-' == cmdline[0]) {
-        memset(masterConfig.name, '\0', MAX_NAME_LENGTH); 
-        cliPrintf("name removed\r\n");
-    } else {
-        memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
+    if (len > 0) {
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name)); 
         strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH)); 
-        cliPrintf("name %s\r\n", masterConfig.name);
     }
+    cliPrintf("name %s\r\n", strlen(masterConfig.name) > 0 ? masterConfig.name : "-");
     
     return;
 }

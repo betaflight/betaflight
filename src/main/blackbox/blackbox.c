@@ -1140,6 +1140,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:Betaflight %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.escAndServoConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.escAndServoConfig.maxthrottle);
