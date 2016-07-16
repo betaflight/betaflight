@@ -1506,9 +1506,6 @@ MSP.crunch = function (code) {
             for (var i = 0; i<CONFIG.name.length; i++) {
                 buffer.push(CONFIG.name.charCodeAt(i));
             }
-            if (!buffer.length) {
-                buffer.push('-'.charCodeAt(0));
-            }
             break;
         
         
