@@ -8,6 +8,9 @@ var MSP_codes = {
     MSP_BOARD_INFO:             4,
     MSP_BUILD_INFO:             5,
     
+    MSP_NAME:                   10,
+    MSP_SET_NAME:               11, 
+    
     // MSP commands for Cleanflight original features
     MSP_CHANNEL_FORWARDING:     32,
     MSP_SET_CHANNEL_FORWARDING: 33,
@@ -737,6 +740,15 @@ var MSP = {
                 offset+=2;
                 break;
 
+            case MSP_codes.MSP_NAME:
+                var offset = 0;
+                var name = '';
+                while (offset<data.byteLength) {
+                    name += String.fromCharCode(data.getUint8(offset++));;
+                }
+                CONFIG.name = name;
+                break;
+
             case MSP_codes.MSP_SET_CHANNEL_FORWARDING:
                 console.log('Channel forwarding saved');
                 break;
@@ -1186,6 +1198,10 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_VTX_CONFIG:
                 break;
+            case MSP_codes.MSP_SET_NAME:
+                console.log('Name set');
+                break;
+            
             default:
                 console.log('Unknown code detected: ' + code);
         } else {
@@ -1589,6 +1605,15 @@ MSP.crunch = function (code) {
             buffer.push(SENSOR_CONFIG.baro_hardware);
             buffer.push(SENSOR_CONFIG.mag_hardware);
             break;
+            
+        case MSP_codes.MSP_SET_NAME:
+            var MSP_BUFFER_SIZE = 64;
+            for (var i = 0; i<CONFIG.name.length && i<MSP_BUFFER_SIZE; i++) {
+                buffer.push(CONFIG.name.charCodeAt(i));
+            }
+            break;
+        
+        
         default:
             return false;
     }

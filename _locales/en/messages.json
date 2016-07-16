@@ -1751,8 +1751,15 @@
     },
       "pidTuningRatesTip": {
         "message": "Play with the rates and see how those affect the stick curve"
+    },
+      "configurationMisc": {
+        "message": "Misc"
+    },
+      "configurationVesselName": {
+        "message": "Craft name"
     }
-
+    
+    
 
 
 
