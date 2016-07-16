@@ -117,6 +117,7 @@
 #undef GPS
 
 #undef BARO
+#undef MAG
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
