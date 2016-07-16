@@ -184,8 +184,10 @@ float calculateRate(int axis, int16_t rc) {
         angleRate = (float)((currentControlRateProfile->rates[axis] + 27) * rc) / 16.0f;
     }
 
-
-    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    if (currentProfile->pidProfile.pidController == PID_CONTROLLER_INTEGER)
+	    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    else
+        return  constrainf(angleRate / 4.1f, -1997.0f, 1997.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {

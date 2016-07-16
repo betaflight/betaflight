@@ -129,9 +129,9 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
     // Scaling factors for Pids for better tunable range in configurator
-    static const float luxPTermScale = 1.0f / 128;
-    static const float luxITermScale = 1000000.0f / 0x1000000;
-    static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 508;
+    static const float PTermScale = 0.032029f;
+    static const float ITermScale = 0.244381f;
+    static const float DTermScale = 0.000529f;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -170,7 +170,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
             }
         }
 
-        gyroRate = gyroADCf[axis] / 4.0f; // gyro output scaled for easier int conversion
+        gyroRate = gyroADCf[axis] / 16.4f; // gyro output deg/sec
 
         // --------low-level gyro-based PID. ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
@@ -187,7 +187,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
         }
 
         // -----calculate P component
-        PTerm = luxPTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
+        PTerm = PTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -197,7 +197,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
         // -----calculate I component.
         uint16_t kI = (pidProfile->dynamic_pid) ? getDynamicKi(axis, pidProfile, (int32_t)angleRate[axis]) : pidProfile->I8[axis];
 
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + luxITermScale * errorLimiter * RateError * getdT() * kI, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + ITermScale * errorLimiter * RateError * getdT() * kI, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -232,7 +232,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
 
-            DTerm = constrainf(luxDTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
+            DTerm = constrainf(DTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
