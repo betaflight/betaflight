@@ -659,7 +659,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-
+    uint8_t len;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -748,6 +748,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
+        break;
+
+    case MSP_NAME:
+        len = strlen(masterConfig.name);
+        headSerialReply(len);
+        for (uint8_t i=0; i<len; i++) {
+            serialize8(masterConfig.name[i]);
+        }
         break;
 
     case MSP_STATUS:
@@ -1867,6 +1875,16 @@ static bool processInCommand(void)
         masterConfig.acc_hardware = read8();
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
+        break;
+        
+    case MSP_SET_NAME:
+        memset(masterConfig.name, 0, MAX_NAME_LENGTH+1);
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
+            masterConfig.name[i] = read8();
+        }
+        if (masterConfig.name[0] == '-') {
+            memset(masterConfig.name, '\0', MAX_NAME_LENGTH);
+        }
         break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

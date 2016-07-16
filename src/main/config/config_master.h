@@ -161,6 +161,9 @@ typedef struct master_t {
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
+    
+    char name[MAX_NAME_LENGTH+1];
+    
 } master_t;
 
 extern master_t masterConfig;

@@ -441,6 +441,7 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
+
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
 
@@ -657,6 +658,7 @@ static void resetConf(void)
     targetConfiguration();
 #endif
 
+    
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));

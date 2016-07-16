@@ -99,6 +99,10 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
 
+#define MSP_NAME                        10
+#define MSP_SET_NAME                    11
+
+
 //
 // MSP commands for Cleanflight original features
 //
@@ -147,6 +151,23 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_ARMING_CONFIG               61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
 #define MSP_SET_ARMING_CONFIG           62 //in message          Sets auto_disarm_delay and disarm_kill_switch parameters
 
+//
+// Baseflight MSP commands (if enabled they exist in Cleanflight)
+//
+#define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
+#define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
+
+// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
+// DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
+#define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
+#define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
+
+#define MSP_REBOOT                      68 //in message reboot settings
+
+// DEPRECATED - Use MSP_BUILD_INFO instead
+#define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+
+
 #define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
 #define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
 #define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
@@ -176,22 +197,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define MSP_VTX_CONFIG                  88 //in message          Get vtx settings
 #define MSP_SET_VTX_CONFIG              89 //out message         Set vtx settings
-
-//
-// Baseflight MSP commands (if enabled they exist in Cleanflight)
-//
-#define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
-#define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
-
-// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
-// DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-#define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
-
-#define MSP_REBOOT                      68 //in message reboot settings
-
-// DEPRECATED - Use MSP_BUILD_INFO instead
-#define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
 
 // Betaflight Additional Commands
 #define MSP_PID_ADVANCED_CONFIG         90
