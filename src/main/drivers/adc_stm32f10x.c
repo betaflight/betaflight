@@ -110,8 +110,6 @@ void adcInit(drv_adc_config_t *init)
     RCC_AHBPeriphClockCmd(ADC_AHB_PERIPHERAL, ENABLE);
     RCC_APB2PeriphClockCmd(ADC_ABP2_PERIPHERAL, ENABLE);
 
-    // FIXME ADC driver assumes all the GPIO was already placed in 'AIN' mode
-
     DMA_DeInit(ADC_DMA_CHANNEL);
     DMA_InitTypeDef DMA_InitStructure;
     DMA_StructInit(&DMA_InitStructure);
