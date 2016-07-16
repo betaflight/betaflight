@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "LUX"
+#define TARGET_BOARD_IDENTIFIER "LUXR" // LUX Race
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_15
