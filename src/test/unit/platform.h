@@ -34,6 +34,8 @@
 #define UART4              ((USART_TypeDef *) 4)
 #define UART5              ((USART_TypeDef *) 5)
 
+#define NVIC_PriorityGroup_2         ((uint32_t)0x500)
+
 typedef enum
 {
     Mode_TEST = 0x0,
@@ -54,6 +56,11 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
+
+typedef struct {
+    uint32_t ISR;
+    uint32_t IFCR;
+} DMA_TypeDef;
 
 typedef struct {
     void* test;
