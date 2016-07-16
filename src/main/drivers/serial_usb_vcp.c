@@ -90,7 +90,6 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 {
     UNUSED(instance);
 
-
     if (!(usbIsConnected() && usbIsConfigured())) {
         return;
     }
@@ -120,12 +119,12 @@ static bool usbVcpFlush(vcpPort_t *port)
         return false;
     }
 
-    uint32_t txed;
+    uint8_t txed = 0;
     uint32_t start = millis();
 
     do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
+        txed += CDC_Send_DATA(&port->txBuf[txed], count-txed);
+    } while (txed < count && (millis() - start < USB_TIMEOUT));
 
     return txed == count;
 }
