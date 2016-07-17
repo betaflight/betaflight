@@ -220,8 +220,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 180;
-    pidProfile->yawItermIgnoreRate = 35;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 50;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->dynamic_pid = 1;
