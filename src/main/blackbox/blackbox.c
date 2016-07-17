@@ -1211,7 +1211,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                 (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("dterm_average_count:%d",              masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
-        BLACKBOX_PRINT_HEADER_LINE("dynamic_pid:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pid);
+        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("rollPitchItermIgnoreRate:%d",         masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("yawItermIgnoreRate:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",               (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
@@ -1226,7 +1226,6 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
-        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            masterConfig.batteryConfig.vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("rc_smooth_interval:%d",               masterConfig.rxConfig.rcSmoothInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);

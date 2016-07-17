@@ -1219,14 +1219,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
         serialize8(currentProfile->pidProfile.deltaMethod);
-        serialize8(masterConfig.batteryConfig.vbatPidCompensation);
+        serialize8(currentProfile->pidProfile.vbatPidCompensation);
         break;
     case MSP_SPECIAL_PARAMETERS:
         headSerialReply(1 + 2 + 1 + 2);
         serialize8(currentControlRateProfile->rcYawRate8);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         serialize8(masterConfig.rxConfig.rcSmoothInterval);
-        serialize16(masterConfig.escAndServoConfig.accelerationLimitPercent);
+        serialize16(currentProfile->pidProfile.accelerationLimitPercent);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1295,7 +1295,7 @@ static bool processInCommand(void)
         read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
+        currentProfile->pidProfile.pidController = constrain(read8(), 0, 1);
         pidSetController(currentProfile->pidProfile.pidController);
         break;
     case MSP_SET_PID:
@@ -1795,13 +1795,13 @@ static bool processInCommand(void)
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
-        masterConfig.batteryConfig.vbatPidCompensation = read8();
+        currentProfile->pidProfile.vbatPidCompensation = read8();
         break;
     case MSP_SET_SPECIAL_PARAMETERS:
         currentControlRateProfile->rcYawRate8 = read8();
         masterConfig.rxConfig.airModeActivateThreshold = read16();
         masterConfig.rxConfig.rcSmoothInterval = read8();
-        masterConfig.escAndServoConfig.accelerationLimitPercent = read16();
+        currentProfile->pidProfile.accelerationLimitPercent = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();

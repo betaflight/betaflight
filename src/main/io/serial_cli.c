@@ -389,7 +389,7 @@ static const char * const lookupTableBlackboxDevice[] = {
 
 
 static const char * const lookupTablePidController[] = {
-    "UNUSED", "INT", "FLOAT"
+    "LEGACY", "BETAFLIGHT"
 };
 
 static const char * const lookupTableSerialRX[] = {
@@ -601,7 +601,6 @@ const clivalue_t valueTable[] = {
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "motor_accel_limit_percent",  VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.accelerationLimitPercent, .config.minmax = { 0,  10000 } },
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
@@ -680,7 +679,6 @@ const clivalue_t valueTable[] = {
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmincellvoltage, .config.minmax = { 10,  50 } },
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatwarningcellvoltage, .config.minmax = { 10,  50 } },
     { "vbat_hysteresis",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbathysteresis, .config.minmax = { 0,  250 } },
-    { "vbat_pid_compensation",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_scale",        VAR_INT16  | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterScale, .config.minmax = { -10000,  10000 } },
     { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterOffset, .config.minmax = { 0,  3300 } },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
@@ -767,8 +765,14 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "dterm_lowpass",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
-    { "dynamic_iterm",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dynamic_pid, .config.lookup = { TABLE_OFF_ON } },
-    { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
+    { "vbat_pid_compensation",      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_accel_limit_percent",  VAR_UINT16 | MASTER_VALUE,  &masterConfig.profile[0].pidProfile.accelerationLimitPercent, .config.minmax = { 0,  10000 } },
+    { "pid_tolerance_band",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBand, .config.minmax = {0, 200 } },
+    { "tolerance_band_reduction",   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBandReduction, .config.minmax = {0, 100 } },
+    { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
+    { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
+
+	{ "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },

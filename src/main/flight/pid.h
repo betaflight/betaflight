@@ -41,8 +41,8 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_INTEGER = 1,           // Integer math to gain some more performance from F1 targets
-    PID_CONTROLLER_FLOAT,
+    PID_CONTROLLER_LEGACY = 0,           // Legacy PID controller. Old INT / Rewrite with 2.9 status. Fastest performance....least math. Will stay same in the future
+    PID_CONTROLLER_BETAFLIGHT,           // Betaflight PID controller. Old luxfloat -> float evolution. More math added and maintained in the future
     PID_COUNT
 } pidControllerType_e;
 
@@ -57,10 +57,13 @@ typedef enum {
     SUPEREXPO_YAW_ALWAYS
 } pidSuperExpoYaw_e;
 
-#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == 2)
+typedef enum {
+    NEGATIVE_ERROR = 0,
+    POSITIVE_ERROR
+} pidErrorPolarity_e;
 
 typedef struct pidProfile_s {
-    uint8_t pidController;                  // 1 = rewrite from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Luggi09s new baseflight pid
+    uint8_t pidController;                  // 1 = rewrite betaflight evolved from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Betaflight PIDc (Evolved Luxfloat)
 
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
@@ -73,7 +76,14 @@ typedef struct pidProfile_s {
     uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
-    uint8_t dynamic_pid;                    // Dynamic PID implementation (currently only P and I)
+    uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
+
+    // Betaflight PID controller parameters
+    uint8_t toleranceBand;                  // Error tolerance area where toleranceBandReduction is applied under certain circumstances
+    uint8_t toleranceBandReduction;         // Lowest possible P and D reduction in percentage
+    uint8_t zeroCrossAllowanceCount;        // Amount of bouncebacks within tolerance band allowed before reduction kicks in
+    uint16_t accelerationLimitPercent;      // Percentage that motor is allowed to increase or decrease in a period of 1ms
+    uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

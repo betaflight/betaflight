@@ -755,13 +755,14 @@ STATIC_UNIT_TESTED void servoMixer(void)
 
 #endif
 
-void mixTable(void)
+void mixTable(void *pidProfilePtr)
 {
     uint32_t i = 0;
     fix12_t vbatCompensationFactor = 0;
     static fix12_t mixReduction;
     bool use_vbat_compensation = false;
-    if (batteryConfig && batteryConfig->vbatPidCompensation) {
+    pidProfile_t *pidProfile = (pidProfile_t *) pidProfilePtr;
+    if (batteryConfig && pidProfile->vbatPidCompensation) {
         use_vbat_compensation = true;
         vbatCompensationFactor = calculateVbatPidCompensation();
     }
@@ -836,9 +837,9 @@ void mixTable(void)
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
 
-    // Keep track for motor update timing
+    // Keep track for motor update timing // Only for Betaflight pid controller to keep legacy pidc basic and free from additional float math
     float motorDtms;
-    if (escAndServoConfig->accelerationLimitPercent) {
+    if (pidProfile->accelerationLimitPercent && pidProfile->pidController == PID_CONTROLLER_BETAFLIGHT) {
         static uint32_t previousMotorTime;
         uint32_t currentMotorTime = micros();
         motorDtms = (float) (currentMotorTime - previousMotorTime) / 1000.0f;
@@ -850,13 +851,13 @@ void mixTable(void)
     for (i = 0; i < motorCount; i++) {
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
-        // Accel limit. Prevent PID controller to output huge ramps to the motors. Only limiting acceleration.
-        if (escAndServoConfig->accelerationLimitPercent) {
+        // Accel limit. Prevent PID controller to output huge ramps to the motors. Only limiting acceleration. Only for Betaflight pid controller to keep legacy pidc basic
+        if (pidProfile->accelerationLimitPercent && pidProfile->pidController == PID_CONTROLLER_BETAFLIGHT) {
             static int16_t lastFilteredMotor[MAX_SUPPORTED_MOTORS];
 
             // acceleration limit
             float delta    = motor[i] - lastFilteredMotor[i];
-            const float maxDeltaPerMs = throttleRange * ((float)escAndServoConfig->accelerationLimitPercent / 100.0f);
+            const float maxDeltaPerMs = throttleRange * ((float)pidProfile->accelerationLimitPercent / 100.0f);
             float maxDelta = maxDeltaPerMs * motorDtms;
             if (delta > maxDelta) { // accelerating too hard
                 motor[i] = lastFilteredMotor[i] + maxDelta;

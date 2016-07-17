@@ -62,14 +62,12 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 uint8_t PIDweight[3];
 
 static int32_t errorGyroI[3];
-#ifndef SKIP_PID_LUXFLOAT
 static float errorGyroIf[3];
-#endif
 
-static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 
-pidControllerFuncPtr pid_controller = pidInteger; // which pid controller are we using
+pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are we using
 
 void setTargetPidLooptime(uint8_t pidProcessDenom)
 {
@@ -82,9 +80,7 @@ void pidResetErrorGyroState(void)
 
     for (axis = 0; axis < 3; axis++) {
         errorGyroI[axis] = 0;
-#ifndef SKIP_PID_LUXFLOAT
         errorGyroIf[axis] = 0.0f;
-#endif
     }
 }
 
@@ -101,8 +97,8 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 
-#ifndef SKIP_PID_LUXFLOAT
-static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+// Experimental betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage
+static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     float RateError = 0, gyroRate = 0, RateErrorSmooth = 0;
@@ -130,6 +126,25 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
             horizonLevelStrength = 0;
         } else {
             horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
+        }
+    }
+
+    // Yet Highly experimental and under test and development
+    // Throttle coupled to Igain like inverted TPA // 50hz calculation (should cover all rx protocols)
+    static float kiThrottleGain = 1.0f;
+
+    if (pidProfile->itermThrottleGain) {
+        const uint16_t maxLoopCount = 20000 / targetPidLooptime;
+        const float throttleItermGain = (float)pidProfile->itermThrottleGain * 0.001f;
+        static int16_t previousThrottle;
+        static uint16_t loopIncrement;
+
+        if (loopIncrement >= maxLoopCount) {
+            kiThrottleGain = 1.0f + constrainf((float)(ABS(rcCommand[THROTTLE] - previousThrottle)) * throttleItermGain, 0.0f, 5.0f); // Limit to factor 5
+            previousThrottle = rcCommand[THROTTLE];
+            loopIncrement = 0;
+        } else {
+            loopIncrement++;
         }
     }
 
@@ -164,6 +179,34 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
         // multiplication of rcCommand corresponds to changing the sticks scaling here
         RateError = angleRate[axis] - gyroRate;
 
+        float dynReduction = tpaFactor;
+        // Reduce Hunting effect and jittering near setpoint. Limit multiple zero crossing within deadband and lower PID affect during low error amount
+        if (pidProfile->toleranceBand) {
+            const float minReduction = (float)pidProfile->toleranceBandReduction / 100.0f;
+            static uint8_t zeroCrossCount[3];
+            static uint8_t currentErrorPolarity[3];
+            if (ABS(RateError) < pidProfile->toleranceBand) {
+                if (zeroCrossCount[axis]) {
+                    if (currentErrorPolarity[axis] == POSITIVE_ERROR) {
+                        if (RateError < 0 ) {
+                            zeroCrossCount[axis]--;
+                            currentErrorPolarity[axis] = NEGATIVE_ERROR;
+                        }
+                    } else {
+                        if (RateError > 0 ) {
+                            zeroCrossCount[axis]--;
+                            currentErrorPolarity[axis] = POSITIVE_ERROR;
+                        }
+                    }
+                } else {
+                    dynReduction *= constrainf(ABS(RateError) / pidProfile->toleranceBand, minReduction, 1.0f);
+                }
+            } else {
+                zeroCrossCount[axis] =  pidProfile->zeroCrossAllowanceCount;
+                currentErrorPolarity[axis] = (RateError > 0) ? POSITIVE_ERROR : NEGATIVE_ERROR;
+            }
+        }
+
         if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
             // Smoothed Error for Derivative when delta from error selected
             if (flightModeFlags && axis != YAW)
@@ -173,7 +216,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
         }
 
         // -----calculate P component
-        PTerm = PTermScale * RateError * pidProfile->P8[axis] * tpaFactor;
+        PTerm = PTermScale * RateError * pidProfile->P8[axis] * dynReduction;
 
         // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
         if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
@@ -185,7 +228,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
         float accumulationThreshold = (axis == YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
         float antiWindupScaler = constrainf(1.0f - (1.5f * (ABS(angleRate[axis]) / accumulationThreshold)), 0.0f, 1.0f);
 
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + ITermScale * RateError * getdT() * pidProfile->I8[axis] * antiWindupScaler, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + ITermScale * RateError * getdT() * pidProfile->I8[axis] * antiWindupScaler * kiThrottleGain, -250.0f, 250.0f);
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
@@ -220,7 +263,7 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
 
-            DTerm = constrainf(DTermScale * delta * (float)pidProfile->D8[axis] * tpaFactor, -300.0f, 300.0f);
+            DTerm = constrainf(DTermScale * delta * (float)pidProfile->D8[axis] * dynReduction, -300.0f, 300.0f);
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
@@ -239,9 +282,9 @@ static void pidFloat(const pidProfile_t *pidProfile, uint16_t max_angle_inclinat
 #endif
     }
 }
-#endif
 
-static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+// Legacy pid controller betaflight evolved pid rewrite based on 2.9 releae. Good for fastest cycletimes for those who believe in that. Don't expect much development in the future
+static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     int axis;
@@ -385,13 +428,11 @@ void pidSetController(pidControllerType_e type)
 {
     switch (type) {
         default:
-        case PID_CONTROLLER_INTEGER:
-            pid_controller = pidInteger;
+        case PID_CONTROLLER_LEGACY:
+            pid_controller = pidLegacy;
             break;
-#ifndef SKIP_PID_LUXFLOAT
-        case PID_CONTROLLER_FLOAT:
-            pid_controller = pidFloat;
-#endif
+        case PID_CONTROLLER_BETAFLIGHT:
+            pid_controller = pidBetaflight;
     }
 }
 
