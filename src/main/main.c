@@ -310,7 +310,7 @@ void init(void)
         featureClear(FEATURE_ONESHOT125);
     }
 
-    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL;
+    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
     pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
