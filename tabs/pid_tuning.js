@@ -476,6 +476,11 @@ TABS.pid_tuning.initialize = function (callback) {
                 { name: "MultiWii (2.3 - hybrid)"},
                 { name: "Harakiri"}
             ]
+        } else if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            pidControllerList = [
+                { name: "Legacy"},
+                { name: "Betaflight"},
+            ]
         } else {
             pidControllerList = [
                 { name: ""},
