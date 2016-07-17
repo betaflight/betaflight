@@ -836,10 +836,6 @@ void mixTable(void)
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
 
-    // adjust feedback to scale PID error inputs to our limitations.
-    errorLimiter = constrainf(((float)throttleRange / rollPitchYawMixRange), 0.1f, 1.0f);
-    if (debugMode == DEBUG_AIRMODE) debug[1] = errorLimiter * 100;
-
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {

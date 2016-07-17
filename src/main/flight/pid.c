@@ -323,7 +323,7 @@ static void pidInteger(const pidProfile_t *pidProfile, uint16_t max_angle_inclin
         uint16_t dynamicFactor = (1 << 8) - constrain(((ABS(AngleRateTmp) << 6) / resetRate), 0, 1 << 8);
         uint16_t dynamicKi = (pidProfile->I8[axis] * dynamicFactor) >> 8;
 
-        errorGyroI[axis] = errorGyroI[axis] + ((uint16_t)targetPidLooptime >> 11) * dynamicKi;
+        errorGyroI[axis] = errorGyroI[axis] + ((RateError * (uint16_t)targetPidLooptime) >> 11) * dynamicKi;
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
