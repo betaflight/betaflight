@@ -26,12 +26,9 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
-
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
+#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -57,13 +54,12 @@
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 #define MAG_INT_EXTI            PC14
 
-
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
 #define SONAR
-#define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
 
 #define USE_UART1
 #define USE_UART2
@@ -131,5 +127,6 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 
