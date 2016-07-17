@@ -310,12 +310,12 @@ void init(void)
         featureClear(FEATURE_ONESHOT125);
     }
 
-    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
+    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL;
 
     // Configurator feature abused for enabling Fast PWM
     pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
