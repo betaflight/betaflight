@@ -278,7 +278,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 #endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->escDesyncProtection = 0;
+    escAndServoConfig->accelerationLimitPercent = 15;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)

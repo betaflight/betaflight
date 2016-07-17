@@ -830,16 +830,39 @@ void mixTable(void)
             rollPitchYawMix[i] =  qMultiply(mixReduction,rollPitchYawMix[i]);
         }
         // Get the maximum correction by setting offset to center
-        if (!escAndServoConfig->escDesyncProtection) throttleMin = throttleMax = throttleMin + (throttleRange / 2);
+        throttleMin = throttleMax = throttleMin + (throttleRange / 2);
     } else {
         throttleMin = throttleMin + (rollPitchYawMixRange / 2);
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
+    }
+
+    // Keep track for motor update timing
+    float motorDtms;
+    if (escAndServoConfig->accelerationLimitPercent) {
+        static uint32_t previousMotorTime;
+        uint32_t currentMotorTime = micros();
+        motorDtms = (float) (currentMotorTime - previousMotorTime) / 1000.0f;
+        previousMotorTime = currentMotorTime;
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
+
+        // Accel limit. Prevent PID controller to output huge ramps to the motors. Only limiting acceleration.
+        if (escAndServoConfig->accelerationLimitPercent) {
+            static int16_t lastFilteredMotor[MAX_SUPPORTED_MOTORS];
+
+            // acceleration limit
+            float delta    = motor[i] - lastFilteredMotor[i];
+            const float maxDeltaPerMs = throttleRange * ((float)escAndServoConfig->accelerationLimitPercent / 100.0f);
+            float maxDelta = maxDeltaPerMs * motorDtms;
+            if (delta > maxDelta) { // accelerating too hard
+                motor[i] = lastFilteredMotor[i] + maxDelta;
+            }
+            lastFilteredMotor[i] = motor[i];
+        }
 
         if (isFailsafeActive) {
             motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
@@ -857,19 +880,6 @@ void mixTable(void)
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                 motor[i] = escAndServoConfig->mincommand;
-            }
-        }
-
-        // Experimental Code. Anti Desync feature for ESC's
-        if (escAndServoConfig->escDesyncProtection) {
-            const int16_t maxThrottleStep = constrain(escAndServoConfig->escDesyncProtection / (1000 / targetPidLooptime), 5, 10000);
-
-            // Only makes sense when it's within the range
-            if (maxThrottleStep < throttleRange) {
-                static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
-
-                motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
-                motorPrevious[i] = motor[i];
             }
         }
     }

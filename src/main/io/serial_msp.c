@@ -1226,7 +1226,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentControlRateProfile->rcYawRate8);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         serialize8(masterConfig.rxConfig.rcSmoothInterval);
-        serialize16(masterConfig.escAndServoConfig.escDesyncProtection);
+        serialize16(masterConfig.escAndServoConfig.accelerationLimitPercent);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1801,7 +1801,7 @@ static bool processInCommand(void)
         currentControlRateProfile->rcYawRate8 = read8();
         masterConfig.rxConfig.airModeActivateThreshold = read16();
         masterConfig.rxConfig.rcSmoothInterval = read8();
-        masterConfig.escAndServoConfig.escDesyncProtection = read16();
+        masterConfig.escAndServoConfig.accelerationLimitPercent = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();
