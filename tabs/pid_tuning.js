@@ -337,20 +337,6 @@ TABS.pid_tuning.initialize = function (callback) {
         }
     }
 
-    var showAllButton = $('#showAllPids');
-
-    function updatePidDisplay() {
-        if (!TABS.pid_tuning.showAllPids) {
-            hideUnusedPids();
-
-            showAllButton.text(chrome.i18n.getMessage("pidTuningShowAllPids"));
-        } else {
-            showAllPids();
-
-            showAllButton.text(chrome.i18n.getMessage("pidTuningHideUnusedPids"));
-        }
-    }
-
     function drawAxes(curveContext, width, height, scaleHeight) {
         curveContext.strokeStyle = '#000000';
         curveContext.lineWidth = 4;
@@ -438,6 +424,20 @@ TABS.pid_tuning.initialize = function (callback) {
         if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
             self.currentRates.roll_rate = RC_tuning.roll_pitch_rate;
             self.currentRates.pitch_rate = RC_tuning.roll_pitch_rate;
+        }
+
+        var showAllButton = $('#showAllPids');
+
+        function updatePidDisplay() {
+            if (!TABS.pid_tuning.showAllPids) {
+                hideUnusedPids();
+
+                showAllButton.text(chrome.i18n.getMessage("pidTuningShowAllPids"));
+            } else {
+                showAllPids();
+
+                showAllButton.text(chrome.i18n.getMessage("pidTuningHideUnusedPids"));
+            }
         }
 
         updatePidDisplay();
