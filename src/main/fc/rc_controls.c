@@ -195,17 +195,23 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
-    if (isUsingSticksToArm) {
+   if (isUsingSticksToArm) {
         // Disarm on throttle down + yaw
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
+            // Dont disarm if fixedwing and motorstop
+            if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP)) {
+            return;
+		}
+		else {
             if (ARMING_FLAG(ARMED))
                 mwDisarm();
             else {
                 beeper(BEEPER_DISARM_REPEAT);    // sound tone while stick held
                 rcDelayCommand = 0;              // reset so disarm tone will repeat
+                }
             }
         }
-    }
+   }
 
     if (ARMING_FLAG(ARMED)) {
         // actions during armed
@@ -240,6 +246,16 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     if (isUsingSticksToArm) {
 
         if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
+            // Arm via YAW
+            mwArm();
+            return;
+        }
+    }
+
+// Auto arm on throttle when using fixedwing and motorstop
+    if (isUsingSticksToArm) {
+
+        if ((!throttleStatus == THROTTLE_LOW) && (STATE(FIXED_WING)) && (feature(FEATURE_MOTOR_STOP))) {
             // Arm via YAW
             mwArm();
             return;
