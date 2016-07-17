@@ -146,6 +146,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
+    { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -473,6 +474,8 @@ void mspInit(serialConfig_t *serialConfig)
 
     if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
+
+    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;

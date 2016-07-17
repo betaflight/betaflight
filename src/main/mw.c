@@ -229,7 +229,7 @@ void processRcCommand(void)
         for (axis = 0; axis < 3; axis++) angleRate[axis] = calculateRate(axis, rcCommand[axis]);
 
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
+        if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRcCommandToFpvCamAngle();
         }
 
