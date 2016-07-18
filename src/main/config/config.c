@@ -226,8 +226,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->toleranceBand = 15;
     pidProfile->toleranceBandReduction = 35;
     pidProfile->zeroCrossAllowanceCount = 3;
-    pidProfile->accelerationLimitPercent = 15;
-    pidProfile->itermThrottleGain = 0;
+    pidProfile->accelerationLimitPercent = 20;
+    pidProfile->itermThrottleGain = 10;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
