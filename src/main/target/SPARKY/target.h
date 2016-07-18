@@ -153,7 +153,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 
 #endif
 
@@ -172,7 +172,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel7
 #define WS2811_IRQ                      DMA1_Channel7_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC7
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH7_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel7Descriptor
 
 
 #endif

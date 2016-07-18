@@ -180,7 +180,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 #else
 // alternative LED strip configuration, tested working.
 #define LED_STRIP_TIMER TIM1
@@ -195,7 +195,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
 #endif
 
 #define BLACKBOX

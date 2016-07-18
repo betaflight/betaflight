@@ -202,7 +202,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -215,7 +215,7 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
 #define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
 
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 

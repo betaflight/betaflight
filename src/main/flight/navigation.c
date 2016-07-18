@@ -35,6 +35,7 @@
 #include "config/profile.h"
 #include "config/config_reset.h"
 
+#include "drivers/dma.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
