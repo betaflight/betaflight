@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#include "drivers/dma.h"
 #include "drivers/gpio.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/nvic.h"
@@ -36,7 +37,7 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
 #define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 #endif
 
 void transponderIrHardwareInit(void)
@@ -85,9 +86,6 @@ void transponderIrHardwareInit(void)
     TIM_CtrlPWMOutputs(TRANSPONDER_TIMER, ENABLE);
 
     /* configure DMA */
-    /* DMA clock enable */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
     /* DMA1 Channel6 Config */
     DMA_DeInit(TRANSPONDER_DMA_CHANNEL);
 
@@ -109,14 +107,6 @@ void transponderIrHardwareInit(void)
     TIM_DMACmd(TRANSPONDER_TIMER, TIM_DMA_CC1, ENABLE);
 
     DMA_ITConfig(TRANSPONDER_DMA_CHANNEL, DMA_IT_TC, ENABLE);
-
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = TRANSPONDER_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_TRANSPONDER_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_TRANSPONDER_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
 }
 
 void transponderIrDMAEnable(void)

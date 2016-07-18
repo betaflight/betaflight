@@ -490,16 +490,34 @@ void init(void)
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
-    adc_params.channelMask =
-            (feature(FEATURE_VBAT) << ADC_CHANNEL1_BIT)
-            | (feature(FEATURE_RSSI_ADC) << ADC_CHANNEL2_BIT)
-            | (feature(FEATURE_CURRENT_METER) << ADC_CHANNEL3_BIT);
+    adc_params.channelMask = 0;
+
+#ifdef ADC_BATTERY
+    adc_params.channelMask = (feature(FEATURE_VBAT) ? ADC_CHANNEL_MASK(ADC_BATTERY) : 0);
+#endif
+#ifdef ADC_RSSI
+    adc_params.channelMask |= (feature(FEATURE_RSSI_ADC) ? ADC_CHANNEL_MASK(ADC_RSSI) : 0);
+#endif
+#ifdef ADC_CURRENT
+    adc_params.channelMask |=  (feature(FEATURE_CURRENT_METER) ? ADC_CHANNEL_MASK(ADC_CURRENT) : 0);
+#endif
+
+#ifdef ADC_POWER_12V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_12V);
+#endif
+#ifdef ADC_POWER_5V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_5V);
+#endif
+#ifdef ADC_POWER_3V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_3V);
+#endif
+
 #ifdef OLIMEXINO
-    adc_params.channelMask |= (1 << ADC_CHANNEL4_BIT);
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL);
 #endif
 #ifdef NAZE
     // optional ADC5 input on rev.5 hardware
-    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? (1 << ADC_CHANNEL4_BIT) : 0;
+    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? ADC_CHANNEL_MASK(ADC_EXTERNAL) : 0;
 #endif
 
     adcInit(&adc_params);

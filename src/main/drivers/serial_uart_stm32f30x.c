@@ -29,9 +29,13 @@
 
 #include <platform.h>
 
+#include "common/utils.h"
+
+#include "dma.h"
 #include "system.h"
 #include "gpio.h"
 #include "nvic.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -61,6 +65,18 @@ static uartPort_t uartPort4;
 #ifdef USE_UART5
 static uartPort_t uartPort5;
 #endif
+
+static void handleUsartTxDma(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
+{
+    uartPort_t *s = container_of(handler, uartPort_t, dmaTxHandler);
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    DMA_Cmd(descriptor->channel, DISABLE);
+
+    if (s->port.txBufferHead != s->port.txBufferTail)
+        uartStartTxDMA(s);
+    else
+        s->txDMAEmpty = true;
+}
 
 #ifdef USE_UART1
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
@@ -92,7 +108,6 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -121,11 +136,8 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     }
 
     // DMA TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART1_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaHandlerInit(&uartPort1.dmaTxHandler, handleUsartTxDma);
+    dmaSetHandler(DMA1Channel4Descriptor, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
 
 #ifndef USE_UART1_RX_DMA
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
@@ -171,10 +183,6 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
-#if defined(USE_UART2_TX_DMA) || defined(USE_UART2_RX_DMA)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-#endif
-
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -203,11 +211,8 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
 #ifdef USE_UART2_TX_DMA
     // DMA TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel7_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART2_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART2_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaHandlerInit(&uartPort2.dmaTxHandler, handleUsartTxDma);
+    dmaSetHandler(DMA1Channel7Descriptor, &uartPort2.dmaTxHandler, NVIC_PRIO_SERIALUART2_TXDMA);
 #endif
 
 #ifndef USE_UART2_RX_DMA
@@ -254,10 +259,6 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
 
-#if defined(USE_UART3_TX_DMA) || defined(USE_UART3_RX_DMA)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-#endif
-
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -286,11 +287,8 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 
 #ifdef USE_UART3_TX_DMA
     // DMA TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3_TXDMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    dmaHandlerInit(&uartPort3.dmaTxHandler, handleUsartTxDma);
+    dmaSetHandler(DMA1Channel2Descriptor, &uartPort3.dmaTxHandler, NVIC_PRIO_SERIALUART3_TXDMA);
 #endif
 
 #ifndef USE_UART3_RX_DMA
@@ -304,48 +302,6 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     return s;
 }
 #endif
-
-static void handleUsartTxDma(uartPort_t *s)
-{
-    DMA_Cmd(s->txDMAChannel, DISABLE);
-
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
-}
-
-// UART1 Tx DMA Handler
-void DMA1_Channel4_IRQHandler(void)
-{
-    uartPort_t *s = &uartPort1;
-    DMA_ClearITPendingBit(DMA1_IT_TC4);
-    DMA_Cmd(DMA1_Channel4, DISABLE);
-    handleUsartTxDma(s);
-}
-
-#ifdef USE_UART2_TX_DMA
-// UART2 Tx DMA Handler
-void DMA1_Channel7_IRQHandler(void)
-{
-    uartPort_t *s = &uartPort2;
-    DMA_ClearITPendingBit(DMA1_IT_TC7);
-    DMA_Cmd(DMA1_Channel7, DISABLE);
-    handleUsartTxDma(s);
-}
-#endif
-
-// UART3 Tx DMA Handler
-#ifdef USE_UART3_TX_DMA
-void DMA1_Channel2_IRQHandler(void)
-{
-    uartPort_t *s = &uartPort3;
-    DMA_ClearITPendingBit(DMA1_IT_TC2);
-    DMA_Cmd(DMA1_Channel2, DISABLE);
-    handleUsartTxDma(s);
-}
-#endif
-
 
 void usartIrqHandler(uartPort_t *s)
 {

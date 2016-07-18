@@ -604,7 +604,7 @@ void updateRSSIPWM(void)
 
 void updateRSSIADC(uint32_t currentTime)
 {
-#ifndef USE_ADC
+#ifndef ADC_RSSI
     UNUSED(currentTime);
 #else
     static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];

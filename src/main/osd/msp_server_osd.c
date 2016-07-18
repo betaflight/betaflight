@@ -217,10 +217,10 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                         sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
                         break;
                     case 1:
-                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_12V)), 0, 255));
+                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_POWER_12V)), 0, 255));
                         break;
                     case 2:
-                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_5V)), 0, 255));
+                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V)), 0, 255));
                         break;
                 }
             }

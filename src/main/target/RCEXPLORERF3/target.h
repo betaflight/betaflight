@@ -17,81 +17,96 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
-#define USE_CLI
-#define USE_EXTI
+#define TARGET_BOARD_IDENTIFIER "REF3" // Rc Explorer F3
 
 #define LED0_GPIO   GPIOB
-#define LED0_PIN    Pin_5 // Blue LEDs - PB5
+#define LED0_PIN    Pin_4  // Blue  - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
 #define LED1_GPIO   GPIOB
-#define LED1_PIN    Pin_9  // Green LEDs - PB9
+#define LED1_PIN    Pin_5  // Orange - PB5
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOB
 
 #define BEEP_GPIO   GPIOA
-#define BEEP_PIN    Pin_0
+#define BEEP_PIN    Pin_0 // PA0 (Beeper)
 #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 #define BEEPER_INVERTED
-#define BEEPER
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USABLE_TIMER_CHANNEL_COUNT 6
 
-// MPU6050 interrupts
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU_INT
+
 #define USE_MPU_DATA_READY_SIGNAL
-//#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
-#define ACC
-
-#define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW180_DEG
-#define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW180_DEG
-
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW180_DEG
 #define USE_ACC_SPI_MPU6000
+
+#define MPU6000_CS_GPIO       GPIOB
+#define MPU6000_CS_PIN        GPIO_Pin_12
+#define MPU6000_SPI_INSTANCE  SPI2
+
+#define ACC
+#define USE_ACC_MPU6000
+
 #define ACC_MPU6000_ALIGN CW180_DEG
+#define GYRO_MPU6000_ALIGN CW180_DEG
 
-#define MPU6000_CS_GPIO GPIOB
-#define MPU6000_CS_PIN GPIO_Pin_12
-#define MPU6000_SPI_INSTANCE SPI2
+#define BARO
+#define USE_BARO_MS5611
 
-//#define BARO
-//#define USE_BARO_MS5611
+#define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883 // External
 
-//#define MAG
-//#define USE_MAG_HMC5883
+#define MAG_AK8975_ALIGN CW180_DEG
 
+#define SONAR
+#define BEEPER
 #define LED0
+#define LED1
+
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_TRIGGER_GPIO          GPIOA
+#define SONAR_ECHO_PIN              Pin_1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_EXTI_LINE             EXTI_Line1
+#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
+#define SONAR_EXTI_IRQN             EXTI1_IRQn
 
 #define USB_IO
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#ifndef UART1_GPIO
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
 #define UART1_GPIO          GPIOB
 #define UART1_GPIO_AF       GPIO_AF_7
 #define UART1_TX_PINSOURCE  GPIO_PinSource6
 #define UART1_RX_PINSOURCE  GPIO_PinSource7
+#endif
 
-#define UART2_TX_PIN        GPIO_Pin_3 // PB3
-#define UART2_RX_PIN        GPIO_Pin_4 // PB4
-#define UART2_GPIO          GPIOB
+#define UART2_TX_PIN        GPIO_Pin_2 // PA2
+#define UART2_RX_PIN        GPIO_Pin_3 // PA3
+#define UART2_GPIO          GPIOA
 #define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource3
-#define UART2_RX_PINSOURCE  GPIO_PinSource4
+#define UART2_TX_PINSOURCE  GPIO_PinSource2
+#define UART2_RX_PINSOURCE  GPIO_PinSource3
 
+#ifndef UART3_GPIO
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
 #define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
 #define UART3_GPIO_AF       GPIO_AF_7
 #define UART3_GPIO          GPIOB
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
+#endif
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
@@ -108,33 +123,25 @@
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_SPI
-#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
-#define M25P16_SPI_INSTANCE   SPI2
-
-//#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
-#define SENSORS_SET (SENSOR_ACC)
-
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
-//#define GPS
-#define GTUNE
-#define DISPLAY
-#define USE_SERVOS
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC2
-#define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
+#define ADC_DMA_CHANNEL             DMA2_Channel1
 
 #define ADC0_GPIO                   GPIOA
 #define ADC0_GPIO_PIN               GPIO_Pin_5
@@ -144,15 +151,20 @@
 #define ADC1_GPIO_PIN               GPIO_Pin_2
 #define ADC1_CHANNEL                ADC_Channel_12
 
-#define ADC_CHANNEL_COUNT 2
+#define ADC2_GPIO                   GPIOA
+#define ADC2_GPIO_PIN               GPIO_Pin_6
+#define ADC2_CHANNEL                ADC_Channel_3
+
+#define ADC_CHANNEL_COUNT 3
 
 #define ADC_BATTERY     ADC_CHANNEL0
-#define ADC_RSSI        ADC_CHANNEL1
+#define ADC_CURRENT     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
 
-#define LED_STRIP
+
+#define LED_STRIP // LED strip configuration using PWM motor output pin 5.
 #define LED_STRIP_TIMER TIM16
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_GPIO                     GPIOB
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
 #define WS2811_GPIO_AF                  GPIO_AF_1
@@ -163,22 +175,29 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+
+#define GPS
+#define BLACKBOX
+#define TELEMETRY
+#define SERIAL_RX
+#define AUTOTUNE
+#define DISPLAY
+#define USE_SERVOS
+#define USE_CLI
 
 #define SPEKTRUM_BIND
-// UART2, PB4
-#define BIND_PORT GPIOB
-#define BIND_PIN Pin_4
+// USART3,
+#define BIND_PORT  GPIOA
+#define BIND_PIN   Pin_3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_6
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_7
+#define USE_SERIAL_1WIRE
 
-// IO - stm32f303cc in 48pin package
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+#define S1W_TX_GPIO         UART1_GPIO
+#define S1W_TX_PIN          UART1_TX_PIN
+#define S1W_RX_GPIO         UART1_GPIO
+#define S1W_RX_PIN          UART1_RX_PIN

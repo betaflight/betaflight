@@ -91,22 +91,33 @@
 
 #define USE_ADC
 
-#define CURRENT_METER_ADC_GPIO      GPIOB
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
+#define ADC_INSTANCE                ADC1
+#define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_0
+#define ADC0_GPIO                   GPIOB
+#define ADC0_GPIO_PIN               GPIO_Pin_1
+#define ADC0_CHANNEL                ADC_Channel_9
 
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
+#define ADC1_GPIO                   GPIOA
+#define ADC1_GPIO_PIN               GPIO_Pin_0
+#define ADC1_CHANNEL                ADC_Channel_0
+
+#define ADC2_GPIO                   GPIOB
+#define ADC2_GPIO_PIN               GPIO_Pin_0
+#define ADC2_CHANNEL                ADC_Channel_8
+
+#define ADC_CHANNEL_COUNT 3
+
+#define ADC_CURRENT     ADC_CHANNEL0
+#define ADC_BATTERY     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1Channel6Descriptor
 
 #define SPEKTRUM_BIND
 // UART3, PB11 (Flexport)

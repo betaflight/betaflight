@@ -72,27 +72,41 @@
 #define USE_ADC
 //#define DEBUG_ADC_CHANNELS
 
+#define ADC_INSTANCE                ADC1
+#define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+
 // 12v
-#define ADC1_GPIO               GPIOA
-#define ADC1_GPIO_PIN           GPIO_Pin_0
-#define ADC1_CHANNEL            ADC_Channel_0
+#define ADC0_GPIO               GPIOA
+#define ADC0_GPIO_PIN           GPIO_Pin_0
+#define ADC0_CHANNEL            ADC_Channel_0
 
 // 5v
-#define ADC2_GPIO               GPIOA
-#define ADC2_GPIO_PIN           GPIO_Pin_1
-#define ADC2_CHANNEL            ADC_Channel_1
+#define ADC1_GPIO               GPIOA
+#define ADC1_GPIO_PIN           GPIO_Pin_1
+#define ADC1_CHANNEL            ADC_Channel_1
 
 //vbat
-#define ADC3_GPIO               GPIOA
-#define ADC3_GPIO_PIN           GPIO_Pin_2
-#define ADC3_CHANNEL            ADC_Channel_2
+#define ADC2_GPIO               GPIOA
+#define ADC2_GPIO_PIN           GPIO_Pin_2
+#define ADC2_CHANNEL            ADC_Channel_2
 
 // current
-#define ADC4_GPIO               GPIOA
-#define ADC4_GPIO_PIN           GPIO_Pin_3
-#define ADC4_CHANNEL            ADC_Channel_3
+#define ADC3_GPIO               GPIOA
+#define ADC3_GPIO_PIN           GPIO_Pin_3
+#define ADC3_CHANNEL            ADC_Channel_3
+
+// adc channel mapping
+#define ADC_CHANNEL_COUNT 4
+
+#define ADC_POWER_12V ADC_CHANNEL0
+#define ADC_POWER_5V ADC_CHANNEL1
+#define ADC_BATTERY ADC_CHANNEL2
+#define ADC_CURRENT ADC_CHANNEL3
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+

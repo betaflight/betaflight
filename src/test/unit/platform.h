@@ -34,6 +34,8 @@
 #define UART4              ((USART_TypeDef *) 4)
 #define UART5              ((USART_TypeDef *) 5)
 
+#define NVIC_PriorityGroup_2         ((uint32_t)0x500)
+
 typedef enum
 {
     Mode_TEST = 0x0,
@@ -63,6 +65,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
 
 typedef struct {
+    uint32_t ISR;
+    uint32_t IFCR;
+} DMA_TypeDef;
+
+typedef struct {
     void* test;
 } DMA_Channel_TypeDef;
 
@@ -77,6 +84,14 @@ void DMA_ClearFlag(uint32_t);
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
+
+#define USE_ADC
+
+#define ADC_CHANNEL_COUNT 3
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_CURRENT     ADC_CHANNEL1
+#define ADC_EXTERNAL    ADC_CHANNEL2
 
 typedef enum
 {

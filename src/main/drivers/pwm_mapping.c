@@ -630,6 +630,46 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#ifdef RCEXPLORERF3
+static const uint16_t multiPPM[] = {
+    PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+        PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+        PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
+        PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+        PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
+        PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    0xFFFF
+};
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
@@ -807,6 +847,13 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(RCEXPLORERF3)
+            if (timerIndex == PWM2)
+            {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
 #endif
 
 #if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))

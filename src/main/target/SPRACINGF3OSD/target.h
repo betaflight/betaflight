@@ -50,6 +50,30 @@
 #define MAX7456_NRST_GPIO               GPIOB
 #define MAX7456_NRST_PIN                Pin_2
 
+#define MAX7456_LOS_GPIO_PERIPHERAL     RCC_AHBPeriph_GPIOC
+#define MAX7456_LOS_GPIO                GPIOC
+#define MAX7456_LOS_PIN					Pin_13
+#define MAX7456_LOS_PORT_SOURCE			EXTI_PortSourceGPIOC
+#define MAX7456_LOS_PIN_SOURCE			EXTI_PinSource13
+#define MAX7456_LOS_EXTI_LINE			EXTI_Line13
+#define MAX7456_LOS_EXTI_IRQ			EXTI15_10_IRQn
+
+#define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_VSYNC_GPIO 				GPIOC
+#define MAX7456_VSYNC_PIN				Pin_14
+#define MAX7456_VSYNC_PORT_SOURCE		EXTI_PortSourceGPIOC
+#define MAX7456_VSYNC_PIN_SOURCE		EXTI_PinSource14
+#define MAX7456_VSYNC_EXTI_LINE			EXTI_Line14
+#define MAX7456_VSYNC_EXTI_IRQ			EXTI15_10_IRQn
+
+#define MAX7456_HSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_HSYNC_GPIO 				GPIOC
+#define MAX7456_HSYNC_PIN				Pin_15
+#define MAX7456_HSYNC_PORT_SOURCE		EXTI_PortSourceGPIOC
+#define MAX7456_HSYNC_PIN_SOURCE		EXTI_PinSource15
+#define MAX7456_HSYNC_EXTI_LINE			EXTI_Line15
+#define MAX7456_HSYNC_EXTI_IRQ			EXTI15_10_IRQn
+
 #define EXTI_CALLBACK_HANDLER_COUNT 3 // LOS, HSYNC, VSYNC
 
 #define USE_FLASHFS
@@ -80,27 +104,39 @@
 #define USE_EXTI
 
 #define USE_ADC
-//#define DEBUG_ADC_CHANNELS
+
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+#endif
 
 // 12v
-#define ADC1_GPIO               GPIOA
-#define ADC1_GPIO_PIN           GPIO_Pin_0
-#define ADC1_CHANNEL            ADC_Channel_1
+#define ADC0_GPIO               GPIOA
+#define ADC0_GPIO_PIN           GPIO_Pin_0
+#define ADC0_CHANNEL            ADC_Channel_1
 
 // 5v
-#define ADC2_GPIO               GPIOA
-#define ADC2_GPIO_PIN           GPIO_Pin_1
-#define ADC2_CHANNEL            ADC_Channel_2
+#define ADC1_GPIO               GPIOA
+#define ADC1_GPIO_PIN           GPIO_Pin_1
+#define ADC1_CHANNEL            ADC_Channel_2
 
 // vbat
-#define ADC3_GPIO               GPIOA
-#define ADC3_GPIO_PIN           GPIO_Pin_2
-#define ADC3_CHANNEL            ADC_Channel_3
+#define ADC2_GPIO               GPIOA
+#define ADC2_GPIO_PIN           GPIO_Pin_2
+#define ADC2_CHANNEL            ADC_Channel_3
 
 // current
-#define ADC4_GPIO               GPIOA
-#define ADC4_GPIO_PIN           GPIO_Pin_3
-#define ADC4_CHANNEL            ADC_Channel_4
+#define ADC3_GPIO               GPIOA
+#define ADC3_GPIO_PIN           GPIO_Pin_3
+#define ADC3_CHANNEL            ADC_Channel_4
+
+// adc channel mapping
+#define ADC_CHANNEL_COUNT 4
+#define ADC_POWER_12V ADC_CHANNEL0
+#define ADC_POWER_5V ADC_CHANNEL1
+#define ADC_BATTERY ADC_CHANNEL2
+#define ADC_CURRENT ADC_CHANNEL3
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA 0xffff

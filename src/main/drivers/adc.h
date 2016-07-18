@@ -18,42 +18,32 @@
 #pragma once
 
 typedef enum {
-    ADC_CHANNEL1_BIT = 0,
-    ADC_CHANNEL2_BIT = 1,
-    ADC_CHANNEL3_BIT = 2,
-    ADC_CHANNEL4_BIT = 3,
-} adcChannelBit_e;
-
-typedef enum {
-    ADC_CHANNEL1_ENABLE = (1 << ADC_CHANNEL1_BIT),
-    ADC_CHANNEL2_ENABLE = (1 << ADC_CHANNEL2_BIT),
-    ADC_CHANNEL3_ENABLE = (1 << ADC_CHANNEL3_BIT),
-    ADC_CHANNEL4_ENABLE = (1 << ADC_CHANNEL4_BIT),
+    ADC_CHANNEL0_ENABLE = (1 << 0),
+    ADC_CHANNEL1_ENABLE = (1 << 1),
+    ADC_CHANNEL2_ENABLE = (1 << 2),
+    ADC_CHANNEL3_ENABLE = (1 << 3),
+    ADC_CHANNEL4_ENABLE = (1 << 4),
+    ADC_CHANNEL5_ENABLE = (1 << 5),
 } adcChannelEnableMask_e;
 
-typedef enum {
-    ADC_CHANNEL_1 = 0,
-    ADC_CHANNEL_2 = 1,
-    ADC_CHANNEL_3 = 2,
-    ADC_CHANNEL_4 = 3,
-
-#ifdef OSD
-    // OSD
-    ADC_12V       = 0,
-    ADC_5V        = 1,
-    ADC_BATTERY   = 2,
-    ADC_CURRENT   = 3,
-#else
-    // FC
-    ADC_BATTERY   = 0,
-    ADC_RSSI      = 1,
-    ADC_EXTERNAL1 = 2,
-    ADC_CURRENT   = 3,
+#ifndef ADC_CHANNEL_COUNT
+#define ADC_CHANNEL_COUNT 4
 #endif
-    ADC_CHANNEL_MAX = 3
+
+typedef enum {
+    ADC_CHANNEL0 = 0,
+    ADC_CHANNEL1 = 1,
+    ADC_CHANNEL2 = 2,
+    ADC_CHANNEL3 = 3,
+#if ADC_CHANNEL_COUNT > 4
+    ADC_CHANNEL4 = 4,
+#endif
+#if ADC_CHANNEL_COUNT > 5
+    ADC_CHANNEL5 = 5,
+#endif
 } adcChannelIndex_e;
 
-#define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)
+#define ADC_CHANNEL_MASK(adcChannel) (1 << adcChannel)
 
 typedef struct adc_config_s {
     uint8_t adcChannel;         // ADC1_INxx channel number
