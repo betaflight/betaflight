@@ -427,33 +427,33 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 
 
 
-$(OBJECT_DIR)/io/rate_profile.o : \
-	$(USER_DIR)/io/rate_profile.c \
-	$(USER_DIR)/io/rate_profile.h \
+$(OBJECT_DIR)/fc/rate_profile.o : \
+	$(USER_DIR)/fc/rate_profile.c \
+	$(USER_DIR)/fc/rate_profile.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_controls.c -o $@
 
-$(OBJECT_DIR)/io/rc_adjustments.o : \
-	$(USER_DIR)/io/rc_adjustments.c \
-	$(USER_DIR)/io/rc_adjustments.h \
+$(OBJECT_DIR)/fc/rc_adjustments.o : \
+	$(USER_DIR)/fc/rc_adjustments.c \
+	$(USER_DIR)/fc/rc_adjustments.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_adjustments.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_adjustments.c -o $@
 
-$(OBJECT_DIR)/io/rc_controls.o : \
-	$(USER_DIR)/io/rc_controls.c \
-	$(USER_DIR)/io/rc_controls.h \
+$(OBJECT_DIR)/fc/rc_controls.o : \
+	$(USER_DIR)/fc/rc_controls.c \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_controls.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(TEST_DIR)/rc_controls_unittest.cc \
-	$(USER_DIR)/io/rc_controls.h \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -461,8 +461,8 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 
 $(OBJECT_DIR)/rc_controls_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/io/rc_controls.o \
-	$(OBJECT_DIR)/io/rc_adjustments.o \
+	$(OBJECT_DIR)/fc/rc_controls.o \
+	$(OBJECT_DIR)/fc/rc_adjustments.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -729,13 +729,13 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/version.o : \
-	$(USER_DIR)/version.c \
-	$(USER_DIR)/version.h \
+$(OBJECT_DIR)/build/version.o : \
+	$(USER_DIR)/build/version.c \
+	$(USER_DIR)/build/version.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/version.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/build/version.c -o $@
 
 $(OBJECT_DIR)/drivers/buf_writer.o : \
 	$(USER_DIR)/drivers/buf_writer.c \
@@ -753,81 +753,91 @@ $(OBJECT_DIR)/common/streambuf.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/common/streambuf.c -o $@
 
-$(OBJECT_DIR)/io/serial_msp.o : \
-	$(USER_DIR)/io/serial_msp.c \
-	$(USER_DIR)/io/serial_msp.h \
+$(OBJECT_DIR)/msp/msp_serial.o : \
+	$(USER_DIR)/msp/msp_serial.c \
+	$(USER_DIR)/msp/msp_serial.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/serial_msp.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/msp/msp_serial.c -o $@
 
-$(OBJECT_DIR)/io/msp.o : \
-	$(USER_DIR)/io/msp.c \
-	$(USER_DIR)/io/msp.h \
+$(OBJECT_DIR)/msp/msp.o : \
+	$(USER_DIR)/msp/msp.c \
+	$(USER_DIR)/msp/msp.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/msp.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/msp/msp.c -o $@
 
-$(OBJECT_DIR)/serial_msp_unittest.o : \
-	$(TEST_DIR)/serial_msp_unittest.cc \
+$(OBJECT_DIR)/fc/msp_server_fc.o : \
+	$(USER_DIR)/fc/msp_server_fc.c \
+	$(USER_DIR)/fc/msp_server_fc.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/serial_msp_unittest.cc -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/msp_server_fc.c -o $@
 
-$(OBJECT_DIR)/serial_msp_unittest : \
+$(OBJECT_DIR)/msp_serial_unittest.o : \
+	$(TEST_DIR)/msp_serial_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/msp_serial_unittest.cc -o $@
+
+$(OBJECT_DIR)/msp_serial_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/streambuf.o \
-	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/build/version.o \
 	$(OBJECT_DIR)/io/serial.o \
-	$(OBJECT_DIR)/io/serial_msp.o \
+	$(OBJECT_DIR)/msp/msp.o \
+	$(OBJECT_DIR)/msp/msp_serial.o \
 	$(OBJECT_DIR)/drivers/buf_writer.o \
 	$(OBJECT_DIR)/config/parameter_group.o \
-	$(OBJECT_DIR)/serial_msp_unittest.o \
+	$(OBJECT_DIR)/msp_serial_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/msp_unittest.o : \
-	$(TEST_DIR)/msp_unittest.cc \
+$(OBJECT_DIR)/msp_fc_unittest.o : \
+	$(TEST_DIR)/msp_fc_unittest.cc \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/msp_unittest.cc -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/msp_fc_unittest.cc -o $@
 
-$(OBJECT_DIR)/msp_unittest : \
+$(OBJECT_DIR)/msp_fc_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/streambuf.o \
-	$(OBJECT_DIR)/version.o \
+	$(OBJECT_DIR)/build/version.o \
 	$(OBJECT_DIR)/io/serial.o \
-	$(OBJECT_DIR)/io/msp.o \
+	$(OBJECT_DIR)/fc/msp_server_fc.o \
+	$(OBJECT_DIR)/msp/msp.o \
 	$(OBJECT_DIR)/config/parameter_group.o \
-	$(OBJECT_DIR)/msp_unittest.o \
+	$(OBJECT_DIR)/msp_fc_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/scheduler_tasks.o : \
-	$(USER_DIR)/scheduler_tasks.c \
-	$(USER_DIR)/scheduler.h \
+$(OBJECT_DIR)/fc_tasks.o : \
+	$(USER_DIR)/fc/fc_tasks.c \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler_tasks.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/fc_tasks.c -o $@
 
-$(OBJECT_DIR)/scheduler.o : \
-	$(USER_DIR)/scheduler.c \
-	$(USER_DIR)/scheduler.h \
+$(OBJECT_DIR)/scheduler/scheduler.o : \
+	$(USER_DIR)/scheduler/scheduler.c \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/scheduler/scheduler.c -o $@
 
 $(OBJECT_DIR)/scheduler_unittest.o : \
 	$(TEST_DIR)/scheduler_unittest.cc \
-	$(USER_DIR)/scheduler.h \
+	$(USER_DIR)/scheduler/scheduler.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -835,8 +845,8 @@ $(OBJECT_DIR)/scheduler_unittest.o : \
 
 $(OBJECT_DIR)/scheduler_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/scheduler_tasks.o \
-	$(OBJECT_DIR)/scheduler.o \
+	$(OBJECT_DIR)/fc_tasks.o \
+	$(OBJECT_DIR)/scheduler/scheduler.o \
 	$(OBJECT_DIR)/scheduler_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -859,13 +869,13 @@ $(OBJECT_DIR)/config/profile.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/profile.c -o $@
 
-$(OBJECT_DIR)/config/config.o : \
-	$(USER_DIR)/config/config.c \
-	$(USER_DIR)/config/config.h \
+$(OBJECT_DIR)/fc/config.o : \
+	$(USER_DIR)/fc/config.c \
+	$(USER_DIR)/fc/config.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/config/config.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/fc/config.c -o $@
 
 $(OBJECT_DIR)/config/config_eeprom.o : \
 	$(USER_DIR)/config/config_eeprom.c \
@@ -911,7 +921,7 @@ $(OBJECT_DIR)/config_eeprom_unittest : \
 	$(OBJECT_DIR)/mock/mock_flash.o \
 	$(OBJECT_DIR)/mock/mock_system.o \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/config/config.o \
+	$(OBJECT_DIR)/fc/config.o \
 	$(OBJECT_DIR)/config/config_streamer.o \
 	$(OBJECT_DIR)/config/feature.o \
 	$(OBJECT_DIR)/config/profile.o \
@@ -932,7 +942,7 @@ $(OBJECT_DIR)/config/config_streamer.o : \
 
 $(OBJECT_DIR)/config_streamer_unittest.o : \
 	$(TEST_DIR)/config_streamer_unittest.cc \
-	$(USER_DIR)/config/config.h \
+	$(USER_DIR)/fc/config.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)

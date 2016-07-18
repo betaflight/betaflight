@@ -16,24 +16,28 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <limits.h>
 
 //#define DEBUG_LEDSTRIP
 
 extern "C" {
-    #include "build_config.h"
+    #include "build/build_config.h"
 
     #include "common/color.h"
     #include "common/axis.h"
     #include "common/utils.h"
 
     #include "config/parameter_group.h"
-    #include "config/runtime_config.h"
-    #include "config/config.h"
+    #include "config/profile.h"
 
-    #include "io/rc_controls.h"
+
+    #include "fc/runtime_config.h"
+    #include "fc/rc_controls.h"
+
     #include "io/gps.h"
+
     #include "rx/rx.h"
 
     #include "sensors/battery.h"
@@ -420,7 +424,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
 bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
-    bool sensors(uint32_t mask) { UNUSED(mask); return true; }
+bool sensors(uint32_t mask) { UNUSED(mask); return true; }
 
 uint8_t GPS_numSat;
 uint8_t stateFlags;

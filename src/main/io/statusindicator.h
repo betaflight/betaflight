@@ -17,8 +17,12 @@
 
 #pragma once
 
-void warningLedEnable(void);
-void warningLedDisable(void);
-void warningLedRefresh(void);
+#define WARNING_LED_BLINK_BIT_DELAY  200000
+
+void warningLedBeeper(bool on);
+void warningLedPulse(void);
+
+void warningLedSetBlinkMask(uint32_t newBlinkMask);
+
 void warningLedUpdate(void);
-void warningLedFlash(void);
+void warningLedCode(uint8_t code);

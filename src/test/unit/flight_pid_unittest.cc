@@ -19,14 +19,15 @@
 #include <math.h>
 
 extern "C" {
-    #include "build_config.h"
-    #include "debug.h"
+    #include "build/build_config.h"
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
-    #include "config/runtime_config.h"
     #include "config/parameter_group.h"
+
+    #include "fc/runtime_config.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
@@ -35,8 +36,8 @@ extern "C" {
     #include "sensors/gyro.h"
 
     #include "rx/rx.h"
-    #include "io/rc_controls.h"
-    #include "io/rate_profile.h"
+    #include "fc/rc_controls.h"
+    #include "fc/rate_profile.h"
 
     #include "flight/pid.h"
     #include "config/config_unittest.h"
@@ -62,12 +63,10 @@ extern "C" {
     float dT; // dT for pidLuxFloat
     int32_t targetLooptime; // targetLooptime for pidMultiWiiRewrite
     float unittest_pidLuxFloatCore_lastRateForDelta[3];
-    int32_t unittest_pidLuxFloatCore_deltaState[3][DTERM_AVERAGE_COUNT];
     float unittest_pidLuxFloatCore_PTerm[3];
     float unittest_pidLuxFloatCore_ITerm[3];
     float unittest_pidLuxFloatCore_DTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_lastRateForDelta[3];
-    int32_t unittest_pidMultiWiiRewriteCore_deltaState[3][DTERM_AVERAGE_COUNT];
     int32_t unittest_pidMultiWiiRewriteCore_PTerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_ITerm[3];
     int32_t unittest_pidMultiWiiRewriteCore_DTerm[3];
@@ -81,7 +80,7 @@ static const int mwrGyroScaleNum = 4;
 static const int mwrGyroScaleDenom = 1;
 #define TARGET_LOOPTIME 2048
 
-static const int DTermAverageCount = 4;
+static const int DTermAverageCount = 1;
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -117,7 +116,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->dterm_cut_hz = 0;
+    pidProfile->dterm_lpf = 0;
+    pidProfile->yaw_lpf = 0;
 }
 
 void resetRcCommands(void)
@@ -153,9 +153,6 @@ void pidControllerInitLuxFloatCore(void)
     // reset the pidLuxFloat static values
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         unittest_pidLuxFloatCore_lastRateForDelta[axis] = 0.0f;
-        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
-            unittest_pidLuxFloatCore_deltaState[axis][ii] = 0.0f; \
-        } \
     }
 }
 
@@ -543,9 +540,6 @@ void pidControllerInitMultiWiiRewriteCore(void)
     // reset the pidMultiWiiRewrite static values
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         unittest_pidMultiWiiRewriteCore_lastRateForDelta[axis] = 0;
-        for (int ii = 0; ii < DTERM_AVERAGE_COUNT; ++ii) { \
-            unittest_pidMultiWiiRewriteCore_deltaState[axis][ii] = 0; \
-        } \
     }
 }
 

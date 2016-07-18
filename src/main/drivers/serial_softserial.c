@@ -23,10 +23,10 @@
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
-#include "common/atomic.h"
+#include "build/atomic.h"
 
 #include "nvic.h"
 #include "system.h"

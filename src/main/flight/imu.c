@@ -24,18 +24,17 @@
 
 #include "common/maths.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 #include <platform.h>
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
 
-#include "config/runtime_config.h"
 #include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
-#include "config/config.h"
 #include "config/config_reset.h"
+#include "config/profile.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -54,6 +53,8 @@
 #include "flight/imu.h"
 
 #include "io/gps.h"
+
+#include "fc/runtime_config.h"
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
@@ -406,7 +407,7 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(void)
 {
-    static filterStatePt1_t accLPFState[3];
+    static pt1Filter_t accLPFState[3];
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
     int32_t axis;
@@ -421,7 +422,7 @@ static void imuCalculateEstimatedAttitude(void)
     // Smooth and use only valid accelerometer readings
     for (axis = 0; axis < 3; axis++) {
         if (imuRuntimeConfig->acc_cut_hz > 0) {
-            accSmooth[axis] = filterApplyPt1(accADC[axis], &accLPFState[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
+            accSmooth[axis] = pt1FilterApply4(&accLPFState[axis], accADC[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
         } else {
             accSmooth[axis] = accADC[axis];
         }

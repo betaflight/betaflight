@@ -19,7 +19,7 @@
 #include <math.h>
 
 extern "C" {
-    #include "build_config.h"
+    #include "build/build_config.h"
     #include "drivers/sonar_hcsr04.h"
     #include "sensors/sonar.h"
     extern int32_t measurement;

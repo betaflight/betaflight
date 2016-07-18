@@ -22,15 +22,17 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
+#include "common/streambuf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/system.h"
+
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"
 #endif
@@ -44,43 +46,16 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_cli.h"
-#include "serial_msp.h"
 
-#include "config/config.h"
-#include "config/parameter_group.h"
+#include "msp/msp.h"
+#include "msp/msp_serial.h"
+
+#include "fc/config.h"
+
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
-
-PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
-
-void pgResetFn_serialConfig(serialConfig_t *serialConfig)
-{
-    memset(serialConfig, 0, sizeof(serialConfig_t));
-
-    serialPortConfig_t portConfig_Reset = {
-        .msp_baudrateIndex = BAUD_115200,
-        .gps_baudrateIndex = BAUD_57600,
-        .telemetry_baudrateIndex = BAUD_AUTO,
-        .blackbox_baudrateIndex = BAUD_115200,
-    };
-
-    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-        memcpy(&serialConfig->portConfigs[i], &portConfig_Reset, sizeof(serialConfig->portConfigs[i]));
-        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
-    }
-
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-
-#if defined(USE_VCP)
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
-
-    serialConfig->reboot_character = 'R';
-}
 
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
@@ -159,19 +134,19 @@ typedef struct findSerialPortConfigState_s {
 
 static findSerialPortConfigState_t findSerialPortConfigState;
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+serialPortConfig_t *findSerialPortConfig(uint16_t mask)
 {
     memset(&findSerialPortConfigState, 0, sizeof(findSerialPortConfigState));
 
-    return findNextSerialPortConfig(function);
+    return findNextSerialPortConfig(mask);
 }
 
-serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
+serialPortConfig_t *findNextSerialPortConfig(uint16_t mask)
 {
     while (findSerialPortConfigState.lastIndex < SERIAL_PORT_COUNT) {
         serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSerialPortConfigState.lastIndex++];
 
-        if (candidate->functionMask & function) {
+        if (candidate->functionMask & mask) {
             return candidate;
         }
     }
@@ -228,7 +203,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 }
 
 #define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP_SERVER (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
 
 bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 {
@@ -236,7 +211,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     /*
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
-     * - Only MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+     * - Only MSP SERVER is allowed to be shared with EITHER any telemetry OR blackbox.
      * - No other sharing combinations are valid.
      */
     uint8_t mspPortCount = 0;
@@ -245,7 +220,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
 
-        if (portConfig->functionMask & FUNCTION_MSP) {
+        if (portConfig->functionMask & (FUNCTION_MSP_SERVER | FUNCTION_MSP_CLIENT)) {
             mspPortCount++;
         }
 
@@ -256,11 +231,11 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
                 return false;
             }
 
-            if (!(portConfig->functionMask & FUNCTION_MSP)) {
+            if (!(portConfig->functionMask & FUNCTION_MSP_SERVER)) {
                 return false;
             }
 
-            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP_SERVER)) {
                 // some other bit must have been set.
                 return false;
             }
@@ -299,7 +274,7 @@ serialPort_t *openSerialPort(
     portMode_t mode,
     portOptions_t options)
 {
-#if (!defined(USE_VCP) && !defined(USE_UART1) && !defined(USE_UART2) && !defined(USE_UART3) && !defined(USE_UART4) && !defined(USE_UART5) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL1))
+#if (!defined(USE_VCP) && !defined(USE_UART1) && !defined(USE_UART2) && !defined(USE_UART3) && !defined(USE_UART4) && !defined(USE_UART5) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2))
     UNUSED(callback);
     UNUSED(baudRate);
     UNUSED(mode);
@@ -440,19 +415,6 @@ bool serialIsPortAvailable(serialPortIdentifier_e identifier)
     return false;
 }
 
-void handleSerial(void)
-{
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-
-    mspSerialProcess();
-}
-
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 {
     while (!isSerialTransmitBufferEmpty(serialPort)) {
@@ -460,18 +422,3 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
-void cliEnter(serialPort_t *serialPort);
-
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
-{
-#ifndef USE_CLI
-    UNUSED(serialPort);
-#else
-    if (receivedChar == '#') {
-        cliEnter(serialPort);
-    }
-#endif
-    if (receivedChar == serialConfig()->reboot_character) {
-        systemResetToBootloader();
-    }
-}

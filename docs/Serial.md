@@ -44,7 +44,7 @@ If the configuration is invalid the serial port configuration will reset to its 
 * To use a port for a function, the function's corresponding feature must be also be enabled.
 e.g. after configuring a port for GPS enable the GPS feature.
 * If SoftSerial is used, then all SoftSerial ports must use the same baudrate.
-* Softserial is limited to 19200 buad.
+* Softserial is limited to 19200 baud.
 * All telemetry systems except MSP will ignore any attempts to override the baudrate.
 * MSP/CLI can be shared with EITHER Blackbox OR telemetry.  In shared mode blackbox or telemetry will be output only when armed.
 * Smartport telemetry cannot be shared with MSP.

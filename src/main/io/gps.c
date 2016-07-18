@@ -23,8 +23,8 @@
 #include <math.h>
 
 #include <platform.h>
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -32,8 +32,6 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config.h"
-#include "config/runtime_config.h"
 #include "config/feature.h"
 
 #include "drivers/system.h"
@@ -43,6 +41,10 @@
 #include "drivers/light_led.h"
 
 #include "sensors/sensors.h"
+
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+#include "fc/fc_serial.h"
 
 #include "io/serial.h"
 #include "io/display.h"
@@ -231,7 +233,7 @@ void gpsInit(void)
         return;
     }
 
-    while (gpsInitData[gpsData.baudrateIndex].baudrateIndex != gpsPortConfig->gps_baudrateIndex) {
+    while (gpsInitData[gpsData.baudrateIndex].baudrateIndex != gpsPortConfig->baudRates[BAUDRATE_GPS]) {
         gpsData.baudrateIndex++;
         if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
             gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX;

@@ -9,12 +9,16 @@ that is not recommended).
 By default, arming and disarming is done using stick positions.  (NOTE: this feature is disabled when using a
 switch to arm.)
 
-Arming is disabled if:
-- CLI is active in the configurator
-- The aircraft has landed in failsafe mode
-- Maximum arming angle is exceeded
-- Calibration is active
-- The system is overloaded
+Some conditions will disable arming. In this case the Warning LED on the board will flash a certain number of times, indicating what the condition is:
+
+| Reason for disabled Arming               | LED Flashes |
+|------------------------------------------|-------------|
+| CLI is active in the configurator        | 2           |
+| Failsafe mode is active                  | 3           |
+| The aircraft has landed in failsafe mode | 3           |
+| Maximum arming angle is exceeded         | 4           |
+| Calibration is active                    | 5           |
+| The system is overloaded                 | 6           |
 
 ## Stick Positions
 

@@ -19,7 +19,8 @@
 
 extern "C" {
     #include "platform.h"
-    #include "scheduler.h"
+    #include "fc/fc_tasks.h"
+    #include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"
@@ -72,8 +73,6 @@ extern "C" {
     void taskLedStrip(void) {simulatedTime+=ledStripTime;}
     void taskTransponder(void) {simulatedTime+=transponderTime;}
 
-    extern cfTask_t* taskQueueArray[];
-
     extern void queueClear(void);
     extern int queueSize();
     extern bool queueContains(cfTask_t *task);
@@ -85,7 +84,7 @@ extern "C" {
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(14, TASK_COUNT);
+    EXPECT_EQ(14, taskCount);
           // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
@@ -100,7 +99,7 @@ TEST(SchedulerUnittest, TestQueueInit)
     EXPECT_EQ(0, queueSize());
     EXPECT_EQ(0, queueFirst());
     EXPECT_EQ(0, queueNext());
-    for (int ii = 0; ii <= TASK_COUNT; ++ii) {
+    for (unsigned int ii = 0; ii <= taskCount; ++ii) {
         EXPECT_EQ(0, taskQueueArray[ii]);
     }
 }
@@ -110,19 +109,19 @@ cfTask_t *deadBeefPtr = reinterpret_cast<cfTask_t*>(0xDEADBEEF);
 TEST(SchedulerUnittest, TestQueue)
 {
     queueClear();
-    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr;
+    taskQueueArray[taskCount + 1] = deadBeefPtr;
 
     queueAdd(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(1, queueSize());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     queueAdd(&cfTasks[TASK_GYROPID]); // TASK_PRIORITY_REALTIME
     EXPECT_EQ(2, queueSize());
     EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     queueAdd(&cfTasks[TASK_SERIAL]); // TASK_PRIORITY_LOW
     EXPECT_EQ(3, queueSize());
@@ -130,7 +129,7 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     queueAdd(&cfTasks[TASK_BATTERY]); // TASK_PRIORITY_MEDIUM
     EXPECT_EQ(4, queueSize());
@@ -139,7 +138,7 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     queueAdd(&cfTasks[TASK_RX]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(5, queueSize());
@@ -149,7 +148,7 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     queueRemove(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(4, queueSize());
@@ -158,112 +157,111 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 }
 
 TEST(SchedulerUnittest, TestQueueAddAndRemove)
 {
     queueClear();
-    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr;
+    taskQueueArray[taskCount + 1] = deadBeefPtr;
 
     // fill up the queue
-    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId = 0; taskId < taskCount; ++taskId) {
         const bool added = queueAdd(&cfTasks[taskId]);
         EXPECT_EQ(true, added);
         EXPECT_EQ(taskId + 1, queueSize());
-        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
     }
     // double check end of queue
-    EXPECT_EQ(TASK_COUNT, queueSize());
-    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]); // null pointer at end of queue is preserved
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]); // there hasn't been an out by one error
+    EXPECT_EQ(taskCount, queueSize());
+    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[taskCount - 1]); // last item was indeed added to queue
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]); // null pointer at end of queue is preserved
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]); // there hasn't been an out by one error
 
     // and empty it again
-    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId = 0; taskId < taskCount; ++taskId) {
         const bool removed = queueRemove(&cfTasks[taskId]);
         EXPECT_EQ(true, removed);
-        EXPECT_EQ(TASK_COUNT - taskId - 1, queueSize());
-        EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - taskId]);
-        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+        EXPECT_EQ(taskCount - taskId - 1, queueSize());
+        EXPECT_EQ(NULL, taskQueueArray[taskCount - taskId]);
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
     }
     // double check size and end of queue
     EXPECT_EQ(0, queueSize()); // queue is indeed empty
     EXPECT_EQ(NULL, taskQueueArray[0]); // there is a null pointer at the end of the queueu
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]); // no accidental overwrites past end of queue
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]); // no accidental overwrites past end of queue
 }
 
 TEST(SchedulerUnittest, TestQueueArray)
 {
     // test there are no "out by one" errors or buffer overruns when items are added and removed
     queueClear();
-    taskQueueArray[TASK_COUNT + 1] = deadBeefPtr; // note, must set deadBeefPtr after queueClear
+    taskQueueArray[taskCount + 1] = deadBeefPtr; // note, must set deadBeefPtr after queueClear
 
-    for (int taskId = 0; taskId < TASK_COUNT - 1; ++taskId) {
+    for (unsigned int taskId = 0; taskId < taskCount - 1; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), true);
         EXPECT_EQ(taskId + 1, queueSize());
-        EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+        EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
     }
-    EXPECT_EQ(TASK_COUNT - 1, queueSize());
-    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 2]);
-    const cfTask_t *lastTaskPrev = taskQueueArray[TASK_COUNT - 2];
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 1, queueSize());
+    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[taskCount - 2]);
+    const cfTask_t *lastTaskPrev = taskQueueArray[taskCount - 2];
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     setTaskEnabled(TASK_SYSTEM, false);
-    EXPECT_EQ(TASK_COUNT - 2, queueSize());
-    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 3]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]); // NULL at end of queue
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 2, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[taskCount - 3]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 2]); // NULL at end of queue
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
-    taskQueueArray[TASK_COUNT - 2] = 0;
+    taskQueueArray[taskCount - 2] = 0;
     setTaskEnabled(TASK_SYSTEM, true);
-    EXPECT_EQ(TASK_COUNT - 1, queueSize());
-    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 2]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 1, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[taskCount - 2]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     cfTaskInfo_t taskInfo;
-    getTaskInfo(static_cast<cfTaskId_e>(TASK_COUNT - 1), &taskInfo);
+    getTaskInfo(static_cast<cfTaskId_e>(taskCount - 1), &taskInfo);
     EXPECT_EQ(false, taskInfo.isEnabled);
-    setTaskEnabled(static_cast<cfTaskId_e>(TASK_COUNT - 1), true);
-    EXPECT_EQ(TASK_COUNT, queueSize());
-    EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]); // check no buffer overrun
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    setTaskEnabled(static_cast<cfTaskId_e>(taskCount - 1), true);
+    EXPECT_EQ(taskCount, queueSize());
+    EXPECT_EQ(lastTaskPrev, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]); // check no buffer overrun
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     setTaskEnabled(TASK_SYSTEM, false);
-    EXPECT_EQ(TASK_COUNT - 1, queueSize());
-    //EXPECT_EQ(lastTaskPrev, taskQueueArray[TASK_COUNT - 3]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 1, queueSize());
+    //EXPECT_EQ(lastTaskPrev, taskQueueArray[taskCount - 3]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     setTaskEnabled(TASK_ACCEL, false);
-    EXPECT_EQ(TASK_COUNT - 2, queueSize());
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 2, queueSize());
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 2]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 
     setTaskEnabled(TASK_BATTERY, false);
-    EXPECT_EQ(TASK_COUNT - 3, queueSize());
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 3]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 2]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - 1]);
-    EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]);
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
+    EXPECT_EQ(taskCount - 3, queueSize());
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 3]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 2]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount - 1]);
+    EXPECT_EQ(NULL, taskQueueArray[taskCount]);
+    EXPECT_EQ(deadBeefPtr, taskQueueArray[taskCount + 1]);
 }
 
 TEST(SchedulerUnittest, TestSchedulerInit)
 {
     schedulerInit();
-    EXPECT_EQ(1, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
+    EXPECT_EQ(0, queueSize());
 }
 
 TEST(SchedulerUnittest, TestScheduleEmptyQueue)
@@ -279,7 +277,7 @@ TEST(SchedulerUnittest, TestSingleTask)
 {
     schedulerInit();
     // disable all tasks except TASK_GYROPID
-    for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId=0; taskId < taskCount; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_GYROPID, true);
@@ -299,7 +297,7 @@ TEST(SchedulerUnittest, TestSingleTask)
 TEST(SchedulerUnittest, TestTwoTasks)
 {
     // disable all tasks except TASK_GYROPID  and TASK_SERIAL
-    for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId=0; taskId < taskCount; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_SERIAL, true);
@@ -355,7 +353,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
 TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
 {
     // disable all tasks except TASK_GYROPID and TASK_SYSTEM
-    for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId=0; taskId < taskCount; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_GYROPID, true);
@@ -380,7 +378,7 @@ TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
 TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
 {
     // disable all tasks except TASK_GYROPID and TASK_SYSTEM
-    for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
+    for (unsigned int taskId=0; taskId < taskCount; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_GYROPID, true);

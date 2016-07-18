@@ -20,7 +20,7 @@
 
 extern "C" {
     #include "platform.h"
-    #include "build_config.h"
+    #include "build/build_config.h"
     
     #include "common/axis.h"
     #include "common/maths.h"
@@ -39,9 +39,9 @@ extern "C" {
     #include "drivers/pwm_rx.h"
     #include "drivers/serial.h"
 
-    #include "io/rc_controls.h"
-    #include "io/rate_profile.h"
-    #include "io/rc_adjustments.h"
+    #include "fc/rc_controls.h"
+    #include "fc/rate_profile.h"
+    #include "fc/rc_adjustments.h"
     #include "io/motor_and_servo.h"
     #include "io/gimbal.h"
     #include "io/gps.h"
@@ -68,11 +68,12 @@ extern "C" {
     #include "telemetry/frsky.h"
     #include "telemetry/hott.h"
 
-    #include "config/config.h"
     #include "config/config_eeprom.h"
     #include "config/config_system.h"
     #include "config/feature.h"
     #include "config/profile.h"
+
+    #include "fc/config.h"
 
     #include "platform.h"
 
