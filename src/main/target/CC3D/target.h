@@ -121,6 +121,7 @@
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
+#undef LED_STRIP
 #undef DISPLAY
 #undef SONAR
 #endif
