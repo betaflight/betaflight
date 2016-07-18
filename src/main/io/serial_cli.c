@@ -398,7 +398,7 @@ static const char * const lookupTableGyroLpf[] = {
 };
 
 static const char * const lookupTablePidDeltaMethod[] = {
-    "ERROR", "MEASUREMENT"
+    "MEASUREMENT", "ERROR"
 };
 
 typedef struct lookupTableEntry_s {
