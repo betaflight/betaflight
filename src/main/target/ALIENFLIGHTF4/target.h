@@ -93,8 +93,6 @@
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
 
-#define USABLE_TIMER_CHANNEL_COUNT      13
-
 #define USE_VCP
 
 #define USE_UART1
@@ -175,5 +173,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
+#define USABLE_TIMER_CHANNEL_COUNT      13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
 
