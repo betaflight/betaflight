@@ -129,7 +129,7 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {                                    // ensure sending a start
             while (I2Cx->CR1 & 0x0200 && --timeout > 0) { ; }           // wait for any stop to finish sending
-            if (timeout == 0) {
+            if (error || timeout == 0) {
                 return i2cHandleHardwareFailure();
             }
             I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
@@ -139,7 +139,7 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 
     timeout = I2C_DEFAULT_TIMEOUT;
     while (busy && --timeout > 0) { ; }
-    if (timeout == 0) {
+    if (error || timeout == 0) {
         return i2cHandleHardwareFailure();
     }
 
@@ -171,7 +171,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
         if (!(I2Cx->CR1 & 0x0100)) {                                    // ensure sending a start
             while (I2Cx->CR1 & 0x0200 && --timeout > 0) { ; }           // wait for any stop to finish sending
-            if (timeout == 0)
+            if (error || timeout == 0)
                 return i2cHandleHardwareFailure();
             I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
         }
@@ -180,7 +180,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 
     timeout = I2C_DEFAULT_TIMEOUT;
     while (busy && --timeout > 0) { ; }
-    if (timeout == 0)
+    if (error || timeout == 0)
         return i2cHandleHardwareFailure();
 
     return !error;
