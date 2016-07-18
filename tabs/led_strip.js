@@ -124,7 +124,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             $(element).removeClass(classesToRemove.join(' '));
         }
 
-
         // Directional Buttons
         $('.directions').on('click', 'button', function() {
             var that = this;
@@ -189,7 +188,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             
         });
         
-
         // Color sliders
         var ip = $('div.colorDefineSliders input');
         ip.eq(0).on("input change", function() { updateColors($(this).val(), 0); });
@@ -198,7 +196,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         for (var i = 0; i < 3; i++) {
             updateColors(ip.eq(i).val(), i);
         }
-
 
         // Color Buttons
         $('.colors').on('click', 'button', function(e) {
@@ -419,7 +416,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                             $(this).removeClass('mode_color-' + i + '-' + j);
                             $(this).addClass('mode_color-' + mode + '-' + j);
                         }
-                
             });
 
             $('.mode_colors').each(function() { setModeBackgroundColor($(this)); });
@@ -462,8 +458,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                             }
                         }
                     });
-                    
-                    
+                                        
                     clearModeColorSelection();
                     updateBulkCmd();
                     setOptionalGroupsVisibility();
@@ -493,7 +488,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             var ledIndex = ledResult.index;
             var led = ledResult.led;
             
-            if (led.functions.length == 0 && led.directions.length == 0 && led.color == 0) {
+            if (led.functions[0] == 'c' && led.functions.length == 1 && led.directions.length == 0 && led.color == 0 && led.x == 0 && led.y == 0) {
                 return;
             }
             
@@ -759,28 +754,6 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             break; 
         }
         
-        // set color palette visibility
-        /*
-        switch (activeFunction) {
-            case "":
-            case "function-c":
-            case "function-b":
-            case "function-r":
-            case "function-a":
-            case "function-f":
-            case "function-g":
-            case "function-l":
-                $('.colors').show();
-                $('.colorDefineSliders').show();
-            break;
-          
-            default: 
-                $('.colors').hide();
-                $('.colorDefineSliders').hide();
-            break; 
-        }
-        */
-        
         // set overlays (checkboxes) visibility
         // set directions visibility
         if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
@@ -896,15 +869,13 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
     
     function unselectOverlay(func, overlay) {
-        if ($('input.function-' + overlay).is(':checked')) {
-            $('input.function-' + overlay).prop('checked', false);
-            $('input.function-' + overlay).change();
-            $('.ui-selected').each(function() {
-                if (func == '' || $(this).is('.function-' + func)) {
-                    $(this).removeClass('function-' + overlay);
-                }
-            });
-        }                
+        $('input.function-' + overlay).prop('checked', false);
+        $('input.function-' + overlay).change();
+        $('.ui-selected').each(function() {
+            if (func == '' || $(this).is('.function-' + func)) {
+                $(this).removeClass('function-' + overlay);
+            }
+        });
     }
     
     function updateColors(value, hsvIndex) {
@@ -1005,6 +976,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
     
     function HsvToColor(input) {
+    	if (input == undefined)
+    		return "";
+    	
         var HSV = { h:Number(input.h), s:Number(input.s), v:Number(input.v) };
         
         if (HSV.s == 0 && HSV.v == 0)
