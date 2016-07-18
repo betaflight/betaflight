@@ -3,8 +3,7 @@
 // code below is highly experimental, although it runs fine on latest firmware
 // the data inside nested objects needs to be verified if deep copy works properly
 function configuration_backup(callback) {
-    var activeProfile = null,
-        profilesN = 3;
+    var activeProfile = null;
 
     var configuration = {
         'generatedBy': chrome.runtime.getManifest().version,
@@ -53,7 +52,7 @@ function configuration_backup(callback) {
             codeKey = 0;
 
         function fetch_specific_data_item() {
-            if (fetchingProfile < profilesN) {
+            if (fetchingProfile < CONFIG.numProfiles) {
                 MSP.send_message(profileSpecificData[codeKey], false, false, function () {
                     codeKey++;
 
@@ -635,8 +634,11 @@ function configuration_restore(callback) {
     
     function configuration_upload(configuration, callback) {
         function upload() {
-            var activeProfile = null,
-                profilesN = 3;
+            var activeProfile = null;
+            var numProfiles = CONFIG.numProfiles;
+            if (configuration.profiles.length < numProfiles) {
+                numProfiles = configuration.profiles.length;
+            }
 
             var profileSpecificData = [
                 MSP_codes.MSP_SET_PID_CONTROLLER,
@@ -688,7 +690,7 @@ function configuration_restore(callback) {
                             codeKey = 0;
                             savingProfile++;
 
-                            if (savingProfile < profilesN) {
+                            if (savingProfile < numProfiles) {
                                 load_objects(savingProfile);
 
                                 MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
