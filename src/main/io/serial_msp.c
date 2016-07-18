@@ -1193,18 +1193,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_3D:
-        headSerialReply(2 * 4);
+        headSerialReply(2 * 3);
         serialize16(masterConfig.flight3DConfig.deadband3d_low);
         serialize16(masterConfig.flight3DConfig.deadband3d_high);
         serialize16(masterConfig.flight3DConfig.neutral3d);
-        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
 
     case MSP_RC_DEADBAND:
-        headSerialReply(3);
+        headSerialReply(5);
         serialize8(masterConfig.rcControlsConfig.deadband);
         serialize8(masterConfig.rcControlsConfig.yaw_deadband);
         serialize8(masterConfig.rcControlsConfig.alt_hold_deadband);
+        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
