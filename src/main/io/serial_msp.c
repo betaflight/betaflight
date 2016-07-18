@@ -672,7 +672,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_STATUS_EX:
-        headSerialReply(13);
+        headSerialReply(14);
         serialize16(cycleTime);
 #ifdef USE_I2C
         serialize16(i2cGetErrorCounter());
@@ -683,6 +683,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
+        serialize8(MAX_PROFILE_COUNT);
         break;
 
     case MSP_NAME:
