@@ -49,8 +49,9 @@
 
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
-extern float errorLimiter;
 extern float angleRate[3], angleRateSmooth[3];
+
+static bool pidStabilisationEnabled;
 
 int16_t axisPID[3];
 
@@ -76,12 +77,15 @@ void setTargetPidLooptime(uint8_t pidProcessDenom)
 
 void pidResetErrorGyroState(void)
 {
-    int axis;
-
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
         errorGyroI[axis] = 0;
         errorGyroIf[axis] = 0.0f;
     }
+}
+
+void pidStabilisationState(pidStabilisationState_e pidControllerState)
+{
+    pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
 }
 
 float getdT (void)
@@ -269,6 +273,8 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
         }
 
+        if (!pidStabilisationEnabled) axisPID[axis] = 0;
+
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
             calculate_Gtune(axis);
@@ -409,6 +415,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             axisPID[axis] = PTerm + ITerm + DTerm;
         }
 
+        if (!pidStabilisationEnabled) axisPID[axis] = 0;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

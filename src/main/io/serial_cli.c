@@ -766,6 +766,7 @@ const clivalue_t valueTable[] = {
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
     { "dterm_lowpass",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
     { "vbat_pid_compensation",      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
+    { "zero_throttle_stabilisation",VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.zeroThrottleStabilisation, .config.lookup = { TABLE_OFF_ON } },
     { "motor_accel_limit_percent",  VAR_UINT16 | MASTER_VALUE,  &masterConfig.profile[0].pidProfile.accelerationLimitPercent, .config.minmax = { 0,  10000 } },
     { "pid_tolerance_band",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBand, .config.minmax = {0, 200 } },
     { "tolerance_band_reduction",   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBandReduction, .config.minmax = {0, 100 } },

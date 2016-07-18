@@ -220,6 +220,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
+    pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
     pidProfile->toleranceBand = 15;

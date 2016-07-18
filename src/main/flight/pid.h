@@ -62,6 +62,11 @@ typedef enum {
     POSITIVE_ERROR
 } pidErrorPolarity_e;
 
+typedef enum {
+    PID_STABILISATION_OFF = 0,
+    PID_STABILISATION_ON
+} pidStabilisationState_e;
+
 typedef struct pidProfile_s {
     uint8_t pidController;                  // 1 = rewrite betaflight evolved from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Betaflight PIDc (Evolved Luxfloat)
 
@@ -77,6 +82,7 @@ typedef struct pidProfile_s {
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
+    uint8_t zeroThrottleStabilisation;      // Disable/Enable zero throttle stabilisation. Normally even without airmode P and D would be active.
 
     // Betaflight PID controller parameters
     uint8_t toleranceBand;                  // Error tolerance area where toleranceBandReduction is applied under certain circumstances
@@ -107,5 +113,6 @@ extern uint32_t targetPidLooptime;
 
 void pidSetController(pidControllerType_e type);
 void pidResetErrorGyroState(void);
+void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void setTargetPidLooptime(uint8_t pidProcessDenom);
 

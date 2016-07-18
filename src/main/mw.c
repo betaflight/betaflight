@@ -518,6 +518,12 @@ void processRx(void)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !wasAirmodeIsActivated) {
         pidResetErrorGyroState();
+        if (currentProfile->pidProfile.zeroThrottleStabilisation)
+            pidStabilisationState(PID_STABILISATION_ON);
+        else
+            pidStabilisationState(PID_STABILISATION_OFF);
+    } else {
+        if (currentProfile->pidProfile.zeroThrottleStabilisation || wasAirmodeIsActivated) pidStabilisationState(PID_STABILISATION_ON);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
