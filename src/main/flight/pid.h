@@ -40,7 +40,7 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-	PID_CONTROLLER_MW23 = 0,
+    PID_CONTROLLER_MW23 = 0,
     PID_CONTROLLER_MWREWRITE,
     PID_CONTROLLER_LUX_FLOAT,
     PID_COUNT
@@ -48,11 +48,17 @@ typedef enum {
 
 #define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
 
+typedef enum {
+    PID_DELTA_FROM_ERROR = 0,
+    PID_DELTA_FROM_MEASUREMENT
+} pidDeltaMethod_e;
+
 typedef struct pidProfile_s {
-    uint8_t P8[PID_ITEM_COUNT];
-    uint8_t I8[PID_ITEM_COUNT];
-    uint8_t D8[PID_ITEM_COUNT];
-    uint8_t pidController;
+    uint8_t  P8[PID_ITEM_COUNT];
+    uint8_t  I8[PID_ITEM_COUNT];
+    uint8_t  D8[PID_ITEM_COUNT];
+    uint8_t  pidController;
+    uint8_t  deltaMethod;
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
     uint16_t dterm_lpf;                     // dterm filtering
     uint16_t yaw_lpf;                       // additional yaw filter when yaw axis too noisy

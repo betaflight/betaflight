@@ -115,9 +115,14 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         // optimisation for when D8 is zero, often used by YAW axis
         DTerm = 0;
     } else {
-        // delta calculated from measurement
-        float delta = -(gyroRate - lastRateForDelta[axis]);
-        lastRateForDelta[axis] = gyroRate;
+        float delta;
+        if (pidProfile->deltaMethod == PID_DELTA_FROM_MEASUREMENT) {
+            delta = -(gyroRate - lastRateForDelta[axis]);
+            lastRateForDelta[axis] = gyroRate;
+        } else {
+            delta = rateError - lastRateForDelta[axis];
+            lastRateForDelta[axis] = rateError;
+        }
         // Divide delta by dT to get differential (ie dr/dt)
         delta *= (1.0f / dT);
         if (pidProfile->dterm_lpf) {

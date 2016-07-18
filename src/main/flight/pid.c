@@ -105,6 +105,7 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .I8[PIDVEL] = 45,
     .D8[PIDVEL] = 1,
 
+    .deltaMethod = PID_DELTA_FROM_MEASUREMENT,
     .yaw_p_limit = YAW_P_LIMIT_MAX,
     .dterm_lpf = 100,   // DTERM filtering ON by default
     .yaw_lpf = 80,
