@@ -22,7 +22,7 @@
 #include "drivers/pwm_mapping.h"
 
 const uint16_t multiPPM[] = {
-    PWM9  | (MAP_TO_PPM_INPUT << 8),
+    PWM12 | (MAP_TO_PPM_INPUT << 8),
     PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -32,7 +32,6 @@ const uint16_t multiPPM[] = {
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 
@@ -44,6 +43,7 @@ const uint16_t multiPWM[] = {
     PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
 
+    PWM7  | (MAP_TO_PWM_INPUT << 8),
     PWM8  | (MAP_TO_PWM_INPUT << 8),
     PWM9  | (MAP_TO_PWM_INPUT << 8),
     PWM10 | (MAP_TO_PWM_INPUT << 8),

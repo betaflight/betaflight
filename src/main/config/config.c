@@ -182,12 +182,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-
-#if (defined(STM32F10X))
-    pidProfile->pidController = PID_CONTROLLER_INTEGER;
-#else
-    pidProfile->pidController = PID_CONTROLLER_FLOAT;
-#endif
+    pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
@@ -220,11 +215,19 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 180;
-    pidProfile->yawItermIgnoreRate = 35;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 50;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->dynamic_pid = 1;
+    pidProfile->vbatPidCompensation = 0;
+    pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
+
+    // Betaflight PID controller parameters
+    pidProfile->toleranceBand = 15;
+    pidProfile->toleranceBandReduction = 35;
+    pidProfile->zeroCrossAllowanceCount = 3;
+    pidProfile->accelerationLimitPercent = 15;
+    pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -278,7 +281,6 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 #endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->escDesyncProtection = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -311,7 +313,6 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
-    batteryConfig->vbatPidCompensation = 0;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -452,14 +453,14 @@ static void resetConf(void)
     masterConfig.gyro_lpf = 0;                 // 256HZ default
 #ifdef STM32F10X
     masterConfig.gyro_sync_denom = 8;
+    masterConfig.pid_process_denom = 1;
 #else
     masterConfig.gyro_sync_denom = 4;
+    masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_lpf_hz = 100;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_q = 5;
-
-    masterConfig.pid_process_denom = 2;
 
     masterConfig.debug_mode = 0;
 

@@ -104,74 +104,6 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-void setGyroSamplingSpeed(uint16_t looptime) {
-    uint16_t gyroSampleRate = 1000;
-    uint8_t maxDivider = 1;
-
-    if (looptime != gyro.targetLooptime || looptime == 0) {
-        if (looptime == 0) looptime = gyro.targetLooptime; // needed for pid controller changes
-#ifdef STM32F303xC
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            if (looptime < 250) {
-                masterConfig.acc_hardware = ACC_NONE;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            } else if (looptime < 375) {
-                masterConfig.acc_hardware = CONFIG_FASTLOOP_PREFERRED_ACC;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-        }
-#else
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.acc_hardware = ACC_NONE;
-            masterConfig.baro_hardware = BARO_NONE;
-            masterConfig.mag_hardware = MAG_NONE;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                masterConfig.pid_process_denom = 2;
-            }
-            if (looptime < 250) {
-                masterConfig.pid_process_denom = 4;
-            } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                    masterConfig.pid_process_denom = 3;
-                } else {
-                    masterConfig.pid_process_denom = 2;
-                }
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            masterConfig.pid_process_denom = 1;
-        }
-#endif
-    }
-}
-
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -214,6 +146,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
+    { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -542,6 +475,8 @@ void mspInit(serialConfig_t *serialConfig)
     if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
+    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
+
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
@@ -737,7 +672,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_STATUS_EX:
-        headSerialReply(12);
+        headSerialReply(13);
         serialize16(cycleTime);
 #ifdef USE_I2C
         serialize16(i2cGetErrorCounter());
@@ -1284,14 +1219,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
         serialize8(currentProfile->pidProfile.deltaMethod);
-        serialize8(masterConfig.batteryConfig.vbatPidCompensation);
+        serialize8(currentProfile->pidProfile.vbatPidCompensation);
         break;
     case MSP_SPECIAL_PARAMETERS:
         headSerialReply(1 + 2 + 1 + 2);
         serialize8(currentControlRateProfile->rcYawRate8);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         serialize8(masterConfig.rxConfig.rcSmoothInterval);
-        serialize16(masterConfig.escAndServoConfig.escDesyncProtection);
+        serialize16(currentProfile->pidProfile.accelerationLimitPercent);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1311,7 +1246,6 @@ static bool processInCommand(void)
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
-    uint8_t oldPid;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1358,13 +1292,11 @@ static bool processInCommand(void)
         masterConfig.disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        setGyroSamplingSpeed(read16());
+        read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        oldPid = currentProfile->pidProfile.pidController;
-        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
+        currentProfile->pidProfile.pidController = constrain(read8(), 0, 1);
         pidSetController(currentProfile->pidProfile.pidController);
-        if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1863,13 +1795,13 @@ static bool processInCommand(void)
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
-        masterConfig.batteryConfig.vbatPidCompensation = read8();
+        currentProfile->pidProfile.vbatPidCompensation = read8();
         break;
     case MSP_SET_SPECIAL_PARAMETERS:
         currentControlRateProfile->rcYawRate8 = read8();
         masterConfig.rxConfig.airModeActivateThreshold = read16();
         masterConfig.rxConfig.rcSmoothInterval = read8();
-        masterConfig.escAndServoConfig.escDesyncProtection = read16();
+        currentProfile->pidProfile.accelerationLimitPercent = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();
