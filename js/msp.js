@@ -296,7 +296,11 @@ var MSP = {
                 CONFIG.mode = data.getUint32(6, 1);
                 CONFIG.profile = data.getUint8(10);
                 CONFIG.cpuload = data.getUint16(11, 1);
+                CONFIG.numProfiles = data.getUint8(13);
                 $('select[name="profilechange"]').val(CONFIG.profile);
+                if (CONFIG.numProfiles === 2) {
+                    $('select[name="profilechange"] .profile3').hide();
+                }
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
