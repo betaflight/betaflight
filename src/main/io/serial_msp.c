@@ -59,6 +59,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/msp_protocol.h"
 
 #include "telemetry/telemetry.h"
 
