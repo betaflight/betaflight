@@ -976,6 +976,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
     
     function HsvToColor(input) {
+    	if (input == undefined)
+    		return "";
+    	
         var HSV = { h:Number(input.h), s:Number(input.s), v:Number(input.v) };
         
         if (HSV.s == 0 && HSV.v == 0)
