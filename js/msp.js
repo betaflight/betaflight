@@ -597,6 +597,12 @@ var MSP = {
                 RC_deadband.deadband = data.getUint8(offset++, 1);
                 RC_deadband.yaw_deadband = data.getUint8(offset++, 1);
                 RC_deadband.alt_hold_deadband = data.getUint8(offset++, 1);
+                
+                if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+                    _3D.deadband3d_throttle = data.getUint16(offset, 1);
+                    offset += 2;
+                }
+                
                 break;
             case MSP_codes.MSP_SENSOR_ALIGNMENT:
                 var offset = 0;
