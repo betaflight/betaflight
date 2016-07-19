@@ -108,6 +108,7 @@ extern void resetPidProfile(pidProfile_t *pidProfile);
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
