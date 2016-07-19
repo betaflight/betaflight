@@ -2,7 +2,9 @@
     "translation_version": {
         "message": "0"
     },
-
+    "warningTitle": {
+        "message": "Warning"
+    },
     "options_title": {
         "message": "Application Options"
     },
@@ -157,7 +159,10 @@
         "message": "No configuration received within <span style=\"color: red\">10 seconds</span>, communication <span style=\"color: red\">failed</span>"
     },
     "firmwareVersionNotSupported": {
-        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to firmware that supports api version <strong>$1</strong> or higher. Use CLI for backup before flashing.  CLI backup/restore procedure is in the documention."
+        "message": "This firmware version is <span style=\"color: red\">not supported</span>. Please upgrade to firmware that supports api version <strong>$1</strong> or higher. Use CLI for backup before flashing. CLI backup/restore procedure is in the documention."
+    },
+    "firmwareTypeNotSupported": {
+        "message": "Non - Betaflight firmware is <span style=\"color: red\">not supported</span>. Please note that this tool is designed to support the advanced features of the Betaflight firmware, and does not support use with other types of firmware, except for in CLI mode."
     },
 
     "tabSwitchConnectionRequired": {
@@ -168,7 +173,7 @@
     },
 
     "tabSwitchUpgradeRequired": {
-        "message": "You need to <strong>upgrade</strong> your firmware before you can use the $1 tab."
+        "message": "You need to <strong>upgrade</strong> your firmware to the latest version of Betaflight before you can use the $1 tab."
     },
     "firmwareVersion": {
         "message": "Firmware Version: <strong>$1</strong>"
@@ -1472,9 +1477,6 @@
     },
     "firmwareFlasherMessage": {
         "message": "Message:"
-    },
-    "firmwareFlasherWarningHead": {
-        "message": "Warning"
     },
     "firmwareFlasherWarningText": {
         "message": "Please do <span style=\"color: red\">not</span> try to flash <strong>non-Betaflight</strong> hardware with this firmware flasher.<br />Do <span style=\"color: red\">not</span> <strong>disconnect</strong> the board or <strong>turn off</strong> your computer while flashing.<br /><br /><strong>Note: </strong>STM32 bootloader is stored in ROM, it cannot be bricked.<br /><strong>Note: </strong><span style=\"color: red\">Auto-Connect</span> is always disabled while you are inside firmware flasher.<br /><strong>Note: </strong>Make sure you have a backup; some upgrades/downgrades will wipe your configuration.<br /><strong>Note:</strong> If you have problems flashing try disconnecting all cables from your FC first, try rebooting, upgrade chrome, upgrade drivers.<br /><strong>Note:</strong> When flashing boards that have directly connected USB sockets (SPRacingF3Mini, Sparky, ColibriRace, etc) ensure you have read the USB Flashing section of the Betaflight manual and have the correct software and drivers installed"

@@ -310,5 +310,16 @@ GUI_control.prototype.content_ready = function (callback) {
     if (callback) callback();
 }
 
+GUI_control.prototype.show_modal = function (title, message) {
+    var popup = new jBox('Modal', {
+        title: title,
+        content: message,
+        closeButton: 'title',
+        closeOnClick: 'box'
+    });
+
+    popup.open();
+}
+
 // initialize object into GUI variable
 var GUI = new GUI_control();
