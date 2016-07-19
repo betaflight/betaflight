@@ -427,33 +427,33 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 $('.ui-selected').find('.wire').each(function() {
                     if ($(this).text() != "") {
                         
-                    	var p = $(this).parent();
+                        var p = $(this).parent();
 
                         TABS.led_strip.functions.forEach(function(f) {
                             if (p.is('.function-' + f)) {
 
-								switch (letter) {
-								case 't':
-								case 'o':
-								case 's':
-	                                if (areModifiersActive('function-' + f))
-	                                	p.addClass('function-' + letter);
-									break;
-								case 'b':
-								case 'n':
-	                                if (areBlinkersActive('function-' + f))
-	                                	p.addClass('function-' + letter);
-									break;
-								case 'i':
-	                                if (areOverlaysActive('function-' + f))
-	                                	p.addClass('function-' + letter);
-									break;
-								case 'w':
-	                                if (areOverlaysActive('function-' + f))
-	                                    if (isWarningActive('function-' + f))
-	                                    	p.addClass('function-' + letter);
-									break;
-								}
+                                switch (letter) {
+                                case 't':
+                                case 'o':
+                                case 's':
+                                    if (areModifiersActive('function-' + f))
+                                        p.addClass('function-' + letter);
+                                    break;
+                                case 'b':
+                                case 'n':
+                                    if (areBlinkersActive('function-' + f))
+                                        p.addClass('function-' + letter);
+                                    break;
+                                case 'i':
+                                    if (areOverlaysActive('function-' + f))
+                                        p.addClass('function-' + letter);
+                                    break;
+                                case 'w':
+                                    if (areOverlaysActive('function-' + f))
+                                        if (isWarningActive('function-' + f))
+                                            p.addClass('function-' + letter);
+                                    break;
+                                }
                             }
                         });
                     }
@@ -479,7 +479,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                             var cbb = $('.checkbox .function-b'); // blink
                             
                             if (ret) {
-                            	if (letter == 'b' && cbn.is(':checked')) {
+                                if (letter == 'b' && cbn.is(':checked')) {
                                     cbn.prop('checked', false);
                                     cbn.change();
                                     toggleSwitch(cbn, 'n');
@@ -487,7 +487,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                                     cbb.prop('checked', false);
                                     cbb.change();
                                     toggleSwitch(cbb, 'b');
-                                }	
+                                }    
                             }
                         }
                     });
@@ -718,7 +718,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 break;
             }
         }
-    	return false;
+        return false;
     }
 
     function areOverlaysActive(activeFunction) {
@@ -746,7 +746,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 break;
             }
         }
-    	return false;
+        return false;
     }
 
     function areBlinkersActive(activeFunction) {
@@ -759,7 +759,7 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
                 break;
             }
         }
-    	return false;
+        return false;
     }
 
     function isWarningActive(activeFunction) {
@@ -767,15 +767,15 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             case "function-l": 
             case "function-s":
             case "function-g":
-            	return false;
+                return false;
                 break;
             case "function-r":
             case "function-b":
                 if (semver.lt(CONFIG.apiVersion, "1.20.0"))
-                	return false;
+                    return false;
             break;
             default: 
-            	return true;
+                return true;
             break; 
         }
     }
@@ -819,9 +819,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
             $('.blinkers').show();
 
         if (isWarningActive(activeFunction))
-        	$('.warningOverlay').show();
-        	
-        	
+            $('.warningOverlay').show();
+            
+            
 
         // set directions visibility
         if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
@@ -1045,9 +1045,9 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
     
     function HsvToColor(input) {
-    	if (input == undefined)
-    		return "";
-    	
+        if (input == undefined)
+            return "";
+        
         var HSV = { h:Number(input.h), s:Number(input.s), v:Number(input.v) };
         
         if (HSV.s == 0 && HSV.v == 0)
