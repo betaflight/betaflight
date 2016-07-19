@@ -159,19 +159,19 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-            const float errorAngle = (constrain(2 * rcCommandSmooth[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
-            const float errorAngle = (constrain(2 * rcCommandSmooth[axis], -((int) max_angle_inclination),
-                +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]); // 16 bits is ok here
+                const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
-                angleRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 16.0f;
+                angleRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
             } else {
                 // HORIZON mode - direct sticks control is applied to rate PID
                 // mix up angle error to desired AngleRate to add a little auto-level feel
-                angleRate[axis] = angleRateSmooth[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 16.0f);
+                angleRate[axis] = angleRateSmooth[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
             }
         }
 
