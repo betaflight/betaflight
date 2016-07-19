@@ -701,22 +701,12 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
 
     function areModifiersActive(activeFunction) {
-        if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
-            switch (activeFunction) {
-                case "function-c": 
-                case "function-a": 
-                case "function-f":
-                    return true;
-                break;
-            }
-        } else {
-            switch (activeFunction) {
-                case "function-c": 
-                case "function-a": 
-                case "function-f":
-                    return true;
-                break;
-            }
+        switch (activeFunction) {
+            case "function-c": 
+            case "function-a": 
+            case "function-f":
+                return true;
+            break;
         }
         return false;
     }
@@ -840,8 +830,10 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         $('.mode_colors').hide();
         if (semver.gte(CONFIG.apiVersion, "1.19.0")) { 
             // set mode colors visibility
-            if (activeFunction == "function-f")
-                $('.mode_colors').show(); 
+
+            if (semver.gte(CONFIG.apiVersion, "1.20.0"))
+	            if (activeFunction == "function-f")
+	                $('.mode_colors').show(); 
             
             // set special colors visibility
             $('.special_colors').show();
