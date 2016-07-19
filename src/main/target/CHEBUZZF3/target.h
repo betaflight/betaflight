@@ -19,12 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "CHF3" // Chebuzz F3
 
-#define LED0                PE8 // Blue LEDs - PE8/PE12
+#define LED0                  PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1                PE10  // Orange LEDs - PE10/PE14
+#define LED1                  PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER              PE9 // Red LEDs - PE9/PE13
+#define BEEPER                PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USABLE_TIMER_CHANNEL_COUNT 18
@@ -70,26 +70,11 @@
 #define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
-
-#define ADC_INSTANCE                ADC1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-
-#define VBAT_ADC_GPIO               GPIOC
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_6
-
-#define CURRENT_METER_ADC_GPIO      GPIOC
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_7
-
-#define RSSI_ADC_GPIO               GPIOC
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
-
-#define EXTERNAL1_ADC_GPIO          GPIOC
-#define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
-#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
+#define ADC_INSTANCE          ADC1
+#define VBAT_ADC_PIN          PC0
+#define CURRENT_METER_ADC_PIN PC1
+#define RSSI_ADC_PIN          PC2
+#define EXTERNAL1_ADC_PIN     PC3
 
 #define LED_STRIP
 #if 1

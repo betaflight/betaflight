@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef INVERTER  
+#ifdef INVERTER 
 
 #include "io.h"
 #include "io_impl.h"
@@ -31,9 +31,9 @@ static const IO_t pin = DEFIO_IO(INVERTER);
 
 void initInverter(void)
 {
-    IOInit(pin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(pin, OWNER_INVERTER, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(pin, IOCFG_OUT_PP);
-    
+
     inverterSet(false);
 }
 

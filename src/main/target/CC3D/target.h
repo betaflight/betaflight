@@ -17,13 +17,13 @@
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
-#define LED0                PB3
+#define LED0                  PB3
 
-#define BEEPER              PA15
-#define BEEPER_OPT          PB2
+#define BEEPER                PA15
+#define BEEPER_OPT            PB2
 
-#define INVERTER            PB2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_USART      USART1
+#define INVERTER              PB2 // PB2 (BOOT1) used as inverter select GPIO
+#define INVERTER_USART        USART1
 
 #define MPU6000_CS_GPIO       GPIOA
 #define MPU6000_CS_PIN        GPIO_Pin_4
@@ -44,12 +44,12 @@
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define GYRO_MPU6000_ALIGN CW270_DEG
+#define GYRO_MPU6000_ALIGN    CW270_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
 
-#define ACC_MPU6000_ALIGN CW270_DEG
+#define ACC_MPU6000_ALIGN     CW270_DEG
 
 // External I2C BARO
 #define BARO
@@ -143,23 +143,12 @@
 
 
 #define USE_ADC
-
-#define CURRENT_METER_ADC_GPIO      GPIOB
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
-
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_0
-
+#define CURRENT_METER_ADC_PIN PB1
+#define VBAT_ADC_PIN          PA0
 #ifdef CC3D_PPM1
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_1
+#define RSSI_ADC_PIN          PA1
 #else
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
+#define RSSI_ADC_PIN          PB0
 #endif
 
 #define SONAR

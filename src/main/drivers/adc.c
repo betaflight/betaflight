@@ -33,6 +33,14 @@
 adc_config_t adcConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
+uint8_t adcChannelByTag(ioTag_t ioTag)
+{
+    for (uint8_t i = 0; i < ARRAYLEN(adcTagMap); i++) {
+        if (ioTag == adcTagMap[i].tag)
+            return adcTagMap[i].channel;
+    }
+    return 0;
+}
 
 uint16_t adcGetChannel(uint8_t channel)
 {

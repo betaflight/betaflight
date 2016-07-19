@@ -20,17 +20,17 @@
 #define TARGET_BOARD_IDENTIFIER "AFF3" // ALIENFLIGHTF3
 
 #define USE_HARDWARE_REVISION_DETECTION
-#define HW_PIN              PB2
+#define HW_PIN                PB2
 
 // LED's V1
-#define LED0                PB4
-#define LED1                PB5
+#define LED0                  PB4
+#define LED1                  PB5
 
 // LED's V2
-#define LED0_A              PB8
-#define LED1_A              PB9
+#define LED0_A                PB8
+#define LED1_A                PB9
 
-#define BEEPER              PA5
+#define BEEPER                PA5
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
@@ -116,16 +116,10 @@
 #define MPU6500_SPI_INSTANCE             SPI3
 
 #define USE_ADC
-
-#define ADC_INSTANCE         ADC2
-#define ADC_DMA_CHANNEL      DMA2_Channel1
-#define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
-
-//#define BOARD_HAS_VOLTAGE_DIVIDER
-
-#define VBAT_ADC_GPIO        GPIOA
-#define VBAT_ADC_GPIO_PIN    GPIO_Pin_4
-#define VBAT_ADC_CHANNEL     ADC_Channel_1
+#define ADC_INSTANCE          ADC2
+#define ADC_DMA_CHANNEL       DMA2_Channel1
+#define ADC_AHB_PERIPHERAL    RCC_AHBPeriph_DMA2
+#define VBAT_ADC_PIN          PA4
 
 #define SPEKTRUM_BIND
 // USART2, PA3
