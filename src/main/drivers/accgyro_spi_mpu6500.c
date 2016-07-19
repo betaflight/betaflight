@@ -92,7 +92,7 @@ static void mpu6500SpiInit(void)
 
     GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN);
 
-    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }

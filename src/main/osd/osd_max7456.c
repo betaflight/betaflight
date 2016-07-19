@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 #include "build/debug.h"
@@ -62,12 +63,14 @@ TEXT_SCREEN_CHAR textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more 
 const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
 #ifdef STM32F303
+#ifdef MAX7456_LOS_GPIO
 static const extiConfig_t max7456LOSExtiConfig = {
         .gpioAHBPeripherals = MAX7456_LOS_GPIO_PERIPHERAL,
         .gpioPort = MAX7456_LOS_GPIO,
         .gpioPin = MAX7456_LOS_PIN,
         .io = IO_TAG(MAX7456_LOS_IO),
 };
+#endif
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
         .gpioAHBPeripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
@@ -124,11 +127,19 @@ void osdHardwareInit(void)
 
     osdHardwareApplyConfiguration(osdVideoConfig()->videoMode);
 
-    max7456_extiConfigure(&max7456LOSExtiConfig, &max7456VSYNCExtiConfig, &max7456HSYNCExtiConfig);
+    memset(&max7456ExtiConfig, 0, sizeof(max7456ExtiConfig));
+#ifdef MAX7456_LOS_GPIO
+    max7456ExtiConfig.los = &max7456LOSExtiConfig;
+#endif
+    max7456ExtiConfig.vsync = &max7456VSYNCExtiConfig;
+    max7456ExtiConfig.hsync = &max7456HSYNCExtiConfig;
+
+    max7456_extiConfigure();
 
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
         max7456_showFont();
+
         delay(5000); // give the user a chance to power off before changing
 
         max7456_resetFont();
@@ -140,8 +151,8 @@ void osdHardwareInit(void)
         osdFontConfig()->fontVersion = FONT_VERSION;
         writeEEPROM();
 
-    	max7456_clearScreen();
-    	max7456_ensureDisplayClearIsComplete();
+        max7456_clearScreen();
+        max7456_ensureDisplayClearIsComplete();
     }
 }
 

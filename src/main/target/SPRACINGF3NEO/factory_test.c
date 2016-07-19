@@ -30,6 +30,7 @@
 #include "drivers/gpio.h"
 #include "drivers/exti.h"
 
+#ifdef DEBUG_INTERCONNECTS
 static const extiConfig_t spRacingF3NEOInterconnect1ExtiConfig = {
     .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
     .gpioPort = GPIOC,
@@ -122,8 +123,9 @@ void EXT2_READY_EXTI_Handler(void)
 void configureBoardInterconnects(void)
 {
     /*
-     * The SP Racing F3 NEO has 2 GPIOs connected to a stack connector.  The GPIOs
+     * The SP Racing F3 NEO has 2 GPIOs connected to a stack connector.
      */
     configureBoardInterconnect(&spRacingF3NEOInterconnect1ExtiConfig, EXT1_READY_EXTI_Handler, EXTI_Trigger_Rising);
     configureBoardInterconnect(&spRacingF3NEOInterconnect2ExtiConfig, EXT2_READY_EXTI_Handler, EXTI_Trigger_Rising);
 }
+#endif

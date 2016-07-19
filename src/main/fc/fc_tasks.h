@@ -57,6 +57,9 @@ typedef enum {
 #ifdef TRANSPONDER
     TASK_TRANSPONDER,
 #endif
+#ifdef OSD
+    TASK_DRAW_SCREEN,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT
@@ -84,3 +87,4 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
+void taskDrawScreen(void);

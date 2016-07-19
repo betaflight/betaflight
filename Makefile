@@ -231,6 +231,8 @@ endif
 # OSDs
 ifeq ($(TARGET),$(filter $(TARGET),$(OSD_TARGETS)))
 TARGET_FLAGS := $(TARGET_FLAGS) -DOSD
+else
+TARGET_FLAGS := $(TARGET_FLAGS) -DFC
 endif
 
 
@@ -330,7 +332,7 @@ FC_COMMON_SRC = \
 		   sensors/gyro.c \
 		   sensors/initialisation.c
 
-OSD_COMMON_SRC = \
+OSD_SYSTEM_SRC = \
 		   config/feature.c \
 		   osd/boot.c \
 		   osd/cleanflight_osd.c \
@@ -348,6 +350,10 @@ OSD_COMMON_SRC = \
 		   sensors/voltage.c \
 		   sensors/amperage.c \
 		   io/beeper.c
+
+OSD_COMMON_SRC = \
+		   osd/fc_state.c \
+		   osd/osd.c
 
 HIGHEND_SRC = \
 		   flight/gtune.c \
@@ -721,6 +727,34 @@ SPRACINGF3EVO_SRC	 = \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
 
+SPRACINGF3NEO_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
+		   $(STM32F30x_FC_COMMON_SRC) \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6500.c \
+		   drivers/accgyro_spi_mpu6500.c \
+		   drivers/display_ug2864hsweg01.h \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
+		   drivers/transponder_ir.c \
+		   drivers/transponder_ir_stm32f30x.c \
+		   drivers/video_max7456.c \
+		   drivers/vtx_rtc6705.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
+		   io/transponder_ir.c \
+		   io/flashfs.c \
+		   osd/fonts/font_max7456_12x18.c \
+		   osd/osd_max7456.c \
+		   $(HIGHEND_SRC) \
+		   $(FC_COMMON_SRC) \
+		   $(OSD_COMMON_SRC) \
+		   $(SYSTEM_SRC) \
+		   $(VCP_SRC)
+
 MOTOLAB_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
@@ -791,8 +825,9 @@ SPRACINGF1OSD_SRC = \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
-		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
+		   $(OSD_SYSTEM_SRC) \
+		   $(OSD_COMMON_SRC) \
 		   $(VCP_SRC)
 
 SPRACINGF3OSD_SRC = \
@@ -808,8 +843,9 @@ SPRACINGF3OSD_SRC = \
 		   io/transponder_ir.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
-		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
+		   $(OSD_SYSTEM_SRC) \
+		   $(OSD_COMMON_SRC) \
 		   $(VCP_SRC)
 
 # Search path and source files for the ST stdperiph library

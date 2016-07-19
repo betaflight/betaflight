@@ -47,8 +47,11 @@
 
 #include "osd/config.h"
 
-#include "osd/fc_state.h"
+#ifdef USE_MSP_CLIENT
 #include "osd/msp_client_osd.h"
+#endif
+
+#include "osd/fc_state.h"
 
 #include "osd/osd_screen.h"
 #include "osd/osd_element.h"
@@ -224,7 +227,11 @@ void osdUpdate(void)
         timerState[timId].val += timerTable[i].delay;
     }
 
-    bool showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
+    bool showNowOrFlashWhenFCTimeoutOccured = true;
+
+#ifdef USE_MSP_CLIENT
+    showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
+#endif
 
     osdSetElementFlashOnDisconnectState(showNowOrFlashWhenFCTimeoutOccured);
 

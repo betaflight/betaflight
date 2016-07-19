@@ -20,6 +20,7 @@
 #ifndef SPI1_GPIO
 #define SPI1_GPIO               GPIOA
 #define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
+#define SPI1_NSS_GPIO           GPIOA
 #define SPI1_NSS_PIN            GPIO_Pin_4
 #define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
 #define SPI1_SCK_PIN            GPIO_Pin_5
@@ -62,10 +63,13 @@
 
 #endif
 
-#define SPI_0_28125MHZ_CLOCK_DIVIDER  256
-#define SPI_0_5625MHZ_CLOCK_DIVIDER 128
-#define SPI_18MHZ_CLOCK_DIVIDER     2
-#define SPI_9MHZ_CLOCK_DIVIDER      4
+typedef enum {
+    SPI_CLOCK_INITIALIZATON = 256,
+    SPI_CLOCK_SLOW          = 128, //00.56250 MHz
+    SPI_CLOCK_STANDARD      = 4,   //09.00000 MHz
+    SPI_CLOCK_FAST          = 2,   //18.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2,   //18.00000 MHz
+} SPIClockDivider_e;
 
 bool spiInit(SPI_TypeDef *instance);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);

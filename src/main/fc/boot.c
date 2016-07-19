@@ -65,6 +65,9 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
+#include "drivers/video.h"
+#include "drivers/video_textscreen.h"
+#include "drivers/vtx_rtc6705.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -109,6 +112,9 @@
 #include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
+
+#include "osd/osd_element.h"
+#include "osd/osd.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
@@ -462,6 +468,12 @@ void init(void)
     updateHardwareRevision();
 #endif
 
+#ifdef VTX_RTC6705
+    rtc6705Init();
+    delay(50);
+    rtc6705SetChannel(5, 1); // raceband channel 1
+#endif
+
 #if defined(NAZE)
     if (hardwareRevision == NAZE32_SP) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
@@ -481,7 +493,6 @@ void init(void)
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
 #endif
-
 
 #ifdef USE_I2C
 #if defined(NAZE)
@@ -664,11 +675,17 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
+
     // start all timers
     // TODO - not implemented yet
     timerStart();
 
-#ifdef SPRACINGF3NEO
+#if defined(SPRACINGF3NEO) && defined(DEBUG_INTERCONNECTS)
     void configureBoardInterconnects(void);
 
     configureBoardInterconnects();
@@ -787,6 +804,9 @@ void configureScheduler(void)
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_DRAW_SCREEN, feature(FEATURE_OSD));
 #endif
 }
 

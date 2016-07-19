@@ -364,7 +364,7 @@ static void initActiveBoxIds(void)
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
 
-static uint32_t packFlightModeFlags(void)
+uint32_t packFlightModeFlags(void)
 {
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix

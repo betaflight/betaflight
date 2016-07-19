@@ -96,7 +96,7 @@
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1 // External
+#define USE_SPI_DEVICE_1 // External (MAX7456 & RTC6705)
 #define USE_SPI_DEVICE_2 // SDCard
 #define USE_SPI_DEVICE_3 // MPU
 
@@ -130,46 +130,77 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   SPI3_GPIO_PERIPHERAL
-#define MPU6500_CS_GPIO                  SPI3_NSS_GPIO
-#define MPU6500_CS_PIN                   SPI3_NSS_PIN
-#define MPU6500_SPI_INSTANCE             SPI3
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL  SPI3_GPIO_PERIPHERAL
+#define MPU6500_CS_GPIO                 SPI3_NSS_GPIO
+#define MPU6500_CS_PIN                  SPI3_NSS_PIN
+#define MPU6500_SPI_INSTANCE            SPI3
+
+
+// Bus Switched Device, Device A.
+#define MAX7456_CS_GPIO                 SPI1_NSS_GPIO
+#define MAX7456_CS_PIN                  SPI1_NSS_PIN
+#define MAX7456_SPI_INSTANCE            SPI1
+
+#define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_VSYNC_GPIO              GPIOC
+#define MAX7456_VSYNC_PIN               Pin_4
+#define MAX7456_VSYNC_IO                PC4
+
+#define MAX7456_HSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_HSYNC_GPIO              GPIOC
+#define MAX7456_HSYNC_PIN               Pin_5
+#define MAX7456_HSYNC_IO                PC5
+
+// Bus Switched Device, Device B.
+#define VTX_RTC6705
+#define RTC6705_CS_PERIPHERAL           RCC_AHBPeriph_GPIOF
+#define RTC6705_CS_GPIO                 GPIOF
+#define RTC6705_CS_PIN                  GPIO_Pin_4
+#define RTC6705_SPI_INSTANCE            SPI1
+
 
 #define USE_ADC
+#define DEBUG_ADC_CHANNELS
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
 
 #define ADC_INSTANCE                ADC1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 
-//#define DEBUG_ADC_CHANNELS
-
 // 6 ADC Sources on ADC1
 
-#define VBAT_ADC_GPIO               GPIOC
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_1
-#define VBAT_ADC_CHANNEL            ADC_Channel_7
+#define ADC0_GPIO             GPIOC
+#define ADC0_GPIO_PIN         GPIO_Pin_1
+#define ADC0_CHANNEL          ADC_Channel_7
 
-#define CURRENT_METER_ADC_GPIO      GPIOC
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_8
+#define ADC1_GPIO             GPIOC
+#define ADC1_GPIO_PIN         GPIO_Pin_2
+#define ADC1_CHANNEL          ADC_Channel_8
 
-#define RSSI_ADC_GPIO               GPIOC
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_0
-#define RSSI_ADC_CHANNEL            ADC_Channel_6
+#define ADC2_GPIO             GPIOC
+#define ADC2_GPIO_PIN         GPIO_Pin_0
+#define ADC2_CHANNEL          ADC_Channel_6
 
-#define POWER_12V_ADC_GPIO            GPIOA
-#define POWER_12V_ADC_GPIO_PIN        GPIO_Pin_0
-#define POWER_12V_CHANNEL             ADC_Channel_1
+#define ADC3_GPIO             GPIOA
+#define ADC3_GPIO_PIN         GPIO_Pin_0
+#define ADC3_CHANNEL          ADC_Channel_1
 
-#define POWER_5V_ADC_GPIO             GPIOA
-#define POWER_5V_ADC_GPIO_PIN         GPIO_Pin_1
-#define POWER_5V_CHANNEL              ADC_Channel_2
+#define ADC4_GPIO             GPIOA
+#define ADC4_GPIO_PIN         GPIO_Pin_1
+#define ADC4_CHANNEL          ADC_Channel_2
 
-#define POWER_3V_ADC_GPIO             GPIOC
-#define POWER_3V_ADC_GPIO_PIN         GPIO_Pin_3     // connected directly to 3v3.
-#define POWER_3V_CHANNEL              ADC_Channel_9
+#define ADC5_GPIO             GPIOC
+#define ADC5_GPIO_PIN         GPIO_Pin_3     // connected directly to 3v3.
+#define ADC5_CHANNEL          ADC_Channel_9
+
+#define ADC_CHANNEL_COUNT 6
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_CURRENT     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
+#define ADC_POWER_12V   ADC_CHANNEL3
+#define ADC_POWER_5V    ADC_CHANNEL4
+#define ADC_POWER_3V    ADC_CHANNEL5
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
@@ -185,7 +216,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOB
@@ -198,11 +229,12 @@
 #define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
 #define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 #define DEFAULT_FEATURES (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
 
+#define OSD
 #define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -212,6 +244,7 @@
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -219,3 +252,10 @@
 #define BIND_PIN   Pin_2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - assuming 303 in 64pin package, TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))

@@ -39,11 +39,12 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
-
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/video.h"
+#include "drivers/video_textscreen.h"
 
 #include "fc/rc_controls.h"
 #include "fc/rate_profile.h"
@@ -92,6 +93,12 @@
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
 #include "flight/navigation.h"
+
+#include "osd/osd_element.h"
+#include "osd/osd.h"
+#include "osd/fc_state.h"
+
+#include "fc/msp_server_fc.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
@@ -1059,5 +1066,19 @@ void taskTransponder(void)
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
     }
+}
+#endif
+
+#ifdef OSD
+void osdUpdateFCState(void)
+{
+    fcStatus.vbat = vbat;
+    fcStatus.fcState = packFlightModeFlags();
+}
+
+void taskDrawScreen(void)
+{
+    osdUpdateFCState();
+    osdUpdate();
 }
 #endif

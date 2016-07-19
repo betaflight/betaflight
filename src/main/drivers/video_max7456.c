@@ -131,11 +131,12 @@ volatile uint8_t dma_transaction_in_progress = 0;
 
 uint8_t max7456_videoModeMask;
 
-#define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
-#define ENABLE_MAX7456        GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
+#define DISABLE_MAX7456         GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
+#define ENABLE_MAX7456          GPIO_ResetBits(MAX7456_CS_GPIO, MAX7456_CS_PIN)
 
 textScreen_t max7456Screen;
 max7456State_t max7456State;
+max7456ExtiConfig_t max7456ExtiConfig;
 
 static extiCallbackRec_t losExtiCallbackRec;
 static IO_t losIO;
@@ -204,25 +205,24 @@ void HSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 
 typedef void (*handlerFuncPtr)(void);
 
-void max7456_extiConfigure(
-    const extiConfig_t *losExtiConfig,
-    const extiConfig_t *vSyncExtiConfig,
-    const extiConfig_t *hSyncExtiConfig
-)
-{
-    losIO = IOGetByTag(losExtiConfig->io);
-    IOConfigGPIO(losIO, IOCFG_IN_FLOATING);
-    EXTIHandlerInit(&losExtiCallbackRec, LOS_EXTI_Handler);
-    EXTIConfig(losIO, &losExtiCallbackRec, NVIC_PRIO_OSD_LOS_EXTI, EXTI_Trigger_Rising_Falling);
-    EXTIEnable(losIO, true);
 
-    vsyncIO = IOGetByTag(vSyncExtiConfig->io);
+void max7456_extiConfigure(void)
+{
+    if (max7456ExtiConfig.los) {
+        losIO = IOGetByTag(max7456ExtiConfig.los->io);
+        IOConfigGPIO(losIO, IOCFG_IN_FLOATING);
+        EXTIHandlerInit(&losExtiCallbackRec, LOS_EXTI_Handler);
+        EXTIConfig(losIO, &losExtiCallbackRec, NVIC_PRIO_OSD_LOS_EXTI, EXTI_Trigger_Rising_Falling);
+        EXTIEnable(losIO, true);
+    }
+
+    vsyncIO = IOGetByTag(max7456ExtiConfig.vsync->io);
     IOConfigGPIO(vsyncIO, IOCFG_IN_FLOATING);
     EXTIHandlerInit(&vsyncExtiCallbackRec, VSYNC_EXTI_Handler);
     EXTIConfig(vsyncIO, &vsyncExtiCallbackRec, NVIC_PRIO_OSD_VSYNC_EXTI, EXTI_Trigger_Falling);
     EXTIEnable(vsyncIO, true);
 
-    hsyncIO = IOGetByTag(hSyncExtiConfig->io);
+    hsyncIO = IOGetByTag(max7456ExtiConfig.hsync->io);
     IOConfigGPIO(hsyncIO, IOCFG_IN_FLOATING);
     EXTIHandlerInit(&hsyncExtiCallbackRec, HSYNC_EXTI_Handler);
     EXTIConfig(hsyncIO, &hsyncExtiCallbackRec, NVIC_PRIO_OSD_HSYNC_EXTI, EXTI_Trigger_Falling);
@@ -247,6 +247,9 @@ static void max7456_writeDMA(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
     while (dma_transaction_in_progress); // Wait for prev DMA transaction
 
     // Enable SPI TX/RX request
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
+
+
     ENABLE_MAX7456;
 
     DMA_DeInit(MAX7456_DMA_CHANNEL_TX);
@@ -355,6 +358,8 @@ static void max7456_write(uint8_t address, uint8_t data)
 {
     max7456_waitForDMAToComplete();
 
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
+
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, address);
@@ -368,6 +373,8 @@ static uint8_t max7456_read(uint8_t address)
     uint8_t result;
 
     max7456_waitForDMAToComplete();
+
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
 
     ENABLE_MAX7456;
 
@@ -454,6 +461,7 @@ static void max7456_softReset()
 
 void max7456_hardwareReset(void)
 {
+#ifdef MAX7456_NRST_PIN
     gpio_config_t cfg = { MAX7456_NRST_PIN, Mode_Out_PP, Speed_2MHz };
 
     RCC_AHBPeriphClockCmd(MAX7456_NRST_GPIO_PERIPHERAL, ENABLE);
@@ -464,6 +472,7 @@ void max7456_hardwareReset(void)
     digitalLo(MAX7456_NRST_GPIO, MAX7456_NRST_PIN);
     delay(100);
     digitalHi(MAX7456_NRST_GPIO, MAX7456_NRST_PIN);
+#endif
 }
 
 void max7456_disableOSD(void)
@@ -473,8 +482,6 @@ void max7456_disableOSD(void)
 
 void max7456_init(videoMode_e desiredVideoMode)
 {
-    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
-
     max7456_softReset();
 
     delay(100); // allow time to detect video signal
@@ -634,6 +641,8 @@ void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffe
 #else
 void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
 {
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
+
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
@@ -699,6 +708,8 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
     // divide 16 bits into hi & lo uint8_t
     char_address_hi = linepos >> 8;
     char_address_lo = linepos;
+
+    spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
 
     ENABLE_MAX7456;
 

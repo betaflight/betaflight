@@ -16,7 +16,7 @@
  */
 
 #ifndef MAX7456_SPI_CLOCK_DIVIDER
-#define MAX7456_SPI_CLOCK_DIVIDER SPI_9MHZ_CLOCK_DIVIDER // rated for 10mhz but using 9mhz due to available prescalers.
+#define MAX7456_SPI_CLOCK_DIVIDER SPI_CLOCK_STANDARD // rated for 10mhz but using 9mhz due to available prescalers.
 #endif
 
 #define MAX7456_CHARACTER_BUFFER_SIZE 54
@@ -41,15 +41,19 @@ typedef struct max7456State_s {
     bool useSync;
 } max7456State_t;
 
+typedef struct max7456ExtiConfig_s {
+    const extiConfig_t *los;
+    const extiConfig_t *vsync;
+    const extiConfig_t *hsync;
+} max7456ExtiConfig_t;
+
+extern max7456ExtiConfig_t max7456ExtiConfig;
+
 extern max7456State_t max7456State;
 
 void max7456_hardwareReset(void);
 void max7456_init(videoMode_e videoMode);
-void max7456_extiConfigure(
-    const extiConfig_t *losExtiConfig,
-    const extiConfig_t *vSyncExtiConfig,
-    const extiConfig_t *hSyncExtiConfig
-);
+void max7456_extiConfigure(void);
 void max7456_resetFont(void);
 void max7456_updateLOSState(void);
 void max7456_updateStatus(void);

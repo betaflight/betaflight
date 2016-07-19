@@ -158,6 +158,15 @@ cfTask_t cfTasks[] = {
     },
 #endif
 
+#ifdef OSD
+    [TASK_DRAW_SCREEN] = {
+        .taskName = "DRAW_SCREEN",
+        .taskFunc = taskDrawScreen,
+        .desiredPeriod = 1000000 / 30,      // 30 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
 #ifdef DISPLAY
     [TASK_DISPLAY] = {
         .taskName = "DISPLAY",
