@@ -1,11 +1,15 @@
-# Cleanflight
+# Betaflight
+
+[![Join the chat at https://gitter.im/betaflight/betaflight](https://badges.gitter.im/betaflight/betaflight.svg)](https://gitter.im/betaflight/betaflight?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
 This fork differs from baseflight in that it attempts to use modern software development practices which result in:
 
 1. greater reliability through code robustness and automated testing. 
-2. easier maintainance through code cleanliness.
+2. easier maintenance through code cleanliness.
 3. easier to develop new features. 
 4. easier to re-use code though code de-coupling and modularisation.
 
@@ -16,10 +20,12 @@ The MultiWii software, from which baseflight originated, violates many good soft
 Cleanflight also has additional features not found in baseflight.
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
-* OneShot ESC support.
+* Oneshot ESC support.
+* Blackbox flight recorder logging (to onboard flash or external SD card).
 * Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
-* Support for the TauLabs Sparky board (~$35 STM32F303 I2C sensors, based board with acc/gyro/compass and baro!)
-* Support for the OpenPilot CC3D board. (~$20 STM32F103 board, SPI acc/gyro)
+* Support for the Seriously Pro Racing F3 board (STM32F303, I2C sensors, large flash, excellent I/O.)
+* Support for the TauLabs Sparky board (STM32F303, I2C sensors, based board with acc/gyro/compass and baro, ~$35)
+* Support for the OpenPilot CC3D board. (STM32F103, board, SPI acc/gyro, ~$20)
 * Support for the CJMCU nano quadcopter board.
 * Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
 * Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
@@ -29,17 +35,19 @@ Cleanflight also has additional features not found in baseflight.
 * Better PWM and PPM input and failsafe detection than baseflight.
 * Better FrSky Telemetry than baseflight.
 * MSP Telemetry.
+* Smartport Telemetry.
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
-* Autotune - ported from BradWii, experimental - feedback welcomed.
 * OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
 * In-flight manual PID tuning and rate adjustment.
 * Rate profiles and in-flight selection of them.
 * Graupner PPM failsafe.
 * Graupner HoTT telemetry.
-* Configurable serial port scenarios for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
-+ more many minor bug fixes.
+* Multiple simultaneous telemetry providers.
+* Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
+* Optional lost buzzer on port 6 for CC3D (set enable_buzzer_p6 = ON)
+* And many more minor bug fixes.
 
-For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documenation.
+For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.
 
 http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
 
@@ -65,7 +73,7 @@ Etiquette: Don't ask to ask and please wait around long enough for a reply - som
 
 ## Videos
 
-There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instrutions and other related videos.
+There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instructions and other related videos.
 
 https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
 
@@ -73,17 +81,17 @@ Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
-To configure Cleanflight you should use the Cleanlight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure Cleanflight you should use the Cleanflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
 
 https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
 
 The source for it is here:
 
-https://github.com/hydra/cleanflight-configurator
+https://github.com/cleanflight/cleanflight-configurator
 
 ## Contributing
 
-Contributions are welcome and encouraged.  You can contibute in many ways:
+Contributions are welcome and encouraged.  You can contribute in many ways:
 
 * Documentation updates and corrections.
 * How-To guides - received help?  help others!
@@ -100,22 +108,15 @@ Before creating new issues please check to see if there is an existing one, sear
 
 ## Developers
 
-There is a developers section in the `docs/development` folder.
+Please refer to the development section in the `docs/development` folder.
 
-Before making any code contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
-
-For this fork it is also advised to read about clean code, here are some useful links:
-
-* http://cleancoders.com/
-* http://en.wikipedia.org/wiki/SOLID_%28object-oriented_design%29
-* http://en.wikipedia.org/wiki/Code_smell
-* http://en.wikipedia.org/wiki/Code_refactoring
-* http://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin/dp/0131177052
-
-TravisCI is also used to run automatic builds
+TravisCI is used to run automatic builds
 
 https://travis-ci.org/cleanflight/cleanflight
 
 [![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
+
+## Cleanflight Releases
+https://github.com/cleanflight/cleanflight/releases
 
 
