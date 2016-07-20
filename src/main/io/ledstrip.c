@@ -705,6 +705,7 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
                 default:;
             }
         }
+        if (warningColor)
             applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
     }
 }
