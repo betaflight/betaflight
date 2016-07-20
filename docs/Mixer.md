@@ -115,7 +115,7 @@ Note: You have to configure every motor number starting at 0. Your command will 
 
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
 
-### `smix`
+##### `smix`
 
 Prints current servo mixer
 
@@ -134,6 +134,7 @@ Load servo part of given configuration (`<name>` is from `mixer list`)
 - `<rule>` is index of rule, used mainly for bookkeeping. Rules are applied in this order, but ordering has no influence on result in current code.
 
 - `<servo>`
+
 | id |  Servo slot |
 |----|--------------|
 | 0  | GIMBAL PITCH |
@@ -146,9 +147,9 @@ Load servo part of given configuration (`<name>` is from `mixer list`)
 | 7  | FLAPS |
 
 Only some `<servo>` channels are connected to output, based on mode. For custom modes:
- - RUDDER for CUSTOM_TRI
- - ELEVATOR ... FLAPS for CUSTOM_AIRPLANE
- - no servos for CUSTOM
+  - RUDDER for CUSTOM_TRI
+  - ELEVATOR ... FLAPS for CUSTOM_AIRPLANE
+  - no servos for CUSTOM
 
 GIMBAL handling is hard-coded, mmix rule is ignored.
 
