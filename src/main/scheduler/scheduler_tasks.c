@@ -28,7 +28,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
+        .desiredPeriod = 1000000 / 10,      // 10 Hz
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -43,14 +43,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,     // every 10ms
+        .desiredPeriod = 1000000 / 1000,    // 1 kHz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_ATTITUDE] = {
         .taskName = "ATTITUDE",
         .taskFunc = taskUpdateAttitude,
-        .desiredPeriod = 1000000 / 100,
+        .desiredPeriod = 1000000 / 1000,    // 1 kHz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
@@ -58,7 +58,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "RX",
         .checkFunc = taskUpdateRxCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .desiredPeriod = 1000000 / 50,      // 50 Hz, if event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -89,7 +89,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GPS] = {
         .taskName = "GPS",
         .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
+        .desiredPeriod = 1000000 / 10,      // GPS usually doesn't go faster than 10 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -107,7 +107,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BARO] = {
         .taskName = "BARO",
         .taskFunc = taskUpdateBaro,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = 1000000 / 20,      // 20 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -116,7 +116,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = 1000000 / 20,      // 20 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -125,7 +125,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = 1000000 / 40,
+        .desiredPeriod = 1000000 / 40,      // 40 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -134,7 +134,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
         .taskFunc = taskTransponder,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .desiredPeriod = 1000000 / 250,     // 250 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -143,7 +143,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_DISPLAY] = {
         .taskName = "DISPLAY",
         .taskFunc = taskUpdateDisplay,
-        .desiredPeriod = 1000000 / 10,
+        .desiredPeriod = 1000000 / 10,      // 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -151,7 +151,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = taskUpdateOsd,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .desiredPeriod = 1000000 / 60,      // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -159,7 +159,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .desiredPeriod = 1000000 / 250,     // 250 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
@@ -168,7 +168,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .desiredPeriod = 1000000 / 100,     // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -177,7 +177,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BST_MASTER_PROCESS] = {
         .taskName = "BST_MASTER_PROCESS",
         .taskFunc = taskBstMasterProcess,
-        .desiredPeriod = 1000000 / 50,          // 50 Hz
+        .desiredPeriod = 1000000 / 50,      // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
