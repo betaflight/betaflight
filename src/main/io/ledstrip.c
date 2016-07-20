@@ -687,7 +687,7 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
     }
 
     if (warningFlags) {
-        const hsvColor_t *warningColor = &HSV(BLACK);
+        const hsvColor_t *warningColor = NULL;
 
         bool colorOn = (warningFlashCounter % 2) == 0;   // w_w_
         warningFlags_e warningId = warningFlashCounter / 4;
@@ -705,7 +705,6 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
                 default:;
             }
         }
-        if (warningColor)
             applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
     }
 }
