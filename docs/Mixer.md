@@ -44,14 +44,29 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 
 ## Servo configuration
 
-The cli `servo` command defines the settings for the servo outputs. 
-The cli mixer `smix` command controllers how the mixer maps internal FC data (RC input, PID stabilization output, channel forwarding, etc) to servo outputs.
+The cli `servo` command defines the settings for the servo outputs.
+The cli mixer `smix` command controls how the mixer maps internal FC data (RC input, PID stabilization output, channel forwarding, etc) to servo outputs.
+
+### cli `servo`
+
+`servo <min> <max> <middle> <angleMin> <angleMax> <rate> <forwardFromChannel>`
+
+- `<min>`, `<max>` - limit servo travel, in uS
+
+- `<middle>` - mid value when not forwarding, value from servo mixer is added to this.
+
+- `<angleMin>`,  `<angleMax>` - unused
+
+- `<rate>` - scale for value from servo mixer or gimbal input, -100% .. 100%
+
+- `<forwardFromChannel>` - use RC channel value as reference instead of `<middle>`. Servo will follow given RC channel, with possible correction from servo mixer. `<min>`, `<max>` are still honored.
+
 
 ## Servo filtering
 
-A low-pass filter can be enabled for the servos.  It may be useful for avoiding structural modes in the airframe, for example.  
+A low-pass filter can be enabled for the servos.  It may be useful for avoiding structural modes in the airframe, for example.
 
-### Configuration 
+### Configuration
 
 Currently it can only be configured via the CLI:
 
@@ -70,46 +85,28 @@ One method for tuning the filter cutoff is as follows:
 
 4. If the oscillations are dampened within roughly a second or are no longer present, then you are done.  Be sure to run `save`.
 
-## Servo configuration
+## Custom Motor Mixing
 
-### `servo <min> <max> <middle> <angleMin> <angleMax> <rate> <forwardFromChannel>`
-
-`<min>`, `<max>` - limit servo travel, in uS
-
-`<middle>` - mid value when not forwarding, value from servo mixer is added to this.
-
-`<angleMin>`,  `<angleMax>` - unused
-
-`<rate>` - scale for value from servo mixer or gimbal input, -100% .. 100%
-
-<forwardFromChannel> - use RC channel value as reference instead of `<middle>`. Servo will follow given RC channel, with possible correction from servo mixer. `<min>`, `<max>` are still honored.
-
-## Custom Motor Mixing 
-
-Custom motor mixing allows for completely customized motor configurations. Each motor must be defined with a custom mixing table for that motor. The mix must reflect how close each motor is with reference to the CG (Center of Gravity) of the flight controller. A motor closer to the CG of the flight controller will need to travel less distance than a motor further away.  
+Custom motor mixing allows for completely customized motor configurations. Each motor must be defined with a custom mixing table for that motor. The mix must reflect how close each motor is with reference to the CG (Center of Gravity) of the flight controller. A motor closer to the CG of the flight controller will need to travel less distance than a motor further away.
 
 Steps to configure custom mixer in the CLI:
 
 1. Use `mixer custom` to enable the custom mixing.
-2. Use `mmix reset` to erase the any existing custom mixing. 
+2. Use `mmix reset` to erase the any existing custom mixing.
 3. Optionally use `mmix load <name>` to start with one of available mixers.
 4. Issue a `mmix` statement for each motor.
 
-The mmix statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW` 
+The `mmix` statement has the following syntax: `mmix n THROTTLE ROLL PITCH YAW`
 
-| Mixing table parameter | Definition | 
+| Mixing table parameter | Definition |
 | ---------------------- | ---------- |
-| n	| Motor ordering number |
-| THROTTLE	         | Indicates how much throttle is mixed for this motor. All values used in current configurations are set to 1.0
-                           (full throttle mixing), but other non-zero values may be used. Unused set to 0.0. |
-| ROLL	                 | Indicates how much roll authority this motor imparts to the roll of the flight controller.
-                           Accepts values nominally from -1.0 to 1.0. |
-| PITCH	                 | Indicates the pitch authority this motor has over the flight controller. Also accepts values
-                           nominally from -1.0 to 1.0. |
-| YAW	                 | Indicates the direction of the motor rotation in relationship with the flight controller.
-                           1.0 = CCW -1.0 = CW. |
+| n	                 | Motor ordering number |
+| THROTTLE	         | Indicates how much throttle is mixed for this motor. All values used in current configurations are set to 1.0 (full throttle mixing), but other non-zero values may be used. Unused set to 0.0. |
+| ROLL	                 | Indicates how much roll authority this motor imparts to the roll of the flight controller. Accepts values nominally from -1.0 to 1.0. |
+| PITCH	                 | Indicates the pitch authority this motor has over the flight controller. Also accepts values nominally from -1.0 to 1.0. |
+| YAW	                 | Indicates the direction of the motor rotation in relationship with the flight controller. 1.0 = CCW -1.0 = CW. |
 
-Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers. 
+Note: the `mmix` command may show a motor mix that is not active, custom motor mixes are only active for models that use custom mixers.
 
 Note: You have to configure every motor number starting at 0. Your command will be ignored if there was no `mmix` command for the previous motor number (mixer stops on first THROTTLE value that is zero). See example 5.
 
@@ -124,27 +121,28 @@ Prints current servo mixer
 
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 
-### `smix reset`
+##### `smix reset`
 
 Erase custom mixer. Servo reversal in current profile ONLY is erased too.
 
-### `smix load <name>`
+##### `smix load <name>`
 
 Load servo part of given configuration (`<name>` is from `mixer list`)
 
-### `smix <rule> <servo> <source> <rate> <speed> <min> <max> <box>`
+##### `smix <rule> <servo> <source> <rate> <speed> <min> <max> <box>`
 
-`<rule>` is index of rule, used mainly for bookkeeping. Rules are applied in this order, but ordering has no influence on result in current code.
+- `<rule>` is index of rule, used mainly for bookkeeping. Rules are applied in this order, but ordering has no influence on result in current code.
 
-| id | `<servo>` Servo slot |
+- `<servo>`
+| id |  Servo slot |
 |----|--------------|
 | 0  | GIMBAL PITCH |
 | 1  | GIMBAL ROLL |
-| 2  | ELEVATOR / SINGLECOPTER_4 | 
+| 2  | ELEVATOR / SINGLECOPTER_4 |
 | 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
 | 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
 | 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
-| 6  | THROTTLE (Based ONLY on the first motor output) | 
+| 6  | THROTTLE (Based ONLY on the first motor output) |
 | 7  | FLAPS |
 
 Only some `<servo>` channels are connected to output, based on mode. For custom modes:
@@ -154,7 +152,8 @@ Only some `<servo>` channels are connected to output, based on mode. For custom 
 
 GIMBAL handling is hard-coded, mmix rule is ignored.
 
-| id | `<source>` Input sources |
+- `<source>`
+| id |  Input sources |
 |----|-----------------|
 | 0  | Stabilized ROLL |
 | 1  | Stabilized PITCH |
@@ -173,19 +172,19 @@ GIMBAL handling is hard-coded, mmix rule is ignored.
 
 Stabilized ROLL/PITCH/YAW is taken directly from RC command when in PASSTHRU mode.
 
-`<rate>` is used to scale `<source>`, -100% - 100% is allowed. Note that servo reversal may be applied, see below. Zero `<rate>` will terminate smix table.
+- `<rate>` is used to scale `<source>`, -100% - 100% is allowed. Note that servo reversal may be applied, see below. Zero `<rate>` will terminate smix table.
 
-`<speed>` will limit <source> speed when non-zero. This speed is taken per-rule, so you may limit only some sources. Value is maximal change of value per loop (1ms with default configuration)
+- `<speed>` will limit <source> speed when non-zero. This speed is taken per-rule, so you may limit only some sources. Value is maximal change of value per loop (1ms with default configuration)
 
-`<min>` `<max>` - consult code. value 0% - 100%, using `0 100` will limit mixer rule to -50us .. 50us, it will be worse if you use different values.
+- `<min>` `<max>` - consult code. value 0% - 100%, using `0 100` will limit mixer rule to -50us .. 50us, it will be worse if you use different values.
 
-`<box>` rule will be applied only when `<box>` is zero or corresponding SERVOx mode is enabled.
+- `<box>` rule will be applied only when `<box>` is zero or corresponding SERVOx mode is enabled.
 
-### `smix reverse`
+##### `smix reverse`
 
 Print current servo reversal configuration
 
-### `smix reverse <servo> <source> r|n`
+##### `smix reverse <servo> <source> r|n`
 
 Each `<source>` may be `r`eversed or `n`ormal for given `<servo>`. It is almost equivalent to using negative <rate> in given rule, but `<min>, `<max>` limits are applied to value before reversing.
 `smix reverse` works for non-custom mixers too.
@@ -199,8 +198,8 @@ i.e. when mixing rudder servo slot (`5`) using Stabilized YAW input source (`2`)
 `smix reverse` is a per-profile setting.  So ensure you configure it for your profiles as required.
 
 
-### Example 1: A KK2.0 wired motor setup 
-Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme. 
+### Example 1: A KK2.0 wired motor setup
+Here's an example of a X configuration quad, but the motors are still wired using the KK board motor numbering scheme.
 
 ```
 KK2.0 Motor Layout
@@ -214,33 +213,33 @@ KK2.0 Motor Layout
 
 1. Use `mixer custom`
 2. Use `mmix reset`
-3. Use `mmix 0 1.0,  1.0, -1.0, -1.0` for the Front Left motor. It tells the flight controller the #1 motor is used, provides positive roll, provides negative pitch and is turning CW.  
+3. Use `mmix 0 1.0,  1.0, -1.0, -1.0` for the Front Left motor. It tells the flight controller the #1 motor is used, provides positive roll, provides negative pitch and is turning CW.
 4. Use `mmix 1 1.0, -1.0, -1.0,  1.0` for the Front Right motor. It still provides a negative pitch authority, but unlike the front left, it provides negative roll authority and turns CCW.
 5. Use `mmix 2 1.0, -1.0,  1.0, -1.0` for the Rear Right motor. It has negative roll, provides positive pitch when the speed is increased and turns CW.
 6. Use `mmix 3 1.0,  1.0,  1.0,  1.0` for the Rear Left motor. Increasing motor speed imparts positive roll, positive pitch and turns CCW.
 
-### Example 2: A HEX-U Copter 
+### Example 2: A HEX-U Copter
 
-Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much less force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC. 
+Here is an example of a U-shaped hex; probably good for herding giraffes in the Sahara. Because the 1 and 6 motors are closer to the roll axis, they impart much less force than the motors mounted twice as far from the FC CG. The effect they have on pitch is the same as the forward motors because they are the same distance from the FC CG. The 2 and 5 motors do not contribute anything to pitch because speeding them up and slowing them down has no effect on the forward/back pitch of the FC.
 
-``` 
+```
 HEX6-U
 
-.4........3. 
+.4........3.
 ............
-.5...FC...2. 
+.5...FC...2.
 ............
 ...6....1...
 ```
 
 |Command| Roll | Pitch | Yaw |
-| ----- | ---- | ----- | --- | 
+| ----- | ---- | ----- | --- |
 | Use `mmix 0 1.0, -0.5,  1.0, -1.0` | half negative | full positive | CW |
-| Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW | 
-| Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW | 
-| Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  | 
-| Use `mmix 4 1.0,  1.0,  0.0, -1.0` | full positive | none | CW | 
-| Use `mmix 5 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW | 
+| Use `mmix 1 1.0, -1.0,  0.0,  1.0` | full negative | none | CCW |
+| Use `mmix 2 1.0, -1.0, -1.0, -1.0` | full negative | full negative | CW |
+| Use `mmix 3 1.0,  1.0, -1.0,  1.0` | full positive | full negative | CCW  |
+| Use `mmix 4 1.0,  1.0,  0.0, -1.0` | full positive | none | CW |
+| Use `mmix 5 1.0,  0.5,  1.0,  1.0` | half positive | full positive | CCW |
 
 ### Example 3: Custom tricopter
 
@@ -281,7 +280,7 @@ Note: You can look at the Motors tab in [Cleanflight Cofigurator](https://chrome
 ```
 mixer CUSTOMAIRPLANE
 mmix reset
-mmix 0 1.0 0.0 0.0 0.3  # Left Engine
+mmix 0 1.0 0.0 0.0 0.3   # Left Engine
 mmix 1 1.0 0.0 0.0 -0.3  # Right Engine
 
 smix reset
@@ -294,7 +293,7 @@ smix 3 2 1 100 0 0 100 0  # Pitch / Elevator
 ```
 
 ### Example 5: Use motor output 0,1,2,4 because your output 3 is broken
-For this to work you have to make a dummy mmix for motor 3. We do this by just saying it has 0 impact on yaw, roll and pitch. 
+For this to work you have to make a dummy mmix for motor 3. We do this by just saying it has 0 impact on yaw, roll and pitch.
 ```
 mixer custom
 mmix reset
