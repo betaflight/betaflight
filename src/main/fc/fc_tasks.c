@@ -92,7 +92,7 @@ cfTask_t cfTasks[] = {
     [TASK_GPS] = {
         .taskName = "GPS",
         .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 10,          // GPS usually don't go faster than 10Hz
+        .desiredPeriod = 1000000 / 100,         // 115 (<256) bytes/call @ 115K
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
