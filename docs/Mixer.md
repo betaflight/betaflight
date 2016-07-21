@@ -177,7 +177,7 @@ Stabilized ROLL/PITCH/YAW is taken directly from RC command when in PASSTHRU mod
 
 - `<speed>` will limit <source> speed when non-zero. This speed is taken per-rule, so you may limit only some sources. Value is maximal change of value per loop (1ms with default configuration)
 
-- `<min>` `<max>` - consult code. value 0% - 100%, using `0 100` will limit mixer rule to -50us .. 50us, it will be worse if you use different values.
+- `<min>` `<max>` - Value in percentage of full servo range. For symmetrical servo limits (equal distance between mid and min/max), 0% is servo min, 50% is servo center, 100% is max servo position. When mid position is asymmetrical, 0% and 100% limits will be shifted.
 
 - `<box>` rule will be applied only when `<box>` is zero or corresponding SERVOx mode is enabled.
 
