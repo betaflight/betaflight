@@ -65,9 +65,11 @@
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
-#define CLEANFLIGHT_IDENTIFIER "CLFL"
 #define BASEFLIGHT_IDENTIFIER "BAFL";
+#define BETAFLIGHT_IDENTIFIER "BTFL"
+#define CLEANFLIGHT_IDENTIFIER "CLFL"
 #define INAV_IDENTIFIER "INAV"
+#define RACEFLIGHT_IDENTIFIER "RCFL"
 
 #define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
 #define FLIGHT_CONTROLLER_VERSION_LENGTH    3
@@ -96,6 +98,10 @@
 #define MSP_FC_VERSION                  3    //out message
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
+
+#define MSP_NAME                        10   //out message          Returns user set board name - betaflight
+#define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
+
 
 //
 // MSP commands for Cleanflight original features
@@ -145,19 +151,6 @@
 #define MSP_ARMING_CONFIG               61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
 #define MSP_SET_ARMING_CONFIG           62 //in message          Sets auto_disarm_delay and disarm_kill_switch parameters
 
-#define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
-#define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
-#define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
-
-#define MSP_LOOP_TIME                   73 //out message         Returns FC cycle time i.e looptime parameter
-#define MSP_SET_LOOP_TIME               74 //in message          Sets FC cycle time i.e looptime parameter
-
-#define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
-#define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
-
-#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
-#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
-
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
 //
@@ -173,6 +166,59 @@
 
 // DEPRECATED - Use MSP_BUILD_INFO instead
 #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+
+
+#define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
+#define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
+#define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
+
+#define MSP_LOOP_TIME                   73 //out message         Returns FC cycle time i.e looptime parameter
+#define MSP_SET_LOOP_TIME               74 //in message          Sets FC cycle time i.e looptime parameter
+
+#define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
+#define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
+
+#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
+#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
+
+#define MSP_SDCARD_SUMMARY              79 //out message         Get the state of the SD card
+
+#define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
+#define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
+
+#define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
+#define MSP_SET_TRANSPONDER_CONFIG      83 //in message          Set transponder settings
+
+#define MSP_OSD_CONFIG                  84 //out message         Get osd settings - betaflight
+#define MSP_SET_OSD_CONFIG              85 //in message          Set osd settings - betaflight
+
+#define MSP_OSD_CHAR_READ               86 //out message         Get osd settings - betaflight
+#define MSP_OSD_CHAR_WRITE              87 //in message          Set osd settings - betaflight
+
+#define MSP_VTX_CONFIG                  88 //out message         Get vtx settings - betaflight
+#define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
+
+// Betaflight Additional Commands
+#define MSP_PID_ADVANCED_CONFIG         90
+#define MSP_SET_PID_ADVANCED_CONFIG     91
+
+#define MSP_FILTER_CONFIG               92
+#define MSP_SET_FILTER_CONFIG           93
+
+#define MSP_ADVANCED_TUNING             94
+#define MSP_SET_ADVANCED_TUNING         95
+
+#define MSP_SENSOR_CONFIG               96
+#define MSP_SET_SENSOR_CONFIG           97
+
+#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
+#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
+
+//
+// OSD specific
+//
+#define MSP_OSD_VIDEO_CONFIG            180
+#define MSP_SET_OSD_VIDEO_CONFIG        181
 
 //
 // Multwii original MSP commands
@@ -207,6 +253,7 @@
 #define MSP_3D                   124    //out message         Settings needed for reversible ESCs
 #define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
 #define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
+#define MSP_LED_STRIP_MODECOLOR  127    //out message         Get LED strip mode_color settings
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -227,13 +274,17 @@
 #define MSP_SET_RC_DEADBAND      218    //in message          deadbands for yaw alt pitch roll
 #define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
+#define MSP_SET_LED_STRIP_MODECOLOR 221 //in  message         Set LED strip mode_color settings
 
 // #define MSP_BIND                 240    //in message          no param
+// #define MSP_ALARMS               242
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
-
+#define MSP_RESERVE_1            251    //reserved for system usage
+#define MSP_RESERVE_2            252    //reserved for system usage
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
+#define MSP_RESERVE_3            255    //reserved for system usage
 
 // Additional commands that are not compatible with MultiWii
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
