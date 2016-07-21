@@ -51,6 +51,7 @@ typedef enum {
     BOXGCSNAV,
     BOXHEADINGLOCK,
     BOXSURFACE,
+    BOXFLAPERON,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

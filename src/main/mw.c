@@ -398,6 +398,17 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(HEADING_LOCK);
     }
 
+    /*
+    Flaperon mode
+    */
+    if (IS_RC_MODE_ACTIVE(BOXFLAPERON) && STATE(FLAPERON_AVAILABLE)) {
+        if (!FLIGHT_MODE(FLAPERON)) {
+            ENABLE_FLIGHT_MODE(FLAPERON);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(FLAPERON);
+    }
+
 #if defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
@@ -599,7 +610,7 @@ void taskMainPidLoop(void)
 #ifdef USE_SERVOS
 
     if (isMixerUsingServos()) {
-        servoMixer();
+        servoMixer(currentProfile->flaperon_throw_offset, currentProfile->flaperon_throw_inverted);
     }
 
     if (feature(FEATURE_SERVO_TILT)) {

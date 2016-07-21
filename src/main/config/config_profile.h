@@ -40,5 +40,8 @@ typedef struct profile_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
+
+    uint16_t flaperon_throw_offset;
+    uint8_t flaperon_throw_inverted;
 #endif
 } profile_t;

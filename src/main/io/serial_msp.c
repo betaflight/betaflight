@@ -143,6 +143,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXGCSNAV, "GCS NAV;", 31 },
     { BOXHEADINGLOCK, "HEADING LOCK;", 32 },
     { BOXSURFACE, "SURFACE;", 33 },
+    { BOXFLAPERON, "FLAPERON;", 34 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -437,8 +438,17 @@ void mspInit(void)
     }
 #endif
 
-    if (isFixedWing)
+    if (isFixedWing) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
+    }
+
+    /*
+     * FLAPERON mode active only in case of airplane and custom airplane. Activating on
+     * flying wing can cause bad thing
+     */
+    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+        activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
+    }
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
@@ -511,6 +521,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
         IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
+        IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {

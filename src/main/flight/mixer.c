@@ -53,6 +53,7 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
+#include "config/config_profile.h"
 
 //#define MIXER_DEBUG
 
@@ -355,6 +356,15 @@ void mixerUseConfigs(
 }
 
 #ifdef USE_SERVOS
+
+int16_t getFlaperonDirection(uint8_t servoPin) {
+    if (servoPin == SERVO_FLAPPERON_2) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
@@ -402,6 +412,12 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
         ENABLE_STATE(FIXED_WING);
     } else {
         DISABLE_STATE(FIXED_WING);
+    }
+
+    if (currentMixerMode == MIXER_AIRPLANE || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
+        ENABLE_STATE(FLAPERON_AVAILABLE);
+    } else {
+        DISABLE_STATE(FLAPERON_AVAILABLE);
     }
 
     customMixers = initialCustomMotorMixers;
@@ -464,7 +480,7 @@ void mixerUsePWMIOConfiguration(void)
     int i;
 
     motorCount = 0;
-    
+
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -779,7 +795,7 @@ void mixTable(void)
 
 #ifdef USE_SERVOS
 
-void servoMixer(void)
+void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
@@ -835,13 +851,26 @@ void servoMixer(void)
             int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
             int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
 
-            if (currentServoMixer[i].speed == 0)
+            if (currentServoMixer[i].speed == 0) {
                 currentOutput[i] = input[from];
-            else {
-                if (currentOutput[i] < input[from])
+            } else {
+                if (currentOutput[i] < input[from]) {
                     currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
-                else if (currentOutput[i] > input[from])
+                } else if (currentOutput[i] > input[from]) {
                     currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
+                }
+            }
+
+            /*
+            Flaperon fligh mode
+            */
+            if (FLIGHT_MODE(FLAPERON) && (target == SERVO_FLAPPERON_1 || target == SERVO_FLAPPERON_2)) {
+                int8_t multiplier = 1;
+
+                if (flaperon_throw_inverted == 1) {
+                    multiplier = -1;
+                }
+                currentOutput[i] += flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
             }
 
             servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);

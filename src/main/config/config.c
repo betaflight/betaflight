@@ -604,6 +604,10 @@ static void resetConf(void)
 
     // gimbal
     currentProfile->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+
+    currentProfile->flaperon_throw_offset = FLAPERON_THROW_DEFAULT;
+    currentProfile->flaperon_throw_inverted = 0;
+
 #endif
 
     // custom mixer. clear by defaults.

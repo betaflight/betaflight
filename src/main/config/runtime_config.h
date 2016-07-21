@@ -45,6 +45,7 @@ typedef enum {
     UNUSED_MODE2    = (1 << 11), // old G-Tune
     NAV_WP_MODE     = (1 << 12),
     HEADING_LOCK    = (1 << 13),
+    FLAPERON        = (1 << 14),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
@@ -54,12 +55,14 @@ extern uint16_t flightModeFlags;
 #define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
 typedef enum {
-    GPS_FIX_HOME    = (1 << 0),
-    GPS_FIX         = (1 << 1),
-    CALIBRATE_MAG   = (1 << 2),
-    SMALL_ANGLE     = (1 << 3),
-    FIXED_WING      = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
-    ANTI_WINDUP     = (1 << 5),
+    GPS_FIX_HOME        = (1 << 0),
+    GPS_FIX             = (1 << 1),
+    CALIBRATE_MAG       = (1 << 2),
+    SMALL_ANGLE         = (1 << 3),
+    FIXED_WING          = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
+    ANTI_WINDUP         = (1 << 5),
+    //PID_ATTENUATE       = (1 << 6),
+    FLAPERON_AVAILABLE  = (1 << 7)
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
