@@ -307,15 +307,20 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         if (pidProfile->dterm_lpf_hz) {
             newDTerm = pt1FilterApply4(&pidState->deltaLpfState, newDTerm, pidProfile->dterm_lpf_hz, dT);
         }
+
+        // Additionally constrain D
+        newDTerm = constrainf(newDTerm, -300.0f, 300.0f);
     }
 
     // TODO: Get feedback from mixer on available correction range for each axis
-    const float pidAttenuationFactor = STATE(PID_ATTENUATE) ? 0.33f : 1.0f;
-    const float newOutput = (newPTerm + newDTerm) * pidAttenuationFactor + pidState->errorGyroIf;
+    const float newOutput = newPTerm + newDTerm + pidState->errorGyroIf;
     const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
 
-    // Integrate only if we can do backtracking
-    pidState->errorGyroIf += (rateError * pidState->kI * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);
+    // Prevent strong Iterm accumulation during stick inputs
+    const float integratorThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
+    const float antiWindupScaler = constrainf(1.0f - (ABS(pidState->rateTarget) / integratorThreshold), 0.0f, 1.0f);
+
+    pidState->errorGyroIf += (rateError * pidState->kI * antiWindupScaler * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);
 
     // Don't grow I-term if motors are at their limit
     if (STATE(ANTI_WINDUP) || motorLimitReached) {

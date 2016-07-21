@@ -452,17 +452,8 @@ void processRx(void)
                 DISABLE_STATE(ANTI_WINDUP);
                 pidResetErrorAccumulators();
             }
-
-            // Enable low-throttle PID attenuation on multicopters
-            if (!STATE(FIXED_WING)) {
-                ENABLE_STATE(PID_ATTENUATE);
-            }
-            else {
-                DISABLE_STATE(PID_ATTENUATE);
-            }
         }
         else {
-            DISABLE_STATE(PID_ATTENUATE);
             DISABLE_STATE(ANTI_WINDUP);
         }
     }

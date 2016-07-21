@@ -60,10 +60,12 @@ typedef struct pidProfile_s {
     uint16_t yaw_p_limit;
     uint8_t yaw_lpf_hz;
 
+    uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for ignoring iterm for pitch and roll on certain rates
+    uint16_t yawItermIgnoreRate;            // Experimental threshold for ignoring iterm for yaw on certain rates
+
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 
-    uint8_t mag_hold_rate_limit;    //Maximum rotation rate MAG_HOLD mode cas feed to yaw rate PID controller
-
+    uint8_t mag_hold_rate_limit;            //Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
 } pidProfile_t;
 
 extern int16_t axisPID[];
