@@ -54,19 +54,14 @@
 // External I2C BARO
 #define BARO
 #define USE_BARO_BMP085
-#define USE_BARO_MS5611
-
-#if !defined(OPBL)
 #define USE_BARO_BMP280
-#endif 
+#define USE_BARO_MS5611
 
 // External I2C MAG
 #define MAG
 #define USE_MAG_HMC5883
-#if !defined(OPBL)
 #define USE_MAG_AK8975
 #define USE_MAG_MAG3110
-#endif
 
 #define USE_VCP
 #define USE_USART1
@@ -182,19 +177,24 @@
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 
-#ifdef OPBL
+#ifdef CC3D_OPBL
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
 #define TARGET_MOTOR_COUNT 6
 #else
 #define TARGET_MOTOR_COUNT 4
 #undef USE_SONAR_SRF10
-#endif
+#endif // USE_RX_NRF24
+#undef USE_MAG_AK8975
+#undef USE_MAG_MAG3110
+#undef USE_BARO_BMP280
 #undef USE_BARO_MS5611
 #undef BLACKBOX
 #undef TELEMETRY
 #undef TELEMETRY_LTM
-#endif
+#undef SERIAL_RX
+#undef SPEKTRUM_BIND
+#endif //CC3D_OPBL
 
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
