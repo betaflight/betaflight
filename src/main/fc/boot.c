@@ -361,6 +361,10 @@ void init(void)
     }
 #endif
 
+#ifdef VTX_RTC6705
+    rtc6705Init();
+#endif
+
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
@@ -477,8 +481,6 @@ void init(void)
 #endif
 
 #ifdef VTX_RTC6705
-    rtc6705Init();
-    delay(50);
     rtc6705SetChannel(5, 1); // raceband channel 1
 #endif
 
