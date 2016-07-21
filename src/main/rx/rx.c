@@ -57,6 +57,7 @@
 #include "rx/msp.h"
 #include "rx/xbus.h"
 #include "rx/ibus.h"
+#include "rx/srxl.h"
 
 #include "rx/rx.h"
 
@@ -242,7 +243,10 @@ void serialRxInit(rxConfig_t *rxConfig)
             rxRefreshRate = 11000;
             enabled = sumhInit(&rxRuntimeConfig, &rcReadRawFunc);
             break;
-        case SERIALRX_XBUS_MODE_B:
+        case SERIALRX_SRXL:
+			rxRefreshRate = 11000;
+            enabled = srxlInit(&rxRuntimeConfig, &rcReadRawFunc);
+            break;
         case SERIALRX_XBUS_MODE_B_RJ01:
             rxRefreshRate = 11000;
             enabled = xBusInit(&rxRuntimeConfig, &rcReadRawFunc);
@@ -279,7 +283,8 @@ uint8_t serialRxFrameStatus(void)
             return sumdFrameStatus();
         case SERIALRX_SUMH:
             return sumhFrameStatus();
-        case SERIALRX_XBUS_MODE_B:
+        case SERIALRX_SRXL:
+						return srxlFrameStatus();
         case SERIALRX_XBUS_MODE_B_RJ01:
             return xBusFrameStatus();
         case SERIALRX_IBUS:

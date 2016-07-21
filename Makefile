@@ -246,6 +246,7 @@ SYSTEM_SRC = \
 		   common/printf.c \
 		   common/streambuf.c \
 		   common/typeconversion.c \
+			 common/crc.c \
 		   drivers/buf_writer.c \
 		   drivers/dma.c \
 		   drivers/serial.c \
@@ -258,7 +259,7 @@ SYSTEM_SRC = \
 		   $(TARGET_SRC) \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
- 
+
 FC_COMMON_SRC = \
 		   config/feature.c \
 		   config/profile.c \
@@ -302,6 +303,7 @@ FC_COMMON_SRC = \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+			 rx/srxl.c \
 		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
@@ -351,7 +353,7 @@ VCP_SRC = \
 		   vcp/usb_prop.c \
 		   vcp/usb_pwr.c \
 		   drivers/serial_usb_vcp.c \
-		   drivers/usb_io.c 
+		   drivers/usb_io.c
 
 STM32F10x_COMMON_SRC = \
 		   drivers/adc.c \
@@ -584,7 +586,7 @@ COLIBRI_RACE_SRC = \
 		   $(FC_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
-		   
+
 LUX_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
@@ -757,7 +759,7 @@ SPRACINGF3MINI_SRC	 = \
 		   $(FC_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
-		   
+
 IRCFUSIONF3_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
