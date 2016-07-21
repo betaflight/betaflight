@@ -694,10 +694,10 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
         if (warningFlags & (1 << warningId)) {
             switch (warningId) {
                 case WARNING_ARMING_DISABLED:
-                    warningColor = colorOn ? &HSV(GREEN)  : NULL;
+                    warningColor = colorOn ? &HSV(GREEN)  : &HSV(BLACK);
                     break;
                 case WARNING_LOW_BATTERY:
-                    warningColor = colorOn ? &HSV(RED)    : NULL;
+                    warningColor = colorOn ? &HSV(RED)    : &HSV(BLACK);
                     break;
                 case WARNING_FAILSAFE:
                     warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);
