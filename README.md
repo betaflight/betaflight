@@ -11,6 +11,7 @@ Starting at 22-06-2016 INAV uses the same scaling for PIDs as Cleanflight/Betafl
 * PIDs from CF/BF can be used in INAV, no need to retune for INAV
 * INAV uses the same PID defaults that Cleanflight and Betaflight
 * Current INAV tunes can be converted to new using [this guide](https://github.com/iNavFlight/inav/wiki/PID-conversion-from-pre-1.2-to-1.2). This applies to all INAV 1.1
+* [Conversion spreadsheet](https://docs.google.com/spreadsheets/d/133vfzz6_38W5nUmoRNuP7ZX9V1E-8IG6x0FxuxkBuQg/edit?usp=sharing)
 
 ## Features
 
