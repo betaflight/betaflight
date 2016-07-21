@@ -197,25 +197,32 @@ void flashLedsAndBeep(void)
 void buttonsInit(void)
 {
 
+#ifdef BUTTON_A_PIN
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
         Speed_2MHz
     };
     gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+#endif
 
+#ifdef BUTTON_B_PIN
     gpio_config_t buttonBGpioConfig = {
         BUTTON_B_PIN,
         Mode_IPU,
         Speed_2MHz
     };
     gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+#endif
 
     delayMicroseconds(10);  // allow GPIO configuration to settle
 }
 
 void buttonsHandleColdBootButtonPresses(void)
 {
+#if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
+    // two buttons required
+
     uint8_t secondsRemaining = 10;
     bool bothButtonsHeld;
     do {
@@ -247,6 +254,7 @@ void buttonsHandleColdBootButtonPresses(void)
 
         systemResetToBootloader();
     }
+#endif
 }
 
 #endif

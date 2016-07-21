@@ -246,10 +246,18 @@
 #define USE_CLI
 #define USE_EXTI
 
+#define BUTTONS
+#define BUTTON_A_PORT  GPIOD
+#define BUTTON_A_PIN   Pin_2
+
+#define HARDWARE_BIND_PLUG
+#define BINDPLUG_PORT  BUTTON_A_PORT
+#define BINDPLUG_PIN   BUTTON_A_PIN
+
 #define SPEKTRUM_BIND
-// USART3,
+// USART3
 #define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_2
+#define BIND_PIN   Pin_3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
