@@ -73,7 +73,7 @@ $(document).ready(function () {
                     // Reset various UI elements
                     $('span.i2c-error').text(0);
                     $('span.cycle-time').text(0);
-                    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0"))
+                    if (CONFIG.flightControllerVersion !== '' && semver.gte(CONFIG.flightControllerVersion, "3.0.0"))
                         $('span.cpu-load').text('');
 
                     // unlock port select & baud
@@ -189,45 +189,50 @@ function onOpen(openInfo) {
             if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.apiVersionAccepted)) {
 
                 MSP.send_message(MSP_codes.MSP_FC_VARIANT, false, false, function () {
+                    if (CONFIG.flightControllerIdentifier === 'BTFL') {
+                        MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
 
-                    MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
+                            GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
 
-                        GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
+                            MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
 
-                        MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
+                                GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
 
-                            GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
+                                MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
 
-                            MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
+                                    GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
 
-                                GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
+                                    MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
+                                        GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
 
-                                MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
-                                    GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
+                                        // continue as usually
+                                        CONFIGURATOR.connectionValid = true;
+                                        GUI.allowedTabs = GUI.defaultAllowedTabsWhenConnected.slice();
+                                        if (semver.lt(CONFIG.apiVersion, "1.4.0")) {
+                                            GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
+                                        }
 
-                                    // continue as usually
-                                    CONFIGURATOR.connectionValid = true;
-                                    GUI.allowedTabs = GUI.defaultAllowedTabsWhenConnected.slice();
-                                    if (semver.lt(CONFIG.apiVersion, "1.4.0")) {
-                                        GUI.allowedTabs.splice(GUI.allowedTabs.indexOf('led_strip'), 1);
-                                    }
+                                        GUI.canChangePidController = semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion);
 
-                                    GUI.canChangePidController = semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion);
+                                        onConnect();
 
-                                    onConnect();
-
-                                    $('#tabs ul.mode-connected .tab_setup a').click();
+                                        $('#tabs ul.mode-connected .tab_setup a').click();
+                                    });
                                 });
                             });
                         });
-                    });
+                    } else {
+                        GUI.show_modal(chrome.i18n.getMessage('warningTitle'),
+                            chrome.i18n.getMessage('firmwareTypeNotSupported'));
+
+                        connectCli();
+                    }
                 });
             } else {
-                GUI.log(chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.apiVersionAccepted]));
-                CONFIGURATOR.connectionValid = true; // making it possible to open the CLI tab
-                GUI.allowedTabs = ['cli'];
-                onConnect();
-                $('#tabs .tab_cli a').click();
+                GUI.show_modal(chrome.i18n.getMessage('warningTitle'),
+                    chrome.i18n.getMessage('firmwareVersionNotSupported', [CONFIGURATOR.apiVersionAccepted]));
+
+                connectCli();
             }
         });
     } else {
@@ -245,6 +250,13 @@ function onOpen(openInfo) {
     }
 }
 
+function connectCli() {
+    CONFIGURATOR.connectionValid = true; // making it possible to open the CLI tab
+    GUI.allowedTabs = ['cli'];
+    onConnect();
+    $('#tabs .tab_cli a').click();
+}
+
 function onConnect() {
     GUI.timeout_remove('connecting'); // kill connecting timer
     $('div#connectbutton a.connect_state').text(chrome.i18n.getMessage('disconnect')).addClass('active');
@@ -252,20 +264,24 @@ function onConnect() {
     $('#tabs ul.mode-disconnected').hide();
     $('#tabs ul.mode-connected').show(); 
     
-    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-    	MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
-    } else {
-    	MSP.send_message(MSP_codes.MSP_STATUS, false, false);
-
-        if (semver.gte(CONFIG.flightControllerVersion, "2.4.0")) {
-            CONFIG.numProfiles = 2;
-            $('select[name="profilechange"] .profile3').hide();
+    if (CONFIG.flightControllerVersion !== '') {
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
         } else {
-            CONFIG.numProfiles = 3;
+            MSP.send_message(MSP_codes.MSP_STATUS, false, false);
+
+            if (semver.gte(CONFIG.flightControllerVersion, "2.4.0")) {
+                CONFIG.numProfiles = 2;
+                $('select[name="profilechange"] .profile3').hide();
+            } else {
+                CONFIG.numProfiles = 3;
+            }
         }
-    }
     
-    MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+
+        startLiveDataRefreshTimer();
+    }
     
     var sensor_state = $('#sensor-status');
     sensor_state.show(); 
@@ -275,8 +291,6 @@ function onConnect() {
 
     var dataflash = $('#dataflash_wrapper_global');
     dataflash.show();
-    
-    startLiveDataRefreshTimer();
 }
 
 function onClosed(result) {
