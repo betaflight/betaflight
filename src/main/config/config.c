@@ -537,6 +537,7 @@ static void resetConf(void)
 #ifdef BRUSHED_MOTORS
     masterConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    masterConfig.use_unsyncedPwm = true;
 #else
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;

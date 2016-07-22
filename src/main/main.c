@@ -323,7 +323,6 @@ void init(void)
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
-        use_unsyncedPwm = false;
     }
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
