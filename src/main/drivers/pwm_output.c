@@ -137,7 +137,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
 static void pwmWriteBrushed(uint8_t index, uint16_t value)
 {
-    *motors[index]->ccr = (value - 1000) * motors[index]->period / 1000;
+    *motors[index]->ccr = (value - 1000) * motors[index]->period / 850;
 }
 
 static void pwmWriteStandard(uint8_t index, uint16_t value)
@@ -201,10 +201,10 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate)
+void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex)
 {
     const uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-    motors[motorIndex] = pwmOutConfig(timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / motorPwmRate, 0);
+    motors[motorIndex] = pwmOutConfig(timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / 850, 0);
     motors[motorIndex]->pwmWritePtr = pwmWriteBrushed;
 }
 
