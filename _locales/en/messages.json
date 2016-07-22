@@ -1620,7 +1620,7 @@
         "message": "Vbat PID Compensation"
     },
     "pidTuningVbatPidCompensationHelp": {
-        "message": "Increases the PID values to compensate when Vbat gets lower. This will give more constant flight characteristics throughout the flight. The amount of compensation that is applied is calculated from Maximum Cell Voltage above, so make this is set to something appropriate."
+        "message": "Increases the PID values to compensate when Vbat gets lower. This will give more constant flight characteristics throughout the flight. The amount of compensation that is applied is calculated from Maximum Cell Voltage above, so make sure this is set to something appropriate."
     },
     "configHelp2": {
         "message": "Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc. When running external sensors, use the sensor alignments (Gyro, Acc, Mag) to define sensor position independent from board orientation. "
