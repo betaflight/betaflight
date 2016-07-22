@@ -174,24 +174,12 @@
 #define I2C1_SDA_PIN_SOURCE  GPIO_PinSource9
 #define I2C1_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOB
 
-#define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
-#define ADC_INSTANCE                ADC1
-#define ADC_DMA_CHANNEL             DMA1_Channel1
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
-
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_2
-
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_2
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_3
+#define USE_ADC
+#define ADC_INSTANCE            ADC1
+#define VBAT_ADC_PIN            PA0
+#define RSSI_ADC_PIN            PA1
+#define CURRENT_METER_ADC_PIN   PA2
 
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_0   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
