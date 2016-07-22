@@ -19,9 +19,10 @@
 #include <stdint.h>
 
 #include <platform.h>
-#include "build_config.h"
 
 #ifdef USE_RX_NRF24
+
+#include "build_config.h"
 #include "drivers/rx_nrf24l01.h"
 #include "rx/rx.h"
 #include "rx/nrf24.h"

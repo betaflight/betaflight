@@ -62,7 +62,6 @@ void initSpi1(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
     RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, ENABLE);
 
-
 #ifdef STM32F303xC
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -71,9 +70,11 @@ void initSpi1(void)
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_5);
+
 #ifdef SPI1_NSS_PIN_SOURCE
     GPIO_PinAFConfig(SPI1_GPIO, SPI1_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
+
     // Init pins
     GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -91,20 +92,22 @@ void initSpi1(void)
 
     GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
 #endif
-
 #endif
 
 #ifdef STM32F10X
     gpio_config_t gpio;
+
     // MOSI + SCK as output
     gpio.mode = Mode_AF_PP;
     gpio.pin = SPI1_MOSI_PIN | SPI1_SCK_PIN;
     gpio.speed = Speed_50MHz;
     gpioInit(GPIOA, &gpio);
+
     // MISO as input
     gpio.pin = SPI1_MISO_PIN;
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(GPIOA, &gpio);
+
 #ifdef SPI1_NSS_PIN
     // NSS as gpio slave select
     gpio.pin = SPI1_NSS_PIN;
@@ -113,7 +116,7 @@ void initSpi1(void)
 #endif
 #endif
 
-    // Init SPI hardware
+    // Init SPI1 hardware
     SPI_I2S_DeInit(SPI1);
 
     spi.SPI_Mode = SPI_Mode_Master;
@@ -122,9 +125,15 @@ void initSpi1(void)
     spi.SPI_NSS = SPI_NSS_Soft;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+
+#if (defined(USE_SDCARD_SPI1) || defined(USE_NRF24_SPI1))
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
     spi.SPI_CPOL = SPI_CPOL_High;
     spi.SPI_CPHA = SPI_CPHA_2Edge;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
@@ -133,6 +142,11 @@ void initSpi1(void)
 
     SPI_Init(SPI1, &spi);
     SPI_Cmd(SPI1, ENABLE);
+
+#ifdef SPI1_NSS_PIN
+    // Drive NSS high to disable connected SPI device.
+    GPIO_SetBits(SPI1_GPIO, SPI1_NSS_PIN);
+#endif
 }
 #endif
 
@@ -166,7 +180,6 @@ void initSpi2(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
     RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI2, ENABLE);
 
-
 #ifdef STM32F303xC
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -175,6 +188,7 @@ void initSpi2(void)
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_SCK_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_MISO_PIN_SOURCE, GPIO_AF_5);
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_MOSI_PIN_SOURCE, GPIO_AF_5);
+
 #ifdef SPI2_NSS_PIN_SOURCE
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
 #endif
@@ -195,7 +209,6 @@ void initSpi2(void)
 
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
 #endif
-
 #endif
 
 #ifdef STM32F10X
@@ -206,6 +219,7 @@ void initSpi2(void)
     gpio.pin = SPI2_SCK_PIN | SPI2_MOSI_PIN;
     gpio.speed = Speed_50MHz;
     gpioInit(SPI2_GPIO, &gpio);
+
     // MISO as input
     gpio.pin = SPI2_MISO_PIN;
     gpio.mode = Mode_IN_FLOATING;
@@ -222,27 +236,34 @@ void initSpi2(void)
     // Init SPI2 hardware
     SPI_I2S_DeInit(SPI2);
 
-    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spi.SPI_Mode = SPI_Mode_Master;
+    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spi.SPI_DataSize = SPI_DataSize_8b;
-    spi.SPI_CPOL = SPI_CPOL_High;
-    spi.SPI_CPHA = SPI_CPHA_2Edge;
     spi.SPI_NSS = SPI_NSS_Soft;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+
+#ifdef USE_SDCARD_SPI2
+    spi.SPI_CPOL = SPI_CPOL_Low;
+    spi.SPI_CPHA = SPI_CPHA_1Edge;
+#else
+    spi.SPI_CPOL = SPI_CPOL_High;
+    spi.SPI_CPHA = SPI_CPHA_2Edge;
+#endif
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
     SPI_RxFIFOThresholdConfig(SPI2, SPI_RxFIFOThreshold_QF);
 #endif
+
     SPI_Init(SPI2, &spi);
     SPI_Cmd(SPI2, ENABLE);
 
+#ifdef SPI2_NSS_PIN
     // Drive NSS high to disable connected SPI device.
     GPIO_SetBits(SPI2_GPIO, SPI2_NSS_PIN);
-
-
+#endif
 }
 #endif
 

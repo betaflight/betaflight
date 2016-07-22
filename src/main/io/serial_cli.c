@@ -393,6 +393,7 @@ static const char * const lookupTableNRF24RX[] = {
     "CX10A",
     "H8_3D",
     "H8_3D_DEV",
+    "REF"
 };
 #endif
 
