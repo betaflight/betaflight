@@ -1819,7 +1819,7 @@ input {
 
 }
 
-@media only screen and (max-height: 700px) , only screen and (max-device-height: 700px) {
+@media only screen and (max-height: 750px) , only screen and (max-device-height: 750px) {
 
 .tab_container {
     overflow-x: hidden;
