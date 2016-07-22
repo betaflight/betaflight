@@ -341,7 +341,8 @@ TABS.firmware_flasher.initialize = function (callback) {
         });
 
         $(document).on('click', 'span.progressLabel a.save_firmware', function () {
-            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: 'betaflight', accepts: [{extensions: ['hex']}]}, function (fileEntry) {
+            var summary = $('select[name="firmware_version"] option:selected').data('summary');
+            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: summary.file, accepts: [{extensions: ['hex']}]}, function (fileEntry) {
                 if (chrome.runtime.lastError) {
                     console.error(chrome.runtime.lastError.message);
                     return;
