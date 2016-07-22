@@ -42,10 +42,14 @@ TABS.pid_tuning.initialize = function (callback) {
     });
 
     function pid_and_rc_to_form() {
-        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
             //This will need to be reworked to remove BF_CONFIG reference eventually
             $('.pid_tuning input[name="show_superexpo_rates"]').prop(
                 'checked', bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT));
+        }
+
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+            $('input[name="vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
         }
 
         // Fill in the data from PIDs array
@@ -215,13 +219,17 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     function form_to_pid_and_rc() {
-        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
             //This will need to be reworked to remove BF_CONFIG reference eventually
             if ($('.pid_tuning input[name="show_superexpo_rates"]').is(':checked')) {
                 BF_CONFIG.features = bit_set(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
             } else {
                 BF_CONFIG.features = bit_clear(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
             }
+        }
+
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+            ADVANCED_TUNING.vbatPidCompensation = $('input[name="vbatpidcompensation"]').is(':checked') ? 1 : 0;
         }
 
         // Fill in the data from PIDs array
