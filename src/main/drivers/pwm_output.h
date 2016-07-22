@@ -26,7 +26,7 @@ typedef enum {
 } motorPwmProtocolTypes_e;
 
 struct timerHardware_s;
-void pwmBrushedMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
+void pwmBrushedMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex);
 void pwmBrushlessMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmFastPwmMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t fastPwmProtocolType);
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
