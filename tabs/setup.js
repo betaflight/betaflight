@@ -54,6 +54,12 @@ TABS.setup.initialize = function (callback) {
         // set heading in interactive block
         $('span.heading').text(chrome.i18n.getMessage('initialSetupAttitude', [0]));
 
+        // check if we have accelerometer
+        if (!have_sensor(CONFIG.activeSensors, 'acc')) {
+            $('a.calibrateAccel').addClass('disabled');
+            $('default_btn').addClass('disabled');
+
+        }
 
         // check if we have magnetometer
         if (!bit_check(CONFIG.activeSensors, 2)) {
