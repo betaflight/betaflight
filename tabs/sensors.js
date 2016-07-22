@@ -185,16 +185,16 @@ TABS.sensors.initialize = function (callback) {
 
         // disable graphs for sensors that are missing
         var checkboxes = $('.tab-sensors .info .checkboxes input');
-        if (!have_sensor(CONFIG.activeSensors, 'acc')) { // acc
+        if (!have_sensor(CONFIG.activeSensors, 'acc')) {
             checkboxes.eq(1).prop('disabled', true);
         }
-        if (!bit_check(CONFIG.activeSensors, 1)) { // baro
-            checkboxes.eq(3).prop('disabled', true);
-        }
-        if (!bit_check(CONFIG.activeSensors, 2)) { // mag
+        if (!have_sensor(CONFIG.activeSensors, 'mag')) {
             checkboxes.eq(2).prop('disabled', true);
         }
-        if (!bit_check(CONFIG.activeSensors, 4)) { // sonar
+        if (!have_sensor(CONFIG.activeSensors, 'baro')) {
+            checkboxes.eq(3).prop('disabled', true);
+        }
+        if (!have_sensor(CONFIG.activeSensors, 'sonar')) {
             checkboxes.eq(4).prop('disabled', true);
         }
 
