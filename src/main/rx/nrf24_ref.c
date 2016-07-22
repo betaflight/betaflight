@@ -20,9 +20,10 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
 
 #ifdef USE_RX_REF
+
+#include "build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
@@ -93,7 +94,6 @@ STATIC_UNIT_TESTED uint8_t refRfChannelIndex;
 STATIC_UNIT_TESTED uint8_t refRfChannels[REF_RF_CHANNEL_COUNT];
 #define REF_RF_BIND_CHANNEL 0x4c
 
-//static uint32_t packetCount = 0;
 static uint32_t timeOfLastHop;
 static const uint32_t hopTimeout = 5000; // 5ms
 
@@ -167,22 +167,23 @@ static void refHopToNextChannel(void)
 }
 
 // The hopping channels are determined by the low bits of rxTxAddr
-STATIC_UNIT_TESTED void refSetHoppingChannels(uint32_t addr)
+STATIC_UNIT_TESTED void refSetHoppingChannels(uint8_t addr)
 {
-    addr = addr & 0x1f;
-    const uint32_t inc = (addr << 24) | (addr << 16) | (addr << 8) | addr;
-    uint32_t * const prfChannels = (uint32_t *)refRfChannels;
-    *prfChannels = 0x10314259 + inc;
+    addr &= 0x07;
+    refRfChannels[0] = 0x10 + addr;
+    refRfChannels[1] = 0x1C + addr;
+    refRfChannels[2] = 0x28 + addr;
+    refRfChannels[3] = 0x34 + addr;
 }
 
-void refSetBound(const uint8_t* rxTxAddr)
+void refSetBound(void)
 {
     protocolState = STATE_DATA;
+    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
     refSetHoppingChannels(rxTxAddr[0]);
     timeOfLastHop = micros();
     refRfChannelIndex = 0;
     NRF24L01_SetChannel(refRfChannels[0]);
-    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
 }
 
 /*
@@ -200,7 +201,7 @@ nrf24_received_t refDataReceived(uint8_t *payload)
             if (bindPacket) {
                 ret = NRF24_RECEIVED_BIND;
                 // got a bind packet, so set the hopping channels and the rxTxAddr and start listening for data
-                refSetBound(rxTxAddr);
+                refSetBound();
             }
         }
         break;
@@ -222,23 +223,24 @@ nrf24_received_t refDataReceived(uint8_t *payload)
 void refNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 {
     UNUSED(protocol);
+    UNUSED(nrf24_id);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
 
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
     NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    if ((nrf24_id[0] | nrf24_id[1] | nrf24_id[2] | nrf24_id[3] | nrf24_id[4]) == 0) {
+    //if ((nrf24_id != NULL) && ((nrf24_id[0] | nrf24_id[1] | nrf24_id[2] | nrf24_id[3] | nrf24_id[4]) == 0)) {
         protocolState = STATE_BIND;
         NRF24L01_SetChannel(REF_RF_BIND_CHANNEL);
-    } else {
+    /*} else {
         rxTxAddr[0] = nrf24_id[0];
         rxTxAddr[1] = nrf24_id[1];
         rxTxAddr[2] = nrf24_id[2];
         rxTxAddr[3] = nrf24_id[3];
         rxTxAddr[4] = nrf24_id[4];
         refSetBound(nrf24_id);
-    }
+    }*/
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
@@ -253,7 +255,8 @@ void refNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
+    //refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_address);
+    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, NULL);
 }
 #endif
 

@@ -409,10 +409,10 @@ COMMON_SRC = \
             rx/msp.c \
             rx/nrf24.c \
             rx/nrf24_cx10.c \
+            rx/nrf24_ref.c \
+            rx/nrf24_h8_3d.c \
             rx/nrf24_syma.c \
             rx/nrf24_v202.c \
-            rx/nrf24_h8_3d.c \
-            rx/nrf24_ref.c \
             rx/pwm.c \
             rx/rx.c \
             rx/sbus.c \

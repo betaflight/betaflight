@@ -20,11 +20,10 @@
 
 #include <platform.h>
 
-#include "platform.h"
-#include "build_config.h"
 
 #ifndef SKIP_RX_PWM_PPM
 
+#include "build_config.h"
 #include "debug.h"
 
 #include "common/utils.h"
