@@ -86,6 +86,7 @@ STATIC_UNIT_TESTED const uint8_t payloadSize = REF_PROTOCOL_PAYLOAD_SIZE;
 #define RX_TX_ADDR_LEN 5
 // set rxTxAddr to the bind values
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f};
+uint32_t *nrf24rxIdPtr;
 
 // radio channels for frequency hopping
 #define REF_RF_CHANNEL_COUNT 4
@@ -107,6 +108,10 @@ STATIC_UNIT_TESTED bool refCheckBindPacket(const uint8_t *payload)
         rxTxAddr[2] = payload[4];
         rxTxAddr[3] = payload[5];
         rxTxAddr[4] = payload[6];
+        if (nrf24rxIdPtr != NULL && *nrf24rxIdPtr == 0) {
+            // copy the rxTxAddr so it can be saved
+            memcpy(nrf24rxIdPtr, rxTxAddr, sizeof(uint32_t));
+        }
     }
     return bindPacket;
 }
@@ -220,18 +225,19 @@ nrf24_received_t refDataReceived(uint8_t *payload)
     return ret;
 }
 
-void refNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
+void refNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
 {
     UNUSED(protocol);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
     NRF24L01_Setup();
 
-    if (nrf24_id == 0) {
+    nrf24rxIdPtr = (uint32_t*)nrf24rx_id;
+    if (nrf24rx_id == NULL || *nrf24rx_id == 0) {
         protocolState = STATE_BIND;
         NRF24L01_SetChannel(REF_RF_BIND_CHANNEL);
     } else {
-        memcpy(rxTxAddr, (uint8_t*)nrf24_id, sizeof(uint32_t));
+        memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
         rxTxAddr[4] = 0xD2;
         refSetBound();
     }
@@ -246,8 +252,7 @@ void refNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
 void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    //refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
-    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, 0);
+    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
 }
 #endif
 

@@ -653,9 +653,11 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_RX_NRF24
     { "nrf24rx_protocol",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_protocol, .config.lookup = { TABLE_NRF24_RX }, 0 },
+    { "nrf24rx_id",                 VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.nrf24rx_id, .config.minmax = { 0, 0 }, 0 },
 #endif
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },
 
+#ifdef TELEMETRY
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_inversion, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLatitude, .config.minmax = { -90.0,  90.0 }, 0 },
@@ -664,6 +666,7 @@ const clivalue_t valueTable[] = {
     { "frsky_unit",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.frsky_unit, .config.lookup = { TABLE_UNIT }, 0 },
     { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_vfas_precision, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH }, 0 },
     { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.hottAlarmSoundInterval, .config.minmax = { 0,  120 }, 0 },
+#endif
 
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.batteryCapacity, .config.minmax = { 0,  20000 }, 0 },
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatscale, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, 0 },
@@ -742,12 +745,16 @@ const clivalue_t valueTable[] = {
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
+#ifdef BARO
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.barometerConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
+#endif
 
+#ifdef MAG
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, .config.minmax = { -18000,  18000 }, 0 },
     { "mag_hold_rate_limit",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.mag_hold_rate_limit, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, 0 },
+#endif
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 }, 0 },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 }, 0 },
@@ -2448,7 +2455,8 @@ static void cliSet(char *cmdline)
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
 
-                                if (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) { // note: compare float value
+                                if ((valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max) // note: compare float value
+                                        || (valueTable[i].config.minmax.min == 0 && valueTable[i].config.minmax.max == 0)) {  // setting both min and max to zero allows full range
 
                                     if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
                                         tmp.float_value = valuef;
