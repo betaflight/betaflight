@@ -34,18 +34,24 @@ LINE_CODING g_lc;
 extern __IO uint8_t USB_Tx_State;
 __IO uint32_t bDeviceState = UNCONNECTED; /* USB device status */
 
-/* These are external variables imported from CDC core to be used for IN
- transfer management. */
-extern uint8_t APP_Rx_Buffer[]; /* Write CDC received data in this buffer.
+/* These are external variables imported from CDC core to be used for IN transfer management. */
+
+/* Write CDC received data in this buffer.
  These data will be sent over USB IN endpoint
  in the CDC core functions. */
+extern uint8_t APP_Rx_Buffer[]; 
+
 extern uint32_t APP_Rx_ptr_out;
-extern uint32_t APP_Rx_ptr_in; /* Increment this pointer or roll it back to
+
+/* Increment this pointer or roll it back to
  start address when writing received data
  in the buffer APP_Rx_Buffer. */
 __IO uint32_t receiveLength=0;
+extern uint32_t APP_Rx_ptr_in; 
 
-usbStruct_t usbData;
+static uint8_t APP_Tx_Buffer[USB_RX_BUFSIZE]; 
+static uint32_t APP_Tx_ptr_out;
+static uint32_t APP_Tx_ptr_in;
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t VCP_Init(void);
@@ -153,9 +159,11 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
  *******************************************************************************/
 uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
 {
-    if (USB_Tx_State)
-        return 0;
-
+    static uint32_t stateCount = 0;
+    if (USB_Tx_State) {
+        stateCount++;
+        while (USB_Tx_State);
+    }
     VCP_DataTx(ptrBuffer, sendLength);
     return sendLength;
 }
@@ -174,12 +182,13 @@ static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
     }
+
     return USBD_OK;
 }
 
 uint8_t usbAvailable(void)
 {
-    return (usbData.bufferInPosition != usbData.bufferOutPosition);
+    return (APP_Tx_ptr_out != APP_Tx_ptr_in);
 }
 
 /*******************************************************************************
@@ -194,8 +203,8 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
     uint32_t count = 0;
 
     while (usbAvailable() && count < len) {
-        recvBuf[count] = usbData.buffer[usbData.bufferOutPosition];
-        usbData.bufferOutPosition = (usbData.bufferOutPosition + 1) % USB_RX_BUFSIZE;
+        recvBuf[count] = APP_Tx_Buffer[APP_Tx_ptr_out];
+        APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % USB_RX_BUFSIZE;
         count++;
         receiveLength--;
     }
@@ -227,8 +236,8 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
     rxPackets++;
 
     for (uint32_t i = 0; i < Len; i++) {
-        usbData.buffer[usbData.bufferInPosition] = Buf[i];
-        usbData.bufferInPosition = (usbData.bufferInPosition + 1) % USB_RX_BUFSIZE;
+        APP_Tx_Buffer[APP_Tx_ptr_in] = Buf[i];
+        APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % USB_RX_BUFSIZE;
         receiveLength++;
         rxTotalBytes++;
     }

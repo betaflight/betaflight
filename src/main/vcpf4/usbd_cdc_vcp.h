@@ -34,7 +34,7 @@
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-#define USB_RX_BUFSIZE      2048
+#define USB_RX_BUFSIZE      1024
 
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
@@ -69,12 +69,6 @@ typedef struct
   uint8_t  paritytype;
   uint8_t  datatype;
 } LINE_CODING;
-
-typedef struct {
-    uint8_t buffer[USB_RX_BUFSIZE];
-    uint16_t bufferInPosition;
-    uint16_t bufferOutPosition;
-} usbStruct_t;
 
 
 #endif /* __USBD_CDC_VCP_H */
