@@ -106,7 +106,7 @@ extern "C" {
     PG_REGISTER_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
     PG_REGISTER_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
     PG_REGISTER_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
-    PG_REGISTER_ARR(specialColorIndexes_t, 1, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
+    PG_REGISTER(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
@@ -527,7 +527,7 @@ int32_t gyroADC[XYZ_AXIS_COUNT];
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 int16_t accSmooth[XYZ_AXIS_COUNT];
 // from ledstrip.c
-void reevalulateLedConfig(void) {}
+void reevaluateLedConfig(void) {}
 bool setModeColor(ledModeIndex_e , int , int ) { return true; }
 // from mixer.c
 int16_t motor[MAX_SUPPORTED_MOTORS];
