@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -26,7 +25,6 @@
 
 #include "nvic.h"
 
-#include "gpio.h"
 #include "gpio.h"
 #include "rcc.h"
 #include "system.h"
@@ -90,8 +88,35 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 #if USED_TIMERS & TIM_N(4)
         _CASE(4);
 #endif
+#if USED_TIMERS & TIM_N(5)
+        _CASE(5);
+#endif
+#if USED_TIMERS & TIM_N(6)
+        _CASE(6);
+#endif
+#if USED_TIMERS & TIM_N(7)
+        _CASE(7);
+#endif
 #if USED_TIMERS & TIM_N(8)
         _CASE(8);
+#endif
+#if USED_TIMERS & TIM_N(9)
+        _CASE(9);
+#endif
+#if USED_TIMERS & TIM_N(10)
+        _CASE(10);
+#endif
+#if USED_TIMERS & TIM_N(11)
+        _CASE(11);
+#endif
+#if USED_TIMERS & TIM_N(12)
+        _CASE(12);
+#endif
+#if USED_TIMERS & TIM_N(13)
+        _CASE(13);
+#endif
+#if USED_TIMERS & TIM_N(14)
+        _CASE(14);
 #endif
 #if USED_TIMERS & TIM_N(15)
         _CASE(15);
@@ -123,8 +148,35 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #if USED_TIMERS & TIM_N(4)
     _DEF(4),
 #endif
+#if USED_TIMERS & TIM_N(5)
+    _DEF(5),
+#endif
+#if USED_TIMERS & TIM_N(6)
+    _DEF(6),
+#endif
+#if USED_TIMERS & TIM_N(7)
+    _DEF(7),
+#endif
 #if USED_TIMERS & TIM_N(8)
     _DEF(8),
+#endif
+#if USED_TIMERS & TIM_N(9)
+    _DEF(9),
+#endif
+#if USED_TIMERS & TIM_N(10)
+    _DEF(10),
+#endif
+#if USED_TIMERS & TIM_N(11)
+    _DEF(11),
+#endif
+#if USED_TIMERS & TIM_N(12)
+    _DEF(12),
+#endif
+#if USED_TIMERS & TIM_N(13)
+    _DEF(13),
+#endif
+#if USED_TIMERS & TIM_N(14)
+    _DEF(14),
 #endif
 #if USED_TIMERS & TIM_N(15)
     _DEF(15),
@@ -148,10 +200,22 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
             return timerDefinitions[i].rcc;
-        }            
+        }
     }
     return 0;
 }
+
+#if defined(STM32F3) || defined(STM32F4)
+uint8_t timerGPIOAF(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].alternateFunction;
+        }
+    }
+    return 0;
+}
+#endif
 
 void timerNVICConfigure(uint8_t irq)
 {
@@ -189,8 +253,8 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     }
 #else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-#endif 
-    
+#endif
+
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &TIM_TimeBaseStructure);
@@ -364,7 +428,7 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 
@@ -458,7 +522,7 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     if(outEnable) {
         TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Inactive;
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        if (timHw->outputInverted) {
+        if (timHw->output & TIMER_OUTPUT_INVERTED) {
             stateHigh = !stateHigh;
         }
         TIM_OCInitStructure.TIM_OCPolarity = stateHigh ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
@@ -660,7 +724,7 @@ void timerInit(void)
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
     }
 #endif
-    
+
     // initialize timer channel structures
     for(int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;

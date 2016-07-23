@@ -211,8 +211,8 @@ void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 #endif
 void mixerResetDisarmedMotors(void);
-void mixTable(void);
+void mixTable(void *pidProfilePtr);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
-void StopPwmAllMotors(void);
+void stopPwmAllMotors(void);

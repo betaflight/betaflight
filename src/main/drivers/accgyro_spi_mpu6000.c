@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -41,6 +40,9 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
+
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(void);
@@ -49,12 +51,12 @@ static bool mpuSpi6000InitDone = false;
 
 
 // Bits
-#define BIT_SLEEP				    0x40
-#define BIT_H_RESET				    0x80
-#define BITS_CLKSEL				    0x07
-#define MPU_CLK_SEL_PLLGYROX	    0x01
-#define MPU_CLK_SEL_PLLGYROZ	    0x03
-#define MPU_EXT_SYNC_GYROX		    0x02
+#define BIT_SLEEP                   0x40
+#define BIT_H_RESET                 0x80
+#define BITS_CLKSEL                 0x07
+#define MPU_CLK_SEL_PLLGYROX        0x01
+#define MPU_CLK_SEL_PLLGYROZ        0x03
+#define MPU_EXT_SYNC_GYROX          0x02
 #define BITS_FS_250DPS              0x00
 #define BITS_FS_500DPS              0x08
 #define BITS_FS_1000DPS             0x10
@@ -74,9 +76,9 @@ static bool mpuSpi6000InitDone = false;
 #define BITS_DLPF_CFG_2100HZ_NOLPF  0x07
 #define BITS_DLPF_CFG_MASK          0x07
 #define BIT_INT_ANYRD_2CLEAR        0x10
-#define BIT_RAW_RDY_EN			    0x01
+#define BIT_RAW_RDY_EN              0x01
 #define BIT_I2C_IF_DIS              0x10
-#define BIT_INT_STATUS_DATA		    0x01
+#define BIT_INT_STATUS_DATA         0x01
 #define BIT_GYRO                    3
 #define BIT_ACC                     2
 #define BIT_TEMP                    1
@@ -156,12 +158,12 @@ bool mpu6000SpiDetect(void)
     uint8_t in;
     uint8_t attemptsRemaining = 5;
 
-#ifdef MPU6000_CS_PIN     
+#ifdef MPU6000_CS_PIN
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
 #endif
-    IOInit(mpuSpi6000CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(mpuSpi6000CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
-    
+
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
@@ -251,7 +253,7 @@ static void mpu6000AccAndGyroInit(void) {
     delayMicroseconds(15);
 #endif
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST); 
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 
     mpuSpi6000InitDone = true;
@@ -283,3 +285,5 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro)
 
     return true;
 }
+
+#endif

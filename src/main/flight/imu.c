@@ -28,7 +28,6 @@
 #include "debug.h"
 
 #include "common/axis.h"
-#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -85,7 +84,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     float q1q1 = sq(q1);
     float q2q2 = sq(q2);
     float q3q3 = sq(q3);
-    
+
     float q0q1 = q0 * q1;
     float q0q2 = q0 * q2;
     float q0q3 = q0 * q3;

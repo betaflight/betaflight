@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #pragma once
 
 #define I2C1_OVERCLOCK true
@@ -33,6 +33,12 @@
 
 #define TASK_GYROPID_DESIRED_PERIOD 1000
 #define SCHEDULER_DELAY_LIMIT 100
+
+#endif
+
+#ifdef STM32F1
+// Using RX DMA disables the use of receive callbacks
+#define USE_UART1_RX_DMA
 
 #endif
 

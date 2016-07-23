@@ -15,7 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -53,23 +52,24 @@ static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705LePin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
-void rtc6705_soft_spi_init(void) {
-
+void rtc6705_soft_spi_init(void)
+{
     rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPIDATA_PIN));
     rtc6705LePin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
     rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
 
-    IOInit(rtc6705DataPin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705DataPin, OWNER_TX, RESOURCE_SPI_MOSI, 0);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705LePin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705LePin, OWNER_TX, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(rtc6705LePin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705ClkPin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(rtc6705ClkPin, OWNER_TX, RESOURCE_SPI_SCK, 0);
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
 }
 
-static void rtc6705_write_register(uint8_t addr, uint32_t data) {
+static void rtc6705_write_register(uint8_t addr, uint32_t data)
+{
     uint8_t i;
 
     RTC6705_SPILE_OFF;
@@ -107,7 +107,8 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data) {
 }
 
 
-void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
+void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
+{
 
     uint32_t freq = (uint32_t)channel_freq * 1000;
     uint32_t N, A;
@@ -119,7 +120,8 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq) {
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power) {
+void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power)
+{
     rtc6705_write_register(7, (reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT));
 }
 

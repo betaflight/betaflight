@@ -32,7 +32,6 @@
 #include "gpio.h"
 #include "exti.h"
 #include "bus_i2c.h"
-#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -166,7 +165,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         return true;
     }
 #endif
-    
+
     return false;
 }
 #endif
@@ -228,43 +227,43 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
 
 void mpuIntExtiInit(void)
 {
-	static bool mpuExtiInitDone = false;
+    static bool mpuExtiInitDone = false;
 
-	if (mpuExtiInitDone || !mpuIntExtiConfig) {
-		return;
-	}
+    if (mpuExtiInitDone || !mpuIntExtiConfig) {
+        return;
+    }
 
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
-	IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
-	
+    IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
+
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
-	uint8_t status = IORead(mpuIntIO);
-	if (status) {
-		return;
-	}
+    uint8_t status = IORead(mpuIntIO);
+    if (status) {
+        return;
+    }
 #endif
 
-	IOInit(mpuIntIO, OWNER_SYSTEM, RESOURCE_INPUT | RESOURCE_EXTI);
-	IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+    IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);
+    IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
-	EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
-	EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
-	EXTIEnable(mpuIntIO, true);
+    EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(mpuIntIO, true);
 #endif
-    
-	mpuExtiInitDone = true; 
+
+    mpuExtiInitDone = true;
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
 {
-	bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
+    bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
 {
-	bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
+    bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
 }
 
@@ -300,11 +299,14 @@ bool mpuGyroRead(int16_t *gyroADC)
     return true;
 }
 
-void checkMPUDataReady(bool *mpuDataReadyPtr) {
+bool checkMPUDataReady(void)
+{
+    bool ret;
     if (mpuDataReady) {
-        *mpuDataReadyPtr = true;
+        ret = true;
         mpuDataReady= false;
     } else {
-        *mpuDataReadyPtr = false;
+        ret = false;
     }
+    return ret;
 }

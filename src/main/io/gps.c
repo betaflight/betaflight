@@ -23,6 +23,9 @@
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef GPS
+
 #include "build_config.h"
 #include "debug.h"
 
@@ -49,8 +52,6 @@
 #include "config/config.h"
 #include "config/runtime_config.h"
 
-
-#ifdef GPS
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'
@@ -239,7 +240,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     // only RX is needed for NMEA-style GPS
 #if !defined(COLIBRI_RACE) || !defined(LUX_RACE)
     if (gpsConfig->provider == GPS_NMEA)
-	    mode &= ~MODE_TX;
+        mode &= ~MODE_TX;
 #endif
 
     // no callback - buffer will be consumed in gpsThread()
@@ -256,47 +257,47 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
 void gpsInitNmea(void)
 {
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-	uint32_t now;
+    uint32_t now;
 #endif
     switch(gpsData.state) {
         case GPS_INITIALIZING:
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-		   now = millis();
-		   if (now - gpsData.state_ts < 1000)
-			   return;
-		   gpsData.state_ts = now;
-		   if (gpsData.state_position < 1) {
-			   serialSetBaudRate(gpsPort, 4800);
-			   gpsData.state_position++;
-		   } else if (gpsData.state_position < 2) {
-			   // print our FIXED init string for the baudrate we want to be at
-			   serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
-			   gpsData.state_position++;
-		   } else {
-			   // we're now (hopefully) at the correct rate, next state will switch to it
-			   gpsSetState(GPS_CHANGE_BAUD);
-		   }
-		   break;
+           now = millis();
+           if (now - gpsData.state_ts < 1000)
+               return;
+           gpsData.state_ts = now;
+           if (gpsData.state_position < 1) {
+               serialSetBaudRate(gpsPort, 4800);
+               gpsData.state_position++;
+           } else if (gpsData.state_position < 2) {
+               // print our FIXED init string for the baudrate we want to be at
+               serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
+               gpsData.state_position++;
+           } else {
+               // we're now (hopefully) at the correct rate, next state will switch to it
+               gpsSetState(GPS_CHANGE_BAUD);
+           }
+           break;
 #endif
         case GPS_CHANGE_BAUD:
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-		   now = millis();
-		   if (now - gpsData.state_ts < 1000)
-			   return;
-		   gpsData.state_ts = now;
-		   if (gpsData.state_position < 1) {
-			   serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
-			   gpsData.state_position++;
-		   } else if (gpsData.state_position < 2) {
-			   serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
-			   gpsData.state_position++;
-		   } else {
+           now = millis();
+           if (now - gpsData.state_ts < 1000)
+               return;
+           gpsData.state_ts = now;
+           if (gpsData.state_position < 1) {
+               serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+               gpsData.state_position++;
+           } else if (gpsData.state_position < 2) {
+               serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
+               gpsData.state_position++;
+           } else {
 #else
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
 #endif
             gpsSetState(GPS_RECEIVING_DATA);
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-		   }
+           }
 #endif
             break;
     }
@@ -1066,9 +1067,9 @@ static void gpsHandlePassthrough(uint8_t data)
          updateDisplay();
      }
  #endif
- 	
+
  }
- 
+
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
@@ -1083,7 +1084,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
         displayShowFixedPage(PAGE_GPS);
     }
 #endif
-    
+
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 

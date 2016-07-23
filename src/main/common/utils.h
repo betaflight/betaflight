@@ -56,7 +56,7 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
     (32*((v)/2L>>31 > 0) \
      + LOG2_32BIT((v)*1L >>16*((v)/2L>>31 > 0) \
                          >>16*((v)/2L>>31 > 0)))
-    
+
 #if 0
 // ISO C version, but no type checking
 #define container_of(ptr, type, member) \
@@ -70,5 +70,16 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 
 static inline int16_t cmp16(uint16_t a, uint16_t b) { return a-b; }
 static inline int32_t cmp32(uint32_t a, uint32_t b) { return a-b; }
+
+// using memcpy_fn will force memcpy function call, instead of inlining it. In most cases function call takes fewer instructions
+//  than inlined version (inlining is cheaper for very small moves < 8 bytes / 2 store instructions)
+#ifdef UNIT_TEST
+// Call memcpy when building unittest - this is easier that asm symbol name mangling (symbols start with _underscore on win32)
+#include <string.h>
+static inline void  memcpy_fn ( void * destination, const void * source, size_t num ) { memcpy(destination, source, num); };
+#else
+void * memcpy_fn ( void * destination, const void * source, size_t num ) asm("memcpy");
+#endif
+
 
 #endif

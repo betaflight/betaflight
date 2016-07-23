@@ -21,63 +21,66 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
+#include "drivers/nvic.h"
 #include "drivers/dma.h"
 
 /*
- * DMA handlers for DMA resources that are shared between different features depending on run-time configuration.
+ * DMA descriptors.
  */
-static dmaHandlers_t dmaHandlers;
+static dmaChannelDescriptor_t dmaDescriptors[] = {
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel1,  0, DMA1_Channel1_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel2,  4, DMA1_Channel2_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel3,  8, DMA1_Channel3_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel4, 12, DMA1_Channel4_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel5, 16, DMA1_Channel5_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel6, 20, DMA1_Channel6_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel7, 24, DMA1_Channel7_IRQn, RCC_AHBPeriph_DMA1),
+#if defined(STM32F3) || defined(STM32F10X_CL)
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel1,  0, DMA2_Channel1_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel2,  4, DMA2_Channel2_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel3,  8, DMA2_Channel3_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel4, 12, DMA2_Channel4_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel5, 16, DMA2_Channel5_IRQn, RCC_AHBPeriph_DMA2),
+#endif
+};
 
-void dmaNoOpHandler(DMA_Channel_TypeDef *channel)
-{
-    UNUSED(channel);
-}
+/*
+ * DMA IRQ Handlers
+ */
+DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1_CH1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1_CH2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1_CH3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1_CH4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1_CH5_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1_CH6_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1_CH7_HANDLER)
 
-void DMA1_Channel2_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel2IRQHandler(DMA1_Channel2);
-}
+#if defined(STM32F3) || defined(STM32F10X_CL)
+DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2_CH1_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2_CH2_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2_CH3_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
+DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
+#endif
 
-void DMA1_Channel3_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel3IRQHandler(DMA1_Channel3);
-}
-
-void DMA1_Channel6_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel6IRQHandler(DMA1_Channel6);
-}
-
-void DMA1_Channel7_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel7IRQHandler(DMA1_Channel7);
-}
 
 void dmaInit(void)
 {
-    memset(&dmaHandlers, 0, sizeof(dmaHandlers));
-    dmaHandlers.dma1Channel2IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel3IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel6IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel7IRQHandler = dmaNoOpHandler;
+    // TODO: Do we need this?
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback)
+void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
-    switch (identifier) {
-        case DMA1_CH2_HANDLER:
-            dmaHandlers.dma1Channel2IRQHandler = callback;
-            break;
-        case DMA1_CH3_HANDLER:
-            dmaHandlers.dma1Channel3IRQHandler = callback;
-            break;
-        case DMA1_CH6_HANDLER:
-            dmaHandlers.dma1Channel6IRQHandler = callback;
-            break;
-        case DMA1_CH7_HANDLER:
-            dmaHandlers.dma1Channel7IRQHandler = callback;
-            break;
-    }
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
+    dmaDescriptors[identifier].irqHandlerCallback = callback;
+    dmaDescriptors[identifier].userParam = userParam;
+
+    NVIC_InitStructure.NVIC_IRQChannel = dmaDescriptors[identifier].irqN;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
+

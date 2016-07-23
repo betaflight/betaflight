@@ -86,7 +86,7 @@ void transponderIrHardwareInit(void)
 
     /* configure DMA */
     /* DMA clock enable */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    //RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 
     /* DMA1 Channel6 Config */
     DMA_DeInit(TRANSPONDER_DMA_CHANNEL);
@@ -110,13 +110,6 @@ void transponderIrHardwareInit(void)
 
     DMA_ITConfig(TRANSPONDER_DMA_CHANNEL, DMA_IT_TC, ENABLE);
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = TRANSPONDER_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_TRANSPONDER_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_TRANSPONDER_DMA);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
 }
 
 void transponderIrDMAEnable(void)
