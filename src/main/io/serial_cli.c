@@ -1278,7 +1278,7 @@ static void cliModeColor(char *cmdline)
         }
 
         for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-            int colorIndex = specialColors(0)->color[j];
+            int colorIndex = specialColors()->color[j];
             cliPrintf("mode_color %u %u %u\r\n", LED_SPECIAL, j, colorIndex);
         }
     } else {

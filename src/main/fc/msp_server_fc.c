@@ -910,11 +910,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_LED_STRIP_CONFIG:
             for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
                 ledConfig_t *ledConfig = ledConfigs(i);
-                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-                sbufWriteU8(dst, ledGetX(ledConfig));
-                sbufWriteU8(dst, ledGetY(ledConfig));
-                sbufWriteU8(dst, ledConfig->color);
+                sbufWriteU32(dst, *ledConfig);
             }
             break;
 
@@ -929,7 +925,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
                 sbufWriteU8(dst, LED_MODE_COUNT);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, specialColors(0)->color[j]);
+                sbufWriteU8(dst, specialColors_System.color[j]);
             }
             break;
 #endif
@@ -1445,27 +1441,13 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_SET_LED_STRIP_CONFIG: {
             int i = sbufReadU8(src);
-            if (len != (1 + 7) || i >= LED_MAX_STRIP_LENGTH)
+            if (len != (1 + 4) || i >= LED_MAX_STRIP_LENGTH)
                 return -1;
 
             ledConfig_t *ledConfig = ledConfigs(i);
-            uint16_t mask;
-            uint16_t flags;
-            // currently we're storing directions and functions in a uint16 (flags)
-            // the msp uses 2 x uint16_t to cater for future expansion
-            mask = sbufReadU16(src);
-            flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_FLAG_DIRECTION_MASK;
-            mask = sbufReadU16(src);
-            flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FLAG_FUNCTION_MASK;
-            ledConfig->flags = flags;
+            *ledConfig = sbufReadU32(src);
 
-            int x = sbufReadU8(src);
-            int y = sbufReadU8(src);
-            ledSetXY(ledConfig, x, y);
-
-            ledConfig->color = sbufReadU8(src);
-
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 
