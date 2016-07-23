@@ -72,11 +72,13 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      TIMER_OUTPUT_ENABLED|TIMER_OUTPUT_INVERTED, IOCFG_AF_PP, GPIO_AF_1},
     { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, TIMER_OUTPUT_ENABLED|TIMER_OUTPUT_INVERTED, IOCFG_AF_PP, GPIO_AF_1},
 
-    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1}, // TODO - Cleanup. KISS FC uses the same pin for serial and PPM
+    // TODO: Validate pwm input order. Anybody know how these should be mapped?
+    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1},
     { TIM2,  IO_TAG(PA15), TIM_Channel_1, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1},
     { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1},
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1},
     { TIM4,  IO_TAG(PA13), TIM_Channel_2, TIM4_IRQn,               0, IOCFG_AF_PP, GPIO_AF_10},
     { TIM8,  IO_TAG(PA14), TIM_Channel_3, TIM8_CC_IRQn,            0, IOCFG_AF_PP, GPIO_AF_5},
+
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1}, // PWM / RX3
 };
 
