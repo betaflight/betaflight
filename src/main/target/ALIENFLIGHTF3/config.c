@@ -84,9 +84,14 @@ void targetConfiguration(void) {
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rates[FD_PITCH] = 40;
-    currentControlRateProfile->rates[FD_ROLL] = 40;
-    currentControlRateProfile->rates[FD_YAW] = 40;
+    masterConfig.gyro_sync_denom = 2;
+    masterConfig.pid_process_denom = 1;
+    currentProfile->pidProfile.P8[ROLL] = 90;
+    currentProfile->pidProfile.I8[ROLL] = 44;
+    currentProfile->pidProfile.D8[ROLL] = 60;
+    currentProfile->pidProfile.P8[PITCH] = 90;
+    currentProfile->pidProfile.I8[PITCH] = 44;
+    currentProfile->pidProfile.D8[PITCH] = 60;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
