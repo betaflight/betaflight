@@ -707,6 +707,11 @@ var MSP = {
                 BF_CONFIG.board_align_yaw = data.getInt16(10, 1); // -180 - 360
                 BF_CONFIG.currentscale = data.getInt16(12, 1);
                 BF_CONFIG.currentoffset = data.getUint16(14, 1);
+
+                if (this.features) {
+                    updateTabList(BF_CONFIG.features, this.features);
+                }
+
                 break;
             case MSP_codes.MSP_SET_BF_CONFIG:
                 break;
@@ -720,8 +725,16 @@ var MSP = {
 
             case MSP_codes.MSP_API_VERSION:
                 var offset = 0;
+                var apiVersion = CONFIG.apiVersion;
+
                 CONFIG.mspProtocolVersion = data.getUint8(offset++); 
                 CONFIG.apiVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++) + '.0';
+
+                if ((!this.features || CONFIG.apiVersion !== apiVersion)
+                    && CONFIG.flightControllerVersion !== '') {
+                    this.features = new Features(CONFIG);
+                }
+
                 break;
 
             case MSP_codes.MSP_FC_VARIANT:
@@ -735,7 +748,16 @@ var MSP = {
 
             case MSP_codes.MSP_FC_VERSION:
                 var offset = 0;
+                var flightControllerVersion = CONFIG.flightControllerVersion;
+
                 CONFIG.flightControllerVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++) + '.' + data.getUint8(offset++);
+
+                if ((!this.features
+                    || CONFIG.flightControllerVersion !== flightControllerVersion)
+                    && CONFIG.apiVersion !== '') {
+                    this.features = new Features(CONFIG);
+                }
+
                 break;
 
             case MSP_codes.MSP_BUILD_INFO:
@@ -2072,7 +2094,7 @@ MSP.sendRxFailConfig = function(onCompleteCallback) {
         }
         MSP.send_message(MSP_codes.MSP_SET_RXFAIL_CONFIG, buffer, false, nextFunction);
     }
-};
+}
 
 MSP.SDCARD_STATE_NOT_PRESENT = 0;
 MSP.SDCARD_STATE_FATAL       = 1;
