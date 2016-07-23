@@ -109,21 +109,16 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define DISPLAY
+#undef GPS
+#ifdef CC3D_OPBL
+#undef LED_STRIP
+#define SKIP_CLI_COMMAND_HELP
+#undef BARO
+//#undef MAG
+#else
 #define SONAR
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
-
-#undef GPS
-
-#undef BARO
-#undef MAG
-
-#ifdef CC3D_OPBL
-#define SKIP_CLI_COMMAND_HELP
-#undef LED_STRIP
-#undef DISPLAY
-#undef SONAR
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

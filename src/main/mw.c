@@ -856,16 +856,17 @@ void taskUpdateBeeper(void)
 
 void taskUpdateBattery(void)
 {
+#ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    static uint32_t ibatLastServiced = 0;
-
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
         }
     }
+#endif
 
+    static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
         int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 

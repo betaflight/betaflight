@@ -65,10 +65,15 @@ uint8_t PIDweight[3];
 static int32_t errorGyroI[3];
 static float errorGyroIf[3];
 
+#ifdef SKIP_PID_FLOAT
+static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+        const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
+pidControllerFuncPtr pid_controller = pidLegacy; // which pid controller are we using
+#else
 static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
-
 pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are we using
+#endif
 
 void setTargetPidLooptime(uint8_t pidProcessDenom)
 {
@@ -101,6 +106,7 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 
+#ifndef SKIP_PID_FLOAT
 // Experimental betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage
 static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
@@ -288,6 +294,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 #endif
     }
 }
+#endif
 
 // Legacy pid controller betaflight evolved pid rewrite based on 2.9 releae. Good for fastest cycletimes for those who believe in that. Don't expect much development in the future
 static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
@@ -438,8 +445,10 @@ void pidSetController(pidControllerType_e type)
         case PID_CONTROLLER_LEGACY:
             pid_controller = pidLegacy;
             break;
+#ifndef SKIP_PID_FLOAT
         case PID_CONTROLLER_BETAFLIGHT:
             pid_controller = pidBetaflight;
+#endif
     }
 }
 
