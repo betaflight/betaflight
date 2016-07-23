@@ -68,8 +68,6 @@
 #define FLAG_CAMERA_UP  0x04 // on payload[18]
 #define FLAG_CAMERA_DOWN 0x08 // on payload[18]
 
-STATIC_UNIT_TESTED nrf24_protocol_t h8_3dProtocol;
-
 typedef enum {
     STATE_BIND = 0,
     STATE_DATA
@@ -181,7 +179,7 @@ static void h8_3dHopToNextChannel(void)
 // The hopping channels are determined by the txId
 void h8_3dSetHoppingChannels(const uint8_t* txId)
 {
-#ifndef XXX
+#ifdef XXX
     for (int ii = 0; ii < H8_3D_RF_CHANNEL_COUNT; ++ii) {
         h8_3dRfChannels[ii] = 0x06 + (0x0f * ii) + ((txId[ii] >> 4) + (txId[ii] & 0x0f)) % 0x0f;
     }
@@ -237,7 +235,7 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
     case STATE_DATA:
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            const uint16_t crc = XN297_UnscramblePayload(payload - CRC_LEN, payloadSize, rxTxAddrXN297);
+            const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize - CRC_LEN, rxTxAddrXN297);
             if (crcOK(crc, payload)) {
                 ret = NRF24_RECEIVED_DATA;
             }
@@ -252,28 +250,23 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
     return ret;
 }
 
-void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
+void h8_3dNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
 {
-    h8_3dProtocol = protocol;
+    UNUSED(protocol);
     protocolState = STATE_BIND;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC - hardware CRC not used for XN297
+    NRF24L01_Setup();
 
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0); // No auto acknowledgment
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddrXN297, RX_TX_ADDR_LEN);
-    if ((nrf24_id[0] | nrf24_id[1] | nrf24_id[2] | nrf24_id[3]) == 0) {
+    if (nrf24_id == 0) {
         h8_3dRfChannelIndex = H8_3D_RF_BIND_CHANNEL_START;
         NRF24L01_SetChannel(H8_3D_RF_BIND_CHANNEL_START);
     } else {
-        h8_3dSetBound(nrf24_id);
+        h8_3dSetBound((uint8_t*)&nrf24_id);
     }
-
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
 
     payloadSize = H8_3D_PROTOCOL_PAYLOAD_SIZE + CRC_LEN; // payload + 2 bytes CRC
     NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize); // payload + 2 bytes CRC
@@ -284,6 +277,6 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 void h8_3dInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    h8_3dNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
+    h8_3dNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, 0);
 }
 #endif

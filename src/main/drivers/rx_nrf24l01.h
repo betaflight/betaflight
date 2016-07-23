@@ -136,6 +136,7 @@ void NRF24L01_FlushRx(void);
 
 // Utility functions
 
+void NRF24L01_Setup(void);
 void NRF24L01_SetStandbyMode(void);
 void NRF24L01_SetRxMode(void);
 void NRF24L01_SetTxMode(void);

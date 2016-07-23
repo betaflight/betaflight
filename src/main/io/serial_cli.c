@@ -392,7 +392,6 @@ static const char * const lookupTableNRF24RX[] = {
     "CX10",
     "CX10A",
     "H8_3D",
-    "H8_3D_DEV",
     "REF"
 };
 #endif
@@ -522,7 +521,6 @@ typedef struct cliLookupTableConfig_s {
 typedef union {
     cliLookupTableConfig_t lookup;
     cliMinMaxConfig_t minmax;
-
 } cliValueConfig_t;
 
 typedef struct {

@@ -220,33 +220,24 @@ nrf24_received_t refDataReceived(uint8_t *payload)
     return ret;
 }
 
-void refNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
+void refNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
 {
     UNUSED(protocol);
-    UNUSED(nrf24_id);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
+    NRF24L01_Setup();
 
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    //if ((nrf24_id != NULL) && ((nrf24_id[0] | nrf24_id[1] | nrf24_id[2] | nrf24_id[3] | nrf24_id[4]) == 0)) {
+    if (nrf24_id == 0) {
         protocolState = STATE_BIND;
         NRF24L01_SetChannel(REF_RF_BIND_CHANNEL);
-    /*} else {
-        rxTxAddr[0] = nrf24_id[0];
-        rxTxAddr[1] = nrf24_id[1];
-        rxTxAddr[2] = nrf24_id[2];
-        rxTxAddr[3] = nrf24_id[3];
-        rxTxAddr[4] = nrf24_id[4];
-        refSetBound(nrf24_id);
-    }*/
+    } else {
+        memcpy(rxTxAddr, (uint8_t*)nrf24_id, sizeof(uint32_t));
+        rxTxAddr[4] = 0xD2;
+        refSetBound();
+    }
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
-
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
 
     NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize);
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
@@ -255,8 +246,8 @@ void refNrf24Init(nrf24_protocol_t protocol, const uint8_t* nrf24_id)
 void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    //refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_address);
-    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, NULL);
+    //refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
+    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, 0);
 }
 #endif
 
