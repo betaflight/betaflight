@@ -87,12 +87,18 @@ static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
     float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
 
-    // hard limit desired target velocity to +/- 20 m/s
-    targetVel = constrainf(targetVel, -2000.0f, 2000.0f);
+    // hard limit desired target velocity to max_climb_rate
+    targetVel = constrainf(targetVel, -posControl.navConfig->max_climb_rate, posControl.navConfig->max_climb_rate);
 
-    // limit max vertical acceleration 250 cm/s/s - reach the max 20 m/s target in 80 seconds
-    float maxVelDifference = US2S(deltaMicros) * 250.0f;
-    posControl.desiredState.vel.V.Z = constrainf(targetVel, posControl.desiredState.vel.V.Z - maxVelDifference, posControl.desiredState.vel.V.Z + maxVelDifference);
+    // limit max vertical acceleration to 1/5G (~200 cm/s/s) if we are increasing velocity.
+    // if we are decelerating - don't limit (allow better recovery from falling)
+    if (ABS(targetVel) > ABS(posControl.desiredState.vel.V.Z)) {
+        float maxVelDifference = US2S(deltaMicros) * (GRAVITY_CMSS / 5.0f);
+        posControl.desiredState.vel.V.Z = constrainf(targetVel, posControl.desiredState.vel.V.Z - maxVelDifference, posControl.desiredState.vel.V.Z + maxVelDifference);
+    }
+    else {
+        posControl.desiredState.vel.V.Z = targetVel;
+    }
 
 #if defined(NAV_BLACKBOX)
     navDesiredVelocity[Z] = constrain(lrintf(posControl.desiredState.vel.V.Z), -32678, 32767);

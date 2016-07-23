@@ -104,6 +104,7 @@ typedef struct navConfig_s {
     uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)
     uint16_t waypoint_radius;               // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
     uint16_t max_speed;                     // autonomous navigation speed cm/sec
+    uint16_t max_climb_rate;                // max vertical speed limitation cm/sec
     uint16_t max_manual_speed;              // manual velocity control max horizontal speed
     uint16_t max_manual_climb_rate;         // manual velocity control max vertical speed
     uint16_t land_descent_rate;             // normal RTH landing descent rate

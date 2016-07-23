@@ -269,6 +269,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->pos_failure_timeout = 5;     // 5 sec
     navConfig->waypoint_radius = 100;       // 2m diameter
     navConfig->max_speed = 300;             // 3 m/s = 10.8 km/h
+    navConfig->max_climb_rate = 500;        // 5 m/s
     navConfig->max_manual_speed = 500;
     navConfig->max_manual_climb_rate = 200;
     navConfig->land_descent_rate = 200;     // 2 m/s
