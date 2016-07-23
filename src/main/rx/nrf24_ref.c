@@ -220,18 +220,18 @@ nrf24_received_t refDataReceived(uint8_t *payload)
     return ret;
 }
 
-void refNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
+void refNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
 {
     UNUSED(protocol);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
     NRF24L01_Setup();
 
-    if (nrf24_id == 0) {
+    if (nrf24rx_id == NULL || *nrf24rx_id == 0) {
         protocolState = STATE_BIND;
         NRF24L01_SetChannel(REF_RF_BIND_CHANNEL);
     } else {
-        memcpy(rxTxAddr, (uint8_t*)nrf24_id, sizeof(uint32_t));
+        memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
         rxTxAddr[4] = 0xD2;
         refSetBound();
     }
@@ -246,8 +246,7 @@ void refNrf24Init(nrf24_protocol_t protocol, uint32_t nrf24_id)
 void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    //refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, rxConfig->nrf24rx_id);
-    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, 0);
+    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
 }
 #endif
 
