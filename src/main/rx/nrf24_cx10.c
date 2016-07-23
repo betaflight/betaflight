@@ -85,6 +85,7 @@ STATIC_UNIT_TESTED protocol_state_t protocolState;
 static uint8_t payloadSize;
 #define ACK_TO_SEND_COUNT 8
 
+#define CRC_LEN 2
 #define RX_TX_ADDR_LEN     5
 //STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0xcc, 0xcc, 0xcc, 0xcc, 0xcc};
 STATIC_UNIT_TESTED uint8_t txAddr[RX_TX_ADDR_LEN] = {0x55, 0x0F, 0x71, 0x0C, 0x00}; // converted XN297 address, 0xC710F55 (28 bit)
@@ -97,8 +98,10 @@ STATIC_UNIT_TESTED uint8_t txId[TX_ID_LEN];
 STATIC_UNIT_TESTED uint8_t cx10RfChannelIndex = 0;
 STATIC_UNIT_TESTED uint8_t cx10RfChannels[RF_CHANNEL_COUNT]; // channels are set using txId from bind packet
 
+#define CX10_PROTOCOL_HOP_TIMEOUT  1500 // 1.5ms
+#define CX10A_PROTOCOL_HOP_TIMEOUT 6500 // 6.5ms
+static uint32_t hopTimeout;
 static uint32_t timeOfLastHop;
-static const uint32_t hopTimeout = 5000; // 5ms
 
 /*
  * Returns true if it is a bind packet.
@@ -179,8 +182,8 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
 
     switch (protocolState) {
     case STATE_BIND:
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
-            XN297_UnscramblePayload(payload, payloadSize + 2, rxAddr);
+        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
+            XN297_UnscramblePayload(payload, payloadSize + CRC_LEN, rxAddr);
             const bool bindPacket = cx10CheckBindPacket(payload);
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
@@ -232,8 +235,8 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
     case STATE_DATA:
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + 2)) {
-            XN297_UnscramblePayload(payload, payloadSize + 2, rxAddr);
+        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
+            XN297_UnscramblePayload(payload, payloadSize + CRC_LEN, rxAddr);
             cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
             ret = NRF24_RECEIVED_DATA;
@@ -251,12 +254,11 @@ void cx10Nrf24Init(nrf24_protocol_t protocol)
     cx10Protocol = protocol;
     protocolState = STATE_BIND;
     payloadSize = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_PAYLOAD_SIZE : CX10A_PROTOCOL_PAYLOAD_SIZE;
+    hopTimeout = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_HOP_TIMEOUT : CX10A_PROTOCOL_HOP_TIMEOUT;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC
+    NRF24L01_Setup();
 
-    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0);
-    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));  // Enable data pipe 0 only
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
     NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
 
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
@@ -265,10 +267,7 @@ void cx10Nrf24Init(nrf24_protocol_t protocol)
     NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, txAddr, RX_TX_ADDR_LEN);
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxAddr, RX_TX_ADDR_LEN);
 
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
-    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize + 2); // payload + 2 bytes CRC
-
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
+    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize + CRC_LEN); // payload + 2 bytes CRC
 
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }

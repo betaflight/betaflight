@@ -253,6 +253,18 @@ void NRF24L01_Initialize(uint8_t baseConfig)
 }
 
 /*
+ * Common setup of registers
+ */
+void NRF24L01_Setup(void)
+{
+    NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
+    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
+    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
+}
+
+/*
  * Enter standby mode
  */
 void NRF24L01_SetStandbyMode(void)
