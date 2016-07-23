@@ -238,6 +238,21 @@ static void ltm_oframe()
     ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
     ltm_finalise();
 }
+
+/*
+ * Extended information data frame, 1 Hz rate
+ *  This frame is intended to report extended GPS and NAV data, however at the moment it contains only HDOP value
+ */
+static void ltm_xframe()
+{
+    ltm_initialise_packet('X');
+    ltm_serialise_16(gpsSol.hdop);
+    ltm_serialise_8(0);
+    ltm_serialise_8(0);
+    ltm_serialise_8(0);
+    ltm_serialise_8(0);
+    ltm_finalise();
+}
 #endif
 
 #if defined(NAV)
@@ -256,11 +271,24 @@ static void ltm_nframe(void)
 }
 #endif
 
+static bool ltm_shouldSendXFrame(void)
+{
+    static uint16_t lastHDOP = 0;
+
+    if (lastHDOP != gpsSol.hdop) {
+        lastHDOP = gpsSol.hdop;
+        return true;
+    }
+
+    return false;
+}
+
 #define LTM_BIT_AFRAME  (1 << 0)
 #define LTM_BIT_GFRAME  (1 << 1)
 #define LTM_BIT_SFRAME  (1 << 2)
 #define LTM_BIT_OFRAME  (1 << 3)
 #define LTM_BIT_NFRAME  (1 << 4)
+#define LTM_BIT_XFRAME  (1 << 5)
 
 static uint8_t ltm_schedule[10] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
@@ -268,7 +296,7 @@ static uint8_t ltm_schedule[10] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
-    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_XFRAME,
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME,
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
@@ -289,6 +317,9 @@ static void process_ltm(void)
 
     if (current_schedule & LTM_BIT_OFRAME)
         ltm_oframe();
+
+    if (current_schedule & LTM_BIT_XFRAME && ltm_shouldSendXFrame())
+        ltm_xframe();
 #endif
 
     if (current_schedule & LTM_BIT_SFRAME)
