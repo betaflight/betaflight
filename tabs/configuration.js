@@ -80,18 +80,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
     
     function load_sensor_alignment() {
-        var next_callback = load_advanced_tuning;
+        var next_callback = load_name;
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
             MSP.send_message(MSP_codes.MSP_SENSOR_ALIGNMENT, false, false, next_callback);
-        } else {
-            next_callback();
-        }
-    }
-    
-    function load_advanced_tuning() {
-        var next_callback = load_name;
-        if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            MSP.send_message(MSP_codes.MSP_ADVANCED_TUNING, false, false, next_callback);
         } else {
             next_callback();
         }
@@ -539,7 +530,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input[name="maxcellvoltage"]').val(MISC.vbatmaxcellvoltage);
         $('input[name="warningcellvoltage"]').val(MISC.vbatwarningcellvoltage);
         $('input[name="voltagescale"]').val(MISC.vbatscale);
-        $('input[name="vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
 
         // fill current
         $('input[name="currentscale"]').val(BF_CONFIG.currentscale);
@@ -713,26 +703,13 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 }
             }
             function save_sensor_config() {
-                var next_callback = save_advanced_tuning;
+                var next_callback = save_name;
                 
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                     SENSOR_CONFIG.acc_hardware = $('input[name="accHardwareSwitch"]').is(':checked')?0:1;
                     SENSOR_CONFIG.baro_hardware = $('input[name="baroHardwareSwitch"]').is(':checked')?0:1;
                     SENSOR_CONFIG.mag_hardware = $('input[name="magHardwareSwitch"]').is(':checked')?0:1
                     MSP.send_message(MSP_codes.MSP_SET_SENSOR_CONFIG, MSP.crunch(MSP_codes.MSP_SET_SENSOR_CONFIG), false, next_callback);
-                } else {
-                    next_callback();
-                }
-            }
-
-            function save_advanced_tuning() {
-                var next_callback = save_name;
-                
-                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-
-                    ADVANCED_TUNING.vbatPidCompensation = $('input[name="vbatpidcompensation"]').is(':checked') ? 1 : 0;
-
-                    MSP.send_message(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING), false, next_callback);
                 } else {
                     next_callback();
                 }
