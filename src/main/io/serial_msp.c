@@ -48,6 +48,7 @@
 #include "drivers/buf_writer.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
+#include "blackbox/blackbox.h"
 
 #include "io/escservo.h"
 #include "io/rc_controls.h"
@@ -1047,8 +1048,8 @@ static bool processOutCommand(uint8_t cmdMSP)
 
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
-        headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        headSerialReply(LED_CONFIGURABLE_COLOR_COUNT * 4);
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             serialize16(color->h);
             serialize8(color->s);
@@ -1057,14 +1058,27 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 7);
-        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+        headSerialReply(LED_MAX_STRIP_LENGTH * 4);
+        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-            serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-            serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-            serialize8(GET_LED_X(ledConfig));
-            serialize8(GET_LED_Y(ledConfig));
-            serialize8(ledConfig->color);
+            serialize32(*ledConfig);
+        }
+        break;
+
+    case MSP_LED_STRIP_MODECOLOR:
+        headSerialReply(((LED_MODE_COUNT * LED_DIRECTION_COUNT) + LED_SPECIAL_COLOR_COUNT) * 3);
+        for (int i = 0; i < LED_MODE_COUNT; i++) {
+            for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                serialize8(i);
+                serialize8(j);
+                serialize8(masterConfig.modeColors[i].color[j]);
+            }
+        }
+
+        for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+            serialize8(LED_MODE_COUNT);
+            serialize8(j);
+            serialize8(masterConfig.specialColors.color[j]);
         }
         break;
 #endif
@@ -1092,18 +1106,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_3D:
-        headSerialReply(2 * 4);
+        headSerialReply(2 * 3);
         serialize16(masterConfig.flight3DConfig.deadband3d_low);
         serialize16(masterConfig.flight3DConfig.deadband3d_high);
         serialize16(masterConfig.flight3DConfig.neutral3d);
-        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
 
     case MSP_RC_DEADBAND:
-        headSerialReply(3);
+        headSerialReply(5);
         serialize8(currentProfile->rcControlsConfig.deadband);
         serialize8(currentProfile->rcControlsConfig.yaw_deadband);
         serialize8(currentProfile->rcControlsConfig.alt_hold_deadband);
+        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
@@ -1553,7 +1567,7 @@ static bool processInCommand(void)
 
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             color->h = read16();
             color->s = read8();
@@ -1564,29 +1578,24 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != (1 + 7)) {
+            if (i >= LED_MAX_STRIP_LENGTH || currentPort->dataSize != (1 + 4)) {
                 headSerialError(0);
                 break;
             }
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-            uint16_t mask;
-            // currently we're storing directions and functions in a uint16 (flags)
-            // the msp uses 2 x uint16_t to cater for future expansion
-            mask = read16();
-            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
+            *ledConfig = read32();
+            reevaluateLedConfig();
+        }
+        break;
 
-            mask = read16();
-            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
+    case MSP_SET_LED_STRIP_MODECOLOR:
+        {
+            ledModeIndex_e modeIdx = read8();
+            int funIdx = read8();
+            int color = read8();
 
-            mask = read8();
-            ledConfig->xy = CALCULATE_LED_X(mask);
-
-            mask = read8();
-            ledConfig->xy |= CALCULATE_LED_Y(mask);
-
-            ledConfig->color = read8();
-
-            reevalulateLedConfig();
+            if (!setModeColor(modeIdx, funIdx, color))
+                return false;
         }
         break;
 #endif
@@ -1596,6 +1605,7 @@ static bool processInCommand(void)
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_SET_4WAY_IF:
+        // get channel number
         // switch all motor lines HI
         // reply the count of ESC found
         headSerialReply(1);

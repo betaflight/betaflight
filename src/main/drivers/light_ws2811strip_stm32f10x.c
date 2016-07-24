@@ -100,6 +100,8 @@ void ws2811LedStripHardwareInit(void)
 
     DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);
 
+
+    const hsvColor_t hsv_white = {  0, 255, 255};
     NVIC_InitTypeDef NVIC_InitStructure;
 
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel6_IRQn;
