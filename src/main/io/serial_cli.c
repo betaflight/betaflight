@@ -133,7 +133,6 @@ static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
 static void cliPFlags(char *cmdline);
 
-
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
 #endif
@@ -169,7 +168,7 @@ static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
 #ifndef USE_QUAD_MIXER_ONLY
-//  this with mixerMode_e
+// sync this with mixerMode_e
 static const char * const mixerNames[] = {
     "TRI", "QUADP", "QUADX", "BI",
     "GIMBAL", "Y6", "HEX6",
@@ -253,8 +252,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile]", cliDump),
+    CLI_COMMAND_DEF("dump", "dump configuration", "[master|profile]", cliDump),
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -290,8 +288,7 @@ const clicmd_t cmdTable[] = {
         "[<index>]\r\n", cliPlaySound),
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
-    CLI_COMMAND_DEF("rateprofile", "change rate profile",
-        "[<index>]", cliRateProfile),
+    CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
@@ -359,16 +356,20 @@ static const char * const lookupTableCurrentSensor[] = {
     "NONE", "ADC", "VIRTUAL"
 };
 
+#ifdef USE_SERVOS
 static const char * const lookupTableGimbalMode[] = {
     "NORMAL", "MIXTILT"
 };
+#endif
+
+#ifdef BLACKBOX
+static const char * const lookupTableBlackboxDevice[] = {
+    "SERIAL", "SPIFLASH"
+};
+#endif
 
 static const char * const lookupTablePidController[] = {
     "UNUSED", "MWREWRITE", "LUX"
-};
-
-static const char * const lookupTableBlackboxDevice[] = {
-    "SERIAL", "SPIFLASH"
 };
 
 #ifdef SERIAL_RX
@@ -439,7 +440,9 @@ typedef enum {
     TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_CURRENT_SENSOR,
+#ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
+#endif
     TABLE_PID_CONTROLLER,
 #ifdef SERIAL_RX
     TABLE_SERIAL_RX,
@@ -468,7 +471,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
 #endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
+#ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
+#endif
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
 #ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
@@ -476,7 +481,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_RX_NRF24
     { lookupTableNRF24RX, sizeof(lookupTableNRF24RX) / sizeof(char *) },
 #endif
-     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
+    { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
 #ifdef NAV
     { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
@@ -552,7 +557,9 @@ const clivalue_t valueTable[] = {
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+#ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+#endif
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME lower limit should match code in the mixer, 1500 currently,
@@ -560,7 +567,9 @@ const clivalue_t valueTable[] = {
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 50,  32000 }, 0 },
+#ifdef USE_SERVOS
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 }, 0 },
+#endif
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
@@ -657,8 +666,9 @@ const clivalue_t valueTable[] = {
     { "nrf24rx_protocol",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_protocol, .config.lookup = { TABLE_NRF24_RX }, 0 },
     { "nrf24rx_id",                 VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.nrf24rx_id, .config.minmax = { 0, 0 }, 0 },
 #endif
+#ifdef SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },
-
+#endif
 #ifdef TELEMETRY
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_inversion, .config.lookup = { TABLE_OFF_ON }, 0 },
@@ -791,9 +801,11 @@ const clivalue_t valueTable[] = {
     { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_device, .config.lookup = { TABLE_BLACKBOX_DEVICE }, 0 },
 #endif
 
+#ifdef MAG
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
     { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Y], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
+#endif
 
     { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accZero.raw[X], .config.minmax = { -32768,  32767 }, 0 },
     { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accZero.raw[Y], .config.minmax = { -32768,  32767 }, 0 },
@@ -2035,11 +2047,11 @@ static void cliBeeper(char *cmdline)
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int i = 0; ; i++) {
-        	if (i == beeperCount-2){
+            if (i == beeperCount-2){
                 if (mask == 0)
-                	cliPrint("  none");
-        		break;
-        	}
+                    cliPrint("  none");
+                break;
+            }
             if (mask & (1 << i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
@@ -2068,7 +2080,7 @@ static void cliBeeper(char *cmdline)
                     if (i == BEEPER_ALL-1)
                         beeperOffSetAll(beeperCount-2);
                     else
-                    	if (i == BEEPER_PREFERENCE-1)
+                        if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferedBeeperOffMask());
                         else {
                             mask = 1 << i;
@@ -2080,7 +2092,7 @@ static void cliBeeper(char *cmdline)
                     if (i == BEEPER_ALL-1)
                         beeperOffClearAll();
                     else
-                    	if (i == BEEPER_PREFERENCE-1)
+                        if (i == BEEPER_PREFERENCE-1)
                             setPreferedBeeperOffMask(getBeeperOffMask());
                         else {
                             mask = 1 << i;

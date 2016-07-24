@@ -461,8 +461,10 @@ void mspInit(void)
 
     activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
+#ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
+#endif
 
 #ifdef USE_SERVOS
     if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {

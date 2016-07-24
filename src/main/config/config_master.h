@@ -92,7 +92,9 @@ typedef struct master_t {
 
     serialConfig_t serialConfig;
 
+#ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
+#endif
 
 
 #ifdef LED_STRIP

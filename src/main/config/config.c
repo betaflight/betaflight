@@ -331,6 +331,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->deadband3d_throttle = 50;
 }
 
+#ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 0;
@@ -342,6 +343,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
 }
+#endif
 
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
@@ -501,7 +503,9 @@ static void resetConf(void)
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
+#ifdef TELEMETRY
     resetTelemetryConfig(&masterConfig.telemetryConfig);
+#endif
 
     masterConfig.rxConfig.serialrx_provider = 0;
     masterConfig.rxConfig.nrf24rx_protocol = NRF24_DEFAULT_PROTOCOL;
