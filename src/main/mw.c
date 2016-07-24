@@ -126,30 +126,14 @@ bool isCalibrating(void)
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-int16_t getAxisRcCommand(int16_t rawData, int16_t (*loopupTable)(int32_t), int16_t deadband)
+int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
 {
-    int16_t command, absoluteDeflection;
+    int16_t stickDeflection;
 
-    absoluteDeflection = MIN(ABS(rawData - masterConfig.rxConfig.midrc), 500);
+    stickDeflection = constrain(rawData - masterConfig.rxConfig.midrc, -500, 500);
+    stickDeflection = applyDeadband(stickDeflection, deadband);
 
-    if (deadband) {
-        if (absoluteDeflection > deadband) {
-            absoluteDeflection -= deadband;
-        } else {
-            absoluteDeflection = 0;
-        }
-    }
-
-    /*
-        Get command from lookup table after applying deadband
-    */
-    command = loopupTable(absoluteDeflection);
-
-    if (rawData < masterConfig.rxConfig.midrc) {
-        command = -command;
-    }
-
-    return command;
+    return rcLookup(stickDeflection, rate);
 }
 
 void annexCode(void)
@@ -158,9 +142,9 @@ void annexCode(void)
     int32_t throttleValue;
 
     // Compute ROLL PITCH and YAW command
-    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
-    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], rcLookupPitchRoll, currentProfile->rcControlsConfig.deadband);
-    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], rcLookupYaw, currentProfile->rcControlsConfig.yaw_deadband);
+    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, currentProfile->rcControlsConfig.deadband);
+    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, currentProfile->rcControlsConfig.deadband);
+    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, currentProfile->rcControlsConfig.yaw_deadband);
 
     //Compute THROTTLE command
     throttleValue = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);

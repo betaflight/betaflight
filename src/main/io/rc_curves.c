@@ -28,28 +28,8 @@
 #define YAW_LOOKUP_LENGTH 7
 #define THROTTLE_LOOKUP_LENGTH 12
 
-static int16_t lookupPitchRollRC[PITCH_LOOKUP_LENGTH];      // lookup table for expo & RC rate PITCH+ROLL
-static int16_t lookupYawRC[YAW_LOOKUP_LENGTH];              // lookup table for expo & RC rate YAW
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 int16_t lookupThrottleRCMid;                         // THROTTLE curve mid point
-
-int16_t computeRcCurvePoint(uint8_t expo, uint8_t i)
-{
-    return (2500 + expo * (i * i - 25)) * i / 25;
-}
-
-void generateRcCurves(controlRateConfig_t *controlRateConfig)
-{
-    uint8_t i;
-
-    for (i = 0; i < PITCH_LOOKUP_LENGTH; i++) {
-        lookupPitchRollRC[i] = computeRcCurvePoint(controlRateConfig->rcExpo8, i);
-    }
-
-    for (i = 0; i < YAW_LOOKUP_LENGTH; i++) {
-        lookupYawRC[i] = computeRcCurvePoint(controlRateConfig->rcYawExpo8, i);
-    }
-}
 
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
 {
@@ -67,25 +47,16 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
     }
 }
 
-int16_t rcLookupTable(int16_t lookupTable[], int32_t absoluteDeflection)
+int16_t rcLookup(int32_t stickDeflection, uint8_t expo)
 {
-    const int32_t lookupStep = absoluteDeflection / 100;
-    return lookupTable[lookupStep] + (absoluteDeflection - lookupStep * 100) * (lookupTable[lookupStep + 1] - lookupTable[lookupStep]) / 100;
-}
-
-int16_t rcLookupPitchRoll(int32_t absoluteDeflection)
-{
-    return rcLookupTable(lookupPitchRollRC, absoluteDeflection);
-}
-
-int16_t rcLookupYaw(int32_t absoluteDeflection)
-{
-    return rcLookupTable(lookupYawRC, absoluteDeflection);
+    float tmpf = stickDeflection / 100.0f;
+    return (int16_t)((2500.0f + (float)expo * (tmpf * tmpf - 25.0f)) * tmpf / 25.0f);
 }
 
 int16_t rcLookupThrottle(int32_t absoluteDeflection)
 {
-    return rcLookupTable(lookupThrottleRC, absoluteDeflection);
+    const int32_t lookupStep = absoluteDeflection / 100;
+    return lookupThrottleRC[lookupStep] + (absoluteDeflection - lookupStep * 100) * (lookupThrottleRC[lookupStep + 1] - lookupThrottleRC[lookupStep]) / 100;
 }
 
 int16_t rcLookupThrottleMid(void)

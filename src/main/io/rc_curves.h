@@ -17,10 +17,8 @@
 
 #pragma once
 
-void generateRcCurves(controlRateConfig_t *controlRateConfig);
 void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
 
-int16_t rcLookupPitchRoll(int32_t tmp);
-int16_t rcLookupYaw(int32_t tmp);
+int16_t rcLookup(int32_t stickDeflection, uint8_t expo);
 int16_t rcLookupThrottle(int32_t tmp);
 int16_t rcLookupThrottleMid(void);

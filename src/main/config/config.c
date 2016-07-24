@@ -778,7 +778,6 @@ static bool isEEPROMContentValid(void)
 
 void activateControlRateConfig(void)
 {
-    generateRcCurves(currentControlRateProfile);
     generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
 }
 
