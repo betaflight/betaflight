@@ -87,7 +87,6 @@ static uint8_t payloadSize;
 
 #define CRC_LEN 2
 #define RX_TX_ADDR_LEN     5
-//STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0xcc, 0xcc, 0xcc, 0xcc, 0xcc};
 STATIC_UNIT_TESTED uint8_t txAddr[RX_TX_ADDR_LEN] = {0x55, 0x0F, 0x71, 0x0C, 0x00}; // converted XN297 address, 0xC710F55 (28 bit)
 STATIC_UNIT_TESTED uint8_t rxAddr[RX_TX_ADDR_LEN] = {0x49, 0x26, 0x87, 0x7d, 0x2f}; // converted XN297 address
 #define TX_ID_LEN 4
@@ -119,7 +118,7 @@ STATIC_UNIT_TESTED bool cx10CheckBindPacket(const uint8_t *packet)
     return false;
 }
 
-STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t* pVal)
+STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t *pVal)
 {
     uint16_t ret = (*(pVal + 1)) & 0x7f; // mask out top bit which is used for a flag for the rudder
     ret = (ret << 8) | *pVal;
@@ -160,13 +159,35 @@ static void cx10HopToNextChannel(void)
 }
 
 // The hopping channels are determined by the txId
-STATIC_UNIT_TESTED void cx10SetHoppingChannels(const uint8_t* txId)
+STATIC_UNIT_TESTED void cx10SetHoppingChannels(const uint8_t *txId)
 {
     cx10RfChannelIndex = 0;
     cx10RfChannels[0] = 0x03 + (txId[0] & 0x0F);
     cx10RfChannels[1] = 0x16 + (txId[0] >> 4);
     cx10RfChannels[2] = 0x2D + (txId[1] & 0x0F);
     cx10RfChannels[3] = 0x40 + (txId[1] >> 4);
+}
+
+static bool cx10CrcOK(uint16_t crc, const uint8_t *payload)
+{
+    if (payload[payloadSize] != (crc >> 8)) {
+        return false;
+    }
+    if (payload[payloadSize + 1] != (crc & 0xff)) {
+        return false;
+    }
+    return true;
+}
+
+static bool cx10ReadPayloadIfAvailable(uint8_t *payload)
+{
+    if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
+        const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize, rxAddr);
+        if (cx10CrcOK(crc, payload)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
@@ -182,8 +203,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
 
     switch (protocolState) {
     case STATE_BIND:
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
-            XN297_UnscramblePayload(payload, payloadSize + CRC_LEN, rxAddr);
+        if (cx10ReadPayloadIfAvailable(payload)) {
             const bool bindPacket = cx10CheckBindPacket(payload);
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
@@ -211,7 +231,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
             totalDelayUs += fifoDelayUs;
         }
         // send out an ACK on each of the hopping channels, required by CX10 transmitter
-        for (uint8_t ii = 0; ii < RF_CHANNEL_COUNT; ++ii) {
+        for (int ii = 0; ii < RF_CHANNEL_COUNT; ++ii) {
             NRF24L01_SetChannel(cx10RfChannels[ii]);
             XN297_WritePayload(payload, payloadSize, rxAddr);
             NRF24L01_SetTxMode();// enter transmit mode to send the packet
@@ -235,8 +255,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
     case STATE_DATA:
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
-            XN297_UnscramblePayload(payload, payloadSize + CRC_LEN, rxAddr);
+        if (cx10ReadPayloadIfAvailable(payload)) {
             cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
             ret = NRF24_RECEIVED_DATA;
