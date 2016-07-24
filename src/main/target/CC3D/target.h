@@ -177,7 +177,10 @@
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 
+#undef GPS_PROTO_NAZA
+
 #ifdef CC3D_OPBL
+
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
 #define TARGET_MOTOR_COUNT 6
@@ -185,15 +188,13 @@
 #define TARGET_MOTOR_COUNT 4
 #undef USE_SONAR_SRF10
 #endif // USE_RX_NRF24
+
 #undef USE_MAG_AK8975
 #undef USE_MAG_MAG3110
-#undef USE_BARO_BMP280
-#undef USE_BARO_MS5611
 #undef BLACKBOX
-#undef TELEMETRY
-#undef TELEMETRY_LTM
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
+
 #endif //CC3D_OPBL
 
 #ifdef USE_RX_NRF24

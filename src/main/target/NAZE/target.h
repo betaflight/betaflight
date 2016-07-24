@@ -236,13 +236,13 @@
 #undef USE_SERVOS
 #undef BEEPER
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
-
 #endif
 
 #undef TELEMETRY_FRSKY
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 
+#undef GPS_PROTO_NAZA
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA 0xffff
