@@ -129,30 +129,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // select current mixer configuration
         mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
 
-        var features = new Features(CONFIG);
-
         var radioGroups = [];
         var features_e = $('.features');
 
-        features.generateElements(features_e, radioGroups);
+        BF_CONFIG.features.generateElements(features_e);
         
         // translate to user-selected language
         localize();
 
-        for (var i = 0; i < radioGroups.length; i++) {
-            var group = radioGroups[i];
-            var controls_e = $('input[name="' + group + '"].feature');
-            
-            
-            controls_e.each(function() {
-                var bit = parseInt($(this).attr('value'));
-                var state = bit_check(BF_CONFIG.features, bit);
-                
-                $(this).prop('checked', state);
-            });
-        }
-
-        
         var alignments = [
             'CW 0°',
             'CW 90°',
@@ -413,7 +397,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
             $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
             $('div.disarm').show();            
-            if (features.isFeatureEnabled(BF_CONFIG.features, 'MOTOR_STOP')) {
+            if (BF_CONFIG.features.isEnabled('MOTOR_STOP')) {
                 $('div.disarmdelay').show();
             } else {
                 $('div.disarmdelay').hide();
@@ -457,11 +441,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('input.feature', features_e).change(function () {
             var element = $(this);
 
-            BF_CONFIG.features = features.updateData(BF_CONFIG.features, element);
-            updateTabList(BF_CONFIG.features, features);
+            BF_CONFIG.features.updateData(element);
+            updateTabList(BF_CONFIG.features);
 
             if (element.attr('name') === 'MOTOR_STOP') {
-                if (features.isFeatureEnabled(BF_CONFIG.features, 'MOTOR_STOP')) {
+                if (BF_CONFIG.features.isEnabled('MOTOR_STOP')) {
                     $('div.disarmdelay').show();
                 } else {
                     $('div.disarmdelay').hide();

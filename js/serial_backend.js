@@ -265,6 +265,8 @@ function onConnect() {
     $('#tabs ul.mode-connected-cli').show();
     
     if (CONFIG.flightControllerVersion !== '') {
+        BF_CONFIG.features = new Features(CONFIG);
+
         $('#tabs ul.mode-connected').show();
 
         if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {

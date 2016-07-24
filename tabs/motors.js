@@ -176,7 +176,7 @@ TABS.motors.initialize = function (callback) {
         // translate to user-selected language
         localize();
 
-        self.feature3DEnabled = bit_check(BF_CONFIG.features, 12);
+        self.feature3DEnabled = BF_CONFIG.features.isEnabled('3D');
 
         if (self.feature3DEnabled && !self.feature3DSupported) {
             self.allowTestMode = false;

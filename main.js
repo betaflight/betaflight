@@ -399,32 +399,32 @@ function updateActivatedTab() {
     $('a', activeTab).trigger('click');
 }
 
-function updateTabList(featureSet, features) {
-    if (features.isFeatureEnabled(featureSet, 'GPS')) {
+function updateTabList(features) {
+    if (features.isEnabled('GPS')) {
         $('#tabs ul.mode-connected li.tab_gps').show();
     } else {
         $('#tabs ul.mode-connected li.tab_gps').hide();
     }
 
-    if (features.isFeatureEnabled(featureSet, 'LED_STRIP')) {
+    if (features.isEnabled('LED_STRIP')) {
         $('#tabs ul.mode-connected li.tab_led_strip').show();
     } else {
         $('#tabs ul.mode-connected li.tab_led_strip').hide();
     }
 
-    if (features.isFeatureEnabled(featureSet, 'BLACKBOX')) {
+    if (features.isEnabled('BLACKBOX')) {
         $('#tabs ul.mode-connected li.tab_onboard_logging').show();
     } else {
         $('#tabs ul.mode-connected li.tab_onboard_logging').hide();
     }
 
-    if (features.isFeatureEnabled(featureSet, 'TRANSPONDER')) {
+    if (features.isEnabled('TRANSPONDER')) {
         $('#tabs ul.mode-connected li.tab_transponder').show();
     } else {
         $('#tabs ul.mode-connected li.tab_transponder').hide();
     }
 
-    if (features.isFeatureEnabled(featureSet, 'OSD')) {
+    if (features.isEnabled('OSD')) {
         $('#tabs ul.mode-connected li.tab_osd').show();
     } else {
         $('#tabs ul.mode-connected li.tab_osd').hide();

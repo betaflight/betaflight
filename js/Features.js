@@ -35,7 +35,7 @@ var Features = function (config) {
         );
     }
 
-    if (semver.gte(config.flightControllerVersion, "2.8.0")) {
+    if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "2.8.0")) {
          features.push(
             {bit: 22, group: 'other', name: 'AIRMODE'},
             {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'},
@@ -44,20 +44,34 @@ var Features = function (config) {
     }
 
     this._features = features;
+    this._featureMask = 0;
 }
 
-Features.prototype.isFeatureEnabled = function (featureSet, featureName) {
+Features.prototype.getMask = function () {
+    return this._featureMask;
+}
+
+Features.prototype.setMask = function (featureMask) {
+    this._featureMask = featureMask;
+}
+
+Features.prototype.isEnabled = function (featureName) {
     var features = this._features;
+    var featureMask = this._featureMask;
+
     for (var i = 0; i < features.length; i++) {
-        if (features[i].name === featureName && bit_check(featureSet, features[i].bit)) {
+        if (features[i].name === featureName && bit_check(featureMask, features[i].bit)) {
             return true;
         }
     }
     return false;
 }
 
-Features.prototype.generateElements = function (featuresElements, radioGroups) {
+Features.prototype.generateElements = function (featuresElements) {
     var features = this._features;
+    var featureMask = this._featureMask;
+    var radioGroups = [];
+
     for (var i = 0; i < features.length; i++) {
         var row_e;
 
@@ -83,7 +97,7 @@ Features.prototype.generateElements = function (featuresElements, radioGroups) {
                     + feature_tip_html + '</td></tr>');
             radioGroups.push(features[i].group);
         } else {
-            row_e = $('<tr><td><input class="feature toggle"'
+            row_e = $('<tr><td><input class="feature toggle" id="feature-'
                     + i
                     + '" name="'
                     + features[i].name
@@ -98,7 +112,7 @@ Features.prototype.generateElements = function (featuresElements, radioGroups) {
 
             var feature_e = row_e.find('input.feature');
 
-            feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
+            feature_e.prop('checked', bit_check(featureMask, features[i].bit));
             feature_e.data('bit', features[i].bit);
         }
 
@@ -108,17 +122,29 @@ Features.prototype.generateElements = function (featuresElements, radioGroups) {
             }
         });
     }
+
+    for (var i = 0; i < radioGroups.length; i++) {
+        var group = radioGroups[i];
+        var controlElements = $('input[name="' + group + '"].feature');
+
+        controlElements.each(function() {
+            var bit = parseInt($(this).attr('value'));
+            var state = bit_check(featureMask, bit);
+
+            $(this).prop('checked', state);
+        });
+    }
 }
 
-Features.prototype.updateData = function (featureSet, featureElement) {
+Features.prototype.updateData = function (featureElement) {
     switch (featureElement.attr('type')) {
         case 'checkbox':
             var bit = featureElement.data('bit');
 
             if (featureElement.is(':checked')) {
-                featureSet = bit_set(featureSet, bit);
+                this._featureMask = bit_set(this._featureMask, bit);
             } else {
-                featureSet = bit_clear(featureSet, bit);
+                this._featureMask = bit_clear(this._featureMask, bit);
             }
 
             break;
@@ -130,15 +156,13 @@ Features.prototype.updateData = function (featureSet, featureElement) {
             controlElements.each(function() {
                 var bit = $(this).val();
                 if (selectedBit === bit) {
-                    featureSet = bit_set(BF_CONFIG.featureSet, bit);
+                    this._featureMask = bit_set(BF_CONFIG.this._featureMask, bit);
                 } else {
-                    featureSet = bit_clear(featureSet, bit);
+                    this._featureMask = bit_clear(this._featureMask, bit);
                 }
 
             });
 
             break;
     }
-
-    return featureSet;
 }

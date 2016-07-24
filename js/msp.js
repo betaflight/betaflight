@@ -700,7 +700,7 @@ var MSP = {
                 break;
             case MSP_codes.MSP_BF_CONFIG:
                 BF_CONFIG.mixerConfiguration = data.getUint8(0);
-                BF_CONFIG.features = data.getUint32(1, 1);
+                BF_CONFIG.features.setMask(data.getUint32(1, 1));
                 BF_CONFIG.serialrx_type = data.getUint8(5);
                 BF_CONFIG.board_align_roll = data.getInt16(6, 1); // -180 - 360
                 BF_CONFIG.board_align_pitch = data.getInt16(8, 1); // -180 - 360
@@ -708,9 +708,7 @@ var MSP = {
                 BF_CONFIG.currentscale = data.getInt16(12, 1);
                 BF_CONFIG.currentoffset = data.getUint16(14, 1);
 
-                if (this.features) {
-                    updateTabList(BF_CONFIG.features, this.features);
-                }
+                updateTabList(BF_CONFIG.features);
 
                 break;
             case MSP_codes.MSP_SET_BF_CONFIG:
@@ -730,11 +728,6 @@ var MSP = {
                 CONFIG.mspProtocolVersion = data.getUint8(offset++); 
                 CONFIG.apiVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++) + '.0';
 
-                if ((!this.features || CONFIG.apiVersion !== apiVersion)
-                    && CONFIG.flightControllerVersion !== '') {
-                    this.features = new Features(CONFIG);
-                }
-
                 break;
 
             case MSP_codes.MSP_FC_VARIANT:
@@ -751,12 +744,6 @@ var MSP = {
                 var flightControllerVersion = CONFIG.flightControllerVersion;
 
                 CONFIG.flightControllerVersion = data.getUint8(offset++) + '.' + data.getUint8(offset++) + '.' + data.getUint8(offset++);
-
-                if ((!this.features
-                    || CONFIG.flightControllerVersion !== flightControllerVersion)
-                    && CONFIG.apiVersion !== '') {
-                    this.features = new Features(CONFIG);
-                }
 
                 break;
 
@@ -1380,11 +1367,12 @@ MSP.crunch = function (code) {
 
     switch (code) {
         case MSP_codes.MSP_SET_BF_CONFIG:
+            var featureMask = BF_CONFIG.features.getMask();
             buffer.push(BF_CONFIG.mixerConfiguration);
-            buffer.push(specificByte(BF_CONFIG.features, 0));
-            buffer.push(specificByte(BF_CONFIG.features, 1));
-            buffer.push(specificByte(BF_CONFIG.features, 2));
-            buffer.push(specificByte(BF_CONFIG.features, 3));
+            buffer.push(specificByte(featureMask, 0));
+            buffer.push(specificByte(featureMask, 1));
+            buffer.push(specificByte(featureMask, 2));
+            buffer.push(specificByte(featureMask, 3));
             buffer.push(BF_CONFIG.serialrx_type);
             buffer.push(specificByte(BF_CONFIG.board_align_roll, 0));
             buffer.push(specificByte(BF_CONFIG.board_align_roll, 1));

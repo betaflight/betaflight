@@ -4,8 +4,6 @@ TABS.pid_tuning = {
     controllerChanged: false
 };
 
-var SUPEREXPO_FEATURE_BIT = 23;
-
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
     if (GUI.active_tab != 'pid_tuning') {
@@ -42,13 +40,7 @@ TABS.pid_tuning.initialize = function (callback) {
     });
 
     function pid_and_rc_to_form() {
-        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-            //This will need to be reworked to remove BF_CONFIG reference eventually
-            $('.pid_tuning input[name="show_superexpo_rates"]').prop(
-                'checked', bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT));
-        }
-
-        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
             $('input[name="vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
         }
 
@@ -220,12 +212,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
     function form_to_pid_and_rc() {
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-            //This will need to be reworked to remove BF_CONFIG reference eventually
-            if ($('.pid_tuning input[name="show_superexpo_rates"]').is(':checked')) {
-                BF_CONFIG.features = bit_set(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
-            } else {
-                BF_CONFIG.features = bit_clear(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
-            }
+            BF_CONFIG.features.updateData($('.pid_tuning input[name="SUPEREXPO_RATES"]'));
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
@@ -335,7 +322,7 @@ TABS.pid_tuning.initialize = function (callback) {
             $('#pid_mag').show();
             showTitle = true;
         }
-        if (bit_check(BF_CONFIG.features, 7)) {   //This will need to be reworked to remove BF_CONFIG reference eventually
+        if (BF_CONFIG.features.isEnabled('GPS')) {
             $('#pid_gps').show();
             showTitle = true;
         }
@@ -410,6 +397,12 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     function process_html() {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+            var features_e = $('.features');
+
+            BF_CONFIG.features.generateElements(features_e);
+        }
+
         // translate to user-selected language
         localize();
 
@@ -422,7 +415,7 @@ TABS.pid_tuning.initialize = function (callback) {
             rc_rate_yaw: SPECIAL_PARAMETERS.RC_RATE_YAW,
             rc_expo:     RC_tuning.RC_EXPO,
             rc_yaw_expo: RC_tuning.RC_YAW_EXPO,
-            superexpo:   bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT)
+            superexpo:   BF_CONFIG.features.isEnabled('SUPEREXPO_RATES')
         };
 
         if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
@@ -559,13 +552,13 @@ TABS.pid_tuning.initialize = function (callback) {
                     self.currentRates.pitch_rate = targetValue;
 
                     updateNeeded = true;
-	        }
+                }
 
-                if (targetElement.attr('name') === 'show_superexpo_rates') {
+                if (targetElement.attr('name') === 'SUPEREXPO_RATES') {
                     self.currentRates.superexpo = targetElement.is(':checked');
 
                     updateNeeded = true;
-		}
+                }
 
                 if (updateNeeded) {
                     var curveHeight = rcCurveElement.height;
@@ -598,7 +591,7 @@ TABS.pid_tuning.initialize = function (callback) {
         // UI Hooks
         // curves
         $('.pid_tuning').on('input change', updateRates);
-        $('.super_expo_checkbox').on('input change', updateRates).trigger('input');
+        $('input.feature').on('input change', updateRates).trigger('input');
 
         $('.throttle input').on('input change', function () {
             setTimeout(function () { // let global validation trigger and adjust the values first

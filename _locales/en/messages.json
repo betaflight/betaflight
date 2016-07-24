@@ -538,7 +538,13 @@
         "message": "Configure via the Race Transponder tab after enabling."
     },
     "featureAIRMODE": {
-        "message": "Airmode always enabled!"
+        "message": "Permanently enable Airmode"
+    },
+    "featureSUPEREXPO_RATES": {
+        "message": "Super Expo Rates"
+    },
+    "featureOSD": {
+        "message": "On Screen Display"
     },
     "configurationFeatureEnabled": {
         "message": "Enabled"
@@ -1609,12 +1615,6 @@
     },
     "pidTuningYaw": {
         "message": "Yaw (Hz)"
-    },
-    "pidTuningSuperExpo": {
-        "message": "Enable SuperExpo Rates"
-    },
-    "pidTuningRatesSuperExpoHelp": {
-        "message": "This setting controls the feature 'SUPEREXPO_RATES'"
     },
     "pidTuningVbatPidCompensation": {
         "message": "Vbat PID Compensation"
