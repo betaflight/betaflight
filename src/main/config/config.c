@@ -252,7 +252,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->inav.w_z_baro_p = 0.35f;
 
     navConfig->inav.w_z_gps_p = 0.2f;
-    navConfig->inav.w_z_gps_v = 0.2f;
+    navConfig->inav.w_z_gps_v = 0.5f;
 
     navConfig->inav.w_xy_gps_p = 1.0f;
     navConfig->inav.w_xy_gps_v = 2.0f;
