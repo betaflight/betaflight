@@ -90,6 +90,7 @@ uint32_t *nrf24rxIdPtr;
 STATIC_UNIT_TESTED uint8_t h8_3dRfChannelCount = H8_3D_RF_CHANNEL_COUNT;
 STATIC_UNIT_TESTED uint8_t h8_3dRfChannelIndex;
 STATIC_UNIT_TESTED uint8_t h8_3dRfChannels[H8_3D_RF_CHANNEL_COUNT];
+// hop between these channels in the bind phase
 #define H8_3D_RF_BIND_CHANNEL_START 0x06
 #define H8_3D_RF_BIND_CHANNEL_END 0x26
 
@@ -181,21 +182,14 @@ static void h8_3dHopToNextChannel(void)
 }
 
 // The hopping channels are determined by the txId
-void h8_3dSetHoppingChannels(const uint8_t* txId)
+void h8_3dSetHoppingChannels(const uint8_t *txId)
 {
-#ifdef XXX
     for (int ii = 0; ii < H8_3D_RF_CHANNEL_COUNT; ++ii) {
         h8_3dRfChannels[ii] = 0x06 + (0x0f * ii) + ((txId[ii] >> 4) + (txId[ii] & 0x0f)) % 0x0f;
     }
-#else
-    h8_3dRfChannels[0] = 0x06 + ((txId[0]>>4) + (txId[0] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[1] = 0x15 + ((txId[1]>>4) + (txId[1] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[2] = 0x24 + ((txId[2]>>4) + (txId[2] & 0x0f)) % 0x0f;
-    h8_3dRfChannels[3] = 0x33 + ((txId[3]>>4) + (txId[3] & 0x0f)) % 0x0f;
-#endif
 }
 
-void h8_3dSetBound(const uint8_t* txId)
+void h8_3dSetBound(const uint8_t *txId)
 {
     protocolState = STATE_DATA;
     h8_3dSetHoppingChannels(txId);
@@ -205,12 +199,12 @@ void h8_3dSetBound(const uint8_t* txId)
     NRF24L01_SetChannel(h8_3dRfChannels[0]);
 }
 
-bool crcOK(uint16_t crc, const uint8_t *payload)
+static bool h8_3dCrcOK(uint16_t crc, const uint8_t *payload)
 {
-    if (payload[payloadSize - CRC_LEN] != (crc >> 8)) {
+    if (payload[payloadSize] != (crc >> 8)) {
         return false;
     }
-    if (payload[payloadSize - CRC_LEN + 1] != (crc & 0xff)) {
+    if (payload[payloadSize + 1] != (crc & 0xff)) {
         return false;
     }
     return true;
@@ -223,26 +217,26 @@ bool crcOK(uint16_t crc, const uint8_t *payload)
 nrf24_received_t h8_3dDataReceived(uint8_t *payload)
 {
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
+    bool payloadReceived = false;
+    if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize + CRC_LEN)) {
+        const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize, rxTxAddrXN297);
+        if (h8_3dCrcOK(crc, payload)) {
+            payloadReceived = true;
+        }
+    }
     switch (protocolState) {
     case STATE_BIND:
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize - CRC_LEN, rxTxAddrXN297);
-            if (crcOK(crc, payload)) {
-                const bool bindPacket = h8_3dCheckBindPacket(payload);
-                if (bindPacket) {
-                    ret = NRF24_RECEIVED_BIND;
-                    h8_3dSetBound(txId);
-                }
+        if (payloadReceived) {
+            const bool bindPacket = h8_3dCheckBindPacket(payload);
+            if (bindPacket) {
+                ret = NRF24_RECEIVED_BIND;
+                h8_3dSetBound(txId);
             }
         }
         break;
     case STATE_DATA:
-        // read the payload, processing of payload is deferred
-        if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            const uint16_t crc = XN297_UnscramblePayload(payload, payloadSize - CRC_LEN, rxTxAddrXN297);
-            if (crcOK(crc, payload)) {
-                ret = NRF24_RECEIVED_DATA;
-            }
+        if (payloadReceived) {
+            ret = NRF24_RECEIVED_DATA;
         }
         break;
     }
@@ -273,8 +267,8 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
         h8_3dSetBound((uint8_t*)nrf24rx_id);
     }
 
-    payloadSize = H8_3D_PROTOCOL_PAYLOAD_SIZE + CRC_LEN; // payload + 2 bytes CRC
-    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize); // payload + 2 bytes CRC
+    payloadSize = H8_3D_PROTOCOL_PAYLOAD_SIZE;
+    NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize + CRC_LEN); // payload + 2 bytes CRC
 
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
