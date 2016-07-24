@@ -195,14 +195,13 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     }
 
    if (isUsingSticksToArm) {
-        // Dont disarm if fixedwing and motorstop
-        if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP) && fixed_wing_auto_arm) {
-            return;
-		}
-
         // Disarm on throttle down + yaw
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
-            if (ARMING_FLAG(ARMED)) {
+            // Dont disarm if fixedwing and motorstop
+            if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP) && fixed_wing_auto_arm) {
+                return;
+            }
+            else if (ARMING_FLAG(ARMED)) {
                 mwDisarm();
             }
             else {
