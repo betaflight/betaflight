@@ -126,9 +126,9 @@
 #else
 
 #define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT       4
 
-#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
@@ -204,9 +204,6 @@
 #undef SPEKTRUM_BIND
 #undef TELEMETRY
 #undef TELEMETRY_LTM
-#ifndef CC3D_OPBL
-#define LED_STRIP
-#endif
 #endif
 
 

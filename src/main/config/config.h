@@ -45,18 +45,21 @@ typedef enum {
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
-    FEATURE_RX_NRF24 = 1 << 22,
-    FEATURE_SOFTSPI = 1 << 23,
+    FEATURE_AIRMODE = 1 << 22,
+    FEATURE_SUPEREXPO_RATES = 1 << 23,
+    FEATURE_OSD = 1 << 24,
+    FEATURE_VTX = 1 << 25,
+    FEATURE_RX_NRF24 = 1 << 26,
+    FEATURE_SOFTSPI = 1 << 27,
 } features_e;
-
-void handleOneshotFeatureChangeOnRestart(void);
-void latchActiveFeatures(void);
-bool featureConfigured(uint32_t mask);
 
 typedef enum {
     FLAG_MAG_CALIBRATION_DONE = 1 << 0,
 } persistent_flags_e;
 
+void handleOneshotFeatureChangeOnRestart(void);
+void latchActiveFeatures(void);
+bool featureConfigured(uint32_t mask);
 bool feature(uint32_t mask);
 void featureSet(uint32_t mask);
 void featureClear(uint32_t mask);
@@ -68,8 +71,8 @@ void beeperOffClear(uint32_t mask);
 void beeperOffClearAll(void);
 uint32_t getBeeperOffMask(void);
 void setBeeperOffMask(uint32_t mask);
-uint32_t getPreferedBeeperOffMask(void);
-void setPreferedBeeperOffMask(uint32_t mask);
+uint32_t getPreferredBeeperOffMask(void);
+void setPreferredBeeperOffMask(uint32_t mask);
 
 bool persistentFlag(uint8_t mask);
 void persistentFlagSet(uint8_t mask);
@@ -91,9 +94,7 @@ void changeProfile(uint8_t profileIndex);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
-
 bool canSoftwareSerialBeUsed(void);
-
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 
 uint16_t getCurrentMinthrottle(void);
