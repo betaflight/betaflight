@@ -336,7 +336,7 @@ void processRx(void)
 
     processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
-    updateActivatedModes(currentProfile->modeActivationConditions);
+    updateActivatedModes(currentProfile->modeActivationConditions, currentProfile->modeActivationOperator);
 
     if (!cliMode) {
         updateAdjustmentStates(currentProfile->adjustmentRanges);

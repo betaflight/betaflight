@@ -144,6 +144,11 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
+typedef enum {
+    MODE_OPERATOR_OR,
+    MODE_OPERATOR_AND
+} modeActivationOperator_e;
+
 typedef struct controlRateConfig_s {
     uint8_t rcExpo8;
     uint8_t thrMid8;
@@ -170,7 +175,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
 rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
 void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
+void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, modeActivationOperator_e modeActivationOperator);
 
 
 typedef enum {

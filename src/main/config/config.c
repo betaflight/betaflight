@@ -578,6 +578,8 @@ static void resetConf(void)
 
     currentProfile->mag_declination = 0;
 
+    currentProfile->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
+
     resetBarometerConfig(&masterConfig.barometerConfig);
 
     // Radio
