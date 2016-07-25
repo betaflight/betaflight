@@ -283,7 +283,7 @@ var MSP = {
                 CONFIG.activeSensors = data.getUint16(4, 1);
                 CONFIG.mode = data.getUint32(6, 1);
                 CONFIG.profile = data.getUint8(10);
-                $('select[name="profilechange"]').val(CONFIG.profile);
+                $('.tab-pid_tuning select[name="profilechange"]').val(CONFIG.profile);
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
@@ -297,9 +297,10 @@ var MSP = {
                 CONFIG.profile = data.getUint8(10);
                 CONFIG.cpuload = data.getUint16(11, 1);
                 CONFIG.numProfiles = data.getUint8(13);
-                $('select[name="profilechange"]').val(CONFIG.profile);
-                if (CONFIG.numProfiles === 2) {
-                    $('select[name="profilechange"] .profile3').hide();
+                $('.tab-pid_tuning select[name="profilechange"]').val(CONFIG.profile);
+                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
+                    && CONFIG.numProfiles === 2) {
+                    $('.tab-pid_tuning select[name="profilechange"] .profile3').hide();
                 }
 
                 sensor_status(CONFIG.activeSensors);

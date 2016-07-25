@@ -1516,15 +1516,6 @@ dialog {
 
 }
 
-#profile_change {
-    color:white;
-    margin-top: 16px;
-    width:125px;
-    float: right;
-    margin-right: 0px;
-    line-height: 12px;
-}
-
 .dataflash-contents_global {
     margin-top: 18px;
     border: 1px solid #4A4A4A;
