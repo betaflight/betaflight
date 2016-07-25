@@ -262,9 +262,13 @@ function onConnect() {
     $('div#connectbutton a.connect_state').text(chrome.i18n.getMessage('disconnect')).addClass('active');
     $('div#connectbutton a.connect').addClass('active');
     $('#tabs ul.mode-disconnected').hide();
-    $('#tabs ul.mode-connected').show(); 
+    $('#tabs ul.mode-connected-cli').show();
     
     if (CONFIG.flightControllerVersion !== '') {
+        BF_CONFIG.features = new Features(CONFIG);
+
+        $('#tabs ul.mode-connected').show();
+
         if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
             MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
         } else {
@@ -301,6 +305,7 @@ function onClosed(result) {
     }
 
     $('#tabs ul.mode-connected').hide();
+    $('#tabs ul.mode-connected-cli').hide();
     $('#tabs ul.mode-disconnected').show();
 
     var sensor_state = $('#sensor-status');

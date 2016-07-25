@@ -273,7 +273,7 @@ TABS.receiver.initialize = function (callback) {
         });
 
         // Only show the MSP control sticks if the MSP Rx feature is enabled
-        $(".sticks_btn").toggle(bit_check(BF_CONFIG.features, 14 /* RX_MSP */));
+        $(".sticks_btn").toggle(BF_CONFIG.features.isEnabled('RX_MSP'));
 
         $('select[name="rx_refresh_rate"]').change(function () {
             var plot_update_rate = parseInt($(this).val(), 10);
@@ -405,7 +405,7 @@ TABS.receiver.initModelPreview = function () {
 
     this.useSuperExpo = false;
     if (CONFIG.flightControllerIdentifier === 'BTFL' && semver.gte(CONFIG.flightControllerVersion, '2.8.0')) {
-        this.useSuperExpo = bit_check(BF_CONFIG.features, SUPEREXPO_FEATURE_BIT);
+        this.useSuperExpo = BF_CONFIG.features.isEnabled('SUPEREXPO_RATES');
     }
 
     this.rateCurve = new RateCurve(CONFIG.flightControllerIdentifier !== 'BTFL' || semver.lt(CONFIG.flightControllerVersion, '2.8.0'));

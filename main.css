@@ -508,6 +508,10 @@ input[type="number"]::-webkit-inner-spin-button {
     display: none;
 }
 
+#tabs ul.mode-connected-cli {
+    display: none;
+}
+
 #tabs li {
     border-bottom: 1px solid rgba(0, 0, 0, 0.30);
 }

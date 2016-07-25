@@ -94,7 +94,7 @@ TABS.onboard_logging.initialize = function (callback) {
              * The best we can do on those targets is check the BLACKBOX feature bit to identify support for Blackbox instead.
              */
             if (BLACKBOX.supported || DATAFLASH.supported 
-                    || semver.gte(CONFIG.flightControllerVersion, "1.5.0") && semver.lte(CONFIG.flightControllerVersion, "1.10.0") && bit_check(BF_CONFIG.features, 19)) {
+                    || semver.gte(CONFIG.flightControllerVersion, "1.5.0") && semver.lte(CONFIG.flightControllerVersion, "1.10.0") && BF_CONFIG.features.isEnabled('BLACKBOX')) {
                 blackboxSupport = 'yes';
             } else if (semver.gte(CONFIG.flightControllerVersion, "1.5.0") && semver.lte(CONFIG.flightControllerVersion, "1.10.0")) {
                 blackboxSupport = 'maybe';

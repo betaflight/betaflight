@@ -113,7 +113,6 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
     
     function process_html() {
-        
         var mixer_list_e = $('select.mixerList');
         for (var i = 0; i < mixerList.length; i++) {
             mixer_list_e.append('<option value="' + (i + 1) + '">' + mixerList[i].name + '</option>');
@@ -130,127 +129,14 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // select current mixer configuration
         mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
 
-        // generate features
-        var features = [
-            {bit: 0, group: 'rxMode', mode: 'group', name: 'RX_PPM'},
-            {bit: 1, group: 'batteryVoltage', name: 'VBAT'},
-            {bit: 2, group: 'other', name: 'INFLIGHT_ACC_CAL'},
-            {bit: 3, group: 'rxMode', mode: 'group', name: 'RX_SERIAL'},
-            {bit: 4, group: 'esc', name: 'MOTOR_STOP'},
-            {bit: 5, group: 'other', name: 'SERVO_TILT'},
-            {bit: 6, group: 'other', name: 'SOFTSERIAL', haveTip: true},
-            {bit: 7, group: 'gps', name: 'GPS', haveTip: true},
-            {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE'},
-            {bit: 9, group: 'other', name: 'SONAR'},
-            {bit: 10, group: 'other', name: 'TELEMETRY'},
-            {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER'},
-            {bit: 12, group: 'other', name: '3D'},
-            {bit: 13, group: 'rxMode', mode: 'group', name: 'RX_PARALLEL_PWM'},
-            {bit: 14, group: 'rxMode', mode: 'group', name: 'RX_MSP'},
-            {bit: 15, group: 'rssi', name: 'RSSI_ADC'},
-            {bit: 16, group: 'other', name: 'LED_STRIP'},
-            {bit: 17, group: 'other', name: 'DISPLAY'},
-            {bit: 19, group: 'other', name: 'BLACKBOX', haveTip: true}
-        ];
-        
-        if (semver.gte(CONFIG.apiVersion, "1.12.0")) {
-            features.push(
-                {bit: 20, group: 'other', name: 'CHANNEL_FORWARDING'}
-            );
-        }
-
-        if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
-            features.push(
-                {bit: 21, group: 'other', name: 'TRANSPONDER', haveTip: true}
-            );
-        }
-
-        if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-             features.push(
-                {bit: 22, group: 'other', name: 'AIRMODE'}
-            );
-        }
-
-        function isFeatureEnabled(featureName) {
-            for (var i = 0; i < features.length; i++) {
-                if (features[i].name == featureName && bit_check(BF_CONFIG.features, features[i].bit)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         var radioGroups = [];
-        
         var features_e = $('.features');
-        for (var i = 0; i < features.length; i++) {
-            var row_e;
-            
-            var feature_tip_html = '';
-            if (features[i].haveTip) {
-                feature_tip_html = '<div class="helpicon cf_tip" i18n_title="feature' + features[i].name + 'Tip"></div>';
-            }
-            
-            if (features[i].mode === 'group') {
-                row_e = $('<tr><td style="width: 15px;"><input style="width: 13px;" class="feature" id="feature-'
-                        + i
-                        + '" value="'
-                        + features[i].bit
-                        + '" title="'
-                        + features[i].name
-                        + '" type="radio" name="'
-                        + features[i].group
-                        + '" /></td><td><label for="feature-'
-                        + i
-                        + '">'
-                        + features[i].name
-                        + '</label></td><td><span i18n="feature' + features[i].name + '"></span>' 
-                        + feature_tip_html + '</td></tr>');
-                radioGroups.push(features[i].group);
-            } else {
-                row_e = $('<tr><td><input class="feature toggle"'
-                        + i
-                        + '" name="'
-                        + features[i].name
-                        + '" title="'
-                        + features[i].name
-                        + '" type="checkbox"/></td><td><label for="feature-'
-                        + i
-                        + '">'
-                        + features[i].name
-                        + '</label></td><td><span i18n="feature' + features[i].name + '"></span>' 
-                        + feature_tip_html + '</td></tr>');
-                
-                var feature_e = row_e.find('input.feature');
 
-                feature_e.prop('checked', bit_check(BF_CONFIG.features, features[i].bit));
-                feature_e.data('bit', features[i].bit);
-            }
-
-            features_e.each(function () {
-                if ($(this).hasClass(features[i].group)) {
-                    $(this).append(row_e);
-                }
-            });
-        }
+        BF_CONFIG.features.generateElements(features_e);
         
         // translate to user-selected language
         localize();
 
-        for (var i = 0; i < radioGroups.length; i++) {
-            var group = radioGroups[i];
-            var controls_e = $('input[name="' + group + '"].feature');
-            
-            
-            controls_e.each(function() {
-                var bit = parseInt($(this).attr('value'));
-                var state = bit_check(BF_CONFIG.features, bit);
-                
-                $(this).prop('checked', state);
-            });
-        }
-
-        
         var alignments = [
             'CW 0°',
             'CW 90°',
@@ -511,10 +397,11 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
             $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
             $('div.disarm').show();            
-            if(bit_check(BF_CONFIG.features, 4))//MOTOR_STOP
+            if (BF_CONFIG.features.isEnabled('MOTOR_STOP')) {
                 $('div.disarmdelay').show();
-            else
+            } else {
                 $('div.disarmdelay').hide();
+            }
 
             $('div.cycles').show();
         }
@@ -550,53 +437,29 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
         }
 
-        $('input[type="checkbox"].feature', features_e).change(function () {
-            var element = $(this),
-                index = element.data('bit'),
-                state = element.is(':checked');
-
-            if (state) {
-                BF_CONFIG.features = bit_set(BF_CONFIG.features, index);
-                if(element.attr('name') === 'MOTOR_STOP')                    
-                    $('div.disarmdelay').show();
-            } else {
-                BF_CONFIG.features = bit_clear(BF_CONFIG.features, index);
-                if(element.attr('name') === 'MOTOR_STOP')
-                    $('div.disarmdelay').hide();
-            }
-        });
-
-        $("input[type='checkbox']").change(function() {
-            var element = $(this), 
-                name = element.attr('name'),
-                isChecked = element.is(':checked');
-            if (name == 'unsyncedPWMSwitch') {
-                if (isChecked) { $('div.unsyncedpwmfreq').show(); }
-                else { $('div.unsyncedpwmfreq').hide(); }
-            }
-        });
-
         // UI hooks
-        $('input[type="radio"].feature', features_e).change(function () {
-            var element = $(this),
-                group = element.attr('name');
+        $('input.feature', features_e).change(function () {
+            var element = $(this);
 
-            var controls_e = $('input[name="' + group + '"]');
-            var selected_bit = controls_e.filter(':checked').val();
-            
-            controls_e.each(function() {
-                var bit = $(this).attr('value');
-                
-                var selected = (selected_bit == bit);
-                if (selected) {
-                    BF_CONFIG.features = bit_set(BF_CONFIG.features, bit);
+            BF_CONFIG.features.updateData(element);
+            updateTabList(BF_CONFIG.features);
+
+            if (element.attr('name') === 'MOTOR_STOP') {
+                if (BF_CONFIG.features.isEnabled('MOTOR_STOP')) {
+                    $('div.disarmdelay').show();
                 } else {
-                    BF_CONFIG.features = bit_clear(BF_CONFIG.features, bit);
+                    $('div.disarmdelay').hide();
                 }
-
-            });
+            }
         });
 
+        $("input[name='unsyncedPWMSwitch']").change(function() {
+            if ($(this).is(':checked')) {
+                $('div.unsyncedpwmfreq').show();
+            } else {
+                $('div.unsyncedpwmfreq').hide();
+            }
+        });
 
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
