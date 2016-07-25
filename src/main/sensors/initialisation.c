@@ -612,7 +612,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 
 static void detectMag(magSensor_e magHardwareToUse)
 {
-    magSensor_e magHardware;
+    magSensor_e magHardware = MAG_NONE;
 
 #ifdef USE_MAG_HMC5883
     const hmc5883Config_t *hmc5883Config = 0;
