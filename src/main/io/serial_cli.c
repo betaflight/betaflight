@@ -2006,9 +2006,10 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
+	printSectionBreak();
         cliPrint("\r\n# name\r\n");
         cliName(NULL);
-        cliPrint("\r\n# dump master\r\n");
+
         cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -2069,8 +2070,7 @@ static void cliDump(char *cmdline)
 #endif
 #endif
 
-        cliPrint("\r\n\r\n# feature\r\n");
-
+        cliPrint("\r\n# feature\r\n");
         mask = featureMask();
         for (i = 0; ; i++) { // disable all feature first
             if (featureNames[i] == NULL)
@@ -2090,10 +2090,8 @@ static void cliDump(char *cmdline)
 #endif
         }
 
-
 #ifdef BEEPER
-        cliPrint("\r\n\r\n# beeper\r\n");
-
+        cliPrint("\r\n# beeper\r\n");
         uint8_t beeperCount = beeperTableEntryCount();
         mask = getBeeperOffMask();
         for (int i = 0; i < (beeperCount-2); i++) {
@@ -2104,43 +2102,38 @@ static void cliDump(char *cmdline)
         }
 #endif
 
-
-        cliPrint("\r\n\r\n# map\r\n");
+        cliPrint("\r\n# map\r\n");
 
         for (i = 0; i < 8; i++)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
         cliPrintf("map %s\r\n", buf);
 
-        cliPrint("\r\n\r\n# serial\r\n");
+        cliPrint("\r\n# serial\r\n");
         cliSerial("");
 
 #ifdef LED_STRIP
-        cliPrint("\r\n\r\n# led\r\n");
+        cliPrint("\r\n# led\r\n");
         cliLed("");
 
-        cliPrint("\r\n\r\n# color\r\n");
+        cliPrint("\r\n# color\r\n");
         cliColor("");
 
-        cliPrint("\r\n\r\n# mode_color\r\n");
+        cliPrint("\r\n# mode_color\r\n");
         cliModeColor("");
 #endif
 
         cliPrint("\r\n# aux\r\n");
-
         cliAux("");
 
         cliPrint("\r\n# adjrange\r\n");
-
         cliAdjustmentRange("");
 
         cliPrintf("\r\n# rxrange\r\n");
-
         cliRxRange("");
 
 #ifdef USE_SERVOS
         cliPrint("\r\n# servo\r\n");
-
         cliServo("");
 
         // print servo directions
@@ -2160,11 +2153,10 @@ static void cliDump(char *cmdline)
 
 #ifdef VTX
         cliPrint("\r\n# vtx\r\n");
-
         cliVtx("");
 #endif
 
-        printSectionBreak();
+        cliPrint("\r\n# dump master\r\n");
         dumpValues(MASTER_VALUE);
 
         cliPrint("\r\n# rxfail\r\n");
@@ -2214,30 +2206,23 @@ static void cliDump(char *cmdline)
 
 void cliDumpProfile(uint8_t profileIndex)
 {
-        if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
-            return;
-
-        changeProfile(profileIndex);
-        cliPrint("\r\n# profile\r\n");
-        cliProfile("");
-        cliPrintf("############################# PROFILE VALUES ####################################\r\n");
-
-        printSectionBreak();
-        dumpValues(PROFILE_VALUE);
-
-        cliRateProfile("");
+    if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
+        return;
+    changeProfile(profileIndex);
+    cliPrint("\r\n# profile\r\n");
+    cliProfile("");
+    printSectionBreak();
+    dumpValues(PROFILE_VALUE);
 }
 
 void cliDumpRateProfile(uint8_t rateProfileIndex)
 {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
-
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
     printSectionBreak();
-
     dumpValues(PROFILE_RATE_VALUE);
 }
 
