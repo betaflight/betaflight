@@ -188,6 +188,8 @@ STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 STATIC_UNIT_TESTED mspPort_t *currentPort;
 STATIC_UNIT_TESTED bufWriter_t *writer;
 
+#define RATEPROFILE_MASK (1 << 7)
+
 static void serialize8(uint8_t a)
 {
     bufWriterAppend(writer, a);
@@ -674,7 +676,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_STATUS_EX:
-        headSerialReply(14);
+        headSerialReply(15);
         serialize16(cycleTime);
 #ifdef USE_I2C
         serialize16(i2cGetErrorCounter());
@@ -683,9 +685,10 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         serialize32(packFlightModeFlags());
-        serialize8(masterConfig.current_profile_index);
+        serialize8(getCurrentProfile());
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
         serialize8(MAX_PROFILE_COUNT);
+        serialize8(getCurrentControlRateProfile());
         break;
 
     case MSP_NAME:
@@ -1261,7 +1264,7 @@ static bool processInCommand(void)
 {
     uint32_t i;
     uint16_t tmp;
-    uint8_t rate;
+    uint8_t value;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1271,14 +1274,23 @@ static bool processInCommand(void)
 #endif
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
-        if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 1) {
-                masterConfig.current_profile_index = 0;
+        value = read8();
+        if ((value & RATEPROFILE_MASK) == 0) {
+            if (!ARMING_FLAG(ARMED)) {
+                if (value >= MAX_PROFILE_COUNT) {
+                    value = 0;
+                }
+                changeProfile(value);
             }
-            writeEEPROM();
-            readEEPROM();
+        } else {
+            value = value & ~RATEPROFILE_MASK;
+
+            if (value >= MAX_RATEPROFILES) {
+                value = 0;
+            }
+            changeControlRateProfile(value);
         }
+
         break;
     case MSP_SET_HEAD:
         magHold = read16();
@@ -1366,11 +1378,11 @@ static bool processInCommand(void)
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
-                rate = read8();
-                currentControlRateProfile->rates[i] = MIN(rate, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                value = read8();
+                currentControlRateProfile->rates[i] = MIN(value, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             }
-            rate = read8();
-            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            value = read8();
+            currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
