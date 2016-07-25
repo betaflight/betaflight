@@ -1971,7 +1971,6 @@ typedef enum {
     DUMP_ALL = (1 << 3),
 } dumpFlags_e;
 
-
 static const char* const sectionBreak = "\r\n";
 
 #define printSectionBreak() cliPrintf((char *)sectionBreak)
@@ -2103,7 +2102,6 @@ static void cliDump(char *cmdline)
 #endif
 
         cliPrint("\r\n# map\r\n");
-
         for (i = 0; i < 8; i++)
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
@@ -2156,7 +2154,7 @@ static void cliDump(char *cmdline)
         cliVtx("");
 #endif
 
-        cliPrint("\r\n# dump master\r\n");
+        cliPrint("\r\n# master\r\n");
         dumpValues(MASTER_VALUE);
 
         cliPrint("\r\n# rxfail\r\n");
@@ -2174,7 +2172,6 @@ static void cliDump(char *cmdline)
                     cliDumpRateProfile(rateCount);
 
                 cliPrint("\r\n# restore original rateprofile selection\r\n");
-
                 changeControlRateProfile(currentRateIndex);
                 cliRateProfile("");
 #ifdef USE_SLOW_SERIAL_CLI
@@ -2183,7 +2180,6 @@ static void cliDump(char *cmdline)
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
-
             changeProfile(activeProfile);
             cliProfile("");
             printSectionBreak();
