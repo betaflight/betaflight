@@ -113,7 +113,7 @@
 
 #define MAG_HMC5883_ALIGN CW180_DEG
 
-#define SONAR
+//#define SONAR
 #define USE_SONAR_SRF10
 #define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
 #define SONAR_PWM_TRIGGER_GPIO      GPIOB

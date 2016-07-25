@@ -146,7 +146,7 @@
 #define RSSI_ADC_PIN          PB0
 #endif
 
-#define SONAR
+//#define SONAR
 #define USE_SONAR_SRF10
 #define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
 #define SONAR_TRIGGER_GPIO          GPIOB
