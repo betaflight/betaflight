@@ -815,10 +815,6 @@ void esc4wayProcess(serialPort_t *mspPort)
         WriteByte(CRCout.bytes[0]);
         serialEndWrite(port);
                     
-#if defined(STM32F4) && defined(USE_VCP)
-        if (port->identifier == SERIAL_PORT_USB_VCP)
-            delay(75); /* we need some processing cycles to ensure VCP4 transmission completes and it doesn't lock up */
-#endif
         TX_LED_OFF;
         if (isExitScheduled) {
             esc4wayRelease();
