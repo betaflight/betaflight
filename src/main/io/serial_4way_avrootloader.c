@@ -330,7 +330,8 @@ uint8_t BL_WriteFlash(ioMem_t *pMem)
     return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
 }
 
-#else
+#endif
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_FAKE_ESC)
 
 #define FAKE_PAGE_SIZE 512
 #define FAKE_FLASH_SIZE 16385
