@@ -46,8 +46,12 @@ extern uint32_t APP_Rx_ptr_out;
 extern uint32_t APP_Rx_ptr_in; 
 __IO uint32_t receiveLength = 0;
 
-
-static uint8_t APP_Tx_Buffer[USB_RX_BUFSIZE]; 
+/*
+    APP TX is the circular buffer for data that is transmitted from the APP (host)
+    to the USB device (flight controller).
+*/
+#define APP_TX_DATA_SIZE      1024
+static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE]; 
 static uint32_t APP_Tx_ptr_out = 0;
 static uint32_t APP_Tx_ptr_in = 0;
 
@@ -171,6 +175,11 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
  */
 static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
 {
+    /* 
+        make sure that any paragraph end frame is not in play
+        could just check for: USB_CDC_ZLP, but better to be safe
+        and wait for any existing transmission to complete.
+    */
     while (USB_Tx_State);
     
     for (uint32_t i = 0; i < Len; i++) {
@@ -194,7 +203,7 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 
     while (APP_Tx_ptr_out != APP_Tx_ptr_in && count < len) {
         recvBuf[count] = APP_Tx_Buffer[APP_Tx_ptr_out];
-        APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % USB_RX_BUFSIZE;
+        APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % APP_TX_DATA_SIZE;
         count++;
         receiveLength--;
     }
@@ -228,12 +237,12 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
     receiveLength += Len;
     for (uint32_t i = 0; i < Len; i++) {
         APP_Tx_Buffer[APP_Tx_ptr_in] = Buf[i];
-        APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % USB_RX_BUFSIZE;
+        APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % APP_TX_DATA_SIZE;
     }
 
     __enable_irq();
 
-    if(receiveLength > (USB_RX_BUFSIZE-1))
+    if(receiveLength > APP_TX_DATA_SIZE)
         return USBD_FAIL;
 
     return USBD_OK;

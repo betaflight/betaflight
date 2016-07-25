@@ -34,8 +34,6 @@
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-#define USB_RX_BUFSIZE      1024
-
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
 uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength);  // HJI
