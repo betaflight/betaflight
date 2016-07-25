@@ -329,16 +329,6 @@ $(document).ready(function () {
     $(this).data('state', state);
 
     });
-
-    var profile_e = $('select[name="profilechange"]');
-
-    profile_e.change(function () {
-        var profile = parseInt($(this).val());
-        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
-            GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
-            updateActivatedTab();
-        });
-    });
 });
 
 function microtime() {

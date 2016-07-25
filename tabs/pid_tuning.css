@@ -302,33 +302,6 @@
     border-top-right-radius: 3px;
 }
 
-.tab-pid_tuning .profile {
-    float: left;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-}
-
-.tab-pid_tuning .profile .head {
-    display: block;
-    text-align: left;
-    line-height: 20px;
-    border-bottom: 1px solid #ccc;
-    background-color: #828885;
-    color: white;
-    height: 19px;
-    font-weight: normal;
-    padding: 2px;
-    padding-bottom: 3px;
-    padding-left: 6px;
-}
-
-.tab-pid_tuning .profile select {
-    width: 100%;
-    padding-left: calc(100% - 35px);
-    height: 20px;
-    line-height: 20px;
-}
-
 .tab-pid_tuning .name {
     width: 14%;
 }
@@ -551,6 +524,17 @@
     padding-top: 5px;
     padding-bottom: 5px;
     background-color: #f9f9f9;
+}
+
+
+.tab-pid_tuning .profile {
+    width: 100px;
+}
+
+.tab-pid_tuning .profile select {
+    border: 1px solid silver;
+    margin-left: 5px;
+    width: calc(100% - 10px);
 }
 
 

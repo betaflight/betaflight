@@ -454,6 +454,16 @@ TABS.pid_tuning.initialize = function (callback) {
           updateActivatedTab();
         });
 
+        var profileElement = $('.tab-pid_tuning select[name="profilechange"]');
+
+        profileElement.change(function () {
+            var profile = parseInt($(this).val());
+            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [profile], false, function () {
+                GUI.log(chrome.i18n.getMessage('pidTuningLoadedProfile', [profile + 1]));
+                updateActivatedTab();
+            });
+        });
+
         $('.pid_tuning tr').each(function(){
           for(i = 0; i < PID_names.length; i++) {
             if($(this).hasClass(PID_names[i])) {
