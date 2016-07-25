@@ -29,8 +29,6 @@
 #include "stdbool.h"
 #include "drivers/system.h"
 
-#include <string.h>
-
 LINE_CODING g_lc;
 
 extern __IO uint8_t USB_Tx_State;
