@@ -185,7 +185,8 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
-    "BLACKBOX", "CHANNEL_FORWARDING", "RX_NRF24", "SOFTSPI", NULL
+    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
+    "SUPEREXPO", "OSD", "VTX", "RX_NRF24", "SOFTSPI", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -2081,7 +2082,7 @@ static void cliBeeper(char *cmdline)
                         beeperOffSetAll(beeperCount-2);
                     else
                         if (i == BEEPER_PREFERENCE-1)
-                            setBeeperOffMask(getPreferedBeeperOffMask());
+                            setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
                             mask = 1 << i;
                             beeperOffSet(mask);
@@ -2093,7 +2094,7 @@ static void cliBeeper(char *cmdline)
                         beeperOffClearAll();
                     else
                         if (i == BEEPER_PREFERENCE-1)
-                            setPreferedBeeperOffMask(getBeeperOffMask());
+                            setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
                             mask = 1 << i;
                             beeperOffClear(mask);
