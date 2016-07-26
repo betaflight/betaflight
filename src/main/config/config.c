@@ -265,6 +265,8 @@ void resetProfile(profile_t *profile)
     for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
         resetControlRateConfig(&profile->controlRateProfile[rI]);
     }
+
+   profile->activeRateProfile = 0;
 }
 
 #ifdef GPS
