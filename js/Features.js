@@ -152,13 +152,13 @@ Features.prototype.updateData = function (featureElement) {
             var group = featureElement.attr('name');
             var controlElements = $('input[name="' + group + '"]');
             var selectedBit = controlElements.filter(':checked').val();
-
+            var thisFeature = this;
             controlElements.each(function() {
                 var bit = $(this).val();
                 if (selectedBit === bit) {
-                    this._featureMask = bit_set(BF_CONFIG.this._featureMask, bit);
+                	thisFeature._featureMask = bit_set(thisFeature._featureMask, bit);
                 } else {
-                    this._featureMask = bit_clear(this._featureMask, bit);
+                	thisFeature._featureMask = bit_clear(thisFeature._featureMask, bit);
                 }
 
             });
