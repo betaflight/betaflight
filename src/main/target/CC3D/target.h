@@ -72,8 +72,12 @@
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
+#ifdef CC3D_OPBL
+#define SERIAL_PORT_COUNT       3
+#else
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       4
+#endif
 
 #ifdef USE_UART1_RX_DMA
 #undef USE_UART1_RX_DMA
@@ -110,10 +114,10 @@
 #undef GPS
 
 #ifdef CC3D_OPBL
-#undef LED_STRIP
+//#undef LED_STRIP
 #define SKIP_CLI_COMMAND_HELP
 #undef BARO
-//#undef MAG
+#undef MAG
 #undef SONAR
 #endif
 
