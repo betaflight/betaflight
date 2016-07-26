@@ -303,7 +303,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         $('#pid_main').show();
 
-        if (semver.ge(CONFIG.flightControllerVersion, "2.9.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.0")) {
             $('#pid_filter').show();
         }
 
