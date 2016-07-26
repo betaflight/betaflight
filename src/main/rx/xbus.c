@@ -226,7 +226,7 @@ static void xBusUnpackRJ01Frame(void)
     uint8_t outerCrc = 0;
     uint8_t i = 0;
 
-    // When using the Align RJ01 receiver with 
+    // When using the Align RJ01 receiver with
     // a MODE B setting in the radio (XG14 tested)
     // the MODE_B -frame is packed within some
     // at the moment unknown bytes before and after:
@@ -234,7 +234,7 @@ static void xBusUnpackRJ01Frame(void)
     // Compared to a standard MODE B frame that only
     // contains the "middle" package.
     // Hence, at the moment, the unknown header and footer
-    // of the RJ01 MODEB packages are discarded. 
+    // of the RJ01 MODEB packages are discarded.
     // However, the LAST byte (CRC_OUTER) is infact an 8-bit
     // CRC for the whole package, using the Dallas-One-Wire CRC
     // method.

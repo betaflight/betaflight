@@ -31,8 +31,8 @@
 
 #ifdef LED_STRIP
 
-#if !defined(WS2811_PIN) 
-#define WS2811_PIN                      PA0 
+#if !defined(WS2811_PIN)
+#define WS2811_PIN                      PA0
 #define WS2811_TIMER                    TIM5
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
@@ -154,6 +154,7 @@ void ws2811LedStripHardwareInit(void)
 
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
+    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();

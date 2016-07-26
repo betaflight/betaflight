@@ -159,7 +159,7 @@ size_t custom_flash_memory_address = 0;
 #define CONFIG_START_FLASH_ADDRESS (custom_flash_memory_address)
 #else
 // use the last flash pages for storage
-#ifndef CONFIG_START_FLASH_ADDRESS 
+#ifndef CONFIG_START_FLASH_ADDRESS
 #define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 #endif
 #endif
@@ -182,12 +182,7 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
-
-#if (defined(STM32F10X))
-    pidProfile->pidController = PID_CONTROLLER_INTEGER;
-#else
-    pidProfile->pidController = PID_CONTROLLER_FLOAT;
-#endif
+    pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
@@ -220,11 +215,19 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 180;
-    pidProfile->yawItermIgnoreRate = 35;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 50;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->dynamic_pid = 1;
+    pidProfile->vbatPidCompensation = 0;
+    pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
+
+    // Betaflight PID controller parameters
+    pidProfile->toleranceBand = 15;
+    pidProfile->toleranceBandReduction = 35;
+    pidProfile->zeroCrossAllowanceCount = 3;
+    pidProfile->accelerationLimitPercent = 20;
+    pidProfile->itermThrottleGain = 10;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -278,7 +281,6 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 #endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->escDesyncProtection = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -311,7 +313,6 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
-    batteryConfig->vbatPidCompensation = 0;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -349,7 +350,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) 
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
     controlRateConfig->rcYawRate8 = 100;
@@ -366,7 +367,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 }
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) 
+void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 0;
     rcControlsConfig->yaw_deadband = 0;
@@ -374,7 +375,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_fast_change = 1;
 }
 
-void resetMixerConfig(mixerConfig_t *mixerConfig) 
+void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
     mixerConfig->yaw_motor_direction = 1;
 #ifdef USE_SERVOS
@@ -441,6 +442,7 @@ static void resetConf(void)
     featureSet(FEATURE_VBAT);
 #endif
 
+
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
 
@@ -451,12 +453,14 @@ static void resetConf(void)
     masterConfig.gyro_lpf = 0;                 // 256HZ default
 #ifdef STM32F10X
     masterConfig.gyro_sync_denom = 8;
+    masterConfig.pid_process_denom = 1;
 #else
     masterConfig.gyro_sync_denom = 4;
+    masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_lpf_hz = 100;
-
-    masterConfig.pid_process_denom = 2;
+    masterConfig.gyro_soft_notch_hz = 0;
+    masterConfig.gyro_soft_notch_q = 5;
 
     masterConfig.debug_mode = 0;
 
@@ -533,6 +537,7 @@ static void resetConf(void)
 #ifdef BRUSHED_MOTORS
     masterConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    masterConfig.use_unsyncedPwm = true;
 #else
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;
@@ -612,8 +617,10 @@ static void resetConf(void)
     }
 
 #ifdef LED_STRIP
-    applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
+    applyDefaultColors(masterConfig.colors);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
+    applyDefaultModeColors(masterConfig.modeColors);
+    applyDefaultSpecialColors(&(masterConfig.specialColors));
     masterConfig.ledstrip_visual_beeper = 0;
 #endif
 
@@ -657,6 +664,7 @@ static void resetConf(void)
     targetConfiguration();
 #endif
 
+   
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
@@ -715,7 +723,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

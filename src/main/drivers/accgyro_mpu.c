@@ -252,7 +252,7 @@ void mpuIntExtiInit(void)
     EXTIEnable(mpuIntIO, true);
 #endif
 
-    mpuExtiInitDone = true; 
+    mpuExtiInitDone = true;
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)

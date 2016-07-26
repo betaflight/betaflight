@@ -26,7 +26,7 @@
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID
-#endif 
+#endif
 
 typedef enum I2CDevice {
     I2CINVALID = -1,

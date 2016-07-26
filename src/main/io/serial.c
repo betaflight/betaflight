@@ -465,7 +465,7 @@ static void nopConsumer(uint8_t data)
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
                        *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);

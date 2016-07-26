@@ -59,6 +59,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/msp_protocol.h"
 
 #include "telemetry/telemetry.h"
 
@@ -104,77 +105,10 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-void setGyroSamplingSpeed(uint16_t looptime) {
-    uint16_t gyroSampleRate = 1000;
-    uint8_t maxDivider = 1;
-
-    if (looptime != gyro.targetLooptime || looptime == 0) {
-        if (looptime == 0) looptime = gyro.targetLooptime; // needed for pid controller changes
-#ifdef STM32F303xC
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            if (looptime < 250) {
-                masterConfig.acc_hardware = ACC_NONE;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            } else if (looptime < 375) {
-                masterConfig.acc_hardware = CONFIG_FASTLOOP_PREFERRED_ACC;
-                masterConfig.baro_hardware = BARO_NONE;
-                masterConfig.mag_hardware = MAG_NONE;
-                masterConfig.pid_process_denom = 2;
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-        }
-#else
-        if (looptime < 1000) {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.acc_hardware = ACC_NONE;
-            masterConfig.baro_hardware = BARO_NONE;
-            masterConfig.mag_hardware = MAG_NONE;
-            gyroSampleRate = 125;
-            maxDivider = 8;
-            masterConfig.pid_process_denom = 1;
-            if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                masterConfig.pid_process_denom = 2;
-            }
-            if (looptime < 250) {
-                masterConfig.pid_process_denom = 4;
-            } else if (looptime < 375) {
-                if (currentProfile->pidProfile.pidController == PID_CONTROLLER_FLOAT) {
-                    masterConfig.pid_process_denom = 3;
-                } else {
-                    masterConfig.pid_process_denom = 2;
-                }
-            }
-            masterConfig.gyro_sync_denom = constrain(looptime / gyroSampleRate, 1, maxDivider);
-        } else {
-            masterConfig.gyro_lpf = 0;
-            masterConfig.gyro_sync_denom = 8;
-            masterConfig.acc_hardware = ACC_DEFAULT;
-            masterConfig.baro_hardware = BARO_DEFAULT;
-            masterConfig.mag_hardware = MAG_DEFAULT;
-            masterConfig.pid_process_denom = 1;
-        }
-#endif
-    }
-}
-
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
@@ -214,6 +148,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
+    { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -252,6 +187,8 @@ STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 STATIC_UNIT_TESTED mspPort_t *currentPort;
 STATIC_UNIT_TESTED bufWriter_t *writer;
+
+#define RATEPROFILE_MASK (1 << 7)
 
 static void serialize8(uint8_t a)
 {
@@ -542,6 +479,8 @@ void mspInit(serialConfig_t *serialConfig)
     if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
 
+    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
+
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
@@ -659,7 +598,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-
+    uint8_t len;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -737,7 +676,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_STATUS_EX:
-        headSerialReply(12);
+        headSerialReply(15);
         serialize16(cycleTime);
 #ifdef USE_I2C
         serialize16(i2cGetErrorCounter());
@@ -746,8 +685,18 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         serialize32(packFlightModeFlags());
-        serialize8(masterConfig.current_profile_index);
+        serialize8(getCurrentProfile());
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
+        serialize8(MAX_PROFILE_COUNT);
+        serialize8(getCurrentControlRateProfile());
+        break;
+
+    case MSP_NAME:
+        len = strlen(masterConfig.name);
+        headSerialReply(len);
+        for (uint8_t i=0; i<len; i++) {
+            serialize8(masterConfig.name[i]);
+        }
         break;
 
     case MSP_STATUS:
@@ -1142,8 +1091,8 @@ static bool processOutCommand(uint8_t cmdMSP)
 
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
-        headSerialReply(CONFIGURABLE_COLOR_COUNT * 4);
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        headSerialReply(LED_CONFIGURABLE_COLOR_COUNT * 4);
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             serialize16(color->h);
             serialize8(color->s);
@@ -1152,14 +1101,27 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        headSerialReply(MAX_LED_STRIP_LENGTH * 7);
-        for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+        headSerialReply(LED_MAX_STRIP_LENGTH * 4);
+        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-            serialize16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-            serialize16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-            serialize8(GET_LED_X(ledConfig));
-            serialize8(GET_LED_Y(ledConfig));
-            serialize8(ledConfig->color);
+            serialize32(*ledConfig);
+        }
+        break;
+
+    case MSP_LED_STRIP_MODECOLOR:
+        headSerialReply(((LED_MODE_COUNT * LED_DIRECTION_COUNT) + LED_SPECIAL_COLOR_COUNT) * 3);
+        for (int i = 0; i < LED_MODE_COUNT; i++) {
+            for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+                serialize8(i);
+                serialize8(j);
+                serialize8(masterConfig.modeColors[i].color[j]);
+            }
+        }
+
+        for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+            serialize8(LED_MODE_COUNT);
+            serialize8(j);
+            serialize8(masterConfig.specialColors.color[j]);
         }
         break;
 #endif
@@ -1237,18 +1199,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_3D:
-        headSerialReply(2 * 4);
+        headSerialReply(2 * 3);
         serialize16(masterConfig.flight3DConfig.deadband3d_low);
         serialize16(masterConfig.flight3DConfig.deadband3d_high);
         serialize16(masterConfig.flight3DConfig.neutral3d);
-        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
 
     case MSP_RC_DEADBAND:
-        headSerialReply(3);
+        headSerialReply(5);
         serialize8(masterConfig.rcControlsConfig.deadband);
         serialize8(masterConfig.rcControlsConfig.yaw_deadband);
         serialize8(masterConfig.rcControlsConfig.alt_hold_deadband);
+        serialize16(masterConfig.flight3DConfig.deadband3d_throttle);
         break;
     case MSP_SENSOR_ALIGNMENT:
         headSerialReply(3);
@@ -1276,14 +1238,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
         serialize8(currentProfile->pidProfile.deltaMethod);
-        serialize8(masterConfig.batteryConfig.vbatPidCompensation);
+        serialize8(currentProfile->pidProfile.vbatPidCompensation);
         break;
     case MSP_SPECIAL_PARAMETERS:
         headSerialReply(1 + 2 + 1 + 2);
         serialize8(currentControlRateProfile->rcYawRate8);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         serialize8(masterConfig.rxConfig.rcSmoothInterval);
-        serialize16(masterConfig.escAndServoConfig.escDesyncProtection);
+        serialize16(currentProfile->pidProfile.accelerationLimitPercent);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1302,8 +1264,7 @@ static bool processInCommand(void)
 {
     uint32_t i;
     uint16_t tmp;
-    uint8_t rate;
-    uint8_t oldPid;
+    uint8_t value;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1313,14 +1274,23 @@ static bool processInCommand(void)
 #endif
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
-        if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 1) {
-                masterConfig.current_profile_index = 0;
+        value = read8();
+        if ((value & RATEPROFILE_MASK) == 0) {
+            if (!ARMING_FLAG(ARMED)) {
+                if (value >= MAX_PROFILE_COUNT) {
+                    value = 0;
+                }
+                changeProfile(value);
             }
-            writeEEPROM();
-            readEEPROM();
+        } else {
+            value = value & ~RATEPROFILE_MASK;
+
+            if (value >= MAX_RATEPROFILES) {
+                value = 0;
+            }
+            changeControlRateProfile(value);
         }
+
         break;
     case MSP_SET_HEAD:
         magHold = read16();
@@ -1350,13 +1320,11 @@ static bool processInCommand(void)
         masterConfig.disarm_kill_switch = read8();
         break;
     case MSP_SET_LOOP_TIME:
-        setGyroSamplingSpeed(read16());
+        read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-        oldPid = currentProfile->pidProfile.pidController;
-        currentProfile->pidProfile.pidController = constrain(read8(), 1, 2);
+        currentProfile->pidProfile.pidController = constrain(read8(), 0, 1);
         pidSetController(currentProfile->pidProfile.pidController);
-        if (oldPid != currentProfile->pidProfile.pidController) setGyroSamplingSpeed(0); // recalculate looptimes for new PID
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1410,11 +1378,11 @@ static bool processInCommand(void)
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
-                rate = read8();
-                currentControlRateProfile->rates[i] = MIN(rate, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                value = read8();
+                currentControlRateProfile->rates[i] = MIN(value, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             }
-            rate = read8();
-            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            value = read8();
+            currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
@@ -1774,7 +1742,7 @@ static bool processInCommand(void)
 
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             color->h = read16();
             color->s = read8();
@@ -1785,29 +1753,24 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= MAX_LED_STRIP_LENGTH || currentPort->dataSize != (1 + 7)) {
+            if (i >= LED_MAX_STRIP_LENGTH || currentPort->dataSize != (1 + 4)) {
                 headSerialError(0);
                 break;
             }
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-            uint16_t mask;
-            // currently we're storing directions and functions in a uint16 (flags)
-            // the msp uses 2 x uint16_t to cater for future expansion
-            mask = read16();
-            ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
-
-            mask = read16();
-            ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
-
-            mask = read8();
-            ledConfig->xy = CALCULATE_LED_X(mask);
-
-            mask = read8();
-            ledConfig->xy |= CALCULATE_LED_Y(mask);
-
-            ledConfig->color = read8();
-
+            *ledConfig = read32();
             reevaluateLedConfig();
+        }
+        break;
+
+    case MSP_SET_LED_STRIP_MODECOLOR:
+        {
+            ledModeIndex_e modeIdx = read8();
+            int funIdx = read8();
+            int color = read8();
+
+            if (!setModeColor(modeIdx, funIdx, color))
+                return false;
         }
         break;
 #endif
@@ -1855,18 +1818,25 @@ static bool processInCommand(void)
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
-        masterConfig.batteryConfig.vbatPidCompensation = read8();
+        currentProfile->pidProfile.vbatPidCompensation = read8();
         break;
     case MSP_SET_SPECIAL_PARAMETERS:
         currentControlRateProfile->rcYawRate8 = read8();
         masterConfig.rxConfig.airModeActivateThreshold = read16();
         masterConfig.rxConfig.rcSmoothInterval = read8();
-        masterConfig.escAndServoConfig.escDesyncProtection = read16();
+        currentProfile->pidProfile.accelerationLimitPercent = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
+        break;
+       
+    case MSP_SET_NAME:
+        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
+            masterConfig.name[i] = read8();
+        }
         break;
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

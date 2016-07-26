@@ -41,7 +41,7 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void) 
+void systemResetToBootloader(void)
 {
     if (mpuConfiguration.reset)
         mpuConfiguration.reset();

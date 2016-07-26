@@ -1069,7 +1069,7 @@ static void gpsHandlePassthrough(uint8_t data)
  #endif
 
  }
- 
+
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {

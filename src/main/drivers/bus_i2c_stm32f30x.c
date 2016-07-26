@@ -39,18 +39,18 @@
 
 #define I2C_SHORT_TIMEOUT   ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT    ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
-#define I2C_GPIO_AF         GPIO_AF_4 
+#define I2C_GPIO_AF         GPIO_AF_4
 
-#ifndef I2C1_SCL 
-#define I2C1_SCL PB6 
+#ifndef I2C1_SCL
+#define I2C1_SCL PB6
 #endif
-#ifndef I2C1_SDA 
-#define I2C1_SDA PB7 
+#ifndef I2C1_SDA
+#define I2C1_SDA PB7
 #endif
-#ifndef I2C2_SCL 
-#define I2C2_SCL PF4 
+#ifndef I2C2_SCL
+#define I2C2_SCL PF4
 #endif
-#ifndef I2C2_SDA 
+#ifndef I2C2_SDA
 #define I2C2_SDA PA10
 #endif
 
@@ -82,7 +82,7 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-   
+  
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
@@ -108,7 +108,7 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
-  
+ 
     I2C_Cmd(I2Cx, ENABLE);
 }
 
@@ -122,7 +122,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
+    I2Cx = i2cHardwareMap[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -188,7 +188,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
+    I2Cx = i2cHardwareMap[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;

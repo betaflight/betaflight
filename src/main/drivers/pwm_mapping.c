@@ -30,11 +30,6 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
-void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
-void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t fastPwmProtocolType, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
-
 /*
     Configuration maps
 
@@ -100,7 +95,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     int channelIndex = 0;
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
-   
+  
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
     if (init->airplane)
         i = 2; // switch to air hardware config
@@ -265,7 +260,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (init->useChannelForwarding && !init->airplane) {
 #if defined(NAZE) && defined(WS2811_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
-            if (init->useLEDStrip) { 
+            if (init->useLEDStrip) {
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }
@@ -313,14 +308,14 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             }
 #endif
             if (init->useFastPwm) {
-                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->pwmProtocolType, init->motorPwmRate, init->idlePulse);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
+                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->pwmProtocolType);
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM  | PWM_PF_OUTPUT_PROTOCOL_ONESHOT;
             } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_MOTOR_MODE_BRUSHED;
             } else {
                 pwmBrushlessMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM ;
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM;
             }
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].index = pwmOutputConfiguration.motorCount;
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].timerHardware = timerHardwarePtr;

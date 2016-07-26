@@ -22,17 +22,15 @@
 
 #ifndef STM32F3DISCOVERY
 #define STM32F3DISCOVERY
-#endif 
- 
-#define LED0    PE8 // Blue LEDs - PE8/PE12
+#endif
+
+#define LED0                    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1    PE10  // Orange LEDs - PE10/PE14
+#define LED1                    PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER      PE9 // Red LEDs - PE9/PE13
+#define BEEPER                  PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
-
-#define USABLE_TIMER_CHANNEL_COUNT 18
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -81,16 +79,14 @@
 #define ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
-
-#define ACC_MPU6050_ALIGN CW0_DEG
+#define ACC_MPU6050_ALIGN       CW0_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 
 #define MAG
 #define USE_MAG_AK8975
-
-#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 
 #define USE_VCP
 #define USE_UART1
@@ -101,20 +97,20 @@
 #define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
-#define ADC_INSTANCE                ADC1
-#define VBAT_ADC_PIN                PC0
-#define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_PIN                PC2
-#define EXTERNAL1_ADC_PIN           PC3
+#define ADC_INSTANCE            ADC1
+#define VBAT_ADC_PIN            PC0
+#define CURRENT_METER_ADC_PIN   PC1
+#define RSSI_ADC_PIN            PC2
+#define EXTERNAL1_ADC_PIN       PC3
 
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2)|BIT(5)|BIT(6)|BIT(10)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTE 0xffff
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4)|BIT(9)|BIT(10))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2)|BIT(5)|BIT(6)|BIT(10)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTE         0xffff
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4)|BIT(9)|BIT(10))
 
-
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 18
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))
 

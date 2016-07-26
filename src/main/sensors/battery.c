@@ -70,7 +70,7 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
     if (!vbatFilterIsInitialised) {
-        biquadFilterInit(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
     vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
@@ -91,7 +91,7 @@ void updateBattery(void)
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
         /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up) 
+        (using the filtered value takes a long time to ramp up)
         We only do this on the ground so don't care if we do block, not
         worse than original code anyway*/
         delay(VBATTERY_STABLE_DELAY);
@@ -212,7 +212,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
 fix12_t calculateVbatPidCompensation(void) {
     fix12_t batteryScaler;
-    if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
+    if (feature(FEATURE_VBAT) && batteryCellCount > 1) {
         uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
         batteryScaler = qConstruct(maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage));
     } else {
@@ -224,7 +224,7 @@ fix12_t calculateVbatPidCompensation(void) {
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return (((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount);
+    return constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
 }
 
 uint8_t calculateBatteryCapacityRemainingPercentage(void)

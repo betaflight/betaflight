@@ -134,7 +134,7 @@ void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 void osdInit(void);
@@ -310,12 +310,12 @@ void init(void)
         featureClear(FEATURE_ONESHOT125);
     }
 
-    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
+    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
+    pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
@@ -323,7 +323,6 @@ void init(void)
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
-        use_unsyncedPwm = false;
     }
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -544,7 +543,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors);
+    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

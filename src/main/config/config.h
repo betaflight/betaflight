@@ -24,6 +24,8 @@
 #endif
 #define MAX_RATEPROFILES 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
+#define MAX_NAME_LENGTH 16
+
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -52,6 +54,8 @@ typedef enum {
     FEATURE_SUPEREXPO_RATES = 1 << 23,
     FEATURE_OSD = 1 << 24,
     FEATURE_VTX = 1 << 25,
+    FEATURE_RX_NRF24 = 1 << 26,
+    FEATURE_SOFTSPI = 1 << 27,
 } features_e;
 
 void latchActiveFeatures(void);

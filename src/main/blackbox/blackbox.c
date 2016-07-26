@@ -632,7 +632,7 @@ static void writeInterframe(void)
     arraySubInt32(deltas, blackboxCurrent->axisPID_P, blackboxLast->axisPID_P, XYZ_AXIS_COUNT);
     blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
-    /* 
+    /*
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
      * that can pack all three fields into one byte in that situation.
      */
@@ -1140,6 +1140,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:Betaflight %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.escAndServoConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.escAndServoConfig.maxthrottle);
@@ -1210,7 +1211,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                 (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("dterm_average_count:%d",              masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_average_count);
-        BLACKBOX_PRINT_HEADER_LINE("dynamic_pid:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.dynamic_pid);
+        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("rollPitchItermIgnoreRate:%d",         masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("yawItermIgnoreRate:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",               (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
@@ -1218,12 +1219,13 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                     masterConfig.rcControlsConfig.yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                         masterConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",            (int)(masterConfig.gyro_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz:%d",              (int)(masterConfig.gyro_soft_notch_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_q:%d",               (int)(masterConfig.gyro_soft_notch_q * 10.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                 (int)(masterConfig.acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     masterConfig.acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
-        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            masterConfig.batteryConfig.vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("rc_smooth_interval:%d",               masterConfig.rxConfig.rcSmoothInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
@@ -1314,7 +1316,7 @@ static void blackboxCheckAndLogFlightMode()
     }
 }
 
-/* 
+/*
  * Use the user's num/denom settings to decide if the P-frame of the given index should be logged, allowing the user to control
  * the portion of logged loop iterations.
  */
