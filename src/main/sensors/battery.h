@@ -69,7 +69,6 @@ extern uint16_t amperageLatestADC;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 
-uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
