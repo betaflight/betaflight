@@ -432,7 +432,9 @@ TABS.receiver.renderModel = function () {
 
 TABS.receiver.cleanup = function (callback) {
     $(window).off('resize', this.resize);
-    $(window).off('resize', $.proxy(this.model.resize, this.model));
+    if (this.model) {
+        $(window).off('resize', $.proxy(this.model.resize, this.model));
+    }
 
     this.keepRendering = false;
 

@@ -297,11 +297,9 @@ var MSP = {
                 CONFIG.profile = data.getUint8(10);
                 CONFIG.cpuload = data.getUint16(11, 1);
                 CONFIG.numProfiles = data.getUint8(13);
-                $('.tab-pid_tuning select[name="profilechange"]').val(CONFIG.profile);
-                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
-                    && CONFIG.numProfiles === 2) {
-                    $('.tab-pid_tuning select[name="profilechange"] .profile3').hide();
-                }
+                CONFIG.rateProfile = data.getUint8(14);
+
+                TABS.pid_tuning.checkUpdateProfile();
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);

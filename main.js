@@ -383,12 +383,6 @@ String.prototype.format = function () {
     });
 };
 
-function updateActivatedTab() {
-    var activeTab = $('#tabs > ul li.active');
-    activeTab.removeClass('active');
-    $('a', activeTab).trigger('click');
-}
-
 function updateTabList(features) {
     if (features.isEnabled('GPS')) {
         $('#tabs ul.mode-connected li.tab_gps').show();

@@ -845,6 +845,12 @@
     "pidTuningControllerHead": {
         "message": "PID"
     },
+    "pidTuningPidsReset": {
+        "message": "Loaded default PID values."
+    },
+    "pidTuningReceivedProfile": {
+        "message": "Flight controller set Profile: <strong style=\"color: #ffbb00\">$1</strong>"
+    },
     "pidTuningLoadedProfile": {
         "message": "Loaded Profile: <strong style=\"color: #ffbb00\">$1</strong>"
     },

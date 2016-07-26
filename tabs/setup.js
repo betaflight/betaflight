@@ -235,7 +235,9 @@ TABS.setup.renderModel = function () {
 };
 
 TABS.setup.cleanup = function (callback) {
-    $(window).off('resize', $.proxy(this.model.resize, this.model));
+    if (this.model) {
+        $(window).off('resize', $.proxy(this.model.resize, this.model));
+    }
 
     if (callback) callback();
 };
