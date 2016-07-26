@@ -103,7 +103,7 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
-extern void resetPidProfile(pidProfile_t *pidProfile);
+extern void resetProfile(profile_t *profile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -1482,7 +1482,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(&currentProfile->pidProfile);
+        resetProfile(currentProfile);
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:

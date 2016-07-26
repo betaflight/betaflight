@@ -180,7 +180,23 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-void resetPidProfile(pidProfile_t *pidProfile)
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+{
+    controlRateConfig->rcRate8 = 100;
+    controlRateConfig->rcYawRate8 = 100;
+    controlRateConfig->rcExpo8 = 10;
+    controlRateConfig->thrMid8 = 50;
+    controlRateConfig->thrExpo8 = 0;
+    controlRateConfig->dynThrPID = 20;
+    controlRateConfig->rcYawExpo8 = 10;
+    controlRateConfig->tpa_breakpoint = 1650;
+
+    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+        controlRateConfig->rates[axis] = 70;
+    }
+}
+
+static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 
@@ -240,6 +256,15 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
     pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
 #endif
+}
+
+void resetProfile(profile_t *profile)
+{
+    resetPidProfile(&profile->pidProfile);
+
+    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
+        resetControlRateConfig(&profile->controlRateProfile[rI]);
+    }
 }
 
 #ifdef GPS
@@ -348,23 +373,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 #endif
 
     serialConfig->reboot_character = 'R';
-}
-
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcYawRate8 = 100;
-    controlRateConfig->rcExpo8 = 10;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 10;
-    controlRateConfig->tpa_breakpoint = 1650;
-
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 70;
-    }
-
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
@@ -560,11 +568,8 @@ static void resetConf(void)
 
     masterConfig.emf_avoidance = 0; // TODO - needs removal
 
-    resetPidProfile(&currentProfile->pidProfile);
+    resetProfile(currentProfile);
 
-    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
-        resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
-    }
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
