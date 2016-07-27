@@ -10,7 +10,7 @@ var Features = function (config) {
         {bit: 5, group: 'other', name: 'SERVO_TILT'},
         {bit: 6, group: 'other', name: 'SOFTSERIAL', haveTip: true},
         {bit: 7, group: 'gps', name: 'GPS', haveTip: true},
-        {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE'},
+        {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', haveTip: true},
         {bit: 9, group: 'other', name: 'SONAR'},
         {bit: 10, group: 'other', name: 'TELEMETRY'},
         {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER'},
@@ -152,17 +152,17 @@ Features.prototype.updateData = function (featureElement) {
             var group = featureElement.attr('name');
             var controlElements = $('input[name="' + group + '"]');
             var selectedBit = controlElements.filter(':checked').val();
-
+            var featureMask = this._featureMask;
             controlElements.each(function() {
                 var bit = $(this).val();
                 if (selectedBit === bit) {
-                    this._featureMask = bit_set(BF_CONFIG.this._featureMask, bit);
+                	featureMask = bit_set(featureMask, bit);
                 } else {
-                    this._featureMask = bit_clear(this._featureMask, bit);
+                	featureMask = bit_clear(featureMask, bit);
                 }
 
             });
-
+            this._featureMask = featureMask;
             break;
     }
 }

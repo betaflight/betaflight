@@ -313,7 +313,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         $('#pid_main').show();
 
-        if (CONFIG.flightControllerIdentifier === "BTFL" || semver.ge(CONFIG.flightControllerVersion, "2.9.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.0")) {
             $('#pid_filter').show();
         }
 
@@ -408,9 +408,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
     function process_html() {
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-            var features_e = $('.features');
-
-            BF_CONFIG.features.generateElements(features_e);
+            BF_CONFIG.features.generateElements($('.tab-pid_tuning .features'));
         }
 
         // translate to user-selected language
