@@ -1,6 +1,8 @@
 'use strict;'
 
 var Features = function (config) {
+    var self = this;
+
     var features = [
         {bit: 0, group: 'rxMode', mode: 'group', name: 'RX_PPM'},
         {bit: 1, group: 'batteryVoltage', name: 'VBAT'},
@@ -43,24 +45,27 @@ var Features = function (config) {
         );
     }
 
-    this._features = features;
-    this._featureMask = 0;
+    self._features = features;
+    self._featureMask = 0;
 }
 
 Features.prototype.getMask = function () {
-    return this._featureMask;
+    var self = this;
+
+    return self._featureMask;
 }
 
 Features.prototype.setMask = function (featureMask) {
-    this._featureMask = featureMask;
+    var self = this;
+
+    self._featureMask = featureMask;
 }
 
 Features.prototype.isEnabled = function (featureName) {
-    var features = this._features;
-    var featureMask = this._featureMask;
+    var self = this;
 
-    for (var i = 0; i < features.length; i++) {
-        if (features[i].name === featureName && bit_check(featureMask, features[i].bit)) {
+    for (var i = 0; i < self._features.length; i++) {
+        if (self._features[i].name === featureName && bit_check(self._featureMask, self._features[i].bit)) {
             return true;
         }
     }
@@ -68,56 +73,56 @@ Features.prototype.isEnabled = function (featureName) {
 }
 
 Features.prototype.generateElements = function (featuresElements) {
-    var features = this._features;
-    var featureMask = this._featureMask;
+    var self = this;
+
     var radioGroups = [];
 
-    for (var i = 0; i < features.length; i++) {
+    for (var i = 0; i < self._features.length; i++) {
         var row_e;
 
         var feature_tip_html = '';
-        if (features[i].haveTip) {
-            feature_tip_html = '<div class="helpicon cf_tip" i18n_title="feature' + features[i].name + 'Tip"></div>';
+        if (self._features[i].haveTip) {
+            feature_tip_html = '<div class="helpicon cf_tip" i18n_title="feature' + self._features[i].name + 'Tip"></div>';
         }
 
-        if (features[i].mode === 'group') {
+        if (self._features[i].mode === 'group') {
             row_e = $('<tr><td style="width: 15px;"><input style="width: 13px;" class="feature" id="feature-'
                     + i
                     + '" value="'
-                    + features[i].bit
+                    + self._features[i].bit
                     + '" title="'
-                    + features[i].name
+                    + self._features[i].name
                     + '" type="radio" name="'
-                    + features[i].group
+                    + self._features[i].group
                     + '" /></td><td><label for="feature-'
                     + i
                     + '">'
-                    + features[i].name
-                    + '</label></td><td><span i18n="feature' + features[i].name + '"></span>'
+                    + self._features[i].name
+                    + '</label></td><td><span i18n="feature' + self._features[i].name + '"></span>'
                     + feature_tip_html + '</td></tr>');
-            radioGroups.push(features[i].group);
+            radioGroups.push(self._features[i].group);
         } else {
             row_e = $('<tr><td><input class="feature toggle" id="feature-'
                     + i
                     + '" name="'
-                    + features[i].name
+                    + self._features[i].name
                     + '" title="'
-                    + features[i].name
+                    + self._features[i].name
                     + '" type="checkbox"/></td><td><label for="feature-'
                     + i
                     + '">'
-                    + features[i].name
-                    + '</label></td><td><span i18n="feature' + features[i].name + '"></span>'
+                    + self._features[i].name
+                    + '</label></td><td><span i18n="feature' + self._features[i].name + '"></span>'
                     + feature_tip_html + '</td></tr>');
 
             var feature_e = row_e.find('input.feature');
 
-            feature_e.prop('checked', bit_check(featureMask, features[i].bit));
-            feature_e.data('bit', features[i].bit);
+            feature_e.prop('checked', bit_check(self._featureMask, self._features[i].bit));
+            feature_e.data('bit', self._features[i].bit);
         }
 
         featuresElements.each(function () {
-            if ($(this).hasClass(features[i].group)) {
+            if ($(this).hasClass(self._features[i].group)) {
                 $(this).append(row_e);
             }
         });
@@ -129,7 +134,7 @@ Features.prototype.generateElements = function (featuresElements) {
 
         controlElements.each(function() {
             var bit = parseInt($(this).attr('value'));
-            var state = bit_check(featureMask, bit);
+            var state = bit_check(self._featureMask, bit);
 
             $(this).prop('checked', state);
         });
@@ -137,14 +142,16 @@ Features.prototype.generateElements = function (featuresElements) {
 }
 
 Features.prototype.updateData = function (featureElement) {
+    var self = this;
+
     switch (featureElement.attr('type')) {
         case 'checkbox':
             var bit = featureElement.data('bit');
 
             if (featureElement.is(':checked')) {
-                this._featureMask = bit_set(this._featureMask, bit);
+                self._featureMask = bit_set(self._featureMask, bit);
             } else {
-                this._featureMask = bit_clear(this._featureMask, bit);
+                self._featureMask = bit_clear(self._featureMask, bit);
             }
 
             break;
@@ -152,17 +159,15 @@ Features.prototype.updateData = function (featureElement) {
             var group = featureElement.attr('name');
             var controlElements = $('input[name="' + group + '"]');
             var selectedBit = controlElements.filter(':checked').val();
-            var featureMask = this._featureMask;
             controlElements.each(function() {
                 var bit = $(this).val();
                 if (selectedBit === bit) {
-                	featureMask = bit_set(featureMask, bit);
+                    self._featureMask = bit_set(self._featureMask, bit);
                 } else {
-                	featureMask = bit_clear(featureMask, bit);
+                    self._featureMask = bit_clear(self._featureMask, bit);
                 }
 
             });
-            this._featureMask = featureMask;
             break;
     }
 }

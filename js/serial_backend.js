@@ -274,9 +274,10 @@ function onConnect() {
 
             if (semver.gte(CONFIG.flightControllerVersion, "2.4.0")) {
                 CONFIG.numProfiles = 2;
-                $('select[name="profilechange"] .profile3').hide();
+                $('.tab-pid_tuning select[name="profile"] .profile3').hide();
             } else {
                 CONFIG.numProfiles = 3;
+                $('.tab-pid_tuning select[name="rate_profile"]').hide();
             }
         }
     

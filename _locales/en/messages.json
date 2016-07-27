@@ -848,14 +848,23 @@
     "pidTuningControllerHead": {
         "message": "PID"
     },
-    "pidTuningPidsReset": {
-        "message": "Loaded default PID values."
+    "pidTuningResetProfile": {
+        "message": "Reset all profile values"
+    },
+    "pidTuningProfileReset": {
+        "message": "Loaded default profile values."
     },
     "pidTuningReceivedProfile": {
         "message": "Flight controller set Profile: <strong style=\"color: #ffbb00\">$1</strong>"
     },
+    "pidTuningReceivedRateProfile": {
+        "message": "Flight controller set Rateprofile: <strong style=\"color: #ffbb00\">$1</strong>"
+    },
     "pidTuningLoadedProfile": {
         "message": "Loaded Profile: <strong style=\"color: #ffbb00\">$1</strong>"
+    },
+    "pidTuningLoadedRateProfile": {
+        "message": "Loaded Rateprofile: <strong style=\"color: #ffbb00\">$1</strong>"
     },
     "pidTuningDataRefreshed": {
         "message": "PID data <strong>refreshed</strong>"
@@ -1747,6 +1756,12 @@
     },
     "pidTuningProfileTip": {
         "message": "Up to 3 (2 for some controllers) different profiles can be stored on the flight controller. The profiles include all the settings on this tab. Once in the field, simple stick commands (see online instructions) can be used to switch between the profiles."
+    },
+    "pidTuningRateProfile": {
+        "message": "Rateprofile"
+    },
+    "pidTuningRateProfileTip": {
+        "message": "Up to 3 different rateprofiles per profile can be stored on the flight controller. The rateprofiles include the settings for 'RC Rate', 'Rate', 'RC Expo', 'Throttle', and 'TPA'. Switching between rateprofiles is possible in-flight, by setting up a 3 position switch for 'Rate Profile Selection' on the 'Adjustments' tab."
     },
     "pidTuningPidTip": {
         "message": "<b>Derivative from Error</b> provides more direct stick response and is mostly prefered for Racing.<br><br><b>Derivative from Measurement</b> provides smoother stick response what is more usefull for freestyling"

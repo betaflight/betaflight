@@ -14,10 +14,21 @@
                 <div class="helpicon cf_tip" i18n_title="pidTuningProfileTip" style="margin-top: 5px;"></div>
                 <div class="head" i18n="pidTuningProfile"></div>
                 <div class="bottomarea">
-                    <select name="profilechange">
+                    <select name="profile">
                         <option value="0" class="profile1">Profile 1</option>
                         <option value="1" class="profile2">Profile 2</option>
                         <option value="2" class="profile3">Profile 3</option>
+                    </select>
+                </div>
+            </div>
+            <div class="rate_profile single-field">
+                <div class="helpicon cf_tip" i18n_title="pidTuningRateProfileTip" style="margin-top: 5px;"></div>
+                <div class="head" i18n="pidTuningRateProfile"></div>
+                <div class="bottomarea">
+                    <select name="rate_profile">
+                        <option value="0">Rateprofile 1</option>
+                        <option value="1">Rateprofile 2</option>
+                        <option value="2">Rateprofile 3</option>
                     </select>
                 </div>
             </div>
@@ -42,10 +53,10 @@
             </div>
             <div class="cf_column right">
                 <div class="default_btn show">
-                    <a href="#" id="showAllPids">Show all PIDs</a>
+                    <a href="#" id="showAllPids" i18n="pidTuningShowAllPids"></a>
                 </div>
                 <div class="default_btn resetbt">
-                    <a href="#" id="resetPIDs">Reset PID Controller</a>
+                    <a href="#" id="resetProfile" i18n="pidTuningResetProfile"></a>
                 </div>
             </div>
         </div>
