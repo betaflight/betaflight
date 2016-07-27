@@ -469,6 +469,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "PIDLOOP",
     "NOTCH",
 };
+
 #ifdef OSD
 static const char * const lookupTableOsdType[] = {
     "AUTO",
@@ -2964,7 +2965,7 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
-#ifndef CJMCU
+#if (FLASH_SIZE > 64)
     uint8_t i;
     uint32_t mask;
     uint32_t detectedSensorsMask = sensorsMask();
@@ -3008,44 +3009,34 @@ static void cliTasks(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cfTaskId_e taskId;
-    cfTaskInfo_t taskInfo;
-
-    cliPrintf("Task list:\r\n");
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
+    cliPrintf("Task list           max/us  avg/us rate/hz  total/ms\r\n");
+    for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
+        cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
             uint16_t taskFrequency;
             uint16_t subTaskFrequency;
 
-            uint32_t taskTotalTime = taskInfo.totalExecutionTime / 1000;
-
             if (taskId == TASK_GYROPID) {
                 subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
+                taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
                 if (masterConfig.pid_process_denom > 1) {
-                    taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-                    cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%02d - (%s/%s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%8s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
-                cliPrintf("%02d - (%s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
             }
-
-            cliPrintf("max: %dus, avg: %dus, rate: %dhz, total: ", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency);
-
-            if (taskTotalTime >= 1000) {
-                cliPrintf("%dsec", taskTotalTime / 1000);
-            } else {
-                cliPrintf("%dms", taskTotalTime);
+            cliPrintf("%6d   %5d   %5d  %8d\r\n", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency, taskInfo.totalExecutionTime / 1000);
+            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
+                cliPrintf("   - (%12s)              rate: %d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
-
-            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) cliPrintf("\r\n - - (%s)  rate: %dhz", taskInfo.subTaskName, subTaskFrequency);
-            cliPrintf("\r\n", taskTotalTime);
         }
     }
+    cliPrintf("CPU load: %d%%\r\n", constrain(averageSystemLoadPercent, 0, 100));
 }
 #endif
 
