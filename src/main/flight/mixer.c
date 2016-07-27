@@ -383,11 +383,6 @@ void writeMotors(void)
 
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
-
-
-    if (feature(FEATURE_ONESHOT125)) {
-        pwmCompleteOneshotMotorUpdate(motorCount);
-    }
 }
 
 void writeAllMotors(int16_t mc)
@@ -407,7 +402,7 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-void StopPwmAllMotors()
+void stopPwmAllMotors()
 {
     pwmShutdownPulsesForAllMotors(motorCount);
 }

@@ -194,7 +194,10 @@ static void mspRebootFn(serialPort_t *serialPort)
     UNUSED(serialPort);
 
     stopMotors();
-    handleOneshotFeatureChangeOnRestart();
+    stopPwmAllMotors();
+
+    // extra delay before reboot to give ESCs chance to reset
+    delay(1000);
     systemReset();
 
     // control should never return here.

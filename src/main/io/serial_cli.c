@@ -210,10 +210,10 @@ static const char * const mixerNames[] = {
 
 // sync this with features_e
 static const char * const featureNames[] = {
-    "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
+    "RX_PPM", "VBAT", "UNUSED_1", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
+    "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "UNUSED_2",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
     "SUPEREXPO", "VTX", "RX_SPI", "SOFTSPI", "PWM_SERVO_DRIVER", NULL
 };
@@ -464,6 +464,10 @@ static const char * const lookupTableAuxOperator[] = {
     "OR", "AND"
 };
 
+static const char * const lookupTablePwmProtocol[] = {
+    "PWM", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -498,6 +502,7 @@ typedef enum {
     TABLE_NAV_RTH_ALT_MODE,
 #endif
     TABLE_AUX_OPERATOR,
+    TABLE_MOTOR_PWM_PROTOCOL,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -529,6 +534,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableNavRthAltMode, sizeof(lookupTableNavRthAltMode) / sizeof(char *) },
 #endif
     { lookupTableAuxOperator, sizeof(lookupTableAuxOperator) / sizeof(char *) },
+    { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -605,6 +611,7 @@ const clivalue_t valueTable[] = {
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 50,  32000 }, 0 },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
 
     { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
@@ -2492,8 +2499,11 @@ static void cliReboot(void) {
     cliPrint("\r\nRebooting");
     bufWriterFlush(cliWriter);
     waitForSerialPortToFinishTransmitting(cliPort);
+
     stopMotors();
-    handleOneshotFeatureChangeOnRestart();
+    stopPwmAllMotors();
+
+    delay(1000);
     systemReset();
 }
 

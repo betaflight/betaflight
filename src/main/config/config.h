@@ -32,7 +32,7 @@
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
-    //FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
+    FEATURE_UNUSED_1 = 1 << 2,          // Unused in INAV
     FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
     FEATURE_SERVO_TILT = 1 << 5,
@@ -48,7 +48,7 @@ typedef enum {
     FEATURE_RSSI_ADC = 1 << 15,
     FEATURE_LED_STRIP = 1 << 16,
     FEATURE_DISPLAY = 1 << 17,
-    FEATURE_ONESHOT125 = 1 << 18,
+    FEATURE_UNUSED_2 = 1 << 18,         // Unused in INAV
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
@@ -64,7 +64,6 @@ typedef enum {
     FLAG_MAG_CALIBRATION_DONE = 1 << 0,
 } persistent_flags_e;
 
-void handleOneshotFeatureChangeOnRestart(void);
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);
