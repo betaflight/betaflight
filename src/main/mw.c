@@ -451,7 +451,7 @@ void handleInflightCalibrationStickPosition(void)
     }
 }
 
-void updateInflightCalibrationState(void)
+static void updateInflightCalibrationState(void)
 {
     if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
