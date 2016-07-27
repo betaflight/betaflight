@@ -3008,14 +3008,16 @@ static void cliStatus(char *cmdline)
 static void cliTasks(char *cmdline)
 {
     UNUSED(cmdline);
+    int maxLoadSum = 0;
+    int averageLoadSum = 0;
 
-    cliPrintf("Task list           max/us  avg/us rate/hz  total/ms\r\n");
+    cliPrintf("Task list           max/us  avg/us rate/hz maxload avgload     total/ms\r\n");
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
         cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            uint16_t taskFrequency;
-            uint16_t subTaskFrequency;
+            int taskFrequency;
+            int subTaskFrequency;
 
             if (taskId == TASK_GYROPID) {
                 subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
@@ -3030,13 +3032,21 @@ static void cliTasks(char *cmdline)
                 taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
                 cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
             }
-            cliPrintf("%6d   %5d   %5d  %8d\r\n", taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency, taskInfo.totalExecutionTime / 1000);
+            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
+            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
+            if (taskId != TASK_SERIAL) {
+                maxLoadSum += maxLoad;
+                averageLoadSum += averageLoad;
+            }
+            cliPrintf("%6d   %5d   %5d %4d.%1d%% %4d.%1d%%  %8d\r\n",
+                    taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
             if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
                 cliPrintf("   - (%12s)              rate: %d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
-    cliPrintf("CPU load: %d%%\r\n", constrain(averageSystemLoadPercent, 0, 100));
+    cliPrintf("Total (excluding SERIAL) %22d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif
 
