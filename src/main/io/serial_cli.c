@@ -2640,19 +2640,27 @@ static void cliStatus(char *cmdline)
 static void cliTasks(char *cmdline)
 {
     UNUSED(cmdline);
+    int maxLoadSum = 0;
+    int averageLoadSum = 0;
 
-    cfTaskId_e taskId;
-    cfTaskInfo_t taskInfo;
-
-    cliPrintf("Task list          max/us  avg/us rate/hz     total/ms\r\n");
-    for (taskId = 0; taskId < TASK_COUNT; taskId++) {
+    cliPrintf("Task list         rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+    for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
+        cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            const uint16_t taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
-            cliPrintf("%2d - %12s, %6d,  %5d,  %5d, %8d\r\n",
-                   taskId, taskInfo.taskName, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency, taskInfo.totalExecutionTime / 1000);
+            const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
+            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
+            if (taskId != TASK_SERIAL) {
+                maxLoadSum += maxLoad;
+                averageLoadSum += averageLoad;
+            }
+            cliPrintf("%2d - %12s  %6d   %5d   %5d %4d.%1d%% %4d.%1d%%  %8d\r\n",
+                    taskId, taskInfo.taskName, taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
         }
     }
+    cliPrintf("Total (excluding SERIAL) %21d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif
 
