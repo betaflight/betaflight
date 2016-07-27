@@ -127,14 +127,14 @@ void updateBattery(void)
             if (vbat <= (batteryCriticalVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_CRITICAL;
                 beeper(BEEPER_BAT_CRIT_LOW);
-            } else if (vbat > (batteryWarningVoltage + batteryConfig->vbathysteresis)){
+            } else if (vbat > batteryWarningVoltage) {
                 batteryState = BATTERY_OK;
             } else {
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if (vbat > (batteryCriticalVoltage + batteryConfig->vbathysteresis)){
+            if (vbat > batteryCriticalVoltage) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             } else {
