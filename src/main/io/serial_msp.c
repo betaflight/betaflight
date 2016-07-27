@@ -44,6 +44,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/sdcard.h"
 
 #include "drivers/buf_writer.h"
 #include "rx/rx.h"
@@ -58,6 +59,7 @@
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/msp_protocol.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "telemetry/telemetry.h"
 
@@ -83,6 +85,8 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#include "blackbox/blackbox.h"
 
 #include "version.h"
 #ifdef NAZE
@@ -169,6 +173,23 @@ static const char pidnames[] =
     "LEVEL;"
     "MAG;"
     "VEL;";
+
+typedef enum {
+    MSP_SDCARD_STATE_NOT_PRESENT = 0,
+    MSP_SDCARD_STATE_FATAL       = 1,
+    MSP_SDCARD_STATE_CARD_INIT   = 2,
+    MSP_SDCARD_STATE_FS_INIT     = 3,
+    MSP_SDCARD_STATE_READY       = 4,
+} mspSDCardState_e;
+
+typedef enum {
+    MSP_SDCARD_FLAG_SUPPORTTED   = 1,
+} mspSDCardFlags_e;
+
+typedef enum {
+    MSP_FLASHFS_BIT_READY        = 1,
+    MSP_FLASHFS_BIT_SUPPORTED    = 2,
+} mspFlashfsFlags_e;
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
@@ -312,6 +333,55 @@ reset:
         flag = 0;
         goto reset;
     }
+}
+
+static void serializeSDCardSummaryReply(void)
+{
+    headSerialReply(3 + 2 * 4);
+
+#ifdef USE_SDCARD
+    uint8_t flags = MSP_SDCARD_FLAG_SUPPORTTED;
+    uint8_t state;
+
+    serialize8(flags);
+
+    // Merge the card and filesystem states together
+    if (!sdcard_isInserted()) {
+        state = MSP_SDCARD_STATE_NOT_PRESENT;
+    } else if (!sdcard_isFunctional()) {
+        state = MSP_SDCARD_STATE_FATAL;
+    } else {
+        switch (afatfs_getFilesystemState()) {
+            case AFATFS_FILESYSTEM_STATE_READY:
+                state = MSP_SDCARD_STATE_READY;
+                break;
+            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+                if (sdcard_isInitialized()) {
+                    state = MSP_SDCARD_STATE_FS_INIT;
+                } else {
+                    state = MSP_SDCARD_STATE_CARD_INIT;
+                }
+                break;
+            case AFATFS_FILESYSTEM_STATE_FATAL:
+            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+            default:
+                state = MSP_SDCARD_STATE_FATAL;
+                break;
+        }
+    }
+
+    serialize8(state);
+    serialize8(afatfs_getLastError());
+    // Write free space and total space in kilobytes
+    serialize32(afatfs_getContiguousFreeSpace() / 1024);
+    serialize32(sdcard_getMetadata()->numBlocks / 2); // Block size is half a kilobyte
+#else
+    serialize8(0);
+    serialize8(0);
+    serialize8(0);
+    serialize32(0);
+    serialize32(0);
+#endif
 }
 
 static void serializeDataflashSummaryReply(void)
@@ -1100,6 +1170,25 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 #endif
 
+    case MSP_BLACKBOX_CONFIG:
+            headSerialReply(4);
+#ifdef BLACKBOX
+            serialize8(1); //Blackbox supported
+            serialize8(masterConfig.blackbox_device);
+            serialize8(masterConfig.blackbox_rate_num);
+            serialize8(masterConfig.blackbox_rate_denom);
+#else
+            serialize8(0); // Blackbox not supported
+            serialize8(0);
+            serialize8(0);
+            serialize8(0);
+#endif
+        break;
+
+    case MSP_SDCARD_SUMMARY:
+        serializeSDCardSummaryReply();
+        break;
+
     case MSP_BF_BUILD_INFO:
         headSerialReply(11 + 4 + 4);
         for (i = 0; i < 11; i++)
@@ -1396,6 +1485,17 @@ static bool processInCommand(void)
         writeEEPROM();
         readEEPROM();
         break;
+
+#ifdef BLACKBOX
+        case MSP_SET_BLACKBOX_CONFIG:
+            // Don't allow config to be updated while Blackbox is logging
+            if (!blackboxMayEditConfig())
+                return false;
+            masterConfig.blackbox_device = read8();
+            masterConfig.blackbox_rate_num = read8();
+            masterConfig.blackbox_rate_denom = read8();
+            break;
+#endif
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:

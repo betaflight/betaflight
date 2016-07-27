@@ -65,6 +65,7 @@
 #define USE_BARO_MS5611
 
 #define MAG
+#define USE_MPU9250_MAG     // Bypass enable
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
 

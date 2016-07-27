@@ -26,7 +26,10 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_SERIAL = 0,
 
 #ifdef USE_FLASHFS
-    BLACKBOX_DEVICE_FLASH,
+    BLACKBOX_DEVICE_FLASH = 1,
+#endif
+#ifdef USE_SDCARD
+    BLACKBOX_DEVICE_SDCARD = 2,
 #endif
 
     BLACKBOX_DEVICE_END
@@ -69,9 +72,13 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount);
 void blackboxWriteU32(int32_t value);
 void blackboxWriteFloat(float value);
 
-bool blackboxDeviceFlush(void);
+void blackboxDeviceFlush(void);
+bool blackboxDeviceFlushForce(void);
 bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
+
+bool blackboxDeviceBeginLog(void);
+bool blackboxDeviceEndLog(bool retainLog);
 
 bool isBlackboxDeviceFull(void);
 
