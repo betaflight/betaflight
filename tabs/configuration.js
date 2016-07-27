@@ -130,7 +130,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         mixer_list_e.val(BF_CONFIG.mixerConfiguration).change();
 
         var radioGroups = [];
-        var features_e = $('.features');
+        var features_e = $('.tab-configuration .features');
 
         BF_CONFIG.features.generateElements(features_e);
         

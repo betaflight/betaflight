@@ -486,9 +486,6 @@
     "featureGPSTip": {
         "message": "Configure port scenario first"
     },
-    "featureFAILSAFE": {
-        "message": "Apply failsafe settings on RX signal loss"
-    },
     "featureSONAR": {
         "message": "Sonar"
     },
@@ -545,6 +542,12 @@
     },
     "featureOSD": {
         "message": "On Screen Display"
+    },
+    "featureFAILSAFE": {
+        "message": "Apply failsafe on RX signal loss"
+    },
+    "featureFAILSAFETip": {
+        "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
     },
     "configurationFeatureEnabled": {
         "message": "Enabled"
@@ -1634,12 +1637,6 @@
     "failsafePaneTitleOld": {
         "message": "Receiver failsafe"
     },
-    "failsafeFeatureItemOld": {
-        "message": "Failsafe settings on RX signal loss"
-    },
-    "failsafeThrottleItemOld": {
-        "message": "Failsafe Throttle"
-    },
     "failsafeFeaturesHelpNew": {
         "message": "Failsafe has two stages. <strong>Stage 1</strong> is entered when a flightchannel has an invalid pulse length, the receiver reports failsafe mode or there is no signal from the receiver at all, the channel fallback settings are applied to <span style=\"color: red\">all channels</span> and a short amount of time is provided to allow for recovery. <strong>Stage 2</strong> is entered when the error condition takes longer than the configured guard time while the craft is <span style=\"color: red\">armed</span>, all channels will remain at the applied channel fallback setting unless overruled by the chosen procedure. <br /><strong>Note:</strong> Prior to entering stage 1, channel fallback settings are also applied to individual AUX channels that have invalid pulses."
     },
@@ -1669,12 +1666,6 @@
     },
     "failsafeStageTwoSettingsTitle": {
         "message": "Stage 2 - Settings"
-    },
-    "failsafeFeatureItem": {
-        "message": "Failsafe Stage 2 enabled"
-    },
-    "failsafeFeatureHelp": {
-        "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
     },
     "failsafeDelayItem": {
         "message": "Guard time for stage 2 activation after signal lost [1 = 0.1 sec.]"

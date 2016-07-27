@@ -63,11 +63,6 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
     }
 
     function process_html() {
-        var failsafeFeature;
-
-        // translate to user-selected language
-        localize();
-
         // Conditionally hide the old or the new control pane's
         if(apiVersionGte1_15_0) {
             var oldPane = $('div.oldpane');
@@ -79,7 +74,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             newPane.hide();
         }
 
-        if(apiVersionGte1_15_0) {
+        if (apiVersionGte1_15_0) {
             // generate labels for assigned aux modes
             var auxAssignment = [],
                 i,
@@ -204,18 +199,22 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                 channel_mode_array[i].change();
             }
 
+            BF_CONFIG.features.generateElements($('.tab-failsafe .featuresNew'));
+
             // fill stage 2 fields
-            failsafeFeature = $('input[name="failsafe_feature_new"]');
-            failsafeFeature.change(function () {
-                if ($(this).is(':checked')) {
+            function toggleStage2(doShow) {
+                if (doShow) {
                     $('div.stage2').show();
                 } else {
                     $('div.stage2').hide();
                 }
-            });
+            }
 
-            failsafeFeature.prop('checked', bit_check(BF_CONFIG.features, 8));
-            failsafeFeature.change();
+            var failsafeFeature = $('input[name="FAILSAFE"]');
+            failsafeFeature.change(function () {
+                toggleStage2($(this).is(':checked'));
+            });
+            toggleStage2(BF_CONFIG.features.isEnabled('FAILSAFE'));
 
             $('input[name="failsafe_throttle"]').val(FAILSAFE_CONFIG.failsafe_throttle);
             $('input[name="failsafe_off_delay"]').val(FAILSAFE_CONFIG.failsafe_off_delay);
@@ -262,27 +261,19 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             $('input[name="failsafe_kill_switch"]').prop('checked', FAILSAFE_CONFIG.failsafe_kill_switch);
 
         } else {
-
-            // set FAILSAFE feature option (pre API 1.15.0)
-            failsafeFeature = $('input[name="failsafe_feature"]');
-            failsafeFeature.prop('checked', bit_check(BF_CONFIG.features, 8));
-
+            BF_CONFIG.features.generateElements($('.tab-failsafe .featuresOld'));
             // fill failsafe_throttle field (pre API 1.15.0)
             $('input[name="failsafe_throttle_old"]').val(MISC.failsafe_throttle);
         }
 
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
+
+            BF_CONFIG.features.updateData($('input[name="FAILSAFE"]'));
+
             if(apiVersionGte1_15_0) {
                 RX_CONFIG.rx_min_usec = parseInt($('input[name="rx_min_usec"]').val());
                 RX_CONFIG.rx_max_usec = parseInt($('input[name="rx_max_usec"]').val());
-
-                // get FAILSAFE feature option (>= API 1.15.0)
-                if ($('input[name="failsafe_feature_new"]').is(':checked')) {
-                    BF_CONFIG.features = bit_set(BF_CONFIG.features, 8);
-                } else {
-                    BF_CONFIG.features = bit_clear(BF_CONFIG.features, 8);
-                }
 
                 FAILSAFE_CONFIG.failsafe_throttle = parseInt($('input[name="failsafe_throttle"]').val());
                 FAILSAFE_CONFIG.failsafe_off_delay = parseInt($('input[name="failsafe_off_delay"]').val());
@@ -297,13 +288,6 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
 
                 FAILSAFE_CONFIG.failsafe_kill_switch = $('input[name="failsafe_kill_switch"]').is(':checked') ? 1 : 0;
             } else {
-                // get FAILSAFE feature option (pre API 1.15.0)
-                if ($('input[name="failsafe_feature"]').is(':checked')) {
-                    BF_CONFIG.features = bit_set(BF_CONFIG.features, 8);
-                } else {
-                    BF_CONFIG.features = bit_clear(BF_CONFIG.features, 8);
-                }
-
                 // get failsafe_throttle field value (pre API 1.15.0)
                 MISC.failsafe_throttle = parseInt($('input[name="failsafe_throttle_old"]').val());
             }
@@ -363,6 +347,9 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                 MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_misc);
             }
         });
+
+        // translate to user-selected language
+        localize();
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
