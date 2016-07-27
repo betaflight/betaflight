@@ -132,7 +132,7 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
         }
 
         if (mode & MODE_RX) {
-            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
+            IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
