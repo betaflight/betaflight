@@ -239,11 +239,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
+    pidProfile->ptermSetpointWeight = 80;
+    pidProfile->dtermSetpointWeight = 0;
+    pidProfile->pidMaxVelocity = 1000;
+    pidProfile->pidMaxVelocityYaw = 50;
     pidProfile->toleranceBand = 15;
-    pidProfile->toleranceBandReduction = 35;
-    pidProfile->zeroCrossAllowanceCount = 3;
-    pidProfile->accelerationLimitPercent = 20;
-    pidProfile->itermThrottleGain = 10;
+    pidProfile->toleranceBandReduction = 40;
+    pidProfile->zeroCrossAllowanceCount = 2;
+    pidProfile->itermThrottleGain = 15;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -524,7 +527,8 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
+    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_AUTO;
+    masterConfig.rxConfig.rcSmoothInterval = 9;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
 #ifdef STM32F4
     masterConfig.rxConfig.max_aux_channel = 99;
