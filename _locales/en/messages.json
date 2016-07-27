@@ -1722,10 +1722,10 @@
         "message": "ESC/Motor protocol"
     },
     "configurationunsyndePwm": {
-        "message": "Unsynced PWM output"
+        "message": "Motor PWM speed Separated from PID speed"
     },
     "configurationUnsyncedPWMFreq": {
-        "message": "Unsynced PWM frequency"
+        "message": "Motor PWM frequency"
     },
     "configurationGyroSyncDenom": {
         "message": "Gyro update frequency"
