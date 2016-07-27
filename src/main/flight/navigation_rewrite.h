@@ -41,7 +41,9 @@ void onNewGPSData(void);
 #define NAV_BLACKBOX
 #endif
 
-#define NAV_MAX_WAYPOINTS           15
+#ifndef NAV_MAX_WAYPOINTS
+#define NAV_MAX_WAYPOINTS 15
+#endif
 
 enum {
     NAV_GPS_ATTI    = 0,                    // Pitch/roll stick controls attitude (pitch/roll lean angles)

@@ -200,6 +200,7 @@
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
+#define NAV_MAX_WAYPOINTS       30
 
 #define LED_STRIP
 #define LED_STRIP_TIMER     TIM3
