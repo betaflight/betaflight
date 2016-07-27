@@ -690,21 +690,21 @@ void main_init(void)
     rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
-    if(sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
-             case(500):
-             case(375):
-             case(250):
-             case(125):
-                 accTargetLooptime = 1000;
-                 break;
-             default:
-                 case(1000):
+        switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        case 500:
+        case 375:
+        case 250:
+        case 125:
+            accTargetLooptime = 1000;
+            break;
+        default:
+        case 1000:
 #ifdef STM32F10X
-                accTargetLooptime = 3000;
+            accTargetLooptime = 1000;
 #else
-                accTargetLooptime = 1000;
+            accTargetLooptime = 1000;
 #endif
         }
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
