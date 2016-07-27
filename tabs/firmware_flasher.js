@@ -31,7 +31,7 @@ TABS.firmware_flasher.initialize = function (callback) {
 
 
         $('input.show_development_releases').click(function(){
-            buildFirmwareOptions();
+            buildBoardOptions();
         });
 
         var buildBoardOptions = function(){
