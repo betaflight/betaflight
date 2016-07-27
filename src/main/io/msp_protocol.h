@@ -213,6 +213,12 @@
 #define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
 #define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
 
+#define MSP_PIDC_BETAFLIGHT             246
+#define MSP_SET_PIDC_BETAFLIGHT         247
+
+#define MSP_RC_SMOOTHING                248
+#define MSP_SET_RC_SMOOTHING            249
+
 //
 // OSD specific
 //

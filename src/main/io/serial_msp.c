@@ -1250,6 +1250,21 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.rcSmoothInterval);
         serialize16(currentProfile->pidProfile.pidMaxVelocity);
         break;
+    case MSP_PIDC_BETAFLIGHT:
+        headSerialReply(9);
+        serialize8(currentProfile->pidProfile.ptermSetpointWeight);
+        serialize8(currentProfile->pidProfile.dtermSetpointWeight);
+        serialize8(currentProfile->pidProfile.toleranceBand);
+        serialize8(currentProfile->pidProfile.toleranceBandReduction);
+        serialize8(currentProfile->pidProfile.itermThrottleGain);
+        serialize16(currentProfile->pidProfile.pidMaxVelocity);
+        serialize16(currentProfile->pidProfile.pidMaxVelocityYaw);
+        break;
+    case MSP_RC_SMOOTHING:
+        headSerialReply(2);
+        serialize8(masterConfig.rxConfig.rcSmoothing);
+        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
         serialize8(masterConfig.acc_hardware);
@@ -1830,6 +1845,19 @@ static bool processInCommand(void)
         masterConfig.rxConfig.airModeActivateThreshold = read16();
         masterConfig.rxConfig.rcSmoothInterval = read8();
         read16();
+        break;
+    case MSP_SET_PIDC_BETAFLIGHT:
+        currentProfile->pidProfile.ptermSetpointWeight = read8();
+        currentProfile->pidProfile.dtermSetpointWeight = read8();
+        currentProfile->pidProfile.toleranceBand = read8();
+        currentProfile->pidProfile.toleranceBandReduction = read8();
+        currentProfile->pidProfile.itermThrottleGain = read8();
+        currentProfile->pidProfile.pidMaxVelocity = read16();
+        currentProfile->pidProfile.pidMaxVelocityYaw = read16();
+        break;
+    case MSP_SET_RC_SMOOTHING:
+        masterConfig.rxConfig.rcSmoothing = read8();
+        masterConfig.rxConfig.rcSmoothInterval = read8();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();
