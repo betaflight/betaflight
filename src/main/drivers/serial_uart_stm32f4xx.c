@@ -30,8 +30,8 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-#define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE UART1_TX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE 512
+#define UART_TX_BUFFER_SIZE 512
 
 typedef enum UARTDevice {
     UARTDEV_1 = 0,
