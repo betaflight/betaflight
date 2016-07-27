@@ -3042,7 +3042,7 @@ static void cliTasks(char *cmdline)
                     taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency,
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
             if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
-                cliPrintf("   - (%12s)              rate: %d\r\n", taskInfo.subTaskName, subTaskFrequency);
+                cliPrintf("   - (%12s)             rate: %d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
