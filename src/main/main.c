@@ -327,7 +327,9 @@ void init(void)
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
+#ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);

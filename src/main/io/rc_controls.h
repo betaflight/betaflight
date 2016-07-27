@@ -249,7 +249,6 @@ typedef struct adjustmentState_s {
 bool isAirmodeActive(void);
 bool isSuperExpoActive(void);
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
