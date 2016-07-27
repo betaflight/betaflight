@@ -877,7 +877,7 @@ uint8_t BL_PageErase(ioMem_t *pMem)
     uint16_t address = pMem->D_FLASH_ADDR_H << 8 | pMem->D_FLASH_ADDR_L;
     if (address + FAKE_PAGE_SIZE > FAKE_FLASH_SIZE)
         return false;
-    memset(&fakeFlash[address], 0xFF, FAKE_PAGE_SIZE);    
+    memset(&fakeFlash[address], 0xFF, FAKE_PAGE_SIZE);
     return true;
 }
 
