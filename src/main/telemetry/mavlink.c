@@ -68,7 +68,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
-#include "mavlink/common/mavlink.h"
+#include "telemetry/mavlink/common/mavlink.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
