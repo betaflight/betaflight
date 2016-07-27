@@ -29,19 +29,16 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
-#include "drivers/max7456.h"
 #include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
@@ -54,9 +51,6 @@
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
 #include "io/ledstrip.h"
-#include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
 
 #include "rx/rx.h"
 
