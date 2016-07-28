@@ -129,9 +129,15 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #if defined(STM32F303xC) && defined(USE_UART3)
-        // skip UART3 ports (PB10/PB11)
+#if defined(AVOID_UART3_FOR_PWM_PPM)
+        if (!init->usePPM)
+            // skip UART3 ports (PB10/PB11)
+            if (init->useUART3 && (timerHardwarePtr->tag == IO_TAG(UART3_TX_PIN) || timerHardwarePtr->tag == IO_TAG(UART3_RX_PIN)))
+                continue;
+#else
         if (init->useUART3 && (timerHardwarePtr->tag == IO_TAG(UART3_TX_PIN) || timerHardwarePtr->tag == IO_TAG(UART3_RX_PIN)))
             continue;
+#endif
 #endif
 
 #ifdef SOFTSERIAL_1_TIMER
