@@ -247,7 +247,7 @@ void init(void)
 
     dmaInit();
 
-#ifdef AVOID_UART2_PWM_PPM
+#ifdef AVOID_UART2_FOR_PWM_PPM
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #else
