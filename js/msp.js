@@ -1446,7 +1446,7 @@ MSP.crunch = function (code) {
             if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
                 buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
                 if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                     buffer.push(Math.round(RC_tuning.rcYawRate));
+                     buffer.push(Math.round(RC_tuning.rcYawRate * 100));
                 }
             }
             break;
