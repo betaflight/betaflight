@@ -1,5 +1,6 @@
 .tab-auxiliary {
     float: left;
+    width: 100%;
 }
 
 .tab-auxiliary .help {
