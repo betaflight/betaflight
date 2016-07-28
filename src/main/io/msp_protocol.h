@@ -198,26 +198,17 @@
 #define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
 
 // Betaflight Additional Commands
-#define MSP_PID_ADVANCED_CONFIG         90
-#define MSP_SET_PID_ADVANCED_CONFIG     91
+#define MSP_ADVANCED_CONFIG             90
+#define MSP_SET_ADVANCED_CONFIG         91
 
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93
 
-#define MSP_ADVANCED_TUNING             94
-#define MSP_SET_ADVANCED_TUNING         95
+#define MSP_PID_ADVANCED                94
+#define MSP_SET_PID_ADVANCED            95
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
-
-#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
-#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
-
-#define MSP_PIDC_BETAFLIGHT             246
-#define MSP_SET_PIDC_BETAFLIGHT         247
-
-#define MSP_RC_SMOOTHING                248
-#define MSP_SET_RC_SMOOTHING            249
 
 //
 // OSD specific
