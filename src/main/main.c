@@ -118,7 +118,6 @@ serialPort_t *loopbackPort;
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
@@ -248,7 +247,12 @@ void init(void)
 
     dmaInit();
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+#ifdef AVOID_UART2_FOR_PWM_PPM
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+#else
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
 
 #ifdef USE_SERVOS
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
