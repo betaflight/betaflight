@@ -42,7 +42,7 @@ These receivers are reported working:
 These receivers are reported working:
 
 Lemon Rx DSMX Compatible PPM 8-Channel Receiver + Lemon DSMX Compatible Satellite with Failsafe
-http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
+http://www.lemon-rx.com/index.php?route=product/product&product_id=118
 
 
 ### S.BUS
