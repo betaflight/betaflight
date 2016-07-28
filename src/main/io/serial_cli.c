@@ -3024,16 +3024,15 @@ static void cliTasks(char *cmdline)
     int maxLoadSum = 0;
     int averageLoadSum = 0;
 
-    cliPrintf("Task list           max/us  avg/us rate/hz maxload avgload     total/ms\r\n");
+    cliPrintf("Task list          rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
         cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
             int taskFrequency;
             int subTaskFrequency;
-
             if (taskId == TASK_GYROPID) {
-                subTaskFrequency = (uint16_t)(1.0f / ((float)cycleTime * 0.000001f));
+                subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
                 taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
                 if (masterConfig.pid_process_denom > 1) {
                     cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
@@ -3042,7 +3041,7 @@ static void cliTasks(char *cmdline)
                     cliPrintf("%02d - (%8s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
-                taskFrequency = (uint16_t)(1.0f / ((float)taskInfo.latestDeltaTime * 0.000001f));
+                taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
@@ -3051,11 +3050,11 @@ static void cliTasks(char *cmdline)
                 maxLoadSum += maxLoad;
                 averageLoadSum += averageLoad;
             }
-            cliPrintf("%6d   %5d   %5d %4d.%1d%% %4d.%1d%%  %8d\r\n",
-                    taskInfo.maxExecutionTime, taskInfo.averageExecutionTime, taskFrequency,
+            cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
+                    taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
             if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
-                cliPrintf("   - (%12s)             rate: %d\r\n", taskInfo.subTaskName, subTaskFrequency);
+                cliPrintf("   - (%12s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
