@@ -73,6 +73,8 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
+#define AVOID_UART2_FOR_PWM_PPM
+
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB4
 
