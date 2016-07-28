@@ -25,9 +25,7 @@ TABS.pid_tuning.initialize = function (callback) {
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_RC_TUNING);
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
-    }).then(function() {
-        return MSP.promise(MSP_codes.MSP_ADVANCED_TUNING);
+        return MSP.promise(MSP_codes.MSP_PID_ADVANCED);
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_FILTER_CONFIG);
     }).then(function() {
@@ -193,7 +191,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="yaw_rate"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.pid_tuning input[name="rc_expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
         $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-        $('.pid_tuning input[name="rc_rate_yaw"]').val(SPECIAL_PARAMETERS.RC_RATE_YAW.toFixed(2));
+        $('.pid_tuning input[name="rc_rate_yaw"]').val(RC_tuning.rcYawRate.toFixed(2));
 
         $('.throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
         $('.throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
@@ -292,7 +290,7 @@ TABS.pid_tuning.initialize = function (callback) {
         RC_tuning.yaw_rate = parseFloat($('.pid_tuning input[name="yaw_rate"]').val());
         RC_tuning.RC_EXPO = parseFloat($('.pid_tuning input[name="rc_expo"]').val());
         RC_tuning.RC_YAW_EXPO = parseFloat($('.pid_tuning input[name="rc_yaw_expo"]').val());
-        SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
+        RC_tuning.rcYawRate = parseFloat($('.pid_tuning input[name="rc_rate_yaw"]').val());
 
         RC_tuning.throttle_MID = parseFloat($('.throttle input[name="mid"]').val());
         RC_tuning.throttle_EXPO = parseFloat($('.throttle input[name="expo"]').val())
@@ -420,7 +418,7 @@ TABS.pid_tuning.initialize = function (callback) {
             pitch_rate:  RC_tuning.pitch_rate,
             yaw_rate:    RC_tuning.yaw_rate,
             rc_rate:     RC_tuning.RC_RATE,
-            rc_rate_yaw: SPECIAL_PARAMETERS.RC_RATE_YAW,
+            rc_rate_yaw: RC_tuning.rcYawRate,
             rc_expo:     RC_tuning.RC_EXPO,
             rc_yaw_expo: RC_tuning.RC_YAW_EXPO,
             superexpo:   BF_CONFIG.features.isEnabled('SUPEREXPO_RATES')
@@ -700,14 +698,7 @@ TABS.pid_tuning.initialize = function (callback) {
             }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID));
             }).then(function () {
-                var promise;
-                if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-                    promise = MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
-                }
-
-                return promise;
-            }).then(function () {
-                return MSP.promise(MSP_codes.MSP_SET_ADVANCED_TUNING, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_TUNING));
+                return MSP.promise(MSP_codes.MSP_SET_PID_ADVANCED, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED));
             }).then(function () {
                 var promise;
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {

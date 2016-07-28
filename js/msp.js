@@ -51,16 +51,14 @@ var MSP_codes = {
     MSP_OSD_CHAR_WRITE:         87,
     MSP_VTX_CONFIG:             88,
     MSP_SET_VTX_CONFIG:         89,
-    MSP_PID_ADVANCED_CONFIG:    90,
-    MSP_SET_PID_ADVANCED_CONFIG: 91,
+    MSP_ADVANCED_CONFIG:        90,
+    MSP_SET_ADVANCED_CONFIG:    91,
     MSP_FILTER_CONFIG:          92,
     MSP_SET_FILTER_CONFIG:      93,
-    MSP_ADVANCED_TUNING:        94,
-    MSP_SET_ADVANCED_TUNING:    95,
+    MSP_PID_ADVANCED:           94,
+    MSP_SET_PID_ADVANCED:       95,
     MSP_SENSOR_CONFIG:          96,
     MSP_SET_SENSOR_CONFIG:      97,
-    MSP_SPECIAL_PARAMETERS:     98,
-    MSP_SET_SPECIAL_PARAMETERS: 99,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -406,6 +404,11 @@ var MSP = {
                 }
                 if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
                     RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                    if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                        RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                    } else {
+                        RC_tuning.rcYawRate = 0;
+                    }
                 } else {
                     RC_tuning.RC_YAW_EXPO = 0;
                 }
@@ -901,6 +904,10 @@ var MSP = {
                 offset += 2;
                 RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
                 offset += 2;
+                RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
+                RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
+                RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
+                offset += 2;
                 break;
 
             case MSP_codes.MSP_FAILSAFE_CONFIG:
@@ -936,7 +943,7 @@ var MSP = {
                 }
                 break;
 
-            case MSP_codes.MSP_PID_ADVANCED_CONFIG:
+            case MSP_codes.MSP_ADVANCED_CONFIG:
                 var offset = 0;
                 PID_ADVANCED_CONFIG.gyro_sync_denom = data.getUint8(offset++, 1);
                 PID_ADVANCED_CONFIG.pid_process_denom = data.getUint8(offset++, 1);
@@ -952,8 +959,8 @@ var MSP = {
                 FILTER_CONFIG.yaw_lpf_hz = data.getUint16(offset, 1);
                 break;
 
-            case MSP_codes.MSP_ADVANCED_TUNING:
-                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+            case MSP_codes.MSP_PID_ADVANCED:
+                if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                     var offset = 0;
                     ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1);
                     offset += 2;
@@ -963,17 +970,15 @@ var MSP = {
                     offset += 2;
                     ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
                     ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
-                }
-                break;
-
-            case MSP_codes.MSP_SPECIAL_PARAMETERS:
-                var offset = 0;
-                SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
-                if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                    SPECIAL_PARAMETERS.airModeActivateThreshold = data.getUint16(offset, 1);
+                    ADVANCED_TUNING.ptermSetpointWeight = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.dtermSetpointWeight = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.toleranceBand = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.toleranceBandReduction = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.itermThrottleGain = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.pidMaxVelocity = data.getUint16(offset, 1);
                     offset += 2;
-                    SPECIAL_PARAMETERS.rcSmoothInterval = data.getUint8(offset++, 1)
-                    SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                    ADVANCED_TUNING.pidMaxVelocityYaw = data.getUint16(offset, 1);
+                    offset += 2;
                 }
                 break;
             case MSP_codes.MSP_SENSOR_CONFIG:
@@ -1235,6 +1240,12 @@ var MSP = {
             case MSP_codes.MSP_SET_NAME:
                 console.log('Name set');
                 break;
+            case MSP_codes.MSP_SET_FILTER_CONFIG:
+                console.log('Filter config set');
+                break;
+            case MSP_codes.MSP_SET_PID_ADVANCED:
+                console.log('Advanced tuning parameters set');
+                break;
             default:
                 console.log('Unknown code detected: ' + code);
         } else {
@@ -1434,6 +1445,9 @@ MSP.crunch = function (code) {
             }
             if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
                 buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
+                if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                     buffer.push(Math.round(RC_tuning.rcYawRate));
+                }
             }
             break;
         // Disabled, cleanflight does not use MSP_SET_BOX.
@@ -1507,6 +1521,13 @@ MSP.crunch = function (code) {
             buffer.push(highByte(RX_CONFIG.rx_min_usec));
             buffer.push(lowByte(RX_CONFIG.rx_max_usec));
             buffer.push(highByte(RX_CONFIG.rx_max_usec));
+            if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
+                buffer.push(RX_CONFIG.rcSmoothing);
+                buffer.push(RX_CONFIG.rcSmoothInterval);
+                buffer.push(lowByte(RX_CONFIG.airModeActivateThreshold));
+                buffer.push(highByte(RX_CONFIG.airModeActivateThreshold));
+            }
+
             break;
 
         case MSP_codes.MSP_SET_FAILSAFE_CONFIG:
@@ -1604,7 +1625,7 @@ MSP.crunch = function (code) {
             buffer.push(SENSOR_ALIGNMENT.align_acc);
             buffer.push(SENSOR_ALIGNMENT.align_mag);
             break
-        case MSP_codes.MSP_SET_PID_ADVANCED_CONFIG:
+        case MSP_codes.MSP_SET_ADVANCED_CONFIG:
             buffer.push(PID_ADVANCED_CONFIG.gyro_sync_denom);
             buffer.push(PID_ADVANCED_CONFIG.pid_process_denom);
             buffer.push(PID_ADVANCED_CONFIG.use_unsyncedPwm);
@@ -1617,21 +1638,20 @@ MSP.crunch = function (code) {
               .push16(FILTER_CONFIG.dterm_lpf_hz)
               .push16(FILTER_CONFIG.yaw_lpf_hz);
             break;
-        case MSP_codes.MSP_SET_ADVANCED_TUNING:
-            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+        case MSP_codes.MSP_SET_PID_ADVANCED:
+            if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
                 .push16(ADVANCED_TUNING.yawItermIgnoreRate)
                 .push16(ADVANCED_TUNING.yaw_p_limit)
                 .push8(ADVANCED_TUNING.deltaMethod)
-                .push8(ADVANCED_TUNING.vbatPidCompensation);
-            }
-            break;
-        case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
-            buffer.push(Math.round(SPECIAL_PARAMETERS.RC_RATE_YAW * 100));
-            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                buffer.push16(SPECIAL_PARAMETERS.airModeActivateThreshold);
-                buffer.push(SPECIAL_PARAMETERS.rcSmoothInterval);
-                buffer.push16(SPECIAL_PARAMETERS.escDesyncProtection);
+                .push8(ADVANCED_TUNING.vbatPidCompensation)
+                .push8(ADVANCED_TUNING.ptermSetpointWeight)
+                .push8(ADVANCED_TUNING.dtermSetpointWeight)
+                .push8(ADVANCED_TUNING.toleranceBand)
+                .push8(ADVANCED_TUNING.toleranceBandReduction)
+                .push8(ADVANCED_TUNING.itermThrottleGain)
+                .push16(ADVANCED_TUNING.pidMaxVelocity)
+                .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
             }
             break;
         case MSP_codes.MSP_SET_SENSOR_CONFIG:

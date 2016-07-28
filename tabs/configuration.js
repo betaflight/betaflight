@@ -64,7 +64,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     function esc_protocol() {
         var next_callback = sensor_config;
         if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            MSP.send_message(MSP_codes.MSP_PID_ADVANCED_CONFIG, false, false, next_callback);
+            MSP.send_message(MSP_codes.MSP_ADVANCED_CONFIG, false, false, next_callback);
         } else {
             next_callback();
         }        
@@ -541,7 +541,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             function save_esc_protocol() {
                 var next_callback = save_acc_trim;
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-                    MSP.send_message(MSP_codes.MSP_SET_PID_ADVANCED_CONFIG, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED_CONFIG), false, next_callback);
+                    MSP.send_message(MSP_codes.MSP_SET_ADVANCED_CONFIG, MSP.crunch(MSP_codes.MSP_SET_ADVANCED_CONFIG), false, next_callback);
                 } else {
                    next_callback();
                 }

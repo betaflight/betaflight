@@ -20,11 +20,7 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_bt_config_data() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_special_parameters_data);
-    }
-
-    function get_special_parameters_data() {
-        MSP.send_message(MSP_codes.MSP_SPECIAL_PARAMETERS, false, false, get_rc_map);
+        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_rc_map);
     }
 
     function get_rc_map() {
@@ -423,7 +419,7 @@ TABS.receiver.renderModel = function () {
 
         var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
             pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
-            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate, SPECIAL_PARAMETERS.RC_RATE_YAW, RC_tuning.RC_YAW_EXPO, this.useSuperExpo);
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate, RC_tuning.rcYawRate, RC_tuning.RC_YAW_EXPO, this.useSuperExpo);
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
     }

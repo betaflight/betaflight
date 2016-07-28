@@ -40,7 +40,6 @@ var RXFAIL_CONFIG;
 var PID_ADVANCED_CONFIG;
 var FILTER_CONFIG;
 var ADVANCED_TUNING;
-var SPECIAL_PARAMETERS;
 var SENSOR_CONFIG;
 
 var FC = {
@@ -111,7 +110,8 @@ var FC = {
             throttle_MID:    0,
             throttle_EXPO:   0,
             dynamic_THR_breakpoint: 0,
-        	RC_YAW_EXPO:         0
+            RC_YAW_EXPO:     0,
+            rcYawRate:       0
         };
         
         AUX_CONFIG = [];
@@ -266,15 +266,15 @@ var FC = {
             yawItermIgnoreRate:       0,
             yaw_p_limit:              0,
             deltaMethod:              0,
-            vbatPidCompensation:      0
+            vbatPidCompensation:      0,
+            ptermSetpointWeight:      0,
+            dtermSetpointWeight:      0,
+            toleranceBand:            0,
+            toleranceBandReduction:   0,
+            itermThrottleGain:        0,
+            pidMaxVelocity:           0,
+            pidMaxVelocityYaw:        0
         };
-
-        SPECIAL_PARAMETERS = {
-            RC_RATE_YAW:              0,
-            airModeActivateThreshold: 0,
-            rcSmoothInterval:         0,
-            escDesyncProtection:      0
-         };
 
         SENSOR_CONFIG = {
             acc_hardware:             0,
@@ -289,7 +289,10 @@ var FC = {
             mincheck:               0,
             spektrum_sat_bind:      0,
             rx_min_usec:            0,
-            rx_max_usec:            0
+            rx_max_usec:            0,
+            rcSmoothing:            0,
+            rcSmoothInterval:       0,
+            airModeActivateThreshold: 0
         };
         
         FAILSAFE_CONFIG = {
