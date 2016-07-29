@@ -57,8 +57,7 @@
 #define USE_UART2
 #define USE_UART3
 #define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       5
+#define SERIAL_PORT_COUNT       4
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -72,9 +71,6 @@
 #define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER      TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
 
 #define USE_I2C
