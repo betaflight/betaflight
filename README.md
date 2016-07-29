@@ -2,6 +2,8 @@
 
 ![INAV](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088858-102-inav.png)
 
+[![Join the chat at https://gitter.im/iNavFlight/inav](https://badges.gitter.im/iNavFlight/inav.svg)](https://gitter.im/iNavFlight/inav?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
 ## Important: PID values and scaling
