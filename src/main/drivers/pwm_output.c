@@ -193,13 +193,17 @@ void pwmEnableMotors(void)
 
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
-    TIM_TypeDef *lastTimerPtr = NULL;
-
     for (int index = 0; index < motorCount; index++) {
-        // Force the timer to overflow if it's the first motor to output, or if we change timers
-        if (motors[index]->tim != lastTimerPtr) {
-            lastTimerPtr = motors[index]->tim;
-            timerForceOverflow(motors[index]->tim);
+        bool overflowed = false;
+        // If we have not already overflowed this timer
+        for (int j = 0; j < index; j++) {
+          if (motors[j]->tim == motors[index]->tim) {
+            overflowed = true;
+            break;
+          }
+        }
+        if (!overflowed) {
+          timerForceOverflow(motors[index]->tim);
         }
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
         // This compare register will be set to the output value on the next main loop.
