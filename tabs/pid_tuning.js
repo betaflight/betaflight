@@ -14,7 +14,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
     MSP.promise(MSP_codes.MSP_STATUS).then(function() {
-        if (GUI.canChangePidController) {
+        if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
             return MSP.promise(MSP_codes.MSP_PID_CONTROLLER);
         }
         return true;
