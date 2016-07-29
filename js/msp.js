@@ -904,10 +904,15 @@ var MSP = {
                 offset += 2;
                 RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
                 offset += 2;
-                RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
-                RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
-                RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
-                offset += 2;
+                if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                    RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
+                    RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
+                    RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
+                } else {
+                    RX_CONFIG.rcSmoothing = 0;
+                    RX_CONFIG.rcSmoothInterval = 0;
+                    RX_CONFIG.airModeActivateThreshold = 0;
+                }
                 break;
 
             case MSP_codes.MSP_FAILSAFE_CONFIG:
@@ -960,7 +965,7 @@ var MSP = {
                 break;
 
             case MSP_codes.MSP_PID_ADVANCED:
-                if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
                     var offset = 0;
                     ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1);
                     offset += 2;
@@ -970,15 +975,24 @@ var MSP = {
                     offset += 2;
                     ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
                     ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.ptermSetpointWeight = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.dtermSetpointWeight = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.toleranceBand = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.toleranceBandReduction = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.itermThrottleGain = data.getUint8(offset++, 1);
-                    ADVANCED_TUNING.pidMaxVelocity = data.getUint16(offset, 1);
-                    offset += 2;
-                    ADVANCED_TUNING.pidMaxVelocityYaw = data.getUint16(offset, 1);
-                    offset += 2;
+                    if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                        ADVANCED_TUNING.ptermSetpointWeight = data.getUint8(offset++, 1);
+                        ADVANCED_TUNING.dtermSetpointWeight = data.getUint8(offset++, 1);
+                        ADVANCED_TUNING.toleranceBand = data.getUint8(offset++, 1);
+                        ADVANCED_TUNING.toleranceBandReduction = data.getUint8(offset++, 1);
+                        ADVANCED_TUNING.itermThrottleGain = data.getUint8(offset++, 1);
+                        ADVANCED_TUNING.pidMaxVelocity = data.getUint16(offset, 1);
+                        offset += 2;
+                        ADVANCED_TUNING.pidMaxVelocityYaw = data.getUint16(offset, 1);
+                    } else {
+                        ADVANCED_TUNING.ptermSetpointWeight = 0;
+                        ADVANCED_TUNING.dtermSetpointWeight = 0;
+                        ADVANCED_TUNING.toleranceBand = 0;
+                        ADVANCED_TUNING.toleranceBandReduction = 0;
+                        ADVANCED_TUNING.itermThrottleGain = 0;
+                        ADVANCED_TUNING.pidMaxVelocity = 0;
+                        ADVANCED_TUNING.pidMaxVelocityYaw = 0;
+                    }
                 }
                 break;
             case MSP_codes.MSP_SENSOR_CONFIG:
@@ -1639,19 +1653,21 @@ MSP.crunch = function (code) {
               .push16(FILTER_CONFIG.yaw_lpf_hz);
             break;
         case MSP_codes.MSP_SET_PID_ADVANCED:
-            if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+            if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
-                .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-                .push16(ADVANCED_TUNING.yaw_p_limit)
-                .push8(ADVANCED_TUNING.deltaMethod)
-                .push8(ADVANCED_TUNING.vbatPidCompensation)
-                .push8(ADVANCED_TUNING.ptermSetpointWeight)
-                .push8(ADVANCED_TUNING.dtermSetpointWeight)
-                .push8(ADVANCED_TUNING.toleranceBand)
-                .push8(ADVANCED_TUNING.toleranceBandReduction)
-                .push8(ADVANCED_TUNING.itermThrottleGain)
-                .push16(ADVANCED_TUNING.pidMaxVelocity)
-                .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
+                    .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                    .push16(ADVANCED_TUNING.yaw_p_limit)
+                    .push8(ADVANCED_TUNING.deltaMethod);
+                if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
+                    buffer.push8(ADVANCED_TUNING.vbatPidCompensation)
+                        .push8(ADVANCED_TUNING.ptermSetpointWeight)
+                        .push8(ADVANCED_TUNING.dtermSetpointWeight)
+                        .push8(ADVANCED_TUNING.toleranceBand)
+                        .push8(ADVANCED_TUNING.toleranceBandReduction)
+                        .push8(ADVANCED_TUNING.itermThrottleGain)
+                        .push16(ADVANCED_TUNING.pidMaxVelocity)
+                        .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
+                }
             }
             break;
         case MSP_codes.MSP_SET_SENSOR_CONFIG:
