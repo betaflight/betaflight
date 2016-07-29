@@ -180,11 +180,12 @@
 
 #undef GPS_PROTO_NAZA
 
-#ifdef CC3D_OPBL
+#ifdef OPBL
 
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
-#define TARGET_MOTOR_COUNT 6
+#define TARGET_MOTOR_COUNT 4
+#undef USE_SONAR
 #else
 #define TARGET_MOTOR_COUNT 4
 #undef USE_SONAR_SRF10
@@ -196,7 +197,8 @@
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
 
-#endif //CC3D_OPBL
+#endif //OPBL
+
 
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
