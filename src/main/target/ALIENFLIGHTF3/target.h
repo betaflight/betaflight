@@ -72,6 +72,7 @@
 #define USE_UART2 // Receiver - RX (PA3)
 #define USE_UART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT       4
+#define AVOID_UART3_FOR_PWM_PPM
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7

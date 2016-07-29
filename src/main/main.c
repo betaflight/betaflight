@@ -118,7 +118,6 @@ serialPort_t *loopbackPort;
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
@@ -248,7 +247,15 @@ void init(void)
 
     dmaInit();
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+#if defined(AVOID_UART2_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+#elif defined(AVOID_UART3_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+#else
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
 
 #ifdef USE_SERVOS
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
@@ -313,7 +320,7 @@ void init(void)
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
@@ -709,7 +716,7 @@ void main_init(void)
         }
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
     }
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER

@@ -204,8 +204,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 50;
-    pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->I8[PITCH] = 55;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -239,10 +239,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
+    pidProfile->ptermSetpointWeight = 75;
+    pidProfile->dtermSetpointWeight = 0;
+    pidProfile->pidMaxVelocity = 1000;
+    pidProfile->pidMaxVelocityYaw = 50;
     pidProfile->toleranceBand = 15;
-    pidProfile->toleranceBandReduction = 35;
-    pidProfile->zeroCrossAllowanceCount = 3;
-    pidProfile->accelerationLimitPercent = 20;
+    pidProfile->toleranceBandReduction = 40;
+    pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 10;
 
 #ifdef GTUNE
@@ -524,7 +527,8 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
+    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_OFF;
+    masterConfig.rxConfig.rcSmoothInterval = 9;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
 #ifdef STM32F4
     masterConfig.rxConfig.max_aux_channel = 99;
