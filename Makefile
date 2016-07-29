@@ -406,6 +406,7 @@ COMMON_SRC = \
             io/serial_msp.c \
             io/statusindicator.c \
             rx/ibus.c \
+            rx/jetiexbus.c \
             rx/msp.c \
             rx/nrf24.c \
             rx/nrf24_cx10.c \
@@ -552,6 +553,7 @@ TARGET_SRC += $(VCP_SRC)
 endif
 # end target specific make file checks
 
+
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 
@@ -613,6 +615,7 @@ LDFLAGS     = -lm \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
+              -Wl,--no-wchar-size-warning \
               -T$(LD_SCRIPT)
 
 ###############################################################################
