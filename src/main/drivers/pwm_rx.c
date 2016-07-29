@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#ifndef SKIP_RX_PWM_PPM
+
 #include "build_config.h"
 #include "debug.h"
 
@@ -419,3 +421,4 @@ uint16_t pwmRead(uint8_t channel)
 {
     return captures[channel];
 }
+#endif

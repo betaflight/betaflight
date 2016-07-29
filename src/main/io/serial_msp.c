@@ -103,11 +103,12 @@ static serialPort_t *mspSerialPort;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
-extern void resetPidProfile(pidProfile_t *pidProfile);
+extern void resetProfile(profile_t *profile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
     const uint8_t boxId;         // see boxId_e
@@ -186,6 +187,8 @@ STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 STATIC_UNIT_TESTED mspPort_t *currentPort;
 STATIC_UNIT_TESTED bufWriter_t *writer;
+
+#define RATEPROFILE_MASK (1 << 7)
 
 static void serialize8(uint8_t a)
 {
@@ -514,12 +517,15 @@ void mspInit(serialConfig_t *serialConfig)
 
     activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
+#ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-
+#endif
+#ifdef SONAR
     if (feature(FEATURE_SONAR)){
         activeBoxIds[activeBoxIdCount++] = BOXSONAR;
     }
+#endif
 
 #ifdef USE_SERVOS
     if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
@@ -673,7 +679,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_STATUS_EX:
-        headSerialReply(14);
+        headSerialReply(15);
         serialize16(cycleTime);
 #ifdef USE_I2C
         serialize16(i2cGetErrorCounter());
@@ -682,9 +688,10 @@ static bool processOutCommand(uint8_t cmdMSP)
 #endif
         serialize16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         serialize32(packFlightModeFlags());
-        serialize8(masterConfig.current_profile_index);
+        serialize8(getCurrentProfile());
         serialize16(constrain(averageSystemLoadPercent, 0, 100));
         serialize8(MAX_PROFILE_COUNT);
+        serialize8(getCurrentControlRateProfile());
         break;
 
     case MSP_NAME:
@@ -801,7 +808,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16((uint16_t)gyro.targetLooptime);
         break;
     case MSP_RC_TUNING:
-        headSerialReply(11);
+        headSerialReply(12);
         serialize8(currentControlRateProfile->rcRate8);
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
@@ -812,6 +819,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentControlRateProfile->thrExpo8);
         serialize16(currentControlRateProfile->tpa_breakpoint);
         serialize8(currentControlRateProfile->rcYawExpo8);
+        serialize8(currentControlRateProfile->rcYawRate8);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
@@ -1013,7 +1021,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(12);
+        headSerialReply(16);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
@@ -1021,6 +1029,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
+        serialize8(masterConfig.rxConfig.rcSmoothing);
+        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1214,7 +1225,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.sensorAlignmentConfig.acc_align);
         serialize8(masterConfig.sensorAlignmentConfig.mag_align);
         break;
-    case MSP_PID_ADVANCED_CONFIG :
+    case MSP_ADVANCED_CONFIG :
         headSerialReply(6);
         serialize8(masterConfig.gyro_sync_denom);
         serialize8(masterConfig.pid_process_denom);
@@ -1228,20 +1239,20 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.dterm_lpf_hz);
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
         break;
-    case MSP_ADVANCED_TUNING:
-        headSerialReply(3 * 2 + 2);
+    case MSP_PID_ADVANCED:
+        headSerialReply(17);
         serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
         serialize8(currentProfile->pidProfile.deltaMethod);
         serialize8(currentProfile->pidProfile.vbatPidCompensation);
-        break;
-    case MSP_SPECIAL_PARAMETERS:
-        headSerialReply(1 + 2 + 1 + 2);
-        serialize8(currentControlRateProfile->rcYawRate8);
-        serialize16(masterConfig.rxConfig.airModeActivateThreshold);
-        serialize8(masterConfig.rxConfig.rcSmoothInterval);
-        serialize16(currentProfile->pidProfile.accelerationLimitPercent);
+        serialize8(currentProfile->pidProfile.ptermSetpointWeight);
+        serialize8(currentProfile->pidProfile.dtermSetpointWeight);
+        serialize8(currentProfile->pidProfile.toleranceBand);
+        serialize8(currentProfile->pidProfile.toleranceBandReduction);
+        serialize8(currentProfile->pidProfile.itermThrottleGain);
+        serialize16(currentProfile->pidProfile.pidMaxVelocity);
+        serialize16(currentProfile->pidProfile.pidMaxVelocityYaw);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1260,7 +1271,7 @@ static bool processInCommand(void)
 {
     uint32_t i;
     uint16_t tmp;
-    uint8_t rate;
+    uint8_t value;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1270,19 +1281,29 @@ static bool processInCommand(void)
 #endif
     switch (currentPort->cmdMSP) {
     case MSP_SELECT_SETTING:
-        if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = read8();
-            if (masterConfig.current_profile_index > 1) {
-                masterConfig.current_profile_index = 0;
+        value = read8();
+        if ((value & RATEPROFILE_MASK) == 0) {
+            if (!ARMING_FLAG(ARMED)) {
+                if (value >= MAX_PROFILE_COUNT) {
+                    value = 0;
+                }
+                changeProfile(value);
             }
-            writeEEPROM();
-            readEEPROM();
+        } else {
+            value = value & ~RATEPROFILE_MASK;
+
+            if (value >= MAX_RATEPROFILES) {
+                value = 0;
+            }
+            changeControlRateProfile(value);
         }
+
         break;
     case MSP_SET_HEAD:
         magHold = read16();
         break;
     case MSP_SET_RAW_RC:
+#ifndef SKIP_RX_MSP
         {
             uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
@@ -1297,6 +1318,7 @@ static bool processInCommand(void)
                 rxMspFrameReceive(frame, channelCount);
             }
         }
+#endif
         break;
     case MSP_SET_ACC_TRIM:
         masterConfig.accelerometerTrims.values.pitch = read16();
@@ -1365,16 +1387,19 @@ static bool processInCommand(void)
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
-                rate = read8();
-                currentControlRateProfile->rates[i] = MIN(rate, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                value = read8();
+                currentControlRateProfile->rates[i] = MIN(value, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             }
-            rate = read8();
-            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            value = read8();
+            currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
             if (currentPort->dataSize >= 11) {
                 currentControlRateProfile->rcYawExpo8 = read8();
+            }
+            if (currentPort->dataSize >= 12) {
+                currentControlRateProfile->rcYawRate8 = read8();
             }
         } else {
             headSerialError(0);
@@ -1469,7 +1494,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(&currentProfile->pidProfile);
+        resetProfile(currentProfile);
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
@@ -1645,6 +1670,11 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
+        if (currentPort->dataSize > 12) {
+            masterConfig.rxConfig.rcSmoothing = read8();
+            masterConfig.rxConfig.rcSmoothInterval = read8();
+            masterConfig.rxConfig.airModeActivateThreshold = read16();
+        }
         break;
 
     case MSP_SET_FAILSAFE_CONFIG:
@@ -1788,7 +1818,7 @@ static bool processInCommand(void)
         break;
 #endif
 
-    case MSP_SET_PID_ADVANCED_CONFIG :
+    case MSP_SET_ADVANCED_CONFIG :
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
         masterConfig.use_unsyncedPwm = read8();
@@ -1800,18 +1830,19 @@ static bool processInCommand(void)
         currentProfile->pidProfile.dterm_lpf_hz = read16();
         currentProfile->pidProfile.yaw_lpf_hz = read16();
         break;
-    case MSP_SET_ADVANCED_TUNING:
+    case MSP_SET_PID_ADVANCED:
         currentProfile->pidProfile.rollPitchItermIgnoreRate = read16();
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
         currentProfile->pidProfile.vbatPidCompensation = read8();
-        break;
-    case MSP_SET_SPECIAL_PARAMETERS:
-        currentControlRateProfile->rcYawRate8 = read8();
-        masterConfig.rxConfig.airModeActivateThreshold = read16();
-        masterConfig.rxConfig.rcSmoothInterval = read8();
-        currentProfile->pidProfile.accelerationLimitPercent = read16();
+        currentProfile->pidProfile.ptermSetpointWeight = read8();
+        currentProfile->pidProfile.dtermSetpointWeight = read8();
+        currentProfile->pidProfile.toleranceBand = read8();
+        currentProfile->pidProfile.toleranceBandReduction = read8();
+        currentProfile->pidProfile.itermThrottleGain = read8();
+        currentProfile->pidProfile.pidMaxVelocity = read16();
+        currentProfile->pidProfile.pidMaxVelocityYaw = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();

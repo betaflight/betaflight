@@ -64,17 +64,16 @@
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
-#define CLEANFLIGHT_IDENTIFIER "CLFL"
-#define BETAFLIGHT_IDENTIFIER "BTFL"
 #define BASEFLIGHT_IDENTIFIER "BAFL";
+#define BETAFLIGHT_IDENTIFIER "BTFL"
+#define CLEANFLIGHT_IDENTIFIER "CLFL"
+#define INAV_IDENTIFIER "INAV"
+#define RACEFLIGHT_IDENTIFIER "RCFL"
 
 #define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
-extern const char * const flightControllerIdentifier;
-
 #define FLIGHT_CONTROLLER_VERSION_LENGTH    3
 #define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF
 
-static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define BOARD_IDENTIFIER_LENGTH             4 // 4 UPPER CASE alpha numeric characters that identify the board being used.
 #define BOARD_HARDWARE_REVISION_LENGTH      2
 
@@ -99,8 +98,8 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
 
-#define MSP_NAME                        10
-#define MSP_SET_NAME                    11
+#define MSP_NAME                        10   //out message          Returns user set board name - betaflight
+#define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
 
 
 //
@@ -186,33 +185,36 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define MSP_BLACKBOX_CONFIG             80 //out message         Get blackbox settings
 #define MSP_SET_BLACKBOX_CONFIG         81 //in message          Set blackbox settings
 
-#define MSP_TRANSPONDER_CONFIG          82 //in message          Get transponder settings
-#define MSP_SET_TRANSPONDER_CONFIG      83 //out message         Set transponder settings
+#define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
+#define MSP_SET_TRANSPONDER_CONFIG      83 //in message          Set transponder settings
 
-#define MSP_OSD_CONFIG                  84 //in message          Get osd settings
-#define MSP_SET_OSD_CONFIG              85 //out message         Set osd settings
+#define MSP_OSD_CONFIG                  84 //out message         Get osd settings - betaflight
+#define MSP_SET_OSD_CONFIG              85 //in message          Set osd settings - betaflight
 
-#define MSP_OSD_CHAR_READ               86 //in message          Get osd settings
-#define MSP_OSD_CHAR_WRITE              87 //out message         Set osd settings
+#define MSP_OSD_CHAR_READ               86 //out message         Get osd settings - betaflight
+#define MSP_OSD_CHAR_WRITE              87 //in message          Set osd settings - betaflight
 
-#define MSP_VTX_CONFIG                  88 //in message          Get vtx settings
-#define MSP_SET_VTX_CONFIG              89 //out message         Set vtx settings
+#define MSP_VTX_CONFIG                  88 //out message         Get vtx settings - betaflight
+#define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
 
 // Betaflight Additional Commands
-#define MSP_PID_ADVANCED_CONFIG         90
-#define MSP_SET_PID_ADVANCED_CONFIG     91
+#define MSP_ADVANCED_CONFIG             90
+#define MSP_SET_ADVANCED_CONFIG         91
 
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93
 
-#define MSP_ADVANCED_TUNING             94
-#define MSP_SET_ADVANCED_TUNING         95
+#define MSP_PID_ADVANCED                94
+#define MSP_SET_PID_ADVANCED            95
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
 
-#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
-#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
+//
+// OSD specific
+//
+#define MSP_OSD_VIDEO_CONFIG            180
+#define MSP_SET_OSD_VIDEO_CONFIG        181
 
 //
 // Multwii original MSP commands
@@ -274,14 +276,17 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 // #define MSP_ALARMS               242
 
 #define MSP_EEPROM_WRITE         250    //in message          no param
-
+#define MSP_RESERVE_1            251    //reserved for system usage
+#define MSP_RESERVE_2            252    //reserved for system usage
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
+#define MSP_RESERVE_3            255    //reserved for system usage
 
 // Additional commands that are not compatible with MultiWii
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
+#define MSP_GPSSTATISTICS        166    //out message         get GPS debugging data
 #define MSP_ACC_TRIM             240    //out message         get acc angle trim values
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration

@@ -443,20 +443,21 @@ void esc4wayProcess(serialPort_t *mspPort)
         CRC_check.bytes[1] = ReadByte();
         CRC_check.bytes[0] = ReadByte();
 
-        RX_LED_OFF;
-
         if(CRC_check.word == CRC_in.word) {
             ACK_OUT = ACK_OK;
         } else {
             ACK_OUT = ACK_I_INVALID_CRC;
         }
-
+        
+        TX_LED_ON;
+        
         if (ACK_OUT == ACK_OK)
         {
             // wtf.D_FLASH_ADDR_H=Adress_H;
             // wtf.D_FLASH_ADDR_L=Adress_L;
             ioMem.D_PTR_I = ParamBuf;
 
+            
             switch(CMD) {
                 // ******* Interface related stuff *******
                 case cmd_InterfaceTestAlive:
@@ -522,13 +523,13 @@ void esc4wayProcess(serialPort_t *mspPort)
                 }
                 case cmd_InterfaceSetMode:
                 {
-                    #if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
                     if ((ParamBuf[0] <= imSK) && (ParamBuf[0] >= imSIL_BLB)) {
-                    #elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
                     if ((ParamBuf[0] <= imATM_BLB) && (ParamBuf[0] >= imSIL_BLB)) {
-                    #elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
                     if (ParamBuf[0] == imSK) {
-                    #endif
+#endif
                         CurrentInterfaceMode = ParamBuf[0];
                     } else {
                         ACK_OUT = ACK_I_INVALID_PARAM;
@@ -616,7 +617,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                             //Address = Page * 512
                             ioMem.D_FLASH_ADDR_H = (Dummy.bytes[0] << 1);
                             ioMem.D_FLASH_ADDR_L = 0;
-                            if (!BL_PageErase(&ioMem))  ACK_OUT = ACK_D_GENERAL_ERROR;
+                            if (!BL_PageErase(&ioMem)) ACK_OUT = ACK_D_GENERAL_ERROR;
                             break;
                         }
                         default:
@@ -793,7 +794,8 @@ void esc4wayProcess(serialPort_t *mspPort)
 
         CRCout.word = 0;
 
-        TX_LED_ON;
+        RX_LED_OFF;
+
         serialBeginWrite(port);
         WriteByteCrc(cmd_Remote_Escape);
         WriteByteCrc(CMD);
@@ -812,6 +814,7 @@ void esc4wayProcess(serialPort_t *mspPort)
         WriteByte(CRCout.bytes[1]);
         WriteByte(CRCout.bytes[0]);
         serialEndWrite(port);
+                    
         TX_LED_OFF;
         if (isExitScheduled) {
             esc4wayRelease();

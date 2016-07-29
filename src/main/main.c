@@ -118,7 +118,6 @@ serialPort_t *loopbackPort;
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
@@ -248,7 +247,15 @@ void init(void)
 
     dmaInit();
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+#if defined(AVOID_UART2_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+#elif defined(AVOID_UART3_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+#else
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
 
 #ifdef USE_SERVOS
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
@@ -323,12 +330,13 @@ void init(void)
     if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
-        use_unsyncedPwm = false;
     }
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
+#ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
@@ -689,21 +697,21 @@ void main_init(void)
     rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
-    if(sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
-             case(500):
-             case(375):
-             case(250):
-             case(125):
-                 accTargetLooptime = 1000;
-                 break;
-             default:
-                 case(1000):
+        switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        case 500:
+        case 375:
+        case 250:
+        case 125:
+            accTargetLooptime = 1000;
+            break;
+        default:
+        case 1000:
 #ifdef STM32F10X
-                accTargetLooptime = 3000;
+            accTargetLooptime = 1000;
 #else
-                accTargetLooptime = 1000;
+            accTargetLooptime = 1000;
 #endif
         }
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
