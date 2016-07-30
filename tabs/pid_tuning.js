@@ -687,16 +687,15 @@ TABS.pid_tuning.initialize = function (callback) {
         $('a.update').click(function () {
             form_to_pid_and_rc();
 
-            var promise;
-            if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
-                PID.controller = pidController_e.val();
-                promise = MSP.promise(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER));
-            } else {
-                promise = new Promise(function (resolve) {
-                    resolve();
-                });
-            }
-            promise.then(function () {
+            Promise.resolve(function () {
+                var promise;
+                if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
+                    PID.controller = pidController_e.val();
+                    promise = MSP.promise(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER));
+                }
+
+                return promise;
+            }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID));
             }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_PID_ADVANCED, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED));
