@@ -22,7 +22,7 @@ TABS.pid_tuning.initialize = function (callback) {
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_PID);
     }).then(function () {
-        if (semver.gte(CONFIG.apiVersion, "2.9.0") && semver.lte(CONFIG.apiVersion, "3.0.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lte(CONFIG.apiVersion, "3.0.0")) {
           return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
         }
     }).then(function() {
@@ -703,7 +703,7 @@ TABS.pid_tuning.initialize = function (callback) {
             }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID));
             }).then(function () {
-                if (semver.gte(CONFIG.apiVersion, "2.9.0") && semver.lte(CONFIG.apiVersion, "3.0.0")) {
+                if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lte(CONFIG.apiVersion, "3.0.0")) {
                   return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
                 }
             }).then(function () {
