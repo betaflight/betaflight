@@ -276,6 +276,13 @@ var FC = {
             pidMaxVelocityYaw:        0
         };
 
+        SPECIAL_PARAMETERS = {
+            RC_RATE_YAW:              0,
+            airModeActivateThreshold: 0,
+            rcSmoothInterval:         0,
+            escDesyncProtection:      0
+        };
+
         SENSOR_CONFIG = {
             acc_hardware:             0,
             baro_hardware:            0,

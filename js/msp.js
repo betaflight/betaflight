@@ -59,6 +59,8 @@ var MSP_codes = {
     MSP_SET_PID_ADVANCED:       95,
     MSP_SENSOR_CONFIG:          96,
     MSP_SET_SENSOR_CONFIG:      97,
+    MSP_SPECIAL_PARAMETERS:     98,
+    MSP_SET_SPECIAL_PARAMETERS: 99,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -981,6 +983,16 @@ var MSP = {
                     offset += 2;
                 }
                 break;
+            case MSP_codes.MSP_SPECIAL_PARAMETERS:
+                 var offset = 0;
+                 SPECIAL_PARAMETERS.RC_RATE_YAW = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                      SPECIAL_PARAMETERS.airModeActivateThreshold = data.getUint16(offset, 1);
+                      offset += 2;
+                      SPECIAL_PARAMETERS.rcSmoothInterval = data.getUint8(offset++, 1)
+                      SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                 }
+                 break;
             case MSP_codes.MSP_SENSOR_CONFIG:
                 var offset = 0;
                 SENSOR_CONFIG.acc_hardware = data.getUint8(offset++, 1);
@@ -1652,6 +1664,14 @@ MSP.crunch = function (code) {
                 .push8(ADVANCED_TUNING.itermThrottleGain)
                 .push16(ADVANCED_TUNING.pidMaxVelocity)
                 .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
+            }
+            break;
+        case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
+            buffer.push(Math.round(SPECIAL_PARAMETERS.RC_RATE_YAW * 100));
+            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                buffer.push16(SPECIAL_PARAMETERS.airModeActivateThreshold);
+                buffer.push(SPECIAL_PARAMETERS.rcSmoothInterval);
+                buffer.push16(SPECIAL_PARAMETERS.escDesyncProtection);
             }
             break;
         case MSP_codes.MSP_SET_SENSOR_CONFIG:
