@@ -26,7 +26,7 @@ TABS.pid_tuning.initialize = function (callback) {
           return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
         }
     }).then(function() {
-        if (semver.gte(CONFIG.apiVersion, "2.8.2")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
           return MSP.promise(MSP_codes.MSP_PID_ADVANCED);
         }
     }).then(function() {
