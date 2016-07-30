@@ -179,8 +179,7 @@ void init(void)
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
-    }
-    else {
+    } else {
         ledInit(true);
     }
 #else
@@ -581,10 +580,10 @@ void init(void)
 #ifdef USE_FLASHFS
 #ifdef NAZE
     if (hardwareRevision == NAZE32_REV5) {
-        m25p16_init();
+        m25p16_init(IOTAG_NONE);
     }
 #elif defined(USE_FLASH_M25P16)
-    m25p16_init();
+    m25p16_init(IOTAG_NONE);
 #endif
 
     flashfsInit();
@@ -599,7 +598,11 @@ void init(void)
 
 #if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
     // Ensure the SPI Tx DMA doesn't overlap with the led strip
+#ifdef STM32F4
+    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
+#else
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
+#endif
 #else
     sdcardUseDMA = true;
 #endif
