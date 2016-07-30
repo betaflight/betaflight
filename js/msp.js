@@ -408,11 +408,7 @@ var MSP = {
                     RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                     if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                         RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
-                    } else {
-                        RC_tuning.rcYawRate = 0;
                     }
-                } else {
-                    RC_tuning.RC_YAW_EXPO = 0;
                 }
                 break;
             case MSP_codes.MSP_PID:
@@ -1001,7 +997,7 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SPECIAL_PARAMETERS:
                  var offset = 0;
-                 RC_tuning.yaw_rate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                 RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                  if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                       RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
                       offset += 2;
@@ -1691,7 +1687,7 @@ MSP.crunch = function (code) {
             }
             break;
         case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
-            buffer.push(Math.round(RC_tuning.yaw_rate * 100));
+            buffer.push(Math.round(RC_tuning.rcYawRate * 100));
             if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                 buffer.push16(RX_CONFIG.airModeActivateThreshold);
                 buffer.push(RX_CONFIG.rcSmoothInterval);
