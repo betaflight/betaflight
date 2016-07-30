@@ -58,13 +58,26 @@ void detectHardwareRevision(void)
     if (!IORead(pin1)) {
         if (!IORead(pin2)) {
             hardwareRevision = BJF4_REV3A;
-            return;
         }
         hardwareRevision = BJF4_REV3;
-        return;
     }
 
-    hardwareRevision = BJF4_REV2;    
+    if (hardwareRevision == UNKNOWN) {
+        hardwareRevision = BJF4_REV2;
+        return;
+    }
+    
+    /* 
+        enable the UART1 inversion PC9
+        
+        TODO: once param groups are in place, inverter outputs
+        can be moved to be simple IO outputs, and merely set them
+        HI or LO in configuration.
+    */
+    IO_t uart1invert = IOGetByTag(IO_TAG(PC9));
+    IOInit(uart1invert, OWNER_INVERTER, RESOURCE_OUTPUT, 2);
+    IOConfigGPIO(uart1invert, IOCFG_AF_PP);
+    IOLo(uart1invert);    
 }
 
 void updateHardwareRevision(void)
