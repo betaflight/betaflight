@@ -906,10 +906,12 @@ var MSP = {
                 offset += 2;
                 RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
                 offset += 2;
-                RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
-                RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
-                RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
-                offset += 2;
+                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+                    RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
+                    RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
+                    RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
+                    offset += 2;
+                }
                 break;
 
             case MSP_codes.MSP_FAILSAFE_CONFIG:
