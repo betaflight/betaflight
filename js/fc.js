@@ -278,9 +278,6 @@ var FC = {
         };
 
         SPECIAL_PARAMETERS = {
-            RC_RATE_YAW:              0,
-            airModeActivateThreshold: 0,
-            rcSmoothInterval:         0,
             escDesyncProtection:      0
         };
 
