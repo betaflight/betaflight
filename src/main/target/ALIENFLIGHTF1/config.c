@@ -76,7 +76,8 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(void) {
+void targetConfiguration(void) 
+{
     featureClear(FEATURE_ONESHOT125);
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
