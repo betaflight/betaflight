@@ -1535,7 +1535,7 @@ MSP.crunch = function (code) {
             buffer.push(highByte(RX_CONFIG.rx_min_usec));
             buffer.push(lowByte(RX_CONFIG.rx_max_usec));
             buffer.push(highByte(RX_CONFIG.rx_max_usec));
-            if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                 buffer.push(RX_CONFIG.rcSmoothing);
                 buffer.push(RX_CONFIG.rcSmoothInterval);
                 buffer.push(lowByte(RX_CONFIG.airModeActivateThreshold));
@@ -1658,7 +1658,7 @@ MSP.crunch = function (code) {
                     .push16(ADVANCED_TUNING.yawItermIgnoreRate)
                     .push16(ADVANCED_TUNING.yaw_p_limit)
                     .push8(ADVANCED_TUNING.deltaMethod);
-                if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
+                if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                     buffer.push8(ADVANCED_TUNING.vbatPidCompensation)
                         .push8(ADVANCED_TUNING.ptermSetpointWeight)
                         .push8(ADVANCED_TUNING.dtermSetpointWeight)
