@@ -687,7 +687,8 @@ TABS.pid_tuning.initialize = function (callback) {
         $('a.update').click(function () {
             form_to_pid_and_rc();
 
-            Promise.resolve(function () {
+            Promise.resolve(true)
+            .then(function () {
                 var promise;
                 if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
                     PID.controller = pidController_e.val();
