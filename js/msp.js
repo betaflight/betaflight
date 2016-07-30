@@ -906,11 +906,14 @@ var MSP = {
                 offset += 2;
                 RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
                 offset += 2;
-                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+                if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                     RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
                     RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
                     RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
-                    offset += 2;
+                } else {
+                    RX_CONFIG.rcSmoothing = 0;
+                    RX_CONFIG.rcSmoothInterval = 0;
+                    RX_CONFIG.airModeActivateThreshold = 0;
                 }
                 break;
 
@@ -1546,7 +1549,7 @@ MSP.crunch = function (code) {
             buffer.push(highByte(RX_CONFIG.rx_min_usec));
             buffer.push(lowByte(RX_CONFIG.rx_max_usec));
             buffer.push(highByte(RX_CONFIG.rx_max_usec));
-            if (semver.lt(CONFIG.apiVersion, "1.20.0")) {
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                 buffer.push(RX_CONFIG.rcSmoothing);
                 buffer.push(RX_CONFIG.rcSmoothInterval);
                 buffer.push(lowByte(RX_CONFIG.airModeActivateThreshold));
