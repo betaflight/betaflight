@@ -213,7 +213,8 @@ bool m25p16_init(ioTag_t csTag)
     } else {
 #ifdef M25P16_CS_PIN
         m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
-#else        return false;
+#else
+        return false;
 #endif
     }
     IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI_CS, 0);

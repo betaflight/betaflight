@@ -17,6 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "BJF4"
+#define TARGET_CONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -44,12 +45,12 @@
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define GYRO_MPU6500_ALIGN      CW0_DEG
 
 //#define MAG
 //#define USE_MAG_AK8963
