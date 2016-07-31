@@ -234,15 +234,12 @@ void init(void)
     memset(&pwm_params, 0, sizeof(pwm_params));
 
 #ifdef SONAR
-    sonarGPIOConfig_t sonarGPIOConfig;
     if (feature(FEATURE_SONAR)) {
         const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
         if (sonarHardware) {
-            sonarGPIOConfig.gpio = sonarHardware->echo_gpio;
-            sonarGPIOConfig.triggerPin = sonarHardware->echo_pin;
-            sonarGPIOConfig.echoPin = sonarHardware->trigger_pin;
-            pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
             pwm_params.useSonar = true;
+            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
+            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
         }
     }
 #endif

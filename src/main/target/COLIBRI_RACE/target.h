@@ -19,12 +19,20 @@
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
 
-#define LED0                PC15
-#define LED1                PC14
-#define LED2                PC13
+#define LED0                    PC15
+#define LED1                    PC14
+#define LED2                    PC13
 
-#define BEEPER              PB13
+#define BEEPER                  PB13
 #define BEEPER_INVERTED
+
+// MPU6500 interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI            PA5
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
 #define MPU6500_CS_GPIO                  GPIOA
@@ -47,19 +55,15 @@
 #define SPI1_MOSI_PIN           GPIO_Pin_5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
@@ -132,21 +136,20 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
+#define DEFAULT_FEATURES        FEATURE_VBAT
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

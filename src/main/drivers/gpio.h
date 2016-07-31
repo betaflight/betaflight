@@ -102,8 +102,8 @@ typedef struct
 
 #ifndef UNIT_TEST
 #ifdef STM32F4
-static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRRL = i; }        
-static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BSRRH = i; }        
+static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRRL = i; }
+static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BSRRH = i; }
 #else
 static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRR = i; }
 static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BRR = i; }
@@ -112,6 +112,7 @@ static inline void digitalToggle(GPIO_TypeDef *p, uint16_t i) { p->ODR ^= i; }
 static inline uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) { return p->IDR & i; }
 #endif
 
-void gpioInit(GPIO_TypeDef *gpio, const gpio_config_t *config);
+
+void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config);
 void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc);
 void gpioPinRemapConfig(uint32_t remap, bool enable);

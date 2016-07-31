@@ -17,15 +17,53 @@
 
 #pragma once
 
+#define I2C_SHORT_TIMEOUT            ((uint32_t)0x1000)
+#define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
+#define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
+
+#include "drivers/io.h"
+#include "drivers/rcc.h"
+
+#ifndef I2C_DEVICE
+#define I2C_DEVICE I2CINVALID
+#endif
+
 typedef enum I2CDevice {
-    I2CDEV_1,
+    I2CINVALID = -1,
+    I2CDEV_1   = 0,
     I2CDEV_2,
-    I2CDEV_MAX = I2CDEV_2,
+    I2CDEV_3,
+    I2CDEV_MAX = I2CDEV_3,
 } I2CDevice;
 
-void i2cInit(I2CDevice index);
-bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
-bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data);
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
+typedef struct i2cDevice_s {
+    I2C_TypeDef *dev;
+    ioTag_t scl;
+    ioTag_t sda;
+    rccPeriphTag_t rcc;
+    bool overClock;
+#if !defined(STM32F303xC)
+    uint8_t ev_irq;
+    uint8_t er_irq;
+#endif
+} i2cDevice_t;
+
+typedef struct i2cState_s {
+    volatile bool error;
+    volatile bool busy;
+    volatile uint8_t addr;
+    volatile uint8_t reg;
+    volatile uint8_t bytes;
+    volatile uint8_t writing;
+    volatile uint8_t reading;
+    volatile uint8_t* write_p;
+    volatile uint8_t* read_p;
+} i2cState_t;
+
+void i2cSetOverclock(uint8_t overClock);
+void i2cInit(I2CDevice device);
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
+bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
+
 uint16_t i2cGetErrorCounter(void);
-void i2cSetOverclock(uint8_t OverClock);

@@ -39,10 +39,10 @@
 
 #define USE_USART1
 #define USE_USART2
-#define SERIAL_PORT_COUNT 2
+#define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -72,9 +72,9 @@
 #define USE_RX_V202
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_REF
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_H8_3D
+#define NRF24_DEFAULT_PROTOCOL  NRF24RX_H8_3D
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_CX10A
-#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
+//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
 #define SKIP_RX_PWM_PPM
@@ -103,8 +103,8 @@
 
 
 // IO - assuming all IOs on 48pin package TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))

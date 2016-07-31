@@ -20,29 +20,30 @@
 #define TARGET_BOARD_IDENTIFIER "AFF3" // ALIENFLIGHTF3
 
 #define USE_HARDWARE_REVISION_DETECTION
-#define HW_PIN                PB2
+#define HW_PIN                  PB2
 
 // LED's V1
-#define LED0                  PB4
-#define LED1                  PB5
+#define LED0                    PB4
+#define LED1                    PB5
 
 // LED's V2
-#define LED0_A                PB8
-#define LED1_A                PB9
+#define LED0_A                  PB8
+#define LED1_A                  PB9
 
-#define BEEPER                PA5
+#define BEEPER                  PA5
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USE_EXTI
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 // Using MPU6050 for the moment.
 #define GYRO
 #define USE_GYRO_MPU6050
-
 #define GYRO_MPU6050_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
-
 #define ACC_MPU6050_ALIGN CW270_DEG
 
 // No baro support.
@@ -52,14 +53,13 @@
 // No mag support for now (option to use MPU9150 in the future).
 //#define MAG
 //#define USE_MAG_AK8975
-
-#define MAG_AK8975_ALIGN CW0_DEG_FLIP
+//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
 
 #define USE_VCP
 #define USE_USART1 // Not connected - TX (PB6) RX PB7 (AF7)
 #define USE_USART2 // Receiver - RX (PA3)
 #define USE_USART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT   4
 
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
@@ -148,12 +148,12 @@
 #undef TELEMETRY_LTM
 
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )
 

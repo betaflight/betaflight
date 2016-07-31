@@ -21,16 +21,17 @@
 #include <math.h>
 
 #include <platform.h>
-#include "build_config.h"
 
 #ifdef SONAR
+
+#include "build_config.h"
 
 #include "common/maths.h"
 
 #include "config/config.h"
 #include "config/runtime_config.h"
 
-#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
 #include "drivers/rangefinder.h"
@@ -67,34 +68,16 @@ static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(curre
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
             || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
-        sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
-            .trigger_pin = SONAR_PWM_TRIGGER_PIN,
-            .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
-            .echo_pin = SONAR_PWM_ECHO_PIN,
-            .echo_gpio = SONAR_PWM_ECHO_GPIO,
-            .exti_line = SONAR_PWM_EXTI_LINE,
-            .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
-            .exti_irqn = SONAR_PWM_EXTI_IRQN };
+        sonarHcsr04Hardware.triggerTag = IO_TAG(SONAR_TRIGGER_PIN_PWM);
+        sonarHcsr04Hardware.echoTag = IO_TAG(SONAR_ECHO_PIN_PWM);
     } else {
-        sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
-            .trigger_pin = SONAR_TRIGGER_PIN,
-            .trigger_gpio = SONAR_TRIGGER_GPIO,
-            .echo_pin = SONAR_ECHO_PIN,
-            .echo_gpio = SONAR_ECHO_GPIO,
-            .exti_line = SONAR_EXTI_LINE,
-            .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
-            .exti_irqn = SONAR_EXTI_IRQN };
+        sonarHcsr04Hardware.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+        sonarHcsr04Hardware.echoTag = IO_TAG(SONAR_ECHO_PIN);
     }
 #elif defined(SONAR_TRIGGER_PIN)
     UNUSED(currentSensor);
-    sonarHcsr04Hardware = (sonarHcsr04Hardware_t){
-        .trigger_pin = SONAR_TRIGGER_PIN,
-        .trigger_gpio = SONAR_TRIGGER_GPIO,
-        .echo_pin = SONAR_ECHO_PIN,
-        .echo_gpio = SONAR_ECHO_GPIO,
-        .exti_line = SONAR_EXTI_LINE,
-        .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_EXTI_IRQN };
+    sonarHcsr04Hardware.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+    sonarHcsr04Hardware.echoTag = IO_TAG(SONAR_ECHO_PIN);
 #else
 #error Sonar not defined for target
 #endif

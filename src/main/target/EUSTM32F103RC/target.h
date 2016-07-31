@@ -19,20 +19,20 @@
 
 #define TARGET_BOARD_IDENTIFIER "EUF1"
 
-#define LED0                PB3
-#define LED1                PB4
+#define LED0                    PB3
+#define LED1                    PB4
 
-#define INVERTER            PB2
-#define INVERTER_USART USART2
+#define INVERTER                PB2
+#define INVERTER_USART          USART2
 
-#define MPU6000_CS_GPIO       GPIOB
-#define MPU6000_CS_PIN        GPIO_Pin_12
-#define MPU6000_SPI_INSTANCE  SPI2
+#define MPU6000_CS_GPIO         GPIOB
+#define MPU6000_CS_PIN          GPIO_Pin_12
+#define MPU6000_SPI_INSTANCE    SPI2
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOB
-#define MPU6500_CS_GPIO       GPIOB
-#define MPU6500_CS_PIN        GPIO_Pin_12
-#define MPU6500_SPI_INSTANCE  SPI2
+#define MPU6500_CS_GPIO         GPIOB
+#define MPU6500_CS_PIN          GPIO_Pin_12
+#define MPU6500_SPI_INSTANCE    SPI2
 
 #define GYRO
 #define USE_FAKE_GYRO
@@ -43,7 +43,7 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500
 
-#define GYRO_MPU6050_ALIGN CW0_DEG
+#define GYRO_MPU6050_ALIGN      CW0_DEG
 
 #define ACC
 #define USE_FAKE_ACC
@@ -54,34 +54,23 @@
 //#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6050_ALIGN CW0_DEG
+#define ACC_MPU6050_ALIGN       CW0_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
+#define USE_BARO_BMP280
 
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-
-#define MAG_AK8975_ALIGN CW180_DEG_FLIP
-
+#define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
 #define SONAR
-#define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
-#define SONAR_PWM_TRIGGER_GPIO      GPIOB
-#define SONAR_PWM_ECHO_PIN          Pin_9   // PWM6 (PB9) - 5v tolerant
-#define SONAR_PWM_ECHO_GPIO         GPIOB
-#define SONAR_PWM_EXTI_LINE         EXTI_Line9
-#define SONAR_PWM_EXTI_PIN_SOURCE   GPIO_PinSource9
-#define SONAR_PWM_EXTI_IRQN         EXTI9_5_IRQn
-#define SONAR_TRIGGER_PIN           Pin_0   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_TRIGGER_GPIO          GPIOB
-#define SONAR_ECHO_PIN              Pin_1   // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
+#define SONAR_TRIGGER_PIN_PWM   PB8
+#define SONAR_ECHO_PIN_PWM      PB9
 
 #define USE_USART1
 #define USE_USART2
@@ -118,11 +107,10 @@
 #define BIND_PIN   Pin_3
 
 // IO - stm32f103RCT6 in 64pin package (TODO)
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(0)|BIT(1)|BIT(2))
 
-
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
 

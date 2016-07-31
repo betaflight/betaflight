@@ -38,8 +38,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6050.h"
 
-extern uint8_t mpuLowPassFilter;
-
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 // MPU6050, Standard address 0x68

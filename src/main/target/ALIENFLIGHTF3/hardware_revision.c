@@ -57,7 +57,6 @@ void updateHardwareRevision(void)
 {
 }
 
-/* !!TODO - this has been deferred
 const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
 {
     // MPU_INT output on V1 PA15
@@ -76,4 +75,3 @@ const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
         return &alienFlightF3V2MPUIntExtiConfig;
     }
 }
-*/

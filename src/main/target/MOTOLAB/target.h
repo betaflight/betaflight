@@ -19,28 +19,26 @@
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 
-#define LED0                PB5 // Blue LEDs - PB5
-#define LED1                PB9 // Green LEDs - PB9
+#define LED0                    PB5 // Blue LEDs - PB5
+#define LED1                    PB9 // Green LEDs - PB9
 
-#define BEEPER              PA0
+#define BEEPER                  PA0
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
-
 // MPU6050 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PA15
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
 #define USE_GYRO_MPU6050
-
-#define GYRO_MPU6050_ALIGN CW180_DEG
+#define GYRO_MPU6050_ALIGN      CW180_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
-
-#define ACC_MPU6050_ALIGN   CW180_DEG
+#define ACC_MPU6050_ALIGN       CW180_DEG
 
 //#define BARO
 //#define USE_BARO_MS5611
@@ -161,12 +159,13 @@
 #undef GPS_PROTO_NAZA
 
 // IO - stm32f303cc in 48pin package
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-// #define TARGET_IO_PORTF (BIT(0)|BIT(1))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+// #define TARGET_IO_PORTF         (BIT(0)|BIT(1))
 // !!TODO - check the following line is correct
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
 

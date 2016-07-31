@@ -20,9 +20,11 @@
 
 #include <math.h>
 
-#include "build_config.h"
-
 #include "platform.h"
+
+#ifdef USE_MAG_MAG3110
+
+#include "build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -39,7 +41,6 @@
 
 #include "compass_mag3110.h"
 
-#ifdef USE_MAG_MAG3110
 
 #define MAG3110_MAG_I2C_ADDRESS     0x0E
 
@@ -62,7 +63,7 @@ bool mag3110detect(mag_t *mag)
     bool ack = false;
     uint8_t sig = 0;
 
-    ack = i2cRead(MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
+    ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
     if (!ack || sig != 0xC4)
         return false;
 
@@ -77,10 +78,10 @@ void mag3110Init()
     bool ack;
     UNUSED(ack);
 
-    ack = i2cWrite(MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG1, 0x01); //  active mode 80 Hz ODR with OSR = 1
+    ack = i2cWrite(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG1, 0x01); //  active mode 80 Hz ODR with OSR = 1
     delay(20);
 
-    ack = i2cWrite(MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG2, 0xA0); // AUTO_MRST_EN + RAW
+    ack = i2cWrite(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG2, 0xA0); // AUTO_MRST_EN + RAW
     delay(10);
 }
 
@@ -93,12 +94,12 @@ bool mag3110Read(int16_t *magData)
     uint8_t status;
     uint8_t buf[6];
 
-    ack = i2cRead(MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_STATUS, 1, &status);
+    ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_STATUS, 1, &status);
     if (!ack || (status & BIT_STATUS_REG_DATA_READY) == 0) {
         return false;
     }
 
-    ack = i2cRead(MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_HXL, 6, buf);
+    ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_HXL, 6, buf);
 
     magData[X] = (int16_t)(buf[0] << 8 | buf[1]);
     magData[Y] = (int16_t)(buf[2] << 8 | buf[3]);

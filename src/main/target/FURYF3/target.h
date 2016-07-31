@@ -19,30 +19,31 @@
 
 #define TARGET_BOARD_IDENTIFIER "FURY"
 
-#define LED0                PC14
+#define LED0                    PC14
 
-#define BEEPER              PC15
+#define BEEPER                  PC15
 #define BEEPER_INVERTED
 
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
 //#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU INT
-
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW180_DEG  // changedkb 270
+#define GYRO_MPU6000_ALIGN      CW180_DEG  // changedkb 270
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW90_DEG  // changedkb 270
+#define GYRO_MPU6500_ALIGN      CW90_DEG  // changedkb 270
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW180_DEG  // changedkb 270
+#define ACC_MPU6000_ALIGN       CW180_DEG  // changedkb 270
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW90_DEG  // changedkb 270
+#define ACC_MPU6500_ALIGN       CW90_DEG  // changedkb 270
 
 #define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
 #define MPU6000_CS_GPIO                  GPIOA
@@ -120,8 +121,6 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 #endif
 
-#define USABLE_TIMER_CHANNEL_COUNT 8
-
 #define USB_IO
 
 #define USE_VCP
@@ -182,13 +181,9 @@
 #define CURRENT_METER_ADC_PIN   PA2
 
 #define SONAR
-#define SONAR_TRIGGER_PIN           Pin_0   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_TRIGGER_GPIO          GPIOB
-#define SONAR_ECHO_PIN              Pin_1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_PIN       PB0 // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_PIN          PB1 // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
@@ -222,13 +217,11 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTF         (BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))
-
-#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
-#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
-#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(16) |TIM_N(17))

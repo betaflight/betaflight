@@ -375,6 +375,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/exti.c \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
             drivers/io.c \
@@ -476,7 +477,8 @@ VCP_SRC = \
             vcp/usb_istr.c \
             vcp/usb_prop.c \
             vcp/usb_pwr.c \
-            drivers/serial_usb_vcp.c
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 endif
 
 STM32F10x_COMMON_SRC = \

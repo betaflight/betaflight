@@ -19,9 +19,10 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build_config.h"
 
 #if defined(SONAR) && defined(USE_SONAR_SRF10)
+
+#include "build_config.h"
 
 #include "drivers/system.h"
 #include "drivers/bus_i2c.h"
@@ -29,6 +30,9 @@
 #include "drivers/rangefinder.h"
 #include "drivers/sonar_srf10.h"
 
+#ifndef SRF10_I2C_INSTANCE
+#define SRF10_I2C_INSTANCE I2CDEV_1
+#endif
 
 // Technical specification is at: http://robot-electronics.co.uk/htm/srf10tech.htm
 #define SRF10_MAX_RANGE_CM 600 // 6m, from SFR10 spec sheet
@@ -94,18 +98,18 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf) {UNUSED(addr
 
 static bool i2c_srf10_send_command(uint8_t command)
 {
-    return i2cWrite(SRF10_AddressI2C, SRF10_WRITE_CommandRegister, command);
+    return i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, SRF10_WRITE_CommandRegister, command);
 }
 
 static bool i2c_srf10_send_byte(uint8_t i2cRegister, uint8_t val)
 {
-    return i2cWrite(SRF10_AddressI2C, i2cRegister, val);
+    return i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, val);
 }
 
 static uint8_t i2c_srf10_read_byte(uint8_t i2cRegister)
 {
     uint8_t byte;
-    i2cRead(SRF10_AddressI2C, i2cRegister, 1, &byte);
+    i2cRead(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, 1, &byte);
     return byte;
 }
 

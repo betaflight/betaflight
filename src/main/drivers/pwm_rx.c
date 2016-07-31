@@ -20,7 +20,6 @@
 
 #include <platform.h>
 
-
 #ifndef SKIP_RX_PWM_PPM
 
 #include "build_config.h"

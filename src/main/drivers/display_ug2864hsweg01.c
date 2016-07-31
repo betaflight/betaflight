@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -25,6 +24,10 @@
 #include "system.h"
 
 #include "display_ug2864hsweg01.h"
+
+#ifndef OLED_I2C_INSTANCE
+#define OLED_I2C_INSTANCE I2CDEV_1
+#endif
 
 #define INVERSE_CHAR_FORMAT 0x7f // 0b01111111
 #define NORMAL_CHAR_FORMAT  0x00 // 0b00000000
@@ -172,12 +175,12 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
 
 static bool i2c_OLED_send_cmd(uint8_t command)
 {
-    return i2cWrite(OLED_address, 0x80, command);
+    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x80, command);
 }
 
 bool i2c_OLED_send_byte(uint8_t val)
 {
-    return i2cWrite(OLED_address, 0x40, val);
+    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x40, val);
 }
 
 void i2c_OLED_clear_display(void)

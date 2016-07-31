@@ -19,24 +19,20 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
-#define LED0                PB4  // Blue (Rev 1 & 2) - PB4
-#define LED1                PB5  // Green (Rev 1) / Red (Rev 2) - PB5
+#define LED0                    PB4  // Blue (Rev 1 & 2) - PB4
+#define LED1                    PB5  // Green (Rev 1) / Red (Rev 2) - PB5
 
-#define BEEPER              PA1
+#define BEEPER                  PA1
 #define BEEPER_INVERTED
-
-#define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
 #define GYRO
 #define USE_GYRO_MPU6050
-
-#define GYRO_MPU6050_ALIGN  CW270_DEG
+#define GYRO_MPU6050_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
-
-#define ACC_MPU6050_ALIGN   CW270_DEG
+#define ACC_MPU6050_ALIGN       CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
@@ -45,8 +41,7 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
 #define USE_MAG_MAG3110
-
-#define MAG_AK8975_ALIGN CW180_DEG_FLIP
+#define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
 #define USE_VCP
 #define USE_USART1 // Conn 1 - TX (PB6) RX PB7 (AF7)
@@ -102,13 +97,8 @@
 #define NAV_MAX_WAYPOINTS       60
 
 #define SONAR
-#define SONAR_TRIGGER_PIN           Pin_2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_TRIGGER_GPIO          GPIOA
-#define SONAR_ECHO_PIN              Pin_1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_PIN       PA2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_PIN          PB1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
 #define LED_STRIP
 #if 1
@@ -151,17 +141,16 @@
 #define BIND_PORT GPIOA
 #define BIND_PIN Pin_3
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // available IO pins (from schematics)
-//#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
-//#define TARGET_IO_PORTB (BIT(0)|BIT(1)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9))
+//#define TARGET_IO_PORTA         (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+//#define TARGET_IO_PORTB         (BIT(0)|BIT(1)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9))
 // !!TODO - check following lines are correct
-#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTB (BIT(0)|BIT(1)|BIT(6)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(12)|BIT(13))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTB         (BIT(0)|BIT(1)|BIT(6)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(12)|BIT(13))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
-
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
 

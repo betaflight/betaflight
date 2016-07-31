@@ -19,16 +19,17 @@
 
 #define TARGET_BOARD_IDENTIFIER "SDF3" // STM Discovery F3
 
-#define LED0                PE8 // Blue LEDs - PE8/PE12
+#define LED0                    PE8 // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1                PE10  // Orange LEDs - PE10/PE14
+#define LED1                    PE10  // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER      PE9 // Red LEDs - PE9/PE13
+#define BEEPER                  PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
 
 #define GYRO
 #define USE_GYRO_L3GD20
@@ -38,7 +39,7 @@
 #define L3GD20_CS_GPIO                  GPIOE
 #define L3GD20_CS_PIN                   GPIO_Pin_3
 
-#define GYRO_L3GD20_ALIGN CW270_DEG
+#define GYRO_L3GD20_ALIGN       CW270_DEG
 
 #define ACC
 #define USE_ACC_LSM303DLHC
@@ -67,13 +68,12 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - 303 in 100pin package
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTE 0xffff
-#define TARGET_IO_PORTF 0x00ff
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTE         0xffff
+#define TARGET_IO_PORTF         0x00ff
 
-
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
 

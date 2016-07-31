@@ -60,6 +60,7 @@ STATIC_UNIT_TESTED uint16_t rxNrf24ReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig,
 STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
 {
     switch (protocol) {
+    default:
 #ifdef USE_RX_V202
     case NRF24RX_V202_250K:
     case NRF24RX_V202_1M:
@@ -98,9 +99,6 @@ STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
         protocolSetRcDataFromPayload = refSetRcDataFromPayload;
         break;
 #endif
-    default:
-        return false;
-        break;
     }
     return true;
 }

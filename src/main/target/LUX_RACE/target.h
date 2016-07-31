@@ -18,14 +18,21 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "LUX"
-#define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define LED0                PC15
-#define LED1                PC14
-#define LED2                PC13
+#define LED0                    PC15
+#define LED1                    PC14
+#define LED2                    PC13
 
-#define BEEPER              PB13
+#define BEEPER                  PB13
 #define BEEPER_INVERTED
+
+// MPU6500 interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI            PA5
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
 #define MPU6500_CS_GPIO                  GPIOA
@@ -43,10 +50,6 @@
 #define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
 #define SPI1_MOSI_PIN           GPIO_Pin_5
 #define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
-
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define GYRO
 #define USE_GYRO_MPU6500
@@ -87,6 +90,7 @@
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 
+#define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC0
@@ -110,11 +114,6 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
 
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
 #define SPEKTRUM_BIND
 // USART1, PC5
 #define BIND_PORT  GPIOC
@@ -129,11 +128,12 @@
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

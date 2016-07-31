@@ -19,10 +19,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "CPM1" // CrazePony MINI
 
+#define BRUSHED_MOTORS
 
-#define LED0                PA11
-#define LED1                PA8
-#define LED2                PB1
+#define LED0                    PA11
+#define LED1                    PA8
+#define LED2                    PB1
 
 #define ACC
 #define USE_ACC_MPU6050
@@ -36,26 +37,20 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-#define BRUSHED_MOTORS
-
 #define USE_USART1
-#define SERIAL_PORT_COUNT 1
+#define SERIAL_PORT_COUNT       1
 
 #define USE_ADC
-
-#define BOARD_HAS_VOLTAGE_DIVIDER
-#define VBAT_ADC_GPIO               GPIOB
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_8
+#define VBAT_ADC_PIN            PB0
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_NRF24
+#define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
 #define USE_RX_NRF24
 #define USE_RX_SYMA
 #define USE_RX_V202
-#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
+#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -84,19 +79,9 @@
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
 
-#if (FLASH_SIZE > 64)
-#define BLACKBOX
-#else
-#define SKIP_TASK_STATISTICS
-#define SKIP_CLI_COMMAND_HELP
-#endif
-
 
 // IO - assuming all IOs on 48pin package TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
 
-#define USED_TIMERS         TIM_N(2)
-
-#define TIMER_APB1_PERIPHERALS RCC_APB1Periph_TIM2
-#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+#define USED_TIMERS             TIM_N(2)
