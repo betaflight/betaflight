@@ -39,6 +39,7 @@ var FAILSAFE_CONFIG;
 var RXFAIL_CONFIG;
 var PID_ADVANCED_CONFIG;
 var FILTER_CONFIG;
+var SPECIAL_PARAMETERS;
 var ADVANCED_TUNING;
 var SENSOR_CONFIG;
 
@@ -274,6 +275,10 @@ var FC = {
             itermThrottleGain:        0,
             pidMaxVelocity:           0,
             pidMaxVelocityYaw:        0
+        };
+
+        SPECIAL_PARAMETERS = {
+            escDesyncProtection:      0
         };
 
         SENSOR_CONFIG = {

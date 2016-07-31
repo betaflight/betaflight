@@ -17,15 +17,20 @@ TABS.pid_tuning.initialize = function (callback) {
         if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
             return MSP.promise(MSP_codes.MSP_PID_CONTROLLER);
         }
-        return true;
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_PIDNAMES)
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_PID);
+    }).then(function () {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lt(CONFIG.flightControllerVersion, "3.0.0")) {
+          return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
+        }
+    }).then(function() {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+          return MSP.promise(MSP_codes.MSP_PID_ADVANCED);
+        }
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_RC_TUNING);
-    }).then(function() {
-        return MSP.promise(MSP_codes.MSP_PID_ADVANCED);
     }).then(function() {
         return MSP.promise(MSP_codes.MSP_FILTER_CONFIG);
     }).then(function() {
@@ -687,35 +692,34 @@ TABS.pid_tuning.initialize = function (callback) {
         $('a.update').click(function () {
             form_to_pid_and_rc();
 
-            var promise;
-            if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
-                PID.controller = pidController_e.val();
-                promise = MSP.promise(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER));
-            } else {
-                promise = new Promise(function (resolve) {
-                    resolve();
-                });
-            }
-            promise.then(function () {
+            Promise.resolve(true)
+            .then(function () {
+                var promise;
+                if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
+                    PID.controller = pidController_e.val();
+                    promise = MSP.promise(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER));
+                }
+                return promise;
+            }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID));
             }).then(function () {
-                return MSP.promise(MSP_codes.MSP_SET_PID_ADVANCED, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED));
-            }).then(function () {
-                var promise;
-                if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-                    promise = MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lt(CONFIG.flightControllerVersion, "3.0.0")) {
+                  return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
                 }
-
-                return promise;
+            }).then(function () {
+                if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                  return MSP.promise(MSP_codes.MSP_SET_PID_ADVANCED, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED));
+                }
+            }).then(function () {
+                if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
+                    return MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                }
             }).then(function () {
                 return MSP.promise(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING));
             }).then(function () {
-                var promise;
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-                    promise = MSP.promise(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG));
+                    return MSP.promise(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG));
                 }
-
-                return promise;
             }).then(function () {
                 return MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
             }).then(function () {

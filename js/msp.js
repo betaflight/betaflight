@@ -59,6 +59,8 @@ var MSP_codes = {
     MSP_SET_PID_ADVANCED:       95,
     MSP_SENSOR_CONFIG:          96,
     MSP_SET_SENSOR_CONFIG:      97,
+    MSP_SPECIAL_PARAMETERS:     98,
+    MSP_SET_SPECIAL_PARAMETERS: 99,
 
     // Multiwii MSP commands
     MSP_IDENT:              100,
@@ -406,11 +408,7 @@ var MSP = {
                     RC_tuning.RC_YAW_EXPO = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
                     if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                         RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
-                    } else {
-                        RC_tuning.rcYawRate = 0;
                     }
-                } else {
-                    RC_tuning.RC_YAW_EXPO = 0;
                 }
                 break;
             case MSP_codes.MSP_PID:
@@ -965,8 +963,8 @@ var MSP = {
                 break;
 
             case MSP_codes.MSP_PID_ADVANCED:
-                if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
-                    var offset = 0;
+                var offset = 0;
+                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
                     ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1);
                     offset += 2;
                     ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1);
@@ -975,26 +973,38 @@ var MSP = {
                     offset += 2;
                     ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
                     ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
-                    if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                        ADVANCED_TUNING.ptermSetpointWeight = data.getUint8(offset++, 1);
-                        ADVANCED_TUNING.dtermSetpointWeight = data.getUint8(offset++, 1);
-                        ADVANCED_TUNING.toleranceBand = data.getUint8(offset++, 1);
-                        ADVANCED_TUNING.toleranceBandReduction = data.getUint8(offset++, 1);
-                        ADVANCED_TUNING.itermThrottleGain = data.getUint8(offset++, 1);
-                        ADVANCED_TUNING.pidMaxVelocity = data.getUint16(offset, 1);
-                        offset += 2;
-                        ADVANCED_TUNING.pidMaxVelocityYaw = data.getUint16(offset, 1);
-                    } else {
-                        ADVANCED_TUNING.ptermSetpointWeight = 0;
-                        ADVANCED_TUNING.dtermSetpointWeight = 0;
-                        ADVANCED_TUNING.toleranceBand = 0;
-                        ADVANCED_TUNING.toleranceBandReduction = 0;
-                        ADVANCED_TUNING.itermThrottleGain = 0;
-                        ADVANCED_TUNING.pidMaxVelocity = 0;
-                        ADVANCED_TUNING.pidMaxVelocityYaw = 0;
-                    }
+                    ADVANCED_TUNING.ptermSetpointWeight = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.dtermSetpointWeight = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.toleranceBand = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.toleranceBandReduction = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.itermThrottleGain = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.pidMaxVelocity = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.pidMaxVelocityYaw = data.getUint16(offset, 1);
+                    offset += 2;
+                }
+                // intentionally supports only 1 version previous to 3.0.0
+                else {
+                    ADVANCED_TUNING.rollPitchItermIgnoreRate = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.yawItermIgnoreRate = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.yaw_p_limit = data.getUint16(offset, 1);
+                    offset += 2;
+                    ADVANCED_TUNING.deltaMethod = data.getUint8(offset++, 1);
+                    ADVANCED_TUNING.vbatPidCompensation = data.getUint8(offset++, 1);
                 }
                 break;
+            case MSP_codes.MSP_SPECIAL_PARAMETERS:
+                 var offset = 0;
+                 RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                      RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
+                      offset += 2;
+                      RX_CONFIG.rcSmoothInterval = data.getUint8(offset++, 1)
+                      SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                 }
+                 break;
             case MSP_codes.MSP_SENSOR_CONFIG:
                 var offset = 0;
                 SENSOR_CONFIG.acc_hardware = data.getUint8(offset++, 1);
@@ -1653,21 +1663,35 @@ MSP.crunch = function (code) {
               .push16(FILTER_CONFIG.yaw_lpf_hz);
             break;
         case MSP_codes.MSP_SET_PID_ADVANCED:
-            if (semver.gte(CONFIG.apiVersion, "1.16.0")) {
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
-                    .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-                    .push16(ADVANCED_TUNING.yaw_p_limit)
-                    .push8(ADVANCED_TUNING.deltaMethod);
-                if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                    buffer.push8(ADVANCED_TUNING.vbatPidCompensation)
-                        .push8(ADVANCED_TUNING.ptermSetpointWeight)
-                        .push8(ADVANCED_TUNING.dtermSetpointWeight)
-                        .push8(ADVANCED_TUNING.toleranceBand)
-                        .push8(ADVANCED_TUNING.toleranceBandReduction)
-                        .push8(ADVANCED_TUNING.itermThrottleGain)
-                        .push16(ADVANCED_TUNING.pidMaxVelocity)
-                        .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
-                }
+                .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                .push16(ADVANCED_TUNING.yaw_p_limit)
+                .push8(ADVANCED_TUNING.deltaMethod)
+                .push8(ADVANCED_TUNING.vbatPidCompensation)
+                .push8(ADVANCED_TUNING.ptermSetpointWeight)
+                .push8(ADVANCED_TUNING.dtermSetpointWeight)
+                .push8(ADVANCED_TUNING.toleranceBand)
+                .push8(ADVANCED_TUNING.toleranceBandReduction)
+                .push8(ADVANCED_TUNING.itermThrottleGain)
+                .push16(ADVANCED_TUNING.pidMaxVelocity)
+                .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
+            }
+            // only supports 1 version pre bf 3.0
+            else {
+                buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
+                      .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                      .push16(ADVANCED_TUNING.yaw_p_limit)
+                      .push8(ADVANCED_TUNING.deltaMethod)
+                      .push8(ADVANCED_TUNING.vbatPidCompensation);
+            }
+            break;
+        case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
+            buffer.push(Math.round(RC_tuning.rcYawRate * 100));
+            if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                buffer.push16(RX_CONFIG.airModeActivateThreshold);
+                buffer.push(RX_CONFIG.rcSmoothInterval);
+                buffer.push16(SPECIAL_PARAMETERS.escDesyncProtection);
             }
             break;
         case MSP_codes.MSP_SET_SENSOR_CONFIG:
