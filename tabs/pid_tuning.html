@@ -58,7 +58,7 @@
                             <th i18n="pidTuningPidSettings"></th>
                         </tr>
                     </table>
-                    <table>
+                    <table class="compensation">
                         <tbody class="features pidTuning">
                             <!-- table generated here -->
                         </tbody>
@@ -69,7 +69,7 @@
                             <td colspan=2>
                                 <div>
                                     <label for="vbatpidcompensation">
-                                        <span i18n="pidTuningVbatPidCompensation"></span>
+                                    <span i18n="pidTuningVbatPidCompensation"></span>
                                     </label>
                                     <div class="helpicon cf_tip" i18n_title="pidTuningVbatPidCompensationHelp"></div>
                                 </div>
@@ -221,9 +221,9 @@
                         <tr>
                             <th colspan="3">
                                 <div class="pid_mode">
-				    <div i18n="pidTuningLevel" style="float:left;"></div>
+                                    <div i18n="pidTuningLevel" style="float:left;"></div>
                                     <div class="helpicon cf_tip" i18n_title="pidTuningLevelHelp"></div>
-				</div>
+                                </div>
                             </th>
                         </tr>
                         <tr class="ANGLE">
@@ -285,41 +285,43 @@
             </div>
             <div class="cf_column third_right">
                 <div class="spacer_left rc_curve">
-                    <table class="cf">
-                        <thead>
-                            <tr>
-                                <th colspan=2>
-                                    <div>
-                                        <div i18n="pidTuningRatesCurve" style="float:left;"></div>
-                                        <div class="helpicon cf_tip" i18n_title="pidTuningRatesTip"></div>
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=2>
-                                    <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
-                                        <div class="rate_curve">
-                                            <canvas height="120px" style="width: 100%; height: 100%"></canvas>
+                    <div class="rc_curve_bg">
+                        <table class="cf">
+                            <thead>
+                                <tr>
+                                    <th colspan=2>
+                                        <div>
+                                            <div i18n="pidTuningRatesCurve" style="float:left;"></div>
+                                            <div class="helpicon cf_tip" i18n_title="pidTuningRatesTip"></div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="new_rates">
-                                <td i18n="pidTuningMaxAngularVelRoll" style="width: 70%"></td>
-                                <td class="maxAngularVelRoll"></td>
-                            </tr>
-                            <tr class="new_rates">
-                                <td i18n="pidTuningMaxAngularVelPitch"></td>
-                                <td class="maxAngularVelPitch"></td>
-                            </tr>
-                            <tr class="new_rates">
-                                <td i18n="pidTuningMaxAngularVelYaw"></td>
-                                <td class="maxAngularVelYaw"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan=2>
+                                        <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                            <div class="rate_curve">
+                                                <canvas height="120px" style="width: 100%; height: 100%"></canvas>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="new_rates">
+                                    <td i18n="pidTuningMaxAngularVelRoll" style="width: 70%"></td>
+                                    <td class="maxAngularVelRoll"></td>
+                                </tr>
+                                <tr class="new_rates">
+                                    <td i18n="pidTuningMaxAngularVelPitch"></td>
+                                    <td class="maxAngularVelPitch"></td>
+                                </tr>
+                                <tr class="new_rates">
+                                    <td i18n="pidTuningMaxAngularVelYaw"></td>
+                                    <td class="maxAngularVelYaw"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="spacer_left topspacer throttle">
                     <table class="cf">

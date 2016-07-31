@@ -262,6 +262,11 @@
     border-right: 0px solid #ccc;
 }
 
+.tab-pid_tuning .compensation td {
+   padding: 5px;
+   }
+
+
 .tab-pid_tuning table td {
     padding: 1px;
     width: 14%;
@@ -526,7 +531,6 @@
     background-color: #f9f9f9;
 }
 
-
 .tab-pid_tuning .profile {
     width: 100px;
 }
@@ -548,7 +552,6 @@
     width: calc(100% - 10px);
 }
 
-
 .tab-pid_tuning .delta {
     width: 150px; 
 }
@@ -558,7 +561,6 @@
     margin-left: 5px;
     width: calc(100% - 10px);
 }
-
 
 .tab-pid_tuning .bracket {
     position: absolute;
@@ -589,4 +591,60 @@
     margin-top: -1px;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
+}
+
+.tab-pid_tuning .pidTuning td {
+    padding: 5px;
+}
+
+.tab-pid_tuning .pidTuning tr {
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+    padding: 0px;
+}
+
+.tab-pid_tuning .pidTuning td:first-child {
+    width: 10%;
+    padding-bottom: 6px;
+    padding-top: 5px;
+}
+
+.tab-pid_tuning .pidTuning td:last-child {
+    width: 40%;
+}
+
+.tab-pid_tuning .pidTuning td {
+width: 50%;
+}
+
+.tab-pid_tuning .new_rates td:first-child {
+    border-bottom-left-radius: 0px;
+    padding-left: 10px;
+}
+
+.tab-pid_tuning .new_rates td:last-child {
+    border-bottom-right-radius: 0px;
+}
+
+.tab-pid_tuning .rc_curve .cf tr  {
+    border-bottom: 1px solid silver;
+}
+
+.tab-pid_tuning .rc_curve .cf tr td {
+    border: none;
+    border-bottom-right-radius: 0px;
+    border-bottom-left-radius: 0px;
+    padding-bottom: 3px;
+}
+
+.tab-pid_tuning .rc_curve_bg {
+    float: left;
+    padding-bottom: 20px;
+    background: #ddd;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    }
+
+.tab-pid_tuning .new_rates_last-child {
+    border-bottom: none;
 }
