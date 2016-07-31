@@ -80,7 +80,7 @@ static void updateBatteryVoltage(uint32_t vbatTimeDelta)
 void updateBattery(uint32_t vbatTimeDelta)
 {
     updateBatteryVoltage(vbatTimeDelta);
-    
+
     /* battery has just been connected*/
     if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
     {
@@ -109,7 +109,7 @@ void updateBattery(uint32_t vbatTimeDelta)
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
-    }    
+    }
 
     switch(batteryState)
     {

@@ -251,7 +251,7 @@ bool adjustFixedWingPositionFromRCInput(void)
 static void updatePositionHeadingController_FW(uint32_t deltaMicros)
 {
     static bool forceTurnDirection = false;
-    
+
     // We have virtual position target, calculate heading error
     int32_t virtualTargetBearing = calculateBearingToDestination(&virtualDesiredPosition);
 

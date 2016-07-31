@@ -94,7 +94,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     float q1q1 = q1 * q1;
     float q2q2 = q2 * q2;
     float q3q3 = q3 * q3;
-    
+
     float q0q1 = q0 * q1;
     float q0q2 = q0 * q2;
     float q0q3 = q0 * q3;
@@ -154,7 +154,7 @@ void imuTransformVectorEarthToBody(t_fp_vector * v)
     float x,y,z;
 
     v->V.Y = -v->V.Y;
-    
+
     /* From earth frame to body frame */
     x = rMat[0][0] * v->V.X + rMat[1][0] * v->V.Y + rMat[2][0] * v->V.Z;
     y = rMat[0][1] * v->V.X + rMat[1][1] * v->V.Y + rMat[2][1] * v->V.Z;

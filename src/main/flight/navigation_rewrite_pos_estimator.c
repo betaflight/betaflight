@@ -235,7 +235,7 @@ static bool detectGPSGlitch(uint32_t currentTime)
             isGlitching = true;
         }
     }
-    
+
     if (!isGlitching) {
         previousTime = currentTime;
         lastKnownGoodPosition = posEstimator.gps.pos;

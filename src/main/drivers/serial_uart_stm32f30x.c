@@ -92,14 +92,14 @@ uartPort_t *serialUSART1(uint32_t baudRate, portMode_t mode, portOptions_t optio
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBuffer = rx1Buffer;
     s->port.txBuffer = tx1Buffer;
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
-    
+
 #ifdef USE_USART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
 #endif
@@ -169,16 +169,16 @@ uartPort_t *serialUSART2(uint32_t baudRate, portMode_t mode, portOptions_t optio
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
-    
+
     s->port.baudRate = baudRate;
-    
+
     s->port.rxBufferSize = UART2_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART2_TX_BUFFER_SIZE;
     s->port.rxBuffer = rx2Buffer;
     s->port.txBuffer = tx2Buffer;
 
     s->USARTx = USART2;
-    
+
 #ifdef USE_USART2_RX_DMA
     s->rxDMAChannel = DMA1_Channel6;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
