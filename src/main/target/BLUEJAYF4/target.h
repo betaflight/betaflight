@@ -33,7 +33,8 @@
 #define LED1                    PB5
 #define LED2                    PB4
 
-#define BEEPER                  PB7
+#define BEEPER                  PC1
+#define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
 #define INVERTER                PB15
