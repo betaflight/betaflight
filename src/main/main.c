@@ -362,6 +362,12 @@ void init(void)
         beeperConfig.isInverted = true;
     }
 #endif
+/* temp until PGs are implemented. */
+#ifdef BLUEJAYF4
+    if (hardwareRevision <= BJF4_REV2) {
+        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+    }
+#endif
 #ifdef CC3D
     if (masterConfig.use_buzzer_p6 == 1)
         beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
