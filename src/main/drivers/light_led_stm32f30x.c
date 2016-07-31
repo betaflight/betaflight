@@ -49,8 +49,8 @@ void ledInit(void)
 #endif
 #ifdef LED2
         {
-        	.gpio = LED2_GPIO,
-        	.cfg = { LED2_PIN, Mode_Out_PP, Speed_2MHz }
+            .gpio = LED2_GPIO,
+            .cfg = { LED2_PIN, Mode_Out_PP, Speed_2MHz }
         }
 #endif
     };

@@ -207,8 +207,8 @@ void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t ind
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
-	ioRec->resource = resource;
-	ioRec->index = index;
+    ioRec->resource = resource;
+    ioRec->index = index;
 }
 
 void IORelease(IO_t io)

@@ -67,7 +67,7 @@
 //      2200µs -> 0xFFF
 // Total range is: 2200 - 800 = 1400 <==> 4095
 // Use formula: 800 + value * 1400 / 4096 (i.e. a shift by 12)
-#define XBUS_CONVERT_TO_USEC(V)	(800 + ((V * 1400) >> 12))
+#define XBUS_CONVERT_TO_USEC(V) (800 + ((V * 1400) >> 12))
 
 static bool xBusFrameReceived = false;
 static bool xBusDataIncoming = false;
