@@ -93,7 +93,7 @@ typedef enum {
 } barometerState_e;
 
 bool isBaroReady(void) {
-	return baroReady;
+    return baroReady;
 }
 
 uint32_t baroUpdate(void)

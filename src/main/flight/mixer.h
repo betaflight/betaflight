@@ -227,7 +227,7 @@ void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         struct escAndServoConfig_s *escAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
-		struct rxConfig_s *rxConfigToUse);
+        struct rxConfig_s *rxConfigToUse);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);

@@ -65,8 +65,8 @@ CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_
  */
 static uint16_t VCP_Init(void)
 {
-	bDeviceState = CONFIGURED;
-	return USBD_OK;
+    bDeviceState = CONFIGURED;
+    return USBD_OK;
 }
 
 /**
@@ -77,8 +77,8 @@ static uint16_t VCP_Init(void)
  */
 static uint16_t VCP_DeInit(void)
 {
-	bDeviceState = UNCONNECTED;
-	return USBD_OK;
+    bDeviceState = UNCONNECTED;
+    return USBD_OK;
 }
 
 void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)

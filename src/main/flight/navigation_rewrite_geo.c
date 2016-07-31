@@ -48,15 +48,15 @@
 #if defined(NAV_AUTO_MAG_DECLINATION)
 /* Declination calculation code from PX4 project */
 /* set this always to the sampling in degrees for the table below */
-#define SAMPLING_RES		10.0f
-#define SAMPLING_MIN_LAT	-60.0f
-#define SAMPLING_MAX_LAT	60.0f
-#define SAMPLING_MIN_LON	-180.0f
-#define SAMPLING_MAX_LON	180.0f
+#define SAMPLING_RES        10.0f
+#define SAMPLING_MIN_LAT    -60.0f
+#define SAMPLING_MAX_LAT    60.0f
+#define SAMPLING_MIN_LON    -180.0f
+#define SAMPLING_MAX_LON    180.0f
 
 static const int8_t declination_table[13][37] = \
 {
-	{ 46, 45, 44, 42, 41, 40, 38, 36, 33, 28, 23, 16, 10, 4, -1, -5, -9, -14, -19, -26, -33, -40, -48, -55, -61, -66, -71, -74, -75, -72, -61, -25, 22, 40, 45, 47, 46 },
+    { 46, 45, 44, 42, 41, 40, 38, 36, 33, 28, 23, 16, 10, 4, -1, -5, -9, -14, -19, -26, -33, -40, -48, -55, -61, -66, -71, -74, -75, -72, -61, -25, 22, 40, 45, 47, 46 },
     { 30, 30, 30, 30, 29, 29, 29, 29, 27, 24, 18, 11, 3, -3, -9, -12, -15, -17, -21, -26, -32, -39, -45, -51, -55, -57, -56, -53, -44, -31, -14, 0, 13, 21, 26, 29, 30 },
     { 21, 22, 22, 22, 22, 22, 22, 22, 21, 18, 13, 5, -3, -11, -17, -20, -21, -22, -23, -25, -29, -35, -40, -44, -45, -44, -40, -32, -22, -12, -3, 3, 9, 14, 18, 20, 21 },
     { 16, 17, 17, 17, 17, 17, 16, 16, 16, 13, 8, 0, -9, -16, -21, -24, -25, -25, -23, -20, -21, -24, -28, -31, -31, -29, -24, -17, -9, -3, 0, 4, 7, 10, 13, 15, 16 },
@@ -73,64 +73,64 @@ static const int8_t declination_table[13][37] = \
 
 static float get_lookup_table_val(unsigned lat_index, unsigned lon_index)
 {
-	return declination_table[lat_index][lon_index];
+    return declination_table[lat_index][lon_index];
 }
 
 float geoCalculateMagDeclination(gpsLocation_t * llh) // degrees units
 {
-	/*
-	 * If the values exceed valid ranges, return zero as default
-	 * as we have no way of knowing what the closest real value
-	 * would be.
-	 */
+    /*
+     * If the values exceed valid ranges, return zero as default
+     * as we have no way of knowing what the closest real value
+     * would be.
+     */
     float lat = llh->lat / 10000000.0f;
     float lon = llh->lon / 10000000.0f;
 
-	if (lat < -90.0f || lat > 90.0f ||
-	    lon < -180.0f || lon > 180.0f) {
-		return 0.0f;
-	}
+    if (lat < -90.0f || lat > 90.0f ||
+        lon < -180.0f || lon > 180.0f) {
+        return 0.0f;
+    }
 
-	/* round down to nearest sampling resolution */
-	int min_lat = (int)(lat / SAMPLING_RES) * SAMPLING_RES;
-	int min_lon = (int)(lon / SAMPLING_RES) * SAMPLING_RES;
+    /* round down to nearest sampling resolution */
+    int min_lat = (int)(lat / SAMPLING_RES) * SAMPLING_RES;
+    int min_lon = (int)(lon / SAMPLING_RES) * SAMPLING_RES;
 
-	/* for the rare case of hitting the bounds exactly
-	 * the rounding logic wouldn't fit, so enforce it.
-	 */
+    /* for the rare case of hitting the bounds exactly
+     * the rounding logic wouldn't fit, so enforce it.
+     */
 
-	/* limit to table bounds - required for maxima even when table spans full globe range */
-	if (lat <= SAMPLING_MIN_LAT) {
-		min_lat = SAMPLING_MIN_LAT;
-	}
+    /* limit to table bounds - required for maxima even when table spans full globe range */
+    if (lat <= SAMPLING_MIN_LAT) {
+        min_lat = SAMPLING_MIN_LAT;
+    }
 
-	if (lat >= SAMPLING_MAX_LAT) {
-		min_lat = (int)(lat / SAMPLING_RES) * SAMPLING_RES - SAMPLING_RES;
-	}
+    if (lat >= SAMPLING_MAX_LAT) {
+        min_lat = (int)(lat / SAMPLING_RES) * SAMPLING_RES - SAMPLING_RES;
+    }
 
-	if (lon <= SAMPLING_MIN_LON) {
-		min_lon = SAMPLING_MIN_LON;
-	}
+    if (lon <= SAMPLING_MIN_LON) {
+        min_lon = SAMPLING_MIN_LON;
+    }
 
-	if (lon >= SAMPLING_MAX_LON) {
-		min_lon = (int)(lon / SAMPLING_RES) * SAMPLING_RES - SAMPLING_RES;
-	}
+    if (lon >= SAMPLING_MAX_LON) {
+        min_lon = (int)(lon / SAMPLING_RES) * SAMPLING_RES - SAMPLING_RES;
+    }
 
-	/* find index of nearest low sampling point */
-	unsigned min_lat_index = (-(SAMPLING_MIN_LAT) + min_lat)  / SAMPLING_RES;
-	unsigned min_lon_index = (-(SAMPLING_MIN_LON) + min_lon) / SAMPLING_RES;
+    /* find index of nearest low sampling point */
+    unsigned min_lat_index = (-(SAMPLING_MIN_LAT) + min_lat)  / SAMPLING_RES;
+    unsigned min_lon_index = (-(SAMPLING_MIN_LON) + min_lon) / SAMPLING_RES;
 
-	float declination_sw = get_lookup_table_val(min_lat_index, min_lon_index);
-	float declination_se = get_lookup_table_val(min_lat_index, min_lon_index + 1);
-	float declination_ne = get_lookup_table_val(min_lat_index + 1, min_lon_index + 1);
-	float declination_nw = get_lookup_table_val(min_lat_index + 1, min_lon_index);
+    float declination_sw = get_lookup_table_val(min_lat_index, min_lon_index);
+    float declination_se = get_lookup_table_val(min_lat_index, min_lon_index + 1);
+    float declination_ne = get_lookup_table_val(min_lat_index + 1, min_lon_index + 1);
+    float declination_nw = get_lookup_table_val(min_lat_index + 1, min_lon_index);
 
-	/* perform bilinear interpolation on the four grid corners */
+    /* perform bilinear interpolation on the four grid corners */
 
-	float declination_min = ((lon - min_lon) / SAMPLING_RES) * (declination_se - declination_sw) + declination_sw;
-	float declination_max = ((lon - min_lon) / SAMPLING_RES) * (declination_ne - declination_nw) + declination_nw;
+    float declination_min = ((lon - min_lon) / SAMPLING_RES) * (declination_se - declination_sw) + declination_sw;
+    float declination_max = ((lon - min_lon) / SAMPLING_RES) * (declination_ne - declination_nw) + declination_nw;
 
-	return ((lat - min_lat) / SAMPLING_RES) * (declination_max - declination_min) + declination_min;
+    return ((lat - min_lat) / SAMPLING_RES) * (declination_max - declination_min) + declination_min;
 }
 #endif
 

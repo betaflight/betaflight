@@ -73,7 +73,7 @@ typedef struct {
     uint16_t pdop;  // 40
     uint16_t vdop;  // 42
     uint16_t ndop; // 44
-    uint16_t edop;	// 46
+    uint16_t edop;  // 46
     uint8_t satellites; // 48
     uint8_t reserved3; //
     uint8_t fix_type; // 50
@@ -81,7 +81,7 @@ typedef struct {
     uint8_t fix_status; // 52
     uint8_t reserved5;
     uint8_t reserved6;
-    uint8_t mask;	// 55
+    uint8_t mask;   // 55
 } naza_nav;
 
 enum {
