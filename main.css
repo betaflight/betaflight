@@ -1812,6 +1812,10 @@ input {
     overflow-y: auto;
 }
 
+.jBox-Tooltip {
+max-width: 180px;
+}
+
 }
 
 @media only screen and (max-height: 750px) , only screen and (max-device-height: 750px) {

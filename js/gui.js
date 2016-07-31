@@ -307,6 +307,7 @@ GUI_control.prototype.content_ready = function (callback) {
         });
     });
 
+
     if (callback) callback();
 }
 
