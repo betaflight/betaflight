@@ -272,7 +272,7 @@ void checkSmartPortTelemetryState(void)
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
-    
+
     if (!smartPortTelemetryEnabled) {
         return;
     }
@@ -300,7 +300,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-         
+ 
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back

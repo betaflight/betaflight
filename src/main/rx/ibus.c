@@ -112,7 +112,7 @@ uint8_t ibusFrameStatus(void)
     chksum = 0xFFFF;
     for (i = 0; i < 30; i++)
         chksum -= ibus[i];
-        
+
     rxsum = ibus[30] + (ibus[31] << 8);
 
     if (chksum == rxsum) {
@@ -126,7 +126,7 @@ uint8_t ibusFrameStatus(void)
         ibusChannelData[7] = (ibus[17] << 8) + ibus[16];
         ibusChannelData[8] = (ibus[19] << 8) + ibus[18];
         ibusChannelData[9] = (ibus[21] << 8) + ibus[20];
-        
+
         frameStatus = SERIAL_RX_FRAME_COMPLETE;
     }
 

@@ -1028,7 +1028,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
         sdcard.pendingOperation.blockIndex = blockIndex;
         sdcard.pendingOperation.callback = callback;
         sdcard.pendingOperation.callbackData = callbackData;
-        
+
         sdcard.state = SDCARD_STATE_READING;
 
         sdcard.operationStartTime = millis();

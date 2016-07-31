@@ -1005,7 +1005,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
                                         / (posControl.navConfig->land_slowdown_maxalt - posControl.navConfig->land_slowdown_minalt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
 
             descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
-            
+
             // Do not allow descent velocity slower than -50cm/s so the landing detector works.
             float descentVelLimited = MIN(-descentVelScaling * posControl.navConfig->land_descent_rate, -50.0f);
             updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
@@ -1211,43 +1211,43 @@ static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
     /* If timeout event defined and timeout reached - switch state */
     if ((navFSM[posControl.navState].timeoutMs > 0) && (navFSM[posControl.navState].onEvent[NAV_FSM_EVENT_TIMEOUT] != NAV_STATE_UNDEFINED) &&
             ((currentMillis - lastStateProcessTime) >= navFSM[posControl.navState].timeoutMs)) {
-		/* Update state */
+        /* Update state */
         previousState = navSetNewFSMState(navFSM[posControl.navState].onEvent[NAV_FSM_EVENT_TIMEOUT]);
 
-		/* Call new state's entry function */
-		while (navFSM[posControl.navState].onEntry) {
-			navigationFSMEvent_t newEvent = navFSM[posControl.navState].onEntry(previousState);
+        /* Call new state's entry function */
+        while (navFSM[posControl.navState].onEntry) {
+            navigationFSMEvent_t newEvent = navFSM[posControl.navState].onEntry(previousState);
 
-			if ((newEvent != NAV_FSM_EVENT_NONE) && (navFSM[posControl.navState].onEvent[newEvent] != NAV_STATE_UNDEFINED)) {
+            if ((newEvent != NAV_FSM_EVENT_NONE) && (navFSM[posControl.navState].onEvent[newEvent] != NAV_STATE_UNDEFINED)) {
                 previousState = navSetNewFSMState(navFSM[posControl.navState].onEvent[newEvent]);
-			}
-			else {
-				break;
-			}
-		}
+            }
+            else {
+                break;
+            }
+        }
 
-		lastStateProcessTime  = currentMillis;
+        lastStateProcessTime  = currentMillis;
     }
 
-	/* Inject new event */
-	if (injectedEvent != NAV_FSM_EVENT_NONE && navFSM[posControl.navState].onEvent[injectedEvent] != NAV_STATE_UNDEFINED) {
-		/* Update state */
+    /* Inject new event */
+    if (injectedEvent != NAV_FSM_EVENT_NONE && navFSM[posControl.navState].onEvent[injectedEvent] != NAV_STATE_UNDEFINED) {
+        /* Update state */
         previousState = navSetNewFSMState(navFSM[posControl.navState].onEvent[injectedEvent]);
 
-		/* Call new state's entry function */
-		while (navFSM[posControl.navState].onEntry) {
-			navigationFSMEvent_t newEvent = navFSM[posControl.navState].onEntry(previousState);
+        /* Call new state's entry function */
+        while (navFSM[posControl.navState].onEntry) {
+            navigationFSMEvent_t newEvent = navFSM[posControl.navState].onEntry(previousState);
 
-			if ((newEvent != NAV_FSM_EVENT_NONE) && (navFSM[posControl.navState].onEvent[newEvent] != NAV_STATE_UNDEFINED)) {
+            if ((newEvent != NAV_FSM_EVENT_NONE) && (navFSM[posControl.navState].onEvent[newEvent] != NAV_STATE_UNDEFINED)) {
                 previousState = navSetNewFSMState(navFSM[posControl.navState].onEvent[newEvent]);
-			}
-			else {
-				break;
-			}
-		}
+            }
+            else {
+                break;
+            }
+        }
 
-		lastStateProcessTime  = currentMillis;
-	}
+        lastStateProcessTime  = currentMillis;
+    }
 
     /* Update public system state information */
     NAV_Status.mode = MW_GPS_MODE_NONE;

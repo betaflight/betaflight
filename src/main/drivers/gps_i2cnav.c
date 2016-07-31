@@ -32,7 +32,7 @@
 #define GPS_I2C_INSTANCE I2CDEV_1
 #endif
 
-#define I2C_GPS_ADDRESS               0x20 //7 bits       
+#define I2C_GPS_ADDRESS               0x20 //7 bits   
 
 #define I2C_GPS_STATUS_00             00    //(Read only)
   #define I2C_GPS_STATUS_NEW_DATA       0x01  // New data is available (after every GGA frame)
@@ -50,12 +50,12 @@ bool i2cnavGPSModuleDetect(void)
 {
     bool ack;
     uint8_t i2cGpsStatus;
-    
+
     ack = i2cRead(GPS_I2C_INSTANCE, I2C_GPS_ADDRESS, I2C_GPS_STATUS_00, 1, &i2cGpsStatus); /* status register */
-    
+
     if (ack) 
         return true;
-    
+
     return false;
 }
 

@@ -474,7 +474,7 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
     if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
         pidApplyHeadingLock(pidProfile, &pidState[FD_YAW]);
     }
-    
+
     // Step 4: Run gyro-driven control
     for (int axis = 0; axis < 3; axis++) {
         // Apply PID setpoint controller

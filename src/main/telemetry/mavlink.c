@@ -163,7 +163,7 @@ void configureMAVLinkTelemetryPort(void)
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;
     }
-    
+
     mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
     if (!mavlinkPort) {
@@ -190,9 +190,9 @@ void checkMAVLinkTelemetryState(void)
 void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
-    
+
     uint32_t onboardControlAndSensors = 35843;
-    
+
     /*
     onboard_control_sensors_present Bitmask
     fedcba9876543210
@@ -202,11 +202,11 @@ void mavlinkSendSystemStatus(void)
     0100000000100000    With GPS  = 16416
     0000001111111111
     */
-    
+
     if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
     if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
-    
+
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present. 
         //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure, 
@@ -277,7 +277,7 @@ void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
-    
+
     if (!sensors(SENSOR_GPS))
         return;
 
@@ -388,7 +388,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
     }
 #endif
-    
+
     // select best source for altitude
 #if defined(NAV)
     mavAltitude = getEstimatedActualPosition(Z) / 100.0f;
@@ -399,7 +399,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavAltitude = gpsSol.llh.alt;
     }
 #endif
-    
+
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s
         mavAirSpeed,
@@ -416,11 +416,11 @@ void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    
+
     uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (ARMING_FLAG(ARMED))
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
-        
+
     uint8_t mavSystemType;
     switch(masterConfig.mixerMode)
     {
@@ -454,11 +454,11 @@ void mavlinkSendHUDAndHeartbeat(void)
         default:
             mavSystemType = MAV_TYPE_GENERIC;
             break;
-    }    
-        
+    }
+
     // Custom mode for compatibility with APM OSDs
     uint8_t mavCustomMode = 1;  // Acro by default
-    
+
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
@@ -469,7 +469,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode = 6;      //Return to Launch
     if (FLIGHT_MODE(NAV_POSHOLD_MODE))
         mavCustomMode = 16;     //Position Hold (Earlier called Hybrid)
-    
+
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
         if (failsafeIsActive()) {
@@ -485,7 +485,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     else {
         mavSystemState = MAV_STATE_STANDBY;
     }
-    
+
     mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
         // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
         mavSystemType,
@@ -507,7 +507,7 @@ void processMAVLinkTelemetry(void)
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
         mavlinkSendSystemStatus();
     }
-    
+
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_RC_CHANNELS)) {
         mavlinkSendRCChannelsAndRSSI();
     }
@@ -521,7 +521,7 @@ void processMAVLinkTelemetry(void)
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA1)) {
         mavlinkSendAttitude();
     }
-    
+
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
         mavlinkSendHUDAndHeartbeat();
     }
@@ -536,7 +536,7 @@ void handleMAVLinkTelemetry(void)
     if (!mavlinkPort) {
         return;
     }
-    
+
     uint32_t now = micros();
     if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
         processMAVLinkTelemetry();
