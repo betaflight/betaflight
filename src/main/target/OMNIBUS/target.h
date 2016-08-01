@@ -26,14 +26,11 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 10 // 6 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
-
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
-
+#define USE_EXTI
+#define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI PC13
-#define USE_EXTI
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
@@ -71,7 +68,7 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT       4
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -192,4 +189,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 10 // 6 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
