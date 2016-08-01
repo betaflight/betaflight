@@ -47,17 +47,21 @@ static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
+static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
+static uint8_t gyroSoftLpfType;
 static uint16_t gyroSoftNotchHz;
 static uint8_t gyroSoftNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
+static float gyroDt;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint8_t gyro_soft_notch_q)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint8_t gyro_soft_notch_q, uint8_t gyro_soft_lpf_type)
 {
     gyroConfig = gyroConfigToUse;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
     gyroSoftNotchHz = gyro_soft_notch_hz;
     gyroSoftNotchQ = gyro_soft_notch_q;
+    gyroSoftLpfType = gyro_soft_lpf_type;
 }
 
 void gyroInit(void)
@@ -65,7 +69,10 @@ void gyroInit(void)
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
             biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, ((float) gyroSoftNotchQ) / 10, FILTER_NOTCH);
-            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+            if (gyroSoftLpfType == GYRO_FILTER_BIQUAD)
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+            else
+                gyroDt = gyro.targetLooptime / 1000.0f;
         }
     }
 }
@@ -175,7 +182,11 @@ void gyroUpdate(void)
                 debug[axis*2 + 1] = lrintf(sample);
             }
 
-            gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], sample);;
+            if (gyroSoftLpfType == GYRO_FILTER_BIQUAD) {
+                gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], sample);
+            } else {
+                gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], sample, gyroSoftLpfHz, gyroDt);
+            }
             gyroADC[axis] = lrintf(gyroADCf[axis]);
         }
     } else {

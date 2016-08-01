@@ -497,6 +497,10 @@ static const char * const lookupTableRcSmoothing[] = {
     "OFF", "DEFAULT", "AUTO", "MANUAL"
 };
 
+static const char * const lookupTableGyroSoftLowpassType[] = {
+    "NORMAL", "HIGH"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -534,6 +538,7 @@ typedef enum {
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_DELTA_METHOD,
     TABLE_RC_SMOOTHING,
+    TABLE_GYRO_LOWPASS_TYPE,
 #ifdef OSD
     TABLE_OSD,
 #endif
@@ -571,6 +576,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableDeltaMethod, sizeof(lookupTableDeltaMethod) / sizeof(char *) },
     { lookupTableRcSmoothing, sizeof(lookupTableRcSmoothing) / sizeof(char *) },
+    { lookupTableGyroSoftLowpassType, sizeof(lookupTableGyroSoftLowpassType) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
@@ -742,6 +748,7 @@ const clivalue_t valueTable[] = {
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
+    { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_soft_type, .config.lookup = { TABLE_GYRO_LOWPASS_TYPE } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
     { "gyro_notch_hz",              VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz, .config.minmax = { 0,  500 } },
     { "gyro_notch_q",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_notch_q, .config.minmax = { 1,  100 } },

@@ -240,13 +240,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 0;
+    pidProfile->dtermSetpointWeight = 200;
     pidProfile->pidMaxVelocity = 1000;
     pidProfile->pidMaxVelocityYaw = 50;
-    pidProfile->toleranceBand = 15;
+    pidProfile->toleranceBand = 20;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
-    pidProfile->itermThrottleGain = 10;
+    pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -475,11 +475,12 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
 #endif
-    masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_type = GYRO_FILTER_PT1;
+    masterConfig.gyro_soft_lpf_hz = 80;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_q = 5;
 
-    masterConfig.debug_mode = 0;
+    masterConfig.debug_mode = DEBUG_NONE;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -527,7 +528,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_OFF;
+    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_AUTO;
     masterConfig.rxConfig.rcSmoothInterval = 9;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
@@ -742,7 +743,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q, masterConfig.gyro_soft_type);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
