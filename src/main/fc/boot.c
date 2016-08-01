@@ -361,8 +361,10 @@ void init(void)
     }
 #endif
 
+#ifdef VTX
 #ifdef VTX_RTC6705
     rtc6705Init();
+#endif
 #endif
 
     delay(100);
@@ -480,8 +482,10 @@ void init(void)
     updateHardwareRevision();
 #endif
 
+#ifdef VTX
 #ifdef VTX_RTC6705
     rtc6705SetChannel(5, 1); // raceband channel 1
+#endif
 #endif
 
 #if defined(NAZE)
