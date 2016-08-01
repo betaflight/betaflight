@@ -826,7 +826,7 @@ const clivalue_t valueTable[] = {
     { "pid_max_velocity",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocity, .config.minmax = {0, 2000 } },
     { "pid_max_velocity_yaw",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocityYaw, .config.minmax = {0, 2000 } },
 
-	{ "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
+    { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
@@ -2009,11 +2009,6 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
-
-#ifdef USE_SLOW_SERIAL_CLI
-        delay(2);
-#endif
-
     }
 }
 
@@ -2058,7 +2053,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
 
-	printSectionBreak();
+        printSectionBreak();
         cliPrint("\r\n# name\r\n");
         cliName(NULL);
 
@@ -2089,9 +2084,6 @@ static void cliDump(char *cmdline)
             if (yaw < 0)
                 cliWrite(' ');
             cliPrintf("%s\r\n", ftoa(yaw, buf));
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
         }
 
 #ifdef USE_SERVOS
@@ -2113,10 +2105,6 @@ static void cliDump(char *cmdline)
                 masterConfig.customServoMixer[i].max,
                 masterConfig.customServoMixer[i].box
             );
-
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
         }
 
 #endif
@@ -2128,18 +2116,12 @@ static void cliDump(char *cmdline)
             if (featureNames[i] == NULL)
                 break;
             cliPrintf("feature -%s\r\n", featureNames[i]);
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
         }
         for (i = 0; ; i++) {  // reenable what we want.
             if (featureNames[i] == NULL)
                 break;
             if (mask & (1 << i))
                 cliPrintf("feature %s\r\n", featureNames[i]);
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
         }
 
 #ifdef BEEPER
@@ -2194,9 +2176,6 @@ static void cliDump(char *cmdline)
             for (channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
                 if (servoDirection(i, channel) < 0) {
                     cliPrintf("smix reverse %d %d r\r\n", i , channel);
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
                 }
             }
         }
@@ -2227,9 +2206,6 @@ static void cliDump(char *cmdline)
                 cliPrint("\r\n# restore original rateprofile selection\r\n");
                 changeControlRateProfile(currentRateIndex);
                 cliRateProfile("");
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
             }
 
             cliPrint("\r\n# restore original profile selection\r\n");
@@ -2710,6 +2686,10 @@ static void cliPrint(const char *str)
 {
     while (*str)
         bufWriterAppend(cliWriter, *str++);
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 }
 
 static void cliPutp(void *p, char ch)
@@ -2723,6 +2703,10 @@ static void cliPrintf(const char *fmt, ...)
     va_start(va, fmt);
     tfp_format(cliWriter, cliPutp, fmt, va);
     va_end(va);
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 }
 
 static void cliWrite(uint8_t ch)
@@ -2856,10 +2840,6 @@ static void cliSet(char *cmdline)
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
             cliPrint("\r\n");
-
-#ifdef USE_SLOW_SERIAL_CLI
-            delay(2);
-#endif
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals

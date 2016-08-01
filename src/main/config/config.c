@@ -530,11 +530,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_OFF;
     masterConfig.rxConfig.rcSmoothInterval = 9;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
-#ifdef STM32F4
-    masterConfig.rxConfig.max_aux_channel = 99;
-#else
-    masterConfig.rxConfig.max_aux_channel = 6;
-#endif
+    masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
