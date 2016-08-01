@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FURY"
+#define TARGET_BOARD_IDENTIFIER "FYF3"
 
 #define LED0                    PC14
 
@@ -30,6 +30,16 @@
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU INT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
+
+#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+#define MPU6000_CS_GPIO                  GPIOA
+#define MPU6000_CS_PIN                   GPIO_Pin_4
+#define MPU6000_SPI_INSTANCE             SPI1
+
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+#define MPU6500_CS_GPIO                  GPIOA
+#define MPU6500_CS_PIN                   GPIO_Pin_4
+#define MPU6500_SPI_INSTANCE             SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -44,16 +54,6 @@
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG  // changedkb 270
-
-#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6000_CS_GPIO                  GPIOA
-#define MPU6000_CS_PIN                   GPIO_Pin_4
-#define MPU6000_SPI_INSTANCE             SPI1
-
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO                  GPIOA
-#define MPU6500_CS_PIN                   GPIO_Pin_4
-#define MPU6500_SPI_INSTANCE             SPI1
 
 #define MAG
 #define USE_MAG_AK8975
@@ -155,23 +155,15 @@
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
 #endif
 
-#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 1
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
+#define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-#define I2C1_SCL_GPIO        GPIOB
-#define I2C1_SCL_GPIO_AF     GPIO_AF_4
-#define I2C1_SCL_PIN         GPIO_Pin_8
-#define I2C1_SCL_PIN_SOURCE  GPIO_PinSource8
-#define I2C1_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOB
-#define I2C1_SDA_GPIO        GPIOB
-#define I2C1_SDA_GPIO_AF     GPIO_AF_4
-#define I2C1_SDA_PIN         GPIO_Pin_9
-#define I2C1_SDA_PIN_SOURCE  GPIO_PinSource9
-#define I2C1_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOB
+#define I2C1_SCL_PIN            PB8
+#define I2C1_SDA_PIN            PB9
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
@@ -179,11 +171,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PA1
 #define CURRENT_METER_ADC_PIN   PA2
-
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0 // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_PIN          PB1 // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
@@ -201,13 +188,17 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB0 // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_PIN          PB1 // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 #define NAV_MAX_WAYPOINTS               60
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES FEATURE_BLACKBOX
+#define DEFAULT_FEATURES        FEATURE_BLACKBOX
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // USART3,
