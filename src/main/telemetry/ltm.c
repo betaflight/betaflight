@@ -33,9 +33,9 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #ifdef TELEMETRY
+
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
