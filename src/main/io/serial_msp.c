@@ -471,15 +471,14 @@ void mspInit(serialConfig_t *serialConfig)
     activeBoxIdCount = 0;
     activeBoxIds[activeBoxIdCount++] = BOXARM;
 
+    if (!feature(FEATURE_AIRMODE)) {
+		activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+	}
+
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
-
-    if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
-
-    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
@@ -491,9 +490,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
 
-    if (feature(FEATURE_SERVO_TILT))
-        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
-
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         activeBoxIds[activeBoxIdCount++] = BOXGPSHOME;
@@ -501,10 +497,21 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE)
-        activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
+#ifdef SONAR
+    if (feature(FEATURE_SONAR)) {
+        activeBoxIds[activeBoxIdCount++] = BOXSONAR;
+    }
+#endif
 
-    activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
+    if (feature(FEATURE_FAILSAFE)) {
+        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
+    }
+
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+        activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
+	}
+
+	activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
@@ -512,19 +519,38 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL))
-        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
-
-    activeBoxIds[activeBoxIdCount++] = BOXOSD;
-
-#ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
-        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-#endif
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)){
-        activeBoxIds[activeBoxIdCount++] = BOXSONAR;
+#ifdef BLACKBOX
+    if (feature(FEATURE_BLACKBOX)) {
+        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
     }
+#endif
+
+    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
+    
+    if (feature(FEATURE_3D)) {
+    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
+	}
+
+    if (feature(FEATURE_SERVO_TILT)) {
+        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
+	}
+
+    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
+	}
+	
+	if (feature(FEATURE_OSD)) {
+		activeBoxIds[activeBoxIdCount++] = BOXOSD;
+	}
+	
+#ifdef TELEMETRY
+    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch) {
+        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
+	}
+#endif
+
+#ifdef GTUNE
+    activeBoxIds[activeBoxIdCount++] = BOXGTUNE;
 #endif
 
 #ifdef USE_SERVOS
@@ -533,20 +559,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
     }
-#endif
-
-#ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)){
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
-    }
-#endif
-
-    if (feature(FEATURE_FAILSAFE)){
-        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
-    }
-
-#ifdef GTUNE
-    activeBoxIds[activeBoxIdCount++] = BOXGTUNE;
 #endif
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
