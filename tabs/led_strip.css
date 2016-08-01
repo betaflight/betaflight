@@ -1,10 +1,14 @@
-
+.tab-led-strip .content_wrapper {
+    position: relative !important;
+}
+    
 .tab-led-strip .help {
     padding: 10px;
     background-color: #ffcb18;
     margin-bottom: 10px;
 }
 
+    
 .tab-led-strip .section {
     color: #565656;
     margin: 20px 0 5px 0;
