@@ -16,6 +16,7 @@
 
     /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
 }
+ 
 
 .darkgrey {
     background-color: #575757;
@@ -259,17 +260,17 @@
 }
 
 .tab-osd .display-layout label {
-  margin: .25em .1em;
-  display: inline-block;
+    margin: .25em .1em;
+    display: inline-block;
 }
 
 .tab-osd .display-layout input {
-  margin: .1em 1em;
+    margin: .1em 1em;
 }
 
 .tab-osd .display-layout input.position{
-  width: 5em;
-  border-bottom: 1px solid #ccc
+    width: 5em;
+    border-bottom: 1px solid #ccc
 }
 
 .tab-osd .hide {
@@ -281,34 +282,30 @@
 }
 
 .tab-osd .col {
-  display: inline-block;
+    display: inline-block;
 }
 
 .tab-osd .left {
-  float: left;
+    float: left;
 }
 
 .tab-osd .right {
-  float: right;
-}
-
-.tab-osd .preview {
-  background: url(/images/osd-bg-1.png);
-  background-size: cover;
+    float: right;
+    margin-top: -7px;
 }
 
 .tab-osd .preview .char {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
 }
 
 .tab-osd .preview .char[draggable="true"] {
-  cursor: move;
+    cursor: move;
 }
 
 .tab-osd .preview .row {
-  height: 18px;
+    height: 18px;
 }
 
 .tab-osd .content_wrapper {
@@ -316,11 +313,11 @@
 }
 
 .tab-osd .content_toolbar {
-  text-align: right;
+    text-align: right;
 }
 
 .tab-osd .content_toolbar button {
-  margin-right: 1em;
+    margin-right: 1em;
 }
 
 button {
@@ -337,8 +334,63 @@ button {
     top: 1em;
 }
 
+.tab-osd .display-field {
+    padding-bottom: 4px;
+    padding-top: 4px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-osd .display-field input {
+    float: right;
+    width: 50px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    padding:2px;
+    margin-top: -2px;
+
+}
+
+.tab-osd .display-fields {
+    float: left;
+    margin-top: 5px;
+    margin-bottom: 8px;
+    width: 100%;
+
+}
+
+.spacer_box_title span {
+    font-size: 11px;
+    font-weight: normal;
+    font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
+}
+
+.video-types input {
+    margin-right: 5px;
+}
+
+.video-types label {
+    margin-right: 10px;
+}
+
+
+.tab-osd .display-field:last-child {
+    border-bottom: 0px;
+}
+
+.tab-osd .preview {
+    width: 360px;
+}
+
+.tab-osd .preview {
+    background: url(/images/osd-bg-1.png);
+    background-size: cover;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
-  .tab-osd .content_wrapper {
-      height: calc(100% - 30px);
-  }
+.tab-osd .content_wrapper {
+    height: calc(100% - 30px);
+}
 }

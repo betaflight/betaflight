@@ -255,7 +255,8 @@ OSD.constants = {
     {
       name: 'VTX_CHANNEL',
       default_position: 1,
-      positionable: true
+      positionable: true,
+      preview: 'CH:1'
     },
     {
       name: 'VOLTAGE_WARNING',
@@ -378,6 +379,17 @@ TABS.osd.initialize = function (callback) {
     $('#content').load("./tabs/osd.html", function () {
         // translate to user-selected language
         localize();
+
+        // Open modal window
+        new jBox('Modal', {
+            width: 600,
+            height: 240,
+            closeButton: 'title',
+            animation: false,
+            attach: $('#fontmanager'),
+            title: 'OSD Font Manager',
+            content: $('#fontmanagercontent')
+        });
 
         // 2 way binding... sorta
         function updateOsdView() {
@@ -542,9 +554,10 @@ TABS.osd.initialize = function (callback) {
           });
         };
 
-        $('button.save').click(function() {
+        $('a.save').click(function() {
           var self = this;
           MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
+          GUI.log('OSD settings saved');
           var oldText = $(this).text();
           $(this).html("Saved");
           setTimeout(function () {
@@ -582,7 +595,7 @@ TABS.osd.initialize = function (callback) {
         });
 
         // font upload
-        $('button.flash_font').click(function () {
+        $('a.flash_font').click(function () {
             if (!GUI.connect_lock) { // button disabled while flashing is in progress
                 $('.progressLabel').text('Uploading...');
                 FONT.upload($('.progress').val(0)).then(function() {
