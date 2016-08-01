@@ -472,8 +472,8 @@ void mspInit(serialConfig_t *serialConfig)
     activeBoxIds[activeBoxIdCount++] = BOXARM;
 
     if (!feature(FEATURE_AIRMODE)) {
-		activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-	}
+	activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    }
 
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
@@ -509,9 +509,9 @@ void mspInit(serialConfig_t *serialConfig)
 
     if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
-	}
+    }
 
-	activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
+    activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
 #ifdef LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
@@ -528,25 +528,25 @@ void mspInit(serialConfig_t *serialConfig)
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
     
     if (feature(FEATURE_3D)) {
-    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
-	}
+    	activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
+    }
 
     if (feature(FEATURE_SERVO_TILT)) {
         activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
-	}
+    }
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
-	}
+    }
 	
-	if (feature(FEATURE_OSD)) {
-		activeBoxIds[activeBoxIdCount++] = BOXOSD;
-	}
+    if (feature(FEATURE_OSD)) {
+	activeBoxIds[activeBoxIdCount++] = BOXOSD;
+    }
 	
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch) {
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-	}
+    }
 #endif
 
 #ifdef GTUNE
