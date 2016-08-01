@@ -1708,6 +1708,10 @@ button.active {
     color: #000;
 }
 
+.jBox-Tooltip {
+    max-width: 180px;
+}
+
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
 
@@ -1814,9 +1818,6 @@ input {
     position: initial;
 }
 
-.jBox-Tooltip {
-max-width: 180px;
-}
 
 }
 
