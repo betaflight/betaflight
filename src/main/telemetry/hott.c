@@ -69,8 +69,6 @@
 #include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "config/runtime_config.h"
-
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 
