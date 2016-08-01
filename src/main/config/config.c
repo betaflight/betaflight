@@ -1060,11 +1060,8 @@ void handleOneshotFeatureChangeOnRestart(void)
 {
     // Shutdown PWM on all motors prior to soft restart
     StopPwmAllMotors();
-    delay(50);
-    // Apply additional delay when OneShot125 feature changed from on to off state
-    if (feature(FEATURE_ONESHOT125) && !featureConfigured(FEATURE_ONESHOT125)) {
-        delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
-    }
+    // Apply additional delay
+    delay(ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS);
 }
 
 void latchActiveFeatures()
