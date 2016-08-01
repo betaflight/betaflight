@@ -213,7 +213,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="dterm"]').val(FILTER_CONFIG.dterm_lpf_hz);
         $('.pid_tuning input[name="yaw"]').val(FILTER_CONFIG.yaw_lpf_hz);
 
-        if (semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+        if (semver.lt(CONFIG.flightControllerVersion, "2.9.0")) {
             $('.pid_filter').hide();
             $('.pid_tuning input[name="rc_rate_yaw"]').hide();
         }
