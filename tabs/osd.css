@@ -334,7 +334,7 @@ button {
     display: inline-block;
     position: absolute;
     right: 1em;
-    top: 1em;
+    top: .5em;
 }
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
