@@ -78,7 +78,6 @@ void targetConfiguration(void)
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
