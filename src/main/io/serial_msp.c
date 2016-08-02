@@ -1239,12 +1239,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ADVANCED_CONFIG :
         headSerialReply(6);
-        if (masterConfig.gyro_lpf == 0) {
+        if (masterConfig.gyro_lpf) {
+            serialize8(8); // If gyro_lpf != OFF then looptime is set to 1000
+            serialize8(1);
+        } else {
             serialize8(masterConfig.gyro_sync_denom);
             serialize8(masterConfig.pid_process_denom);
-        } else {
-           serialize8(8); // If gyro_lpf != OFF then looptime is set to 1000
-           serialize8(1);
         }
         serialize8(masterConfig.use_unsyncedPwm);
         serialize8(masterConfig.motor_pwm_protocol);
