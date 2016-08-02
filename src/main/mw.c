@@ -383,15 +383,22 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(HEADING_LOCK);
     }
 
-    /*
-    Flaperon mode
-    */
+    /* Flaperon mode */
     if (IS_RC_MODE_ACTIVE(BOXFLAPERON) && STATE(FLAPERON_AVAILABLE)) {
         if (!FLIGHT_MODE(FLAPERON)) {
             ENABLE_FLIGHT_MODE(FLAPERON);
         }
     } else {
         DISABLE_FLIGHT_MODE(FLAPERON);
+    }
+
+    /* Turn assistant mode */
+    if (IS_RC_MODE_ACTIVE(BOXTURNASSIST)) {
+        if (!FLIGHT_MODE(TURN_ASSISTANT)) {
+            ENABLE_FLIGHT_MODE(TURN_ASSISTANT);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(TURN_ASSISTANT);
     }
 
 #if defined(MAG)

@@ -438,6 +438,26 @@ float pidMagHold(const pidProfile_t *pidProfile)
     return magHoldRate;
 }
 
+/*
+ * TURN ASSISTANT mode is an assisted mode to do a Yaw rotation on a ground plane, allowing one-stick turn in RATE more
+ * and keeping ROLL and PITCH attitude though the turn.
+ */
+static void pidTurnAssistant(pidState_t *pidState)
+{
+    t_fp_vector targetRates;
+
+    targetRates.V.X = 0.0f;
+    targetRates.V.Y = 0.0f;
+    targetRates.V.Z = pidState[YAW].rateTarget;
+
+    imuTransformVectorEarthToBody(&targetRates);
+
+    // Add in roll and pitch, replace yaw completery
+    pidState[ROLL].rateTarget += targetRates.V.X;
+    pidState[PITCH].rateTarget += targetRates.V.Y;
+    pidState[YAW].rateTarget = targetRates.V.Z;
+}
+
 void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
 {
 
@@ -473,6 +493,10 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
     if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
         pidApplyHeadingLock(pidProfile, &pidState[FD_YAW]);
+    }
+
+    if (FLIGHT_MODE(TURN_ASSISTANT)) {
+        pidTurnAssistant(pidState);
     }
 
     // Step 4: Run gyro-driven control

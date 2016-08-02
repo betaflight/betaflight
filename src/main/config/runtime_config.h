@@ -46,6 +46,7 @@ typedef enum {
     NAV_WP_MODE     = (1 << 12),
     HEADING_LOCK    = (1 << 13),
     FLAPERON        = (1 << 14),
+    TURN_ASSISTANT  = (1 << 15),
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

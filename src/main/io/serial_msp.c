@@ -149,6 +149,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXHEADINGLOCK, "HEADING LOCK;", 32 },
     { BOXSURFACE, "SURFACE;", 33 },
     { BOXFLAPERON, "FLAPERON;", 34 },
+    { BOXTURNASSIST, "TURN ASSIST;", 35 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -479,6 +480,7 @@ void mspInit(void)
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
+        activeBoxIds[activeBoxIdCount++] = BOXTURNASSIST;
     }
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
@@ -595,6 +597,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
         IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
+        IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     for (i = 0; i < activeBoxIdCount; i++) {

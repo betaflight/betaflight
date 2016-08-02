@@ -52,6 +52,7 @@ typedef enum {
     BOXHEADINGLOCK,
     BOXSURFACE,
     BOXFLAPERON,
+    BOXTURNASSIST,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
