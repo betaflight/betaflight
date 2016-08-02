@@ -848,7 +848,7 @@ void resetOsdConfig(void)
     masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]   = -1;
     masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]       = -23;
     masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]          = -18;
-    masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]         = -77;
+    masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]         = 1;
 }
 
 #endif
