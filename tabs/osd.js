@@ -244,7 +244,7 @@ OSD.constants = {
       name: 'THROTTLE_POS',
       default_position: -9,
       positionable: true,
-      preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + '  0'
+      preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + ' 69'
     },
     {
       name: 'CPU_LOAD',
