@@ -23,10 +23,11 @@ typedef enum {
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
     MAG_AK8975 = 3,
-    MAG_AK8963 = 4
+    MAG_AK8963 = 4,
+    MAG_IST8303 = 5
 } magSensor_e;
 
-#define MAG_MAX  MAG_AK8963
+#define MAG_MAX  MAG_IST8303
 
 typedef struct compassConfig_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/

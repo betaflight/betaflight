@@ -15,14 +15,14 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= NAZE
+TARGET		?= SPRACINGF3
 
 # Compile-time options
 OPTIONS		?=
 export OPTIONS
 
 # Debugger optons, must be empty or GDB
-DEBUG ?=
+DEBUG ?= GDB
 
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
@@ -679,6 +679,7 @@ SPRACINGF3_SRC = \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/compass_ist8303.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
@@ -698,6 +699,7 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_ak8963.c \
+		   drivers/compass_ist8303.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
