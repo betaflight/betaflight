@@ -89,7 +89,6 @@ pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
 
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-    int i = 0;
     const uint16_t *setup;
 
 #ifndef SKIP_RX_PWM_PPM
@@ -99,6 +98,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
   
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
+    int i = 0;
     if (init->airplane)
         i = 2; // switch to air hardware config
     if (init->usePPM || init->useSerialRx)
@@ -177,8 +177,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #ifdef SONAR
         if (init->useSonar &&
             (
-                timerHardwarePtr->tag == init->sonarConfig.triggerTag ||
-                timerHardwarePtr->tag == init->sonarConfig.echoTag
+                timerHardwarePtr->tag == init->sonarIOConfig.triggerTag ||
+                timerHardwarePtr->tag == init->sonarIOConfig.echoTag
             )) {
             continue;
         }

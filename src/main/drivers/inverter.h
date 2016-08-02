@@ -28,5 +28,3 @@ void inverterSet(bool on);
 
 void initInverter(void);
 
-
-
