@@ -785,8 +785,35 @@
     "pidTuningHideUnusedPids": {
         "message": "Hide unused PIDs"
     },
+    "pidTuningNonProfilePidSettings": {
+        "message": "Profile independent PID Controller Settings"
+    },
     "pidTuningPidSettings": {
         "message": "PID Controller Settings"
+    },
+    "pidTuningRcSmoothing": {
+        "message": "RC Smoothing"
+    },
+    "pidTuningRcSmoothingOff": {
+        "message": "Off"
+    },
+    "pidTuningRcSmoothingDefault": {
+        "message": "Default"
+    },
+    "pidTuningRcSmoothingAuto": {
+        "message": "Auto"
+    },
+    "pidTuningRcSmoothingManual": {
+        "message": "Manual"
+    },
+    "pidTuningRcSmoothingInterval": {
+        "message": "RC Smoothing Interval (ms)"
+    },
+    "pidTuningPtermSetpoint": {
+        "message": "Pterm Setpoint Weight"
+    },
+    "pidTuningDtermSetpoint": {
+        "message": "Dterm Setpoint Weight"
     },
     "pidTuningProportional": {
         "message": "Proportional"
@@ -846,7 +873,7 @@
         "message": "Profile"
     },
     "pidTuningControllerHead": {
-        "message": "PID"
+        "message": "PID Controller"
     },
     "pidTuningResetProfile": {
         "message": "Reset all profile values"
@@ -1766,7 +1793,16 @@
     "pidTuningRateProfileTip": {
         "message": "Up to 3 different rateprofiles per profile can be stored on the flight controller. The rateprofiles include the settings for 'RC Rate', 'Rate', 'RC Expo', 'Throttle', and 'TPA'. Switching between rateprofiles is possible in-flight, by setting up a 3 position switch for 'Rate Profile Selection' on the 'Adjustments' tab."
     },
-    "pidTuningPidTip": {
+    "pidTuningDelta": {
+        "message": "Derivative Method"
+    },
+    "pidTuningDeltaError": {
+        "message": "Error"
+    },
+    "pidTuningDeltaMeasurement": {
+        "message": "Measurement"
+    },
+    "pidTuningDeltaTip": {
         "message": "<b>Derivative from Error</b> provides more direct stick response and is mostly prefered for Racing.<br><br><b>Derivative from Measurement</b> provides smoother stick response what is more usefull for freestyling"
     },
     "pidTuningPidControllerTip": {

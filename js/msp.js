@@ -911,7 +911,9 @@ var MSP = {
                 offset += 2;
                 if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                     RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
+                    offset++;
                     RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
+                    offset++;
                     RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
                 } else {
                     RX_CONFIG.rcSmoothing = 0;
