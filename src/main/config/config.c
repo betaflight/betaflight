@@ -591,7 +591,11 @@ static void resetConf(void)
 #endif
 
     // Radio
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234", &masterConfig.rxConfig);
+#else
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
+#endif
 
     resetRcControlsConfig(&masterConfig.rcControlsConfig);
 
