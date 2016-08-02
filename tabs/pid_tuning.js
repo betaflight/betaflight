@@ -890,3 +890,9 @@ TABS.pid_tuning.checkUpdateProfile = function (updateRateProfile) {
 
     }
 }
+
+TABS.pid_tuning.setUpdating = function (isUpdating) {
+    var self = this;
+
+    self.updating = isUpdating;
+}
