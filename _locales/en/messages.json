@@ -1478,6 +1478,9 @@
     "firmwareFlasherButtonLoadOnline": {
         "message": "Load Firmware [Online]"
     },
+    "firmwareFlasherButtonDownloading": {
+        "message": "Downloading..."
+    },
     "firmwareFlasherFlashFirmware": {
         "message": "Flash Firmware"
     },

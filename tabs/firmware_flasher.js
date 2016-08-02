@@ -274,12 +274,18 @@ TABS.firmware_flasher.initialize = function (callback) {
             function failed_to_load() {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
                 $('a.flash_firmware').addClass('disabled');
+                $("a.load_remote_file").removeClass('disabled');
+                $("a.load_remote_file").text(chrome.i18n.getMessage('firmwareFlasherButtonLoadOnline'));
             }
 
             var summary = $('select[name="firmware_version"] option:selected').data('summary');
             if (summary) { // undefined while list is loading or while running offline
+                $("a.load_remote_file").text(chrome.i18n.getMessage('firmwareFlasherButtonDownloading'));
+                $("a.load_remote_file").addClass('disabled');
                 $.get(summary.url, function (data) {
                     process_hex(data, summary);
+                    $("a.load_remote_file").removeClass('disabled');
+                    $("a.load_remote_file").text(chrome.i18n.getMessage('firmwareFlasherButtonLoadOnline'));
                 }).fail(failed_to_load);
             } else {
                 $('span.progressLabel').text(chrome.i18n.getMessage('firmwareFlasherFailedToLoadOnlineFirmware'));
