@@ -1004,13 +1004,15 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SPECIAL_PARAMETERS:
                 var offset = 0;
-                if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-                    RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
-                } else if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                    RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
-                    offset += 2;
-                    RX_CONFIG.rcSmoothInterval = data.getUint8(offset++, 1)
-                    SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                if (semver.lt(CONFIG.flightControllerVersion, "2.9.1")) {
+                    if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+                        RC_tuning.rcYawRate = parseFloat((data.getUint8(offset++) / 100).toFixed(2));
+                    } else if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+                        RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
+                        offset += 2;
+                        RX_CONFIG.rcSmoothInterval = data.getUint8(offset++, 1)
+                        SPECIAL_PARAMETERS.escDesyncProtection = data.getUint16(offset, 1);
+                    }
                 }
                 break;
             case MSP_codes.MSP_SENSOR_CONFIG:
