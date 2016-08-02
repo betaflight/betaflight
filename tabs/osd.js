@@ -225,83 +225,83 @@ OSD.constants = {
   // order matters, so these are going in an array... pry could iterate the example map instead
   DISPLAY_FIELDS: [
     {
-      name: 'MAIN_BATT_VOLTAGE',
+      name: 'Battery Voltage',
       default_position: -29,
       positionable: true,
       preview: FONT.symbol(SYM.VOLT) + '16.8'
     },
     {
-      name: 'RSSI_VALUE',
+      name: 'RSSI Value',
       default_position: -59,
       positionable: true,
       preview: FONT.symbol(SYM.RSSI) + '99'
     },
     {
-      name: 'TIMER',
+      name: 'Timer',
       default_position: -39,
       positionable: true,
       preview: FONT.symbol(SYM.ON_M) + ' 11:11'
     },
     {
-      name: 'THROTTLE_POS',
+      name: 'Throttle Position',
       default_position: -9,
       positionable: true,
       preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + ' 69'
     },
     {
-      name: 'CPU_LOAD',
+      name: 'CPU Load',
       default_position: 26,
       positionable: true,
       preview: '15'
     },
     {
-      name: 'VTX_CHANNEL',
+      name: 'VTX Channel',
       default_position: 1,
       positionable: true,
       preview: 'CH:1'
     },
     {
-      name: 'VOLTAGE_WARNING',
+      name: 'Voltage Warning',
       default_position: -80,
       positionable: true,
       preview: 'LOW VOLTAGE'
     },
     {
-      name: 'ARMED',
+      name: 'Armed',
       default_position: -107,
       positionable: true,
       preview: 'ARMED'
     },
     {
-      name: 'DISARMED',
+      name: 'Diasrmed',
       default_position: -109,
       positionable: true,
       preview: 'DISARMED'
     },
     {
-      name: 'ARTIFICIAL_HORIZON',
+      name: 'Artificial Horizon',
       default_position: -1,
       positionable: false
     },
     {
-      name: 'HORIZON_SIDEBARS',
+      name: 'Horizon Sidebars',
       default_position: -1,
       positionable: false
     },
     {
-      name: 'OSD_CURRENT_DRAW',
+      name: 'Current Draw',
       default_position: -23,
       positionable: true,
       preview: FONT.symbol(SYM.AMP) + '42.0'
     },
     {
-      name: 'OSD_MAH_DRAWN',
+      name: 'mAh Drawn',
       default_position: -18,
       positionable: true,
       preview: FONT.symbol(SYM.MAH) + '690'
     },
     {
-      name: 'OSD_CRAFT_NAME',
+      name: 'Craft Name',
       default_position: -77,
       positionable: true,
       preview: '[CRAFT_NAME]'
@@ -522,7 +522,7 @@ TABS.osd.initialize = function (callback) {
             }
             var centerishPosition = 194;
             // artificial horizon
-            if ($('input[name="ARTIFICIAL_HORIZON"]').prop('checked')) {
+            if ($('input[name="Artificial Horizon"]').prop('checked')) {
               for (var i = 0; i < 9; i++) {
                 OSD.data.preview[centerishPosition - 4 + i] = SYM.AH_BAR9_0 + 4;
               }
@@ -531,7 +531,7 @@ TABS.osd.initialize = function (callback) {
               OSD.data.preview[centerishPosition]     = SYM.AH_CENTER;
             }
             // sidebars
-            if ($('input[name="HORIZON_SIDEBARS"]').prop('checked')) {
+            if ($('input[name="Horizon Sidebars"]').prop('checked')) {
               var hudwidth  = OSD.constants.AHISIDEBARWIDTHPOSITION;
               var hudheight = OSD.constants.AHISIDEBARHEIGHTPOSITION;
               for (var i = -hudheight; i <= hudheight; i++) {
