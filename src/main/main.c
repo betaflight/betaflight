@@ -124,14 +124,7 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeCol
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 
-#ifdef STM32F303xC
-// from system_stm32f30x.c
 void SetSysClock(void);
-#endif
-#ifdef STM32F10X
-// from system_stm32f10x.c
-void SetSysClock(bool overclock);
-#endif
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -179,14 +172,8 @@ void init(void)
     SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
 #endif
 
-#ifdef STM32F303xC
     SetSysClock();
-#endif
-#ifdef STM32F10X
-    // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
-    // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(masterConfig.emf_avoidance);
-#endif
+
     i2cSetOverclock(masterConfig.i2c_overclock);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

@@ -564,7 +564,6 @@ static void resetConf(void)
     resetSerialConfig(&masterConfig.serialConfig);
 
     masterConfig.looptime = 2000;
-    masterConfig.emf_avoidance = 0;
     masterConfig.i2c_overclock = 0;
     masterConfig.gyroSync = 0;
     masterConfig.gyroSyncDenominator = 2;

@@ -87,7 +87,7 @@ enum {
 };
 
 // Set system clock to 72 (HSE) or 64 (HSI) MHz
-void SetSysClock(bool overclock)
+void SetSysClock(void)
 {
     __IO uint32_t StartUpCounter = 0, status = 0, clocksrc = SRC_NONE;
     __IO uint32_t *RCC_CRH = &GPIOC->CRH;
@@ -149,14 +149,6 @@ void SetSysClock(bool overclock)
 #endif
     switch (clocksrc) {
         case SRC_HSE:
-            if (overclock) {
-                if (RCC_CFGR_PLLMUL == RCC_CFGR_PLLMULL6)
-                    RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL7;
-                else if (RCC_CFGR_PLLMUL == RCC_CFGR_PLLMULL9)
-                    RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL10;
-            }
-            // overclock=false : PLL configuration: PLLCLK = HSE * 9 = 72 MHz || HSE * 6 = 72 MHz
-            // overclock=true  : PLL configuration: PLLCLK = HSE * 10 = 80 MHz || HSE * 7 = 84 MHz
             RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSE | RCC_CFGR_PLLMUL);
             break;
         case SRC_HSI:
