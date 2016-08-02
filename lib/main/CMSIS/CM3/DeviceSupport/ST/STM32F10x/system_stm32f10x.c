@@ -141,7 +141,7 @@ void SetSysClock(bool overclock)
     *RCC_CRH |= (uint32_t)0x8 << (RCC_CFGR_PLLMULL9 >> 16);
     GPIOC->ODR &= (uint32_t)~(CAN_MCR_RESET);
 	
-#if defined(CJMCU)
+#if defined(CJMCU) || defined(CC3D)
     // On CJMCU new revision boards (Late 2014) bit 15 of GPIOC->IDR is '1'.
     RCC_CFGR_PLLMUL = RCC_CFGR_PLLMULL9;
 #else
