@@ -58,7 +58,7 @@
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
-#include "drivers/compass_ist8303.h"
+#include "drivers/compass_ist8310.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -630,11 +630,11 @@ static void detectMag(magSensor_e magHardwareToUse)
 
 #endif
 
-#ifdef USE_MAG_IST8303
-    const ist8303Config_t *ist8303Config = 0;
+#ifdef USE_MAG_IST8310
+    const ist8310Config_t *ist8310Config = 0;
 
 #ifdef SPRACINGF3
-    static const ist8303Config_t spRacingF3Ist8303Config = {
+    static const ist8310Config_t spRacingF3Ist8310Config = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPin = Pin_14,
         .gpioPort = GPIOC,
@@ -644,7 +644,7 @@ static void detectMag(magSensor_e magHardwareToUse)
         .exti_irqn = EXTI15_10_IRQn
     };
 
-    ist8303Config = &spRacingF3Ist8303Config;
+    ist8310Config = &spRacingF3Ist8310Config;
 #endif
 
 #endif
@@ -692,13 +692,13 @@ retry:
         }
 #endif
         ; // fallthrough
-    case MAG_IST8303:
-#ifdef USE_MAG_IST8303
-        if (ist8303Detect(&mag, ist8303Config)) {
-#ifdef MAG_IST8303_ALIGN
-            magAlign = MAG_IST8303_ALIGN;
+    case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+        if (ist8310Detect(&mag, ist8310Config)) {
+#ifdef MAG_IST8310_ALIGN
+            magAlign = MAG_IST8310_ALIGN;
 #endif
-            magHardware = MAG_IST8303;
+            magHardware = MAG_IST8310;
             break;
         }
 #endif
