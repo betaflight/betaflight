@@ -283,7 +283,8 @@ var MSP = {
                 CONFIG.activeSensors = data.getUint16(4, 1);
                 CONFIG.mode = data.getUint32(6, 1);
                 CONFIG.profile = data.getUint8(10);
-                $('.tab-pid_tuning select[name="profilechange"]').val(CONFIG.profile);
+
+                TABS.pid_tuning.checkUpdateProfile(false);
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
@@ -299,7 +300,7 @@ var MSP = {
                 CONFIG.numProfiles = data.getUint8(13);
                 CONFIG.rateProfile = data.getUint8(14);
 
-                TABS.pid_tuning.checkUpdateProfile();
+                TABS.pid_tuning.checkUpdateProfile(true);
 
                 sensor_status(CONFIG.activeSensors);
                 $('span.i2c-error').text(CONFIG.i2cError);
@@ -1271,8 +1272,11 @@ var MSP = {
             case MSP_codes.MSP_SET_FILTER_CONFIG:
                 console.log('Filter config set');
                 break;
-            case MSP_codes.MSP_SET_PID_ADVANCED:
+            case MSP_codes.MSP_SET_ADVANCED_TUNING:
                 console.log('Advanced tuning parameters set');
+                break;
+            case MSP_codes.MSP_SET_SPECIAL_PARAMETERS:
+                console.log('Special parameters set');
                 break;
             default:
                 console.log('Unknown code detected: ' + code);

@@ -542,6 +542,17 @@
 }
 
 
+.tab-pid_tuning .rate_profile {
+    width: 130px;
+}
+
+.tab-pid_tuning .rate_profile select {
+    border: 1px solid silver;
+    margin-left: 5px;
+    width: calc(100% - 10px);
+}
+
+
 .tab-pid_tuning .controller {
     width: 100px; 
 }
