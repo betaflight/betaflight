@@ -17,6 +17,7 @@
 
 #pragma once
 
-bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
-uint8_t jetiExBusFrameStatus(void);
-
+struct telemetryConfig_s;
+void initJetiExBusTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
+void checkJetiExBusTelemetryState(void);
+void handleJetiExBusTelemetry(void);
