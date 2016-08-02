@@ -330,8 +330,8 @@ button {
 .fontbuttons {
     display: inline-block;
     position: absolute;
-    right: 1em;
-    top: .5em;
+    right: 1.2em;
+    top: .8em;
 }
 
 .tab-osd .display-field {
