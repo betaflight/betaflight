@@ -160,7 +160,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
         .desiredPeriod = 1000000 / 250,         // 250 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
