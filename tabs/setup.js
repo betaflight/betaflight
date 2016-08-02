@@ -140,7 +140,11 @@ TABS.setup.initialize = function (callback) {
             if ($(this).hasClass('disabled')) {
                 return;
             }
+
+            TABS.pid_tuning.setUpdating(true);
             configuration_backup(function () {
+                TABS.pid_tuning.setUpdating(false);
+
                 GUI.log(chrome.i18n.getMessage('initialSetupBackupSuccess'));
             });
         });
@@ -149,11 +153,15 @@ TABS.setup.initialize = function (callback) {
             if ($(this).hasClass('disabled')) {
                 return;
             }
-            configuration_restore(function () {
-                GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
 
+            TABS.pid_tuning.setUpdating(true);
+            configuration_restore(function () {
                 // get latest settings
                 TABS.setup.initialize();
+
+                TABS.pid_tuning.setUpdating(false);
+
+                GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
             });
         });
 
