@@ -267,7 +267,7 @@ function onConnect() {
 
         $('#tabs ul.mode-connected').show();
 
-        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.1")) {
             MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
         } else {
             MSP.send_message(MSP_codes.MSP_STATUS, false, false);
@@ -462,7 +462,7 @@ function update_live_status() {
     
     if (GUI.active_tab != 'cli') {
         MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false);
-        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0"))
+        if (semver.gte(CONFIG.flightControllerVersion, "2.9.1"))
         	MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
         else
         	MSP.send_message(MSP_codes.MSP_STATUS, false, false);
