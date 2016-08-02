@@ -1783,7 +1783,25 @@
     },
       "configurationVesselName": {
         "message": "Craft name"
+    },
+      "onboardLoggingBlackbox": {
+    	"message": "Blackbox logging device"
+    },
+      "onboardLoggingRateOfLogging": {
+    	"message": "Portion of PID loop iterations to log (logging rate)"  
+    },
+      "onboardLoggingSerialLogger": {
+    	"message": "Outboard serial logging device"  
+    },
+      "onboardLoggingFlashLogger": {
+    	"message": "Onboard dataflash chip"  
+    },
+      "onboardLoggingEraseInProgress": {
+    	"message": "Erase in progress, please wait..."  
     }
+    
+    
+    
     
     
 
