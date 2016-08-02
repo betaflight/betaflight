@@ -32,12 +32,12 @@
 #define INVERTER_USART          USART2
 
 // MPU interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI            PC14
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-#define MPU_INT_EXTI            PC14
-#define USE_EXTI
 
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
