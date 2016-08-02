@@ -128,6 +128,8 @@
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PA0
+#define CURRENT_METER_ADC_PIN   PA3
+#define RSSI_ADC_PIN            PA2
 
 //#define USE_QUAD_MIXER_ONLY
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

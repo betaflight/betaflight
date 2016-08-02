@@ -50,6 +50,9 @@ typedef enum {
     OSD_DISARMED,
     OSD_ARTIFICIAL_HORIZON,
     OSD_HORIZON_SIDEBARS,
+    OSD_CURRENT_DRAW,
+    OSD_MAH_DRAWN,
+    OSD_CRAFT_NAME,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
 
