@@ -1,7 +1,7 @@
 'use strict';
 
 var SYM = SYM || {};
-SYM.VOLT = 0x00;
+SYM.VOLT = 0x06;
 SYM.RSSI = 0x01;
 SYM.AH_RIGHT = 0x02;
 SYM.AH_LEFT = 0x03;
@@ -15,6 +15,8 @@ SYM.AH_CENTER = 0x7E;
 SYM.AH_BAR9_0 = 0x80;
 SYM.AH_DECORATION = 0x13;
 SYM.LOGO = 0xA0;
+SYM.AMP = 0x9A;
+SYM.MAH = 0x07;
 
 var FONT = FONT || {};
 
@@ -284,6 +286,24 @@ OSD.constants = {
       name: 'HORIZON_SIDEBARS',
       default_position: -1,
       positionable: false
+    },
+    {
+      name: 'OSD_CURRENT_DRAW',
+      default_position: -23,
+      positionable: true,
+      preview: FONT.symbol(SYM.AMP) + '42.0'
+    },
+    {
+      name: 'OSD_MAH_DRAWN',
+      default_position: -18,
+      positionable: true,
+      preview: FONT.symbol(SYM.MAH) + '690'
+    },
+    {
+      name: 'OSD_CRAFT_NAME',
+      default_position: -77,
+      positionable: true,
+      preview: '[CRAFT_NAME]'
     }
   ],
 };
