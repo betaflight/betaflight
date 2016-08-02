@@ -159,11 +159,7 @@ void init(void)
     latchActiveFeatures();
 
 #ifdef ALIENFLIGHTF3
-    if (hardwareRevision == AFF3_REV_1) {
-        ledInit(false);
-    } else {
-        ledInit(true);
-    }
+    ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
 #else
     ledInit(false);
 #endif
