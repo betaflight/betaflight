@@ -1798,6 +1798,9 @@
     },
       "onboardLoggingEraseInProgress": {
     	"message": "Erase in progress, please wait..."  
+    },
+      "onboardLoggingOnboardSDCard": {
+    	"message": "Onboard SD card"
     }
     
     
