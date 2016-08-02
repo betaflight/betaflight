@@ -90,9 +90,9 @@ static i2cDevice_t i2cHardwareMap[] = {
 static volatile uint16_t i2cErrorCount = 0;
 
 static i2cState_t i2cState[] = {
-    { false, false, 0, 0, 0, 0, 0, 0, 0 },
-    { false, false, 0, 0, 0, 0, 0, 0, 0 },
-    { false, false, 0, 0, 0, 0, 0, 0, 0 }
+    { false, false, false, 0, 0, 0, 0, 0, 0, 0 },
+    { false, false, false, 0, 0, 0, 0, 0, 0, 0 },
+    { false, false, false, 0, 0, 0, 0, 0, 0, 0 }
 };
 
 static bool i2cOverClock;
@@ -150,6 +150,9 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     i2cState_t *state;
     state = &(i2cState[device]);
 
+    if (!state->initialised)
+        return false;
+
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 1;
@@ -195,6 +198,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 
     i2cState_t *state;
     state = &(i2cState[device]);
+
+    if (!state->initialised)
+        return false;
 
     state->addr = addr_ << 1;
     state->reg = reg_;
@@ -384,6 +390,9 @@ void i2cInit(I2CDevice device)
     i2cDevice_t *i2c;
     i2c = &(i2cHardwareMap[device]);
 
+    i2cState_t *state;
+    state = &(i2cState[device]);
+
     NVIC_InitTypeDef nvic;
     I2C_InitTypeDef i2cInit;
 
@@ -443,6 +452,8 @@ void i2cInit(I2CDevice device)
     nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV);
     nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV);
     NVIC_Init(&nvic);
+    
+    state->initialised = true;
 }
 
 uint16_t i2cGetErrorCounter(void)
