@@ -29,7 +29,9 @@ TABS.onboard_logging.initialize = function (callback) {
                 MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
                     if (semver.gte(CONFIG.flightControllerVersion, "1.11.0")) {
                         MSP.send_message(MSP_codes.MSP_SDCARD_SUMMARY, false, false, function() {
-                            MSP.send_message(MSP_codes.MSP_BLACKBOX_CONFIG, false, false, load_html);
+                            MSP.send_message(MSP_codes.MSP_BLACKBOX_CONFIG, false, false, function() { 
+                            	MSP.send_message(MSP_codes.MSP_ADVANCED_CONFIG, false, false, load_html);
+                            });
                         });
                     } else {
                         load_html();
@@ -162,45 +164,38 @@ TABS.onboard_logging.initialize = function (callback) {
     }
     
     function populateLoggingRates() {
-        var
-            userRateGCD = gcd(BLACKBOX.blackboxRateNum, BLACKBOX.blackboxRateDenom),
-            userRate = {num: BLACKBOX.blackboxRateNum / userRateGCD, denom: BLACKBOX.blackboxRateDenom / userRateGCD};
         
         // Offer a reasonable choice of logging rates (if people want weird steps they can use CLI)
         var 
             loggingRates = [
-                 {num: 1, denom: 32},
-                 {num: 1, denom: 16},
-                 {num: 1, denom: 8},
-                 {num: 1, denom: 5},
-                 {num: 1, denom: 4},
-                 {num: 1, denom: 3},
-                 {num: 1, denom: 2},
-                 {num: 2, denom: 3},
-                 {num: 3, denom: 4},
-                 {num: 4, denom: 5},
-                 {num: 7, denom: 8},
                  {num: 1, denom: 1},
+                 {num: 1, denom: 2},
+                 {num: 1, denom: 3},
+                 {num: 1, denom: 4},
+                 {num: 1, denom: 5},
+                 {num: 1, denom: 6},
+                 {num: 1, denom: 7},
+                 {num: 1, denom: 8},
+                 {num: 1, denom: 16},
+                 {num: 1, denom: 32},
             ],
             loggingRatesSelect = $(".blackboxRate select");
         
-        var
-            addedCurrentValue = false;
-        
+        var addedCurrentValue = false;
+        var pidRate = 8000 / PID_ADVANCED_CONFIG.gyro_sync_denom / PID_ADVANCED_CONFIG.pid_process_denom; 
         for (var i = 0; i < loggingRates.length; i++) {
-            if (!addedCurrentValue && userRate.num / userRate.denom <= loggingRates[i].num / loggingRates[i].denom) {
-                if (userRate.num / userRate.denom < loggingRates[i].num / loggingRates[i].denom) {
-                    loggingRatesSelect.append('<option value="' + userRate.num + '/' + userRate.denom + '">' 
-                            + userRate.num + '/' + userRate.denom + ' (' + Math.round(userRate.num / userRate.denom * 100) + '%)</option>');
-                }
-                addedCurrentValue = true;
-            }
-            
+        	var loggingRate = Math.round(pidRate / loggingRates[i].denom);
+        	var loggingRateUnit = " Hz";
+        	if (gcd(loggingRate, 1000)==1000) {
+        		loggingRate /= 1000;
+        		loggingRateUnit = " KHz";
+        		
+        	}
             loggingRatesSelect.append('<option value="' + loggingRates[i].num + '/' + loggingRates[i].denom + '">' 
-                + loggingRates[i].num + '/' + loggingRates[i].denom + ' (' + Math.round(loggingRates[i].num / loggingRates[i].denom * 100) + '%)</option>');
+                + loggingRate + loggingRateUnit + ' (' + Math.round(loggingRates[i].num / loggingRates[i].denom * 100) + '%)</option>');
             
         }
-        loggingRatesSelect.val(userRate.num + '/' + userRate.denom);
+        loggingRatesSelect.val(BLACKBOX.blackboxRateNum + '/' + BLACKBOX.blackboxRateDenom);
     }
     
     function formatFilesizeKilobytes(kilobytes) {

@@ -1788,7 +1788,7 @@
     	"message": "Blackbox logging device"
     },
       "onboardLoggingRateOfLogging": {
-    	"message": "Portion of PID loop iterations to log (logging rate)"  
+    	"message": "Blackbox logging rate"  
     },
       "onboardLoggingSerialLogger": {
     	"message": "Outboard serial logging device"  
@@ -1798,6 +1798,9 @@
     },
       "onboardLoggingEraseInProgress": {
     	"message": "Erase in progress, please wait..."  
+    },
+      "onboardLoggingOnboardSDCard": {
+    	"message": "Onboard SD card"
     }
     
     
