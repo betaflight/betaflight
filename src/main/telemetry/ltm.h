@@ -19,7 +19,8 @@
 
 #pragma once
 
-void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig);
+struct telemetryConfig_s;
+void initLtmTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
 void handleLtmTelemetry(void);
 void checkLtmTelemetryState(void);
 

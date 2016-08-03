@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "io.h"
 
 // old EXTI interface, to be replaced
 typedef struct extiConfig_s {
