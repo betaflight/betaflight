@@ -832,9 +832,8 @@ const clivalue_t valueTable[] = {
     { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
     { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
     { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {30, 100 } },
-    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 200 } },
-    { "pid_max_velocity",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocity, .config.minmax = {0, 2000 } },
-    { "pid_max_velocity_yaw",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocityYaw, .config.minmax = {0, 2000 } },
+    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 300 } },
+    { "max_yaw_acceleration",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocityYaw, .config.minmax = {0, 1000 } },
 
     { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },

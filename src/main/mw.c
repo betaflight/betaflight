@@ -240,7 +240,6 @@ void processRcCommand(void)
                 debug[3] = rxRefreshRate;
             }
 
-            isRXDataNew = false;
             for (int channel=0; channel < 4; channel++) {
                 deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
                 lastCommand[channel] = rcCommand[channel];
@@ -264,9 +263,11 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        isRXDataNew = false;
+        // Don't smooth yaw axis
+        int axisToCalculate = (isRXDataNew) ? 3 : 2;
+        for (int axis = 0; axis < axisToCalculate; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
 
-        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+        isRXDataNew = false;
 
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))

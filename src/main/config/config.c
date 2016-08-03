@@ -245,8 +245,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
     pidProfile->dtermSetpointWeight = 200;
-    pidProfile->pidMaxVelocity = 1000;
-    pidProfile->pidMaxVelocityYaw = 50;
+    pidProfile->pidMaxVelocityYaw = 200;
     pidProfile->toleranceBand = 20;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
