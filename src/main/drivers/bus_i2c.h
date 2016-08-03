@@ -21,8 +21,8 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
-#include "io.h"
-#include "rcc.h"
+#include "drivers/io.h"
+#include "drivers/rcc.h"
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID
