@@ -22,9 +22,10 @@
 
 #ifdef USE_RTC6705
 
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
-#include "drivers/light_led.h"
+#include "bus_spi.h"
+#include "io.h"
+#include "system.h"
+#include "light_led.h"
 
 #include "vtx_soft_spi_rtc6705.h"
 

@@ -24,7 +24,7 @@
 
 #include "common/axis.h"
 
-#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
 

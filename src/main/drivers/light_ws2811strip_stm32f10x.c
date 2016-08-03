@@ -23,10 +23,11 @@
 #ifdef LED_STRIP
 
 #include "common/color.h"
-#include "drivers/light_ws2811strip.h"
+#include "light_ws2811strip.h"
 #include "nvic.h"
 #include "io.h"
 #include "dma.h"
+#include "rcc.h"
 #include "timer.h"
 
 static IO_t ws2811IO = IO_NONE;
