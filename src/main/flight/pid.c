@@ -114,10 +114,8 @@ void initFilters(const pidProfile_t *pidProfile) {
     int axis;
 
     if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
-        float octaves = log2f(((float) pidProfile->dterm_notch_hz + pidProfile->dterm_notch_bw / 2) / ((float) pidProfile->dterm_notch_hz - pidProfile->dterm_notch_bw / 2));
-        float dtermNotchQ = sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
-
-        for (axis = 0; axis < 3; axis++) biquadFilterInit(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, gyro.targetLooptime, dtermNotchQ, FILTER_NOTCH);
+        float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        for (axis = 0; axis < 3; axis++) biquadFilterInit(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
     }
 
     if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
