@@ -15,21 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "io/escservo.h"
+#include "io/rc_controls.h"
+#include "flight/pid.h"
+
+#include "sensors/barometer.h"
 
 extern int32_t AltHold;
 extern int32_t vario;
 
 void calculateEstimatedAltitude(uint32_t currentTime);
 
-struct pidProfile_s;
-struct barometerConfig_s;
-struct rcControlsConfig_s;
-struct escAndServoConfig_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile, struct barometerConfig_s *intialBarometerConfig, struct rcControlsConfig_s *initialRcControlsConfig, struct escAndServoConfig_s *initialEscAndServoConfig);
-
-struct airplaneConfig_t;
-void applyAltHold(struct airplaneConfig_s *airplaneConfig);
+void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, rcControlsConfig_t *initialRcControlsConfig, escAndServoConfig_t *initialEscAndServoConfig);
+void applyAltHold(airplaneConfig_t *airplaneConfig);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
 
