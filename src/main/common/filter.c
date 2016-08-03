@@ -55,6 +55,11 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
+float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
+    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
+    return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+}
+
 /* sets up a biquad Filter */
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
 {
