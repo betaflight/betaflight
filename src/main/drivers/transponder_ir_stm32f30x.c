@@ -20,9 +20,9 @@
 
 #include <platform.h>
 
-#include "drivers/gpio.h"
-#include "drivers/transponder_ir.h"
-#include "drivers/nvic.h"
+#include "gpio.h"
+#include "transponder_ir.h"
+#include "nvic.h"
 
 #ifndef TRANSPONDER_GPIO
 #define USE_TRANSPONDER_ON_DMA1_CHANNEL3

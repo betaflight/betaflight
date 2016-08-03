@@ -23,6 +23,7 @@
 #include "debug.h"
 
 #include "build_config.h"
+#include "debug.h"
 
 #include "blackbox/blackbox_io.h"
 
