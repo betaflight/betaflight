@@ -59,12 +59,11 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-      TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
-      TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
-    }
-    else {
-      TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-      TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+    } else {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     }
     TIM_OCInitStructure.TIM_Pulse = value;
     TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
@@ -163,7 +162,7 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
-    for(int index = 0; index < motorCount; index++){
+    for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         *motors[index]->ccr = 0;
     }
@@ -185,13 +184,13 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
         bool overflowed = false;
         // If we have not already overflowed this timer
         for (int j = 0; j < index; j++) {
-          if (motors[j]->tim == motors[index]->tim) {
-            overflowed = true;
-            break;
-          }
+            if (motors[j]->tim == motors[index]->tim) {
+                overflowed = true;
+                break;
+            }
         }
         if (!overflowed) {
-          timerForceOverflow(motors[index]->tim);
+            timerForceOverflow(motors[index]->tim);
         }
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
         // This compare register will be set to the output value on the next main loop.

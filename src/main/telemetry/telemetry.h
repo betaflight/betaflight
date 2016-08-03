@@ -46,6 +46,7 @@ typedef struct telemetryConfig_s {
     uint8_t hottAlarmSoundInterval;
 } telemetryConfig_t;
 
+void telemetryInit(void);
 bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig);
 extern serialPort_t *telemetrySharedPort;
 

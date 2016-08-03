@@ -21,3 +21,6 @@
 #define SPEKTRUM_SAT_BIND_MAX 10
 
 uint8_t spektrumFrameStatus(void);
+struct rxConfig_s;
+void spektrumBind(struct rxConfig_s *rxConfig);
+

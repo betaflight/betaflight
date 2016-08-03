@@ -470,14 +470,16 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 
 const struct serialPortVTable softSerialVTable[] = {
     {
-        softSerialWriteByte,
-        softSerialRxBytesWaiting,
-        softSerialTxBytesFree,
-        softSerialReadByte,
-        softSerialSetBaudRate,
-        isSoftSerialTransmitBufferEmpty,
-        softSerialSetMode,
+        .serialWrite = softSerialWriteByte,
+        .serialTotalRxWaiting = softSerialRxBytesWaiting,
+        .serialTotalTxFree = softSerialTxBytesFree,
+        .serialRead = softSerialReadByte,
+        .serialSetBaudRate = softSerialSetBaudRate,
+        .isSerialTransmitBufferEmpty = isSoftSerialTransmitBufferEmpty,
+        .setMode = softSerialSetMode,
         .writeBuf = NULL,
+        .beginWrite = NULL,
+        .endWrite = NULL
     }
 };
 
