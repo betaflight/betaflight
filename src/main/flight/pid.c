@@ -66,7 +66,6 @@ uint8_t PIDweight[3];
 static int32_t errorGyroI[3];
 static float errorGyroIf[3];
 
-
 static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 #ifdef SKIP_PID_FLOAT
@@ -107,6 +106,23 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
+static biquadFilter_t dtermFilterLpf[3];
+static biquadFilter_t dtermFilterNotch[3];
+static bool dtermNotchInitialised, dtermBiquadLpfInitialised;
+
+void initFilters(const pidProfile_t *pidProfile) {
+    int axis;
+
+    if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
+        for (axis = 0; axis < 3; axis++) biquadFilterInit(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, gyro.targetLooptime, ((float) pidProfile->dterm_notch_q) / 10, FILTER_NOTCH);
+    }
+
+    if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
+        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
+            for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, gyro.targetLooptime);
+        }
+    }
+}
 
 #ifndef SKIP_PID_FLOAT
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage. Based on 2DOF reference design (matlab)
@@ -125,6 +141,8 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     const float velocityFactor = getdT() * 1000.0f;
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
+
+    initFilters(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -265,7 +283,15 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd * delta * dynReduction;
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+            if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
+
+            if (pidProfile->dterm_lpf_hz) {
+                if (dtermBiquadLpfInitialised) {
+                    delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+                } else {
+                    delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+                }
+            }
 
             DTerm = constrainf(Kd * delta * dynReduction, -300.0f, 300.0f);
 
@@ -316,6 +342,8 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
     int32_t AngleRateTmp = 0, RateError = 0, gyroRate = 0;
 
     int8_t horizonLevelStrength = 100;
+
+    initFilters(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -417,7 +445,15 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, getdT());
+            if (pidProfile->dterm_lpf_hz) {
+                float deltaf = delta;  // single conversion
+                if (dtermBiquadLpfInitialised) {
+                    delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+                } else {
+                    delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+                }
+                delta = lrintf(deltaf);
+            }
 
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 

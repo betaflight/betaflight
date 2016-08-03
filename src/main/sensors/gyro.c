@@ -69,7 +69,7 @@ void gyroInit(void)
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
             biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, ((float) gyroSoftNotchQ) / 10, FILTER_NOTCH);
-            if (gyroSoftLpfType == GYRO_FILTER_BIQUAD)
+            if (gyroSoftLpfType == FILTER_BIQUAD)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
             else
                 gyroDt = gyro.targetLooptime / 1000.0f;
@@ -182,7 +182,7 @@ void gyroUpdate(void)
                 debug[axis*2 + 1] = lrintf(sample);
             }
 
-            if (gyroSoftLpfType == GYRO_FILTER_BIQUAD) {
+            if (gyroSoftLpfType == FILTER_BIQUAD) {
                 gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], sample);
             } else {
                 gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], sample, gyroSoftLpfHz, gyroDt);

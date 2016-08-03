@@ -31,11 +31,6 @@ typedef enum {
     GYRO_MAX = GYRO_FAKE
 } gyroSensor_e;
 
-typedef enum {
-    GYRO_FILTER_PT1 = 0,
-    GYRO_FILTER_BIQUAD,
-} gyroFilter_e;
-
 extern gyro_t gyro;
 
 extern int32_t gyroADC[XYZ_AXIS_COUNT];

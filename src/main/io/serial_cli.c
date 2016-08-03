@@ -497,7 +497,7 @@ static const char * const lookupTableRcSmoothing[] = {
     "OFF", "DEFAULT", "AUTO", "MANUAL"
 };
 
-static const char * const lookupTableGyroSoftLowpassType[] = {
+static const char * const lookupTableLowpassType[] = {
     "NORMAL", "HIGH"
 };
 
@@ -538,7 +538,7 @@ typedef enum {
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_DELTA_METHOD,
     TABLE_RC_SMOOTHING,
-    TABLE_GYRO_LOWPASS_TYPE,
+    TABLE_LOWPASS_TYPE,
 #ifdef OSD
     TABLE_OSD,
 #endif
@@ -576,7 +576,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableDeltaMethod, sizeof(lookupTableDeltaMethod) / sizeof(char *) },
     { lookupTableRcSmoothing, sizeof(lookupTableRcSmoothing) / sizeof(char *) },
-    { lookupTableGyroSoftLowpassType, sizeof(lookupTableGyroSoftLowpassType) / sizeof(char *) },
+    { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
@@ -748,7 +748,7 @@ const clivalue_t valueTable[] = {
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
-    { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_soft_type, .config.lookup = { TABLE_GYRO_LOWPASS_TYPE } },
+    { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_soft_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
     { "gyro_notch_hz",              VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz, .config.minmax = { 0,  500 } },
     { "gyro_notch_q",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_notch_q, .config.minmax = { 1,  100 } },
@@ -821,7 +821,10 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
 #endif
+    { "dterm_filter_type",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dterm_filter_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
     { "dterm_lowpass",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
+    { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_hz, .config.minmax = { 0,  500 } },
+    { "dterm_notch_q",              VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_q, .config.minmax = { 1,  100 } },
     { "vbat_pid_compensation",      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
     { "zero_throttle_stabilisation",VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.zeroThrottleStabilisation, .config.lookup = { TABLE_OFF_ON } },
     { "pid_tolerance_band",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBand, .config.minmax = {0, 200 } },

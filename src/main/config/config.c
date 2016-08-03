@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -171,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 141;
+static const uint8_t EEPROM_CONF_VERSION = 142;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -233,7 +234,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_lpf_hz = 80;
     pidProfile->rollPitchItermIgnoreRate = 200;
     pidProfile->yawItermIgnoreRate = 50;
+    pidProfile->dterm_filter_type = FILTER_PT1;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
+    pidProfile->dterm_notch_hz = 0;
+    pidProfile->dterm_notch_q = 5;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
@@ -475,7 +479,7 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
 #endif
-    masterConfig.gyro_soft_type = GYRO_FILTER_PT1;
+    masterConfig.gyro_soft_type = FILTER_PT1;
     masterConfig.gyro_soft_lpf_hz = 80;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_q = 5;
