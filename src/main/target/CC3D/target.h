@@ -116,6 +116,7 @@
 #undef BARO
 #undef MAG
 #undef SONAR
+#undef LED_STRIP
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
