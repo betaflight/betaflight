@@ -30,7 +30,7 @@
 #include "system.h"
 
 #include "nvic.h"
-#include "gpio.h"
+#include "io.h"
 #include "timer.h"
 
 #include "pwm_output.h"
