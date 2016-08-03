@@ -293,8 +293,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (type == MAP_TO_PPM_INPUT) {
 #ifndef SKIP_RX_PWM_PPM
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
-                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
+            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
+                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2, init->pwmProtocolType);
             }
 #endif
             ppmInConfig(timerHardwarePtr);
@@ -307,7 +307,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #ifdef CC3D
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
                 if (timerHardwarePtr->tim == TIM2)
                     continue;
