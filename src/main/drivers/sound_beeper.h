@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "io.h"
 
 #ifdef BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
