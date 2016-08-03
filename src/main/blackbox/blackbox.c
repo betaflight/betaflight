@@ -1168,6 +1168,8 @@ static bool blackboxWriteSysinfo()
             );
 
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom:%d",                  masterConfig.gyro_sync_denom);
+        BLACKBOX_PRINT_HEADER_LINE("pid_process_denom:%d",                masterConfig.pid_process_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawRate:%d",                        masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);
@@ -1230,6 +1232,10 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_smooth_interval:%d",               masterConfig.rxConfig.rcSmoothInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
+        BLACKBOX_PRINT_HEADER_LINE("serialrx_provider:%d",                masterConfig.rxConfig.serialrx_provider);
+        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                masterConfig.use_unsyncedPwm);
+        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                masterConfig.motor_pwm_protocol);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   masterConfig.motor_pwm_rate);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
 
         default:
