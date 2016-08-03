@@ -237,7 +237,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_filter_type = FILTER_PT1;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 0;
-    pidProfile->dterm_notch_q = 5;
+    pidProfile->dterm_notch_bw = 200;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
@@ -482,7 +482,7 @@ static void resetConf(void)
     masterConfig.gyro_soft_type = FILTER_PT1;
     masterConfig.gyro_soft_lpf_hz = 80;
     masterConfig.gyro_soft_notch_hz = 0;
-    masterConfig.gyro_soft_notch_q = 5;
+    masterConfig.gyro_soft_notch_bw = 200;
 
     masterConfig.debug_mode = DEBUG_NONE;
 
@@ -747,7 +747,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q, masterConfig.gyro_soft_type);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_bw, masterConfig.gyro_soft_type);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

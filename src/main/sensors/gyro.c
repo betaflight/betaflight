@@ -50,25 +50,28 @@ static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
 static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
 static uint8_t gyroSoftLpfType;
 static uint16_t gyroSoftNotchHz;
-static uint8_t gyroSoftNotchQ;
+static float gyroSoftNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 static float gyroDt;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint8_t gyro_soft_notch_q, uint8_t gyro_soft_lpf_type)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint16_t gyro_soft_notch_bw, uint8_t gyro_soft_lpf_type)
 {
     gyroConfig = gyroConfigToUse;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
     gyroSoftNotchHz = gyro_soft_notch_hz;
-    gyroSoftNotchQ = gyro_soft_notch_q;
+    gyroSoftNotchQ = gyro_soft_notch_bw;
     gyroSoftLpfType = gyro_soft_lpf_type;
+
+    float octaves = log2f(((float) gyro_soft_notch_hz + gyro_soft_notch_bw / 2) / ((float) gyro_soft_notch_hz - gyro_soft_notch_bw / 2));
+    gyroSoftNotchQ = sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
 }
 
 void gyroInit(void)
 {
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, ((float) gyroSoftNotchQ) / 10, FILTER_NOTCH);
+            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, gyroSoftNotchQ, FILTER_NOTCH);
             if (gyroSoftLpfType == FILTER_BIQUAD)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
             else
