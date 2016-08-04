@@ -69,9 +69,10 @@ typedef struct accProcessor_s {
     accProcessorState_e state;
 } accProcessor_t;
 
+struct pidProfile_s;
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
-    pidProfile_t *initialPidProfile,
+    struct pidProfile_s *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     uint16_t throttle_correction_angle
 );

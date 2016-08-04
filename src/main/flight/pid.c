@@ -51,6 +51,8 @@ uint32_t targetPidLooptime;
 
 bool pidStabilisationEnabled;
 
+uint8_t PIDweight[3];
+
 int16_t axisPID[3];
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
