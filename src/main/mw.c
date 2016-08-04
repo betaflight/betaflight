@@ -263,9 +263,7 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        // Don't smooth yaw axis
-        int axisToCalculate = (isRXDataNew) ? 3 : 2;
-        for (int axis = 0; axis < axisToCalculate; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
 

@@ -194,7 +194,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             configD[axis] = pidProfile->D8[axis];
         }
 
-        // Limit abrupt yaw inputs
+        // Limit abrupt yaw inputs / stops
         if (axis == YAW && pidProfile->pidMaxVelocityYaw) {
             float yawCurrentVelocity = setpointRate[axis] - yawPreviousRate;
             if (ABS(yawCurrentVelocity) > yawMaxVelocity) {

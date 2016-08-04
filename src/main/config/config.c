@@ -203,10 +203,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 25;
+    pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 60;
-    pidProfile->D8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 25;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -244,7 +244,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 200;
+    pidProfile->dtermSetpointWeight = 120;
     pidProfile->pidMaxVelocityYaw = 200;
     pidProfile->toleranceBand = 20;
     pidProfile->toleranceBandReduction = 40;
