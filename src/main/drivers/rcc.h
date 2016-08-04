@@ -1,7 +1,5 @@
 #pragma once
 
-#include "platform.h"
-#include "common/utils.h"
 #include "rcc_types.h"
 
 enum rcc_reg {
