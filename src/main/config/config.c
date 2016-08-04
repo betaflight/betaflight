@@ -203,10 +203,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 18;
-    pidProfile->P8[PITCH] = 50;
-    pidProfile->I8[PITCH] = 55;
-    pidProfile->D8[PITCH] = 22;
+    pidProfile->D8[ROLL] = 25;
+    pidProfile->P8[PITCH] = 60;
+    pidProfile->I8[PITCH] = 60;
+    pidProfile->D8[PITCH] = 30;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -234,7 +234,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_lpf_hz = 80;
     pidProfile->rollPitchItermIgnoreRate = 200;
     pidProfile->yawItermIgnoreRate = 50;
-    pidProfile->dterm_filter_type = FILTER_PT1;
+    pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 0;
     pidProfile->dterm_notch_cutoff = 150;
@@ -479,7 +479,7 @@ static void resetConf(void)
     masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_type = FILTER_PT1;
-    masterConfig.gyro_soft_lpf_hz = 80;
+    masterConfig.gyro_soft_lpf_hz = 100;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_cutoff = 150;
 
