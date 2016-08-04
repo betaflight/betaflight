@@ -474,6 +474,9 @@ static void resetConf(void)
 #ifdef STM32F10X
     masterConfig.gyro_sync_denom = 8;
     masterConfig.pid_process_denom = 1;
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
+    masterConfig.gyro_sync_denom = 8;
+    masterConfig.pid_process_denom = 4;
 #else
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
