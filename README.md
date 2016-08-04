@@ -4,7 +4,7 @@
 
 [![Join the chat at https://gitter.im/iNavFlight/inav](https://badges.gitter.im/iNavFlight/inav.svg)](https://gitter.im/iNavFlight/inav?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
+Clean-code version of baseflight flight-controller with improved navigational capabilities - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
 ## Important: PID values and scaling
 
@@ -56,13 +56,16 @@ See: https://github.com/iNavFlight/inav/blob/master/docs/Installation.md
 
 There is lots of documentation here: https://github.com/iNavFlight/inav/tree/master/docs
 
-If what you need is not covered then refer to the cleanflight documentation. If you still can't find what you need then visit the Gitter room
+If what you need is not covered then refer to the [Cleanflight documentation](https://github.com/cleanflight/cleanflight/tree/master/docs). If you still can't find what you need then visit the Gitter room or the IRC Channel at #inavflight
 
 ## Gitter Support and Developers Channel
 
 There's a dedicated Gitter room here:
-
 https://gitter.im/iNavFlight/inav
+
+There's a dedicated INAV IRC channel on the Freenode IRC network. Users and some of the developers are there, and it is a helpful and friendly community - but there are two important things to keep in mind: First and most importantly, please go ahead and ask if you have questions, but make sure you wait around long enough for a reply. Next, sometimes people are out flying, asleep or at work and can't answer immediately, even though they are present in the channel. This is how IRC works: Many people stay logged in, even though they are not actively participating in the discussion all the time. Have a seat, grab a drink and hang around if it's a quiet time of day.
+
+irc://irc.freenode.net/#inavflight
 
 ## Configuration Tool
 
