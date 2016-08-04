@@ -36,6 +36,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
+#include "drivers/io.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"

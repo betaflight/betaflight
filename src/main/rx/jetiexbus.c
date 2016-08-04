@@ -39,12 +39,17 @@
 
 #include "platform.h"
 
-#include "common/utils.h"
 #include "build_config.h"
+#include "debug.h"
+
+#include "common/utils.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+
 #include "io/serial.h"
+
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
 
@@ -60,9 +65,6 @@
 
 #endif //TELEMETRY
 
-
-#include "debug.h"
-#include "rx/rx.h"
 
 //
 // Serial driver for Jeti EX Bus receiver
