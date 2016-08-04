@@ -53,6 +53,9 @@ bool pidStabilisationEnabled;
 
 int16_t axisPID[3];
 
+// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
+uint8_t PIDweight[3];
+
 #ifdef BLACKBOX
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
