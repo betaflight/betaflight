@@ -46,7 +46,7 @@ var Features = function (config) {
     if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "2.8.0")) {
          features.push(
             {bit: 22, group: 'other', name: 'AIRMODE'},
-            {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'},
+            {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'}
         );
     }
 
