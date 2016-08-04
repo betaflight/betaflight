@@ -141,10 +141,7 @@ TABS.setup.initialize = function (callback) {
                 return;
             }
 
-            TABS.pid_tuning.setUpdating(true);
             configuration_backup(function () {
-                TABS.pid_tuning.setUpdating(false);
-
                 GUI.log(chrome.i18n.getMessage('initialSetupBackupSuccess'));
             });
         });
@@ -154,12 +151,9 @@ TABS.setup.initialize = function (callback) {
                 return;
             }
 
-            TABS.pid_tuning.setUpdating(true);
             configuration_restore(function () {
                 // get latest settings
                 TABS.setup.initialize();
-
-                TABS.pid_tuning.setUpdating(false);
 
                 GUI.log(chrome.i18n.getMessage('initialSetupRestoreSuccess'));
             });
