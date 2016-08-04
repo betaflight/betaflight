@@ -44,9 +44,9 @@ Starting at 22-06-2016 INAV uses the same scaling for PIDs as Cleanflight/Betafl
 * Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
 * And many more minor bug fixes.
 
-For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.
+For a list of features, changes and some discussion please review the thread on RCGroups forums and consult the documentation.
 
-http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
+http://www.rcgroups.com/forums/showthread.php?t=2495732
 
 ## Installation
 
@@ -56,22 +56,18 @@ See: https://github.com/iNavFlight/inav/blob/master/docs/Installation.md
 
 There is lots of documentation here: https://github.com/iNavFlight/inav/tree/master/docs
 
-If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #iNavflight on the Freenode IRC network
+If what you need is not covered then refer to the cleanflight documentation. If you still can't find what you need then visit the Gitter room
 
-## IRC Support and Developers Channel
+## Gitter Support and Developers Channel
 
-There's a dedicated IRC channel here:
+There's a dedicated Gitter room here:
 
-irc://irc.freenode.net/#iNavflight
-
-If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
-
-Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
-
+https://gitter.im/iNavFlight/inav
 
 ## Configuration Tool
 
 To configure INAV you should use the INAV-configurator GUI tool (Windows/OSX/Linux).
+[//]: # (Can be found here: https://chrome.google.com/webstore/detail/inav-configurator/)
 Currently you have to download the sourcecode and load into Chrome manually from the github page 
 
 https://github.com/iNavFlight/inav-configurator
