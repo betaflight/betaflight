@@ -62,9 +62,6 @@ extern biquadFilter_t dtermFilterNotch[3];
 extern bool dtermNotchInitialised;
 extern bool dtermBiquadLpfInitialised;
 
-// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
-uint8_t PIDweight[3];
-
 void initFilters(const pidProfile_t *pidProfile);
 float getdT(void);
 
