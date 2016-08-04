@@ -37,11 +37,16 @@ var Features = function (config) {
         );
     }
 
+    if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "3.0.0")) {
+        features.push(
+            {bit: 18, group: 'other', name: 'OSD', haveTip: true}
+        );
+    }
+
     if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "2.8.0")) {
          features.push(
             {bit: 22, group: 'other', name: 'AIRMODE'},
             {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'},
-            {bit: 24, group: 'other', name: 'OSD'}
         );
     }
 
