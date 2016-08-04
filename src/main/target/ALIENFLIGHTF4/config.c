@@ -77,7 +77,6 @@
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void) {
-    featureClear(FEATURE_ONESHOT125);
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
