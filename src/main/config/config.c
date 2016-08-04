@@ -23,7 +23,6 @@
 #include "debug.h"
 
 #include "build_config.h"
-#include "debug.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -118,6 +117,9 @@ void targetConfiguration(void);
     #if defined (STM32F411xE)
         #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
     #endif
+    #if defined (STM32F427_437xx)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+    #endif
 
 #endif
 
@@ -135,6 +137,8 @@ void targetConfiguration(void);
 #if defined(STM32F40_41xxx)
 #define FLASH_PAGE_COUNT 4 // just to make calculations work
 #elif defined (STM32F411xE)
+#define FLASH_PAGE_COUNT 4 // just to make calculations work
+#elif defined (STM32F427_437xx)
 #define FLASH_PAGE_COUNT 4 // just to make calculations work
 #else
 #define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
@@ -204,10 +208,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 60;
-    pidProfile->I8[PITCH] = 60;
-    pidProfile->D8[PITCH] = 25;
+    pidProfile->D8[ROLL] = 18;
+    pidProfile->P8[PITCH] = 50;
+    pidProfile->I8[PITCH] = 55;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -235,7 +239,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_lpf_hz = 80;
     pidProfile->rollPitchItermIgnoreRate = 200;
     pidProfile->yawItermIgnoreRate = 50;
-    pidProfile->dterm_filter_type = FILTER_BIQUAD;
+    pidProfile->dterm_filter_type = FILTER_PT1;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 0;
     pidProfile->dterm_notch_cutoff = 150;
@@ -245,7 +249,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 120;
+    pidProfile->dtermSetpointWeight = 200;
     pidProfile->pidMaxVelocityYaw = 200;
     pidProfile->toleranceBand = 20;
     pidProfile->toleranceBandReduction = 40;
@@ -475,15 +479,12 @@ static void resetConf(void)
 #ifdef STM32F10X
     masterConfig.gyro_sync_denom = 8;
     masterConfig.pid_process_denom = 1;
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
-    masterConfig.gyro_sync_denom = 8;
-    masterConfig.pid_process_denom = 4;
 #else
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_type = FILTER_PT1;
-    masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_lpf_hz = 80;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_cutoff = 150;
 

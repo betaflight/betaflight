@@ -25,7 +25,7 @@
 
 #include "nvic.h"
 
-#include "io.h"
+#include "gpio.h"
 #include "rcc.h"
 #include "system.h"
 
@@ -237,7 +237,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined (STM32F427_437xx)
     if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
         TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
     }
@@ -273,12 +273,12 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
         timerNVICConfigure(TIM1_UP_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx) || defined(STM32F411xE)
+#if defined (STM32F40_41xxx) || defined(STM32F411xE) || defined (STM32F427_437xx)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined (STM32F427_437xx)
     case TIM8_CC_IRQn:
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
         break;
@@ -642,7 +642,7 @@ _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
 # if defined(STM32F10X)
 _TIM_IRQ_HANDLER(TIM1_UP_IRQHandler, 1);       // timer can't be shared
 # endif
-# if defined(STM32F40_41xxx) || defined (STM32F411xE)
+# if defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F427_437xx)
 #  if USED_TIMERS & TIM_N(10)
 _TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQHandler, 1, 10);  // both timers are in use
 #  else
@@ -676,7 +676,7 @@ _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);
 # else  // f10x_hd, f30x
 _TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
 # endif
-# if defined(STM32F40_41xxx)
+# if defined(STM32F40_41xxx) || defined (STM32F427_437xx)
 #  if USED_TIMERS & TIM_N(13)
 _TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
 #  else

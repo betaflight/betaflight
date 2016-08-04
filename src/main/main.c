@@ -33,7 +33,6 @@
 #include "drivers/system.h"
 #include "drivers/dma.h"
 #include "drivers/gpio.h"
-#include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/timer.h"
@@ -269,9 +268,16 @@ void init(void)
 #if defined(USE_UART2) && defined(STM32F40_41xxx)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
+#if defined(USE_UART2) && defined(STM32F427_437xx)
+	pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
 #if defined(USE_UART6) && defined(STM32F40_41xxx)
     pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
 #endif
+#if defined(USE_UART6) && defined(STM32F427_437xx)
+	pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
+#endif
+
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -288,6 +294,12 @@ void init(void)
     pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
+
+    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
+        featureSet(FEATURE_ONESHOT125);
+    } else {
+        featureClear(FEATURE_ONESHOT125);
+    }
 
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
