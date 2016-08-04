@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 142;
+static const uint8_t EEPROM_CONF_VERSION = 143;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -246,6 +246,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->ptermSetpointWeight = 75;
     pidProfile->dtermSetpointWeight = 120;
     pidProfile->pidMaxVelocityYaw = 200;
+    pidProfile->pidMaxVelocityRollPitch = 0;
     pidProfile->toleranceBand = 20;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
