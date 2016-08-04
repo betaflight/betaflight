@@ -12,7 +12,7 @@ TABS.pid_tuning = {
 TABS.pid_tuning.initialize = function (callback) {
     var self = this;
 
-    if (GUI.active_tab != 'pid_tuning') {
+    if (GUI.active_tab !== 'pid_tuning') {
         GUI.active_tab = 'pid_tuning';
     }
 
@@ -854,40 +854,41 @@ TABS.pid_tuning.setDirty = function (isDirty) {
 TABS.pid_tuning.checkUpdateProfile = function (updateRateProfile) {
     var self = this;
 
-    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
-        && CONFIG.numProfiles === 2) {
-        $('.tab-pid_tuning select[name="profile"] .profile3').hide();
-    }
-
-    if (!self.updating && !self.dirty) {
-        var changedProfile = false;
-        if (self.currentProfile !== CONFIG.profile) {
-            self.setProfile();
-
-            changedProfile = true;
-        }
-
-        var changedRateProfile = false;
+    if (GUI.active_tab === 'pid_tuning') {
         if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
-            && updateRateProfile
-            && self.currentRateProfile !== CONFIG.rateProfile) {
-            self.setRateProfile();
-
-            changedRateProfile = true;
+            && CONFIG.numProfiles === 2) {
+            $('.tab-pid_tuning select[name="profile"] .profile3').hide();
         }
 
-        if (changedProfile || changedRateProfile) {
-            self.refresh(function () {
-                if (changedProfile) {
-                    GUI.log(chrome.i18n.getMessage('pidTuningReceivedProfile', [CONFIG.profile + 1]));
-                }
+        if (!self.updating && !self.dirty) {
+            var changedProfile = false;
+            if (self.currentProfile !== CONFIG.profile) {
+                self.setProfile();
 
-                if (changedRateProfile) {
-                    GUI.log(chrome.i18n.getMessage('pidTuningReceivedRateProfile', [CONFIG.rateProfile + 1]));
-                }
-            });
+                changedProfile = true;
+            }
+
+            var changedRateProfile = false;
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
+                && updateRateProfile
+                && self.currentRateProfile !== CONFIG.rateProfile) {
+                self.setRateProfile();
+
+                changedRateProfile = true;
+            }
+
+            if (changedProfile || changedRateProfile) {
+                self.refresh(function () {
+                    if (changedProfile) {
+                        GUI.log(chrome.i18n.getMessage('pidTuningReceivedProfile', [CONFIG.profile + 1]));
+                    }
+
+                    if (changedRateProfile) {
+                        GUI.log(chrome.i18n.getMessage('pidTuningReceivedRateProfile', [CONFIG.rateProfile + 1]));
+                    }
+                });
+            }
         }
-
     }
 }
 
