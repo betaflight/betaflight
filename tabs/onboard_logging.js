@@ -186,11 +186,12 @@ TABS.onboard_logging.initialize = function (callback) {
         for (var i = 0; i < loggingRates.length; i++) {
         	var loggingRate = Math.round(pidRate / loggingRates[i].denom);
         	var loggingRateUnit = " Hz";
-        	if (gcd(loggingRate, 1000)==1000) {
-        		loggingRate /= 1000;
-        		loggingRateUnit = " KHz";
-        		
-        	}
+        	if (loggingRate != Infinity) {
+                if (gcd(loggingRate, 1000)==1000) {
+                    loggingRate /= 1000;
+                    loggingRateUnit = " KHz";	
+                }
+            }
             loggingRatesSelect.append('<option value="' + loggingRates[i].num + '/' + loggingRates[i].denom + '">' 
                 + loggingRate + loggingRateUnit + ' (' + Math.round(loggingRates[i].num / loggingRates[i].denom * 100) + '%)</option>');
             
