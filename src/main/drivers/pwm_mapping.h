@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "timer.h"
+#include "io_types.h"
 
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
@@ -88,10 +88,11 @@ typedef enum {
     PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
+struct timerHardware_s;
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
     pwmPortFlags_e flags;
-    const timerHardware_t *timerHardware;
+    const struct timerHardware_s *timerHardware;
 } pwmPortConfiguration_t;
 
 typedef struct pwmOutputConfiguration_s {

@@ -10,9 +10,9 @@
 
 #include "platform.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
+#include "sensor.h"
+#include "accgyro.h"
+#include "gyro_sync.h"
 
 static uint8_t mpuDividerDrops;
 
