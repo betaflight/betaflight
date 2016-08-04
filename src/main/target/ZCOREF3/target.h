@@ -101,6 +101,5 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 17 // PPM, 8 PWM, UART3 RX/TX, LED Strip
-
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 

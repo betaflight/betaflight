@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include <stdint.h>
-#include "io.h"
-#include "rcc.h"
+#include "io_types.h"
+#include "rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)

@@ -5,9 +5,14 @@
   http://www.st.com/software_license_agreement_liberty_v2
 */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
 #include "stm32f4xx.h"
-#include "timer.h"
 #include "rcc.h"
+#include "timer.h"
 
 /**
   * @brief  Selects the TIM Output Compare Mode.
