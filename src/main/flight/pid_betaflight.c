@@ -62,6 +62,9 @@ extern biquadFilter_t dtermFilterNotch[3];
 extern bool dtermNotchInitialised;
 extern bool dtermBiquadLpfInitialised;
 
+// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
+uint8_t PIDweight[3];
+
 void initFilters(const pidProfile_t *pidProfile);
 float getdT(void);
 
@@ -72,7 +75,7 @@ void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
     float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], b[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
+    static float Kp[3], Ki[3], Kd[3], b[3], c[3], yawMaxVelocity, yawPreviousRate;
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -134,14 +137,13 @@ void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
             configD[axis] = pidProfile->D8[axis];
         }
 
-        // Limit abrupt yaw inputs / stops
-        float maxVelocity = (axis == YAW) ? yawMaxVelocity : rollPitchMaxVelocity;
-        if (maxVelocity) {
-            float currentVelocity = setpointRate[axis] - previousSetpoint[axis];
-            if (ABS(currentVelocity) > maxVelocity) {
-                setpointRate[axis] = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity : previousSetpoint[axis] - maxVelocity;
+        // Limit abrupt yaw inputs
+        if (axis == YAW && pidProfile->pidMaxVelocityYaw) {
+            float yawCurrentVelocity = setpointRate[axis] - yawPreviousRate;
+            if (ABS(yawCurrentVelocity) > yawMaxVelocity) {
+                setpointRate[axis] = (yawCurrentVelocity > 0) ? yawPreviousRate + yawMaxVelocity : yawPreviousRate - yawMaxVelocity;
             }
-            previousSetpoint[axis] = setpointRate[axis];
+            yawPreviousRate = setpointRate[axis];
         }
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
