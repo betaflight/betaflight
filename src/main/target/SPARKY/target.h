@@ -72,6 +72,9 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
 
+#define I2C2_SCL                PA9
+#define I2C2_SDA                PA10
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
