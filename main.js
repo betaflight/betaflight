@@ -107,7 +107,6 @@ $(document).ready(function () {
                     case 'help':
                         TABS.help.initialize(content_ready);
                         break;
-
                     case 'auxiliary':
                         TABS.auxiliary.initialize(content_ready);
                         break;
@@ -140,9 +139,6 @@ $(document).ready(function () {
                         break;
                     case 'receiver':
                         TABS.receiver.initialize(content_ready);
-                        break;
-                    case 'modes':
-                        TABS.modes.initialize(content_ready);
                         break;
                     case 'servos':
                         TABS.servos.initialize(content_ready);
