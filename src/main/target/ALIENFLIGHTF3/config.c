@@ -47,8 +47,6 @@ void targetConfiguration(master_t *config)
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
     config->motorConfig.motorPwmRate = 32000;
-    config->failsafeConfig.failsafe_delay = 2;
-    config->failsafeConfig.failsafe_off_delay = 0;
     config->gyro_sync_denom = 2;
     config->pid_process_denom = 1;
     config->profile[0].pidProfile.P8[ROLL] = 90;
