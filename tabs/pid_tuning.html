@@ -41,16 +41,6 @@
                     </select>
                 </div>
             </div>
-            <div class="delta single-field">
-                <div class="helpicon cf_tip" i18n_title="pidTuningPidTip" style="margin-top: 5px;"></div>
-                <div class="head">Derivative Method</div>
-                <div class="bottomarea">
-                    <select name="delta">
-                        <option value="0">Error</option>
-                        <option value="1">Measurement</option>
-                    </select>
-                </div>
-            </div>
             <div class="cf_column right">
                 <div class="default_btn show">
                     <a href="#" id="showAllPids" i18n="pidTuningShowAllPids"></a>
@@ -64,31 +54,6 @@
             <div class="clear-both"></div>
             <div class="cf_column twothird">
                 <div class="gui_box grey">
-                    <table class="pid_titlebar new_rates">
-                        <tr>
-                            <th i18n="pidTuningPidSettings"></th>
-                        </tr>
-                    </table>
-                    <table class="compensation">
-                        <tbody class="features pidTuning">
-                            <!-- table generated here -->
-                        </tbody>
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="vbatpidcompensation" class="toggle" />
-                            </td>
-                            <td colspan=2>
-                                <div>
-                                    <label for="vbatpidcompensation">
-                                    <span i18n="pidTuningVbatPidCompensation"></span>
-                                    </label>
-                                    <div class="helpicon cf_tip" i18n_title="pidTuningVbatPidCompensationHelp"></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="gui_box grey topspacer">
                     <table class="pid_titlebar">
                         <tr>
                             <th class="name" i18n="pidTuningName"></th>
@@ -272,6 +237,79 @@
                             <td class="third"><input type="number" name="gyro" step="1" min="0" max="255" /></td>
                             <td class="third"><input type="number" name="dterm" step="1" min="0" max="500" /></td>
                             <td class="third"><input type="number" name="yaw" step="1" min="0" max="500" /></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="gui_box grey topspacer">
+                    <table class="pid_titlebar new_rates">
+                        <tr>
+                            <th i18n="pidTuningNonProfilePidSettings"></th>
+                        </tr>
+                    </table>
+                    <table class="compensation">
+                        <tbody class="features pidTuning">
+                            <!-- table generated here -->
+                        </tbody>
+                        <tr class="rcSmoothing">
+                            <td>
+                                <select name="rcSmoothing-select">
+                                    <option value="0" i18n="pidTuningRcSmoothingOff"/>
+                                    <option value="1" i18n="pidTuningRcSmoothingDefault"/>
+                                    <option value="2" i18n="pidTuningRcSmoothingAuto"/>
+                                    <option value="3" i18n="pidTuningRcSmoothingManual"/>
+                                </select>
+                            </td>
+                            <td colspan=2 i18n="pidTuningRcSmoothing"></td>
+                        </tr>
+                        <tr class="rcSmoothingInterval">
+                            <td><input type="number" class="nonProfile" name="rcSmoothingInterval-number" step="1" min="1" max="50"/></td>
+                            <td colspan=2 i18n="pidTuningRcSmoothingInterval"></td>
+                        </td>
+                    </table>
+                </div>
+                <div class="gui_box grey topspacer">
+                    <table class="pid_titlebar new_rates">
+                        <tr>
+                            <th i18n="pidTuningPidSettings"></th>
+                        </tr>
+                    </table>
+                    <table class="compensation">
+                        <tr class="delta">
+                            <td>
+                                <select name="delta-select">
+                                    <option value="0" i18n="pidTuningDeltaError"/>
+                                    <option value="1" i18n="pidTuningDeltaMeasurement"/>
+                                </select>
+                            </td>
+                            <td colspan=2>
+                                <div>
+                                    <label for="delta-select">
+                                    <span i18n="pidTuningDelta"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningDeltaTip"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="ptermSetpoint">
+                            <td><input type="number" name="ptermSetpoint-number" step="0.01" min="0.30" max="1.00"/></td>
+                            <td class="slider"><input type="range" name="ptermSetpoint-range" step="0.01" min="0.30" max="1.00"/></td>
+                            <td i18n="pidTuningPtermSetpoint"></td>
+                        </tr>
+                        <tr class="dtermSetpoint">
+                            <td><input type="number" name="dtermSetpoint-number" step="0.01" min="0.00" max="3.00"/></td>
+                            <td class="slider"><input type="range" name="dtermSetpoint-range" step="0.01" min="0.00" max="3.00"/></td>
+                            <td i18n="pidTuningDtermSetpoint"></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" name="vbatpidcompensation" class="toggle" /></td>
+                            <td colspan=2>
+                                <div>
+                                    <label for="vbatpidcompensation">
+                                    <span i18n="pidTuningVbatPidCompensation"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningVbatPidCompensationHelp"></div>
+                                </div>
+                            </td>
                         </tr>
                     </table>
                 </div>

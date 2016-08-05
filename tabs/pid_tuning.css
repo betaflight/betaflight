@@ -264,8 +264,25 @@
 
 .tab-pid_tuning .compensation td {
    padding: 5px;
-   }
+}
 
+.tab-pid_tuning .compensation td:first-child {
+    width: 20%;
+    padding-bottom: 6px;
+    padding-top: 5px;
+}
+
+.tab-pid_tuning .compensation td:last-child {
+    width: 40%;
+}
+
+.tab-pid_tuning .compensation td {
+    width: 40%;
+}
+
+.tab-pid_tuning .compensation .slider input {
+    -webkit-appearance: slider-horizontal
+}
 
 .tab-pid_tuning table td {
     padding: 1px;
@@ -554,7 +571,7 @@
 
 
 .tab-pid_tuning .controller {
-    width: 100px; 
+    width: 150px; 
 }
 
 .tab-pid_tuning .controller select {
