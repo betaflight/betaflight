@@ -18,4 +18,3 @@
 #pragma once
 
 uint8_t sumhFrameStatus(void);
-bool sumhInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);

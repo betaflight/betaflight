@@ -17,28 +17,20 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <platform.h>
 
-#include "build/debug.h"
+#include "debug.h"
 
 #include "common/axis.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
-
-#include "drivers/system.h"
-
 #include "rx/rx.h"
-
+#include "drivers/system.h"
 #include "io/beeper.h"
-#include "io/motor_and_servo.h"
-
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
-#include "fc/config.h"
+#include "io/escservo.h"
+#include "io/rc_controls.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "flight/failsafe.h"
 
@@ -55,18 +47,15 @@
 
 static failsafeState_t failsafeState;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+static failsafeConfig_t *failsafeConfig;
 
-PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
-    .failsafe_delay = 10,              // 1sec
-    .failsafe_off_delay = 200,         // 20sec
-    .failsafe_throttle = 1000,         // default throttle off.
-    .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
-);
+static rxConfig_t *rxConfig;
+
+static uint16_t deadband3dThrottle;           // default throttle deadband from MIDRC
 
 static void failsafeReset(void)
 {
-    failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig->failsafe_delay * MILLIS_PER_TENTH_SECOND;
     failsafeState.validRxDataReceivedAt = 0;
     failsafeState.validRxDataFailedAt = 0;
     failsafeState.throttleLowPeriod = 0;
@@ -77,13 +66,20 @@ static void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
 
-void useFailsafeConfig()
+/*
+ * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
+ */
+void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
 {
+    failsafeConfig = failsafeConfigToUse;
     failsafeReset();
 }
 
-void failsafeInit(void)
+void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
 {
+    rxConfig = intialRxConfig;
+
+    deadband3dThrottle = deadband3d_throttle;
     failsafeState.events = 0;
     failsafeState.monitoring = false;
 
@@ -120,7 +116,7 @@ static void failsafeActivate(void)
     failsafeState.active = true;
     failsafeState.phase = FAILSAFE_LANDING;
     ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-    failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
 
     failsafeState.events++;
 }
@@ -128,9 +124,9 @@ static void failsafeActivate(void)
 static void failsafeApplyControlInput(void)
 {
     for (int i = 0; i < 3; i++) {
-        rcData[i] = rxConfig()->midrc;
+        rcData[i] = rxConfig->midrc;
     }
-    rcData[THROTTLE] = failsafeConfig()->failsafe_throttle;
+    rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
 }
 
 bool failsafeIsReceivingRxData(void)
@@ -173,10 +169,11 @@ void failsafeUpdateState(void)
 
     bool receivingRxData = failsafeIsReceivingRxData();
     bool armed = ARMING_FLAG(ARMED);
-    bool failsafeSwitchIsOn = rcModeIsActive(BOXFAILSAFE);
+    bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
-    if (!receivingRxData) {
+    // Beep RX lost only if we are not seeing data and we have been armed earlier
+    if (!receivingRxData && ARMING_FLAG(WAS_EVER_ARMED)) {
         beeperMode = BEEPER_RX_LOST;
     }
 
@@ -189,11 +186,11 @@ void failsafeUpdateState(void)
             case FAILSAFE_IDLE:
                 if (armed) {
                     // Track throttle command below minimum time
-                    if (THROTTLE_HIGH == calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle)) {
-                        failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+                    if (THROTTLE_HIGH == calculateThrottleStatus(rxConfig, deadband3dThrottle)) {
+                        failsafeState.throttleLowPeriod = millis() + failsafeConfig->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
-                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
+                    if (failsafeSwitchIsOn && failsafeConfig->failsafe_kill_switch) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
                         failsafeActivate();
                         failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
@@ -226,7 +223,7 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
-                    switch (failsafeConfig()->failsafe_procedure) {
+                    switch (failsafeConfig->failsafe_procedure) {
                         default:
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             // Stabilize, and set Throttle to specified level
@@ -273,7 +270,7 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
-                        if (!(!isUsingSticksForArming() && rcModeIsActive(BOXARM))) {
+                        if (!(!isUsingSticksForArming() && IS_RC_MODE_ACTIVE(BOXARM))) {
                             DISABLE_ARMING_FLAG(PREVENT_ARMING);
                             failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                             reprocessState = true;
@@ -288,7 +285,7 @@ void failsafeUpdateState(void)
                 // Entering IDLE with the requirement that throttle first must be at min_check for failsafe_throttle_low_delay period.
                 // This is to prevent that JustDisarm is activated on the next iteration.
                 // Because that would have the effect of shutting down failsafe handling on intermittent connections.
-                failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+                failsafeState.throttleLowPeriod = millis() + failsafeConfig->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;
                 DISABLE_FLIGHT_MODE(FAILSAFE_MODE);

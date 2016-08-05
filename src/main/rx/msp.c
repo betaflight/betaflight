@@ -18,13 +18,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#include "build/build_config.h"
+#ifndef SKIP_RX_MSP
 
-#include "config/parameter_group.h"
+#include "build_config.h"
 
-#include "drivers/dma.h"
 #include "drivers/system.h"
 
 #include "drivers/serial.h"
@@ -67,9 +66,11 @@ bool rxMspFrameComplete(void)
     return true;
 }
 
-void rxMspInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
+    UNUSED(rxConfig);
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
     if (callback)
         *callback = rxMspReadRawRC;
 }
+#endif

@@ -17,18 +17,26 @@
 
 #pragma once
 
+#include "io.h"
+#include "rcc.h"
+
 #if !defined(USABLE_TIMER_CHANNEL_COUNT)
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #endif
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
-#if defined(STM32F303)
+#if defined(STM32F4)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
-#elif defined(STM32F10X)
+#elif defined(STM32F3)
+typedef uint32_t timCCR_t;
+typedef uint32_t timCCER_t;
+typedef uint32_t timSR_t;
+typedef uint32_t timCNT_t;
+#elif defined(STM32F1)
 typedef uint16_t timCCR_t;
 typedef uint16_t timCCER_t;
 typedef uint16_t timSR_t;
@@ -39,8 +47,9 @@ typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
 #else
-# error "Unknown CPU defined"
+#error "Unknown CPU defined"
 #endif
+
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
 struct timerCCHandlerRec_s;
@@ -57,21 +66,49 @@ typedef struct timerOvrHandlerRec_s {
     struct timerOvrHandlerRec_s* next;
 } timerOvrHandlerRec_t;
 
-typedef struct {
+typedef struct timerDef_s {
+    TIM_TypeDef *TIMx;
+    rccPeriphTag_t rcc;
+#if defined(STM32F3) || defined(STM32F4)
+    uint8_t alternateFunction;
+#endif
+} timerDef_t;
+
+typedef struct timerHardware_s {
     TIM_TypeDef *tim;
-    GPIO_TypeDef *gpio;
-    uint16_t pin;
+    ioTag_t tag;
     uint8_t channel;
     uint8_t irq;
-    uint8_t outputEnable;
-    GPIO_Mode gpioInputMode;
-#ifdef STM32F303
-    uint8_t gpioPinSource;             // TODO - this can be removed and pinSource calculated from pin
+    uint8_t output;
+    ioConfig_t ioMode;
+#if defined(STM32F3) || defined(STM32F4)
     uint8_t alternateFunction;
 #endif
 } timerHardware_t;
 
+enum {
+    TIMER_OUTPUT_ENABLED = 0x01,
+    TIMER_OUTPUT_INVERTED = 0x02,
+    TIMER_OUTPUT_N_CHANNEL= 0x04
+};
+
+#ifdef STM32F1
+#if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+#elif defined(STM32F10X_HD) || defined(STM32F10X_CL)
+#define HARDWARE_TIMER_DEFINITION_COUNT 7
+#else
+#define HARDWARE_TIMER_DEFINITION_COUNT 4
+#endif
+#elif defined(STM32F3)
+#define HARDWARE_TIMER_DEFINITION_COUNT 10
+#elif defined(STM32F4)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+#endif
+
+
 extern const timerHardware_t timerHardware[];
+extern const timerDef_t timerDefinitions[];
 
 typedef enum {
     TYPE_FREE,
@@ -100,7 +137,7 @@ volatile timCCR_t* timerChCCR(const timerHardware_t* timHw);
 volatile timCCR_t* timerChCCRLo(const timerHardware_t* timHw);
 volatile timCCR_t* timerChCCRHi(const timerHardware_t* timHw);
 void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh);
-void timerChConfigGPIO(const timerHardware_t* timHw, GPIO_Mode mode);
+void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode);
 
 void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn);
 void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn);
@@ -118,3 +155,8 @@ void timerForceOverflow(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
+rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
+
+#if defined(STM32F3) || defined(STM32F4)
+uint8_t timerGPIOAF(TIM_TypeDef *tim);
+#endif

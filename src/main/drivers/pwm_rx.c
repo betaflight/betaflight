@@ -18,15 +18,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <stdlib.h>
-
 #include <platform.h>
-#include "build/build_config.h"
-#include "build/debug.h"
+
+#ifndef SKIP_RX_PWM_PPM
+
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/utils.h"
-
-#include "config/parameter_group.h"
 
 #include "system.h"
 
@@ -34,6 +33,7 @@
 #include "gpio.h"
 #include "timer.h"
 
+#include "pwm_output.h"
 #include "pwm_mapping.h"
 
 #include "pwm_rx.h"
@@ -51,6 +51,8 @@
 
 // TODO - change to timer clocks ticks
 #define INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX 0x03
+
+static inputFilteringMode_e inputFilteringMode;
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
@@ -84,7 +86,7 @@ static uint16_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
 
 static uint8_t ppmFrameCount = 0;
 static uint8_t lastPPMFrameCount = 0;
-static uint8_t ppmCountShift = 0;
+static uint8_t ppmCountDivisor = 1;
 
 typedef struct ppmDevice_s {
     uint8_t  pulseIndex;
@@ -125,8 +127,9 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-void pwmRxInit(void)
+void pwmRxInit(inputFilteringMode_e initialInputFilteringMode)
 {
+    inputFilteringMode = initialInputFilteringMode;
 }
 
 #ifdef DEBUG_PPM_ISR
@@ -202,14 +205,14 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
         }
     }
 
-    // Divide by 8 if Oneshot125 is active and this is a CC3D board
-    currentTime = currentTime >> ppmCountShift;
+    // Divide value if Oneshot, Multishot or brushed motors are active and the timer is shared
+    currentTime = currentTime / ppmCountDivisor;
 
     /* Capture computation */
     if (currentTime > previousTime) {
-        ppmDev.deltaTime    = currentTime - (previousTime + (ppmDev.overflowed ? (PPM_TIMER_PERIOD >> ppmCountShift) : 0));
+        ppmDev.deltaTime    = currentTime - (previousTime + (ppmDev.overflowed ? (PPM_TIMER_PERIOD / ppmCountDivisor) : 0));
     } else {
-        ppmDev.deltaTime    = (PPM_TIMER_PERIOD >> ppmCountShift) + currentTime - previousTime;
+        ppmDev.deltaTime    = (PPM_TIMER_PERIOD / ppmCountDivisor) + currentTime - previousTime;
     }
 
     ppmDev.overflowed = false;
@@ -336,16 +339,6 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     }
 }
 
-static void pwmGPIOConfig(GPIO_TypeDef *gpio, uint32_t pin, GPIO_Mode mode)
-{
-    gpio_config_t cfg;
-
-    cfg.pin = pin;
-    cfg.mode = mode;
-    cfg.speed = Speed_2MHz;
-    gpioInit(gpio, &cfg);
-}
-
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -356,7 +349,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
     TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
 
-    if (pwmRxConfig()->inputFilteringMode == INPUT_FILTERING_ENABLED) {
+    if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
         TIM_ICInitStructure.TIM_ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
     } else {
         TIM_ICInitStructure.TIM_ICFilter = 0x00;
@@ -375,7 +368,10 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     self->mode = INPUT_MODE_PWM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
+    IO_t io = IOGetByTag(timerHardwarePtr->tag);
+    IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
+    IOConfigGPIO(io, timerHardwarePtr->ioMode);
+
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -388,11 +384,25 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 #define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
-void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer)
+void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer, uint8_t pwmProtocol)
 {
-    if (timerHardwarePtr->tim == sharedPwmTimer) {
-        ppmCountShift = 3;  // Divide by 8 if the timer is running at 8 MHz
-    }
+	if (timerHardwarePtr->tim == sharedPwmTimer) {
+        switch (pwmProtocol)
+        {
+        case PWM_TYPE_ONESHOT125:
+            ppmCountDivisor = ONESHOT125_TIMER_MHZ;
+            break;
+        case PWM_TYPE_ONESHOT42:
+            ppmCountDivisor = ONESHOT42_TIMER_MHZ;
+            break;
+        case PWM_TYPE_MULTISHOT:
+            ppmCountDivisor = MULTISHOT_TIMER_MHZ;
+            break;
+        case PWM_TYPE_BRUSHED:
+            ppmCountDivisor = PWM_BRUSHED_TIMER_MHZ;
+            break;
+        }
+	}
 }
 
 void ppmInConfig(const timerHardware_t *timerHardwarePtr)
@@ -404,7 +414,10 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     self->mode = INPUT_MODE_PPM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
+    IO_t io = IOGetByTag(timerHardwarePtr->tag);
+    IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
+    IOConfigGPIO(io, timerHardwarePtr->ioMode);
+
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -423,3 +436,4 @@ uint16_t pwmRead(uint8_t channel)
 {
     return captures[channel];
 }
+#endif

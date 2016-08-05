@@ -18,8 +18,9 @@
 #pragma once
 
 #ifdef INVERTER
-#define INVERTER_OFF digitalLo(INVERTER_GPIO, INVERTER_PIN)
-#define INVERTER_ON digitalHi(INVERTER_GPIO, INVERTER_PIN)
+void inverterSet(bool on);
+#define INVERTER_OFF inverterSet(false)
+#define INVERTER_ON inverterSet(true)
 #else
 #define INVERTER_OFF do {} while(0)
 #define INVERTER_ON do {} while(0)

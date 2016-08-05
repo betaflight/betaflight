@@ -28,10 +28,9 @@ typedef enum {
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
 
-#define TASK_SELF -1
-
 typedef struct {
     const char * taskName;
+    const char * subTaskName;
     bool         isEnabled;
     uint32_t     desiredPeriod;
     uint8_t      staticPriority;
@@ -41,9 +40,64 @@ typedef struct {
     uint32_t     latestDeltaTime;
 } cfTaskInfo_t;
 
+typedef enum {
+    /* Actual tasks */
+    TASK_SYSTEM = 0,
+    TASK_GYROPID,
+    TASK_ACCEL,
+    TASK_ATTITUDE,
+    TASK_RX,
+    TASK_SERIAL,
+    TASK_BATTERY,
+#ifdef BEEPER
+    TASK_BEEPER,
+#endif
+#ifdef GPS
+    TASK_GPS,
+#endif
+#ifdef MAG
+    TASK_COMPASS,
+#endif
+#ifdef BARO
+    TASK_BARO,
+#endif
+#ifdef SONAR
+    TASK_SONAR,
+#endif
+#if defined(BARO) || defined(SONAR)
+    TASK_ALTITUDE,
+#endif
+#ifdef DISPLAY
+    TASK_DISPLAY,
+#endif
+#ifdef TELEMETRY
+    TASK_TELEMETRY,
+#endif
+#ifdef LED_STRIP
+    TASK_LEDSTRIP,
+#endif
+#ifdef TRANSPONDER
+    TASK_TRANSPONDER,
+#endif
+#ifdef OSD
+    TASK_OSD,
+#endif
+#ifdef USE_BST
+    TASK_BST_MASTER_PROCESS,
+#endif
+
+    /* Count of real tasks */
+    TASK_COUNT,
+
+    /* Service task IDs */
+    TASK_NONE = TASK_COUNT,
+    TASK_SELF
+} cfTaskId_e;
+
 typedef struct {
     /* Configuration */
     const char * taskName;
+    const char * subTaskName;
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
     uint32_t desiredPeriod;         // target period of execution
@@ -64,18 +118,14 @@ typedef struct {
 #endif
 } cfTask_t;
 
+extern cfTask_t cfTasks[TASK_COUNT];
 extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
 
-extern cfTask_t* taskQueueArray[];
-extern const uint32_t taskQueueArraySize;
-extern const uint32_t taskCount;
-extern cfTask_t cfTasks[];
-
-void getTaskInfo(const int taskId, cfTaskInfo_t *taskInfo);
-void rescheduleTask(const int taskId, uint32_t newPeriodMicros);
-void setTaskEnabled(const int taskId, bool newEnabledState);
-uint32_t getTaskDeltaTime(const int taskId);
+void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
+void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
+void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
+uint32_t getTaskDeltaTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);

@@ -19,13 +19,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
-#include "build/debug.h"
+#include "platform.h"
+#include "debug.h"
 
-#include "config/parameter_group.h"
-
-#include "drivers/dma.h"
-#include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/system.h"
 
 #include "drivers/light_led.h"
@@ -34,7 +32,11 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
-#include "fc/config.h"
+#include "config/config.h"
+
+#ifdef TELEMETRY
+#include "telemetry/telemetry.h"
+#endif
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -46,7 +48,6 @@
 #define SPEKTRUM_1024_CHANNEL_COUNT 7
 
 #define SPEK_FRAME_SIZE 16
-#define SPEKTRUM_NEEDED_FRAME_INTERVAL 5000
 
 #define SPEKTRUM_BAUDRATE 115200
 
@@ -62,11 +63,18 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 
-bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+#ifdef SPEKTRUM_BIND
+static IO_t BindPin = DEFIO_IO(NONE);
+#endif
+#ifdef HARDWARE_BIND_PLUG
+static IO_t BindPlug = DEFIO_IO(NONE);
+#endif
+
+bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
-    switch (rxConfig()->serialrx_provider) {
+    switch (rxConfig->serialrx_provider) {
         case SERIALRX_SPEKTRUM2048:
             // 11 bit frames
             spek_chan_shift = 3;
@@ -91,7 +99,19 @@ bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback
         return false;
     }
 
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = spektrumPort;
+    }
+#endif
 
     return spektrumPort != NULL;
 }
@@ -99,24 +119,23 @@ bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
-    uint32_t spekTime, spekTimeInterval;
-    static uint32_t spekTimeLast = 0;
-    static uint8_t spekFramePosition = 0;
+    uint32_t spekTime;
+    static uint32_t spekTimeLast, spekTimeInterval;
+    static uint8_t spekFramePosition;
 
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-
-    if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {
+    if (spekTimeInterval > 5000) {
         spekFramePosition = 0;
     }
 
     if (spekFramePosition < SPEK_FRAME_SIZE) {
         spekFrame[spekFramePosition++] = (uint8_t)c;
-        if (spekFramePosition == SPEK_FRAME_SIZE) {
-            rcFrameComplete = true;
-        } else {
+        if (spekFramePosition < SPEK_FRAME_SIZE) {
             rcFrameComplete = false;
+        } else {
+            rcFrameComplete = true;
         }
     }
 }
@@ -164,16 +183,13 @@ static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t ch
 bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
 #ifdef HARDWARE_BIND_PLUG
-    gpio_config_t cfg = {
-        BINDPLUG_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BINDPLUG_PORT, &cfg);
+    BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
+    IOInit(BindPlug, OWNER_RX, RESOURCE_INPUT, 0);
+    IOConfigGPIO(BindPlug, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
     delayMicroseconds(10);  // allow configuration to settle
-    if (digitalIn(BINDPLUG_PORT, BINDPLUG_PIN)) {
+    if (IORead(BindPlug)) {
         return false;
     }
 #endif
@@ -199,15 +215,12 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     LED1_ON;
 
-    gpio_config_t cfg = {
-        BIND_PIN,
-        Mode_Out_OD,
-        Speed_2MHz
-    };
-    gpioInit(BIND_PORT, &cfg);
+    BindPin = IOGetByTag(IO_TAG(BIND_PIN));
+    IOInit(BindPin, OWNER_RX, RESOURCE_OUTPUT, 0);
+    IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
     // RX line, set high
-    digitalHi(BIND_PORT, BIND_PIN);
+    IOWrite(BindPin, true);
 
     // Bind window is around 20-140ms after powerup
     delay(60);
@@ -218,13 +231,13 @@ void spektrumBind(rxConfig_t *rxConfig)
         LED0_OFF;
         LED2_OFF;
         // RX line, drive low for 120us
-        digitalLo(BIND_PORT, BIND_PIN);
+        IOWrite(BindPin, false);
         delayMicroseconds(120);
 
         LED0_ON;
         LED2_ON;
         // RX line, drive high for 120us
-        digitalHi(BIND_PORT, BIND_PIN);
+        IOWrite(BindPin, true);
         delayMicroseconds(120);
 
     }
@@ -232,7 +245,8 @@ void spektrumBind(rxConfig_t *rxConfig)
 #ifndef HARDWARE_BIND_PLUG
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
-    if (!isMPUSoftReset()) {
+    // Reset only when autoreset is enabled
+    if (rxConfig->spektrum_sat_bind_autoreset == 1 && !isMPUSoftReset()) {
         rxConfig->spektrum_sat_bind = 0;
         saveConfigAndNotify();
     }

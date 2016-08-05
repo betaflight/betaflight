@@ -132,6 +132,12 @@ typedef struct ledCounts_s {
     uint8_t ringSeqLen;
 } ledCounts_t;
 
+
+ledConfig_t *ledConfigs;
+hsvColor_t *colors;
+modeColorIndexes_t *modeColors;
+specialColorIndexes_t specialColors;
+
 #define DEFINE_LED(x, y, col, dir, func, ol, params) (LED_MOV_POS(CALCULATE_LED_XY(x, y)) | LED_MOV_COLOR(col) | LED_MOV_DIRECTION(dir) | LED_MOV_FUNCTION(func) | LED_MOV_OVERLAY(ol) | LED_MOV_PARAMS(params))
 
 static inline uint8_t ledGetXY(const ledConfig_t *lcfg)         { return ((*lcfg >> LED_POS_OFFSET) & LED_BIT_MASK(LED_POS_BITCNT)); }
@@ -145,23 +151,29 @@ static inline uint8_t ledGetParams(const ledConfig_t *lcfg)     { return ((*lcfg
 
 static inline bool ledGetOverlayBit(const ledConfig_t *lcfg, int id) { return ((ledGetOverlay(lcfg) >> id) & 1); }
 static inline bool ledGetDirectionBit(const ledConfig_t *lcfg, int id) { return ((ledGetDirection(lcfg) >> id) & 1); }
-
+/*
 PG_DECLARE_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs);
 PG_DECLARE_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors);
 PG_DECLARE_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors);
 PG_DECLARE(specialColorIndexes_t, specialColors);
-
+*/
 bool parseColor(int index, const char *colorConfig);
 
 bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
-void ledStripInit(void);
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
 void updateLedStrip(void);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 
 extern uint16_t rssi; // FIXME dependency on mw.c
+
+
+void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
+void applyDefaultColors(hsvColor_t *colors);
+void applyDefaultModeColors(modeColorIndexes_t *modeColors);
+void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
 

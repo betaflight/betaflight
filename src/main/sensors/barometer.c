@@ -17,23 +17,17 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 #include <math.h>
 
-#include <platform.h>
-#include "build/build_config.h"
+#include "platform.h"
 
+int32_t BaroAlt = 0;
+
+#ifdef BARO
 #include "common/maths.h"
-
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
-#include "config/profile.h"
 
 #include "drivers/barometer.h"
 #include "drivers/system.h"
-
-//#include "fc/config.h"
 
 #include "sensors/barometer.h"
 
@@ -41,23 +35,17 @@ baro_t baro;                        // barometer access functions
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 int32_t baroPressure = 0;
 int32_t baroTemperature = 0;
-int32_t BaroAlt = 0;
-
-#ifdef BARO
-
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
 
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
 
-PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
-    .baro_sample_count = 21,
-    .baro_noise_lpf = 0.6f,
-    .baro_cf_vel = 0.985f,
-    .baro_cf_alt = 0.965f,
-);
+static barometerConfig_t *barometerConfig;
 
+void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
+{
+    barometerConfig = barometerConfigToUse;
+}
 
 bool isBaroCalibrationComplete(void)
 {
@@ -79,7 +67,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
     static int currentFilterSampleIndex = 0;
     static bool medianFilterReady = false;
     int nextSampleIndex;
-    
+
     nextSampleIndex = (currentFilterSampleIndex + 1);
     if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
         nextSampleIndex = 0;
@@ -88,14 +76,14 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
 
     barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
     currentFilterSampleIndex = nextSampleIndex;
-    
+
     if (medianFilterReady)
         return quickMedianFilter3(barometerFilterSamples);
     else
         return newPressureReading;
 }
 
-#define PRESSURE_SAMPLE_COUNT (barometerConfig()->baro_sample_count - 1)
+#define PRESSURE_SAMPLE_COUNT (barometerConfig->baro_sample_count - 1)
 
 static uint32_t recalculateBarometerTotal(uint8_t baroSampleCount, uint32_t pressureTotal, int32_t newPressureReading)
 {
@@ -128,7 +116,7 @@ typedef enum {
 
 
 bool isBaroReady(void) {
-	return baroReady;
+    return baroReady;
 }
 
 uint32_t baroUpdate(void)
@@ -148,7 +136,7 @@ uint32_t baroUpdate(void)
             baro.get_up();
             baro.start_ut();
             baro.calculate(&baroPressure, &baroTemperature);
-            baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
+            baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.ut_delay;
         break;
@@ -163,7 +151,7 @@ int32_t baroCalculateAltitude(void)
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
     BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
     BaroAlt_tmp -= baroGroundAltitude;
-    BaroAlt = lrintf((float)BaroAlt * barometerConfig()->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig()->baro_noise_lpf)); // additional LPF to reduce baro noise
+    BaroAlt = lrintf((float)BaroAlt * barometerConfig->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig->baro_noise_lpf)); // additional LPF to reduce baro noise
 
     return BaroAlt;
 }

@@ -248,19 +248,13 @@ void HRTIM_SimpleBase_Init(HRTIM_TypeDef* HRTIMx, uint32_t TimerIdx, HRTIM_BaseI
   * @param  HRTIMx: pointer to HRTIMx peripheral 
   * @retval None
   */
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 void HRTIM_DeInit(HRTIM_TypeDef* HRTIMx)
 {
+    (void)HRTIMx;
   /* Check the parameters */
     RCC_APB2PeriphResetCmd(RCC_APB2Periph_HRTIM1, ENABLE);
     RCC_APB2PeriphResetCmd(RCC_APB2Periph_HRTIM1, DISABLE);  
  }
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Initializes the HRTIMx timer in basic output compare mode 
@@ -636,21 +630,15 @@ void HRTIM_SimplePWMStop(HRTIM_TypeDef * HRTIMx,
   *        units. It can be used directly and is active as soon as the timing 
   *        unit counter is enabled.
   */
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 void HRTIM_SimpleCaptureStart(HRTIM_TypeDef * HRTIMx,
                                               uint32_t TimerIdx,
                                               uint32_t CaptureChannel)
 {
+    (void)CaptureChannel;
   /* Enable the timer counter */
   __HRTIM_ENABLE(HRTIMx, TimerIdxToTimerId[TimerIdx]);
 
 }
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Disables a basic capture on the designed capture unit 
@@ -3221,14 +3209,11 @@ uint32_t HRTIM_WaveformGetOutputLevel(HRTIM_TypeDef * HRTIMx,
   *                    @arg HRTIM_OUTPUT_TE2: Timer E - Output 2
   * @retval Output state
   */
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 uint32_t HRTIM_WaveformGetOutputState(HRTIM_TypeDef * HRTIMx,
                                           uint32_t TimerIdx,
                                           uint32_t Output)
 {
+    (void)(TimerIdx);
   uint32_t output_bit = 0;
   uint32_t output_state = HRTIM_OUTPUTSTATE_IDLE;
   
@@ -3313,9 +3298,6 @@ uint32_t HRTIM_WaveformGetOutputState(HRTIM_TypeDef * HRTIMx,
   
   return(output_state);  
 }
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Returns the level (active or inactive) of the designated output 

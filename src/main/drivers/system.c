@@ -15,22 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#include "build/build_config.h"
-
-#include "dma.h"
 #include "gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
 #include "nvic.h"
-#include "serial.h"
-#include "serial_uart.h"
 
 #include "system.h"
 
@@ -38,12 +31,7 @@
 #define EXTI_CALLBACK_HANDLER_COUNT 1
 #endif
 
-typedef struct extiCallbackHandlerConfig_s {
-    IRQn_Type irqn;
-    extiCallbackHandlerFunc* fn;
-} extiCallbackHandlerConfig_t;
-
-static extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
+extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
 
 void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
 {
@@ -58,48 +46,6 @@ void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
     failureMode(FAILURE_DEVELOPER); // EXTI_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
 }
 
-void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
-{
-    for (int index = 0; index < EXTI_CALLBACK_HANDLER_COUNT; index++) {
-        extiCallbackHandlerConfig_t *candidate = &extiHandlerConfigs[index];
-        if (candidate->fn == fn && candidate->irqn == irqn) {
-            candidate->fn = NULL;
-            candidate->irqn = 0;
-            return;
-        }
-    }
-}
-
-static void extiHandler(IRQn_Type irqn)
-{
-    for (int index = 0; index < EXTI_CALLBACK_HANDLER_COUNT; index++) {
-        extiCallbackHandlerConfig_t *candidate = &extiHandlerConfigs[index];
-        if (candidate->fn && candidate->irqn == irqn) {
-            candidate->fn();
-        }
-    }
-
-}
-
-void EXTI15_10_IRQHandler(void)
-{
-    extiHandler(EXTI15_10_IRQn);
-}
-
-#if defined(CC3D)
- void EXTI3_IRQHandler(void)
-{
-    extiHandler(EXTI3_IRQn);
-}
-#endif
-
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
-void EXTI9_5_IRQHandler(void)
-{
-    extiHandler(EXTI9_5_IRQn);
-}
-#endif
-
 // cycles per microsecond
 static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
@@ -107,7 +53,7 @@ static volatile uint32_t sysTickUptime = 0;
 // cached value of RCC->CSR
 uint32_t cachedRccCsrValue;
 
-static void cycleCounterInit(void)
+void cycleCounterInit(void)
 {
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
@@ -127,7 +73,6 @@ uint32_t micros(void)
     do {
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
-
         /*
          * If the SysTick timer expired during the previous instruction, we need to give it a little time for that
          * interrupt to be delivered before we can recheck sysTickUptime:
@@ -141,46 +86,6 @@ uint32_t micros(void)
 uint32_t millis(void)
 {
     return sysTickUptime;
-}
-
-void systemInit(void)
-{
-#ifdef CC3D
-    /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
-    extern void *isr_vector_table_base;
-
-    NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
-#endif
-    // Configure NVIC preempt/priority groups
-    NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);
-
-#ifdef STM32F10X
-    // Turn on clocks for stuff we use
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-    // cache RCC->CSR value to use it in isMPUSoftreset() and others
-    cachedRccCsrValue = RCC->CSR;
-    RCC_ClearFlag();
-
-    enableGPIOPowerUsageAndNoiseReductions();
-
-    usartInitAllIOSignals();
-
-#ifdef STM32F10X
-    // Turn off JTAG port 'cause we're using the GPIO for leds
-#define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
-#endif
-
-    // Init cycle counter
-    cycleCounterInit();
-
-    // Init EXTI handler configurations.
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
-
-    // SysTick
-    SysTick_Config(SystemCoreClock / 1000);
 }
 
 #if 1

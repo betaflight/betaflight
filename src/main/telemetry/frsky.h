@@ -15,31 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rx/rx.h"
+#pragma once
 
-#ifndef TELEMETRY_FRSKY_H_
-#define TELEMETRY_FRSKY_H_
+#include "rx/rx.h"
 
 typedef enum {
     FRSKY_VFAS_PRECISION_LOW = 0,
     FRSKY_VFAS_PRECISION_HIGH
 } frskyVFasPrecision_e;
 
-typedef struct frskyTelemetryConfig_s {
-    float gpsNoFixLatitude;
-    float gpsNoFixLongitude;
-    frskyGpsCoordFormat_e frsky_coordinate_format;
-    frskyUnit_e frsky_unit;
-    uint8_t frsky_vfas_precision;
-} frskyTelemetryConfig_t;
-
-PG_DECLARE(frskyTelemetryConfig_t, frskyTelemetryConfig);
-
-void handleFrSkyTelemetry(uint16_t deadband3d_throttle);
+void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 void checkFrSkyTelemetryState(void);
 
-void initFrSkyTelemetry(void);
+void initFrSkyTelemetry(telemetryConfig_t *telemetryConfig);
 void configureFrSkyTelemetryPort(void);
 void freeFrSkyTelemetryPort(void);
 
-#endif /* TELEMETRY_FRSKY_H_ */

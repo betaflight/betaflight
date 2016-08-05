@@ -17,70 +17,43 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
-#include <platform.h>
-
-#include "build/build_config.h"
+#include "platform.h"
+#include "debug.h"
 
 #include "common/axis.h"
-
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/profile.h"
+#include "common/filter.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/system.h"
 
-#include "fc/rc_controls.h"
-#include "fc/config.h"
-
-#include "io/beeper.h"
-
-#include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "io/beeper.h"
 #include "sensors/boardalignment.h"
-
-#include "config/config_reset.h"
-#include "config/feature.h"
+#include "config/config.h"
 
 #include "sensors/acceleration.h"
 
-PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
-
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
-        .values.roll = 0,
-        .values.pitch = 0,
-    );
-}
-
-void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
-{
-    RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_cut_hz = 15,
-        .accz_lpf_cutoff = 5.0f,
-        .accDeadband.z = 40,
-        .accDeadband.xy = 40,
-        .acc_unarmedcal = 1,
-    );
-    resetRollAndPitchTrims(&instance->accelerometerTrims);
-}
-
-int32_t accADC[XYZ_AXIS_COUNT];
+int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
+uint32_t accTargetLooptime;
 
-uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
-extern bool AccInflightCalibrationArmed;
 extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
 static flightDynamicsTrims_t *accelerationTrims;
+
+static float accLpfCutHz = 0;
+static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
+static bool accFilterInitialised = false;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
@@ -92,32 +65,37 @@ bool isAccelerationCalibrationComplete(void)
     return calibratingA == 0;
 }
 
-bool isOnFinalAccelerationCalibrationCycle(void)
+static bool isOnFinalAccelerationCalibrationCycle(void)
 {
     return calibratingA == 1;
 }
 
-bool isOnFirstAccelerationCalibrationCycle(void)
+static bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    rollAndPitchTrims->values.roll = 0;
+    rollAndPitchTrims->values.pitch = 0;
+}
+
+static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
-    uint8_t axis;
 
-    for (axis = 0; axis < 3; axis++) {
+    for (int axis = 0; axis < 3; axis++) {
 
         // Reset a[axis] at start of calibration
         if (isOnFirstAccelerationCalibrationCycle())
             a[axis] = 0;
 
         // Sum up CALIBRATING_ACC_CYCLES readings
-        a[axis] += accADC[axis];
+        a[axis] += accSmooth[axis];
 
         // Reset global variables to prevent other code from using un-calibrated data
-        accADC[axis] = 0;
+        accSmooth[axis] = 0;
         accelerationTrims->raw[axis] = 0;
     }
 
@@ -135,7 +113,7 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
     calibratingA--;
 }
 
-void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     uint8_t axis;
     static int32_t b[3];
@@ -156,9 +134,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
             if (InflightcalibratingA == 50)
                 b[axis] = 0;
             // Sum up 50 readings
-            b[axis] += accADC[axis];
+            b[axis] += accSmooth[axis];
             // Clear global variables for next reading
-            accADC[axis] = 0;
+            accSmooth[axis] = 0;
             accelerationTrims->raw[axis] = 0;
         }
         // all values are measured
@@ -188,20 +166,11 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
     }
 }
 
-void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
+static void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 {
-    accADC[X] -= accelerationTrims->raw[X];
-    accADC[Y] -= accelerationTrims->raw[Y];
-    accADC[Z] -= accelerationTrims->raw[Z];
-}
-
-static void convertRawACCADCReadingsToInternalType(int16_t *accADCRaw)
-{
-    int axis;
-
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accADC[axis] = accADCRaw[axis];
-    }
+    accSmooth[X] -= accelerationTrims->raw[X];
+    accSmooth[Y] -= accelerationTrims->raw[Y];
+    accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
@@ -212,9 +181,29 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
         return;
     }
 
-    convertRawACCADCReadingsToInternalType(accADCRaw);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];
+        accSmooth[axis] = accADCRaw[axis];
+    }
 
-    alignSensors(accADC, accADC, accAlign);
+    if (accLpfCutHz) {
+        if (!accFilterInitialised) {
+            if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+                }
+                accFilterInitialised = true;
+            }
+        }
+
+        if (accFilterInitialised) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
+            }
+        }
+    }
+
+    alignSensors(accSmooth, accSmooth, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
@@ -230,4 +219,9 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
 {
     accelerationTrims = accelerationTrimsToUse;
+}
+
+void setAccelerationFilter(float initialAccLpfCutHz)
+{
+    accLpfCutHz = initialAccLpfCutHz;
 }

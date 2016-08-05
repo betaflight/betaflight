@@ -16,8 +16,8 @@
  *
  *        http://www.st.com/software_license_agreement_liberty_v2
  *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -30,20 +30,21 @@
 #include "usb_desc.h"
 
 /* USB Standard Device Descriptor */
-const uint8_t Virtual_Com_Port_DeviceDescriptor[] = { 0x12, /* bLength */
-USB_DEVICE_DESCRIPTOR_TYPE, /* bDescriptorType */
-0x00, 0x02, /* bcdUSB = 2.00 */
-0x02, /* bDeviceClass: CDC */
-0x00, /* bDeviceSubClass */
-0x00, /* bDeviceProtocol */
-0x40, /* bMaxPacketSize0 */
-0x83, 0x04, /* idVendor = 0x0483 */
-0x40, 0x57, /* idProduct = 0x7540 */
-0x00, 0x02, /* bcdDevice = 2.00 */
-1, /* Index of string descriptor describing manufacturer */
-2, /* Index of string descriptor describing product */
-3, /* Index of string descriptor describing the device's serial number */
-0x01 /* bNumConfigurations */
+const uint8_t Virtual_Com_Port_DeviceDescriptor[] = { 
+    0x12, /* bLength */
+    USB_DEVICE_DESCRIPTOR_TYPE, /* bDescriptorType */
+    0x00, 0x02, /* bcdUSB = 2.00 */
+    0x02, /* bDeviceClass: CDC */
+    0x00, /* bDeviceSubClass */
+    0x00, /* bDeviceProtocol */
+    0x40, /* bMaxPacketSize0 */
+    0x83, 0x04, /* idVendor  = 0x0483 */
+    0x40, 0x57, /* idProduct = 0x5740 */
+    0x00, 0x02, /* bcdDevice = 2.00 */
+    1, /* Index of string descriptor describing manufacturer */
+    2, /* Index of string descriptor describing product */
+    3, /* Index of string descriptor describing the device's serial number */
+    0x01 /* bNumConfigurations */
 };
 
 const uint8_t Virtual_Com_Port_ConfigDescriptor[] = {

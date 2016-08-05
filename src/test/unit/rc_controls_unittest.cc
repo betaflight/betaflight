@@ -21,15 +21,10 @@
 //#define DEBUG_RC_CONTROLS
 
 extern "C" {
-    #include <platform.h>
-    #include "build/build_config.h"
+    #include "platform.h"
 
     #include "common/maths.h"
     #include "common/axis.h"
-
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
-    #include "config/profile.h"
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
@@ -38,29 +33,19 @@ extern "C" {
     #include "sensors/acceleration.h"
 
     #include "io/beeper.h"
-    #include "io/motor_and_servo.h"
-    #include "fc/rc_controls.h"
-    #include "fc/rate_profile.h"
-    #include "fc/rc_adjustments.h"
+    #include "io/escservo.h"
+    #include "io/rc_controls.h"
 
     #include "rx/rx.h"
 
-
     #include "flight/pid.h"
-
-    void useRcControlsConfig(modeActivationCondition_t *);
-
-    PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
-    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 extern "C" {
-extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
-extern uint32_t rcModeActivationMask;
+extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
 }
 
 class RcControlsModesTest : public ::testing::Test {
@@ -79,6 +64,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
 
     // and
     memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
+    rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
     uint8_t index;
@@ -87,14 +73,14 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     }
 
     // when
-    rcModeUpdateActivated(modeActivationConditions);
+    updateActivatedModes(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
 #ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(false, rcModeIsActive((boxId_e)index));
+        EXPECT_EQ(false, IS_RC_MODE_ACTIVE(index));
     }
 }
 
@@ -150,6 +136,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
 
     // and
     memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
+    rxRuntimeConfig.auxChannelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
     uint8_t index;
@@ -176,7 +163,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     expectedMask |= (0 << 6);
 
     // when
-    rcModeUpdateActivated(modeActivationConditions);
+    updateActivatedModes(modeActivationConditions);
 
     // then
     for (index = 0; index < CHECKBOX_ITEM_COUNT; index++) {
@@ -236,9 +223,16 @@ void resetMillis(void) {
 #define DEFAULT_MIN_CHECK 1100
 #define DEFAULT_MAX_CHECK 1900
 
+rxConfig_t rxConfig;
+
 extern uint8_t adjustmentStateMask;
 extern adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
+static const adjustmentConfig_t rateAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_RC_RATE,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
 
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
@@ -253,24 +247,14 @@ protected:
             .tpa_breakpoint = 0
     };
 
-    adjustmentRange_t adjustmentRange = {
-            .auxChannelIndex = 0,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_NONE,
-            .auxSwitchChannelIndex = 0,
-            .adjustmentIndex = 0
-    };
-
     virtual void SetUp() {
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
-
-        memset(rxConfig(), 0, sizeof(*rxConfig()));
-        rxConfig()->mincheck = DEFAULT_MIN_CHECK;
-        rxConfig()->maxcheck = DEFAULT_MAX_CHECK;
-        rxConfig()->midrc = 1500;
+        memset(&rxConfig, 0, sizeof (rxConfig));
+        rxConfig.mincheck = DEFAULT_MIN_CHECK;
+        rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+        rxConfig.midrc = 1500;
 
         controlRateConfig.rcRate8 = 90;
         controlRateConfig.rcExpo8 = 0;
@@ -289,10 +273,7 @@ protected:
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
 {
     // given
-    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
-    adjustmentRange.auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
-    adjustmentRange.auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
-    configureAdjustmentState(&adjustmentRange);
+    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -305,7 +286,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
     resetMillis();
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 90);
@@ -329,19 +310,15 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     };
 
     // and
-    memset(rxConfig(), 0, sizeof (*rxConfig()));
-    rxConfig()->mincheck = DEFAULT_MIN_CHECK;
-    rxConfig()->maxcheck = DEFAULT_MAX_CHECK;
-    rxConfig()->midrc = 1500;
+    memset(&rxConfig, 0, sizeof (rxConfig));
+    rxConfig.mincheck = DEFAULT_MIN_CHECK;
+    rxConfig.maxcheck = DEFAULT_MAX_CHECK;
+    rxConfig.midrc = 1500;
 
     // and
     adjustmentStateMask = 0;
     memset(&adjustmentStates, 0, sizeof(adjustmentStates));
-    
-    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
-    adjustmentRange.auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
-    adjustmentRange.auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT;
-    configureAdjustmentState(&adjustmentRange);
+    configureAdjustment(0, AUX3 - NON_AUX_CHANNEL_COUNT, &rateAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -364,7 +341,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 496;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
@@ -381,7 +358,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 497;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -403,7 +380,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
             ~(1 << 0);
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     EXPECT_EQ(controlRateConfig.rcRate8, 91);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
@@ -423,7 +400,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 499;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -440,7 +417,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 500;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -454,7 +431,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 997;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 92);
@@ -470,7 +447,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     fixedMillis = 998;
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(controlRateConfig.rcRate8, 93);
@@ -479,20 +456,17 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
+static const adjustmentConfig_t rateProfileAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
+    .mode = ADJUSTMENT_MODE_SELECT,
+    .data = { { 3 } }
+};
+
 TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
 {
     // given
     int adjustmentIndex = 3;
-
-    adjustmentRange.adjustmentFunction = ADJUSTMENT_RATE_PROFILE;
-    adjustmentRange.auxChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
-    adjustmentRange.auxSwitchChannelIndex = AUX4 - NON_AUX_CHANNEL_COUNT;
-    adjustmentRange.adjustmentIndex = adjustmentIndex;
-
-    configureAdjustmentState(&adjustmentRange);
-
-    adjustmentRange.adjustmentFunction = ADJUSTMENT_RC_RATE;
-    configureAdjustmentState(&adjustmentRange);
+    configureAdjustment(adjustmentIndex, AUX4 - NON_AUX_CHANNEL_COUNT, &rateProfileAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -512,7 +486,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
             (1 << adjustmentIndex);
 
     // when
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 1);
@@ -520,81 +494,74 @@ TEST_F(RcControlsAdjustmentsTest, processRcRateProfileAdjustments)
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 }
 
-TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses integers
+static const adjustmentConfig_t pidPitchAndRollPAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidPitchAndRollIAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidPitchAndRollDAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawPAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_P,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawIAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_I,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+static const adjustmentConfig_t pidYawDAdjustmentConfig = {
+    .adjustmentFunction = ADJUSTMENT_YAW_D,
+    .mode = ADJUSTMENT_MODE_STEP,
+    .data = { { 1 } }
+};
+
+TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    memset(pidProfile(), 0, sizeof (*pidProfile()));
-    pidProfile()->pidController = 0;
-    pidProfile()->P8[PIDPITCH] = 0;
-    pidProfile()->P8[PIDROLL] = 5;
-    pidProfile()->P8[YAW] = 7;
-    pidProfile()->I8[PIDPITCH] = 10;
-    pidProfile()->I8[PIDROLL] = 15;
-    pidProfile()->I8[YAW] = 17;
-    pidProfile()->D8[PIDPITCH] = 20;
-    pidProfile()->D8[PIDROLL] = 25;
-    pidProfile()->D8[YAW] = 27;
+    escAndServoConfig_t escAndServoConfig;
+    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+
+    pidProfile_t pidProfile;
+    memset(&pidProfile, 0, sizeof (pidProfile));
+    pidProfile.pidController = 0;
+    pidProfile.P8[PIDPITCH] = 0;
+    pidProfile.P8[PIDROLL] = 5;
+    pidProfile.P8[YAW] = 7;
+    pidProfile.I8[PIDPITCH] = 10;
+    pidProfile.I8[PIDROLL] = 15;
+    pidProfile.I8[YAW] = 17;
+    pidProfile.D8[PIDPITCH] = 20;
+    pidProfile.D8[PIDROLL] = 25;
+    pidProfile.D8[YAW] = 27;
 
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof (controlRateConfig));
 
-    adjustmentRange_t adjustmentRange1 = {
-            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 0
-    };
-    configureAdjustmentState(&adjustmentRange1);
-
-    adjustmentRange_t adjustmentRange2 = {
-            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 1
-    };
-    configureAdjustmentState(&adjustmentRange2);
-
-    adjustmentRange_t adjustmentRange3 = {
-            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 2
-    };
-    configureAdjustmentState(&adjustmentRange3);
-
-    adjustmentRange_t adjustmentRange4 = {
-            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_P,
-            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 3
-    };
-    configureAdjustmentState(&adjustmentRange4);
-
-    adjustmentRange_t adjustmentRange5 = {
-            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_I,
-            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 4
-    };
-    configureAdjustmentState(&adjustmentRange5);
-
-    adjustmentRange_t adjustmentRange6 = {
-            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_D,
-            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 5
-    };
-    configureAdjustmentState(&adjustmentRange6);
+    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
+    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
+    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
+    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
+    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
+    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -621,101 +588,57 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0) // uses inte
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions);
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-    EXPECT_EQ(1, pidProfile()->P8[PIDPITCH]);
-    EXPECT_EQ(6, pidProfile()->P8[PIDROLL]);
-    EXPECT_EQ(8, pidProfile()->P8[YAW]);
-    EXPECT_EQ(11, pidProfile()->I8[PIDPITCH]);
-    EXPECT_EQ(16, pidProfile()->I8[PIDROLL]);
-    EXPECT_EQ(18, pidProfile()->I8[YAW]);
-    EXPECT_EQ(21, pidProfile()->D8[PIDPITCH]);
-    EXPECT_EQ(26, pidProfile()->D8[PIDROLL]);
-    EXPECT_EQ(28, pidProfile()->D8[YAW]);
+    EXPECT_EQ(1, pidProfile.P8[PIDPITCH]);
+    EXPECT_EQ(6, pidProfile.P8[PIDROLL]);
+    EXPECT_EQ(8, pidProfile.P8[YAW]);
+    EXPECT_EQ(11, pidProfile.I8[PIDPITCH]);
+    EXPECT_EQ(16, pidProfile.I8[PIDROLL]);
+    EXPECT_EQ(18, pidProfile.I8[YAW]);
+    EXPECT_EQ(21, pidProfile.D8[PIDPITCH]);
+    EXPECT_EQ(26, pidProfile.D8[PIDROLL]);
+    EXPECT_EQ(28, pidProfile.D8[YAW]);
 }
 
-TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floats
+TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
 {
     // given
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    memset(pidProfile(), 0, sizeof (*pidProfile()));
-    pidProfile()->pidController = 2;
-/* !!TODO - this is temporarily removed, asses permanent removal
-    pidProfile()->P_f[PIDPITCH] = 0.0f;
-    pidProfile()->P_f[PIDROLL] = 5.0f;
-    pidProfile()->P_f[PIDYAW] = 7.0f;
-    pidProfile()->I_f[PIDPITCH] = 10.0f;
-    pidProfile()->I_f[PIDROLL] = 15.0f;
-    pidProfile()->I_f[PIDYAW] = 17.0f;
-    pidProfile()->D_f[PIDPITCH] = 20.0f;
-    pidProfile()->D_f[PIDROLL] = 25.0f;
-    pidProfile()->D_f[PIDYAW] = 27.0f;
-*/
+    escAndServoConfig_t escAndServoConfig;
+    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+
+    pidProfile_t pidProfile;
+    memset(&pidProfile, 0, sizeof (pidProfile));
+    pidProfile.pidController = 2;
+    pidProfile.P_f[PIDPITCH] = 0.0f;
+    pidProfile.P_f[PIDROLL] = 5.0f;
+    pidProfile.P_f[PIDYAW] = 7.0f;
+    pidProfile.I_f[PIDPITCH] = 10.0f;
+    pidProfile.I_f[PIDROLL] = 15.0f;
+    pidProfile.I_f[PIDYAW] = 17.0f;
+    pidProfile.D_f[PIDPITCH] = 20.0f;
+    pidProfile.D_f[PIDROLL] = 25.0f;
+    pidProfile.D_f[PIDYAW] = 27.0f;
+
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof (controlRateConfig));
 
-    adjustmentRange_t adjustmentRange1 = {
-            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
-            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 0
-    };
-    configureAdjustmentState(&adjustmentRange1);
-
-    adjustmentRange_t adjustmentRange2 = {
-            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
-            .auxSwitchChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 1
-    };
-    configureAdjustmentState(&adjustmentRange2);
-
-    adjustmentRange_t adjustmentRange3 = {
-            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
-            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 2
-    };
-    configureAdjustmentState(&adjustmentRange3);
-
-    adjustmentRange_t adjustmentRange4 = {
-            .auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_P,
-            .auxSwitchChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 3
-    };
-    configureAdjustmentState(&adjustmentRange4);
-
-    adjustmentRange_t adjustmentRange5 = {
-            .auxChannelIndex = AUX2 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_I,
-            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 4
-    };
-    configureAdjustmentState(&adjustmentRange5);
-
-    adjustmentRange_t adjustmentRange6 = {
-            .auxChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .range = { .startStep = 0, .endStep = 48 },
-            .adjustmentFunction = ADJUSTMENT_YAW_D,
-            .auxSwitchChannelIndex = AUX3 - NON_AUX_CHANNEL_COUNT,
-            .adjustmentIndex = 5
-    };
-    configureAdjustmentState(&adjustmentRange6);
+    configureAdjustment(0, AUX1 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollPAdjustmentConfig);
+    configureAdjustment(1, AUX2 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollIAdjustmentConfig);
+    configureAdjustment(2, AUX3 - NON_AUX_CHANNEL_COUNT, &pidPitchAndRollDAdjustmentConfig);
+    configureAdjustment(3, AUX1 - NON_AUX_CHANNEL_COUNT, &pidYawPAdjustmentConfig);
+    configureAdjustment(4, AUX2 - NON_AUX_CHANNEL_COUNT, &pidYawIAdjustmentConfig);
+    configureAdjustment(5, AUX3 - NON_AUX_CHANNEL_COUNT, &pidYawDAdjustmentConfig);
 
     // and
     uint8_t index;
@@ -742,31 +665,29 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions);
-    processRcAdjustments(&controlRateConfig, rxConfig());
+    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
     EXPECT_EQ(CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP), 6);
     EXPECT_EQ(adjustmentStateMask, expectedAdjustmentStateMask);
 
     // and
-/* !!TODO - this is temporarily removed, asses permanent removal
-    EXPECT_EQ(0.1f, pidProfile()->P_f[PIDPITCH]);
-    EXPECT_EQ(5.1f, pidProfile()->P_f[PIDROLL]);
-    EXPECT_EQ(7.1f, pidProfile()->P_f[PIDYAW]);
-    EXPECT_EQ(10.01f, pidProfile()->I_f[PIDPITCH]);
-    EXPECT_EQ(15.01f, pidProfile()->I_f[PIDROLL]);
-    EXPECT_EQ(17.01f, pidProfile()->I_f[PIDYAW]);
-    EXPECT_EQ(20.001f, pidProfile()->D_f[PIDPITCH]);
-    EXPECT_EQ(25.001f, pidProfile()->D_f[PIDROLL]);
-    EXPECT_EQ(27.001f, pidProfile()->D_f[PIDYAW]);
-*/
+    EXPECT_EQ(0.01f, pidProfile.P_f[PIDPITCH]);
+    EXPECT_EQ(5.01f, pidProfile.P_f[PIDROLL]);
+    EXPECT_EQ(7.01f, pidProfile.P_f[PIDYAW]);
+    EXPECT_EQ(10.01f, pidProfile.I_f[PIDPITCH]);
+    EXPECT_EQ(15.01f, pidProfile.I_f[PIDROLL]);
+    EXPECT_EQ(17.01f, pidProfile.I_f[PIDYAW]);
+    EXPECT_EQ(20.001f, pidProfile.D_f[PIDPITCH]);
+    EXPECT_EQ(25.001f, pidProfile.D_f[PIDROLL]);
+    EXPECT_EQ(27.001f, pidProfile.D_f[PIDYAW]);
 
 }
 
 extern "C" {
 void saveConfigAndNotify(void) {}
-void generateThrottleCurve(controlRateConfig_t *, motorAndServoConfig_t *) {}
+void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}

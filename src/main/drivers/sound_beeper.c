@@ -17,39 +17,20 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <platform.h>
-
-#include "build/build_config.h"
+#include "platform.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 
 #include "sound_beeper.h"
 
 
 #ifdef BEEPER
 
-void (*systemBeepPtr)(bool onoff) = NULL;
+static IO_t beeperIO = DEFIO_IO(NONE);
+static bool beeperInverted = false;
 
-static void beepNormal(bool onoff)
-{
-    if (onoff) {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
-    } else {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
-    }
-}
-
-static void beepInverted(bool onoff)
-{
-    if (onoff) {
-        digitalHi(BEEP_GPIO, BEEP_PIN);
-    } else {
-        digitalLo(BEEP_GPIO, BEEP_PIN);
-    }
-}
 #endif
 
 void systemBeep(bool onoff)
@@ -57,20 +38,29 @@ void systemBeep(bool onoff)
 #ifndef BEEPER
     UNUSED(onoff);
 #else
-    systemBeepPtr(onoff);
+    IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
 #endif
 }
 
-void beeperInit(beeperConfig_t *config)
+void systemBeepToggle(void)
+{
+#ifdef BEEPER
+    IOToggle(beeperIO);
+#endif
+}
+
+void beeperInit(const beeperConfig_t *config)
 {
 #ifndef BEEPER
     UNUSED(config);
 #else
-    initBeeperHardware(config);
-    if (config->isInverted)
-        systemBeepPtr = beepInverted;
-    else
-        systemBeepPtr = beepNormal;
-    BEEP_OFF;
+    beeperIO = IOGetByTag(config->ioTag);
+    beeperInverted = config->isInverted;
+
+    if (beeperIO) {
+        IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT, 0);
+        IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+    }
+    systemBeep(false);
 #endif
 }

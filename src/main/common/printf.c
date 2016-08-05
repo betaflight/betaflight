@@ -34,16 +34,14 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#include "build/build_config.h"
-
-#include "config/parameter_group.h"
+#include "build_config.h"
 
 #include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "build/build_config.h"
+#include "build_config.h"
 #include "printf.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
@@ -58,7 +56,7 @@ typedef void (*putcf) (void *, char);
 static putcf stdout_putf;
 static void *stdout_putp;
 
-// print bf, padded from left to at least n characters. 
+// print bf, padded from left to at least n characters.
 // padding is zero ('0') if z!=0, space (' ') otherwise
 static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 {
@@ -89,7 +87,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             putf(putp, ch); written++;
         } else {
             char lz = 0;
-#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
             char lng = 0;
 #endif
             int w = 0;
@@ -101,7 +99,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
             }
-#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
             if (ch == 'l') {
                 ch = *(fmt++);
                 lng = 1;
@@ -111,7 +109,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             case 0:
                 goto abort;
             case 'u':{
-#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
                     if (lng)
                         uli2a(va_arg(va, unsigned long int), 10, 0, bf);
                     else
@@ -121,7 +119,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                     break;
                 }
             case 'd':{
-#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
                     if (lng)
                         li2a(va_arg(va, unsigned long int), bf);
                     else
@@ -132,7 +130,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 }
             case 'x':
             case 'X':
-#ifdef 	REQUIRE_PRINTF_LONG_SUPPORT
+#ifdef  REQUIRE_PRINTF_LONG_SUPPORT
                 if (lng)
                     uli2a(va_arg(va, unsigned long int), 16, (ch == 'X'), bf);
                 else

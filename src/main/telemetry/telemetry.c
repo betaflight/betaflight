@@ -17,57 +17,45 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef TELEMETRY
-
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
-
-#include "fc/runtime_config.h"
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/fc_serial.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
+#include "io/rc_controls.h"
 
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
-#include "telemetry/mavlink.h"
+#include "telemetry/jetiexbus.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+static telemetryConfig_t *telemetryConfig;
 
-#ifdef STM32F303xC
-// hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#define DEFAULT_TELEMETRY_INVERSION 1
-#else
-#define DEFAULT_TELEMETRY_INVERSION 0
-#endif
-
-
-PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
-    .telemetry_inversion = DEFAULT_TELEMETRY_INVERSION,
-);
+void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
+{
+    telemetryConfig = telemetryConfigToUse;
+}
 
 void telemetryInit(void)
 {
-    initFrSkyTelemetry();
-    initHoTTTelemetry();
-    initSmartPortTelemetry();
-    initLtmTelemetry();
-    initMAVLinkTelemetry();
+    initFrSkyTelemetry(telemetryConfig);
+    initHoTTTelemetry(telemetryConfig);
+    initSmartPortTelemetry(telemetryConfig);
+    initLtmTelemetry(telemetryConfig);
+    initJetiExBusTelemetry(telemetryConfig);
+
     telemetryCheckState();
 }
 
@@ -76,8 +64,8 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig()->telemetry_switch)
-            enabled = rcModeIsActive(BOXTELEMETRY);
+        if (telemetryConfig->telemetry_switch)
+            enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
     }
@@ -85,22 +73,29 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
+bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig)
+{
+    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK;
+}
+
+serialPort_t *telemetrySharedPort = NULL;
+
 void telemetryCheckState(void)
 {
     checkFrSkyTelemetryState();
     checkHoTTTelemetryState();
     checkSmartPortTelemetryState();
     checkLtmTelemetryState();
-    checkMAVLinkTelemetryState();
+    checkJetiExBusTelemetryState();
 }
 
-void telemetryProcess(uint16_t deadband3d_throttle)
+void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    handleFrSkyTelemetry(deadband3d_throttle);
+    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
     handleHoTTTelemetry();
     handleSmartPortTelemetry();
     handleLtmTelemetry();
-    handleMAVLinkTelemetry();
+    handleJetiExBusTelemetry();
 }
 
 #endif

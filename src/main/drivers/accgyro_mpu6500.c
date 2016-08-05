@@ -19,8 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
-#include "build/build_config.h"
+#include "platform.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -55,7 +54,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
-    gyro->isDataReady = mpuIsDataReady;
+    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -67,11 +66,26 @@ void mpu6500AccInit(acc_t *acc)
 {
     mpuIntExtiInit();
 
-    acc->acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 4;
 }
 
 void mpu6500GyroInit(uint8_t lpf)
 {
+    mpuIntExtiInit();
+
+#ifdef NAZE
+    // FIXME target specific code in driver code.
+
+    gpio_config_t gpio;
+    // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices
+    if (hse_value == 12000000) {
+        gpio.pin = Pin_13;
+        gpio.speed = Speed_2MHz;
+        gpio.mode = Mode_IN_FLOATING;
+        gpioInit(GPIOC, &gpio);
+    }
+#endif
+
     mpuIntExtiInit();
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
@@ -81,10 +95,15 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
     delay(100);
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    delay(15);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
-    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    delay(15);
+    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    delay(15);
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    delay(100);
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG

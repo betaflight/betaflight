@@ -22,8 +22,8 @@
 #endif
 
 // Undefine this for use libc sinf/cosf. Keep this defined to use fast sin/cos approximations
-#define FAST_TRIGONOMETRY               // order 9 approximation
-//#define EVEN_FASTER_TRIGONOMETRY      // order 7 approximation
+#define FAST_MATH             // order 9 approximation
+#define VERY_FAST_MATH      // order 7 approximation
 
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
@@ -33,6 +33,10 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
+
+#define Q12 (1 << 12)
+
+typedef int32_t fix12_t;
 
 typedef struct stdev_s
 {
@@ -67,9 +71,6 @@ typedef union {
 
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
-int constrain(int amt, int low, int high);
-float constrainf(float amt, float low, float high);
-
 void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
@@ -88,6 +89,11 @@ int32_t quickMedianFilter5(int32_t * v);
 int32_t quickMedianFilter7(int32_t * v);
 int32_t quickMedianFilter9(int32_t * v);
 
+float quickMedianFilter3f(float * v);
+float quickMedianFilter5f(float * v);
+float quickMedianFilter7f(float * v);
+float quickMedianFilter9f(float * v);
+
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
@@ -103,3 +109,27 @@ float acos_approx(float x);
 #endif
 
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
+
+int16_t qPercent(fix12_t q);
+int16_t qMultiply(fix12_t q, int16_t input);
+fix12_t qConstruct(int16_t num, int16_t den);
+
+static inline int constrain(int amt, int low, int high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
+
+static inline float constrainf(float amt, float low, float high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}

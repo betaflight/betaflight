@@ -26,12 +26,14 @@ typedef enum {
 
 #define RGB_COLOR_COMPONENT_COUNT (RGB_BLUE + 1)
 
+struct rgbColor24bpp_s {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
 typedef union {
-    struct {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-    } rgb;
+    struct rgbColor24bpp_s rgb;
     uint8_t raw[RGB_COLOR_COMPONENT_COUNT];
 } rgbColor24bpp_t;
 

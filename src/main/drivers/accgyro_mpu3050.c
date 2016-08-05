@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "common/maths.h"
 
@@ -30,7 +30,6 @@
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu3050.h"
-#include "gyro_sync.h"
 
 // MPU3050, Standard address 0x68
 #define MPU3050_ADDRESS         0x68
@@ -58,7 +57,7 @@ bool mpu3050Detect(gyro_t *gyro)
     gyro->init = mpu3050Init;
     gyro->read = mpuGyroRead;
     gyro->temperature = mpu3050ReadTemp;
-    gyro->isDataReady = mpuIsDataReady;
+    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

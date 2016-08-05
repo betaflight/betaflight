@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#define ENABLE_DEBUG_OLED_PAGE
+#define ENABLE_DEBUG_OLED_PAGE
 
 typedef enum {
     PAGE_WELCOME,
@@ -35,8 +35,8 @@ typedef enum {
 #endif
 } pageId_e;
 
-void displayInit(void);
-
+struct rxConfig_s;
+void displayInit(struct rxConfig_s *intialRxConfig);
 void updateDisplay(void);
 
 void displayShowFixedPage(pageId_e pageId);

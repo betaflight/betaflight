@@ -19,22 +19,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 #include <math.h>
 
 #include "common/maths.h"
 
-#include "build/build_config.h"
-#include <platform.h>
-#include "build/debug.h"
+#include "build_config.h"
+#include "platform.h"
+#include "debug.h"
 
 #include "common/axis.h"
-#include "common/filter.h"
-
-#include "config/parameter_group_ids.h"
-#include "config/parameter_group.h"
-#include "config/config_reset.h"
-#include "config/profile.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -54,7 +47,7 @@
 
 #include "io/gps.h"
 
-#include "fc/runtime_config.h"
+#include "config/runtime_config.h"
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
@@ -62,7 +55,6 @@
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
 #define SPIN_RATE_LIMIT 20
 
-int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
@@ -73,27 +65,12 @@ float throttleAngleScale;
 float fc_acc;
 float smallAngleCosZ = 0;
 
+float magneticDeclination = 0.0f;       // calculated at startup from config
 static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
+static pidProfile_t *pidProfile;
 static accDeadband_t *accDeadband;
-
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
-
-PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
-    .dcm_kp = 2500,                // 1.0 * 10000
-    .looptime = 2000,
-    .gyroSync = 1,
-    .gyroSyncDenominator = 1,
-    .small_angle = 25,
-    .max_angle_inclination = 500,    // 50 degrees
-);
-
-PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
-    .throttle_correction_value = 0,      // could 10 with althold or 40 for fpv
-    .throttle_correction_angle = 800,    // could be 80.0 deg with atlhold or 45.0 for fpv
-);
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
@@ -130,14 +107,15 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
+    pidProfile_t *initialPidProfile,
     accDeadband_t *initialAccDeadband,
-    float accz_lpf_cutoff,
     uint16_t throttle_correction_angle
 )
 {
     imuRuntimeConfig = initialImuRuntimeConfig;
+    pidProfile = initialPidProfile;
     accDeadband = initialAccDeadband;
-    fc_acc = calculateAccZLowPassFilterRCTimeConstant(accz_lpf_cutoff);
+    fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
@@ -359,9 +337,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
     /* Compute pitch/roll angles */
-    attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2_approx(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+    attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
@@ -372,15 +350,6 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     } else {
         DISABLE_STATE(SMALL_ANGLE);
     }
-}
-
-bool imuIsAircraftArmable(uint8_t arming_angle)
-{
-    /* Update small angle state */
-    
-    float armingAngleCosZ = cos_approx(degreesToRadians(arming_angle));
-    
-    return (rMat[2][2] > armingAngleCosZ);
 }
 
 static bool imuIsAccelerometerHealthy(void)
@@ -398,19 +367,15 @@ static bool imuIsAccelerometerHealthy(void)
     return (81 < accMagnitude) && (accMagnitude < 121);
 }
 
-#ifdef MAG
 static bool isMagnetometerHealthy(void)
 {
     return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
 }
-#endif
 
 static void imuCalculateEstimatedAttitude(void)
 {
-    static pt1Filter_t accLPFState[3];
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
-    int32_t axis;
     bool useAcc = false;
     bool useMag = false;
     bool useYaw = false;
@@ -419,24 +384,13 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
-    // Smooth and use only valid accelerometer readings
-    for (axis = 0; axis < 3; axis++) {
-        if (imuRuntimeConfig->acc_cut_hz > 0) {
-            accSmooth[axis] = pt1FilterApply4(&accLPFState[axis], accADC[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
-        } else {
-            accSmooth[axis] = accADC[axis];
-        }
-    }
-
     if (imuIsAccelerometerHealthy()) {
         useAcc = true;
     }
 
-#ifdef MAG
     if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
         useMag = true;
     }
-#endif
 #if defined(GPS)
     else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
@@ -464,16 +418,14 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateGyroAndAttitude(void)
+void imuUpdateAttitude(void)
 {
-    gyroUpdate();
-
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
+        accSmooth[X] = 0;
+        accSmooth[Y] = 0;
+        accSmooth[Z] = 0;
     }
 }
 
@@ -492,7 +444,7 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
     if (rMat[2][2] <= 0.015f) {
         return 0;
     }
-    int angle = lrintf(acos_approx(rMat[2][2]) * throttleAngleScale);
+    int angle = lrintf(acosf(rMat[2][2]) * throttleAngleScale);
     if (angle > 900)
         angle = 900;
     return lrintf(throttle_correction_value * sin_approx(angle / (900.0f * M_PIf / 2.0f)));

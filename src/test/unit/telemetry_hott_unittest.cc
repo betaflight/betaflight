@@ -22,31 +22,28 @@
 #include <limits.h>
 
 extern "C" {
-    #include "build/debug.h"
+    #include "debug.h"
 
-    #include <platform.h>
+    #include "platform.h"
 
     #include "common/axis.h"
-
-    #include "config/parameter_group.h"
-    #include "config/profile.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
 
-    #include "fc/runtime_config.h"
-    #include "fc/rc_controls.h"
-    #include "io/serial.h"
-    #include "io/gps.h"
-
     #include "sensors/sensors.h"
     #include "sensors/battery.h"
+
+    #include "io/serial.h"
+    #include "io/gps.h"
 
     #include "telemetry/telemetry.h"
     #include "telemetry/hott.h"
 
     #include "flight/pid.h"
     #include "flight/gps_conversion.h"
+
+    #include "config/runtime_config.h"
 }
 
 #include "unittest_macros.h"
@@ -139,7 +136,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
     stateFlags = GPS_FIX;
     uint16_t altitudeInMeters = 1;
-    GPS_altitude = altitudeInMeters;
+    GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
 
     // when
     hottPrepareGPSResponse(hottGPSMessage);
@@ -165,7 +162,7 @@ uint8_t GPS_numSat;
 int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in m
+uint16_t GPS_altitude;              // altitude in 0.1m
 uint16_t vbat;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 
@@ -221,7 +218,7 @@ void closeSerialPort(serialPort_t *serialPort) {
     UNUSED(serialPort);
 }
 
-serialPortConfig_t *findSerialPortConfig(uint16_t function) {
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
     UNUSED(function);
 
     return NULL;

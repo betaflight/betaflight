@@ -18,51 +18,36 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
-
-#include "build/build_config.h"
+#include "platform.h"
 
 #include "common/axis.h"
-
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "config/profile.h"
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ist8310.h"
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
 #include "sensors/boardalignment.h"
-
-#include "fc/runtime_config.h"
-#include "fc/config.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIGURATION, 0);
-
-PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
-    .mag_declination = 0,
-);
-
 mag_t mag;                   // mag access functions
+int32_t magADC[XYZ_AXIS_COUNT];
+sensor_align_e magAlign = 0;
 
-float magneticDeclination = 0.0f;
+#ifdef MAG
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
-int16_t magADCRaw[XYZ_AXIS_COUNT];
-int32_t magADC[XYZ_AXIS_COUNT];
-sensor_align_e magAlign = 0;
-#ifdef MAG
+static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
 void compassInit(void)
@@ -121,19 +106,3 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     }
 }
 #endif
-
-void recalculateMagneticDeclination(void)
-{
-    int16_t deg, min;
-
-    if (sensors(SENSOR_MAG)) {
-        // calculate magnetic declination
-        deg = compassConfig()->mag_declination / 100;
-        min = compassConfig()->mag_declination % 100;
-
-        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
-    } else {
-        magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
-    }
-
-}

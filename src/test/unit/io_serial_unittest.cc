@@ -21,14 +21,13 @@
 #include <limits.h>
 
 extern "C" {
-    #include <platform.h>
-
-    #include "config/parameter_group.h"
-    #include "config/parameter_group_ids.h"
+    #include "platform.h"
 
     #include "drivers/serial.h"
-    #include "drivers/serial_softserial.h"
     #include "io/serial.h"
+
+    void serialInit(serialConfig_t *initialSerialConfig);
+
 }
 
 #include "unittest_macros.h"
@@ -37,43 +36,17 @@ extern "C" {
 //uint32_t testFeatureMask = 0;
 uint8_t cliMode = 0;
 
-PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
-
-extern uint8_t serialPortCount;
-
-TEST(IoSerialTest, TestSoftSerialPortsEnabled)
-{
-    // given
-    memset(serialConfig(), 0, sizeof(*serialConfig()));
-
-    // when
-    serialInit(true);
-
-    EXPECT_EQ(SERIAL_PORT_COUNT, 8);
-    EXPECT_EQ(SERIAL_PORT_COUNT, serialPortCount);
-}
-
-TEST(IoSerialTest, TestSoftSerialPortsDisabled)
-{
-    // given
-    memset(serialConfig(), 0, sizeof(*serialConfig()));
-
-    // when
-    serialInit(false);
-
-    EXPECT_EQ(SERIAL_PORT_COUNT - 2, serialPortCount);
-}
-
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    memset(serialConfig(), 0, sizeof(*serialConfig()));
+    serialConfig_t serialConfig;
+    memset(&serialConfig, 0, sizeof(serialConfig));
 
     // when
-    serialInit(true);
+    serialInit(&serialConfig);
 
     // and
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP_SERVER);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
 
     // then
     EXPECT_EQ(NULL, portConfig);
@@ -94,11 +67,7 @@ void cliProcess(void) {}
 bool isSerialTransmitBufferEmpty(serialPort_t *) {
     return true;
 }
-void mspSerialProcess(void) {}
+void mspProcess(void) {}
 void systemResetToBootloader(void) {}
 
-serialPort_t *usbVcpOpen(void) { return NULL; }
-serialPort_t *uartOpen(USART_TypeDef *, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) { return NULL; }
-serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portOptions_t) { return NULL; }
-void serialSetMode(serialPort_t *, portMode_t) {}
 }

@@ -34,8 +34,8 @@
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
-#define DEFAULT_SERVO_MIN_ANGLE 45
-#define DEFAULT_SERVO_MAX_ANGLE 45
+#define DEFAULT_SERVO_MIN_ANGLE 90
+#define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
     SERIAL_RX_FRAME_PENDING = 0,
@@ -49,10 +49,11 @@ typedef enum {
     SERIALRX_SBUS = 2,
     SERIALRX_SUMD = 3,
     SERIALRX_SUMH = 4,
-    SERIALRX_SRXL = 5, //formerly XBUS_MODE_B
+    SERIALRX_XBUS_MODE_B = 5,
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
     SERIALRX_IBUS = 7,
-    SERIALRX_PROVIDER_MAX = SERIALRX_IBUS
+    SERIALRX_JETIEXBUS = 8,
+    SERIALRX_PROVIDER_MAX = SERIALRX_JETIEXBUS
 } SerialRXType;
 
 #define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
@@ -101,7 +102,7 @@ typedef enum {
 typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
-} rxFailsafeChannelConfig_t;
+} rxFailsafeChannelConfiguration_t;
 
 typedef struct rxChannelRangeConfiguration_s {
     uint16_t min;
@@ -113,31 +114,40 @@ typedef struct rxConfig_s {
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
+    uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_ppm_invert;
-    uint8_t rcSmoothing;                    // Enable/Disable RC filtering
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t rcSmoothing;
+    uint8_t rcSmoothInterval;
+    uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
+    uint8_t max_aux_channel;
+    uint16_t airModeActivateThreshold;      // Throttle setpoint where airmode gets activated
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-}  rxConfig_t;
+    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-PG_DECLARE(rxConfig_t, rxConfig);
+    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
+} rxConfig_t;
 
-PG_DECLARE_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, failsafeChannelConfigs);
-PG_DECLARE_ARR(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, channelRanges);
+#define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
 typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver
+    uint8_t auxChannelCount;
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
+struct modeActivationCondition_s;
+void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
+void useRxConfig(rxConfig_t *rxConfigToUse);
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
@@ -145,14 +155,13 @@ bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-uint8_t serialRxFrameStatus();
+uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
+void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
 void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
-
-extern uint16_t rssi;

@@ -28,4 +28,5 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options);
 uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options);
 uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART6(uint32_t baudRate, portMode_t mode, portOptions_t options);
 

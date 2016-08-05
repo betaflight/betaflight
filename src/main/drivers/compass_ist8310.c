@@ -17,21 +17,22 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <math.h>
 
-#include <platform.h>
-#include "build/debug.h"
+#include "platform.h"
+
+#ifdef USE_MAG_IST8310
+
+#include "debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "config/parameter_group.h"
-
 #include "system.h"
 #include "nvic.h"
-#include "gpio.h"
+#include "io.h"
+#include "exti.h"
 #include "bus_i2c.h"
 #include "light_led.h"
 
@@ -39,6 +40,7 @@
 #include "compass.h"
 
 #include "sensors/sensors.h"
+
 #include "compass_ist8310.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
@@ -92,86 +94,55 @@
 #define IST8310_AVG_16_TIME 0x24
 #define IST8310_RESET 0x0D
 #define IST8310_ID 0x10
- 
 
+ 
 static const ist8310Config_t *ist8310Config = NULL;
 
-// void IST_MAG_DATA_READY_EXTI_Handler(void)
-// {
-//     if (EXTI_GetITStatus(ist8310Config->exti_line) == RESET) {
-//         return;
-//     }
+#ifdef USE_MAG_DATA_READY_SIGNAL
 
-//     EXTI_ClearITPendingBit(ist8310Config->exti_line);
+static IO_t intIO;
+static extiCallbackRec_t ist8310_extiCallbackRec;
 
-// #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
-//     // Measure the delta between calls to the interrupt handler
-//     // currently should be around 65/66 milli seconds / 15hz output rate
-//     static uint32_t lastCalledAt = 0;
-//     static int32_t callDelta = 0;
+void ist8310_extiHandler(extiCallbackRec_t* cb)
+{
+    UNUSED(cb);
+#ifdef DEBUG_MAG_DATA_READY_INTERRUPT
+    // Measure the delta between calls to the interrupt handler
+    // currently should be around 65/66 milli seconds / 15hz output rate
+    static uint32_t lastCalledAt = 0;
+    static int32_t callDelta = 0;
 
-//     uint32_t now = millis();
-//     callDelta = now - lastCalledAt;
+    uint32_t now = millis();
+    callDelta = now - lastCalledAt;
 
-//     //UNUSED(callDelta);
-//     debug[0] = callDelta;
+    //UNUSED(callDelta);
+    debug[0] = callDelta;
 
-//     lastCalledAt = now;
-// #endif
-// }
+    lastCalledAt = now;
+#endif
+}
+#endif
 
-// static void ist8310ConfigureDataReadyInterruptHandling(void)
-// {
-// #ifdef USE_MAG_DATA_READY_SIGNAL
+static void ist8310ConfigureDataReadyInterruptHandling(void)
+{
+#ifdef USE_MAG_DATA_READY_SIGNAL
 
-//     if (!(ist8310Config->exti_port_source && ist8310Config->exti_pin_source)) {
-//         return;
-//     }
-// #ifdef STM32F10X
-//     // enable AFIO for EXTI support
-//     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-// #endif
+    if (!(ist8310Config->intTag)) {
+        return;
+    }
+    intIO = IOGetByTag(ist8310Config->intTag);
+#ifdef ENSURE_MAG_DATA_READY_IS_HIGH
+    uint8_t status = IORead(intIO);
+    if (!status) {
+        return;
+    }
+#endif
 
-// #ifdef STM32F303xC
-//     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-//     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-// #endif
-
-// #ifdef STM32F10X
-//     gpioExtiLineConfig(ist8310Config->exti_port_source, ist8310Config->exti_pin_source);
-// #endif
-
-// #ifdef STM32F303xC
-//     gpioExtiLineConfig(ist8310Config->exti_port_source, ist8310Config->exti_pin_source);
-// #endif
-
-// #ifdef ENSURE_MAG_DATA_READY_IS_HIGH
-//     uint8_t status = GPIO_ReadInputDataBit(ist8310Config->gpioPort, ist8310Config->gpioPin);
-//     if (!status) {
-//         return;
-//     }
-// #endif
-
-//     registerExtiCallbackHandler(ist8310Config->exti_irqn, IST_MAG_DATA_READY_EXTI_Handler);
-
-//     EXTI_ClearITPendingBit(ist8310Config->exti_line);
-
-//     EXTI_InitTypeDef EXTIInit;
-//     EXTIInit.EXTI_Line = ist8310Config->exti_line;
-//     EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-//     EXTIInit.EXTI_Trigger = EXTI_Trigger_Falling;
-//     EXTIInit.EXTI_LineCmd = ENABLE;
-//     EXTI_Init(&EXTIInit);
-
-//     NVIC_InitTypeDef NVIC_InitStructure;
-
-//     NVIC_InitStructure.NVIC_IRQChannel = ist8310Config->exti_irqn;
-//     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MAG_DATA_READY);
-//     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MAG_DATA_READY);
-//     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//     NVIC_Init(&NVIC_InitStructure);
-// #endif
-// }
+    EXTIHandlerInit(&ist8310_extiCallbackRec, ist8310_extiHandler);
+    EXTIConfig(intIO, &ist8310_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(intIO, true);
+#endif
+}
 
 bool ist8310Detect(mag_t* mag, const ist8310Config_t *ist8310ConfigToUse)
 {
@@ -180,7 +151,7 @@ bool ist8310Detect(mag_t* mag, const ist8310Config_t *ist8310ConfigToUse)
 
     ist8310Config = ist8310ConfigToUse;
 
-    ack = i2cRead(MAG_ADDRESS, MAG_WHOAMI, 1, &sig);
+    ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_WHOAMI, 1, &sig);
     if (!ack || (sig != IST8310_ID))
         return false;
 
@@ -193,48 +164,23 @@ bool ist8310Detect(mag_t* mag, const ist8310Config_t *ist8310ConfigToUse)
 void ist8310Init(void)
 {
     int16_t magADC[3];
-    // int i;
-    // int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
-    // bool bret = true;           // Error indicator
 
-    gpio_config_t gpio;
-
-    if (ist8310Config) {
-#ifdef STM32F303
-        if (ist8310Config->gpioAHBPeripherals) {
-            RCC_AHBPeriphClockCmd(ist8310Config->gpioAHBPeripherals, ENABLE);
-        }
-#endif
-#ifdef STM32F10X
-        if (ist8310Config->gpioAPB2Peripherals) {
-            RCC_APB2PeriphClockCmd(ist8310Config->gpioAPB2Peripherals, ENABLE);
-        }
-#endif
-        gpio.pin = ist8310Config->gpioPin;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_IN_FLOATING;
-        gpioInit(ist8310Config->gpioPort, &gpio);
-    }
-
-    // 
-    i2cWrite(MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
     delay(5);
-    i2cWrite(MAG_ADDRESS, IST8310_AVERAGE, IST8310_AVG_16_TIME);
+    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_AVERAGE, IST8310_AVG_16_TIME);
     delay(5);
     ist8310Read(magADC);
     delay(5);
-    i2cWrite(MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
-    
-    // 20160802 wait for ist8310 hardware pcb for data ready pin on stm32f303cc
-    // ist8310ConfigureDataReadyInterruptHandling();
-   
+    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+
+    ist8310ConfigureDataReadyInterruptHandling();
 }
 
 bool ist8310Read(int16_t *magData)
 {
     uint8_t buf[6];
     float LSB2FSV = 3; // 3mG - 14 bit
-    bool ack = i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
     if (!ack) {
         return false;
     }
@@ -243,6 +189,7 @@ bool ist8310Read(int16_t *magData)
     magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
     magData[Y] = (int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
     magData[Z] = (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
-    i2cWrite(MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
     return true;
 }
+#endif

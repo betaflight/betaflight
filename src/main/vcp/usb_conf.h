@@ -16,8 +16,8 @@
  *
  *        http://www.st.com/software_license_agreement_liberty_v2
  *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -67,9 +67,11 @@
 /* IMR_MSK */
 /* mask defining which events has to be handled */
 /* by the device application software */
-// HJI #define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_SUSPM | CNTR_ERRM  | CNTR_SOFM | CNTR_ESOFM | CNTR_RESETM )
-// Disable Suspend/Resume response completely                                       // HJI
-#define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_ERRM  | CNTR_SOFM | CNTR_RESETM )  // HJI
+// #define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_SUSPM | CNTR_ERRM  | CNTR_SOFM | CNTR_ESOFM | CNTR_RESETM )
+// Disable Suspend/Resume response completely
+// #define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_ERRM  | CNTR_SOFM | CNTR_RESETM )
+// Disable Error interrupt which wasn't really used anyway
+#define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_SOFM | CNTR_RESETM )
 
 /*#define CTR_CALLBACK*/
 /*#define DOVR_CALLBACK*/

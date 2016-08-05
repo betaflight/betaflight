@@ -467,12 +467,9 @@ void SYSCFG_SRAMWRPEnable(uint32_t SYSCFG_SRAMWRP)
   *     @arg SYSCFG_FLAG_PE: SRAM parity error flag.
   * @retval The new state of SYSCFG_Flag (SET or RESET).
   */
-#ifdef __GNUC__
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 FlagStatus SYSCFG_GetFlagStatus(uint32_t SYSCFG_Flag)
 {
+    (void)SYSCFG_Flag;
   FlagStatus bitstatus = RESET;
 
   /* Check the parameter */
@@ -492,9 +489,6 @@ FlagStatus SYSCFG_GetFlagStatus(uint32_t SYSCFG_Flag)
   /* Return the SYSCFG_Flag status */
   return  bitstatus;
 }
-#ifdef __GNUC__
-# pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Clears the selected SYSCFG flag.
