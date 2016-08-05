@@ -558,6 +558,9 @@ TABS.pid_tuning.initialize = function (callback) {
             $('#pid-tuning .dtermSetpoint').hide();
         }
         
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0") && RX_CONFIG.rcInterpolation < 3) {
+            $('#pid-tuning .rcInterpolationInterval').hide();
+        }
 
         if (!semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
             $('#pid-tuning .delta').hide();
