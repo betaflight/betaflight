@@ -22,7 +22,7 @@ OPTIONS		?=
 export OPTIONS
 
 # Debugger optons, must be empty or GDB
-DEBUG ?= 
+DEBUG ?=
 
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
@@ -538,6 +538,7 @@ STM32F3DISCOVERY_COMMON_SRC = \
 		   drivers/accgyro_l3gd20.c \
 		   drivers/accgyro_lsm303dlhc.c \
 		   drivers/compass_hmc5883l.c \
+		   drivers/compass_ist8310.c \
 		   $(VCP_SRC)
 
 STM32F3DISCOVERY_SRC = \
@@ -699,7 +700,6 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_ak8963.c \
-		   drivers/compass_ist8310.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
