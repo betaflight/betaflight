@@ -37,8 +37,7 @@ TABS.servos.initialize = function (callback) {
     function load_html() {
         $('#content').load("./tabs/servos.html", process_html);
     }
-    
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, get_servo_configurations);
+    get_servo_configurations();
     
     function update_ui() {
             

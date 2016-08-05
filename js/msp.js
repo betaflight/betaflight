@@ -63,7 +63,7 @@ var MSP_codes = {
     MSP_SET_SPECIAL_PARAMETERS: 99,
 
     // Multiwii MSP commands
-    MSP_IDENT:              100,
+    MSP_IDENT:              100, // Not used
     MSP_STATUS:             101,
     MSP_RAW_IMU:            102,
     MSP_SERVO:              103,
@@ -76,12 +76,12 @@ var MSP_codes = {
     MSP_ANALOG:             110,
     MSP_RC_TUNING:          111,
     MSP_PID:                112,
-    MSP_BOX:                113,
+    MSP_BOX:                113, // Not used
     MSP_MISC:               114,
-    MSP_MOTOR_PINS:         115,
+    MSP_MOTOR_PINS:         115, // Not used
     MSP_BOXNAMES:           116,
     MSP_PIDNAMES:           117,
-    MSP_WP:                 118,
+    MSP_WP:                 118, // Not used
     MSP_BOXIDS:             119,
     MSP_SERVO_CONFIGURATIONS: 120,
     MSP_3D:                 124,
@@ -91,7 +91,7 @@ var MSP_codes = {
     MSP_STATUS_EX:          150,
     
     MSP_SET_RAW_RC:         200,
-    MSP_SET_RAW_GPS:        201,
+    MSP_SET_RAW_GPS:        201, // Not used
     MSP_SET_PID:            202,
     MSP_SET_BOX:            203,
     MSP_SET_RC_TUNING:      204,
@@ -99,9 +99,9 @@ var MSP_codes = {
     MSP_MAG_CALIBRATION:    206,
     MSP_SET_MISC:           207,
     MSP_RESET_CONF:         208,
-    MSP_SET_WP:             209,
+    MSP_SET_WP:             209, // Not used
     MSP_SELECT_SETTING:     210,
-    MSP_SET_HEAD:           211,
+    MSP_SET_HEAD:           211, // Not used
     MSP_SET_SERVO_CONFIGURATION: 212,
     MSP_SET_MOTOR:          214,
     MSP_SET_3D:             217,
@@ -110,14 +110,13 @@ var MSP_codes = {
     MSP_SET_SENSOR_ALIGNMENT: 220,
     MSP_SET_LED_STRIP_MODECOLOR:221,
     
-    // MSP_BIND:               240,
     
     MSP_SERVO_MIX_RULES:    241,
-    MSP_SET_SERVO_MIX_RULE: 242,
+    MSP_SET_SERVO_MIX_RULE: 242, // Not used
 
     MSP_EEPROM_WRITE:       250,
 
-    MSP_DEBUGMSG:           253,
+    MSP_DEBUGMSG:           253, // Not used
     MSP_DEBUG:              254,
 
     // Additional baseflight commands that are not compatible with MultiWii
@@ -132,7 +131,7 @@ var MSP_codes = {
     MSP_BF_CONFIG:           66, // baseflight-specific settings that aren't covered elsewhere
     MSP_SET_BF_CONFIG:       67, // baseflight-specific settings save
     MSP_SET_REBOOT:          68, // reboot settings
-    MSP_BF_BUILD_INFO:       69  // build date as well as some space for future expansion
+    MSP_BF_BUILD_INFO:       69  // Not used
 };
 
 var MSP = {
@@ -269,14 +268,6 @@ var MSP = {
         var data = new DataView(message_buffer, 0); // DataView (allowing us to view arrayBuffer as struct/union)
 
         if (!this.unsupported) switch (code) {
-            case MSP_codes.MSP_IDENT:
-                console.log('Using deprecated msp command: MSP_IDENT');
-                // Deprecated
-                CONFIG.version = parseFloat((data.getUint8(0) / 100).toFixed(2));
-                CONFIG.multiType = data.getUint8(1);
-                CONFIG.msp_version = data.getUint8(2);
-                CONFIG.capability = data.getUint32(3, 1);
-                break;
             case MSP_codes.MSP_STATUS:
                 CONFIG.cycleTime = data.getUint16(0, 1);
                 CONFIG.i2cError = data.getUint16(2, 1);
@@ -448,17 +439,7 @@ var MSP = {
                     }
                 }
                 break;
-            // Disabled, cleanflight does not use MSP_BOX.
-            /*
-            case MSP_codes.MSP_BOX:
-                AUX_CONFIG_values = []; // empty the array as new data is coming in
 
-                // fill in current data
-                for (var i = 0; i < data.byteLength; i += 2) { // + 2 because uint16_t = 2 bytes
-                    AUX_CONFIG_values.push(data.getUint16(i, 1));
-                }
-                break;
-            */
             case MSP_codes.MSP_ARMING_CONFIG:
                 if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
                     ARMING_CONFIG.auto_disarm_delay = data.getUint8(0, 1);
@@ -511,9 +492,6 @@ var MSP = {
                     _3D.deadband3d_throttle = data.getUint16(offset, 1);
                 }
                 break;
-            case MSP_codes.MSP_MOTOR_PINS:
-                console.log(data);
-                break;
             case MSP_codes.MSP_BOXNAMES:
                 AUX_CONFIG = []; // empty the array as new data is coming in
 
@@ -543,9 +521,6 @@ var MSP = {
                         buff.push(data.getUint8(i));
                     }
                 }
-                break;
-            case MSP_codes.MSP_WP:
-                console.log(data);
                 break;
             case MSP_codes.MSP_BOXIDS:
                 AUX_CONFIG_IDS = []; // empty the array as new data is coming in
@@ -623,8 +598,6 @@ var MSP = {
                 break;
             case MSP_codes.MSP_SET_RAW_RC:
                 break;
-            case MSP_codes.MSP_SET_RAW_GPS:
-                break;
             case MSP_codes.MSP_SET_PID:
                 console.log('PID settings saved');
                 break;
@@ -656,8 +629,6 @@ var MSP = {
                 break;
             case MSP_codes.MSP_EEPROM_WRITE:
                 console.log('Settings Saved in EEPROM');
-                break;
-            case MSP_codes.MSP_DEBUGMSG:
                 break;
             case MSP_codes.MSP_DEBUG:
                 for (var i = 0; i < 4; i++)
@@ -1725,6 +1696,11 @@ MSP.crunch = function (code) {
             }
             break;
         
+        case MSP_codes.MSP_SET_BLACKBOX_CONFIG:
+            buffer.push(BLACKBOX.blackboxDevice); 
+            buffer.push(BLACKBOX.blackboxRateNum);
+            buffer.push(BLACKBOX.blackboxRateDenom);
+            break;     
         
         default:
             return false;
@@ -1749,19 +1725,6 @@ MSP.setRawRx = function(channels) {
     MSP.send_message(MSP_codes.MSP_SET_RAW_RC, buffer, false);
 }
 
-MSP.sendBlackboxConfiguration = function(onDataCallback) {
-    var 
-        message = [
-            BLACKBOX.blackboxDevice & 0xFF, 
-            BLACKBOX.blackboxRateNum & 0xFF, 
-            BLACKBOX.blackboxRateDenom & 0xFF
-        ];
-    
-    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, message, false, function(response) {
-        onDataCallback();
-    });
-}
-
 /**
  * Send a request to read a block of data from the dataflash at the given address and pass that address and a dataview
  * of the returned data to the given callback (or null for the data if an error occured).
@@ -1782,11 +1745,6 @@ MSP.dataflashRead = function(address, onDataCallback) {
             onDataCallback(address, null);
         }
     });
-};
-
-MSP.sendServoMixRules = function(onCompleteCallback) {
-    // TODO implement
-    onCompleteCallback();
 };
 
 MSP.sendServoConfigurations = function(onCompleteCallback) {
