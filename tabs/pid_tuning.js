@@ -551,11 +551,11 @@ TABS.pid_tuning.initialize = function (callback) {
         } else {
             $('.tab-pid_tuning .rate_profile').hide();
 
-            $('.pid-tuning .rcSmoothing').hide();
-            $('.pid-tuning .rcSmoothingInterval').hide();
+            $('#pid-tuning .rcSmoothing').hide();
+            $('#pid-tuning .rcSmoothingInterval').hide();
 
-            $('.pid-tuning .ptermSetpoint').hide();
-            $('.pid-tuning .dtermSetpoint').hide();
+            $('#pid-tuning .ptermSetpoint').hide();
+            $('#pid-tuning .dtermSetpoint').hide();
         }
 
         if (!semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
@@ -968,9 +968,5 @@ TABS.pid_tuning.updatePidControllerParameters = function () {
 
             $('#pid-tuning .delta').hide();
         }
-    } else {
-        $('#pid-tuning .delta').show();
-        $('#pid-tuning .ptermSetpoint').hide();
-        $('#pid-tuning .dtermSetpoint').hide();
     }
 }
