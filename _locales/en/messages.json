@@ -791,29 +791,41 @@
     "pidTuningPidSettings": {
         "message": "PID Controller Settings"
     },
-    "pidTuningRcSmoothing": {
-        "message": "RC Smoothing"
+    "pidTuningRcInterpolationHelp": {
+        "message": "RC TX/RX systems are not as fast as PID loops. That means that PID loop has gaps in the information stream from RC systems. This option enables interpolation of the RC input during the times when no RC frames are received. The option also offers cleaner P and D behaviour as there are no ramps in control input."
     },
-    "pidTuningRcSmoothingOff": {
+    "pidTuningRcInterpolationIntervalHelp": {
+        "message": "Interpolation interval for manual RC interpolation mode in milliseconds"
+    },
+    "pidTuningRcInterpolation": {
+        "message": "RC Interpolation"
+    },
+    "pidTuningRcInterpolationOff": {
         "message": "Off"
     },
-    "pidTuningRcSmoothingDefault": {
-        "message": "Default"
+    "pidTuningRcInterpolationDefault": {
+        "message": "Preset"
     },
-    "pidTuningRcSmoothingAuto": {
+    "pidTuningRcInterpolationAuto": {
         "message": "Auto"
     },
-    "pidTuningRcSmoothingManual": {
+    "pidTuningRcInterpolationManual": {
         "message": "Manual"
     },
-    "pidTuningRcSmoothingInterval": {
-        "message": "RC Smoothing Interval (ms)"
+    "pidTuningRcInterpolationInterval": {
+        "message": "RC Interpolating Interval (ms)"
     },
     "pidTuningPtermSetpoint": {
-        "message": "Pterm Setpoint Weight"
+        "message": "P Setpoint Weight"
     },
     "pidTuningDtermSetpoint": {
-        "message": "Dterm Setpoint Weight"
+        "message": "D Setpoint Weight"
+    },
+    "pidTuningPtermSetpointHelp": {
+        "message": "This parameter determines the transient behaviour of P on abrupt stick moves. Lower value gives less overshoot and smoother behaviour, but too low values can slow down the response. Value of 1 equals to legacy pid controller"
+    },
+    "pidTuningDtermSetpointHelp": {
+        "message": "This parameter determines the transient behaviour of D on stick inputs.<br> Value of 0 equals to old Measuemenent method where D only tracks gyro, while value of 1 equals to old Error method with equal gyro and stick tracking ratio.<br> Lower value equals to slower/smoother stick response, while higher value provides more stick acceleration response.<br> Note that RC interpolation is recommended to be enabled with higher values to prevent control kicks making noise"
     },
     "pidTuningProportional": {
         "message": "Proportional"

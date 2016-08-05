@@ -67,9 +67,9 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
-            $('select[name="rcSmoothing-select"]').val(RX_CONFIG.rcSmoothing);
+            $('select[name="rcInterpolation-select"]').val(RX_CONFIG.rcInterpolation);
 
-            $('input[name="rcSmoothingInterval-number"]').val(RX_CONFIG.rcSmoothInterval);
+            $('input[name="rcInterpolationInterval-number"]').val(RX_CONFIG.rcInterpolationInterval);
 
             $('input[name="ptermSetpoint-number"]').val(ADVANCED_TUNING.ptermSetpointWeight / 100);
             $('input[name="ptermSetpoint-range"]').val(ADVANCED_TUNING.ptermSetpointWeight / 100);
@@ -258,9 +258,9 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
-            RX_CONFIG.rcSmoothing = parseInt($('select[name="rcSmoothing-select"]').val());
+            RX_CONFIG.rcInterpolation = parseInt($('select[name="rcInterpolation-select"]').val());
 
-            RX_CONFIG.rcSmoothInterval = parseInt($('input[name="rcSmoothingInterval-number"]').val());
+            RX_CONFIG.rcInterpolationInterval = parseInt($('input[name="rcInterpolationInterval-number"]').val());
 
             ADVANCED_TUNING.ptermSetpointWeight = parseInt($('input[name="ptermSetpoint-number"]').val() * 100);
 
@@ -551,8 +551,8 @@ TABS.pid_tuning.initialize = function (callback) {
         } else {
             $('.tab-pid_tuning .rate_profile').hide();
 
-            $('.pid-tuning .rcSmoothing').hide();
-            $('.pid-tuning .rcSmoothingInterval').hide();
+            $('.pid-tuning .rcInterpolation').hide();
+            $('.pid-tuning .rcInterpolationInterval').hide();
 
             $('.pid-tuning .ptermSetpoint').hide();
             $('.pid-tuning .dtermSetpoint').hide();

@@ -295,8 +295,8 @@ var FC = {
             spektrum_sat_bind:      0,
             rx_min_usec:            0,
             rx_max_usec:            0,
-            rcSmoothing:            0,
-            rcSmoothInterval:       0,
+            rcInterpolation:        0,
+            rcInterpolationInterval:0,
             airModeActivateThreshold: 0
         };
         

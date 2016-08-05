@@ -250,21 +250,35 @@
                         <tbody class="features pidTuning">
                             <!-- table generated here -->
                         </tbody>
-                        <tr class="rcSmoothing">
+                        <tr class="rcInterpolation">
                             <td>
-                                <select name="rcSmoothing-select">
-                                    <option value="0" i18n="pidTuningRcSmoothingOff"/>
-                                    <option value="1" i18n="pidTuningRcSmoothingDefault"/>
-                                    <option value="2" i18n="pidTuningRcSmoothingAuto"/>
-                                    <option value="3" i18n="pidTuningRcSmoothingManual"/>
+                                <select name="rcInterpolation-select">
+                                    <option value="0" i18n="pidTuningRcInterpolationOff"/>
+                                    <option value="1" i18n="pidTuningRcInterpolationDefault"/>
+                                    <option value="2" i18n="pidTuningRcInterpolationAuto"/>
+                                    <option value="3" i18n="pidTuningRcInterpolationManual"/>
                                 </select>
                             </td>
-                            <td colspan=2 i18n="pidTuningRcSmoothing"></td>
+                            <td colspan=2>
+                                <div>
+                                    <label>
+                                    <span i18n="pidTuningRcInterpolation"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningRcInterpolationHelp"></div>
+                                </div>
+                            </td>
                         </tr>
-                        <tr class="rcSmoothingInterval">
-                            <td><input type="number" class="nonProfile" name="rcSmoothingInterval-number" step="1" min="1" max="50"/></td>
-                            <td colspan=2 i18n="pidTuningRcSmoothingInterval"></td>
-                        </td>
+                        <tr class="rcInterpolationInterval">
+                            <td><input type="number" class="nonProfile" name="rcInterpolationInterval-number" step="1" min="1" max="50"/></td>
+                            <td colspan=2>
+                                <div>
+                                    <label>
+                                    <span i18n="pidTuningRcInterpolationInterval"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningRcInterpolationIntervalHelp"></div>
+                                </div>
+                            </td>
+                        </tr>
                     </table>
                 </div>
                 <div class="gui_box grey topspacer">
@@ -293,15 +307,28 @@
                         <tr class="ptermSetpoint">
                             <td><input type="number" name="ptermSetpoint-number" step="0.01" min="0.30" max="1.00"/></td>
                             <td class="slider"><input type="range" name="ptermSetpoint-range" step="0.01" min="0.30" max="1.00"/></td>
-                            <td i18n="pidTuningPtermSetpoint"></td>
+                             <td colspan=2>
+                                <div>
+                                    <label>
+                                    <span i18n="pidTuningPtermSetpoint"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningPtermSetpointHelp"></div>
+                                </div>
+                            </td>
                         </tr>
                         <tr class="dtermSetpoint">
-                            <td><input type="number" name="dtermSetpoint-number" step="0.01" min="0.00" max="3.00"/></td>
-                            <td class="slider"><input type="range" name="dtermSetpoint-range" step="0.01" min="0.00" max="3.00"/></td>
-                            <td i18n="pidTuningDtermSetpoint"></td>
+                            <td><input type="number" name="dtermSetpoint-number" step="0.01" min="0.00" max="2.00"/></td>
+                            <td class="slider"><input type="range" name="dtermSetpoint-range" step="0.01" min="0.00" max="2.00"/></td>
+                             <td colspan=2>
+                                <div>
+                                    <label>
+                                    <span i18n="pidTuningDtermSetpoint"></span>
+                                    </label>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningDtermSetpointHelp"></div>
+                                </div>
+                            </td>
                         </tr>
-                        <tr>
-                            <td><input type="checkbox" name="vbatpidcompensation" class="toggle" /></td>
+                        <td><input type="checkbox" name="vbatpidcompensation" class="toggle" /></td>
                             <td colspan=2>
                                 <div>
                                     <label for="vbatpidcompensation">

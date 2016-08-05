@@ -910,14 +910,14 @@ var MSP = {
                 RX_CONFIG.rx_max_usec = data.getUint16(offset, 1);
                 offset += 2;
                 if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                    RX_CONFIG.rcSmoothing = data.getUint8(offset, 1);
+                    RX_CONFIG.rcInterpolation = data.getUint8(offset, 1);
                     offset++;
-                    RX_CONFIG.rcSmoothInterval = data.getUint8(offset, 1);
+                    RX_CONFIG.rcInterpolationInterval = data.getUint8(offset, 1);
                     offset++;
                     RX_CONFIG.airModeActivateThreshold = data.getUint16(offset, 1);
                 } else {
-                    RX_CONFIG.rcSmoothing = 0;
-                    RX_CONFIG.rcSmoothInterval = 0;
+                    RX_CONFIG.rcInterpolation = 0;
+                    RX_CONFIG.rcInterpolationInterval = 0;
                     RX_CONFIG.airModeActivateThreshold = 0;
                 }
                 break;
@@ -1562,8 +1562,8 @@ MSP.crunch = function (code) {
             buffer.push(lowByte(RX_CONFIG.rx_max_usec));
             buffer.push(highByte(RX_CONFIG.rx_max_usec));
             if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                buffer.push(RX_CONFIG.rcSmoothing);
-                buffer.push(RX_CONFIG.rcSmoothInterval);
+                buffer.push(RX_CONFIG.rcInterpolation);
+                buffer.push(RX_CONFIG.rcInterpolationInterval);
                 buffer.push(lowByte(RX_CONFIG.airModeActivateThreshold));
                 buffer.push(highByte(RX_CONFIG.airModeActivateThreshold));
             }
