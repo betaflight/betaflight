@@ -15,14 +15,14 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= NAZE
+TARGET		?= SPRACINGF3
 
 # Compile-time options
 OPTIONS		?=
 export OPTIONS
 
 # Debugger optons, must be empty or GDB
-DEBUG ?= GDB
+DEBUG ?= 
 
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
