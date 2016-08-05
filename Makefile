@@ -485,6 +485,7 @@ STM32F10x_COMMON_SRC = \
             startup_stm32f10x_md_gcc.S \
             drivers/adc_stm32f10x.c \
             drivers/bus_i2c_stm32f10x.c \
+            drivers/dma.c \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/serial_softserial.c \
@@ -497,8 +498,8 @@ STM32F30x_COMMON_SRC = \
             target/system_stm32f30x.c \
             drivers/adc_stm32f30x.c \
             drivers/bus_i2c_stm32f30x.c \
+            drivers/dma.c \
             drivers/gpio_stm32f30x.c \
-            drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \

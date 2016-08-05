@@ -40,6 +40,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
+#include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
@@ -148,6 +149,19 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6000ReadRegister;
         mpuConfiguration.write = mpu6000WriteRegister;
+        return true;
+    }
+#endif
+
+#ifdef  USE_GYRO_SPI_MPU9250
+    if (mpu9250SpiDetect()) {
+        mpuDetectionResult.sensor = MPU_9250_SPI;
+        mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        mpuConfiguration.read = mpu9250ReadRegister;
+        mpuConfiguration.slowread = mpu9250SlowReadRegister;
+        mpuConfiguration.verifywrite = verifympu9250WriteRegister;
+        mpuConfiguration.write = mpu9250WriteRegister;
+        mpuConfiguration.reset = mpu9250ResetGyro;
         return true;
     }
 #endif

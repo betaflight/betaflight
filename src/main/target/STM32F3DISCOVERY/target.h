@@ -48,12 +48,12 @@
 #define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define SERIAL_PORT_COUNT 3
+#define USE_UART1
+#define USE_UART2
+#define SERIAL_PORT_COUNT       3
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -63,7 +63,14 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
-#define LED_STRIP_TIMER TIM16
+#define WS2811_PIN                      PB8 // TIM16_CH1
+#define WS2811_TIMER                    TIM16
+#define WS2811_DMA_CHANNEL              DMA1_Channel3
+#define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
+#define LED_STRIP_TIMER                 TIM16
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -72,16 +72,18 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define USE_USART1
-#define USE_USART2
+#define DISPLAY
+
+#define USE_UART1
+#define USE_UART2
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT       4
 
-#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
+#define SOFTSERIAL_2_TIMER      TIM3
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
@@ -98,13 +100,9 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
-
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN                PA3
 
 // IO - stm32f103RCT6 in 64pin package (TODO)
 #define TARGET_IO_PORTA         0xffff

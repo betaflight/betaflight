@@ -42,7 +42,9 @@
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
+#include "telemetry/ltm.h"
 #include "telemetry/mavlink.h"
+#include "telemetry/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -73,6 +75,10 @@ void telemetryInit(void)
     initMAVLinkTelemetry();
 #endif
 
+#if defined(TELEMETRY_JETIEXBUS)
+    initJetiExBusTelemetry();
+#endif
+
     telemetryCheckState();
 }
 
@@ -89,6 +95,13 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 
     return enabled;
 }
+
+bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig)
+{
+    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK;
+}
+
+serialPort_t *telemetrySharedPort = NULL;
 
 void telemetryCheckState(void)
 {
@@ -110,6 +123,10 @@ void telemetryCheckState(void)
 
 #if defined(TELEMETRY_MAVLINK)
     checkMAVLinkTelemetryState();
+#endif
+
+#if defined(TELEMETRY_JETIEXBUS)
+    checkJetiExBusTelemetryState();
 #endif
 }
 
@@ -136,6 +153,10 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 
 #if defined(TELEMETRY_MAVLINK)
     handleMAVLinkTelemetry();
+#endif
+
+#if defined(TELEMETRY_JETIEXBUS)
+    handleJetiExBusTelemetry();
 #endif
 }
 

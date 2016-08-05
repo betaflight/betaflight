@@ -69,14 +69,12 @@
 #define USE_MAG_MAG3110
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART3
+#define USE_UART1
+#define USE_UART3
 
-#define USART3_RX_PIN Pin_11
-#define USART3_TX_PIN Pin_10
-#define USART3_GPIO GPIOB
-#define USART3_APB1_PERIPHERALS RCC_APB1Periph_USART3
-#define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
+
 
 #if defined(CC3D_NRF24) || defined(CC3D_NRF24_OPBL)
 #define USE_RX_NRF24
@@ -152,12 +150,14 @@
 
 // LED strip is on PWM5 output pin
 //#define LED_STRIP
-#define LED_STRIP_TIMER TIM3
+#define WS2811_PIN                      PB4
+#define WS2811_TIMER                    TIM3
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
-#define BIND_PORT  GPIOB
-#define BIND_PIN   Pin_11
+#define BIND_PIN                PB11
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

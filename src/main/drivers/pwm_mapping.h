@@ -16,7 +16,7 @@
  */
 
 #pragma once
-#include "gpio.h"
+
 #include "timer.h"
 
 #if defined(USE_QUAD_MIXER_ONLY)
@@ -59,12 +59,9 @@ typedef struct drv_pwm_config_s {
     bool useSerialRx;
     bool useRSSIADC;
     bool useCurrentMeterADC;
-#ifdef STM32F10X
     bool useUART2;
-#endif
-#ifdef STM32F303xC
     bool useUART3;
-#endif
+    bool useUART6;
     bool useVbat;
     bool useOneshot;
     bool useSoftSerial;
@@ -104,7 +101,6 @@ typedef enum {
     PWM_PF_PWM = (1 << 6)
 } pwmPortFlags_e;
 
-
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
     pwmPortFlags_e flags;
@@ -137,7 +133,11 @@ enum {
     PWM13,
     PWM14,
     PWM15,
-    PWM16
+    PWM16,
+    PWM17,
+    PWM18,
+    PWM19,
+    PWM20
 };
 
 extern const uint16_t multiPPM[];

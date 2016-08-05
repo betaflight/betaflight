@@ -23,16 +23,20 @@
  *
  * Currently the timings are 0 = 350ns high/800ns and 1 = 700ns high/650ns low.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "platform.h"
+#include <platform.h>
+
+#ifdef LED_STRIP
 
 #include "build_config.h"
 
 #include "common/color.h"
 #include "common/colorconversion.h"
+#include "drivers/dma.h"
 #include "drivers/light_ws2811strip.h"
 
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
@@ -128,12 +132,11 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
  */
 void ws2811UpdateStrip(void)
 {
-    static uint32_t waitCounter = 0;
     static rgbColor24bpp_t *rgb24;
 
-    // wait until previous transfer completes
-    while(ws2811LedDataTransferInProgress) {
-        waitCounter++;
+    // don't wait - risk of infinite block, just get an update next time round
+    if (ws2811LedDataTransferInProgress) {
+        return;
     }
 
     dmaBufferOffset = 0;                // reset buffer memory index
@@ -160,3 +163,4 @@ void ws2811UpdateStrip(void)
     ws2811LedStripDMAEnable();
 }
 
+#endif

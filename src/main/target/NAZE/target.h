@@ -20,8 +20,6 @@
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
-
 #define LED0                    PB3
 #define LED1                    PB4
 
@@ -97,7 +95,7 @@
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define BARO
-#define USE_BARO_MS5611
+#define USE_BARO_MS5611 // needed for Flip32 board
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
@@ -114,26 +112,23 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
-#define SOFTSERIAL_1_TIMER TIM3
+#define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
+#define SOFTSERIAL_2_TIMER      TIM3
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
 // USART3 only on NAZE32_SP - Flex Port
-#define USART3_RX_PIN           Pin_11
-#define USART3_TX_PIN           Pin_10
-#define USART3_GPIO             GPIOB
-#define USART3_APB1_PERIPHERALS RCC_APB1Periph_USART3
-#define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
@@ -148,7 +143,7 @@
 #define USE_RX_CX10
 #define USE_RX_H8_3D
 #define USE_RX_REF
-#define USE_RX_SYMA
+//#define USE_RX_SYMA
 //#define USE_RX_V202
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_REF
@@ -197,17 +192,21 @@
 #define NAV_MAX_WAYPOINTS       30
 
 //#define LED_STRIP
-#define LED_STRIP_TIMER     TIM3
+#define WS2811_TIMER                    TIM3
+#define WS2811_PIN                      PA6
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN                        PA3
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_MOTOR_COUNT      6
 #define DISABLE_UNCOMMON_MIXERS
+
+#define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #undef TELEMETRY_FRSKY

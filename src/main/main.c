@@ -30,6 +30,8 @@
 
 #include "drivers/sensor.h"
 #include "drivers/system.h"
+#include "drivers/dma.h"
+#include "drivers/exti.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -106,7 +108,6 @@ serialPort_t *loopbackPort;
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit();
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
@@ -122,17 +123,15 @@ void gpsPreInit(gpsConfig_t *initialGpsConfig);
 void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
 void imuInit(void);
 void displayInit(rxConfig_t *intialRxConfig);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
-
-void SetSysClock(void);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
     SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
     SYSTEM_STATE_SENSORS_READY  = (1 << 1),
     SYSTEM_STATE_MOTORS_READY   = (1 << 2),
+    SYSTEM_STATE_TRANSPONDER_ENABLED = (1 << 3),
     SYSTEM_STATE_READY          = (1 << 7)
 } systemState_e;
 
@@ -166,16 +165,16 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
+    systemInit();
 
     i2cSetOverclock(masterConfig.i2c_overclock);
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
-
-    systemInit();
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -208,7 +207,17 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+    dmaInit();
+
+#if defined(AVOID_UART2_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+#elif defined(AVOID_UART3_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+#else
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
 
 #ifdef USE_SERVOS
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
@@ -235,11 +244,17 @@ void init(void)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
-#if defined(USE_USART2) && defined(STM32F10X)
+#if defined(USE_UART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
 #ifdef STM32F303xC
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
+#endif
+#if defined(USE_UART2) && defined(STM32F40_41xxx)
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+#endif
+#if defined(USE_UART6) && defined(STM32F40_41xxx)
+    pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
 #endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
@@ -324,16 +339,20 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(FURYF3) || defined(OMNIBUS) || defined(SPRACINGF3MINI)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
+    }
+#endif
+#endif
+
+#if defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SPRACINGF3)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
-
-#if defined(FURYF3) && defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
-    }
 #endif
 
 #ifdef USE_I2C
@@ -487,7 +506,11 @@ void init(void)
 
 #if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
     // Ensure the SPI Tx DMA doesn't overlap with the led strip
+#ifdef STM32F4
+    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
+#else
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
+#endif
 #else
     sdcardUseDMA = true;
 #endif

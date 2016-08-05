@@ -37,8 +37,8 @@
 //#define MAG
 #define USE_MAG_HMC5883
 
-#define USE_USART1
-#define USE_USART2
+#define USE_UART1
+#define USE_UART2
 #define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
@@ -84,8 +84,7 @@
 
 #define SPEKTRUM_BIND
 // SART2, PA3
-#define BIND_PORT  GPIOA
-#define BIND_PIN   Pin_3
+#define BIND_PIN                PA3
 #endif //USE_RX_NRF24
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

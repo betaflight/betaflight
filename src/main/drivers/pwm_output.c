@@ -59,35 +59,42 @@ static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 static uint8_t allocatedOutputPortCount = 0;
 
 static bool pwmMotorsEnabled = true;
-static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t outputPolarity)
+
+
+static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
 
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+    } else {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+    }
     TIM_OCInitStructure.TIM_Pulse = value;
-    TIM_OCInitStructure.TIM_OCPolarity = outputPolarity ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
+    TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
     switch (channel) {
-        case TIM_Channel_1:
-            TIM_OC1Init(tim, &TIM_OCInitStructure);
-            TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_2:
-            TIM_OC2Init(tim, &TIM_OCInitStructure);
-            TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_3:
-            TIM_OC3Init(tim, &TIM_OCInitStructure);
-            TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_4:
-            TIM_OC4Init(tim, &TIM_OCInitStructure);
-            TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
-            break;
+    case TIM_Channel_1:
+        TIM_OC1Init(tim, &TIM_OCInitStructure);
+        TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2Init(tim, &TIM_OCInitStructure);
+        TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3Init(tim, &TIM_OCInitStructure);
+        TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4Init(tim, &TIM_OCInitStructure);
+        TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
+        break;
     }
 }
 
@@ -115,22 +122,24 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     TIM_Cmd(timerHardware->tim, ENABLE);
 
     switch (timerHardware->channel) {
-        case TIM_Channel_1:
-            p->ccr = &timerHardware->tim->CCR1;
-            break;
-        case TIM_Channel_2:
-            p->ccr = &timerHardware->tim->CCR2;
-            break;
-        case TIM_Channel_3:
-            p->ccr = &timerHardware->tim->CCR3;
-            break;
-        case TIM_Channel_4:
-            p->ccr = &timerHardware->tim->CCR4;
-            break;
+    case TIM_Channel_1:
+        p->ccr = &timerHardware->tim->CCR1;
+        break;
+    case TIM_Channel_2:
+        p->ccr = &timerHardware->tim->CCR2;
+        break;
+    case TIM_Channel_3:
+        p->ccr = &timerHardware->tim->CCR3;
+        break;
+    case TIM_Channel_4:
+        p->ccr = &timerHardware->tim->CCR4;
+        break;
     }
     p->period = period;
     p->tim = timerHardware->tim;
 
+    *p->ccr = 0;
+   
     return p;
 }
 
@@ -146,15 +155,14 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (motors[index] && index < MAX_MOTORS && pwmMotorsEnabled)
+    if (motors[index] && index < MAX_MOTORS && pwmMotorsEnabled) {
         motors[index]->pwmWritePtr(index, value);
+    }
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
-    uint8_t index;
-
-    for(index = 0; index < motorCount; index++){
+    for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         *motors[index]->ccr = 0;
     }
@@ -172,10 +180,9 @@ void pwmEnableMotors(void)
 
 void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
-    uint8_t index;
     TIM_TypeDef *lastTimerPtr = NULL;
 
-    for (index = 0; index < motorCount; index++) {
+    for (int index = 0; index < motorCount; index++) {
 
         // Force the timer to overflow if it's the first motor to output, or if we change timers
         if (motors[index]->tim != lastTimerPtr) {
@@ -196,14 +203,14 @@ bool isMotorBrushed(uint16_t motorPwmRate)
 
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
-    uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
+    const uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
     motors[motorIndex] = pwmOutConfig(timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / motorPwmRate, idlePulse);
     motors[motorIndex]->pwmWritePtr = pwmWriteBrushed;
 }
 
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
-    uint32_t hz = PWM_TIMER_MHZ * 1000000;
+    const uint32_t hz = PWM_TIMER_MHZ * 1000000;
     motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
@@ -222,7 +229,8 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
 
 void pwmWriteServo(uint8_t index, uint16_t value)
 {
-    if (servos[index] && index < MAX_SERVOS)
+    if (servos[index] && index < MAX_SERVOS) {
         *servos[index]->ccr = value;
+    }
 }
 #endif

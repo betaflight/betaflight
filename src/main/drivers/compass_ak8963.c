@@ -30,8 +30,6 @@
 #include "common/maths.h"
 
 #include "system.h"
-#include "gpio.h"
-#include "exti.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
 
@@ -45,12 +43,10 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
+#include "accgyro_spi_mpu9250.h"
 #include "compass_ak8963.h"
 
 // This sensor is available in MPU-9250.
-#ifndef AK8963_I2C_INSTANCE
-#define AK8963_I2C_INSTANCE I2C_DEVICE
-#endif
 
 // AK8963, mag sensor address
 #define AK8963_MAG_I2C_ADDRESS          0x0C
@@ -92,7 +88,7 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 // FIXME pretend we have real MPU9250 support
 // Is an separate MPU9250 driver really needed? The GYRO/ACC part between MPU6500 and MPU9250 is exactly the same.
-#ifdef MPU6500_SPI_INSTANCE
+#if defined(MPU6500_SPI_INSTANCE) && !defined(MPU9250_SPI_INSTANCE)
 #define MPU9250_SPI_INSTANCE
 #define verifympu9250WriteRegister mpu6500WriteRegister
 #define mpu9250WriteRegister mpu6500WriteRegister
@@ -120,7 +116,7 @@ bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
     verifympu9250WriteRegister(MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
-    delay(8);
+    delay(10);
     __disable_irq();
     mpu9250ReadRegister(MPU_RA_EXT_SENS_DATA_00, len_, buf);               // read I2C
     __enable_irq();
@@ -187,12 +183,12 @@ bool ak8963SensorCompleteRead(uint8_t *buf)
 #else
 bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    return i2cRead(addr_, reg_, len, buf);
+    return i2cRead(MAG_I2C_INSTANCE, addr_, reg_, len, buf);
 }
 
 bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    return i2cWrite(addr_, reg_, data);
+    return i2cWrite(MAG_I2C_INSTANCE, addr_, reg_, data);
 }
 #endif
 

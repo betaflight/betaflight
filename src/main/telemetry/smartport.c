@@ -141,8 +141,6 @@ static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
 
-extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
-
 char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
 static uint8_t smartPortIdCnt = 0;

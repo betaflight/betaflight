@@ -22,7 +22,6 @@
 */
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -99,26 +98,26 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     uartPort_t *s = NULL;
 
     if (USARTx == USART1) {
-        s = serialUSART1(baudRate, mode, options);
-#ifdef USE_USART2
+        s = serialUART1(baudRate, mode, options);
+#ifdef USE_UART2
     } else if (USARTx == USART2) {
-        s = serialUSART2(baudRate, mode, options);
+        s = serialUART2(baudRate, mode, options);
 #endif
-#ifdef USE_USART3
+#ifdef USE_UART3
     } else if (USARTx == USART3) {
-        s = serialUSART3(baudRate, mode, options);
+        s = serialUART3(baudRate, mode, options);
 #endif
-#ifdef USE_USART4
+#ifdef USE_UART4
     } else if (USARTx == UART4) {
-        s = serialUSART4(baudRate, mode, options);
+        s = serialUART4(baudRate, mode, options);
 #endif
-#ifdef USE_USART5
+#ifdef USE_UART5
     } else if (USARTx == UART5) {
-        s = serialUSART5(baudRate, mode, options);
+        s = serialUART5(baudRate, mode, options);
 #endif
-#ifdef USE_USART6
+#ifdef USE_UART6
     } else if (USARTx == USART6) {
-        s = serialUSART6(baudRate, mode, options);
+        s = serialUART6(baudRate, mode, options);
 #endif
 
     } else {
@@ -434,4 +433,3 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = NULL,
     }
 };
-

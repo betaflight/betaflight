@@ -19,7 +19,6 @@
 
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar.h"
-#include "io/rc_controls.h" // for throttleStatus_e required by battery.h
 #include "sensors/battery.h"
 
 typedef enum {

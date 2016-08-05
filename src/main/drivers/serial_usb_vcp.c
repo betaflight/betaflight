@@ -16,18 +16,21 @@
  */
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "platform.h"
 
 #include "build_config.h"
 #include "common/utils.h"
+#include "drivers/io.h"
 
 #include "usb_core.h"
+#ifdef STM32F4
+#include "usbd_cdc_vcp.h"
+#else
 #include "usb_init.h"
 #include "hw_config.h"
+#endif
 
 #include "drivers/system.h"
 
@@ -74,27 +77,25 @@ static uint8_t usbVcpRead(serialPort_t *instance)
 
     uint8_t buf[1];
 
-    uint32_t rxed = 0;
-
-    while (rxed < 1) {
-        rxed += CDC_Receive_DATA((uint8_t*)buf + rxed, 1 - rxed);
+    while (true) {
+        if (CDC_Receive_DATA(buf, 1))
+            return buf[0];
     }
-
-    return buf[0];
 }
 
 static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 {
     UNUSED(instance);
 
-
     if (!(usbIsConnected() && usbIsConfigured())) {
         return;
     }
 
     uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
+    uint8_t *p = data;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
 
@@ -117,14 +118,19 @@ static bool usbVcpFlush(vcpPort_t *port)
         return false;
     }
 
-    uint32_t txed;
     uint32_t start = millis();
+    uint8_t *p = port->txBuf;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
 
-    do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
-
-    return txed == count;
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+    return count == 0;
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
@@ -176,8 +182,8 @@ serialPort_t *usbVcpOpen(void)
     vcpPort_t *s;
 
 #ifdef STM32F4
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_IO);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_IO);
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_INPUT, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 #else
     Set_System();

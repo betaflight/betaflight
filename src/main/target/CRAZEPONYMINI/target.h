@@ -37,7 +37,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-#define USE_USART1
+#define USE_UART1
 #define SERIAL_PORT_COUNT       1
 
 #define USE_ADC

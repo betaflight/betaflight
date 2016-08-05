@@ -54,43 +54,33 @@
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define USB_IO
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
-#define SERIAL_PORT_COUNT 4
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define SERIAL_PORT_COUNT       4
 
-#define UART1_TX_PIN        GPIO_Pin_4
-#define UART1_RX_PIN        GPIO_Pin_5
-#define UART1_GPIO          GPIOC
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource4
-#define UART1_RX_PINSOURCE  GPIO_PinSource5
+#define UART1_TX_PIN            PC4
+#define UART1_RX_PIN            PC5
 
-#define UART2_TX_PIN        GPIO_Pin_14
-#define UART2_RX_PIN        GPIO_Pin_15
-#define UART2_GPIO          GPIOA
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource14
-#define UART2_RX_PINSOURCE  GPIO_PinSource15
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN        GPIO_Pin_10
-#define UART3_RX_PIN        GPIO_Pin_11
-#define UART3_GPIO          GPIOB
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_2)
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC0
@@ -99,15 +89,8 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
-#define LED_STRIP_TIMER TIM16
-
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_6 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource6
+#define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
@@ -116,8 +99,7 @@
 
 #define SPEKTRUM_BIND
 // USART1, PC5
-#define BIND_PORT  GPIOC
-#define BIND_PIN   Pin_5
+#define BIND_PIN                        PC5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #undef GPS_PROTO_NMEA
@@ -125,7 +107,8 @@
 #undef GPS_PROTO_I2C_NAV
 #undef GPS_PROTO_NAZA
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#define DEFAULT_FEATURES        FEATURE_VBAT
 
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA         0xffff

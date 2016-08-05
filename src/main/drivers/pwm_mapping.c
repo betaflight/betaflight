@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -79,7 +78,8 @@ const uint16_t * const hardwareMaps[] = {
 
 static pwmIOConfiguration_t pwmIOConfiguration;
 
-pwmIOConfiguration_t *pwmGetOutputConfiguration(void){
+pwmIOConfiguration_t *pwmGetOutputConfiguration(void)
+{
     return &pwmIOConfiguration;
 }
 
@@ -128,9 +128,9 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#if defined(STM32F303xC) && defined(USE_USART3)
+#if defined(STM32F303xC) && defined(USE_UART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && IO_GPIOBYTAG(timerHardwarePtr->tag) == UART3_GPIO && (IO_PINBYTAG(timerHardwarePtr->tag) == UART3_TX_PIN || IO_PINBYTAG(timerHardwarePtr->tag) == UART3_RX_PIN))
+        if (init->useUART3 && (timerHardwarePtr->tag == IO_TAG(UART3_TX_PIN) || timerHardwarePtr->tag == IO_TAG(UART3_RX_PIN)))
             continue;
 #endif
 
@@ -143,33 +143,33 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef LED_STRIP_TIMER
+#ifdef WS2811_TIMER
         // skip LED Strip output
         if (init->useLEDStrip) {
-            if (timerHardwarePtr->tim == LED_STRIP_TIMER)
+            if (timerHardwarePtr->tim == WS2811_TIMER)
                 continue;
-#if defined(STM32F303xC) && defined(WS2811_GPIO) && defined(WS2811_PIN_SOURCE)
-            if (IO_GPIOBYTAG(timerHardwarePtr->tag) == WS2811_GPIO && IO_GPIO_PinSource(IOGetByTag(timerHardwarePtr->tag)) == WS2811_PIN_SOURCE)
+#if defined(STM32F303xC) && defined(WS2811_PIN)
+            if (timerHardwarePtr->tag == IO_TAG(WS2811_PIN))
                 continue;
 #endif
         }
 
 #endif
 
-#ifdef VBAT_ADC_GPIO
-        if (init->useVbat && IO_GPIOBYTAG(timerHardwarePtr->tag) == VBAT_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == VBAT_ADC_GPIO_PIN) {
+#ifdef VBAT_ADC_PIN
+        if (init->useVbat && timerHardwarePtr->tag == IO_TAG(VBAT_ADC_PIN)) {
             continue;
         }
 #endif
 
 #ifdef RSSI_ADC_GPIO
-        if (init->useRSSIADC && IO_GPIOBYTAG(timerHardwarePtr->tag) == RSSI_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == RSSI_ADC_GPIO_PIN) {
+        if (init->useRSSIADC && timerHardwarePtr->tag == IO_TAG(RSSI_ADC_PIN)) {
             continue;
         }
 #endif
 
 #ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && IO_GPIOBYTAG(timerHardwarePtr->tag) == CURRENT_METER_ADC_GPIO && IO_PINBYTAG(timerHardwarePtr->tag) == CURRENT_METER_ADC_GPIO_PIN) {
+        if (init->useCurrentMeterADC && timerHardwarePtr->tag == IO_TAG(CURRENT_METER_ADC_PIN)) {
             continue;
         }
 #endif
@@ -199,6 +199,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(DOGE)
+            // remap outputs 1+2 (PWM2+3) as servos
+            if ((timerIndex == PWM2 || timerIndex == PWM3) && timerHardwarePtr->tim == TIM4)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
@@ -206,8 +212,8 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #if defined(CC3D)
-            // remap 10 as servo
-            if (timerIndex == PWM10 && timerHardwarePtr->tim == TIM1)
+            // remap PWM9+10 as servos
+            if ((timerIndex == PWM9 || timerIndex == PWM10) && timerHardwarePtr->tim == TIM1)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
@@ -220,6 +226,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #if defined(SPRACINGF3)
             // remap PWM15+16 as servos
             if ((timerIndex == PWM15 || timerIndex == PWM16) && timerHardwarePtr->tim == TIM15)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+            // remap PWM6+7 as servos
+            if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
@@ -239,22 +251,32 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerIndex == PWM7 || timerIndex == PWM8)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
+
+#if defined(SINGULARITY)
+            // remap PWM6+7 as servos
+            if (timerIndex == PWM6 || timerIndex == PWM7)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
         }
 
         if (init->useChannelForwarding && !init->airplane) {
-#if defined(NAZE) && defined(LED_STRIP_TIMER)
+#if defined(NAZE) && defined(WS2811_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
-            if (init->useLEDStrip) { 
+            if (init->useLEDStrip) {
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }
             } else
 #endif
+
+#if defined(SPRACINGF3) || defined(NAZE)
                 // remap PWM5..8 as servos when used in extended servo mode
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
-        }
 #endif
+        }
+
+#endif // USE_SERVOS
 
 #ifdef CC3D
         // This part of code is unnecessary and can be removed - timer clash is resolved by forcing configuration with the same
@@ -280,7 +302,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
             }
 #endif
-#ifdef SPARKY
+#if defined(SPARKY) || defined(ALIENFLIGHTF3)
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }

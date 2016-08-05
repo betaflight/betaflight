@@ -479,7 +479,7 @@ const struct serialPortVTable softSerialVTable[] = {
         .setMode = softSerialSetMode,
         .writeBuf = NULL,
         .beginWrite = NULL,
-        .endWrite = NULL,
+        .endWrite = NULL
     }
 };
 

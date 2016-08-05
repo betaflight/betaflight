@@ -75,43 +75,11 @@ typedef struct {
   * @brief  LSM303DLHC I2C Interface pins
   */
 #define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_CLK                   RCC_APB1Periph_I2C1
-
-#define LSM303DLHC_I2C_SCK_PIN               GPIO_Pin_6                  /* PB.06 */
-#define LSM303DLHC_I2C_SCK_GPIO_PORT         GPIOB                       /* GPIOB */
-#define LSM303DLHC_I2C_SCK_GPIO_CLK          RCC_AHBPeriph_GPIOB
-#define LSM303DLHC_I2C_SCK_SOURCE            GPIO_PinSource6
-#define LSM303DLHC_I2C_SCK_AF                GPIO_AF_4
-
-#define LSM303DLHC_I2C_SDA_PIN               GPIO_Pin_7                  /* PB.7 */
-#define LSM303DLHC_I2C_SDA_GPIO_PORT         GPIOB                       /* GPIOB */
-#define LSM303DLHC_I2C_SDA_GPIO_CLK          RCC_AHBPeriph_GPIOB
-#define LSM303DLHC_I2C_SDA_SOURCE            GPIO_PinSource7
-#define LSM303DLHC_I2C_SDA_AF                GPIO_AF_4
-
-#define LSM303DLHC_DRDY_PIN                  GPIO_Pin_2                  /* PE.02 */
-#define LSM303DLHC_DRDY_GPIO_PORT            GPIOE                       /* GPIOE */
-#define LSM303DLHC_DRDY_GPIO_CLK             RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_DRDY_EXTI_LINE            EXTI_Line2
-#define LSM303DLHC_DRDY_EXTI_PORT_SOURCE     EXTI_PortSourceGPIOE
-#define LSM303DLHC_DRDY_EXTI_PIN_SOURCE      EXTI_PinSource2
-#define LSM303DLHC_DRDY_EXTI_IRQn            EXTI2_TS_IRQn
-
-#define LSM303DLHC_I2C_INT1_PIN              GPIO_Pin_4                  /* PE.04 */
-#define LSM303DLHC_I2C_INT1_GPIO_PORT        GPIOE                       /* GPIOE */
-#define LSM303DLHC_I2C_INT1_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_LINE        EXTI_Line4
-#define LSM303DLHC_I2C_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT1_EXTI_PIN_SOURCE  EXTI_PinSource4
-#define LSM303DLHC_I2C_INT1_EXTI_IRQn        EXTI4_IRQn
-
-#define LSM303DLHC_I2C_INT2_PIN              GPIO_Pin_5                  /* PE.05 */
-#define LSM303DLHC_I2C_INT2_GPIO_PORT        GPIOE                       /* GPIOE */
-#define LSM303DLHC_I2C_INT2_GPIO_CLK         RCC_AHBPeriph_GPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_LINE        EXTI_Line5
-#define LSM303DLHC_I2C_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOE
-#define LSM303DLHC_I2C_INT2_EXTI_PIN_SOURCE  EXTI_PinSource5ss
-#define LSM303DLHC_I2C_INT2_EXTI_IRQn        EXTI9_5_IRQn
+#define LSM303DLHC_I2C_SCK_PIN               PB6                         /* PB.06 */
+#define LSM303DLHC_I2C_SDA_PIN               PB7                         /* PB.7 */
+#define LSM303DLHC_DRDY_PIN                  PE2                         /* PE.02 */
+#define LSM303DLHC_I2C_INT1_PIN              PE4                         /* PE.04 */
+#define LSM303DLHC_I2C_INT2_PIN              PE5                         /* PE.05 */
 
 /******************************************************************************/
 /*************************** START REGISTER MAPPING  **************************/

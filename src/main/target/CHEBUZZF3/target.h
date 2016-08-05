@@ -41,13 +41,9 @@
 #define GYRO_L3GD20_ALIGN CW270_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG
 
-#define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1)
-
 #define ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
-
 #define ACC_MPU6050_ALIGN       CW0_DEG
 
 #define BARO
@@ -55,13 +51,15 @@
 
 #define MAG
 #define USE_MAG_AK8975
-
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define SERIAL_PORT_COUNT       3
+#define USE_UART1
+#define USE_UART2
+#define SERIAL_PORT_COUNT 3
+
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -70,33 +68,13 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define LED_STRIP
-#if 1
-#define LED_STRIP_TIMER TIM16
-#else
-// alternative LED strip configuration, tested working.
-#define LED_STRIP_TIMER TIM1
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_6
-#define WS2811_PIN                      GPIO_Pin_8
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
-#define WS2811_TIMER                    TIM1
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#endif
-
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2)|BIT(10)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTD         (BIT(2)|BIT(5)|BIT(6)|BIT(10)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTE         0xffff
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4)|BIT(9)|BIT(10))
-
 
 #define USABLE_TIMER_CHANNEL_COUNT 18
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))

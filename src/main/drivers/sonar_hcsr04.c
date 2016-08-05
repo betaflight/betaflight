@@ -83,7 +83,7 @@ void hcsr04_set_sonar_hardware(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
 
-#ifdef STM32F303xC
+#if defined(STM32F3) || defined(STM32F4)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */

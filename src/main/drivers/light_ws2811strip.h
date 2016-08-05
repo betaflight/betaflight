@@ -25,8 +25,13 @@
 
 #define WS2811_DMA_BUFFER_SIZE (WS2811_DATA_BUFFER_SIZE + WS2811_DELAY_BUFFER_LENGTH)   // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
 
+#if defined(STM32F40_41xxx)
+#define BIT_COMPARE_1 67 // timer compare value for logical 1
+#define BIT_COMPARE_0 33  // timer compare value for logical 0
+#else
 #define BIT_COMPARE_1 17 // timer compare value for logical 1
 #define BIT_COMPARE_0 9  // timer compare value for logical 0
+#endif
 
 void ws2811LedStripInit(void);
 

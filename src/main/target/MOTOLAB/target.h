@@ -47,45 +47,24 @@
 //#define USE_MAG_HMC5883
 
 #define USE_VCP
-#define USE_USART1
-#define USE_USART2
-#define USE_USART3
-#define SERIAL_PORT_COUNT 4
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define SERIAL_PORT_COUNT       4
 
-#define UART1_TX_PIN        GPIO_Pin_6 // PB6
-#define UART1_RX_PIN        GPIO_Pin_7 // PB7
-#define UART1_GPIO          GPIOB
-#define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource6
-#define UART1_RX_PINSOURCE  GPIO_PinSource7
+#define UART1_TX_PIN            PB6
+#define UART1_RX_PIN            PB7
 
-#define UART2_TX_PIN        GPIO_Pin_3 // PB3
-#define UART2_RX_PIN        GPIO_Pin_4 // PB4
-#define UART2_GPIO          GPIOB
-#define UART2_GPIO_AF       GPIO_AF_7
-#define UART2_TX_PINSOURCE  GPIO_PinSource3
-#define UART2_RX_PINSOURCE  GPIO_PinSource4
+#define UART2_TX_PIN            PB3
+#define UART2_RX_PIN            PB4
 
-#define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
-#define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
-#define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOB
-#define UART3_TX_PINSOURCE  GPIO_PinSource10
-#define UART3_RX_PINSOURCE  GPIO_PinSource11
+#define UART3_TX_PIN            PB10 // PB10 (AF7)
+#define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
-
-#define I2C2_SCL_GPIO        GPIOA
-#define I2C2_SCL_GPIO_AF     GPIO_AF_4
-#define I2C2_SCL_PIN         GPIO_Pin_9
-#define I2C2_SCL_PIN_SOURCE  GPIO_PinSource9
-#define I2C2_SCL_CLK_SOURCE  RCC_AHBPeriph_GPIOA
-#define I2C2_SDA_GPIO        GPIOA
-#define I2C2_SDA_GPIO_AF     GPIO_AF_4
-#define I2C2_SDA_PIN         GPIO_Pin_10
-#define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
-#define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C2_SCL                PA9
+#define I2C2_SDA                PA10
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
@@ -113,18 +92,14 @@
 
 #define LED_STRIP
 #if 1
-#define LED_STRIP_TIMER TIM16
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
-#define WS2811_GPIO                     GPIOB
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_8 // TIM16_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource8
+#define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 #endif
 
 #if 0
@@ -147,8 +122,7 @@
 
 #define SPEKTRUM_BIND
 // USART2, PB4
-#define BIND_PORT GPIOB
-#define BIND_PIN Pin_4
+#define BIND_PIN                PB4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
