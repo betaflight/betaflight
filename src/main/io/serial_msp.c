@@ -1041,8 +1041,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
-        serialize8(masterConfig.rxConfig.rcSmoothing);
-        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize8(masterConfig.rxConfig.rcInterpolation);
+        serialize8(masterConfig.rxConfig.rcInterpolationInterval);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         break;
 
@@ -1688,8 +1688,8 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_max_usec = read16();
         }
         if (currentPort->dataSize > 12) {
-            masterConfig.rxConfig.rcSmoothing = read8();
-            masterConfig.rxConfig.rcSmoothInterval = read8();
+            masterConfig.rxConfig.rcInterpolation = read8();
+            masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
         break;
