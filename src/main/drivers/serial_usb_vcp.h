@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "serial.h"
-
 typedef struct {
     serialPort_t port;
 
@@ -30,4 +28,5 @@ typedef struct {
 } vcpPort_t;
 
 serialPort_t *usbVcpOpen(void);
-uint32_t usbVcpGetBaudRate(serialPort_t *instance);
+struct serialPort_s;
+uint32_t usbVcpGetBaudRate(struct serialPort_s *instance);

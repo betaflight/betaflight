@@ -17,7 +17,7 @@
 */
 #pragma once
 
-#include "drivers/io.h"
+#include "drivers/io_types.h"
 
 typedef struct {
     IO_t io;

@@ -63,6 +63,8 @@
 
 #include "io/display.h"
 
+#include "rx/rx.h"
+
 #include "scheduler/scheduler.h"
 
 extern profile_t *currentProfile;

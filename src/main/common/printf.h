@@ -102,12 +102,9 @@ For further details see source code.
 regs Kusti, 23.10.2004
 */
 
-#ifndef __TFP_PRINTF__
-#define __TFP_PRINTF__
+#pragma once
 
 #include <stdarg.h>
-
-#include "drivers/serial.h"
 
 void init_printf(void *putp, void (*putf) (void *, char));
 
@@ -119,8 +116,6 @@ int tfp_format(void *putp, void (*putf) (void *, char), const char *fmt, va_list
 #define printf tfp_printf
 #define sprintf tfp_sprintf
 
-void setPrintfSerialPort(serialPort_t *serialPort);
+struct serialPort_s;
+void setPrintfSerialPort(struct serialPort_s *serialPort);
 void printfSupportInit(void);
-
-
-#endif
