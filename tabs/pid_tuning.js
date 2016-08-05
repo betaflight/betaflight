@@ -968,5 +968,9 @@ TABS.pid_tuning.updatePidControllerParameters = function () {
 
             $('#pid-tuning .delta').hide();
         }
+    } else {
+        $('#pid-tuning .delta').show();
+        $('#pid-tuning .ptermSetpoint').hide();
+        $('#pid-tuning .dtermSetpoint').hide();
     }
 }
