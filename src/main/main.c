@@ -49,6 +49,8 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/io.h"
+#include "drivers/exti.h"
 
 #include "rx/rx.h"
 
@@ -167,13 +169,6 @@ void init(void)
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
-#ifdef STM32F303
-    // start fpu
-    SCB->CPACR = (0x3 << (10*2)) | (0x3 << (11*2));
-#endif
-
-    SetSysClock();
-
     i2cSetOverclock(masterConfig.i2c_overclock);
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -189,6 +184,10 @@ void init(void)
     ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
 #else
     ledInit(false);
+#endif
+
+#ifdef USE_EXTI
+    EXTIInit();
 #endif
 
 #ifdef SPEKTRUM_BIND
