@@ -52,11 +52,11 @@
 
 #define MAG
 #define USE_MAG_AK8975
-// #define USE_MAG_HMC5883
-// #define MAG_HMC5883_ALIGN CW270_DEG
-// commend the HMC to test our ic
-#define USE_MAG_IST8310
-#define MAG_IST8310_ALIGN CW0_DEG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN CW270_DEG
+// test for ist8310 , ucomment it
+// #define USE_MAG_IST8310
+// #define MAG_IST8310_ALIGN CW0_DEG
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

@@ -82,7 +82,6 @@ extern acc_t acc;
 
 uint8_t detectedSensors[MAX_SENSORS_TO_DETECT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
-
 const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #ifdef NAZE

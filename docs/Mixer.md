@@ -154,6 +154,7 @@ Only some `<servo>` channels are connected to output, based on mode. For custom 
 GIMBAL handling is hard-coded, mmix rule is ignored.
 
 - `<source>`
+
 | id |  Input sources |
 |----|-----------------|
 | 0  | Stabilized ROLL |
