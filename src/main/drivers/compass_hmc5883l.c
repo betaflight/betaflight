@@ -39,8 +39,6 @@
 #include "sensor.h"
 #include "compass.h"
 
-#include "sensors/sensors.h"
-
 #include "compass_hmc5883l.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
@@ -274,5 +272,4 @@ bool hmc5883lRead(int16_t *magData)
 
     return true;
 }
-
 #endif

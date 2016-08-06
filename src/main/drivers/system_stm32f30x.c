@@ -26,7 +26,7 @@
 #include "system.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
-void SetSysClock();
+void SetSysClock(void);
 
 void systemReset(void)
 {

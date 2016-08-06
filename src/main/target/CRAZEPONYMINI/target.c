@@ -21,6 +21,7 @@
 #include <platform.h>
 #include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/timer.h"
 
 const uint16_t multiPPM[] = {
     PWM2 | (MAP_TO_MOTOR_OUTPUT << 8), // motor #1 (M2)

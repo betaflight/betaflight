@@ -235,7 +235,11 @@ void mixerLoadMix(int index, motorMixer_t *customMixers);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers);
+#else
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers);
 #endif
+void mixerUsePWMIOConfiguration(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);

@@ -141,6 +141,8 @@ typedef struct rxRuntimeConfig_s {
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
 
+struct modeActivationCondition_s;
+void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(rxConfig_t *rxConfigToUse);
 
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data

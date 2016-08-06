@@ -22,7 +22,7 @@
 #include "platform.h"
 
 #include "accgyro_mpu.h"
-#include "gpio.h"
+#include "exti.h"
 #include "nvic.h"
 #include "system.h"
 
