@@ -246,7 +246,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
     function form_to_pid_and_rc() {
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-            BF_CONFIG.features.updateData($('.pid_tuning input[name="SUPEREXPO_RATES"]'));
+            BF_CONFIG.features.updateData($('input[name="SUPEREXPO_RATES"]'));
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
