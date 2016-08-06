@@ -25,6 +25,7 @@
 #include "common/color.h"
 #include "common/atomic.h"
 #include "common/maths.h"
+#include "common/printf.h"
 
 #include "drivers/nvic.h"
 
@@ -33,6 +34,7 @@
 #include "drivers/dma.h"
 #include "drivers/exti.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/timer.h"
@@ -43,6 +45,7 @@
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/pwm_output.h"
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
@@ -55,6 +58,7 @@
 #include "drivers/exti.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -66,6 +70,8 @@
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/serial_msp.h"
+#include "io/serial_cli.h"
 
 #include "scheduler/scheduler.h"
 
@@ -77,6 +83,7 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/initialisation.h"
+#include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
 #include "blackbox/blackbox.h"
@@ -104,27 +111,6 @@ extern uint8_t motorControlEnable;
 #ifdef SOFTSERIAL_LOOPBACK
 serialPort_t *loopbackPort;
 #endif
-
-void printfSupportInit(void);
-void timerInit(void);
-void telemetryInit(void);
-void mspInit();
-void cliInit(serialConfig_t *serialConfig);
-void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
-pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
-#ifdef USE_SERVOS
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
-#else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
-#endif
-void mixerUsePWMIOConfiguration(void);
-void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
-void gpsPreInit(gpsConfig_t *initialGpsConfig);
-void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
-void imuInit(void);
-void displayInit(rxConfig_t *intialRxConfig);
-void spektrumBind(rxConfig_t *rxConfig);
-const sonarHcsr04Hardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -391,6 +377,7 @@ void init(void)
     adcInit(&adc_params);
 #endif
 
+
     initBoardAlignment(&masterConfig.boardAlignment);
 
 #ifdef DISPLAY
@@ -441,7 +428,7 @@ void init(void)
 
     imuInit();
 
-    mspInit(&masterConfig.serialConfig);
+    mspInit();
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

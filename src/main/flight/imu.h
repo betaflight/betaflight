@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "flight/pid.h"
-
 #define GRAVITY_CMSS    980.665f
 
 extern int16_t throttleAngleCorrection;
@@ -48,7 +46,8 @@ typedef struct imuRuntimeConfig_s {
     uint8_t small_angle;
 } imuRuntimeConfig_t;
 
-void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile);
+struct pidProfile_s;
+void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, struct pidProfile_s *initialPidProfile);
 
 void imuUpdateGyroAndAttitude(void);
 void imuUpdateAccelerometer(void);
@@ -61,3 +60,4 @@ void imuTransformVectorBodyToEarth(t_fp_vector * v);
 void imuTransformVectorEarthToBody(t_fp_vector * v);
 
 int16_t imuCalculateHeading(t_fp_vector *vec);
+void imuInit(void);

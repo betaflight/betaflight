@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "timer.h"
+#include "io_types.h"
 
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_PWM_MOTORS  4
@@ -101,10 +101,11 @@ typedef enum {
     PWM_PF_PWM = (1 << 6)
 } pwmPortFlags_e;
 
+struct timerHardware_s;
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
     pwmPortFlags_e flags;
-    const timerHardware_t *timerHardware;
+    const struct timerHardware_s *timerHardware;
 } pwmPortConfiguration_t;
 
 typedef struct pwmIOConfiguration_s {
@@ -145,4 +146,5 @@ extern const uint16_t multiPWM[];
 extern const uint16_t airPPM[];
 extern const uint16_t airPWM[];
 
+pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init);
 pwmIOConfiguration_t *pwmGetOutputConfiguration(void);

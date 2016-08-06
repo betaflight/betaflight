@@ -18,7 +18,7 @@
 #pragma once
 
 #include "drivers/sonar_hcsr04.h"
-#include "drivers/sonar.h"
+#include "drivers/rangefinder.h"
 #include "sensors/battery.h"
 
 typedef enum {
@@ -32,7 +32,8 @@ typedef enum {
     SONAR_HCSR04_PINS_PWM,
 } sonarHCSR04Pins_e;
 
-typedef void (*sonarInitFunctionPtr)(sonarRange_t *sonarRange);
+struct sonarRange_s;
+typedef void (*sonarInitFunctionPtr)(struct sonarRange_s *sonarRange);
 typedef void (*sonarUpdateFunctionPtr)(void);
 typedef int32_t (*sonarReadFunctionPtr)(void);
 

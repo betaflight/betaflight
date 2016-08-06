@@ -35,7 +35,7 @@
 
 #include "build_config.h"
 
-#if defined(TELEMETRY) && defined(TELEMETRY_LTM)
+#if defined(TELEMETRY_LTM)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -268,6 +268,7 @@ static void ltm_nframe(void)
 }
 #endif
 
+#if defined(GPS)
 static bool ltm_shouldSendXFrame(void)
 {
     static uint16_t lastHDOP = 0;
@@ -279,6 +280,7 @@ static bool ltm_shouldSendXFrame(void)
 
     return false;
 }
+#endif
 
 #define LTM_BIT_AFRAME  (1 << 0)
 #define LTM_BIT_GFRAME  (1 << 1)

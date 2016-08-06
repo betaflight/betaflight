@@ -27,6 +27,8 @@
 #include "adc.h"
 #include "adc_impl.h"
 
+#include "common/utils.h"
+
 //#define DEBUG_ADC_CHANNELS
 
 #ifdef USE_ADC

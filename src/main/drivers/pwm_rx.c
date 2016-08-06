@@ -30,9 +30,10 @@
 #include "system.h"
 
 #include "nvic.h"
-#include "gpio.h"
+#include "io.h"
 #include "timer.h"
 
+#include "pwm_output.h"
 #include "pwm_mapping.h"
 
 #include "pwm_rx.h"

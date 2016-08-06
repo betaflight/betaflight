@@ -21,6 +21,8 @@ typedef enum {
     PAGE_STATUS
 } pageId_e;
 
+struct rxConfig_s;
+void displayInit(struct rxConfig_s *intialRxConfig);
 void updateDisplay(void);
 
 void displaySetPage(pageId_e newPageId);

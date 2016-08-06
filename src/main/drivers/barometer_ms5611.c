@@ -22,7 +22,6 @@
 
 #include "barometer.h"
 
-#include "gpio.h"
 #include "system.h"
 #include "bus_i2c.h"
 
