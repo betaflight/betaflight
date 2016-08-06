@@ -23,9 +23,10 @@
 #include <string.h>
 
 #include <platform.h>
-#include "build_config.h"
 
 #ifdef USE_RX_H8_3D
+
+#include "build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/rx_xn297.h"
@@ -129,7 +130,7 @@ STATIC_UNIT_TESTED uint16_t h8_3dConvertToPwm(uint8_t val, int16_t _min, int16_t
     return (uint16_t)ret;
 }
 
-void h8_3dSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
+void h8_3dNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     rcData[NRF24_ROLL] = h8_3dConvertToPwm(payload[12], 0xbb, 0x43); // aileron
     rcData[NRF24_PITCH] = h8_3dConvertToPwm(payload[11], 0x43, 0xbb); // elevator
@@ -182,14 +183,14 @@ static void h8_3dHopToNextChannel(void)
 }
 
 // The hopping channels are determined by the txId
-void h8_3dSetHoppingChannels(const uint8_t *txId)
+static void h8_3dSetHoppingChannels(const uint8_t *txId)
 {
     for (int ii = 0; ii < H8_3D_RF_CHANNEL_COUNT; ++ii) {
         h8_3dRfChannels[ii] = 0x06 + (0x0f * ii) + ((txId[ii] >> 4) + (txId[ii] & 0x0f)) % 0x0f;
     }
 }
 
-void h8_3dSetBound(const uint8_t *txId)
+static void h8_3dSetBound(const uint8_t *txId)
 {
     protocolState = STATE_DATA;
     h8_3dSetHoppingChannels(txId);
@@ -214,7 +215,7 @@ static bool h8_3dCrcOK(uint16_t crc, const uint8_t *payload)
  * This is called periodically by the scheduler.
  * Returns NRF24L01_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t h8_3dDataReceived(uint8_t *payload)
+nrf24_received_t h8_3dNrf24DataReceived(uint8_t *payload)
 {
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
     bool payloadReceived = false;
@@ -248,13 +249,13 @@ nrf24_received_t h8_3dDataReceived(uint8_t *payload)
     return ret;
 }
 
-void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
+static void h8_3dNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
 {
     UNUSED(protocol);
     protocolState = STATE_BIND;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC - hardware CRC not used for XN297
-    NRF24L01_Setup();
+    NRF24L01_SetupBasic();
 
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
@@ -273,9 +274,9 @@ void h8_3dNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void h8_3dInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void h8_3dNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    h8_3dNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
+    h8_3dNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
 }
 #endif

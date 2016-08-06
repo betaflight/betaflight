@@ -30,7 +30,7 @@
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
 #include "rx/nrf24_h8_3d.h"
-#include "rx/nrf24_ref.h"
+#include "rx/nrf24_inav.h"
 
 
 uint16_t nrf24RcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -64,39 +64,39 @@ STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
 #ifdef USE_RX_V202
     case NRF24RX_V202_250K:
     case NRF24RX_V202_1M:
-        protocolInit = v202Init;
-        protocolDataReceived = v202DataReceived;
-        protocolSetRcDataFromPayload = v202SetRcDataFromPayload;
+        protocolInit = v202Nrf24Init;
+        protocolDataReceived = v202Nrf24DataReceived;
+        protocolSetRcDataFromPayload = v202Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_SYMA
     case NRF24RX_SYMA_X:
     case NRF24RX_SYMA_X5C:
-        protocolInit = symaInit;
-        protocolDataReceived = symaDataReceived;
-        protocolSetRcDataFromPayload = symaSetRcDataFromPayload;
+        protocolInit = symaNrf24Init;
+        protocolDataReceived = symaNrf24DataReceived;
+        protocolSetRcDataFromPayload = symaNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_CX10
     case NRF24RX_CX10:
     case NRF24RX_CX10A:
-        protocolInit = cx10Init;
-        protocolDataReceived = cx10DataReceived;
-        protocolSetRcDataFromPayload = cx10SetRcDataFromPayload;
+        protocolInit = cx10Nrf24Init;
+        protocolDataReceived = cx10Nrf24DataReceived;
+        protocolSetRcDataFromPayload = cx10Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_H8_3D
     case NRF24RX_H8_3D:
-        protocolInit = h8_3dInit;
-        protocolDataReceived = h8_3dDataReceived;
-        protocolSetRcDataFromPayload = h8_3dSetRcDataFromPayload;
+        protocolInit = h8_3dNrf24Init;
+        protocolDataReceived = h8_3dNrf24DataReceived;
+        protocolSetRcDataFromPayload = h8_3dNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef USE_RX_REF
-    case NRF24RX_REF:
-        protocolInit = refInit;
-        protocolDataReceived = refDataReceived;
-        protocolSetRcDataFromPayload = refSetRcDataFromPayload;
+#ifdef USE_RX_INAV
+    case NRF24RX_INAV:
+        protocolInit = inavNrf24Init;
+        protocolDataReceived = inavNrf24DataReceived;
+        protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
     }

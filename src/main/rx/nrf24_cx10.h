@@ -20,7 +20,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void cx10Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-void cx10SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-nrf24_received_t cx10DataReceived(uint8_t *payload);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void cx10Nrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
+nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload);
 

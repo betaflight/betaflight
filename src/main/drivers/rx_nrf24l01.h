@@ -88,6 +88,13 @@ enum {
     NRF24L01_17_FIFO_STATUS_RX_FULL     = 1,
     NRF24L01_17_FIFO_STATUS_RX_EMPTY    = 0,
 
+    NRF24L01_1C_DYNPD_DPL_P5            = 5,
+    NRF24L01_1C_DYNPD_DPL_P4            = 4,
+    NRF24L01_1C_DYNPD_DPL_P3            = 3,
+    NRF24L01_1C_DYNPD_DPL_P2            = 2,
+    NRF24L01_1C_DYNPD_DPL_P1            = 1,
+    NRF24L01_1C_DYNPD_DPL_P0            = 0,
+
     NRF24L01_1D_FEATURE_EN_DPL          = 2,
     NRF24L01_1D_FEATURE_EN_ACK_PAY      = 1,
     NRF24L01_1D_FEATURE_EN_DYN_ACK      = 0,
@@ -116,6 +123,16 @@ enum {
     NRF24L01_1C_DYNPD_ALL_PIPES         = 0x3F,
 };
 
+// Pipes
+enum {
+    NRF24L01_PIPE0 = 0,
+    NRF24L01_PIPE1 = 1,
+    NRF24L01_PIPE2 = 2,
+    NRF24L01_PIPE3 = 3,
+    NRF24L01_PIPE4 = 4,
+    NRF24L01_PIPE5 = 5
+};
+
 typedef enum {
     NFR24L01_SOFTSPI,
     NFR24L01_SPI,
@@ -125,10 +142,11 @@ void NRF24L01_SpiInit(nfr24l01_spi_type_e spiType);
 void NRF24L01_Initialize(uint8_t baseConfig);
 uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data);
 uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length);
-uint8_t NRF24L01_WritePayload(const uint8_t *data, uint8_t len);
+uint8_t NRF24L01_WritePayload(const uint8_t *data, uint8_t length);
+uint8_t NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe);
 uint8_t NRF24L01_ReadReg(uint8_t reg);
 uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length);
-uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t len);
+uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length);
 
 void NRF24L01_FlushTx(void);
 void NRF24L01_FlushRx(void);
@@ -136,7 +154,7 @@ void NRF24L01_FlushRx(void);
 
 // Utility functions
 
-void NRF24L01_Setup(void);
+void NRF24L01_SetupBasic(void);
 void NRF24L01_SetStandbyMode(void);
 void NRF24L01_SetRxMode(void);
 void NRF24L01_SetTxMode(void);

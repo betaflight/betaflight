@@ -149,15 +149,20 @@ uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data)
     return true;
 }
 
-uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length)
+static uint8_t NRF24L01_WriteMulti(uint8_t type, const uint8_t *data, uint8_t length)
 {
     ENABLE_NRF24();
-    const uint8_t ret = nrf24TransferByte(W_REGISTER | ( REGISTER_MASK & reg));
+    const uint8_t ret = nrf24TransferByte(type);
     for (uint8_t i = 0; i < length; i++) {
         nrf24TransferByte(data[i]);
     }
     DISABLE_NRF24();
     return ret;
+}
+
+uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length)
+{
+    return NRF24L01_WriteMulti(W_REGISTER | ( REGISTER_MASK & reg), data, length);
 }
 
 /*
@@ -167,13 +172,12 @@ uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t le
  */
 uint8_t NRF24L01_WritePayload(const uint8_t *data, uint8_t length)
 {
-    ENABLE_NRF24();
-    const uint8_t ret = nrf24TransferByte(W_TX_PAYLOAD);
-    for (uint8_t i = 0; i < length; i++) {
-        nrf24TransferByte(data[i]);
-    }
-    DISABLE_NRF24();
-    return ret;
+    return NRF24L01_WriteMulti(W_TX_PAYLOAD, data, length);
+}
+
+uint8_t NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe)
+{
+    return NRF24L01_WriteMulti(W_ACK_PAYLOAD | (pipe & 0x07), data, length);
 }
 
 uint8_t NRF24L01_ReadReg(uint8_t reg)
@@ -185,10 +189,10 @@ uint8_t NRF24L01_ReadReg(uint8_t reg)
     return ret;
 }
 
-uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length)
+static uint8_t NRF24L01_ReadMulti(uint8_t type, uint8_t *data, uint8_t length)
 {
     ENABLE_NRF24();
-    const uint8_t ret = nrf24TransferByte(R_REGISTER | (REGISTER_MASK & reg));
+    const uint8_t ret = nrf24TransferByte(type);
     for (uint8_t i = 0; i < length; i++) {
         data[i] = nrf24TransferByte(NOP);
     }
@@ -196,18 +200,17 @@ uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length)
     return ret;
 }
 
+uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length)
+{
+    return NRF24L01_ReadMulti(R_REGISTER | (REGISTER_MASK & reg), data, length);
+}
+
 /*
  * Read a packet from the nRF24L01 RX FIFO.
  */
 uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length)
 {
-    ENABLE_NRF24();
-    const uint8_t ret = nrf24TransferByte(R_RX_PAYLOAD);
-    for (uint8_t i = 0; i < length; i++) {
-        data[i] = nrf24TransferByte(NOP);
-    }
-    DISABLE_NRF24();
-    return ret;
+    return NRF24L01_ReadMulti(R_RX_PAYLOAD, data, length);
 }
 
 /*
@@ -255,12 +258,12 @@ void NRF24L01_Initialize(uint8_t baseConfig)
 /*
  * Common setup of registers
  */
-void NRF24L01_Setup(void)
+void NRF24L01_SetupBasic(void)
 {
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00);
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES); // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00); // Don't count lost or retransmitted packets
     NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
 }
 

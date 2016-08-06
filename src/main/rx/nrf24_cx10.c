@@ -125,7 +125,7 @@ STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t *pVal)
     return ret;
 }
 
-void cx10SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
+void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     const uint8_t offset = (cx10Protocol == NRF24RX_CX10) ? 0 : 4;
     rcData[NRF24_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
@@ -194,7 +194,7 @@ static bool cx10ReadPayloadIfAvailable(uint8_t *payload)
  * This is called periodically by the scheduler.
  * Returns NRF24_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t cx10DataReceived(uint8_t *payload)
+nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload)
 {
     static uint8_t ackCount;
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
@@ -268,7 +268,7 @@ nrf24_received_t cx10DataReceived(uint8_t *payload)
     return ret;
 }
 
-void cx10Nrf24Init(nrf24_protocol_t protocol)
+static void cx10Nrf24Setup(nrf24_protocol_t protocol)
 {
     cx10Protocol = protocol;
     protocolState = STATE_BIND;
@@ -276,7 +276,7 @@ void cx10Nrf24Init(nrf24_protocol_t protocol)
     hopTimeout = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_HOP_TIMEOUT : CX10A_PROTOCOL_HOP_TIMEOUT;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC
-    NRF24L01_Setup();
+    NRF24L01_SetupBasic();
 
     NRF24L01_SetChannel(CX10_RF_BIND_CHANNEL);
 
@@ -291,10 +291,10 @@ void cx10Nrf24Init(nrf24_protocol_t protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void cx10Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void cx10Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    cx10Nrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
+    cx10Nrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
 }
 #endif
 

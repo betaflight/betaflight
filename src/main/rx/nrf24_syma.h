@@ -20,7 +20,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void symaInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-void symaSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-nrf24_received_t symaDataReceived(uint8_t *payload);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void symaNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void symaNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
+nrf24_received_t symaNrf24DataReceived(uint8_t *payload);
 
