@@ -517,6 +517,7 @@ static void resetConf(void)
 #else
     masterConfig.rxConfig.serialrx_provider = 0;
 #endif
+    masterConfig.rxConfig.ibus_model = 0;
     masterConfig.rxConfig.sbus_inversion = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
