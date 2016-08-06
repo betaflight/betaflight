@@ -7,22 +7,22 @@ TABS.auxiliary.initialize = function (callback) {
     GUI.active_tab = 'auxiliary';
     
     function get_mode_ranges() {
-        MSP.send_message(MSP_codes.MSP_MODE_RANGES, false, false, get_box_ids);
+        MSP.send_message(MSPCodes.MSP_MODE_RANGES, false, false, get_box_ids);
     }
 
     function get_box_ids() {
-        MSP.send_message(MSP_codes.MSP_BOXIDS, false, false, get_rc_data);
+        MSP.send_message(MSPCodes.MSP_BOXIDS, false, false, get_rc_data);
     }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, load_html);
+        MSP.send_message(MSPCodes.MSP_RC, false, false, load_html);
     }
 
     function load_html() {
         $('#content').load("./tabs/auxiliary.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_mode_ranges);
+    MSP.send_message(MSPCodes.MSP_BOXNAMES, false, false, get_mode_ranges);
 
     function createMode(modeIndex, modeId) {
         var modeTemplate = $('#tab-auxiliary-templates .mode');
@@ -212,10 +212,10 @@ TABS.auxiliary.initialize = function (callback) {
             //
             // send data to FC
             //
-            MSP.sendModeRanges(save_to_eeprom);
+            MspHelper.sendModeRanges(save_to_eeprom);
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('auxiliaryEepromSaved'));
                 });
             }
@@ -245,7 +245,7 @@ TABS.auxiliary.initialize = function (callback) {
 
         // data pulling functions used inside interval timer
         function get_rc_data() {
-            MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
+            MSP.send_message(MSPCodes.MSP_RC, false, false, update_ui);
         }
 
         function update_ui() {
@@ -280,7 +280,7 @@ TABS.auxiliary.initialize = function (callback) {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function () {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);

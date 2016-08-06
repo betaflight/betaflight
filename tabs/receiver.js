@@ -12,30 +12,30 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, get_rc_tuning_data);
+        MSP.send_message(MSPCodes.MSP_RC, false, false, get_rc_tuning_data);
     }
 
     function get_rc_tuning_data() {
-        MSP.send_message(MSP_codes.MSP_RC_TUNING, false, false, get_bt_config_data);
+        MSP.send_message(MSPCodes.MSP_RC_TUNING, false, false, get_bt_config_data);
     }
 
     function get_bt_config_data() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, get_rc_map);
+        MSP.send_message(MSPCodes.MSP_BF_CONFIG, false, false, get_rc_map);
     }
 
     function get_rc_map() {
-        MSP.send_message(MSP_codes.MSP_RX_MAP, false, false, load_config);
+        MSP.send_message(MSPCodes.MSP_RX_MAP, false, false, load_config);
     }
 
     // Fetch features so we can check if RX_MSP is enabled:
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_rc_configs);
+        MSP.send_message(MSPCodes.MSP_BF_CONFIG, false, false, load_rc_configs);
     }
 
     function load_rc_configs() {
         var next_callback = load_html;
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            MSP.send_message(MSP_codes.MSP_RC_DEADBAND, false, false, next_callback);
+            MSP.send_message(MSPCodes.MSP_RC_DEADBAND, false, false, next_callback);
         } else {
             next_callback();
         }
@@ -45,7 +45,7 @@ TABS.receiver.initialize = function (callback) {
         $('#content').load("./tabs/receiver.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_MISC, false, false, get_rc_data);
+    MSP.send_message(MSPCodes.MSP_MISC, false, false, get_rc_data);
 
     function process_html() {
         // translate to user-selected language
@@ -221,25 +221,25 @@ TABS.receiver.initialize = function (callback) {
             MISC.rssi_channel = parseInt($('select[name="rssi_channel"]').val());
 
             function save_misc() {
-                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_rc_configs);
+                MSP.send_message(MSPCodes.MSP_SET_MISC, mspHelper.crunch(MSPCodes.MSP_SET_MISC), false, save_rc_configs);
             }
 
             function save_rc_configs() {
                 var next_callback = save_to_eeprom;
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                   MSP.send_message(MSP_codes.MSP_SET_RC_DEADBAND, MSP.crunch(MSP_codes.MSP_SET_RC_DEADBAND), false, next_callback);
+                   MSP.send_message(MSPCodes.MSP_SET_RC_DEADBAND, mspHelper.crunch(MSPCodes.MSP_SET_RC_DEADBAND), false, next_callback);
                 } else {
                    next_callback();
                 }
             }
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('receiverEepromSaved'));
                 });
             }
 
-            MSP.send_message(MSP_codes.MSP_SET_RX_MAP, MSP.crunch(MSP_codes.MSP_SET_RX_MAP), false, save_misc);
+            MSP.send_message(MSPCodes.MSP_SET_RX_MAP, mspHelper.crunch(MSPCodes.MSP_SET_RX_MAP), false, save_misc);
         });
 
         $("a.sticks").click(function() {
@@ -259,7 +259,7 @@ TABS.receiver.initialize = function (callback) {
                 // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
                 createdWindow.contentWindow.setRawRx = function(channels) {
                     if (CONFIGURATOR.connectionValid && GUI.active_tab != 'cli') {
-                        MSP.setRawRx(channels);
+                        MspHelper.setRawRx(channels);
                         return true;
                     } else {
                         return false;
@@ -278,7 +278,7 @@ TABS.receiver.initialize = function (callback) {
             chrome.storage.local.set({'rx_refresh_rate': plot_update_rate});
 
             function get_rc_data() {
-                MSP.send_message(MSP_codes.MSP_RC, false, false, update_ui);
+                MSP.send_message(MSPCodes.MSP_RC, false, false, update_ui);
             }
 
             // setup plot
@@ -384,7 +384,7 @@ TABS.receiver.initialize = function (callback) {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);
@@ -392,7 +392,7 @@ TABS.receiver.initialize = function (callback) {
 };
 
 TABS.receiver.getRecieverData = function () {
-    MSP.send_message(MSP_codes.MSP_RC, false, false);
+    MSP.send_message(MSPCodes.MSP_RC, false, false);
 };
 
 TABS.receiver.initModelPreview = function () {

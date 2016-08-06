@@ -15,14 +15,14 @@ TABS.logging.initialize = function (callback) {
 
     if (CONFIGURATOR.connectionValid) {
         var get_motor_data = function () {
-            MSP.send_message(MSP_codes.MSP_MOTOR, false, false, load_html);
+            MSP.send_message(MSPCodes.MSP_MOTOR, false, false, load_html);
         }
 
         var load_html = function () {
             $('#content').load("./tabs/logging.html", process_html);
         }
 
-        MSP.send_message(MSP_codes.MSP_RC, false, false, get_motor_data);
+        MSP.send_message(MSPCodes.MSP_RC, false, false, get_motor_data);
     }
 
     function process_html() {
@@ -60,7 +60,7 @@ TABS.logging.initialize = function (callback) {
 
                                 // request new
                                 for (var i = 0; i < requested_properties.length; i++, requests++) {
-                                    MSP.send_message(MSP_codes[requested_properties[i]]);
+                                    MSP.send_message(MSPCodes[requested_properties[i]]);
                                 }
                             }
 

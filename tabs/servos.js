@@ -9,29 +9,29 @@ TABS.servos.initialize = function (callback) {
     }
 
     function get_servo_configurations() {
-        MSP.send_message(MSP_codes.MSP_SERVO_CONFIGURATIONS, false, false, get_servo_mix_rules);
+        MSP.send_message(MSPCodes.MSP_SERVO_CONFIGURATIONS, false, false, get_servo_mix_rules);
     }
 
     function get_servo_mix_rules() {
-        MSP.send_message(MSP_codes.MSP_SERVO_MIX_RULES, false, false, get_channel_forwarding);
+        MSP.send_message(MSPCodes.MSP_SERVO_MIX_RULES, false, false, get_channel_forwarding);
     }
 
     function get_channel_forwarding() {
         var nextFunction = get_rc_data;
         
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
-            MSP.send_message(MSP_codes.MSP_CHANNEL_FORWARDING, false, false, nextFunction);
+            MSP.send_message(MSPCodes.MSP_CHANNEL_FORWARDING, false, false, nextFunction);
         } else { 
             nextFunction();
         }
     }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, get_boxnames_data);
+        MSP.send_message(MSPCodes.MSP_RC, false, false, get_boxnames_data);
     }
 
     function get_boxnames_data() {
-        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, load_html);
+        MSP.send_message(MSPCodes.MSP_BOXNAMES, false, false, load_html);
     }
 
     function load_html() {
@@ -141,15 +141,15 @@ TABS.servos.initialize = function (callback) {
             //
             // send data to FC
             //
-            MSP.sendServoConfigurations(send_servo_mixer_rules);
+            MspHelper.sendServoConfigurations(send_servo_mixer_rules);
 
             function send_servo_mixer_rules() {
-                MSP.sendServoConfigurations(save_to_eeprom);
+                MspHelper.sendServoConfigurations(save_to_eeprom);
             }
             
             function save_to_eeprom() {
                 if (save_configuration_to_eeprom) {
-                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                    MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
                         GUI.log(chrome.i18n.getMessage('servosEepromSave'));
                     });
                 }
@@ -187,7 +187,7 @@ TABS.servos.initialize = function (callback) {
         
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function () {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);

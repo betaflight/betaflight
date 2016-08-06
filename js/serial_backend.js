@@ -1,4 +1,5 @@
 'use strict';
+var mspHelper;
 
 $(document).ready(function () {
 
@@ -181,28 +182,31 @@ function onOpen(openInfo) {
         }, 10000);
 
         FC.resetState();
-
+        MSP.listen(update_packet_error);
+        mspHelper = new MspHelper();
+        MSP.listen(mspHelper.process_data.bind(mspHelper));
+        
         // request configuration data
-        MSP.send_message(MSP_codes.MSP_API_VERSION, false, false, function () {
+        MSP.send_message(MSPCodes.MSP_API_VERSION, false, false, function () {
             GUI.log(chrome.i18n.getMessage('apiVersionReceived', [CONFIG.apiVersion]));
 
             if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.apiVersionAccepted)) {
 
-                MSP.send_message(MSP_codes.MSP_FC_VARIANT, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_FC_VARIANT, false, false, function () {
                     if (CONFIG.flightControllerIdentifier === 'BTFL') {
-                        MSP.send_message(MSP_codes.MSP_FC_VERSION, false, false, function () {
+                        MSP.send_message(MSPCodes.MSP_FC_VERSION, false, false, function () {
 
                             GUI.log(chrome.i18n.getMessage('fcInfoReceived', [CONFIG.flightControllerIdentifier, CONFIG.flightControllerVersion]));
 
-                            MSP.send_message(MSP_codes.MSP_BUILD_INFO, false, false, function () {
+                            MSP.send_message(MSPCodes.MSP_BUILD_INFO, false, false, function () {
 
                                 GUI.log(chrome.i18n.getMessage('buildInfoReceived', [CONFIG.buildInfo]));
 
-                                MSP.send_message(MSP_codes.MSP_BOARD_INFO, false, false, function () {
+                                MSP.send_message(MSPCodes.MSP_BOARD_INFO, false, false, function () {
 
                                     GUI.log(chrome.i18n.getMessage('boardInfoReceived', [CONFIG.boardIdentifier, CONFIG.boardVersion]));
 
-                                    MSP.send_message(MSP_codes.MSP_UID, false, false, function () {
+                                    MSP.send_message(MSPCodes.MSP_UID, false, false, function () {
                                         GUI.log(chrome.i18n.getMessage('uniqueDeviceIdReceived', [CONFIG.uid[0].toString(16) + CONFIG.uid[1].toString(16) + CONFIG.uid[2].toString(16)]));
 
                                         // continue as usually
@@ -268,9 +272,9 @@ function onConnect() {
         $('#tabs ul.mode-connected').show();
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.9.1")) {
-            MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
+            MSP.send_message(MSPCodes.MSP_STATUS_EX, false, false);
         } else {
-            MSP.send_message(MSP_codes.MSP_STATUS, false, false);
+            MSP.send_message(MSPCodes.MSP_STATUS, false, false);
 
             if (semver.gte(CONFIG.flightControllerVersion, "2.4.0")) {
                 CONFIG.numProfiles = 2;
@@ -281,7 +285,7 @@ function onConnect() {
             }
         }
     
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false);
+        MSP.send_message(MSPCodes.MSP_DATAFLASH_SUMMARY, false, false);
 
         startLiveDataRefreshTimer();
     }
@@ -461,12 +465,12 @@ function update_live_status() {
     });
     
     if (GUI.active_tab != 'cli') {
-        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false);
+        MSP.send_message(MSPCodes.MSP_BOXNAMES, false, false);
         if (semver.gte(CONFIG.flightControllerVersion, "2.9.1"))
-        	MSP.send_message(MSP_codes.MSP_STATUS_EX, false, false);
+        	MSP.send_message(MSPCodes.MSP_STATUS_EX, false, false);
         else
-        	MSP.send_message(MSP_codes.MSP_STATUS, false, false);
-        MSP.send_message(MSP_codes.MSP_ANALOG, false, false);
+        	MSP.send_message(MSPCodes.MSP_STATUS, false, false);
+        MSP.send_message(MSPCodes.MSP_ANALOG, false, false);
     }
     
     var active = ((Date.now() - MSP.analog_last_received_timestamp) < 300);

@@ -12,36 +12,36 @@ function configuration_backup(callback) {
     };
     
     var profileSpecificData = [
-        MSP_codes.MSP_PID_CONTROLLER,
-        MSP_codes.MSP_PID,
-        MSP_codes.MSP_RC_TUNING,
-        MSP_codes.MSP_ACC_TRIM,
-        MSP_codes.MSP_SERVO_CONFIGURATIONS,
-        MSP_codes.MSP_MODE_RANGES,
-        MSP_codes.MSP_ADJUSTMENT_RANGES
+        MSPCodes.MSP_PID_CONTROLLER,
+        MSPCodes.MSP_PID,
+        MSPCodes.MSP_RC_TUNING,
+        MSPCodes.MSP_ACC_TRIM,
+        MSPCodes.MSP_SERVO_CONFIGURATIONS,
+        MSPCodes.MSP_MODE_RANGES,
+        MSPCodes.MSP_ADJUSTMENT_RANGES
     ];
 
     function update_profile_specific_data_list() {
         if (semver.lt(CONFIG.apiVersion, "1.12.0")) {
-            profileSpecificData.push(MSP_codes.MSP_CHANNEL_FORWARDING);
+            profileSpecificData.push(MSPCodes.MSP_CHANNEL_FORWARDING);
          } else {            
-            profileSpecificData.push(MSP_codes.MSP_SERVO_MIX_RULES);
+            profileSpecificData.push(MSPCodes.MSP_SERVO_MIX_RULES);
         }
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            profileSpecificData.push(MSP_codes.MSP_RC_DEADBAND);
+            profileSpecificData.push(MSPCodes.MSP_RC_DEADBAND);
         }
     }
     
     update_profile_specific_data_list();
 
-    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+    MSP.send_message(MSPCodes.MSP_STATUS, false, false, function () {
         activeProfile = CONFIG.profile;
         select_profile();
     });
 
     function select_profile() {
         if (activeProfile > 0) {
-            MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
+            MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [0], false, fetch_specific_data);
         } else {
             fetch_specific_data();
         }
@@ -76,11 +76,11 @@ function configuration_backup(callback) {
                         codeKey = 0;
                         fetchingProfile++;
 
-                        MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [fetchingProfile], false, fetch_specific_data_item);
+                        MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [fetchingProfile], false, fetch_specific_data_item);
                     }
                 });
             } else {
-                MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, fetch_unique_data);
+                MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [activeProfile], false, fetch_unique_data);
             }
         }
 
@@ -89,30 +89,30 @@ function configuration_backup(callback) {
     }
 
     var uniqueData = [
-        MSP_codes.MSP_MISC,
-        MSP_codes.MSP_RX_MAP,
-        MSP_codes.MSP_BF_CONFIG,
-        MSP_codes.MSP_CF_SERIAL_CONFIG,
-        MSP_codes.MSP_LED_STRIP_CONFIG,
-        MSP_codes.MSP_LED_COLORS
+        MSPCodes.MSP_MISC,
+        MSPCodes.MSP_RX_MAP,
+        MSPCodes.MSP_BF_CONFIG,
+        MSPCodes.MSP_CF_SERIAL_CONFIG,
+        MSPCodes.MSP_LED_STRIP_CONFIG,
+        MSPCodes.MSP_LED_COLORS
     ];
 
     function update_unique_data_list() {
         if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
-            uniqueData.push(MSP_codes.MSP_LOOP_TIME);
-            uniqueData.push(MSP_codes.MSP_ARMING_CONFIG);
+            uniqueData.push(MSPCodes.MSP_LOOP_TIME);
+            uniqueData.push(MSPCodes.MSP_ARMING_CONFIG);
         }
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
-            uniqueData.push(MSP_codes.MSP_3D);
+            uniqueData.push(MSPCodes.MSP_3D);
         }
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-            uniqueData.push(MSP_codes.MSP_SENSOR_ALIGNMENT);
-            uniqueData.push(MSP_codes.MSP_RX_CONFIG);
-            uniqueData.push(MSP_codes.MSP_FAILSAFE_CONFIG);
-            uniqueData.push(MSP_codes.MSP_RXFAIL_CONFIG);
+            uniqueData.push(MSPCodes.MSP_SENSOR_ALIGNMENT);
+            uniqueData.push(MSPCodes.MSP_RX_CONFIG);
+            uniqueData.push(MSPCodes.MSP_FAILSAFE_CONFIG);
+            uniqueData.push(MSPCodes.MSP_RXFAIL_CONFIG);
         }
         if (semver.gte(CONFIG.apiVersion, "1.19.0")) {
-            uniqueData.push(MSP_codes.MSP_LED_STRIP_MODECOLOR);
+            uniqueData.push(MSPCodes.MSP_LED_STRIP_MODECOLOR);
         }
     }
     
@@ -641,24 +641,24 @@ function configuration_restore(callback) {
             }
 
             var profileSpecificData = [
-                MSP_codes.MSP_SET_PID_CONTROLLER,
-                MSP_codes.MSP_SET_PID,
-                MSP_codes.MSP_SET_RC_TUNING,
-                MSP_codes.MSP_SET_ACC_TRIM
+                MSPCodes.MSP_SET_PID_CONTROLLER,
+                MSPCodes.MSP_SET_PID,
+                MSPCodes.MSP_SET_RC_TUNING,
+                MSPCodes.MSP_SET_ACC_TRIM
             ];
 
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                profileSpecificData.push(MSP_codes.MSP_SET_RC_DEADBAND);
+                profileSpecificData.push(MSPCodes.MSP_SET_RC_DEADBAND);
             }
 
-            MSP.send_message(MSP_codes.MSP_STATUS, false, false, function () {
+            MSP.send_message(MSPCodes.MSP_STATUS, false, false, function () {
                 activeProfile = CONFIG.profile;
                 select_profile();
             });
 
             function select_profile() {
                 if (activeProfile > 0) {
-                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [0], false, upload_specific_data);
+                    MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [0], false, upload_specific_data);
                 } else {
                     upload_specific_data();
                 }
@@ -681,7 +681,7 @@ function configuration_restore(callback) {
                 }
 
                 function upload_using_specific_commands() {
-                    MSP.send_message(profileSpecificData[codeKey], MSP.crunch(profileSpecificData[codeKey]), false, function () {
+                    MSP.send_message(profileSpecificData[codeKey], mspHelper.crunch(profileSpecificData[codeKey]), false, function () {
                         codeKey++;
 
                         if (codeKey < profileSpecificData.length) {
@@ -693,12 +693,12 @@ function configuration_restore(callback) {
                             if (savingProfile < numProfiles) {
                                 load_objects(savingProfile);
 
-                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [savingProfile], false, upload_using_specific_commands);
+                                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [savingProfile], false, upload_using_specific_commands);
                                 });
                             } else {
-                                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
-                                    MSP.send_message(MSP_codes.MSP_SELECT_SETTING, [activeProfile], false, upload_unique_data);
+                                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
+                                    MSP.send_message(MSPCodes.MSP_SELECT_SETTING, [activeProfile], false, upload_unique_data);
                                 });
                             }
                         }
@@ -706,15 +706,15 @@ function configuration_restore(callback) {
                 }
 
                 function upload_servo_configuration() {
-                    MSP.sendServoConfigurations(upload_mode_ranges);
+                    MspHelper.sendServoConfigurations(upload_mode_ranges);
                 }
 
                 function upload_mode_ranges() {
-                    MSP.sendModeRanges(upload_adjustment_ranges);
+                    MspHelper.sendModeRanges(upload_adjustment_ranges);
                 }
                 
                 function upload_adjustment_ranges() {
-                    MSP.sendAdjustmentRanges(upload_using_specific_commands);
+                    MspHelper.sendAdjustmentRanges(upload_using_specific_commands);
                 }
                 // start uploading
                 load_objects(0);
@@ -725,24 +725,24 @@ function configuration_restore(callback) {
                 var codeKey = 0;
 
                 var uniqueData = [
-                    MSP_codes.MSP_SET_MISC,
-                    MSP_codes.MSP_SET_RX_MAP,
-                    MSP_codes.MSP_SET_BF_CONFIG,
-                    MSP_codes.MSP_SET_CF_SERIAL_CONFIG
+                    MSPCodes.MSP_SET_MISC,
+                    MSPCodes.MSP_SET_RX_MAP,
+                    MSPCodes.MSP_SET_BF_CONFIG,
+                    MSPCodes.MSP_SET_CF_SERIAL_CONFIG
                 ];
                 
                 function update_unique_data_list() {
                     if (semver.gte(CONFIG.apiVersion, "1.8.0")) {
-                        uniqueData.push(MSP_codes.MSP_SET_LOOP_TIME);
-                        uniqueData.push(MSP_codes.MSP_SET_ARMING_CONFIG);
+                        uniqueData.push(MSPCodes.MSP_SET_LOOP_TIME);
+                        uniqueData.push(MSPCodes.MSP_SET_ARMING_CONFIG);
                     }
                     if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
-                        uniqueData.push(MSP_codes.MSP_SET_3D);
+                        uniqueData.push(MSPCodes.MSP_SET_3D);
                     }
                     if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                        uniqueData.push(MSP_codes.MSP_SET_SENSOR_ALIGNMENT);
-                        uniqueData.push(MSP_codes.MSP_SET_RX_CONFIG);
-                        uniqueData.push(MSP_codes.MSP_SET_FAILSAFE_CONFIG);
+                        uniqueData.push(MSPCodes.MSP_SET_SENSOR_ALIGNMENT);
+                        uniqueData.push(MSPCodes.MSP_SET_RX_CONFIG);
+                        uniqueData.push(MSPCodes.MSP_SET_FAILSAFE_CONFIG);
                     }
                 }
                 
@@ -765,7 +765,7 @@ function configuration_restore(callback) {
 
                 function send_unique_data_item() {
                     if (codeKey < uniqueData.length) {
-                        MSP.send_message(uniqueData[codeKey], MSP.crunch(uniqueData[codeKey]), false, function () {
+                        MSP.send_message(uniqueData[codeKey], mspHelper.crunch(uniqueData[codeKey]), false, function () {
                             codeKey++;
                             send_unique_data_item();
                         });
@@ -783,37 +783,37 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_config() {
-                MSP.sendLedStripConfig(send_led_strip_colors);
+                MspHelper.sendLedStripConfig(send_led_strip_colors);
             }
 
             function send_led_strip_colors() {
-                MSP.sendLedStripColors(send_led_strip_mode_colors);
+                MspHelper.sendLedStripColors(send_led_strip_mode_colors);
             }
 
             function send_led_strip_mode_colors() {
                 if (semver.gte(CONFIG.apiVersion, "1.19.0"))
-                    MSP.sendLedStripModeColors(send_rxfail_config);
+                    MspHelper.sendLedStripModeColors(send_rxfail_config);
                 else
                     send_rxfail_config();
             }
             
             function send_rxfail_config() {
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                    MSP.sendRxFailConfig(save_to_eeprom);
+                    MspHelper.sendRxFailConfig(save_to_eeprom);
                 } else {
                     save_to_eeprom();
                 }
             }
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, reboot);
             }
 
             function reboot() {
                 GUI.log(chrome.i18n.getMessage('eeprom_saved_ok'));
 
                 GUI.tab_switch_cleanup(function() {
-                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                    MSP.send_message(MSPCodes.MSP_SET_REBOOT, false, false, reinitialize);
                 });
             }
 
@@ -821,7 +821,7 @@ function configuration_restore(callback) {
                 GUI.log(chrome.i18n.getMessage('deviceRebooting'));
 
                 GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
+                    MSP.send_message(MSPCodes.MSP_STATUS, false, false, function() {
                         GUI.log(chrome.i18n.getMessage('deviceReady'));
                         if (callback) callback();
                     });
