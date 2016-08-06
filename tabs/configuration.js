@@ -110,7 +110,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         $('#content').load("./tabs/configuration.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_IDENT, false, false, load_config);
+    load_config();
     
     function process_html() {
         var mixer_list_e = $('select.mixerList');
@@ -612,7 +612,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 } else {
 
                     GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                        MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                        MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
                             GUI.log(chrome.i18n.getMessage('deviceReady'));
                             TABS.configuration.initialize(false, $('#content').scrollTop());
                         });

@@ -705,10 +705,6 @@ function configuration_restore(callback) {
                     });
                 }
 
-                function upload_servo_mix_rules() {
-                    MSP.sendServoMixRules(upload_servo_configuration);
-                }
-
                 function upload_servo_configuration() {
                     MSP.sendServoConfigurations(upload_mode_ranges);
                 }
@@ -825,9 +821,8 @@ function configuration_restore(callback) {
                 GUI.log(chrome.i18n.getMessage('deviceRebooting'));
 
                 GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                    MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                    MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
                         GUI.log(chrome.i18n.getMessage('deviceReady'));
-
                         if (callback) callback();
                     });
                 }, 1500); // 1500 ms seems to be just the right amount of delay to prevent data request timeouts

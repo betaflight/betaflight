@@ -73,7 +73,7 @@ TABS.onboard_logging.initialize = function (callback) {
         } else {
 
             GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                MSP.send_message(MSP_codes.MSP_IDENT, false, false, function () {
+                MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('deviceReady'));
                     TABS.onboard_logging.initialize(false, $('#content').scrollTop());
                 });
@@ -135,7 +135,7 @@ TABS.onboard_logging.initialize = function (callback) {
                     BLACKBOX.blackboxRateDenom = parseInt(rate[1], 10);
                     BLACKBOX.blackboxDevice = parseInt($(".blackboxDevice select").val(), 10);
                     
-                    MSP.sendBlackboxConfiguration(save_to_eeprom);
+                    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BLACKBOX_CONFIG), false, false, save_to_eeprom);
                 });
             }
             
