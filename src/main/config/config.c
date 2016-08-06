@@ -170,7 +170,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 120;
+static const uint8_t EEPROM_CONF_VERSION = 121;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -221,6 +221,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->rollPitchItermIgnoreRate = 200;     // dps
     pidProfile->yawItermIgnoreRate = 50;            // dps
+
+    pidProfile->axisAccelerationLimitYaw = 10000;       // dps/s
+    pidProfile->axisAccelerationLimitRollPitch = 0;     // dps/s
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_DEFAULT;
     pidProfile->mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT;

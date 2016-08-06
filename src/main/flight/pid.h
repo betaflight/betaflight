@@ -33,6 +33,8 @@
 #define MAG_HOLD_RATE_LIMIT_MAX 250
 #define MAG_HOLD_RATE_LIMIT_DEFAULT 90
 
+#define AXIS_ACCEL_MIN_LIMIT    50
+
 typedef enum {
     PIDROLL,
     PIDPITCH,
@@ -62,6 +64,9 @@ typedef struct pidProfile_s {
 
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for ignoring iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for ignoring iterm for yaw on certain rates
+
+    uint32_t axisAccelerationLimitYaw;          // Max rate of change of yaw angular rate setpoint (deg/s^2 = dps/s)
+    uint32_t axisAccelerationLimitRollPitch;    // Max rate of change of roll/pitch angular rate setpoint (deg/s^2 = dps/s)
 
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 

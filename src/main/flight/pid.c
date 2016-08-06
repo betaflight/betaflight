@@ -74,6 +74,7 @@ typedef struct {
     pt1Filter_t angleFilterState;
 
     // Rate filtering
+    rateLimitFilter_t axisAccelFilter;
     pt1Filter_t ptermLpfState;
     pt1Filter_t deltaLpfState;
 } pidState_t;
@@ -275,6 +276,16 @@ static void pidLevel(const pidProfile_t *pidProfile, const controlRateConfig_t *
         pidState->rateTarget = (1.0f - horizonRateMagnitude) * angleRateTarget + horizonRateMagnitude * pidState->rateTarget;
     } else {
         pidState->rateTarget = angleRateTarget;
+    }
+}
+
+/* Apply angular acceleration limit to rate target to limit extreme stick inputs to respect physical capabilities of the machine */
+static void pidApplySetpointRateLimiting(const pidProfile_t *pidProfile, pidState_t *pidState, flight_dynamics_index_t axis)
+{
+    const uint32_t axisAccelLimit = (axis == FD_YAW) ? pidProfile->axisAccelerationLimitYaw : pidProfile->axisAccelerationLimitRollPitch;
+
+    if (axisAccelLimit > AXIS_ACCEL_MIN_LIMIT) {
+        pidState->rateTarget = rateLimitFilterApply4(&pidState->axisAccelFilter, pidState->rateTarget, (float)axisAccelLimit, dT);
     }
 }
 
@@ -497,6 +508,11 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
     if (FLIGHT_MODE(TURN_ASSISTANT)) {
         pidTurnAssistant(pidState);
+    }
+
+    // Apply setpoint rate of change limits
+    for (int axis = 0; axis < 3; axis++) {
+        pidApplySetpointRateLimiting(pidProfile, &pidState[axis], axis);
     }
 
     // Step 4: Run gyro-driven control

@@ -102,25 +102,28 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, float f_cut, float dT)
     return filter->state;
 }
 
-// f_cut = cutoff frequency
-// rate_limit = maximum rate of change of the output value in units per second
-float pt1FilterApplyWithRateLimit(pt1Filter_t *filter, float input, float f_cut, float rate_limit, float dT)
-{
-    // Pre calculate and store RC
-    if (!filter->RC) {
-        filter->RC = 1.0f / ( 2.0f * (float)M_PI * f_cut );
-    }
-
-    const float newState = filter->state + dT / (filter->RC + dT) * (input - filter->state);
-    const float rateLimitPerSample = rate_limit * dT;
-    filter->state = constrainf(newState, filter->state - rateLimitPerSample, filter->state + rateLimitPerSample);
-
-    return filter->state;
-}
-
 void pt1FilterReset(pt1Filter_t *filter, float input)
 {
     filter->state = input;
+}
+
+// rate_limit = maximum rate of change of the output value in units per second
+void rateLimitFilterInit(rateLimitFilter_t *filter)
+{
+    filter->state = 0;
+}
+
+float rateLimitFilterApply4(rateLimitFilter_t *filter, float input, float rate_limit, float dT)
+{
+    if (rate_limit > 0) {
+        const float rateLimitPerSample = rate_limit * dT;
+        filter->state = constrainf(input, filter->state - rateLimitPerSample, filter->state + rateLimitPerSample);
+    }
+    else {
+        filter->state = input;
+    }
+
+    return filter->state;
 }
 
 // FIR filter
