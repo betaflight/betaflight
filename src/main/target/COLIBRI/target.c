@@ -19,7 +19,9 @@
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/timer.h"
 
 const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
