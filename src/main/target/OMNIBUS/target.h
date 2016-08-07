@@ -175,6 +175,8 @@
 #define BUTTON_B_PORT           GPIOB
 #define BUTTON_B_PIN            Pin_0
 
+#define AVOID_UART3_FOR_PWM_PPM
+
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PIN                PB11
