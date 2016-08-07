@@ -44,10 +44,10 @@
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
 // MPU6000 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PC4
-#define USE_EXTI
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -68,8 +68,6 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-
-#define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
@@ -112,7 +110,11 @@
 
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_ONESHOT125)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -121,4 +123,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

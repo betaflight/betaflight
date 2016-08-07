@@ -17,8 +17,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TELEMETRY_LTM_H_
-#define TELEMETRY_LTM_H_
+#pragma once
 
 void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig);
 void handleLtmTelemetry(void);
@@ -27,4 +26,3 @@ void checkLtmTelemetryState(void);
 void freeLtmTelemetryPort(void);
 void configureLtmTelemetryPort(void);
 
-#endif /* TELEMETRY_LTM_H_ */

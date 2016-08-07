@@ -89,14 +89,16 @@ pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
 
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-    int i = 0;
     const uint16_t *setup;
 
+#ifndef SKIP_RX_PWM_PPM
     int channelIndex = 0;
+#endif
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
   
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
+    int i = 0;
     if (init->airplane)
         i = 2; // switch to air hardware config
     if (init->usePPM || init->useSerialRx)
@@ -175,8 +177,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #ifdef SONAR
         if (init->useSonar &&
             (
-                timerHardwarePtr->tag == init->sonarConfig.triggerTag ||
-                timerHardwarePtr->tag == init->sonarConfig.echoTag
+                timerHardwarePtr->tag == init->sonarIOConfig.triggerTag ||
+                timerHardwarePtr->tag == init->sonarIOConfig.echoTag
             )) {
             continue;
         }
@@ -289,19 +291,23 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
+#ifndef SKIP_RX_PWM_PPM
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
-                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
+            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
+                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2, init->pwmProtocolType);
             }
 #endif
             ppmInConfig(timerHardwarePtr);
+#endif
         } else if (type == MAP_TO_PWM_INPUT) {
+#ifndef SKIP_RX_PWM_PPM
             pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;
+#endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #ifdef CC3D
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
                 if (timerHardwarePtr->tim == TIM2)
                     continue;

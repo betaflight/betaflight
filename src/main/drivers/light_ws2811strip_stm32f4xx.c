@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef LED_STRIP
+
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "nvic.h"
@@ -28,8 +30,6 @@
 #include "system.h"
 #include "rcc.h"
 #include "timer.h"
-
-#ifdef LED_STRIP
 
 #if !defined(WS2811_PIN)
 #define WS2811_PIN                      PA0
@@ -154,6 +154,7 @@ void ws2811LedStripHardwareInit(void)
 
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
+    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();

@@ -53,13 +53,11 @@
 #define USE_BARO_MS5611
 
 // MPU9250 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PA15
-#define USE_EXTI
-
-#define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9
@@ -94,9 +92,14 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PIN                PA3
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) )
 

@@ -37,6 +37,12 @@
 #define INVERTER_USART          USART2
 
 #define USE_EXTI
+#define MAG_INT_EXTI PC14
+#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MAG_DATA_READY_INTERRUPT
+#define USE_MAG_DATA_READY_SIGNAL
 
 // SPI2
 // PB15 28 SPI2_MOSI
@@ -64,15 +70,6 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-
-#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
-
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-
-//#define DEBUG_MAG_DATA_READY_INTERRUPT
-#define USE_MAG_DATA_READY_SIGNAL
-#define MAG_INT_EXTI PC14
 
 #define GYRO
 #define USE_GYRO_MPU3050
@@ -160,26 +157,6 @@
 #define BIND_PIN                PA3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#ifdef ALIENFLIGHTF1
-// alternative defaults for AlienFlight F1 target
-#undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
-#define TARGET_CONFIG
-
-#undef BOARD_HAS_VOLTAGE_DIVIDER
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define BRUSHED_MOTORS
-#define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART2
-
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
-#define BINDPLUG_PIN            PB5
-#endif // ALIENFLIGHTF1
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff

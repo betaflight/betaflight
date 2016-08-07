@@ -31,6 +31,12 @@
 #define INVERTER PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART USART1
 
+// MPU6000 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
+#define USE_MPU_DATA_READY_SIGNAL
+
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
@@ -49,12 +55,6 @@
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
-
-// MPU6000 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PC4
-#define USE_EXTI
 
 #define BARO
 #define USE_BARO_MS5611
@@ -150,7 +150,7 @@
 #define RSSI_ADC_GPIO_PIN       PC2
 #define CURRENT_METER_ADC_PIN   PC3
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX | FEATURE_ONESHOT125)
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 

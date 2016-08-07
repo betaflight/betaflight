@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "debug.h"
 
 #include "build_config.h"
 
@@ -171,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 141;
+static const uint8_t EEPROM_CONF_VERSION = 143;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -180,21 +181,32 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-void resetPidProfile(pidProfile_t *pidProfile)
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
+    controlRateConfig->rcRate8 = 100;
+    controlRateConfig->rcYawRate8 = 100;
+    controlRateConfig->rcExpo8 = 10;
+    controlRateConfig->thrMid8 = 50;
+    controlRateConfig->thrExpo8 = 0;
+    controlRateConfig->dynThrPID = 20;
+    controlRateConfig->rcYawExpo8 = 10;
+    controlRateConfig->tpa_breakpoint = 1650;
 
-#if (defined(STM32F10X))
-    pidProfile->pidController = PID_CONTROLLER_INTEGER;
-#else
-    pidProfile->pidController = PID_CONTROLLER_FLOAT;
-#endif
+    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+        controlRateConfig->rates[axis] = 70;
+    }
+}
+
+static void resetPidProfile(pidProfile_t *pidProfile)
+{
+    pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 18;
-    pidProfile->P8[PITCH] = 50;
-    pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->D8[ROLL] = 20;
+    pidProfile->P8[PITCH] = 60;
+    pidProfile->I8[PITCH] = 60;
+    pidProfile->D8[PITCH] = 25;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -220,11 +232,25 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 180;
-    pidProfile->yawItermIgnoreRate = 35;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 50;
+    pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
+    pidProfile->dterm_notch_hz = 0;
+    pidProfile->dterm_notch_cutoff = 150;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
-    pidProfile->dynamic_pid = 1;
+    pidProfile->vbatPidCompensation = 0;
+    pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
+
+    // Betaflight PID controller parameters
+    pidProfile->ptermSetpointWeight = 75;
+    pidProfile->dtermSetpointWeight = 120;
+    pidProfile->yawRateAccelLimit = 220;
+    pidProfile->rateAccelLimit = 0;
+    pidProfile->toleranceBand = 15;
+    pidProfile->toleranceBandReduction = 40;
+    pidProfile->zeroCrossAllowanceCount = 2;
+    pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
@@ -237,6 +263,17 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
     pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
 #endif
+}
+
+void resetProfile(profile_t *profile)
+{
+    resetPidProfile(&profile->pidProfile);
+
+    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
+        resetControlRateConfig(&profile->controlRateProfile[rI]);
+    }
+
+   profile->activeRateProfile = 0;
 }
 
 #ifdef GPS
@@ -252,6 +289,7 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
+#ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -259,6 +297,7 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
+#endif
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
@@ -278,7 +317,6 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 #endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->escDesyncProtection = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -289,6 +327,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->deadband3d_throttle = 50;
 }
 
+#ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 0;
@@ -301,6 +340,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
 }
+#endif
 
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
@@ -311,7 +351,6 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
-    batteryConfig->vbatPidCompensation = 0;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -347,23 +386,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 #endif
 
     serialConfig->reboot_character = 'R';
-}
-
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcYawRate8 = 100;
-    controlRateConfig->rcExpo8 = 10;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 10;
-    controlRateConfig->tpa_breakpoint = 1650;
-
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 70;
-    }
-
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
@@ -452,16 +474,20 @@ static void resetConf(void)
     masterConfig.gyro_lpf = 0;                 // 256HZ default
 #ifdef STM32F10X
     masterConfig.gyro_sync_denom = 8;
+    masterConfig.pid_process_denom = 1;
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
+    masterConfig.gyro_sync_denom = 1;
+    masterConfig.pid_process_denom = 4;
 #else
     masterConfig.gyro_sync_denom = 4;
-#endif
-    masterConfig.gyro_soft_lpf_hz = 100;
-    masterConfig.gyro_soft_notch_hz = 0;
-    masterConfig.gyro_soft_notch_q = 5;
-
     masterConfig.pid_process_denom = 2;
+#endif
+    masterConfig.gyro_soft_type = FILTER_PT1;
+    masterConfig.gyro_soft_lpf_hz = 90;
+    masterConfig.gyro_soft_notch_hz = 0;
+    masterConfig.gyro_soft_notch_cutoff = 150;
 
-    masterConfig.debug_mode = 0;
+    masterConfig.debug_mode = DEBUG_NONE;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -482,7 +508,9 @@ static void resetConf(void)
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
+#ifdef TELEMETRY
     resetTelemetryConfig(&masterConfig.telemetryConfig);
+#endif
 
 #ifdef SERIALRX_PROVIDER
     masterConfig.rxConfig.serialrx_provider = SERIALRX_PROVIDER;
@@ -507,13 +535,10 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
+    masterConfig.rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
+    masterConfig.rxConfig.rcInterpolationInterval = 19;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
-#ifdef STM32F4
-    masterConfig.rxConfig.max_aux_channel = 99;
-#else
-    masterConfig.rxConfig.max_aux_channel = 6;
-#endif
+    masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
@@ -536,6 +561,7 @@ static void resetConf(void)
 #ifdef BRUSHED_MOTORS
     masterConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    masterConfig.use_unsyncedPwm = true;
 #else
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
     masterConfig.motor_pwm_protocol = PWM_TYPE_ONESHOT125;
@@ -558,11 +584,8 @@ static void resetConf(void)
 
     masterConfig.emf_avoidance = 0; // TODO - needs removal
 
-    resetPidProfile(&currentProfile->pidProfile);
+    resetProfile(currentProfile);
 
-    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
-        resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
-    }
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
@@ -571,10 +594,16 @@ static void resetConf(void)
     masterConfig.accDeadband.z = 40;
     masterConfig.acc_unarmedcal = 1;
 
+#ifdef BARO
     resetBarometerConfig(&masterConfig.barometerConfig);
+#endif
 
     // Radio
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234", &masterConfig.rxConfig);
+#else
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
+#endif
 
     resetRcControlsConfig(&masterConfig.rcControlsConfig);
 
@@ -615,8 +644,10 @@ static void resetConf(void)
     }
 
 #ifdef LED_STRIP
-    applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
+    applyDefaultColors(masterConfig.colors);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
+    applyDefaultModeColors(masterConfig.modeColors);
+    applyDefaultSpecialColors(&(masterConfig.specialColors));
     masterConfig.ledstrip_visual_beeper = 0;
 #endif
 
@@ -719,7 +750,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_q);
+    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_cutoff, masterConfig.gyro_soft_type);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

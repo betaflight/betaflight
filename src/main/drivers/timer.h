@@ -88,7 +88,8 @@ typedef struct timerHardware_s {
 
 enum {
     TIMER_OUTPUT_ENABLED = 0x01,
-    TIMER_OUTPUT_INVERTED = 0x02
+    TIMER_OUTPUT_INVERTED = 0x02,
+    TIMER_OUTPUT_N_CHANNEL= 0x04
 };
 
 #ifdef STM32F1

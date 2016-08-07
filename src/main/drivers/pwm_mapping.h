@@ -68,8 +68,9 @@ typedef struct drv_pwm_config_s {
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    sonarIOConfig_t sonarConfig;
+    sonarIOConfig_t sonarIOConfig;
 } drv_pwm_config_t;
+
 
 enum {
     MAP_TO_PPM_INPUT = 1,
@@ -136,4 +137,5 @@ extern const uint16_t airPPM_BP6[];
 extern const uint16_t airPWM_BP6[];
 #endif
 
+pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);

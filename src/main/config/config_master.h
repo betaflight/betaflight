@@ -58,9 +58,10 @@ typedef struct master_t {
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
+    uint8_t gyro_soft_type;                 // Gyro Filter Type
     uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
     uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
-    uint8_t gyro_soft_notch_q;              // Biquad gyro notch quality
+    uint16_t gyro_soft_notch_cutoff;        // Biquad gyro notch low cutoff
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -119,8 +120,10 @@ typedef struct master_t {
     telemetryConfig_t telemetryConfig;
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 

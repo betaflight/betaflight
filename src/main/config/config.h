@@ -46,14 +46,15 @@ typedef enum {
     FEATURE_RSSI_ADC = 1 << 15,
     FEATURE_LED_STRIP = 1 << 16,
     FEATURE_DISPLAY = 1 << 17,
-    FEATURE_ONESHOT125 = 1 << 18,
+    FEATURE_OSD = 1 << 18,
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SUPEREXPO_RATES = 1 << 23,
-    FEATURE_OSD = 1 << 24,
-    FEATURE_VTX = 1 << 25,
+    FEATURE_VTX = 1 << 24,
+    FEATURE_RX_NRF24 = 1 << 25,
+    FEATURE_SOFTSPI = 1 << 26,
 } features_e;
 
 void latchActiveFeatures(void);

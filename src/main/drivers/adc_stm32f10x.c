@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ADC
+
 #include "build_config.h"
 
 #include "system.h"
@@ -176,3 +178,4 @@ void adcInit(drv_adc_config_t *init)
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
 }
+#endif

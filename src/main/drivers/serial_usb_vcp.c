@@ -77,27 +77,25 @@ static uint8_t usbVcpRead(serialPort_t *instance)
 
     uint8_t buf[1];
 
-    uint32_t rxed = 0;
-
-    while (rxed < 1) {
-        rxed += CDC_Receive_DATA((uint8_t*)buf + rxed, 1 - rxed);
+    while (true) {
+        if (CDC_Receive_DATA(buf, 1))
+            return buf[0];
     }
-
-    return buf[0];
 }
 
 static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 {
     UNUSED(instance);
 
-
     if (!(usbIsConnected() && usbIsConfigured())) {
         return;
     }
 
     uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
+    uint8_t *p = data;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
 
@@ -120,14 +118,19 @@ static bool usbVcpFlush(vcpPort_t *port)
         return false;
     }
 
-    uint32_t txed;
     uint32_t start = millis();
+    uint8_t *p = port->txBuf;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
 
-    do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
-
-    return txed == count;
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+    return count == 0;
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
@@ -168,9 +171,9 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
+        .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
-        .endWrite = usbVcpEndWrite,
-        .writeBuf = usbVcpWriteBuf
+        .endWrite = usbVcpEndWrite
     }
 };
 
