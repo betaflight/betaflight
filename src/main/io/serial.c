@@ -357,7 +357,7 @@ void closeSerialPort(serialPort_t *serialPort) {
 
     // TODO wait until data has been transmitted.
 
-    serialPort->callback = NULL;
+    serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
     serialPortUsage->serialPort = NULL;
