@@ -76,6 +76,8 @@ TABS.pid_tuning.initialize = function (callback) {
 
             $('input[name="dtermSetpoint-number"]').val(ADVANCED_TUNING.dtermSetpointWeight / 100);
             $('input[name="dtermSetpoint-range"]').val(ADVANCED_TUNING.dtermSetpointWeight / 100);
+
+            self.updateRcInterpolationParameters();
         }
 
         // Fill in the data from PIDs array
@@ -558,10 +560,6 @@ TABS.pid_tuning.initialize = function (callback) {
             $('#pid-tuning .dtermSetpoint').hide();
         }
         
-        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0") && RX_CONFIG.rcInterpolation < 3) {
-            $('#pid-tuning .rcInterpolationInterval').hide();
-        }
-
         if (!semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
             $('#pid-tuning .delta').hide();
             $('.tab-pid_tuning .note').hide();
@@ -764,15 +762,21 @@ TABS.pid_tuning.initialize = function (callback) {
             }
         });
 
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
+            $('#pid-tuning .delta select').change(function() {
+                self.setDirty(true);
+            });
+        }
+
         pidController_e.change(function () {
             self.setDirty(true);
 
 			self.updatePidControllerParameters();
         });
 
-        if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-            $('#pid-tuning .delta select').change(function() {
-                self.setDirty(true);
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            $('select[name="rcInterpolation-select"]').change(function () {
+                self.updateRcInterpolationParameters();
             });
         }
 
@@ -971,6 +975,16 @@ TABS.pid_tuning.updatePidControllerParameters = function () {
             $('#pid-tuning .dtermSetpoint').show();
 
             $('#pid-tuning .delta').hide();
+        }
+    }
+}
+
+TABS.pid_tuning.updateRcInterpolationParameters = function () {
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+        if ($('select[name="rcInterpolation-select"]').val() === '3') {
+            $('#pid-tuning .rcInterpolationInterval').show();
+        } else {
+            $('#pid-tuning .rcInterpolationInterval').hide();
         }
     }
 }
