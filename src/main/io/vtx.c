@@ -50,8 +50,8 @@
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -70,7 +70,8 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 static uint8_t locked = 0;
 

@@ -25,7 +25,7 @@
 
 #ifndef SKIP_RX_PWM_PPM
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/gpio.h"
 #include "drivers/timer.h"

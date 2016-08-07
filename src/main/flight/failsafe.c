@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
@@ -28,8 +28,9 @@
 #include "drivers/system.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "config/runtime_config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "flight/failsafe.h"

@@ -27,7 +27,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "light_led.h"
+
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -38,7 +39,7 @@
 #include "exti.h"
 #include "bus_spi.h"
 #include "gyro_sync.h"
-#include "debug.h"
+#include "light_led.h"
 
 #include "sensor.h"
 #include "accgyro.h"

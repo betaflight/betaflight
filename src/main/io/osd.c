@@ -23,12 +23,18 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "version.h"
+
+#ifdef OSD
+
+#include "build/atomic.h"
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
+
 #include "scheduler/scheduler.h"
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/atomic.h"
 #include "common/maths.h"
 #include "common/typeconversion.h"
 
@@ -64,7 +70,7 @@
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
@@ -91,7 +97,8 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -99,11 +106,6 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
-
-#include "build_config.h"
-#include "debug.h"
-
-#ifdef OSD
 
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"

@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 
@@ -60,7 +60,7 @@
 
 #include "drivers/sonar_hcsr04.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
