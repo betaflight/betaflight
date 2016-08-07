@@ -621,6 +621,10 @@ static void applyLedFixedLayers()
 
             case LED_FUNCTION_ARM_STATE:
                 color = ARMING_FLAG(ARMED) ? *getSC(LED_SCOLOR_ARMED) : *getSC(LED_SCOLOR_DISARMED);
+                if(ARMING_FLAG(ARMED) && masterConfig.ledstrip_aux_channel>0){
+                	int rcDataValue=rcData[NON_AUX_CHANNEL_COUNT+masterConfig.ledstrip_aux_channel-1];
+                	hOffset+=scaleRange(rcDataValue, 1000, 2000, 0, HSV_HUE_MAX);
+                }
                 break;
 
             case LED_FUNCTION_BATTERY:

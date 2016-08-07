@@ -649,6 +649,7 @@ static void resetConf(void)
     applyDefaultModeColors(masterConfig.modeColors);
     applyDefaultSpecialColors(&(masterConfig.specialColors));
     masterConfig.ledstrip_visual_beeper = 0;
+    masterConfig.ledstrip_aux_channel = 0;
 #endif
 
 #ifdef VTX
