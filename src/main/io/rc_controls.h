@@ -148,6 +148,7 @@ typedef struct controlRateConfig_s {
 
 extern int16_t rcCommand[4];
 extern int16_t rcCommandSmooth[4];
+extern int     AdjustValue;          // This variable is exposed here in order to enable telemetry module to monitor current value during ajustment
 
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.

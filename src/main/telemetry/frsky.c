@@ -118,6 +118,8 @@ extern int16_t telemTemperature1; // FIXME dependency on mw.c
 #define ID_GYRO_Y             0x41
 #define ID_GYRO_Z             0x42
 
+#define ID_ADJ_VAL            0x33
+
 #define ID_VERT_SPEED         0x30 //opentx vario
 
 #define GPS_BAD_QUALITY       300
@@ -176,6 +178,12 @@ static void sendBaro(void)
     serialize16(BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
     serialize16(ABS(BaroAlt % 100));
+}
+
+static void sendAdjValue(void)
+{
+    sendDataHead(ID_ADJ_VAL);
+    serialize16( (uint16_t)( AdjustValue ) );
 }
 
 #ifdef GPS
@@ -521,6 +529,7 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
         if (lastCycleTime > DELAY_FOR_BARO_INITIALISATION) { //Allow 5s to boot correctly
             sendBaro();
         }
+        sendAdjValue();
         sendHeading();
         sendTelemetryTail();
     }

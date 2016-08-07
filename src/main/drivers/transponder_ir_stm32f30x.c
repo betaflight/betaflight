@@ -26,6 +26,7 @@
 
 #ifndef TRANSPONDER_GPIO
 #define USE_TRANSPONDER_ON_DMA1_CHANNEL3
+#error  "Transponder is not defined"
 #define TRANSPONDER_GPIO                     GPIOB
 #define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
 #define TRANSPONDER_GPIO_AF                  GPIO_AF_1
@@ -91,6 +92,9 @@ void transponderIrHardwareInit(void)
     /* DMA1 Channel6 Config */
     DMA_DeInit(TRANSPONDER_DMA_CHANNEL);
 
+#if defined( TRANSPONDER_DMAChannelRemap )
+    SYSCFG_DMAChannelRemapConfig( TRANSPONDER_DMAChannelRemap, ENABLE );
+#endif
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&TRANSPONDER_TIMER->CCR1;
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)transponderIrDMABuffer;
