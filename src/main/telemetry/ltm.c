@@ -95,8 +95,8 @@ static void ltm_initialise_packet(sbuf_t *dst)
     dst->ptr = ltmPayload;
     dst->end = ARRAYEND(ltmPayload);
 
-    serialWrite(ltmPort, '$');
-    serialWrite(ltmPort, 'T');
+    sbufWriteU8(dst, '$');
+    sbufWriteU8(dst, 'T');
 }
 
 static void ltm_serialise_8(sbuf_t *dst, uint8_t v)
@@ -123,9 +123,9 @@ static void ltm_serialise_32(sbuf_t *dst, uint32_t v)
 
 static void ltm_finalise(sbuf_t *dst)
 {
+    sbufWriteU8(dst, ltm_crc);
     sbufSwitchToReader(dst, ltmPayload);
     serialWriteBuf(ltmPort, sbufPtr(dst), sbufBytesRemaining(dst));
-    serialWrite(ltmPort, ltm_crc);
 }
 
 #if defined(GPS)
