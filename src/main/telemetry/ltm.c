@@ -18,7 +18,7 @@
 /*
  * LightTelemetry from KipK
  *
- * Minimal one way telemetry protocol for really bitrates (1200/2400 bauds).
+ * Minimal one way telemetry protocol for really low bitrates (1200/2400 bauds).
  * Effective for ground OSD, groundstation HUD and Antenna tracker
  * http://www.wedontneednasa.com/2014/02/lighttelemetry-v2-en-route-to-ground-osd.html
  *
@@ -33,13 +33,15 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #if defined(TELEMETRY_LTM)
+
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/streambuf.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -85,40 +87,45 @@ static telemetryConfig_t *telemetryConfig;
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
+static uint8_t ltmPayload[LTM_MAX_MESSAGE_SIZE];
 
-static void ltm_initialise_packet(uint8_t ltm_id)
+static void ltm_initialise_packet(sbuf_t *dst)
 {
     ltm_crc = 0;
-    serialWrite(ltmPort, '$');
-    serialWrite(ltmPort, 'T');
-    serialWrite(ltmPort, ltm_id);
+    dst->ptr = ltmPayload;
+    dst->end = ARRAYEND(ltmPayload);
+
+    sbufWriteU8(dst, '$');
+    sbufWriteU8(dst, 'T');
 }
 
-static void ltm_serialise_8(uint8_t v)
+static void ltm_serialise_8(sbuf_t *dst, uint8_t v)
 {
-    serialWrite(ltmPort, v);
+    sbufWriteU8(dst, v);
     ltm_crc ^= v;
 }
 
-static void ltm_serialise_16(uint16_t v)
+static void ltm_serialise_16(sbuf_t *dst, uint16_t v)
 {
-    ltm_serialise_8((uint8_t)v);
-    ltm_serialise_8((v >> 8));
+    ltm_serialise_8(dst, (uint8_t)v);
+    ltm_serialise_8(dst,  (v >> 8));
 }
 
 #if defined(GPS)
-static void ltm_serialise_32(uint32_t v)
+static void ltm_serialise_32(sbuf_t *dst, uint32_t v)
 {
-    ltm_serialise_8((uint8_t)v);
-    ltm_serialise_8((v >> 8));
-    ltm_serialise_8((v >> 16));
-    ltm_serialise_8((v >> 24));
+    ltm_serialise_8(dst, (uint8_t)v);
+    ltm_serialise_8(dst, (v >> 8));
+    ltm_serialise_8(dst, (v >> 16));
+    ltm_serialise_8(dst, (v >> 24));
 }
 #endif
 
-static void ltm_finalise(void)
+static void ltm_finalise(sbuf_t *dst)
 {
-    serialWrite(ltmPort, ltm_crc);
+    sbufWriteU8(dst, ltm_crc);
+    sbufSwitchToReader(dst, ltmPayload);
+    serialWriteBuf(ltmPort, sbufPtr(dst), sbufBytesRemaining(dst));
 }
 
 #if defined(GPS)
@@ -126,7 +133,7 @@ static void ltm_finalise(void)
  * GPS G-frame 5Hhz at > 2400 baud
  * LAT LON SPD ALT SAT/FIX
  */
-static void ltm_gframe(void)
+void ltm_gframe(sbuf_t *dst)
 {
     uint8_t gps_fix_type = 0;
     int32_t ltm_lat = 0, ltm_lon = 0, ltm_alt = 0, ltm_gs = 0;
@@ -150,13 +157,12 @@ static void ltm_gframe(void)
     ltm_alt = sensors(SENSOR_GPS) ? gpsSol.llh.alt : 0; // cm
 #endif
 
-    ltm_initialise_packet('G');
-    ltm_serialise_32(ltm_lat);
-    ltm_serialise_32(ltm_lon);
-    ltm_serialise_8((uint8_t)ltm_gs);
-    ltm_serialise_32(ltm_alt);
-    ltm_serialise_8((gpsSol.numSat << 2) | gps_fix_type);
-    ltm_finalise();
+    sbufWriteU8(dst, 'G');
+    ltm_serialise_32(dst, ltm_lat);
+    ltm_serialise_32(dst, ltm_lon);
+    ltm_serialise_8(dst, (uint8_t)ltm_gs);
+    ltm_serialise_32(dst, ltm_alt);
+    ltm_serialise_8(dst, (gpsSol.numSat << 2) | gps_fix_type);
 }
 #endif
 
@@ -171,10 +177,10 @@ static void ltm_gframe(void)
  *     15: LAND, 16:FlybyWireA, 17: FlybywireB, 18: Cruise, 19: Unknown
  */
 
-static void ltm_sframe(void)
+void ltm_sframe(sbuf_t *dst)
 {
     uint8_t lt_flightmode;
-    uint8_t lt_statemode;
+
     if (FLIGHT_MODE(PASSTHRU_MODE))
         lt_flightmode = 0;
     else if (FLIGHT_MODE(NAV_WP_MODE))
@@ -194,29 +200,27 @@ static void ltm_sframe(void)
     else
         lt_flightmode = 1;      // Rate mode
 
-    lt_statemode = (ARMING_FLAG(ARMED)) ? 1 : 0;
+    uint8_t lt_statemode = (ARMING_FLAG(ARMED)) ? 1 : 0;
     if (failsafeIsActive())
         lt_statemode |= 2;
-    ltm_initialise_packet('S');
-    ltm_serialise_16(vbat * 100);    //vbat converted to mv
-    ltm_serialise_16(0);             //  current, not implemented
-    ltm_serialise_8((uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
-    ltm_serialise_8(0);              // no airspeed
-    ltm_serialise_8((lt_flightmode << 2) | lt_statemode);
-    ltm_finalise();
+    sbufWriteU8(dst, 'S');
+    ltm_serialise_16(dst, vbat * 100);    //vbat converted to mv
+    ltm_serialise_16(dst, 0);             //  current, not implemented
+    ltm_serialise_8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
+    ltm_serialise_8(dst, 0);              // no airspeed
+    ltm_serialise_8(dst, (lt_flightmode << 2) | lt_statemode);
 }
 
 /*
  * Attitude A-frame - 10 Hz at > 2400 baud
  *  PITCH ROLL HEADING
  */
-static void ltm_aframe()
+void ltm_aframe(sbuf_t *dst)
 {
-    ltm_initialise_packet('A');
-    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.pitch));
-    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.roll));
-    ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
-    ltm_finalise();
+    sbufWriteU8(dst, 'A');
+    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.pitch));
+    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.roll));
+    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
 }
 
 #if defined(GPS)
@@ -225,46 +229,43 @@ static void ltm_aframe()
  *  This frame will be ignored by Ghettostation, but processed by GhettOSD if it is used as standalone onboard OSD
  *  home pos, home alt, direction to home
  */
-static void ltm_oframe()
+void ltm_oframe(sbuf_t *dst)
 {
-    ltm_initialise_packet('O');
-    ltm_serialise_32(GPS_home.lat);
-    ltm_serialise_32(GPS_home.lon);
-    ltm_serialise_32(GPS_home.alt);
-    ltm_serialise_8(1);                 // OSD always ON
-    ltm_serialise_8(STATE(GPS_FIX_HOME) ? 1 : 0);
-    ltm_finalise();
+    sbufWriteU8(dst, 'O');
+    ltm_serialise_32(dst, GPS_home.lat);
+    ltm_serialise_32(dst, GPS_home.lon);
+    ltm_serialise_32(dst, GPS_home.alt);
+    ltm_serialise_8(dst, 1);                 // OSD always ON
+    ltm_serialise_8(dst, STATE(GPS_FIX_HOME) ? 1 : 0);
 }
 
 /*
  * Extended information data frame, 1 Hz rate
  *  This frame is intended to report extended GPS and NAV data, however at the moment it contains only HDOP value
  */
-static void ltm_xframe()
+void ltm_xframe(sbuf_t *dst)
 {
-    ltm_initialise_packet('X');
-    ltm_serialise_16(gpsSol.hdop);
-    ltm_serialise_8(0);
-    ltm_serialise_8(0);
-    ltm_serialise_8(0);
-    ltm_serialise_8(0);
-    ltm_finalise();
+    sbufWriteU8(dst, 'X');
+    ltm_serialise_16(dst, gpsSol.hdop);
+    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, 0);
 }
 #endif
 
 #if defined(NAV)
 /** OSD additional data frame, ~4 Hz rate, navigation system status
  */
-static void ltm_nframe(void)
+void ltm_nframe(sbuf_t *dst)
 {
-    ltm_initialise_packet('N');
-    ltm_serialise_8(NAV_Status.mode);
-    ltm_serialise_8(NAV_Status.state);
-    ltm_serialise_8(NAV_Status.activeWpAction);
-    ltm_serialise_8(NAV_Status.activeWpNumber);
-    ltm_serialise_8(NAV_Status.error);
-    ltm_serialise_8(NAV_Status.flags);
-    ltm_finalise();
+    sbufWriteU8(dst, 'N');
+    ltm_serialise_8(dst, NAV_Status.mode);
+    ltm_serialise_8(dst, NAV_Status.state);
+    ltm_serialise_8(dst, NAV_Status.activeWpAction);
+    ltm_serialise_8(dst, NAV_Status.activeWpNumber);
+    ltm_serialise_8(dst, NAV_Status.error);
+    ltm_serialise_8(dst, NAV_Status.flags);
 }
 #endif
 
@@ -304,29 +305,50 @@ static uint8_t ltm_schedule[10] = {
 
 static void process_ltm(void)
 {
-    static uint8_t ltm_scheduler;
+    static uint8_t ltm_scheduler = 0;
     uint8_t current_schedule = ltm_schedule[ltm_scheduler];
 
-    if (current_schedule & LTM_BIT_AFRAME)
-        ltm_aframe();
+    sbuf_t ltmPayloadBuf;
+    sbuf_t *dst = &ltmPayloadBuf;
+
+    if (current_schedule & LTM_BIT_AFRAME) {
+        ltm_initialise_packet(dst);
+        ltm_aframe(dst);
+        ltm_finalise(dst);
+    }
 
 #if defined(GPS)
-    if (current_schedule & LTM_BIT_GFRAME)
-        ltm_gframe();
+    if (current_schedule & LTM_BIT_GFRAME) {
+        ltm_initialise_packet(dst);
+        ltm_gframe(dst);
+        ltm_finalise(dst);
+    }
 
-    if (current_schedule & LTM_BIT_OFRAME)
-        ltm_oframe();
+    if (current_schedule & LTM_BIT_OFRAME) {
+        ltm_initialise_packet(dst);
+        ltm_oframe(dst);
+        ltm_finalise(dst);
+    }
 
-    if (current_schedule & LTM_BIT_XFRAME && ltm_shouldSendXFrame())
-        ltm_xframe();
+    if (current_schedule & LTM_BIT_XFRAME && ltm_shouldSendXFrame()) {
+        ltm_initialise_packet(dst);
+        ltm_xframe(dst);
+        ltm_finalise(dst);
+    }
 #endif
 
-    if (current_schedule & LTM_BIT_SFRAME)
-        ltm_sframe();
+    if (current_schedule & LTM_BIT_SFRAME) {
+        ltm_initialise_packet(dst);
+        ltm_sframe(dst);
+        ltm_finalise(dst);
+    }
 
 #if defined(NAV)
-    if (current_schedule & LTM_BIT_NFRAME)
-        ltm_nframe();
+    if (current_schedule & LTM_BIT_NFRAME) {
+        ltm_initialise_packet(dst);
+        ltm_nframe(dst);
+        ltm_finalise(dst);
+    }
 #endif
 
     ltm_scheduler = (ltm_scheduler + 1) % 10;
