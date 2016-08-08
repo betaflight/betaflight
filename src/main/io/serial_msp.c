@@ -1041,8 +1041,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
-        serialize8(masterConfig.rxConfig.rcSmoothing);
-        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize8(masterConfig.rxConfig.rcInterpolation);
+        serialize8(masterConfig.rxConfig.rcInterpolationInterval);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         break;
 
@@ -1268,8 +1268,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentProfile->pidProfile.toleranceBand);
         serialize8(currentProfile->pidProfile.toleranceBandReduction);
         serialize8(currentProfile->pidProfile.itermThrottleGain);
-        serialize16(currentProfile->pidProfile.pidMaxVelocityRollPitch);
-        serialize16(currentProfile->pidProfile.pidMaxVelocityYaw);
+        serialize16(currentProfile->pidProfile.rateAccelLimit);
+        serialize16(currentProfile->pidProfile.yawRateAccelLimit);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1688,8 +1688,8 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_max_usec = read16();
         }
         if (currentPort->dataSize > 12) {
-            masterConfig.rxConfig.rcSmoothing = read8();
-            masterConfig.rxConfig.rcSmoothInterval = read8();
+            masterConfig.rxConfig.rcInterpolation = read8();
+            masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
         break;
@@ -1858,8 +1858,8 @@ static bool processInCommand(void)
         currentProfile->pidProfile.toleranceBand = read8();
         currentProfile->pidProfile.toleranceBandReduction = read8();
         currentProfile->pidProfile.itermThrottleGain = read8();
-        currentProfile->pidProfile.pidMaxVelocityRollPitch = read16();
-        currentProfile->pidProfile.pidMaxVelocityYaw = read16();
+        currentProfile->pidProfile.rateAccelLimit = read16();
+        currentProfile->pidProfile.yawRateAccelLimit = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();

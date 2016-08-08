@@ -187,8 +187,8 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
             b[axis] = pidProfile->ptermSetpointWeight / 100.0f;
             c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-            yawMaxVelocity = pidProfile->pidMaxVelocityYaw * 1000 * getdT();
-            rollPitchMaxVelocity = pidProfile->pidMaxVelocityRollPitch * 1000 * getdT();
+            yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
+            rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
 
             configP[axis] = pidProfile->P8[axis];
             configI[axis] = pidProfile->I8[axis];

@@ -245,9 +245,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
     pidProfile->dtermSetpointWeight = 120;
-    pidProfile->pidMaxVelocityYaw = 200;
-    pidProfile->pidMaxVelocityRollPitch = 0;
-    pidProfile->toleranceBand = 20;
+    pidProfile->yawRateAccelLimit = 220;
+    pidProfile->rateAccelLimit = 0;
+    pidProfile->toleranceBand = 15;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
@@ -476,14 +476,14 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 8;
     masterConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
-    masterConfig.gyro_sync_denom = 8;
+    masterConfig.gyro_sync_denom = 1;
     masterConfig.pid_process_denom = 4;
 #else
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_type = FILTER_PT1;
-    masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_lpf_hz = 90;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_cutoff = 150;
 
@@ -535,8 +535,8 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_AUTO;
-    masterConfig.rxConfig.rcSmoothInterval = 9;
+    masterConfig.rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
+    masterConfig.rxConfig.rcInterpolationInterval = 19;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;

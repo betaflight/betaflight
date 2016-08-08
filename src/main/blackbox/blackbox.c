@@ -1230,7 +1230,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smooth_interval:%d",               masterConfig.rxConfig.rcSmoothInterval);
+        BLACKBOX_PRINT_HEADER_LINE("rc_interpolation:%d",                 masterConfig.rxConfig.rcInterpolation);
+        BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        masterConfig.rxConfig.rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider:%d",                masterConfig.rxConfig.serialrx_provider);
         BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                masterConfig.use_unsyncedPwm);

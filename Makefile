@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= SPRACINGF3
+TARGET    ?= NAZE
 
 # Compile-time options
 OPTIONS   ?=

@@ -45,12 +45,18 @@
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
-// ist8310, default address 0x1C
-// NAZE Target connections
-// PB12 connected to MAG_DRDY on rev4 hardware
-// PC14 connected to MAG_DRDY on rev5 hardware
 
-/* CTRL_REGA: Control Register 1
+/* ist8310 Slave Address Select : default address 0x0C
+ *        CAD1  |  CAD0   |  Address
+ *    ------------------------------
+ *         VSS   |   VSS  |  0CH
+ *         VSS   |   VDD  |  0DH
+ *         VDD   |   VSS  |  0EH
+ *         VDD   |   VDD  |  0FH
+ * if CAD1 and CAD0 are floating, I2C address will be 0EH
+ *
+ *
+ * CTRL_REGA: Control Register 1
  * Read Write
  * Default value: 0x0A
  * 7:4  0   Reserved.
@@ -78,23 +84,30 @@
  *      This bit will be set to zero after POR routine
  */
 
-#define MAG_ADDRESS 0x0C
-#define MAG_DATA_REGISTER 0x03
-#define MAG_WHOAMI 0x00
+#define IST8310_ADDRESS 0x0C
+#define IST8310_REG_DATA 0x03
+#define IST8310_REG_WHOAMI 0x00
 
+// I2C Contorl Register
 #define IST8310_REG_CNTRL1 0x0A
 #define IST8310_REG_CNTRL2 0x0B
-#define IST8310_AVERAGE 0x41
+#define IST8310_REG_AVERAGE 0x41
 
-#define IST8310_SINGLE_MODE 0x01
+// Parameter
+// ODR = Output Data Rate, we use single measure mode for getting more data.
+#define IST8310_ODR_SINGLE 0x01
 #define IST8310_ODR_10_HZ 0x03
 #define IST8310_ODR_20_HZ 0x05
 #define IST8310_ODR_50_HZ 0x07
 #define IST8310_ODR_100_HZ 0x06 
-#define IST8310_AVG_16_TIME 0x24
-#define IST8310_RESET 0x0D
-#define IST8310_ID 0x10
 
+// Device ID (ist8310 -> 0x10)
+#define IST8310_CHIP_ID 0x10
+#define IST8310_AVG_16 0x24
+
+#define IST8310_CNTRL2_RESET 0x01
+#define IST8310_CNTRL2_DRPOL 0x04
+#define IST8310_CNTRL2_DRENA 0x08
  
 static const ist8310Config_t *ist8310Config = NULL;
 
@@ -147,12 +160,12 @@ static void ist8310ConfigureDataReadyInterruptHandling(void)
 bool ist8310Detect(mag_t* mag, const ist8310Config_t *ist8310ConfigToUse)
 {
     bool ack = false;
-     uint8_t sig = 0;
+    uint8_t sig = 0;
 
     ist8310Config = ist8310ConfigToUse;
 
-    ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_WHOAMI, 1, &sig);
-    if (!ack || (sig != IST8310_ID))
+    ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_WHOAMI, 1, &sig);
+    if (!ack || (sig != IST8310_CHIP_ID))
         return false;
 
     mag->init = ist8310Init;
@@ -165,13 +178,13 @@ void ist8310Init(void)
 {
     int16_t magADC[3];
 
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+    i2cWrite(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
     delay(5);
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_AVERAGE, IST8310_AVG_16_TIME);
+    i2cWrite(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_AVERAGE, IST8310_AVG_16);
     delay(5);
     ist8310Read(magADC);
     delay(5);
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+    i2cWrite(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
     ist8310ConfigureDataReadyInterruptHandling();
 }
@@ -179,8 +192,8 @@ void ist8310Init(void)
 bool ist8310Read(int16_t *magData)
 {
     uint8_t buf[6];
-    float LSB2FSV = 3; // 3mG - 14 bit
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    uint8_t LSB2FSV = 3; // 3mG - 14 bit
+    bool ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_DATA, 6, buf);
     if (!ack) {
         return false;
     }
@@ -189,7 +202,7 @@ bool ist8310Read(int16_t *magData)
     magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
     magData[Y] = (int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
     magData[Z] = (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, IST8310_REG_CNTRL1, IST8310_SINGLE_MODE);
+    i2cWrite(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
     return true;
 }
 #endif
