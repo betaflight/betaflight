@@ -23,7 +23,7 @@
 
 
 #include "platform.h"
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -39,14 +39,15 @@
 
 #include "rx/rx.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/escservo.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;

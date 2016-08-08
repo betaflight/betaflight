@@ -60,8 +60,8 @@
 
 #ifdef TELEMETRY
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
@@ -70,7 +70,7 @@
 #include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"

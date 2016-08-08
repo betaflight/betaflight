@@ -20,7 +20,8 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"

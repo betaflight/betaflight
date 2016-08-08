@@ -22,8 +22,6 @@
 
 #ifdef USE_MAX7456
 
-#include "version.h"
-
 #include "common/printf.h"
 
 #include "bus_spi.h"

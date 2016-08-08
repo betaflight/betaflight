@@ -18,11 +18,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "config/config.h"
 
 #include "io/escservo.h"
-#include "io/rc_curves.h"
-#include "io/rc_controls.h"
+
+#include "fc/rc_curves.h"
+#include "fc/rc_controls.h"
 
 #include "rx/rx.h"
 

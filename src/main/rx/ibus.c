@@ -16,7 +16,7 @@
  *
  *
  * Driver for IBUS (Flysky) receiver
- *   - initial implementation for MultiWii by Cesco/Plüschi
+ *   - initial implementation for MultiWii by Cesco/PlÂ¸schi
  *   - implementation for BaseFlight by Andreas (fiendie) Tacke
  *   - ported to CleanFlight by Konstantin (digitalentity) Sharlaimov
  */
@@ -27,7 +27,7 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 
