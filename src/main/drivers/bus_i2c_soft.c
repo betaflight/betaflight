@@ -20,7 +20,8 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "bus_i2c.h"
 #include "io.h"
 

@@ -24,7 +24,7 @@
 
 #ifdef USE_MAG_AK8975
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"

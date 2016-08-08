@@ -20,8 +20,10 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build/atomic.h"
+
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 

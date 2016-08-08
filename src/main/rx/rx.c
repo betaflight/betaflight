@@ -22,9 +22,9 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
 
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
@@ -32,14 +32,16 @@
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
+#include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/system.h"
 
+#include "fc/rc_controls.h"
+
 #include "flight/failsafe.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

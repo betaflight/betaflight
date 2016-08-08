@@ -23,13 +23,14 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+
+#include "fc/runtime_config.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -46,8 +47,8 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "io/vtx.h"
 
 #include "io/display.h"
@@ -58,7 +59,7 @@
 
 #include "blackbox/blackbox.h"
 
-#include "mw.h"
+#include "fc/mw.h"
 
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;

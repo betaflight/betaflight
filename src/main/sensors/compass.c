@@ -28,7 +28,8 @@
 #include "drivers/light_led.h"
 
 #include "sensors/boardalignment.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "sensors/sensors.h"

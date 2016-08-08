@@ -23,7 +23,8 @@
 #include <math.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -43,7 +44,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gps.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -54,7 +55,8 @@
 
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 extern int16_t magHold;
 

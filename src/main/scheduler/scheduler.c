@@ -23,8 +23,8 @@
 
 #include "platform.h"
 
-#include "debug.h"
-#include "build_config.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "scheduler/scheduler.h"
 #include "scheduler/scheduler_tasks.h"

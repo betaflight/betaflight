@@ -24,7 +24,7 @@
 
 #ifdef USE_MAG_HMC5883
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
