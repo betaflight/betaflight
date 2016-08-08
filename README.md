@@ -110,11 +110,11 @@ Please refer to the development section in the `docs/development` folder.
 
 TravisCI is used to run automatic builds
 
-https://travis-ci.org/cleanflight/cleanflight
+https://travis-ci.org/betaflight/betaflight
 
-[![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
+[![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
 
-## Cleanflight Releases
-https://github.com/cleanflight/cleanflight/releases
+## Betaflight Releases
+https://github.com/betaflight/betaflight/releases
 
 
