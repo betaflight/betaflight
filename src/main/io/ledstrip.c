@@ -558,6 +558,42 @@ void applyDirectionalModeColor(const uint8_t ledIndex, const ledConfig_t *ledCon
 
 }
 
+typedef enum {
+    QUADRANT_NORTH_EAST = 1,
+    QUADRANT_SOUTH_EAST,
+    QUADRANT_SOUTH_WEST,
+    QUADRANT_NORTH_WEST
+} quadrant_e;
+
+void applyQuadrantColor(const uint8_t ledIndex, const ledConfig_t *ledConfig, const quadrant_e quadrant, const hsvColor_t *color)
+{
+    switch (quadrant) {
+        case QUADRANT_NORTH_EAST:
+            if (GET_LED_Y(ledConfig) <= highestYValueForNorth && GET_LED_X(ledConfig) >= lowestXValueForEast) {
+                setLedHsv(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_SOUTH_EAST:
+            if (GET_LED_Y(ledConfig) >= lowestYValueForSouth && GET_LED_X(ledConfig) >= lowestXValueForEast) {
+                setLedHsv(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_SOUTH_WEST:
+            if (GET_LED_Y(ledConfig) >= lowestYValueForSouth && GET_LED_X(ledConfig) <= highestXValueForWest) {
+                setLedHsv(ledIndex, color);
+            }
+            return;
+
+        case QUADRANT_NORTH_WEST:
+            if (GET_LED_Y(ledConfig) <= highestYValueForNorth && GET_LED_X(ledConfig) <= highestXValueForWest) {
+                setLedHsv(ledIndex, color);
+            }
+            return;
+    }
+}
+
 void applyLedModeLayer(void)
 {
     const ledConfig_t *ledConfig;
@@ -677,24 +713,18 @@ void applyLedWarningLayer(uint8_t updateNow)
 void applyLedIndicatorLayer(uint8_t indicatorFlashState)
 {
     const ledConfig_t *ledConfig;
-    static const hsvColor_t *turnColor;
-    static const hsvColor_t *accColor;
-    static const hsvColor_t *decColor;
+    static const hsvColor_t *flashColor;
 
     if (!rxIsReceivingSignal()) {
         return;
     }
 
     if (indicatorFlashState == 0) {
-        turnColor = &hsv_orange;
-        accColor = &hsv_blue;
-        decColor = &hsv_red;
+        flashColor = &hsv_orange;
     } else {
-        turnColor = &hsv_black;
-        accColor = &hsv_black;
-        decColor = &hsv_black;
+        flashColor = &hsv_black;
     }
-    
+
 
     uint8_t ledIndex;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
@@ -704,31 +734,25 @@ void applyLedIndicatorLayer(uint8_t indicatorFlashState)
         if (!(ledConfig->flags & LED_FUNCTION_INDICATOR)) {
             continue;
         }
-        
+
         if (rcCommand[ROLL] > INDICATOR_DEADBAND) {
-            if ((ledConfig->flags & LED_DIRECTION_EAST)) {
-                setLedHsv(ledIndex, turnColor);
-                continue;
-            }
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
         }
 
         if (rcCommand[ROLL] < -INDICATOR_DEADBAND) {
-            if ((ledConfig->flags & LED_DIRECTION_WEST)) {
-                setLedHsv(ledIndex, turnColor);
-                continue;
-            }
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
         }
 
         if (rcCommand[PITCH] > INDICATOR_DEADBAND) {
-            if ((ledConfig->flags & LED_DIRECTION_NORTH)) {
-                setLedHsv(ledIndex, accColor);
-            }
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_NORTH_WEST, flashColor);
         }
 
         if (rcCommand[PITCH] < -INDICATOR_DEADBAND) {
-            if ((ledConfig->flags & LED_DIRECTION_SOUTH)) {
-                setLedHsv(ledIndex, decColor);
-            }
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_EAST, flashColor);
+            applyQuadrantColor(ledIndex, ledConfig, QUADRANT_SOUTH_WEST, flashColor);
         }
     }
 }
@@ -766,8 +790,11 @@ void applyLedThrustRingLayer(void)
     uint8_t ledIndex;
 
     // initialised to special value instead of using more memory for a flag.
+    static uint8_t rotationSeqLedCount = RING_PATTERN_NOT_CALCULATED;
     static uint8_t rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+    bool nextLedOn = false;
 
+    uint8_t ledRingIndex = 0;
     for (ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
         ledConfig = &ledConfigs[ledIndex];
@@ -776,15 +803,16 @@ void applyLedThrustRingLayer(void)
             continue;
         }
 
-        uint8_t ledRingIndex = GET_LED_X(ledConfig) + GET_LED_Y(ledConfig);
         bool applyColor = false;
-
         if (ARMING_FLAG(ARMED)) {
-            if ((ledRingIndex + rotationPhase) % ROTATION_SEQUENCE_LED_COUNT < ROTATION_SEQUENCE_LED_WIDTH) {
+            if ((ledRingIndex + rotationPhase) % rotationSeqLedCount < ROTATION_SEQUENCE_LED_WIDTH) {
                 applyColor = true;
             }
         } else {
-            applyColor = (ledRingIndex % 2) == 0;
+            if (nextLedOn == false) {
+                applyColor = true;
+            }
+            nextLedOn = !nextLedOn;
         }
 
         if (applyColor) {
@@ -794,11 +822,33 @@ void applyLedThrustRingLayer(void)
         }
 
         setLedHsv(ledIndex, &ringColor);
+
+        ledRingIndex++;
     }
-    
+
+    uint8_t ledRingLedCount = ledRingIndex;
+    if (rotationSeqLedCount == RING_PATTERN_NOT_CALCULATED) {
+        // update ring pattern according to total number of ring leds found
+
+        rotationSeqLedCount = ledRingLedCount;
+
+        // try to split in segments/rings of exactly ROTATION_SEQUENCE_LED_COUNT leds
+        if ((ledRingLedCount % ROTATION_SEQUENCE_LED_COUNT) == 0) {
+            rotationSeqLedCount = ROTATION_SEQUENCE_LED_COUNT;
+        } else {
+            // else split up in equal segments/rings of at most ROTATION_SEQUENCE_LED_COUNT leds
+            while ((rotationSeqLedCount > ROTATION_SEQUENCE_LED_COUNT) && ((rotationSeqLedCount % 2) == 0)) {
+                rotationSeqLedCount >>= 1;
+            }
+        }
+
+        // trigger start over
+        rotationPhase = 1;
+    }
+
     rotationPhase--;
     if (rotationPhase == 0) {
-        rotationPhase = ROTATION_SEQUENCE_LED_COUNT;
+        rotationPhase = rotationSeqLedCount;
     }
 }
 
