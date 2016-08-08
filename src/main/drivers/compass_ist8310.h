@@ -17,22 +17,12 @@
 
 #pragma once
 
-// Type of magnetometer used/detected
-typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_AK8963 = 4,
-    MAG_IST8310 = 5,
-    MAG_MAX = MAG_IST8310,
-} magSensor_e;
+#include "io.h"
 
-void compassInit(void);
-union flightDynamicsTrims_u;
-void updateCompass(union flightDynamicsTrims_u *magZero);
+typedef struct ist8310Config_s {
+    ioTag_t intTag;
+} ist8310Config_t;
 
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern mag_t mag;
+bool ist8310Detect(mag_t* mag, const ist8310Config_t *ist8310ConfigToUse);
+void ist8310Init(void);
+bool ist8310Read(int16_t *magData);

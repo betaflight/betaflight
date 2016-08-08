@@ -57,6 +57,7 @@
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
+#include "drivers/compass_ist8310.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -515,6 +516,22 @@ static void detectMag(magSensor_e magHardwareToUse)
 
 #endif
 
+#ifdef USE_MAG_IST8310
+    const ist8310Config_t *ist8310Config = 0;
+
+#ifdef MAG_INT_EXTI
+    static const ist8310Config_t extiIst8310Config = {
+        .intTag = IO_TAG(MAG_INT_EXTI)
+    };
+
+    ist8310Config = &extiIst8310Config;
+#endif
+
+#endif
+
+
+
+
 retry:
 
     magAlign = ALIGN_DEFAULT;
@@ -559,6 +576,18 @@ retry:
 #endif
             ; // fallthrough
 
+        case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+            if (ist8310Detect(&mag, ist8310Config)) {
+#ifdef MAG_IST8310_ALIGN
+                magAlign = MAG_IST8310_ALIGN;
+#endif
+                magHardware = MAG_IST8310;
+                break;
+            }
+#endif
+            ; // fallthrough
+            
         case MAG_NONE:
             magHardware = MAG_NONE;
             break;
